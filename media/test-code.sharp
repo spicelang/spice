@@ -1,0 +1,14 @@
+int testInt = 0;
+double testDouble = 1.5;
+string testString = "";
+bool testBool = true;
+auto testAuto = false;
+
+f<int> testFunction(double doubleParam) {
+
+    return 10;
+}
+
+p testProcedure(bool boolParam, string stringParam) {
+
+}
