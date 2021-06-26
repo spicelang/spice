@@ -2,25 +2,23 @@
 
 ## Grammar
 ```
-TOP_LVL              --> (TOP_LVL_EXPR | FCTN_DEF)*
-FCTN_DEF             --> 'f' LANGLEBRACKET DATA_TYPE RANGLEBRACKET IDENTIFIER LPAREN PARAM_LST RPAREN LBRACE STMT_LST RBRACE
-PCRE_DEF             --> 'p' IDENTIFIER LBRACE STMT_LST RBRACE
-FOR_LOOP             --> 'for' DEF_STMT ';' TOP_LVL_EXPR ';' (INTEGER | DOUBLE) LBRACE STMT_LST RBRACE
-FOR_EACH_LOOP        --> 'foreach' DATA_TYPE IDENTIFIER ':' VALUE LBRACE STMT_LST RBRACE
-WHILE_LOOP           --> 'while' TOP_LVL_EXPR LBRACE STMT_LST RBRACE
-IF_STMT              --> 'if' TOP_LVL_EXPR LBRACE STMT_LST RBRACE
+ENTRY                --> (TOP_LVL_EXPR | FUNCTION_DEF | PROCEDURE_DEF)*
+FUNCTION_DEF         --> 'f' '<' DATA_TYPE '>' IDENTIFIER '(' PARAM_LST ')' '{' STMT_LST '}'
+PROCEDURE_DEF        --> 'p' IDENTIFIER '{' STMT_LST '}'
+FOR_LOOP             --> 'for' DEF_STMT ';' TOP_LVL_EXPR ';' (INTEGER | DOUBLE) '{' STMT_LST '}'
+FOR_EACH_LOOP        --> 'foreach' IDENTIFIER ':' VALUE '{' STMT_LST '}'
+WHILE_LOOP           --> 'while' TOP_LVL_EXPR '{' STMT_LST '}'
+IF_STMT              --> 'if' TOP_LVL_EXPR '{' STMT_LST '}'
 
-STMT_LST             --> STMT*
-PARAM_LST            --> ((DECL_STMT | DEF_STMT) ',')*
-STMT                 --> (DECL_STMT | DEF_STMT | FCTN_CALL | TOP_LVL_EXPR | IMPORT_STMT | RETURN_STMT) ';'
+STMT_LST             --> (STMT | FOR_LOOP | FOR_EACH_LOOP | WHILE_LOOP | IF_STMT)*
+PARAM_LST            --> ((DECL_STMT | ASSIGNMENT) ',')*
+STMT                 --> (DECL_STMT | ASSIGNMENT | FCTN_CALL | TOP_LVL_EXPR | IMPORT_STMT | RETURN_STMT) ';'
 DECL_STMT            --> 'const'? DATA_TYPE IDENTIFIER
-FCTN_CALL            --> IDENTIFIER LPAREN PARAM_LST RPAREN
+FCTN_CALL            --> IDENTIFIER '(' PARAM_LST ')'
 IMPORT_STMT          --> 'import' STRING
-RETURN_STMT          --> 'return' VALUE
+RETURN_STMT          --> 'return' TOP_LVL_EXPR
 
 DATA_TYPE            --> 'double' | 'int' | 'string' | 'bool' | 'dyn'
-IDENTIFIER           --> [_a-zA-Z][_a-zA-Z0-9]
-VALUE                --> STRING | BOOL | INTEGER | DOUBLE | IDENFIER | FCTN_CALL
 
 TOP_LVL_EXPR         --> ASSIGNMENT
 ASSIGNMENT           --> ((DECL | IDENTIFIER) ('=' | '+=' | '-=' | '*=' | '/='))? TERNARY
@@ -33,21 +31,17 @@ EQUALITY             --> RELATIONAL_EXPR (('==' | '!=') RELATIONAL_EXPR)?
 RELATIONAL_EXPR      --> ADDITIVE_EXPR (('<' | '>' | '<=' | '>=') ADDITIVE_EXPR)?
 ADDITIVE_EXPR        --> MUL_DIV_EXPR (('+' | '-') MUL_DIV_EXPR)*
 MULTIPLICATIVE_EXPR  --> PREFIX_UNARY (('*' | '/') PREFIX_UNARY)*
-PREFIX_UNARY         --> POSTFIX_UNARY ('++' | '--')?
-POSTFIX_UNARY        --> ('!' | '+' | '-' | '++' | '--')? ATOMIC_EXPR
-ATOMIC_EXPR          --> INTEGER | DOUBLE | IDENTIFIER | FCTN_CALL | LPAREN ADD_SUB_EXPR RPAREN
+PREFIX_UNARY         --> ('!' | '++' | '--')? POSTFIX_UNARY
+POSTFIX_UNARY        --> ATOMIC_EXPR ('++' | '--')?
+ATOMIC_EXPR          --> VALUE | '(' ADD_SUB_EXPR ')'
 
-STRING               --> "([^\\"] | \\\\ | \\")*"
+COMMENT_LINE         --> //([^\n])*
+COMMENT_BLOCK        --> \/\*.*\*\/
+
+VALUE                --> STRING | BOOL | INTEGER | DOUBLE | IDENFIER | FCTN_CALL
+IDENTIFIER           --> [_a-zA-Z][_a-zA-Z0-9]*
+STRING               --> "([^\\"]|\\\\|\\")*"
 BOOL                 --> 'true' | 'false'
-INTEGER              --> -*[1-9]+[0-9]* | 0
+INTEGER              --> -*[1-9]+[0-9]*|0
 DOUBLE               --> -*[0-9]+.[0-9]+
-
-LBRACE               --> '{'
-RBRACE               --> '}'
-LPAREN               --> '('
-RPAREN               --> ')'
-LBRACKET             --> '['
-RBRACKET             --> '['
-LANGLEBRACKET        --> '<'
-RANGLEBRACKET        --> '>'
 ```

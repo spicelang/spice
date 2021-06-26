@@ -4,6 +4,8 @@ string testString = "";
 bool testBool = true;
 auto testAuto = false;
 
+4++;
+
 f<int> testFunction(double doubleParam) {
     while testDouble < 2.5 {
         for int i = 12 : i < 15 : i+=2 {
@@ -13,6 +15,6 @@ f<int> testFunction(double doubleParam) {
     return 10;
 }
 
-p testProcedure(bool boolParam, string stringParam) {
+p testProcedure(bool boolParam = false, string stringParam) {
     double result = testString == "" ? 5.0 : 1.4;
 }
