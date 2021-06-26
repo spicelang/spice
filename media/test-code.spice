@@ -5,10 +5,14 @@ bool testBool = true;
 auto testAuto = false;
 
 f<int> testFunction(double doubleParam) {
-
+    while testDouble < 2.5 {
+        for int i = 12 : i < 15 : i+=2 {
+            return 12;
+        }
+    }
     return 10;
 }
 
 p testProcedure(bool boolParam, string stringParam) {
-
+    double result = testString == "" ? 5.0 : 1.4;
 }
