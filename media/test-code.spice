@@ -2,13 +2,14 @@ int testInt = 0;
 double testDouble = 1.5;
 string testString = "";
 bool testBool = true;
-auto testAuto = false;
+dyn testAuto = false;
 
 4++;
 
+// This is a test comment
 f<int> testFunction(double doubleParam) {
     while testDouble < 2.5 {
-        for int i = 12 : i < 15 : i+=2 {
+        for int i = 12; i < 15; i+=2 {
             return 12;
         }
     }
@@ -16,5 +17,8 @@ f<int> testFunction(double doubleParam) {
 }
 
 p testProcedure(bool boolParam = false, string stringParam) {
+    /* Test
+    block
+    comment */
     double result = testString == "" ? 5.0 : 1.4;
 }
