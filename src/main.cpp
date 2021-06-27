@@ -1,18 +1,27 @@
 // Copyright (c) 2021 ChilliBits. All rights reserved.
 
-#include "main.h"
+#include <iostream>
+#include "antlr4-runtime.h"
+#include <antlr/SpiceLexer.h>
+#include <antlr/SpiceParser.h>
+#include <analyzer/AnalyzerVisitor.h>
+
+using namespace antlr4;
 
 int main(int argc, char** argv) {
+    // Read from file
     std::ifstream stream;
     stream.open(argv[1]);
     ANTLRInputStream input(stream);
+
+    // Parse input to AST
     SpiceLexer lexer(&input);
     CommonTokenStream tokens(&lexer);
-    MyGrammarParser parser(&tokens);
+    SpiceParser parser(&tokens);
 
-    tree::ParseTree *tree = parser.key();
-    TreeShapeListener listener;
-    tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
+    // Execute syntactical analysis
+    tree::ParseTree *tree = parser.entry();
+    AnalyzerVisitor().visit(tree);
 
     // Return with positive result code
     return 0;

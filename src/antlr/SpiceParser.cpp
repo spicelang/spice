@@ -45,20 +45,20 @@ SpiceParser::StmtContext* SpiceParser::EntryContext::stmt(size_t i) {
   return getRuleContext<SpiceParser::StmtContext>(i);
 }
 
-std::vector<SpiceParser::Function_defContext *> SpiceParser::EntryContext::function_def() {
-  return getRuleContexts<SpiceParser::Function_defContext>();
+std::vector<SpiceParser::FunctionDefContext *> SpiceParser::EntryContext::functionDef() {
+  return getRuleContexts<SpiceParser::FunctionDefContext>();
 }
 
-SpiceParser::Function_defContext* SpiceParser::EntryContext::function_def(size_t i) {
-  return getRuleContext<SpiceParser::Function_defContext>(i);
+SpiceParser::FunctionDefContext* SpiceParser::EntryContext::functionDef(size_t i) {
+  return getRuleContext<SpiceParser::FunctionDefContext>(i);
 }
 
-std::vector<SpiceParser::Procedure_defContext *> SpiceParser::EntryContext::procedure_def() {
-  return getRuleContexts<SpiceParser::Procedure_defContext>();
+std::vector<SpiceParser::ProcedureDefContext *> SpiceParser::EntryContext::procedureDef() {
+  return getRuleContexts<SpiceParser::ProcedureDefContext>();
 }
 
-SpiceParser::Procedure_defContext* SpiceParser::EntryContext::procedure_def(size_t i) {
-  return getRuleContext<SpiceParser::Procedure_defContext>(i);
+SpiceParser::ProcedureDefContext* SpiceParser::EntryContext::procedureDef(size_t i) {
+  return getRuleContext<SpiceParser::ProcedureDefContext>(i);
 }
 
 
@@ -130,13 +130,13 @@ SpiceParser::EntryContext* SpiceParser::entry() {
 
         case SpiceParser::F: {
           setState(59);
-          function_def();
+          functionDef();
           break;
         }
 
         case SpiceParser::P: {
           setState(60);
-          procedure_def();
+          procedureDef();
           break;
         }
 
@@ -158,72 +158,72 @@ SpiceParser::EntryContext* SpiceParser::entry() {
   return _localctx;
 }
 
-//----------------- Function_defContext ------------------------------------------------------------------
+//----------------- FunctionDefContext ------------------------------------------------------------------
 
-SpiceParser::Function_defContext::Function_defContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::FunctionDefContext::FunctionDefContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::Function_defContext::F() {
+tree::TerminalNode* SpiceParser::FunctionDefContext::F() {
   return getToken(SpiceParser::F, 0);
 }
 
-tree::TerminalNode* SpiceParser::Function_defContext::LESS() {
+tree::TerminalNode* SpiceParser::FunctionDefContext::LESS() {
   return getToken(SpiceParser::LESS, 0);
 }
 
-tree::TerminalNode* SpiceParser::Function_defContext::DATA_TYPE() {
+tree::TerminalNode* SpiceParser::FunctionDefContext::DATA_TYPE() {
   return getToken(SpiceParser::DATA_TYPE, 0);
 }
 
-tree::TerminalNode* SpiceParser::Function_defContext::GREATER() {
+tree::TerminalNode* SpiceParser::FunctionDefContext::GREATER() {
   return getToken(SpiceParser::GREATER, 0);
 }
 
-tree::TerminalNode* SpiceParser::Function_defContext::IDENTIFIER() {
+tree::TerminalNode* SpiceParser::FunctionDefContext::IDENTIFIER() {
   return getToken(SpiceParser::IDENTIFIER, 0);
 }
 
-tree::TerminalNode* SpiceParser::Function_defContext::LPAREN() {
+tree::TerminalNode* SpiceParser::FunctionDefContext::LPAREN() {
   return getToken(SpiceParser::LPAREN, 0);
 }
 
-SpiceParser::Param_lstContext* SpiceParser::Function_defContext::param_lst() {
-  return getRuleContext<SpiceParser::Param_lstContext>(0);
+SpiceParser::ParamLstContext* SpiceParser::FunctionDefContext::paramLst() {
+  return getRuleContext<SpiceParser::ParamLstContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::Function_defContext::RPAREN() {
+tree::TerminalNode* SpiceParser::FunctionDefContext::RPAREN() {
   return getToken(SpiceParser::RPAREN, 0);
 }
 
-tree::TerminalNode* SpiceParser::Function_defContext::LBRACE() {
+tree::TerminalNode* SpiceParser::FunctionDefContext::LBRACE() {
   return getToken(SpiceParser::LBRACE, 0);
 }
 
-SpiceParser::Stmt_lstContext* SpiceParser::Function_defContext::stmt_lst() {
-  return getRuleContext<SpiceParser::Stmt_lstContext>(0);
+SpiceParser::StmtLstContext* SpiceParser::FunctionDefContext::stmtLst() {
+  return getRuleContext<SpiceParser::StmtLstContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::Function_defContext::RBRACE() {
+tree::TerminalNode* SpiceParser::FunctionDefContext::RBRACE() {
   return getToken(SpiceParser::RBRACE, 0);
 }
 
 
-size_t SpiceParser::Function_defContext::getRuleIndex() const {
-  return SpiceParser::RuleFunction_def;
+size_t SpiceParser::FunctionDefContext::getRuleIndex() const {
+  return SpiceParser::RuleFunctionDef;
 }
 
 
-antlrcpp::Any SpiceParser::Function_defContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::FunctionDefContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitFunction_def(this);
+    return parserVisitor->visitFunctionDef(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Function_defContext* SpiceParser::function_def() {
-  Function_defContext *_localctx = _tracker.createInstance<Function_defContext>(_ctx, getState());
-  enterRule(_localctx, 2, SpiceParser::RuleFunction_def);
+SpiceParser::FunctionDefContext* SpiceParser::functionDef() {
+  FunctionDefContext *_localctx = _tracker.createInstance<FunctionDefContext>(_ctx, getState());
+  enterRule(_localctx, 2, SpiceParser::RuleFunctionDef);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -247,13 +247,13 @@ SpiceParser::Function_defContext* SpiceParser::function_def() {
     setState(71);
     match(SpiceParser::LPAREN);
     setState(72);
-    param_lst();
+    paramLst();
     setState(73);
     match(SpiceParser::RPAREN);
     setState(74);
     match(SpiceParser::LBRACE);
     setState(75);
-    stmt_lst();
+    stmtLst();
     setState(76);
     match(SpiceParser::RBRACE);
    
@@ -267,60 +267,60 @@ SpiceParser::Function_defContext* SpiceParser::function_def() {
   return _localctx;
 }
 
-//----------------- Procedure_defContext ------------------------------------------------------------------
+//----------------- ProcedureDefContext ------------------------------------------------------------------
 
-SpiceParser::Procedure_defContext::Procedure_defContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::ProcedureDefContext::ProcedureDefContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::Procedure_defContext::P() {
+tree::TerminalNode* SpiceParser::ProcedureDefContext::P() {
   return getToken(SpiceParser::P, 0);
 }
 
-tree::TerminalNode* SpiceParser::Procedure_defContext::IDENTIFIER() {
+tree::TerminalNode* SpiceParser::ProcedureDefContext::IDENTIFIER() {
   return getToken(SpiceParser::IDENTIFIER, 0);
 }
 
-tree::TerminalNode* SpiceParser::Procedure_defContext::LPAREN() {
+tree::TerminalNode* SpiceParser::ProcedureDefContext::LPAREN() {
   return getToken(SpiceParser::LPAREN, 0);
 }
 
-SpiceParser::Param_lstContext* SpiceParser::Procedure_defContext::param_lst() {
-  return getRuleContext<SpiceParser::Param_lstContext>(0);
+SpiceParser::ParamLstContext* SpiceParser::ProcedureDefContext::paramLst() {
+  return getRuleContext<SpiceParser::ParamLstContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::Procedure_defContext::RPAREN() {
+tree::TerminalNode* SpiceParser::ProcedureDefContext::RPAREN() {
   return getToken(SpiceParser::RPAREN, 0);
 }
 
-tree::TerminalNode* SpiceParser::Procedure_defContext::LBRACE() {
+tree::TerminalNode* SpiceParser::ProcedureDefContext::LBRACE() {
   return getToken(SpiceParser::LBRACE, 0);
 }
 
-SpiceParser::Stmt_lstContext* SpiceParser::Procedure_defContext::stmt_lst() {
-  return getRuleContext<SpiceParser::Stmt_lstContext>(0);
+SpiceParser::StmtLstContext* SpiceParser::ProcedureDefContext::stmtLst() {
+  return getRuleContext<SpiceParser::StmtLstContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::Procedure_defContext::RBRACE() {
+tree::TerminalNode* SpiceParser::ProcedureDefContext::RBRACE() {
   return getToken(SpiceParser::RBRACE, 0);
 }
 
 
-size_t SpiceParser::Procedure_defContext::getRuleIndex() const {
-  return SpiceParser::RuleProcedure_def;
+size_t SpiceParser::ProcedureDefContext::getRuleIndex() const {
+  return SpiceParser::RuleProcedureDef;
 }
 
 
-antlrcpp::Any SpiceParser::Procedure_defContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::ProcedureDefContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitProcedure_def(this);
+    return parserVisitor->visitProcedureDef(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Procedure_defContext* SpiceParser::procedure_def() {
-  Procedure_defContext *_localctx = _tracker.createInstance<Procedure_defContext>(_ctx, getState());
-  enterRule(_localctx, 4, SpiceParser::RuleProcedure_def);
+SpiceParser::ProcedureDefContext* SpiceParser::procedureDef() {
+  ProcedureDefContext *_localctx = _tracker.createInstance<ProcedureDefContext>(_ctx, getState());
+  enterRule(_localctx, 4, SpiceParser::RuleProcedureDef);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -338,13 +338,13 @@ SpiceParser::Procedure_defContext* SpiceParser::procedure_def() {
     setState(80);
     match(SpiceParser::LPAREN);
     setState(81);
-    param_lst();
+    paramLst();
     setState(82);
     match(SpiceParser::RPAREN);
     setState(83);
     match(SpiceParser::LBRACE);
     setState(84);
-    stmt_lst();
+    stmtLst();
     setState(85);
     match(SpiceParser::RBRACE);
    
@@ -358,64 +358,64 @@ SpiceParser::Procedure_defContext* SpiceParser::procedure_def() {
   return _localctx;
 }
 
-//----------------- For_loopContext ------------------------------------------------------------------
+//----------------- ForLoopContext ------------------------------------------------------------------
 
-SpiceParser::For_loopContext::For_loopContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::ForLoopContext::ForLoopContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::For_loopContext::FOR() {
+tree::TerminalNode* SpiceParser::ForLoopContext::FOR() {
   return getToken(SpiceParser::FOR, 0);
 }
 
-SpiceParser::AssignmentContext* SpiceParser::For_loopContext::assignment() {
+SpiceParser::AssignmentContext* SpiceParser::ForLoopContext::assignment() {
   return getRuleContext<SpiceParser::AssignmentContext>(0);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::For_loopContext::SEMICOLON() {
+std::vector<tree::TerminalNode *> SpiceParser::ForLoopContext::SEMICOLON() {
   return getTokens(SpiceParser::SEMICOLON);
 }
 
-tree::TerminalNode* SpiceParser::For_loopContext::SEMICOLON(size_t i) {
+tree::TerminalNode* SpiceParser::ForLoopContext::SEMICOLON(size_t i) {
   return getToken(SpiceParser::SEMICOLON, i);
 }
 
-std::vector<SpiceParser::Top_lvl_exprContext *> SpiceParser::For_loopContext::top_lvl_expr() {
-  return getRuleContexts<SpiceParser::Top_lvl_exprContext>();
+std::vector<SpiceParser::TopLvlExprContext *> SpiceParser::ForLoopContext::topLvlExpr() {
+  return getRuleContexts<SpiceParser::TopLvlExprContext>();
 }
 
-SpiceParser::Top_lvl_exprContext* SpiceParser::For_loopContext::top_lvl_expr(size_t i) {
-  return getRuleContext<SpiceParser::Top_lvl_exprContext>(i);
+SpiceParser::TopLvlExprContext* SpiceParser::ForLoopContext::topLvlExpr(size_t i) {
+  return getRuleContext<SpiceParser::TopLvlExprContext>(i);
 }
 
-tree::TerminalNode* SpiceParser::For_loopContext::LBRACE() {
+tree::TerminalNode* SpiceParser::ForLoopContext::LBRACE() {
   return getToken(SpiceParser::LBRACE, 0);
 }
 
-SpiceParser::Stmt_lstContext* SpiceParser::For_loopContext::stmt_lst() {
-  return getRuleContext<SpiceParser::Stmt_lstContext>(0);
+SpiceParser::StmtLstContext* SpiceParser::ForLoopContext::stmtLst() {
+  return getRuleContext<SpiceParser::StmtLstContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::For_loopContext::RBRACE() {
+tree::TerminalNode* SpiceParser::ForLoopContext::RBRACE() {
   return getToken(SpiceParser::RBRACE, 0);
 }
 
 
-size_t SpiceParser::For_loopContext::getRuleIndex() const {
-  return SpiceParser::RuleFor_loop;
+size_t SpiceParser::ForLoopContext::getRuleIndex() const {
+  return SpiceParser::RuleForLoop;
 }
 
 
-antlrcpp::Any SpiceParser::For_loopContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::ForLoopContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitFor_loop(this);
+    return parserVisitor->visitForLoop(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::For_loopContext* SpiceParser::for_loop() {
-  For_loopContext *_localctx = _tracker.createInstance<For_loopContext>(_ctx, getState());
-  enterRule(_localctx, 6, SpiceParser::RuleFor_loop);
+SpiceParser::ForLoopContext* SpiceParser::forLoop() {
+  ForLoopContext *_localctx = _tracker.createInstance<ForLoopContext>(_ctx, getState());
+  enterRule(_localctx, 6, SpiceParser::RuleForLoop);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -433,15 +433,15 @@ SpiceParser::For_loopContext* SpiceParser::for_loop() {
     setState(89);
     match(SpiceParser::SEMICOLON);
     setState(90);
-    top_lvl_expr();
+    topLvlExpr();
     setState(91);
     match(SpiceParser::SEMICOLON);
     setState(92);
-    top_lvl_expr();
+    topLvlExpr();
     setState(93);
     match(SpiceParser::LBRACE);
     setState(94);
-    stmt_lst();
+    stmtLst();
     setState(95);
     match(SpiceParser::RBRACE);
    
@@ -455,56 +455,56 @@ SpiceParser::For_loopContext* SpiceParser::for_loop() {
   return _localctx;
 }
 
-//----------------- For_each_loopContext ------------------------------------------------------------------
+//----------------- ForeachLoopContext ------------------------------------------------------------------
 
-SpiceParser::For_each_loopContext::For_each_loopContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::ForeachLoopContext::ForeachLoopContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::For_each_loopContext::FOREACH() {
+tree::TerminalNode* SpiceParser::ForeachLoopContext::FOREACH() {
   return getToken(SpiceParser::FOREACH, 0);
 }
 
-tree::TerminalNode* SpiceParser::For_each_loopContext::IDENTIFIER() {
+tree::TerminalNode* SpiceParser::ForeachLoopContext::IDENTIFIER() {
   return getToken(SpiceParser::IDENTIFIER, 0);
 }
 
-tree::TerminalNode* SpiceParser::For_each_loopContext::COLON() {
+tree::TerminalNode* SpiceParser::ForeachLoopContext::COLON() {
   return getToken(SpiceParser::COLON, 0);
 }
 
-SpiceParser::ValueContext* SpiceParser::For_each_loopContext::value() {
+SpiceParser::ValueContext* SpiceParser::ForeachLoopContext::value() {
   return getRuleContext<SpiceParser::ValueContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::For_each_loopContext::LBRACE() {
+tree::TerminalNode* SpiceParser::ForeachLoopContext::LBRACE() {
   return getToken(SpiceParser::LBRACE, 0);
 }
 
-SpiceParser::Stmt_lstContext* SpiceParser::For_each_loopContext::stmt_lst() {
-  return getRuleContext<SpiceParser::Stmt_lstContext>(0);
+SpiceParser::StmtLstContext* SpiceParser::ForeachLoopContext::stmtLst() {
+  return getRuleContext<SpiceParser::StmtLstContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::For_each_loopContext::RBRACE() {
+tree::TerminalNode* SpiceParser::ForeachLoopContext::RBRACE() {
   return getToken(SpiceParser::RBRACE, 0);
 }
 
 
-size_t SpiceParser::For_each_loopContext::getRuleIndex() const {
-  return SpiceParser::RuleFor_each_loop;
+size_t SpiceParser::ForeachLoopContext::getRuleIndex() const {
+  return SpiceParser::RuleForeachLoop;
 }
 
 
-antlrcpp::Any SpiceParser::For_each_loopContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::ForeachLoopContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitFor_each_loop(this);
+    return parserVisitor->visitForeachLoop(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::For_each_loopContext* SpiceParser::for_each_loop() {
-  For_each_loopContext *_localctx = _tracker.createInstance<For_each_loopContext>(_ctx, getState());
-  enterRule(_localctx, 8, SpiceParser::RuleFor_each_loop);
+SpiceParser::ForeachLoopContext* SpiceParser::foreachLoop() {
+  ForeachLoopContext *_localctx = _tracker.createInstance<ForeachLoopContext>(_ctx, getState());
+  enterRule(_localctx, 8, SpiceParser::RuleForeachLoop);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -526,7 +526,7 @@ SpiceParser::For_each_loopContext* SpiceParser::for_each_loop() {
     setState(101);
     match(SpiceParser::LBRACE);
     setState(102);
-    stmt_lst();
+    stmtLst();
     setState(103);
     match(SpiceParser::RBRACE);
    
@@ -540,48 +540,48 @@ SpiceParser::For_each_loopContext* SpiceParser::for_each_loop() {
   return _localctx;
 }
 
-//----------------- While_loopContext ------------------------------------------------------------------
+//----------------- WhileLoopContext ------------------------------------------------------------------
 
-SpiceParser::While_loopContext::While_loopContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::WhileLoopContext::WhileLoopContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::While_loopContext::WHILE() {
+tree::TerminalNode* SpiceParser::WhileLoopContext::WHILE() {
   return getToken(SpiceParser::WHILE, 0);
 }
 
-SpiceParser::Top_lvl_exprContext* SpiceParser::While_loopContext::top_lvl_expr() {
-  return getRuleContext<SpiceParser::Top_lvl_exprContext>(0);
+SpiceParser::TopLvlExprContext* SpiceParser::WhileLoopContext::topLvlExpr() {
+  return getRuleContext<SpiceParser::TopLvlExprContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::While_loopContext::LBRACE() {
+tree::TerminalNode* SpiceParser::WhileLoopContext::LBRACE() {
   return getToken(SpiceParser::LBRACE, 0);
 }
 
-SpiceParser::Stmt_lstContext* SpiceParser::While_loopContext::stmt_lst() {
-  return getRuleContext<SpiceParser::Stmt_lstContext>(0);
+SpiceParser::StmtLstContext* SpiceParser::WhileLoopContext::stmtLst() {
+  return getRuleContext<SpiceParser::StmtLstContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::While_loopContext::RBRACE() {
+tree::TerminalNode* SpiceParser::WhileLoopContext::RBRACE() {
   return getToken(SpiceParser::RBRACE, 0);
 }
 
 
-size_t SpiceParser::While_loopContext::getRuleIndex() const {
-  return SpiceParser::RuleWhile_loop;
+size_t SpiceParser::WhileLoopContext::getRuleIndex() const {
+  return SpiceParser::RuleWhileLoop;
 }
 
 
-antlrcpp::Any SpiceParser::While_loopContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::WhileLoopContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitWhile_loop(this);
+    return parserVisitor->visitWhileLoop(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::While_loopContext* SpiceParser::while_loop() {
-  While_loopContext *_localctx = _tracker.createInstance<While_loopContext>(_ctx, getState());
-  enterRule(_localctx, 10, SpiceParser::RuleWhile_loop);
+SpiceParser::WhileLoopContext* SpiceParser::whileLoop() {
+  WhileLoopContext *_localctx = _tracker.createInstance<WhileLoopContext>(_ctx, getState());
+  enterRule(_localctx, 10, SpiceParser::RuleWhileLoop);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -595,11 +595,11 @@ SpiceParser::While_loopContext* SpiceParser::while_loop() {
     setState(105);
     match(SpiceParser::WHILE);
     setState(106);
-    top_lvl_expr();
+    topLvlExpr();
     setState(107);
     match(SpiceParser::LBRACE);
     setState(108);
-    stmt_lst();
+    stmtLst();
     setState(109);
     match(SpiceParser::RBRACE);
    
@@ -613,48 +613,48 @@ SpiceParser::While_loopContext* SpiceParser::while_loop() {
   return _localctx;
 }
 
-//----------------- If_stmtContext ------------------------------------------------------------------
+//----------------- IfStmtContext ------------------------------------------------------------------
 
-SpiceParser::If_stmtContext::If_stmtContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::IfStmtContext::IfStmtContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::If_stmtContext::IF() {
+tree::TerminalNode* SpiceParser::IfStmtContext::IF() {
   return getToken(SpiceParser::IF, 0);
 }
 
-SpiceParser::Top_lvl_exprContext* SpiceParser::If_stmtContext::top_lvl_expr() {
-  return getRuleContext<SpiceParser::Top_lvl_exprContext>(0);
+SpiceParser::TopLvlExprContext* SpiceParser::IfStmtContext::topLvlExpr() {
+  return getRuleContext<SpiceParser::TopLvlExprContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::If_stmtContext::LBRACE() {
+tree::TerminalNode* SpiceParser::IfStmtContext::LBRACE() {
   return getToken(SpiceParser::LBRACE, 0);
 }
 
-SpiceParser::Stmt_lstContext* SpiceParser::If_stmtContext::stmt_lst() {
-  return getRuleContext<SpiceParser::Stmt_lstContext>(0);
+SpiceParser::StmtLstContext* SpiceParser::IfStmtContext::stmtLst() {
+  return getRuleContext<SpiceParser::StmtLstContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::If_stmtContext::RBRACE() {
+tree::TerminalNode* SpiceParser::IfStmtContext::RBRACE() {
   return getToken(SpiceParser::RBRACE, 0);
 }
 
 
-size_t SpiceParser::If_stmtContext::getRuleIndex() const {
-  return SpiceParser::RuleIf_stmt;
+size_t SpiceParser::IfStmtContext::getRuleIndex() const {
+  return SpiceParser::RuleIfStmt;
 }
 
 
-antlrcpp::Any SpiceParser::If_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::IfStmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitIf_stmt(this);
+    return parserVisitor->visitIfStmt(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::If_stmtContext* SpiceParser::if_stmt() {
-  If_stmtContext *_localctx = _tracker.createInstance<If_stmtContext>(_ctx, getState());
-  enterRule(_localctx, 12, SpiceParser::RuleIf_stmt);
+SpiceParser::IfStmtContext* SpiceParser::ifStmt() {
+  IfStmtContext *_localctx = _tracker.createInstance<IfStmtContext>(_ctx, getState());
+  enterRule(_localctx, 12, SpiceParser::RuleIfStmt);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -668,11 +668,11 @@ SpiceParser::If_stmtContext* SpiceParser::if_stmt() {
     setState(111);
     match(SpiceParser::IF);
     setState(112);
-    top_lvl_expr();
+    topLvlExpr();
     setState(113);
     match(SpiceParser::LBRACE);
     setState(114);
-    stmt_lst();
+    stmtLst();
     setState(115);
     match(SpiceParser::RBRACE);
    
@@ -686,68 +686,68 @@ SpiceParser::If_stmtContext* SpiceParser::if_stmt() {
   return _localctx;
 }
 
-//----------------- Stmt_lstContext ------------------------------------------------------------------
+//----------------- StmtLstContext ------------------------------------------------------------------
 
-SpiceParser::Stmt_lstContext::Stmt_lstContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::StmtLstContext::StmtLstContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::StmtContext *> SpiceParser::Stmt_lstContext::stmt() {
+std::vector<SpiceParser::StmtContext *> SpiceParser::StmtLstContext::stmt() {
   return getRuleContexts<SpiceParser::StmtContext>();
 }
 
-SpiceParser::StmtContext* SpiceParser::Stmt_lstContext::stmt(size_t i) {
+SpiceParser::StmtContext* SpiceParser::StmtLstContext::stmt(size_t i) {
   return getRuleContext<SpiceParser::StmtContext>(i);
 }
 
-std::vector<SpiceParser::For_loopContext *> SpiceParser::Stmt_lstContext::for_loop() {
-  return getRuleContexts<SpiceParser::For_loopContext>();
+std::vector<SpiceParser::ForLoopContext *> SpiceParser::StmtLstContext::forLoop() {
+  return getRuleContexts<SpiceParser::ForLoopContext>();
 }
 
-SpiceParser::For_loopContext* SpiceParser::Stmt_lstContext::for_loop(size_t i) {
-  return getRuleContext<SpiceParser::For_loopContext>(i);
+SpiceParser::ForLoopContext* SpiceParser::StmtLstContext::forLoop(size_t i) {
+  return getRuleContext<SpiceParser::ForLoopContext>(i);
 }
 
-std::vector<SpiceParser::For_each_loopContext *> SpiceParser::Stmt_lstContext::for_each_loop() {
-  return getRuleContexts<SpiceParser::For_each_loopContext>();
+std::vector<SpiceParser::ForeachLoopContext *> SpiceParser::StmtLstContext::foreachLoop() {
+  return getRuleContexts<SpiceParser::ForeachLoopContext>();
 }
 
-SpiceParser::For_each_loopContext* SpiceParser::Stmt_lstContext::for_each_loop(size_t i) {
-  return getRuleContext<SpiceParser::For_each_loopContext>(i);
+SpiceParser::ForeachLoopContext* SpiceParser::StmtLstContext::foreachLoop(size_t i) {
+  return getRuleContext<SpiceParser::ForeachLoopContext>(i);
 }
 
-std::vector<SpiceParser::While_loopContext *> SpiceParser::Stmt_lstContext::while_loop() {
-  return getRuleContexts<SpiceParser::While_loopContext>();
+std::vector<SpiceParser::WhileLoopContext *> SpiceParser::StmtLstContext::whileLoop() {
+  return getRuleContexts<SpiceParser::WhileLoopContext>();
 }
 
-SpiceParser::While_loopContext* SpiceParser::Stmt_lstContext::while_loop(size_t i) {
-  return getRuleContext<SpiceParser::While_loopContext>(i);
+SpiceParser::WhileLoopContext* SpiceParser::StmtLstContext::whileLoop(size_t i) {
+  return getRuleContext<SpiceParser::WhileLoopContext>(i);
 }
 
-std::vector<SpiceParser::If_stmtContext *> SpiceParser::Stmt_lstContext::if_stmt() {
-  return getRuleContexts<SpiceParser::If_stmtContext>();
+std::vector<SpiceParser::IfStmtContext *> SpiceParser::StmtLstContext::ifStmt() {
+  return getRuleContexts<SpiceParser::IfStmtContext>();
 }
 
-SpiceParser::If_stmtContext* SpiceParser::Stmt_lstContext::if_stmt(size_t i) {
-  return getRuleContext<SpiceParser::If_stmtContext>(i);
-}
-
-
-size_t SpiceParser::Stmt_lstContext::getRuleIndex() const {
-  return SpiceParser::RuleStmt_lst;
+SpiceParser::IfStmtContext* SpiceParser::StmtLstContext::ifStmt(size_t i) {
+  return getRuleContext<SpiceParser::IfStmtContext>(i);
 }
 
 
-antlrcpp::Any SpiceParser::Stmt_lstContext::accept(tree::ParseTreeVisitor *visitor) {
+size_t SpiceParser::StmtLstContext::getRuleIndex() const {
+  return SpiceParser::RuleStmtLst;
+}
+
+
+antlrcpp::Any SpiceParser::StmtLstContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitStmt_lst(this);
+    return parserVisitor->visitStmtLst(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Stmt_lstContext* SpiceParser::stmt_lst() {
-  Stmt_lstContext *_localctx = _tracker.createInstance<Stmt_lstContext>(_ctx, getState());
-  enterRule(_localctx, 14, SpiceParser::RuleStmt_lst);
+SpiceParser::StmtLstContext* SpiceParser::stmtLst() {
+  StmtLstContext *_localctx = _tracker.createInstance<StmtLstContext>(_ctx, getState());
+  enterRule(_localctx, 14, SpiceParser::RuleStmtLst);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -803,25 +803,25 @@ SpiceParser::Stmt_lstContext* SpiceParser::stmt_lst() {
 
         case SpiceParser::FOR: {
           setState(118);
-          for_loop();
+          forLoop();
           break;
         }
 
         case SpiceParser::FOREACH: {
           setState(119);
-          for_each_loop();
+          foreachLoop();
           break;
         }
 
         case SpiceParser::WHILE: {
           setState(120);
-          while_loop();
+          whileLoop();
           break;
         }
 
         case SpiceParser::IF: {
           setState(121);
-          if_stmt();
+          ifStmt();
           break;
         }
 
@@ -843,52 +843,52 @@ SpiceParser::Stmt_lstContext* SpiceParser::stmt_lst() {
   return _localctx;
 }
 
-//----------------- Param_lstContext ------------------------------------------------------------------
+//----------------- ParamLstContext ------------------------------------------------------------------
 
-SpiceParser::Param_lstContext::Param_lstContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::ParamLstContext::ParamLstContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::Decl_stmtContext *> SpiceParser::Param_lstContext::decl_stmt() {
-  return getRuleContexts<SpiceParser::Decl_stmtContext>();
+std::vector<SpiceParser::DeclStmtContext *> SpiceParser::ParamLstContext::declStmt() {
+  return getRuleContexts<SpiceParser::DeclStmtContext>();
 }
 
-SpiceParser::Decl_stmtContext* SpiceParser::Param_lstContext::decl_stmt(size_t i) {
-  return getRuleContext<SpiceParser::Decl_stmtContext>(i);
+SpiceParser::DeclStmtContext* SpiceParser::ParamLstContext::declStmt(size_t i) {
+  return getRuleContext<SpiceParser::DeclStmtContext>(i);
 }
 
-std::vector<SpiceParser::AssignmentContext *> SpiceParser::Param_lstContext::assignment() {
+std::vector<SpiceParser::AssignmentContext *> SpiceParser::ParamLstContext::assignment() {
   return getRuleContexts<SpiceParser::AssignmentContext>();
 }
 
-SpiceParser::AssignmentContext* SpiceParser::Param_lstContext::assignment(size_t i) {
+SpiceParser::AssignmentContext* SpiceParser::ParamLstContext::assignment(size_t i) {
   return getRuleContext<SpiceParser::AssignmentContext>(i);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::Param_lstContext::COMMA() {
+std::vector<tree::TerminalNode *> SpiceParser::ParamLstContext::COMMA() {
   return getTokens(SpiceParser::COMMA);
 }
 
-tree::TerminalNode* SpiceParser::Param_lstContext::COMMA(size_t i) {
+tree::TerminalNode* SpiceParser::ParamLstContext::COMMA(size_t i) {
   return getToken(SpiceParser::COMMA, i);
 }
 
 
-size_t SpiceParser::Param_lstContext::getRuleIndex() const {
-  return SpiceParser::RuleParam_lst;
+size_t SpiceParser::ParamLstContext::getRuleIndex() const {
+  return SpiceParser::RuleParamLst;
 }
 
 
-antlrcpp::Any SpiceParser::Param_lstContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::ParamLstContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitParam_lst(this);
+    return parserVisitor->visitParamLst(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Param_lstContext* SpiceParser::param_lst() {
-  Param_lstContext *_localctx = _tracker.createInstance<Param_lstContext>(_ctx, getState());
-  enterRule(_localctx, 16, SpiceParser::RuleParam_lst);
+SpiceParser::ParamLstContext* SpiceParser::paramLst() {
+  ParamLstContext *_localctx = _tracker.createInstance<ParamLstContext>(_ctx, getState());
+  enterRule(_localctx, 16, SpiceParser::RuleParamLst);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -906,7 +906,7 @@ SpiceParser::Param_lstContext* SpiceParser::param_lst() {
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 4, _ctx)) {
     case 1: {
       setState(127);
-      decl_stmt();
+      declStmt();
       break;
     }
 
@@ -930,7 +930,7 @@ SpiceParser::Param_lstContext* SpiceParser::param_lst() {
       switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 5, _ctx)) {
       case 1: {
         setState(132);
-        decl_stmt();
+        declStmt();
         break;
       }
 
@@ -968,28 +968,28 @@ tree::TerminalNode* SpiceParser::StmtContext::SEMICOLON() {
   return getToken(SpiceParser::SEMICOLON, 0);
 }
 
-SpiceParser::Decl_stmtContext* SpiceParser::StmtContext::decl_stmt() {
-  return getRuleContext<SpiceParser::Decl_stmtContext>(0);
+SpiceParser::DeclStmtContext* SpiceParser::StmtContext::declStmt() {
+  return getRuleContext<SpiceParser::DeclStmtContext>(0);
 }
 
 SpiceParser::AssignmentContext* SpiceParser::StmtContext::assignment() {
   return getRuleContext<SpiceParser::AssignmentContext>(0);
 }
 
-SpiceParser::Function_callContext* SpiceParser::StmtContext::function_call() {
-  return getRuleContext<SpiceParser::Function_callContext>(0);
+SpiceParser::FunctionCallContext* SpiceParser::StmtContext::functionCall() {
+  return getRuleContext<SpiceParser::FunctionCallContext>(0);
 }
 
-SpiceParser::Top_lvl_exprContext* SpiceParser::StmtContext::top_lvl_expr() {
-  return getRuleContext<SpiceParser::Top_lvl_exprContext>(0);
+SpiceParser::TopLvlExprContext* SpiceParser::StmtContext::topLvlExpr() {
+  return getRuleContext<SpiceParser::TopLvlExprContext>(0);
 }
 
-SpiceParser::Import_stmtContext* SpiceParser::StmtContext::import_stmt() {
-  return getRuleContext<SpiceParser::Import_stmtContext>(0);
+SpiceParser::ImportStmtContext* SpiceParser::StmtContext::importStmt() {
+  return getRuleContext<SpiceParser::ImportStmtContext>(0);
 }
 
-SpiceParser::Return_stmtContext* SpiceParser::StmtContext::return_stmt() {
-  return getRuleContext<SpiceParser::Return_stmtContext>(0);
+SpiceParser::ReturnStmtContext* SpiceParser::StmtContext::returnStmt() {
+  return getRuleContext<SpiceParser::ReturnStmtContext>(0);
 }
 
 
@@ -1023,7 +1023,7 @@ SpiceParser::StmtContext* SpiceParser::stmt() {
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 7, _ctx)) {
     case 1: {
       setState(141);
-      decl_stmt();
+      declStmt();
       break;
     }
 
@@ -1035,25 +1035,25 @@ SpiceParser::StmtContext* SpiceParser::stmt() {
 
     case 3: {
       setState(143);
-      function_call();
+      functionCall();
       break;
     }
 
     case 4: {
       setState(144);
-      top_lvl_expr();
+      topLvlExpr();
       break;
     }
 
     case 5: {
       setState(145);
-      import_stmt();
+      importStmt();
       break;
     }
 
     case 6: {
       setState(146);
-      return_stmt();
+      returnStmt();
       break;
     }
 
@@ -1073,40 +1073,40 @@ SpiceParser::StmtContext* SpiceParser::stmt() {
   return _localctx;
 }
 
-//----------------- Decl_stmtContext ------------------------------------------------------------------
+//----------------- DeclStmtContext ------------------------------------------------------------------
 
-SpiceParser::Decl_stmtContext::Decl_stmtContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::DeclStmtContext::DeclStmtContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::Decl_stmtContext::DATA_TYPE() {
+tree::TerminalNode* SpiceParser::DeclStmtContext::DATA_TYPE() {
   return getToken(SpiceParser::DATA_TYPE, 0);
 }
 
-tree::TerminalNode* SpiceParser::Decl_stmtContext::IDENTIFIER() {
+tree::TerminalNode* SpiceParser::DeclStmtContext::IDENTIFIER() {
   return getToken(SpiceParser::IDENTIFIER, 0);
 }
 
-tree::TerminalNode* SpiceParser::Decl_stmtContext::CONST() {
+tree::TerminalNode* SpiceParser::DeclStmtContext::CONST() {
   return getToken(SpiceParser::CONST, 0);
 }
 
 
-size_t SpiceParser::Decl_stmtContext::getRuleIndex() const {
-  return SpiceParser::RuleDecl_stmt;
+size_t SpiceParser::DeclStmtContext::getRuleIndex() const {
+  return SpiceParser::RuleDeclStmt;
 }
 
 
-antlrcpp::Any SpiceParser::Decl_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::DeclStmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitDecl_stmt(this);
+    return parserVisitor->visitDeclStmt(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Decl_stmtContext* SpiceParser::decl_stmt() {
-  Decl_stmtContext *_localctx = _tracker.createInstance<Decl_stmtContext>(_ctx, getState());
-  enterRule(_localctx, 20, SpiceParser::RuleDecl_stmt);
+SpiceParser::DeclStmtContext* SpiceParser::declStmt() {
+  DeclStmtContext *_localctx = _tracker.createInstance<DeclStmtContext>(_ctx, getState());
+  enterRule(_localctx, 20, SpiceParser::RuleDeclStmt);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1141,44 +1141,44 @@ SpiceParser::Decl_stmtContext* SpiceParser::decl_stmt() {
   return _localctx;
 }
 
-//----------------- Function_callContext ------------------------------------------------------------------
+//----------------- FunctionCallContext ------------------------------------------------------------------
 
-SpiceParser::Function_callContext::Function_callContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::FunctionCallContext::FunctionCallContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::Function_callContext::IDENTIFIER() {
+tree::TerminalNode* SpiceParser::FunctionCallContext::IDENTIFIER() {
   return getToken(SpiceParser::IDENTIFIER, 0);
 }
 
-tree::TerminalNode* SpiceParser::Function_callContext::LPAREN() {
+tree::TerminalNode* SpiceParser::FunctionCallContext::LPAREN() {
   return getToken(SpiceParser::LPAREN, 0);
 }
 
-SpiceParser::Param_lstContext* SpiceParser::Function_callContext::param_lst() {
-  return getRuleContext<SpiceParser::Param_lstContext>(0);
+SpiceParser::ParamLstContext* SpiceParser::FunctionCallContext::paramLst() {
+  return getRuleContext<SpiceParser::ParamLstContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::Function_callContext::RPAREN() {
+tree::TerminalNode* SpiceParser::FunctionCallContext::RPAREN() {
   return getToken(SpiceParser::RPAREN, 0);
 }
 
 
-size_t SpiceParser::Function_callContext::getRuleIndex() const {
-  return SpiceParser::RuleFunction_call;
+size_t SpiceParser::FunctionCallContext::getRuleIndex() const {
+  return SpiceParser::RuleFunctionCall;
 }
 
 
-antlrcpp::Any SpiceParser::Function_callContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::FunctionCallContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitFunction_call(this);
+    return parserVisitor->visitFunctionCall(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Function_callContext* SpiceParser::function_call() {
-  Function_callContext *_localctx = _tracker.createInstance<Function_callContext>(_ctx, getState());
-  enterRule(_localctx, 22, SpiceParser::RuleFunction_call);
+SpiceParser::FunctionCallContext* SpiceParser::functionCall() {
+  FunctionCallContext *_localctx = _tracker.createInstance<FunctionCallContext>(_ctx, getState());
+  enterRule(_localctx, 22, SpiceParser::RuleFunctionCall);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1194,7 +1194,7 @@ SpiceParser::Function_callContext* SpiceParser::function_call() {
     setState(158);
     match(SpiceParser::LPAREN);
     setState(159);
-    param_lst();
+    paramLst();
     setState(160);
     match(SpiceParser::RPAREN);
    
@@ -1208,36 +1208,36 @@ SpiceParser::Function_callContext* SpiceParser::function_call() {
   return _localctx;
 }
 
-//----------------- Import_stmtContext ------------------------------------------------------------------
+//----------------- ImportStmtContext ------------------------------------------------------------------
 
-SpiceParser::Import_stmtContext::Import_stmtContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::ImportStmtContext::ImportStmtContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::Import_stmtContext::IMPORT() {
+tree::TerminalNode* SpiceParser::ImportStmtContext::IMPORT() {
   return getToken(SpiceParser::IMPORT, 0);
 }
 
-tree::TerminalNode* SpiceParser::Import_stmtContext::STRING() {
+tree::TerminalNode* SpiceParser::ImportStmtContext::STRING() {
   return getToken(SpiceParser::STRING, 0);
 }
 
 
-size_t SpiceParser::Import_stmtContext::getRuleIndex() const {
-  return SpiceParser::RuleImport_stmt;
+size_t SpiceParser::ImportStmtContext::getRuleIndex() const {
+  return SpiceParser::RuleImportStmt;
 }
 
 
-antlrcpp::Any SpiceParser::Import_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::ImportStmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitImport_stmt(this);
+    return parserVisitor->visitImportStmt(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Import_stmtContext* SpiceParser::import_stmt() {
-  Import_stmtContext *_localctx = _tracker.createInstance<Import_stmtContext>(_ctx, getState());
-  enterRule(_localctx, 24, SpiceParser::RuleImport_stmt);
+SpiceParser::ImportStmtContext* SpiceParser::importStmt() {
+  ImportStmtContext *_localctx = _tracker.createInstance<ImportStmtContext>(_ctx, getState());
+  enterRule(_localctx, 24, SpiceParser::RuleImportStmt);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1263,36 +1263,36 @@ SpiceParser::Import_stmtContext* SpiceParser::import_stmt() {
   return _localctx;
 }
 
-//----------------- Return_stmtContext ------------------------------------------------------------------
+//----------------- ReturnStmtContext ------------------------------------------------------------------
 
-SpiceParser::Return_stmtContext::Return_stmtContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::ReturnStmtContext::ReturnStmtContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* SpiceParser::Return_stmtContext::RETURN() {
+tree::TerminalNode* SpiceParser::ReturnStmtContext::RETURN() {
   return getToken(SpiceParser::RETURN, 0);
 }
 
-SpiceParser::Top_lvl_exprContext* SpiceParser::Return_stmtContext::top_lvl_expr() {
-  return getRuleContext<SpiceParser::Top_lvl_exprContext>(0);
+SpiceParser::TopLvlExprContext* SpiceParser::ReturnStmtContext::topLvlExpr() {
+  return getRuleContext<SpiceParser::TopLvlExprContext>(0);
 }
 
 
-size_t SpiceParser::Return_stmtContext::getRuleIndex() const {
-  return SpiceParser::RuleReturn_stmt;
+size_t SpiceParser::ReturnStmtContext::getRuleIndex() const {
+  return SpiceParser::RuleReturnStmt;
 }
 
 
-antlrcpp::Any SpiceParser::Return_stmtContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::ReturnStmtContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitReturn_stmt(this);
+    return parserVisitor->visitReturnStmt(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Return_stmtContext* SpiceParser::return_stmt() {
-  Return_stmtContext *_localctx = _tracker.createInstance<Return_stmtContext>(_ctx, getState());
-  enterRule(_localctx, 26, SpiceParser::RuleReturn_stmt);
+SpiceParser::ReturnStmtContext* SpiceParser::returnStmt() {
+  ReturnStmtContext *_localctx = _tracker.createInstance<ReturnStmtContext>(_ctx, getState());
+  enterRule(_localctx, 26, SpiceParser::RuleReturnStmt);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1306,7 +1306,7 @@ SpiceParser::Return_stmtContext* SpiceParser::return_stmt() {
     setState(165);
     match(SpiceParser::RETURN);
     setState(166);
-    top_lvl_expr();
+    topLvlExpr();
    
   }
   catch (RecognitionException &e) {
@@ -1318,32 +1318,32 @@ SpiceParser::Return_stmtContext* SpiceParser::return_stmt() {
   return _localctx;
 }
 
-//----------------- Top_lvl_exprContext ------------------------------------------------------------------
+//----------------- TopLvlExprContext ------------------------------------------------------------------
 
-SpiceParser::Top_lvl_exprContext::Top_lvl_exprContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::TopLvlExprContext::TopLvlExprContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-SpiceParser::AssignmentContext* SpiceParser::Top_lvl_exprContext::assignment() {
+SpiceParser::AssignmentContext* SpiceParser::TopLvlExprContext::assignment() {
   return getRuleContext<SpiceParser::AssignmentContext>(0);
 }
 
 
-size_t SpiceParser::Top_lvl_exprContext::getRuleIndex() const {
-  return SpiceParser::RuleTop_lvl_expr;
+size_t SpiceParser::TopLvlExprContext::getRuleIndex() const {
+  return SpiceParser::RuleTopLvlExpr;
 }
 
 
-antlrcpp::Any SpiceParser::Top_lvl_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::TopLvlExprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitTop_lvl_expr(this);
+    return parserVisitor->visitTopLvlExpr(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Top_lvl_exprContext* SpiceParser::top_lvl_expr() {
-  Top_lvl_exprContext *_localctx = _tracker.createInstance<Top_lvl_exprContext>(_ctx, getState());
-  enterRule(_localctx, 28, SpiceParser::RuleTop_lvl_expr);
+SpiceParser::TopLvlExprContext* SpiceParser::topLvlExpr() {
+  TopLvlExprContext *_localctx = _tracker.createInstance<TopLvlExprContext>(_ctx, getState());
+  enterRule(_localctx, 28, SpiceParser::RuleTopLvlExpr);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1397,8 +1397,8 @@ tree::TerminalNode* SpiceParser::AssignmentContext::DIV_EQUAL() {
   return getToken(SpiceParser::DIV_EQUAL, 0);
 }
 
-SpiceParser::Decl_stmtContext* SpiceParser::AssignmentContext::decl_stmt() {
-  return getRuleContext<SpiceParser::Decl_stmtContext>(0);
+SpiceParser::DeclStmtContext* SpiceParser::AssignmentContext::declStmt() {
+  return getRuleContext<SpiceParser::DeclStmtContext>(0);
 }
 
 tree::TerminalNode* SpiceParser::AssignmentContext::IDENTIFIER() {
@@ -1443,7 +1443,7 @@ SpiceParser::AssignmentContext* SpiceParser::assignment() {
         case SpiceParser::DATA_TYPE:
         case SpiceParser::CONST: {
           setState(170);
-          decl_stmt();
+          declStmt();
           break;
         }
 
@@ -1495,12 +1495,12 @@ SpiceParser::TernaryContext::TernaryContext(ParserRuleContext *parent, size_t in
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::Logical_or_exprContext *> SpiceParser::TernaryContext::logical_or_expr() {
-  return getRuleContexts<SpiceParser::Logical_or_exprContext>();
+std::vector<SpiceParser::LogicalOrExprContext *> SpiceParser::TernaryContext::logicalOrExpr() {
+  return getRuleContexts<SpiceParser::LogicalOrExprContext>();
 }
 
-SpiceParser::Logical_or_exprContext* SpiceParser::TernaryContext::logical_or_expr(size_t i) {
-  return getRuleContext<SpiceParser::Logical_or_exprContext>(i);
+SpiceParser::LogicalOrExprContext* SpiceParser::TernaryContext::logicalOrExpr(size_t i) {
+  return getRuleContext<SpiceParser::LogicalOrExprContext>(i);
 }
 
 tree::TerminalNode* SpiceParser::TernaryContext::QUESTION_MARK() {
@@ -1539,7 +1539,7 @@ SpiceParser::TernaryContext* SpiceParser::ternary() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(179);
-    logical_or_expr();
+    logicalOrExpr();
     setState(185);
     _errHandler->sync(this);
 
@@ -1548,11 +1548,11 @@ SpiceParser::TernaryContext* SpiceParser::ternary() {
       setState(180);
       match(SpiceParser::QUESTION_MARK);
       setState(181);
-      logical_or_expr();
+      logicalOrExpr();
       setState(182);
       match(SpiceParser::COLON);
       setState(183);
-      logical_or_expr();
+      logicalOrExpr();
     }
    
   }
@@ -1565,44 +1565,44 @@ SpiceParser::TernaryContext* SpiceParser::ternary() {
   return _localctx;
 }
 
-//----------------- Logical_or_exprContext ------------------------------------------------------------------
+//----------------- LogicalOrExprContext ------------------------------------------------------------------
 
-SpiceParser::Logical_or_exprContext::Logical_or_exprContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::LogicalOrExprContext::LogicalOrExprContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::Logical_and_exprContext *> SpiceParser::Logical_or_exprContext::logical_and_expr() {
-  return getRuleContexts<SpiceParser::Logical_and_exprContext>();
+std::vector<SpiceParser::LogicalAndExprContext *> SpiceParser::LogicalOrExprContext::logicalAndExpr() {
+  return getRuleContexts<SpiceParser::LogicalAndExprContext>();
 }
 
-SpiceParser::Logical_and_exprContext* SpiceParser::Logical_or_exprContext::logical_and_expr(size_t i) {
-  return getRuleContext<SpiceParser::Logical_and_exprContext>(i);
+SpiceParser::LogicalAndExprContext* SpiceParser::LogicalOrExprContext::logicalAndExpr(size_t i) {
+  return getRuleContext<SpiceParser::LogicalAndExprContext>(i);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::Logical_or_exprContext::LOGICAL_OR() {
+std::vector<tree::TerminalNode *> SpiceParser::LogicalOrExprContext::LOGICAL_OR() {
   return getTokens(SpiceParser::LOGICAL_OR);
 }
 
-tree::TerminalNode* SpiceParser::Logical_or_exprContext::LOGICAL_OR(size_t i) {
+tree::TerminalNode* SpiceParser::LogicalOrExprContext::LOGICAL_OR(size_t i) {
   return getToken(SpiceParser::LOGICAL_OR, i);
 }
 
 
-size_t SpiceParser::Logical_or_exprContext::getRuleIndex() const {
-  return SpiceParser::RuleLogical_or_expr;
+size_t SpiceParser::LogicalOrExprContext::getRuleIndex() const {
+  return SpiceParser::RuleLogicalOrExpr;
 }
 
 
-antlrcpp::Any SpiceParser::Logical_or_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::LogicalOrExprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitLogical_or_expr(this);
+    return parserVisitor->visitLogicalOrExpr(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Logical_or_exprContext* SpiceParser::logical_or_expr() {
-  Logical_or_exprContext *_localctx = _tracker.createInstance<Logical_or_exprContext>(_ctx, getState());
-  enterRule(_localctx, 34, SpiceParser::RuleLogical_or_expr);
+SpiceParser::LogicalOrExprContext* SpiceParser::logicalOrExpr() {
+  LogicalOrExprContext *_localctx = _tracker.createInstance<LogicalOrExprContext>(_ctx, getState());
+  enterRule(_localctx, 34, SpiceParser::RuleLogicalOrExpr);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1615,7 +1615,7 @@ SpiceParser::Logical_or_exprContext* SpiceParser::logical_or_expr() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(187);
-    logical_and_expr();
+    logicalAndExpr();
     setState(192);
     _errHandler->sync(this);
     _la = _input->LA(1);
@@ -1623,7 +1623,7 @@ SpiceParser::Logical_or_exprContext* SpiceParser::logical_or_expr() {
       setState(188);
       match(SpiceParser::LOGICAL_OR);
       setState(189);
-      logical_and_expr();
+      logicalAndExpr();
       setState(194);
       _errHandler->sync(this);
       _la = _input->LA(1);
@@ -1639,44 +1639,44 @@ SpiceParser::Logical_or_exprContext* SpiceParser::logical_or_expr() {
   return _localctx;
 }
 
-//----------------- Logical_and_exprContext ------------------------------------------------------------------
+//----------------- LogicalAndExprContext ------------------------------------------------------------------
 
-SpiceParser::Logical_and_exprContext::Logical_and_exprContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::LogicalAndExprContext::LogicalAndExprContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::Bitwise_or_exprContext *> SpiceParser::Logical_and_exprContext::bitwise_or_expr() {
-  return getRuleContexts<SpiceParser::Bitwise_or_exprContext>();
+std::vector<SpiceParser::BitwiseOrExprContext *> SpiceParser::LogicalAndExprContext::bitwiseOrExpr() {
+  return getRuleContexts<SpiceParser::BitwiseOrExprContext>();
 }
 
-SpiceParser::Bitwise_or_exprContext* SpiceParser::Logical_and_exprContext::bitwise_or_expr(size_t i) {
-  return getRuleContext<SpiceParser::Bitwise_or_exprContext>(i);
+SpiceParser::BitwiseOrExprContext* SpiceParser::LogicalAndExprContext::bitwiseOrExpr(size_t i) {
+  return getRuleContext<SpiceParser::BitwiseOrExprContext>(i);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::Logical_and_exprContext::LOGICAL_AND() {
+std::vector<tree::TerminalNode *> SpiceParser::LogicalAndExprContext::LOGICAL_AND() {
   return getTokens(SpiceParser::LOGICAL_AND);
 }
 
-tree::TerminalNode* SpiceParser::Logical_and_exprContext::LOGICAL_AND(size_t i) {
+tree::TerminalNode* SpiceParser::LogicalAndExprContext::LOGICAL_AND(size_t i) {
   return getToken(SpiceParser::LOGICAL_AND, i);
 }
 
 
-size_t SpiceParser::Logical_and_exprContext::getRuleIndex() const {
-  return SpiceParser::RuleLogical_and_expr;
+size_t SpiceParser::LogicalAndExprContext::getRuleIndex() const {
+  return SpiceParser::RuleLogicalAndExpr;
 }
 
 
-antlrcpp::Any SpiceParser::Logical_and_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::LogicalAndExprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitLogical_and_expr(this);
+    return parserVisitor->visitLogicalAndExpr(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Logical_and_exprContext* SpiceParser::logical_and_expr() {
-  Logical_and_exprContext *_localctx = _tracker.createInstance<Logical_and_exprContext>(_ctx, getState());
-  enterRule(_localctx, 36, SpiceParser::RuleLogical_and_expr);
+SpiceParser::LogicalAndExprContext* SpiceParser::logicalAndExpr() {
+  LogicalAndExprContext *_localctx = _tracker.createInstance<LogicalAndExprContext>(_ctx, getState());
+  enterRule(_localctx, 36, SpiceParser::RuleLogicalAndExpr);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1689,7 +1689,7 @@ SpiceParser::Logical_and_exprContext* SpiceParser::logical_and_expr() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(195);
-    bitwise_or_expr();
+    bitwiseOrExpr();
     setState(200);
     _errHandler->sync(this);
     _la = _input->LA(1);
@@ -1697,7 +1697,7 @@ SpiceParser::Logical_and_exprContext* SpiceParser::logical_and_expr() {
       setState(196);
       match(SpiceParser::LOGICAL_AND);
       setState(197);
-      bitwise_or_expr();
+      bitwiseOrExpr();
       setState(202);
       _errHandler->sync(this);
       _la = _input->LA(1);
@@ -1713,44 +1713,44 @@ SpiceParser::Logical_and_exprContext* SpiceParser::logical_and_expr() {
   return _localctx;
 }
 
-//----------------- Bitwise_or_exprContext ------------------------------------------------------------------
+//----------------- BitwiseOrExprContext ------------------------------------------------------------------
 
-SpiceParser::Bitwise_or_exprContext::Bitwise_or_exprContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::BitwiseOrExprContext::BitwiseOrExprContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::Bitwise_and_exprContext *> SpiceParser::Bitwise_or_exprContext::bitwise_and_expr() {
-  return getRuleContexts<SpiceParser::Bitwise_and_exprContext>();
+std::vector<SpiceParser::BitwiseAndExprContext *> SpiceParser::BitwiseOrExprContext::bitwiseAndExpr() {
+  return getRuleContexts<SpiceParser::BitwiseAndExprContext>();
 }
 
-SpiceParser::Bitwise_and_exprContext* SpiceParser::Bitwise_or_exprContext::bitwise_and_expr(size_t i) {
-  return getRuleContext<SpiceParser::Bitwise_and_exprContext>(i);
+SpiceParser::BitwiseAndExprContext* SpiceParser::BitwiseOrExprContext::bitwiseAndExpr(size_t i) {
+  return getRuleContext<SpiceParser::BitwiseAndExprContext>(i);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::Bitwise_or_exprContext::BITWISE_OR() {
+std::vector<tree::TerminalNode *> SpiceParser::BitwiseOrExprContext::BITWISE_OR() {
   return getTokens(SpiceParser::BITWISE_OR);
 }
 
-tree::TerminalNode* SpiceParser::Bitwise_or_exprContext::BITWISE_OR(size_t i) {
+tree::TerminalNode* SpiceParser::BitwiseOrExprContext::BITWISE_OR(size_t i) {
   return getToken(SpiceParser::BITWISE_OR, i);
 }
 
 
-size_t SpiceParser::Bitwise_or_exprContext::getRuleIndex() const {
-  return SpiceParser::RuleBitwise_or_expr;
+size_t SpiceParser::BitwiseOrExprContext::getRuleIndex() const {
+  return SpiceParser::RuleBitwiseOrExpr;
 }
 
 
-antlrcpp::Any SpiceParser::Bitwise_or_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::BitwiseOrExprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitBitwise_or_expr(this);
+    return parserVisitor->visitBitwiseOrExpr(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Bitwise_or_exprContext* SpiceParser::bitwise_or_expr() {
-  Bitwise_or_exprContext *_localctx = _tracker.createInstance<Bitwise_or_exprContext>(_ctx, getState());
-  enterRule(_localctx, 38, SpiceParser::RuleBitwise_or_expr);
+SpiceParser::BitwiseOrExprContext* SpiceParser::bitwiseOrExpr() {
+  BitwiseOrExprContext *_localctx = _tracker.createInstance<BitwiseOrExprContext>(_ctx, getState());
+  enterRule(_localctx, 38, SpiceParser::RuleBitwiseOrExpr);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1763,7 +1763,7 @@ SpiceParser::Bitwise_or_exprContext* SpiceParser::bitwise_or_expr() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(203);
-    bitwise_and_expr();
+    bitwiseAndExpr();
     setState(208);
     _errHandler->sync(this);
     _la = _input->LA(1);
@@ -1771,7 +1771,7 @@ SpiceParser::Bitwise_or_exprContext* SpiceParser::bitwise_or_expr() {
       setState(204);
       match(SpiceParser::BITWISE_OR);
       setState(205);
-      bitwise_and_expr();
+      bitwiseAndExpr();
       setState(210);
       _errHandler->sync(this);
       _la = _input->LA(1);
@@ -1787,44 +1787,44 @@ SpiceParser::Bitwise_or_exprContext* SpiceParser::bitwise_or_expr() {
   return _localctx;
 }
 
-//----------------- Bitwise_and_exprContext ------------------------------------------------------------------
+//----------------- BitwiseAndExprContext ------------------------------------------------------------------
 
-SpiceParser::Bitwise_and_exprContext::Bitwise_and_exprContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::BitwiseAndExprContext::BitwiseAndExprContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::EqualityContext *> SpiceParser::Bitwise_and_exprContext::equality() {
+std::vector<SpiceParser::EqualityContext *> SpiceParser::BitwiseAndExprContext::equality() {
   return getRuleContexts<SpiceParser::EqualityContext>();
 }
 
-SpiceParser::EqualityContext* SpiceParser::Bitwise_and_exprContext::equality(size_t i) {
+SpiceParser::EqualityContext* SpiceParser::BitwiseAndExprContext::equality(size_t i) {
   return getRuleContext<SpiceParser::EqualityContext>(i);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::Bitwise_and_exprContext::BITWISE_AND() {
+std::vector<tree::TerminalNode *> SpiceParser::BitwiseAndExprContext::BITWISE_AND() {
   return getTokens(SpiceParser::BITWISE_AND);
 }
 
-tree::TerminalNode* SpiceParser::Bitwise_and_exprContext::BITWISE_AND(size_t i) {
+tree::TerminalNode* SpiceParser::BitwiseAndExprContext::BITWISE_AND(size_t i) {
   return getToken(SpiceParser::BITWISE_AND, i);
 }
 
 
-size_t SpiceParser::Bitwise_and_exprContext::getRuleIndex() const {
-  return SpiceParser::RuleBitwise_and_expr;
+size_t SpiceParser::BitwiseAndExprContext::getRuleIndex() const {
+  return SpiceParser::RuleBitwiseAndExpr;
 }
 
 
-antlrcpp::Any SpiceParser::Bitwise_and_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::BitwiseAndExprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitBitwise_and_expr(this);
+    return parserVisitor->visitBitwiseAndExpr(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Bitwise_and_exprContext* SpiceParser::bitwise_and_expr() {
-  Bitwise_and_exprContext *_localctx = _tracker.createInstance<Bitwise_and_exprContext>(_ctx, getState());
-  enterRule(_localctx, 40, SpiceParser::RuleBitwise_and_expr);
+SpiceParser::BitwiseAndExprContext* SpiceParser::bitwiseAndExpr() {
+  BitwiseAndExprContext *_localctx = _tracker.createInstance<BitwiseAndExprContext>(_ctx, getState());
+  enterRule(_localctx, 40, SpiceParser::RuleBitwiseAndExpr);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1867,12 +1867,12 @@ SpiceParser::EqualityContext::EqualityContext(ParserRuleContext *parent, size_t 
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::Relational_exprContext *> SpiceParser::EqualityContext::relational_expr() {
-  return getRuleContexts<SpiceParser::Relational_exprContext>();
+std::vector<SpiceParser::RelationalExprContext *> SpiceParser::EqualityContext::relationalExpr() {
+  return getRuleContexts<SpiceParser::RelationalExprContext>();
 }
 
-SpiceParser::Relational_exprContext* SpiceParser::EqualityContext::relational_expr(size_t i) {
-  return getRuleContext<SpiceParser::Relational_exprContext>(i);
+SpiceParser::RelationalExprContext* SpiceParser::EqualityContext::relationalExpr(size_t i) {
+  return getRuleContext<SpiceParser::RelationalExprContext>(i);
 }
 
 tree::TerminalNode* SpiceParser::EqualityContext::EQUAL() {
@@ -1911,7 +1911,7 @@ SpiceParser::EqualityContext* SpiceParser::equality() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(219);
-    relational_expr();
+    relationalExpr();
     setState(222);
     _errHandler->sync(this);
 
@@ -1931,7 +1931,7 @@ SpiceParser::EqualityContext* SpiceParser::equality() {
         consume();
       }
       setState(221);
-      relational_expr();
+      relationalExpr();
     }
    
   }
@@ -1944,52 +1944,52 @@ SpiceParser::EqualityContext* SpiceParser::equality() {
   return _localctx;
 }
 
-//----------------- Relational_exprContext ------------------------------------------------------------------
+//----------------- RelationalExprContext ------------------------------------------------------------------
 
-SpiceParser::Relational_exprContext::Relational_exprContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::RelationalExprContext::RelationalExprContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::Additive_exprContext *> SpiceParser::Relational_exprContext::additive_expr() {
-  return getRuleContexts<SpiceParser::Additive_exprContext>();
+std::vector<SpiceParser::AdditiveExprContext *> SpiceParser::RelationalExprContext::additiveExpr() {
+  return getRuleContexts<SpiceParser::AdditiveExprContext>();
 }
 
-SpiceParser::Additive_exprContext* SpiceParser::Relational_exprContext::additive_expr(size_t i) {
-  return getRuleContext<SpiceParser::Additive_exprContext>(i);
+SpiceParser::AdditiveExprContext* SpiceParser::RelationalExprContext::additiveExpr(size_t i) {
+  return getRuleContext<SpiceParser::AdditiveExprContext>(i);
 }
 
-tree::TerminalNode* SpiceParser::Relational_exprContext::LESS() {
+tree::TerminalNode* SpiceParser::RelationalExprContext::LESS() {
   return getToken(SpiceParser::LESS, 0);
 }
 
-tree::TerminalNode* SpiceParser::Relational_exprContext::GREATER() {
+tree::TerminalNode* SpiceParser::RelationalExprContext::GREATER() {
   return getToken(SpiceParser::GREATER, 0);
 }
 
-tree::TerminalNode* SpiceParser::Relational_exprContext::LESS_EQUAL() {
+tree::TerminalNode* SpiceParser::RelationalExprContext::LESS_EQUAL() {
   return getToken(SpiceParser::LESS_EQUAL, 0);
 }
 
-tree::TerminalNode* SpiceParser::Relational_exprContext::GREATER_EQUAL() {
+tree::TerminalNode* SpiceParser::RelationalExprContext::GREATER_EQUAL() {
   return getToken(SpiceParser::GREATER_EQUAL, 0);
 }
 
 
-size_t SpiceParser::Relational_exprContext::getRuleIndex() const {
-  return SpiceParser::RuleRelational_expr;
+size_t SpiceParser::RelationalExprContext::getRuleIndex() const {
+  return SpiceParser::RuleRelationalExpr;
 }
 
 
-antlrcpp::Any SpiceParser::Relational_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::RelationalExprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitRelational_expr(this);
+    return parserVisitor->visitRelationalExpr(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Relational_exprContext* SpiceParser::relational_expr() {
-  Relational_exprContext *_localctx = _tracker.createInstance<Relational_exprContext>(_ctx, getState());
-  enterRule(_localctx, 44, SpiceParser::RuleRelational_expr);
+SpiceParser::RelationalExprContext* SpiceParser::relationalExpr() {
+  RelationalExprContext *_localctx = _tracker.createInstance<RelationalExprContext>(_ctx, getState());
+  enterRule(_localctx, 44, SpiceParser::RuleRelationalExpr);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2002,7 +2002,7 @@ SpiceParser::Relational_exprContext* SpiceParser::relational_expr() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(224);
-    additive_expr();
+    additiveExpr();
     setState(227);
     _errHandler->sync(this);
 
@@ -2026,7 +2026,7 @@ SpiceParser::Relational_exprContext* SpiceParser::relational_expr() {
         consume();
       }
       setState(226);
-      additive_expr();
+      additiveExpr();
     }
    
   }
@@ -2039,52 +2039,52 @@ SpiceParser::Relational_exprContext* SpiceParser::relational_expr() {
   return _localctx;
 }
 
-//----------------- Additive_exprContext ------------------------------------------------------------------
+//----------------- AdditiveExprContext ------------------------------------------------------------------
 
-SpiceParser::Additive_exprContext::Additive_exprContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::AdditiveExprContext::AdditiveExprContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::Multiplicative_exprContext *> SpiceParser::Additive_exprContext::multiplicative_expr() {
-  return getRuleContexts<SpiceParser::Multiplicative_exprContext>();
+std::vector<SpiceParser::MultiplicativeExprContext *> SpiceParser::AdditiveExprContext::multiplicativeExpr() {
+  return getRuleContexts<SpiceParser::MultiplicativeExprContext>();
 }
 
-SpiceParser::Multiplicative_exprContext* SpiceParser::Additive_exprContext::multiplicative_expr(size_t i) {
-  return getRuleContext<SpiceParser::Multiplicative_exprContext>(i);
+SpiceParser::MultiplicativeExprContext* SpiceParser::AdditiveExprContext::multiplicativeExpr(size_t i) {
+  return getRuleContext<SpiceParser::MultiplicativeExprContext>(i);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::Additive_exprContext::PLUS() {
+std::vector<tree::TerminalNode *> SpiceParser::AdditiveExprContext::PLUS() {
   return getTokens(SpiceParser::PLUS);
 }
 
-tree::TerminalNode* SpiceParser::Additive_exprContext::PLUS(size_t i) {
+tree::TerminalNode* SpiceParser::AdditiveExprContext::PLUS(size_t i) {
   return getToken(SpiceParser::PLUS, i);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::Additive_exprContext::MINUS() {
+std::vector<tree::TerminalNode *> SpiceParser::AdditiveExprContext::MINUS() {
   return getTokens(SpiceParser::MINUS);
 }
 
-tree::TerminalNode* SpiceParser::Additive_exprContext::MINUS(size_t i) {
+tree::TerminalNode* SpiceParser::AdditiveExprContext::MINUS(size_t i) {
   return getToken(SpiceParser::MINUS, i);
 }
 
 
-size_t SpiceParser::Additive_exprContext::getRuleIndex() const {
-  return SpiceParser::RuleAdditive_expr;
+size_t SpiceParser::AdditiveExprContext::getRuleIndex() const {
+  return SpiceParser::RuleAdditiveExpr;
 }
 
 
-antlrcpp::Any SpiceParser::Additive_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::AdditiveExprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitAdditive_expr(this);
+    return parserVisitor->visitAdditiveExpr(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Additive_exprContext* SpiceParser::additive_expr() {
-  Additive_exprContext *_localctx = _tracker.createInstance<Additive_exprContext>(_ctx, getState());
-  enterRule(_localctx, 46, SpiceParser::RuleAdditive_expr);
+SpiceParser::AdditiveExprContext* SpiceParser::additiveExpr() {
+  AdditiveExprContext *_localctx = _tracker.createInstance<AdditiveExprContext>(_ctx, getState());
+  enterRule(_localctx, 46, SpiceParser::RuleAdditiveExpr);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2097,7 +2097,7 @@ SpiceParser::Additive_exprContext* SpiceParser::additive_expr() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(229);
-    multiplicative_expr();
+    multiplicativeExpr();
     setState(234);
     _errHandler->sync(this);
     _la = _input->LA(1);
@@ -2116,7 +2116,7 @@ SpiceParser::Additive_exprContext* SpiceParser::additive_expr() {
         consume();
       }
       setState(231);
-      multiplicative_expr();
+      multiplicativeExpr();
       setState(236);
       _errHandler->sync(this);
       _la = _input->LA(1);
@@ -2132,52 +2132,52 @@ SpiceParser::Additive_exprContext* SpiceParser::additive_expr() {
   return _localctx;
 }
 
-//----------------- Multiplicative_exprContext ------------------------------------------------------------------
+//----------------- MultiplicativeExprContext ------------------------------------------------------------------
 
-SpiceParser::Multiplicative_exprContext::Multiplicative_exprContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::MultiplicativeExprContext::MultiplicativeExprContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-std::vector<SpiceParser::Prefix_unaryContext *> SpiceParser::Multiplicative_exprContext::prefix_unary() {
-  return getRuleContexts<SpiceParser::Prefix_unaryContext>();
+std::vector<SpiceParser::PrefixUnaryContext *> SpiceParser::MultiplicativeExprContext::prefixUnary() {
+  return getRuleContexts<SpiceParser::PrefixUnaryContext>();
 }
 
-SpiceParser::Prefix_unaryContext* SpiceParser::Multiplicative_exprContext::prefix_unary(size_t i) {
-  return getRuleContext<SpiceParser::Prefix_unaryContext>(i);
+SpiceParser::PrefixUnaryContext* SpiceParser::MultiplicativeExprContext::prefixUnary(size_t i) {
+  return getRuleContext<SpiceParser::PrefixUnaryContext>(i);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::Multiplicative_exprContext::MUL() {
+std::vector<tree::TerminalNode *> SpiceParser::MultiplicativeExprContext::MUL() {
   return getTokens(SpiceParser::MUL);
 }
 
-tree::TerminalNode* SpiceParser::Multiplicative_exprContext::MUL(size_t i) {
+tree::TerminalNode* SpiceParser::MultiplicativeExprContext::MUL(size_t i) {
   return getToken(SpiceParser::MUL, i);
 }
 
-std::vector<tree::TerminalNode *> SpiceParser::Multiplicative_exprContext::DIV() {
+std::vector<tree::TerminalNode *> SpiceParser::MultiplicativeExprContext::DIV() {
   return getTokens(SpiceParser::DIV);
 }
 
-tree::TerminalNode* SpiceParser::Multiplicative_exprContext::DIV(size_t i) {
+tree::TerminalNode* SpiceParser::MultiplicativeExprContext::DIV(size_t i) {
   return getToken(SpiceParser::DIV, i);
 }
 
 
-size_t SpiceParser::Multiplicative_exprContext::getRuleIndex() const {
-  return SpiceParser::RuleMultiplicative_expr;
+size_t SpiceParser::MultiplicativeExprContext::getRuleIndex() const {
+  return SpiceParser::RuleMultiplicativeExpr;
 }
 
 
-antlrcpp::Any SpiceParser::Multiplicative_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::MultiplicativeExprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitMultiplicative_expr(this);
+    return parserVisitor->visitMultiplicativeExpr(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Multiplicative_exprContext* SpiceParser::multiplicative_expr() {
-  Multiplicative_exprContext *_localctx = _tracker.createInstance<Multiplicative_exprContext>(_ctx, getState());
-  enterRule(_localctx, 48, SpiceParser::RuleMultiplicative_expr);
+SpiceParser::MultiplicativeExprContext* SpiceParser::multiplicativeExpr() {
+  MultiplicativeExprContext *_localctx = _tracker.createInstance<MultiplicativeExprContext>(_ctx, getState());
+  enterRule(_localctx, 48, SpiceParser::RuleMultiplicativeExpr);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2190,7 +2190,7 @@ SpiceParser::Multiplicative_exprContext* SpiceParser::multiplicative_expr() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(237);
-    prefix_unary();
+    prefixUnary();
     setState(242);
     _errHandler->sync(this);
     _la = _input->LA(1);
@@ -2209,7 +2209,7 @@ SpiceParser::Multiplicative_exprContext* SpiceParser::multiplicative_expr() {
         consume();
       }
       setState(239);
-      prefix_unary();
+      prefixUnary();
       setState(244);
       _errHandler->sync(this);
       _la = _input->LA(1);
@@ -2225,44 +2225,44 @@ SpiceParser::Multiplicative_exprContext* SpiceParser::multiplicative_expr() {
   return _localctx;
 }
 
-//----------------- Prefix_unaryContext ------------------------------------------------------------------
+//----------------- PrefixUnaryContext ------------------------------------------------------------------
 
-SpiceParser::Prefix_unaryContext::Prefix_unaryContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::PrefixUnaryContext::PrefixUnaryContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-SpiceParser::Postfix_unaryContext* SpiceParser::Prefix_unaryContext::postfix_unary() {
-  return getRuleContext<SpiceParser::Postfix_unaryContext>(0);
+SpiceParser::PostfixUnaryContext* SpiceParser::PrefixUnaryContext::postfixUnary() {
+  return getRuleContext<SpiceParser::PostfixUnaryContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::Prefix_unaryContext::NOT() {
+tree::TerminalNode* SpiceParser::PrefixUnaryContext::NOT() {
   return getToken(SpiceParser::NOT, 0);
 }
 
-tree::TerminalNode* SpiceParser::Prefix_unaryContext::PLUS_PLUS() {
+tree::TerminalNode* SpiceParser::PrefixUnaryContext::PLUS_PLUS() {
   return getToken(SpiceParser::PLUS_PLUS, 0);
 }
 
-tree::TerminalNode* SpiceParser::Prefix_unaryContext::MINUS_MINUS() {
+tree::TerminalNode* SpiceParser::PrefixUnaryContext::MINUS_MINUS() {
   return getToken(SpiceParser::MINUS_MINUS, 0);
 }
 
 
-size_t SpiceParser::Prefix_unaryContext::getRuleIndex() const {
-  return SpiceParser::RulePrefix_unary;
+size_t SpiceParser::PrefixUnaryContext::getRuleIndex() const {
+  return SpiceParser::RulePrefixUnary;
 }
 
 
-antlrcpp::Any SpiceParser::Prefix_unaryContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::PrefixUnaryContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitPrefix_unary(this);
+    return parserVisitor->visitPrefixUnary(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Prefix_unaryContext* SpiceParser::prefix_unary() {
-  Prefix_unaryContext *_localctx = _tracker.createInstance<Prefix_unaryContext>(_ctx, getState());
-  enterRule(_localctx, 50, SpiceParser::RulePrefix_unary);
+SpiceParser::PrefixUnaryContext* SpiceParser::prefixUnary() {
+  PrefixUnaryContext *_localctx = _tracker.createInstance<PrefixUnaryContext>(_ctx, getState());
+  enterRule(_localctx, 50, SpiceParser::RulePrefixUnary);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2296,7 +2296,7 @@ SpiceParser::Prefix_unaryContext* SpiceParser::prefix_unary() {
       }
     }
     setState(248);
-    postfix_unary();
+    postfixUnary();
    
   }
   catch (RecognitionException &e) {
@@ -2308,40 +2308,40 @@ SpiceParser::Prefix_unaryContext* SpiceParser::prefix_unary() {
   return _localctx;
 }
 
-//----------------- Postfix_unaryContext ------------------------------------------------------------------
+//----------------- PostfixUnaryContext ------------------------------------------------------------------
 
-SpiceParser::Postfix_unaryContext::Postfix_unaryContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::PostfixUnaryContext::PostfixUnaryContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-SpiceParser::Atomic_exprContext* SpiceParser::Postfix_unaryContext::atomic_expr() {
-  return getRuleContext<SpiceParser::Atomic_exprContext>(0);
+SpiceParser::AtomicExprContext* SpiceParser::PostfixUnaryContext::atomicExpr() {
+  return getRuleContext<SpiceParser::AtomicExprContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::Postfix_unaryContext::PLUS_PLUS() {
+tree::TerminalNode* SpiceParser::PostfixUnaryContext::PLUS_PLUS() {
   return getToken(SpiceParser::PLUS_PLUS, 0);
 }
 
-tree::TerminalNode* SpiceParser::Postfix_unaryContext::MINUS_MINUS() {
+tree::TerminalNode* SpiceParser::PostfixUnaryContext::MINUS_MINUS() {
   return getToken(SpiceParser::MINUS_MINUS, 0);
 }
 
 
-size_t SpiceParser::Postfix_unaryContext::getRuleIndex() const {
-  return SpiceParser::RulePostfix_unary;
+size_t SpiceParser::PostfixUnaryContext::getRuleIndex() const {
+  return SpiceParser::RulePostfixUnary;
 }
 
 
-antlrcpp::Any SpiceParser::Postfix_unaryContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::PostfixUnaryContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitPostfix_unary(this);
+    return parserVisitor->visitPostfixUnary(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Postfix_unaryContext* SpiceParser::postfix_unary() {
-  Postfix_unaryContext *_localctx = _tracker.createInstance<Postfix_unaryContext>(_ctx, getState());
-  enterRule(_localctx, 52, SpiceParser::RulePostfix_unary);
+SpiceParser::PostfixUnaryContext* SpiceParser::postfixUnary() {
+  PostfixUnaryContext *_localctx = _tracker.createInstance<PostfixUnaryContext>(_ctx, getState());
+  enterRule(_localctx, 52, SpiceParser::RulePostfixUnary);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2354,7 +2354,7 @@ SpiceParser::Postfix_unaryContext* SpiceParser::postfix_unary() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(250);
-    atomic_expr();
+    atomicExpr();
     setState(252);
     _errHandler->sync(this);
 
@@ -2385,44 +2385,44 @@ SpiceParser::Postfix_unaryContext* SpiceParser::postfix_unary() {
   return _localctx;
 }
 
-//----------------- Atomic_exprContext ------------------------------------------------------------------
+//----------------- AtomicExprContext ------------------------------------------------------------------
 
-SpiceParser::Atomic_exprContext::Atomic_exprContext(ParserRuleContext *parent, size_t invokingState)
+SpiceParser::AtomicExprContext::AtomicExprContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-SpiceParser::ValueContext* SpiceParser::Atomic_exprContext::value() {
+SpiceParser::ValueContext* SpiceParser::AtomicExprContext::value() {
   return getRuleContext<SpiceParser::ValueContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::Atomic_exprContext::LPAREN() {
+tree::TerminalNode* SpiceParser::AtomicExprContext::LPAREN() {
   return getToken(SpiceParser::LPAREN, 0);
 }
 
-SpiceParser::Additive_exprContext* SpiceParser::Atomic_exprContext::additive_expr() {
-  return getRuleContext<SpiceParser::Additive_exprContext>(0);
+SpiceParser::AssignmentContext* SpiceParser::AtomicExprContext::assignment() {
+  return getRuleContext<SpiceParser::AssignmentContext>(0);
 }
 
-tree::TerminalNode* SpiceParser::Atomic_exprContext::RPAREN() {
+tree::TerminalNode* SpiceParser::AtomicExprContext::RPAREN() {
   return getToken(SpiceParser::RPAREN, 0);
 }
 
 
-size_t SpiceParser::Atomic_exprContext::getRuleIndex() const {
-  return SpiceParser::RuleAtomic_expr;
+size_t SpiceParser::AtomicExprContext::getRuleIndex() const {
+  return SpiceParser::RuleAtomicExpr;
 }
 
 
-antlrcpp::Any SpiceParser::Atomic_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+antlrcpp::Any SpiceParser::AtomicExprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<SpiceVisitor*>(visitor))
-    return parserVisitor->visitAtomic_expr(this);
+    return parserVisitor->visitAtomicExpr(this);
   else
     return visitor->visitChildren(this);
 }
 
-SpiceParser::Atomic_exprContext* SpiceParser::atomic_expr() {
-  Atomic_exprContext *_localctx = _tracker.createInstance<Atomic_exprContext>(_ctx, getState());
-  enterRule(_localctx, 54, SpiceParser::RuleAtomic_expr);
+SpiceParser::AtomicExprContext* SpiceParser::atomicExpr() {
+  AtomicExprContext *_localctx = _tracker.createInstance<AtomicExprContext>(_ctx, getState());
+  enterRule(_localctx, 54, SpiceParser::RuleAtomicExpr);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2451,7 +2451,7 @@ SpiceParser::Atomic_exprContext* SpiceParser::atomic_expr() {
         setState(255);
         match(SpiceParser::LPAREN);
         setState(256);
-        additive_expr();
+        assignment();
         setState(257);
         match(SpiceParser::RPAREN);
         break;
@@ -2497,8 +2497,8 @@ tree::TerminalNode* SpiceParser::ValueContext::IDENTIFIER() {
   return getToken(SpiceParser::IDENTIFIER, 0);
 }
 
-SpiceParser::Function_callContext* SpiceParser::ValueContext::function_call() {
-  return getRuleContext<SpiceParser::Function_callContext>(0);
+SpiceParser::FunctionCallContext* SpiceParser::ValueContext::functionCall() {
+  return getRuleContext<SpiceParser::FunctionCallContext>(0);
 }
 
 
@@ -2567,7 +2567,7 @@ SpiceParser::ValueContext* SpiceParser::value() {
     case 6: {
       enterOuterAlt(_localctx, 6);
       setState(266);
-      function_call();
+      functionCall();
       break;
     }
 
@@ -2594,12 +2594,12 @@ atn::ATN SpiceParser::_atn;
 std::vector<uint16_t> SpiceParser::_serializedATN;
 
 std::vector<std::string> SpiceParser::_ruleNames = {
-  "entry", "function_def", "procedure_def", "for_loop", "for_each_loop", 
-  "while_loop", "if_stmt", "stmt_lst", "param_lst", "stmt", "decl_stmt", 
-  "function_call", "import_stmt", "return_stmt", "top_lvl_expr", "assignment", 
-  "ternary", "logical_or_expr", "logical_and_expr", "bitwise_or_expr", "bitwise_and_expr", 
-  "equality", "relational_expr", "additive_expr", "multiplicative_expr", 
-  "prefix_unary", "postfix_unary", "atomic_expr", "value"
+  "entry", "functionDef", "procedureDef", "forLoop", "foreachLoop", "whileLoop", 
+  "ifStmt", "stmtLst", "paramLst", "stmt", "declStmt", "functionCall", "importStmt", 
+  "returnStmt", "topLvlExpr", "assignment", "ternary", "logicalOrExpr", 
+  "logicalAndExpr", "bitwiseOrExpr", "bitwiseAndExpr", "equality", "relationalExpr", 
+  "additiveExpr", "multiplicativeExpr", "prefixUnary", "postfixUnary", "atomicExpr", 
+  "value"
 };
 
 std::vector<std::string> SpiceParser::_literalNames = {
@@ -2809,7 +2809,7 @@ SpiceParser::Initializer::Initializer() {
     0xfd, 0xff, 0x9, 0x8, 0x2, 0x2, 0xfe, 0xfd, 0x3, 0x2, 0x2, 0x2, 0xfe, 
     0xff, 0x3, 0x2, 0x2, 0x2, 0xff, 0x37, 0x3, 0x2, 0x2, 0x2, 0x100, 0x106, 
     0x5, 0x3a, 0x1e, 0x2, 0x101, 0x102, 0x7, 0x16, 0x2, 0x2, 0x102, 0x103, 
-    0x5, 0x30, 0x19, 0x2, 0x103, 0x104, 0x7, 0x17, 0x2, 0x2, 0x104, 0x106, 
+    0x5, 0x20, 0x11, 0x2, 0x103, 0x104, 0x7, 0x17, 0x2, 0x2, 0x104, 0x106, 
     0x3, 0x2, 0x2, 0x2, 0x105, 0x100, 0x3, 0x2, 0x2, 0x2, 0x105, 0x101, 
     0x3, 0x2, 0x2, 0x2, 0x106, 0x39, 0x3, 0x2, 0x2, 0x2, 0x107, 0x10e, 0x7, 
     0x10, 0x2, 0x2, 0x108, 0x10e, 0x7, 0x11, 0x2, 0x2, 0x109, 0x10e, 0x7, 

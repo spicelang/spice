@@ -19,35 +19,35 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitFunction_def(SpiceParser::Function_defContext *ctx) override {
+  virtual antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitProcedure_def(SpiceParser::Procedure_defContext *ctx) override {
+  virtual antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitFor_loop(SpiceParser::For_loopContext *ctx) override {
+  virtual antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitFor_each_loop(SpiceParser::For_each_loopContext *ctx) override {
+  virtual antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitWhile_loop(SpiceParser::While_loopContext *ctx) override {
+  virtual antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitIf_stmt(SpiceParser::If_stmtContext *ctx) override {
+  virtual antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitStmt_lst(SpiceParser::Stmt_lstContext *ctx) override {
+  virtual antlrcpp::Any visitStmtLst(SpiceParser::StmtLstContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitParam_lst(SpiceParser::Param_lstContext *ctx) override {
+  virtual antlrcpp::Any visitParamLst(SpiceParser::ParamLstContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -55,23 +55,23 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitDecl_stmt(SpiceParser::Decl_stmtContext *ctx) override {
+  virtual antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitFunction_call(SpiceParser::Function_callContext *ctx) override {
+  virtual antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitImport_stmt(SpiceParser::Import_stmtContext *ctx) override {
+  virtual antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitReturn_stmt(SpiceParser::Return_stmtContext *ctx) override {
+  virtual antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitTop_lvl_expr(SpiceParser::Top_lvl_exprContext *ctx) override {
+  virtual antlrcpp::Any visitTopLvlExpr(SpiceParser::TopLvlExprContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -83,19 +83,19 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitLogical_or_expr(SpiceParser::Logical_or_exprContext *ctx) override {
+  virtual antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitLogical_and_expr(SpiceParser::Logical_and_exprContext *ctx) override {
+  virtual antlrcpp::Any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitBitwise_or_expr(SpiceParser::Bitwise_or_exprContext *ctx) override {
+  virtual antlrcpp::Any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitBitwise_and_expr(SpiceParser::Bitwise_and_exprContext *ctx) override {
+  virtual antlrcpp::Any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -103,27 +103,27 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitRelational_expr(SpiceParser::Relational_exprContext *ctx) override {
+  virtual antlrcpp::Any visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitAdditive_expr(SpiceParser::Additive_exprContext *ctx) override {
+  virtual antlrcpp::Any visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitMultiplicative_expr(SpiceParser::Multiplicative_exprContext *ctx) override {
+  virtual antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitPrefix_unary(SpiceParser::Prefix_unaryContext *ctx) override {
+  virtual antlrcpp::Any visitPrefixUnary(SpiceParser::PrefixUnaryContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitPostfix_unary(SpiceParser::Postfix_unaryContext *ctx) override {
+  virtual antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitAtomic_expr(SpiceParser::Atomic_exprContext *ctx) override {
+  virtual antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override {
     return visitChildren(ctx);
   }
 

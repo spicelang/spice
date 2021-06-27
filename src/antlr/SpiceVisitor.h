@@ -21,59 +21,59 @@ public:
    */
     virtual antlrcpp::Any visitEntry(SpiceParser::EntryContext *context) = 0;
 
-    virtual antlrcpp::Any visitFunction_def(SpiceParser::Function_defContext *context) = 0;
+    virtual antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *context) = 0;
 
-    virtual antlrcpp::Any visitProcedure_def(SpiceParser::Procedure_defContext *context) = 0;
+    virtual antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext *context) = 0;
 
-    virtual antlrcpp::Any visitFor_loop(SpiceParser::For_loopContext *context) = 0;
+    virtual antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext *context) = 0;
 
-    virtual antlrcpp::Any visitFor_each_loop(SpiceParser::For_each_loopContext *context) = 0;
+    virtual antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext *context) = 0;
 
-    virtual antlrcpp::Any visitWhile_loop(SpiceParser::While_loopContext *context) = 0;
+    virtual antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext *context) = 0;
 
-    virtual antlrcpp::Any visitIf_stmt(SpiceParser::If_stmtContext *context) = 0;
+    virtual antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext *context) = 0;
 
-    virtual antlrcpp::Any visitStmt_lst(SpiceParser::Stmt_lstContext *context) = 0;
+    virtual antlrcpp::Any visitStmtLst(SpiceParser::StmtLstContext *context) = 0;
 
-    virtual antlrcpp::Any visitParam_lst(SpiceParser::Param_lstContext *context) = 0;
+    virtual antlrcpp::Any visitParamLst(SpiceParser::ParamLstContext *context) = 0;
 
     virtual antlrcpp::Any visitStmt(SpiceParser::StmtContext *context) = 0;
 
-    virtual antlrcpp::Any visitDecl_stmt(SpiceParser::Decl_stmtContext *context) = 0;
+    virtual antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext *context) = 0;
 
-    virtual antlrcpp::Any visitFunction_call(SpiceParser::Function_callContext *context) = 0;
+    virtual antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext *context) = 0;
 
-    virtual antlrcpp::Any visitImport_stmt(SpiceParser::Import_stmtContext *context) = 0;
+    virtual antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext *context) = 0;
 
-    virtual antlrcpp::Any visitReturn_stmt(SpiceParser::Return_stmtContext *context) = 0;
+    virtual antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext *context) = 0;
 
-    virtual antlrcpp::Any visitTop_lvl_expr(SpiceParser::Top_lvl_exprContext *context) = 0;
+    virtual antlrcpp::Any visitTopLvlExpr(SpiceParser::TopLvlExprContext *context) = 0;
 
     virtual antlrcpp::Any visitAssignment(SpiceParser::AssignmentContext *context) = 0;
 
     virtual antlrcpp::Any visitTernary(SpiceParser::TernaryContext *context) = 0;
 
-    virtual antlrcpp::Any visitLogical_or_expr(SpiceParser::Logical_or_exprContext *context) = 0;
+    virtual antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *context) = 0;
 
-    virtual antlrcpp::Any visitLogical_and_expr(SpiceParser::Logical_and_exprContext *context) = 0;
+    virtual antlrcpp::Any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *context) = 0;
 
-    virtual antlrcpp::Any visitBitwise_or_expr(SpiceParser::Bitwise_or_exprContext *context) = 0;
+    virtual antlrcpp::Any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *context) = 0;
 
-    virtual antlrcpp::Any visitBitwise_and_expr(SpiceParser::Bitwise_and_exprContext *context) = 0;
+    virtual antlrcpp::Any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *context) = 0;
 
     virtual antlrcpp::Any visitEquality(SpiceParser::EqualityContext *context) = 0;
 
-    virtual antlrcpp::Any visitRelational_expr(SpiceParser::Relational_exprContext *context) = 0;
+    virtual antlrcpp::Any visitRelationalExpr(SpiceParser::RelationalExprContext *context) = 0;
 
-    virtual antlrcpp::Any visitAdditive_expr(SpiceParser::Additive_exprContext *context) = 0;
+    virtual antlrcpp::Any visitAdditiveExpr(SpiceParser::AdditiveExprContext *context) = 0;
 
-    virtual antlrcpp::Any visitMultiplicative_expr(SpiceParser::Multiplicative_exprContext *context) = 0;
+    virtual antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *context) = 0;
 
-    virtual antlrcpp::Any visitPrefix_unary(SpiceParser::Prefix_unaryContext *context) = 0;
+    virtual antlrcpp::Any visitPrefixUnary(SpiceParser::PrefixUnaryContext *context) = 0;
 
-    virtual antlrcpp::Any visitPostfix_unary(SpiceParser::Postfix_unaryContext *context) = 0;
+    virtual antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext *context) = 0;
 
-    virtual antlrcpp::Any visitAtomic_expr(SpiceParser::Atomic_exprContext *context) = 0;
+    virtual antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext *context) = 0;
 
     virtual antlrcpp::Any visitValue(SpiceParser::ValueContext *context) = 0;
 
