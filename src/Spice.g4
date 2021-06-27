@@ -4,11 +4,11 @@ entry: (stmt | functionDef | procedureDef)*;
 functionDef: F LESS DATA_TYPE GREATER IDENTIFIER LPAREN paramLst RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P IDENTIFIER LPAREN paramLst RPAREN LBRACE stmtLst RBRACE;
 forLoop: FOR assignment SEMICOLON topLvlExpr SEMICOLON topLvlExpr LBRACE stmtLst RBRACE;
-foreachLoop: FOREACH IDENTIFIER COLON value LBRACE stmtLst RBRACE;
+//foreachLoop: FOREACH IDENTIFIER COLON value LBRACE stmtLst RBRACE;
 whileLoop: WHILE topLvlExpr LBRACE stmtLst RBRACE;
 ifStmt: IF topLvlExpr LBRACE stmtLst RBRACE;
 
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt)*;
+stmtLst: (stmt | forLoop /*| foreachLoop*/ | whileLoop | ifStmt)*;
 paramLst: (declStmt | assignment)? (COMMA (declStmt | assignment))*;
 stmt: (declStmt | assignment | functionCall | topLvlExpr | importStmt | returnStmt) SEMICOLON;
 declStmt: CONST? DATA_TYPE IDENTIFIER;

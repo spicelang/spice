@@ -31,10 +31,6 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override {
     return visitChildren(ctx);
   }

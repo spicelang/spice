@@ -45,3 +45,17 @@ BOOL                 --> 'true' | 'false'
 INTEGER              --> -*[1-9]+[0-9]*|0
 DOUBLE               --> -*[0-9]+.[0-9]+
 ```
+
+## Semantic analysis checks
+- Data type compatibility
+	- Function call matches function def
+	- Procedure call matches procedure def
+	- Assignments
+	- If condition is bool
+	- While condition is bool
+	- For condition is bool
+	- Foreach is list
+- Check for usage of undefined
+	- Variables
+	- Functions
+	- Procedures

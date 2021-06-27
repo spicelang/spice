@@ -27,8 +27,6 @@ public:
 
     virtual antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext *context) = 0;
 
-    virtual antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext *context) = 0;
-
     virtual antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext *context) = 0;
 
     virtual antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext *context) = 0;

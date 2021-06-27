@@ -26,13 +26,13 @@ public:
 
   enum {
     RuleEntry = 0, RuleFunctionDef = 1, RuleProcedureDef = 2, RuleForLoop = 3, 
-    RuleForeachLoop = 4, RuleWhileLoop = 5, RuleIfStmt = 6, RuleStmtLst = 7, 
-    RuleParamLst = 8, RuleStmt = 9, RuleDeclStmt = 10, RuleFunctionCall = 11, 
-    RuleImportStmt = 12, RuleReturnStmt = 13, RuleTopLvlExpr = 14, RuleAssignment = 15, 
-    RuleTernary = 16, RuleLogicalOrExpr = 17, RuleLogicalAndExpr = 18, RuleBitwiseOrExpr = 19, 
-    RuleBitwiseAndExpr = 20, RuleEquality = 21, RuleRelationalExpr = 22, 
-    RuleAdditiveExpr = 23, RuleMultiplicativeExpr = 24, RulePrefixUnary = 25, 
-    RulePostfixUnary = 26, RuleAtomicExpr = 27, RuleValue = 28
+    RuleWhileLoop = 4, RuleIfStmt = 5, RuleStmtLst = 6, RuleParamLst = 7, 
+    RuleStmt = 8, RuleDeclStmt = 9, RuleFunctionCall = 10, RuleImportStmt = 11, 
+    RuleReturnStmt = 12, RuleTopLvlExpr = 13, RuleAssignment = 14, RuleTernary = 15, 
+    RuleLogicalOrExpr = 16, RuleLogicalAndExpr = 17, RuleBitwiseOrExpr = 18, 
+    RuleBitwiseAndExpr = 19, RuleEquality = 20, RuleRelationalExpr = 21, 
+    RuleAdditiveExpr = 22, RuleMultiplicativeExpr = 23, RulePrefixUnary = 24, 
+    RulePostfixUnary = 25, RuleAtomicExpr = 26, RuleValue = 27
   };
 
   explicit SpiceParser(antlr4::TokenStream *input);
@@ -49,7 +49,6 @@ public:
   class FunctionDefContext;
   class ProcedureDefContext;
   class ForLoopContext;
-  class ForeachLoopContext;
   class WhileLoopContext;
   class IfStmtContext;
   class StmtLstContext;
@@ -157,25 +156,6 @@ public:
 
   ForLoopContext* forLoop();
 
-  class  ForeachLoopContext : public antlr4::ParserRuleContext {
-  public:
-    ForeachLoopContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *FOREACH();
-    antlr4::tree::TerminalNode *IDENTIFIER();
-    antlr4::tree::TerminalNode *COLON();
-    ValueContext *value();
-    antlr4::tree::TerminalNode *LBRACE();
-    StmtLstContext *stmtLst();
-    antlr4::tree::TerminalNode *RBRACE();
-
-
-    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  ForeachLoopContext* foreachLoop();
-
   class  WhileLoopContext : public antlr4::ParserRuleContext {
   public:
     WhileLoopContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -218,8 +198,6 @@ public:
     StmtContext* stmt(size_t i);
     std::vector<ForLoopContext *> forLoop();
     ForLoopContext* forLoop(size_t i);
-    std::vector<ForeachLoopContext *> foreachLoop();
-    ForeachLoopContext* foreachLoop(size_t i);
     std::vector<WhileLoopContext *> whileLoop();
     WhileLoopContext* whileLoop(size_t i);
     std::vector<IfStmtContext *> ifStmt();
