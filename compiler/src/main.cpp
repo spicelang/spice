@@ -2,13 +2,15 @@
 
 #include <iostream>
 #include "antlr4-runtime.h"
-//#include "antlr/SpiceLexer.h"
-//#include "antlr/SpiceParser.h"
-//#include "analyzer/AnalyzerVisitor.h"
+#include "SpiceLexer.h"
+#include "SpiceParser.h"
+#include "analyzer/AnalyzerVisitor.h"
+
+using namespace antlr4;
 
 int main(int argc, char** argv) {
     // Read from file
-    /*std::ifstream stream;
+    std::ifstream stream;
     stream.open(argv[1]);
     antlr4::ANTLRInputStream input(stream);
 
@@ -19,9 +21,8 @@ int main(int argc, char** argv) {
 
     // Execute syntactical analysis
     antlr4::tree::ParseTree *tree = parser.entry();
-    AnalyzerVisitor().visit(tree);*/
+    AnalyzerVisitor().visit(tree);
 
     // Return with positive result code
-    std::cout << "Hello world" << std::endl;
     return 0;
 }

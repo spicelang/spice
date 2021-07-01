@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "../antlr/SpiceBaseVisitor.h"
+#include "SpiceBaseVisitor.h"
 #include "SymbolTable.h"
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
