@@ -1,0 +1,44 @@
+name: CodeQL
+
+on:
+  schedule:
+    - cron: '0 6 * * 6' # Every saturday at 06:00
+  workflow_dispatch:
+
+jobs:
+  analyze-cpp:
+    name: Analyze C++ Code
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: cpp
+
+      - name: Prepare environment
+        run: |
+          shopt -s extglob
+          rm -rf !("compiler")
+          cp -fR ./compiler/* .
+          rm -rf ./compiler
+
+      - name: Download Libs
+        run: |
+          cd lib
+          git clone https://github.com/google/googletest.git
+
+      - name: Build project
+        uses: nicledomaS/cmake_build_action@v1.4
+        with:
+          submodule_update: ON
+          run_tests: ON
+          cmake_args: -DWITH_TESTS=ON
+          unit_test_build: -Dtest=ON
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1

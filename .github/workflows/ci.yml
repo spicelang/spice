@@ -1,0 +1,36 @@
+name: C++ CI
+
+on:
+  push:
+    paths:
+      - 'compiler/cpp/**'
+  pull_request:
+    branches: [ main, dev, feature/** ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+        
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare environment
+        run: |
+          shopt -s extglob
+          rm -rf !("compiler")
+          cp -fR ./compiler/* .
+          rm -rf ./compiler
+
+      - name: Download Libs
+        run: |
+          cd lib
+          git clone https://github.com/google/googletest.git
+
+      - name: Build project
+        uses: nicledomaS/cmake_build_action@v1.4
+        with:
+          submodule_update: ON
+          run_tests: ON
+          cmake_args: -DWITH_TESTS=ON
+          unit_test_build: -Dtest=ON
