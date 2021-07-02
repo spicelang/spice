@@ -2,21 +2,46 @@
 
 #include "SymbolTable.h"
 
-void SymbolTable::insertSymbol(const std::string& identifier, const std::string& scope, SymbolType type) {
-    symbols.insert({
-        getKeyForCombination(identifier, scope),
-        SymbolTableEntry(identifier, scope, type)
-    });
+void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state) {
+    symbols.insert({ name, SymbolTableEntry(name, type, state) });
 }
 
-void SymbolTable::deleteSymbol(const std::string& identifier, const std::string& scope) {
-    symbols.erase(getKeyForCombination(identifier, scope));
+SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
+    // If not available in the current scope, search in the parent scope
+    if (symbols.find(name) == symbols.end()) {
+        if (parent == nullptr) return nullptr;
+        return parent->lookup(name);
+    }
+    // Otherwise return the entry
+    return &symbols.at(name);
 }
 
-bool SymbolTable::isSymbolPresent(const std::string& identifier, const std::string& scope) {
-    return symbols.find(getKeyForCombination(identifier, scope)) != symbols.end();
+void SymbolTable::update(const std::string& name, SymbolState newState) {
+    // If not available in the current scope, search in the parent scope
+    if (symbols.find(name) == symbols.end()) {
+        if (parent == nullptr) throw std::runtime_error("Updating a non-existent symbol: " + name);
+        parent->update(name, newState);
+    }
+    // Otherwise update the entry
+    symbols.at(name).updateState(newState);
 }
 
-std::string SymbolTable::getKeyForCombination(const std::string& identifier, const std::string& scope) {
-    return scope + ":" + identifier;
+SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
+    children.insert({ blockName, SymbolTable(this) });
+    return &children.at(blockName);
+}
+
+SymbolTable* SymbolTable::getParent() {
+    return parent;
+}
+
+std::string SymbolTable::toString() {
+    std::string symbolsString, childrenString;
+    for (auto& symbol : symbols) {
+        symbolsString.append("(" + symbol.second.toString() + ")\n");
+    }
+    for (auto& child : children) {
+        childrenString.append(child.second.toString() + "\n");
+    }
+    return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
 }

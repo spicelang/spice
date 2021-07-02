@@ -11,9 +11,9 @@ WHILE_LOOP           --> 'while' TOP_LVL_EXPR '{' STMT_LST '}'
 IF_STMT              --> 'if' TOP_LVL_EXPR '{' STMT_LST '}'
 
 STMT_LST             --> (STMT | FOR_LOOP | FOR_EACH_LOOP | WHILE_LOOP | IF_STMT)*
-PARAM_LST            --> (DECL_STMT | ASSIGNMENT)? (',' (DECL_STMT | ASSIGNMENT))*
-STMT                 --> (DECL_STMT | ASSIGNMENT | FUNCTION_CALL | TOP_LVL_EXPR | IMPORT_STMT | RETURN_STMT) ';'
-DECL_STMT            --> 'const'? DATA_TYPE IDENTIFIER
+PARAM_LST            --> ('const'? DECL_STMT | ASSIGNMENT)? (',' ('const'? DECL_STMT | ASSIGNMENT))*
+STMT                 --> ('const'? DECL_STMT | ASSIGNMENT | FUNCTION_CALL | TOP_LVL_EXPR | IMPORT_STMT | RETURN_STMT) ';'
+DECL_STMT            --> DATA_TYPE IDENTIFIER
 FUNCTION_CALL        --> IDENTIFIER '(' PARAM_LST ')'
 IMPORT_STMT          --> 'import' STRING
 RETURN_STMT          --> 'return' TOP_LVL_EXPR
@@ -21,7 +21,7 @@ RETURN_STMT          --> 'return' TOP_LVL_EXPR
 DATA_TYPE            --> 'double' | 'int' | 'string' | 'bool' | 'dyn'
 
 TOP_LVL_EXPR         --> ASSIGNMENT
-ASSIGNMENT           --> ((DECL_STMT | IDENTIFIER) ('=' | '+=' | '-=' | '*=' | '/='))? TERNARY
+ASSIGNMENT           --> (('const'? DECL_STMT | IDENTIFIER) ('=' | '+=' | '-=' | '*=' | '/='))? TERNARY
 TERNARY              --> LOGICAL_OR ('?' LOGICAL_OR ':' LOGICAL_OR)?
 LOGICAL_OR           --> LOGICAL_AND ('||' LOGICAL_AND)*
 LOGICAL_AND          --> BITWISE_OR ('&&' BITWISE_OR)*

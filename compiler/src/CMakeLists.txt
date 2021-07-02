@@ -14,7 +14,11 @@ set(SOURCES
         analyzer/AnalyzerVisitor.cpp
         analyzer/AnalyzerVisitor.h
         analyzer/SymbolTable.cpp
-        analyzer/SymbolTable.h)
+        analyzer/SymbolTable.h
+        analyzer/SymbolTableEntry.cpp
+        analyzer/SymbolTableEntry.h
+        exception/SemanticError.cpp
+        exception/SemanticError.h)
 
 add_executable(${BINARY}_run ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
@@ -23,4 +27,4 @@ include_directories(${ANTLR_Spice_OUTPUT_DIR})
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
 
 target_link_libraries(${BINARY}_run antlr4_static)
-add_library(${BINARY}_lib STATIC ${SOURCES})
+add_library(${BINARY}_lib STATIC ${SOURCES} exception/SemanticError.cpp exception/SemanticError.h analyzer/SymbolTableEntry.cpp analyzer/SymbolTableEntry.h)

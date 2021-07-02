@@ -3,13 +3,12 @@
 #pragma once
 
 #include "SpiceBaseVisitor.h"
+#include "SpiceLexer.h"
 #include "SymbolTable.h"
+#include <exception/SemanticError.h>
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
-    // Constructor
-    AnalyzerVisitor();
-
     // Public methods
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
@@ -36,5 +35,5 @@ public:
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
 private:
     // Members
-    SymbolTable symbolTable;
+    SymbolTable* currentScope = new SymbolTable(nullptr);
 };

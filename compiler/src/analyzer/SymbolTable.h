@@ -4,36 +4,24 @@
 
 #include <string>
 #include <utility>
-#include <unordered_map>
-
-enum SymbolType {
-    INT,
-    DOUBLE,
-    STRING,
-    BOOL,
-    FUNCTION,
-    PROCEDURE
-};
-
-class SymbolTableEntry {
-public:
-    SymbolTableEntry(std::string identifier, std::string scope, SymbolType type):
-        identifier(std::move(identifier)), scope(std::move(scope)), type(type) {};
-private:
-    std::string identifier, scope;
-    SymbolType type;
-};
+#include <map>
+#include <vector>
+#include "SymbolTableEntry.h"
 
 class SymbolTable {
 public:
+    // Constructors
+    explicit SymbolTable(SymbolTable* parent): parent(parent) {};
     // Public methods
-    void insertSymbol(const std::string&, const std::string&, SymbolType);
-    void deleteSymbol(const std::string&, const std::string&);
-    bool isSymbolPresent(const std::string&, const std::string&);
+    void insert(const std::string&, SymbolType, SymbolState);
+    SymbolTableEntry* lookup(const std::string&);
+    void update(const std::string&, SymbolState);
+    SymbolTable* createChildBlock(const std::string&);
+    SymbolTable* getParent();
+    std::string toString();
 private:
-    // Private methods
-    static std::string getKeyForCombination(const std::string&, const std::string&);
-
     // Members
-    std::unordered_map<std::string, SymbolTableEntry> symbols;
+    std::map<std::string, SymbolTableEntry> symbols;
+    SymbolTable* parent;
+    std::map<std::string, SymbolTable> children;
 };
