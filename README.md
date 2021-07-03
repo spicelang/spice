@@ -59,3 +59,7 @@ DOUBLE               --> -*[0-9]+.[0-9]+
 	- Variables
 	- Functions
 	- Procedures
+
+## Special language features
+- Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"`
+- 

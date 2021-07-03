@@ -2,6 +2,17 @@
 
 #include "AnalyzerVisitor.h"
 
+antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
+    // Pre-traversing action
+
+    // Traverse AST
+    antlrcpp::Any result = visitChildren(ctx);
+
+    // Post traversing actions
+    std::cout << currentScope->toString() << std::endl; // ToDo: This line is only for testing, remove it in the future
+    return result;
+}
+
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     // Insert function name into the root symbol table
     currentScope->insert(ctx->IDENTIFIER()->toString(), TYPE_FUNCTION, INITIALIZED);
@@ -13,7 +24,6 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     antlrcpp::Any childrenResult = SpiceBaseVisitor::visitFunctionDef(ctx);
     // Return to old scope
     currentScope = currentScope->getParent();
-    std::cout << currentScope->toString() << std::endl; // ToDo: This line is only for testing, remove it in the future
     return childrenResult;
 }
 
@@ -145,15 +155,99 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
 }
 
 antlrcpp::Any AnalyzerVisitor::visitEquality(SpiceParser::EqualityContext *ctx) {
-    return SpiceBaseVisitor::visitEquality(ctx);
+    // Check if at least one equality operator is applied
+    if (ctx->children.size() > 1) {
+        SymbolType leftType = visit(ctx->relationalExpr()[0]).as<SymbolType>();
+        SymbolType rightType = visit(ctx->relationalExpr()[1]).as<SymbolType>();
+        if (leftType == TYPE_DOUBLE && rightType == TYPE_DOUBLE) return TYPE_BOOL; // Can compare double with double
+        if (leftType == TYPE_DOUBLE && rightType == TYPE_INT) return TYPE_BOOL; // Can compare double with int
+        if (leftType == TYPE_INT && rightType == TYPE_DOUBLE) return TYPE_BOOL; // Can compare int with double
+        if (leftType == TYPE_INT && rightType == TYPE_INT) return TYPE_BOOL; // Can compare int with int
+        if (leftType == TYPE_STRING && rightType == TYPE_STRING) return TYPE_BOOL; // Can compare string with string
+        if (leftType == TYPE_BOOL && rightType == TYPE_BOOL) return TYPE_BOOL; // Can compare bool with bool
+        // Every other combination is invalid
+        throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                            "Can only compare some type combinations with an equality operator");
+    }
+    return visit(ctx->relationalExpr()[0]);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
-    return SpiceBaseVisitor::visitRelationalExpr(ctx);
+    // Check if at least one relational operator is applied
+    if (ctx->children.size() > 1) {
+        SymbolType leftType = visit(ctx->additiveExpr()[0]).as<SymbolType>();
+        SymbolType rightType = visit(ctx->additiveExpr()[1]).as<SymbolType>();
+        if (leftType == TYPE_DOUBLE && rightType == TYPE_DOUBLE) return TYPE_BOOL; // Can compare double with double
+        if (leftType == TYPE_DOUBLE && rightType == TYPE_INT) return TYPE_BOOL; // Can compare double with int
+        if (leftType == TYPE_INT && rightType == TYPE_DOUBLE) return TYPE_BOOL; // Can compare int with double
+        if (leftType == TYPE_INT && rightType == TYPE_INT) return TYPE_BOOL; // Can compare int with int
+        // Every other combination is invalid
+        throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                            "Can only compare doubles or ints with one another with a relational operator");
+    }
+    return visit(ctx->additiveExpr()[0]);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
-    return SpiceBaseVisitor::visitAdditiveExpr(ctx);
+    // Check if at least one additive operator is applied
+    if (ctx->children.size() > 1) {
+        antlrcpp::Any currentType = visit(ctx->multiplicativeExpr()[0]);
+        // Check if data types are compatible
+        for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
+            antlrcpp::Any nextType = visit(ctx->multiplicativeExpr()[i]);
+            // Check all combinations
+            if (currentType.as<SymbolType>() == TYPE_DOUBLE) {
+                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: 4.3 + 6.1
+                    currentType = TYPE_DOUBLE;
+                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4.3 + 4
+                    currentType = TYPE_DOUBLE;
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4.3 + "Test"
+                    currentType = TYPE_STRING;
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4.3 + true
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands double and bool for additive operator");
+                }
+            } else if (currentType.as<SymbolType>() == TYPE_INT) {
+                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: 4 + 6.1
+                    currentType = TYPE_DOUBLE;
+                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4 + 5
+                    currentType = TYPE_INT;
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4.3 + "Test"
+                    currentType = TYPE_STRING;
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4.3 + true
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands int and bool for additive operator");
+                }
+            } else if (currentType.as<SymbolType>() == TYPE_STRING) {
+                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: "Test" + 6.1
+                    currentType = TYPE_STRING;
+                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: "Test" + 5
+                    currentType = TYPE_STRING;
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: "Test" + "Test"
+                    currentType = TYPE_STRING;
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: "Test" + true
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and bool for additive operator");
+                }
+            } else if (currentType.as<SymbolType>() == TYPE_BOOL) {
+                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: true + 6.1
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and double for additive operator");
+                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: true + 5
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and int for additive operator");
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: true + "Test"
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and string for additive operator");
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: true + false
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and bool for additive operator");
+                }
+            }
+        }
+        return currentType;
+    }
+    return visit(ctx->multiplicativeExpr()[0]);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
@@ -181,10 +275,9 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                     currentType = TYPE_DOUBLE;
                 } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4 * 5
                     currentType = TYPE_INT;
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4.3 * "Test"
-                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands int and string for multiplicative operator");
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4.3 * true
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4 * "Test"
+                    currentType = TYPE_STRING;
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4 * true
                     throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands int and bool for multiplicative operator");
                 }
@@ -264,7 +357,6 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     if (ctx->TRUE() || ctx->FALSE()) return TYPE_BOOL;
     if (ctx->IDENTIFIER()) {
         std::string variableName = ctx->IDENTIFIER()->toString();
-        std::cout << "Variable name: " << variableName << std::endl;
         SymbolTableEntry* entry = currentScope->lookup(variableName);
         if (entry == nullptr)
             throw SemanticError(REFERENCED_UNDEFINED_VARIABLE, "Variable " + variableName +

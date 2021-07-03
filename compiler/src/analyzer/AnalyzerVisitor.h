@@ -10,6 +10,7 @@
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
     // Public methods
+    antlrcpp::Any visitEntry(SpiceParser::EntryContext *ctx) override;
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
