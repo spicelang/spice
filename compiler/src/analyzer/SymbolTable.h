@@ -16,6 +16,7 @@ public:
     void insert(const std::string&, SymbolType, SymbolState);
     SymbolTableEntry* lookup(const std::string&);
     void update(const std::string&, SymbolState);
+    void update(const std::string&, SymbolType);
     SymbolTable* createChildBlock(const std::string&);
     SymbolTable* getParent();
     std::string toString();

@@ -9,7 +9,8 @@ enum SemanticErrorType {
     REFERENCED_UNDEFINED_FUNCTION,
     REFERENCED_UNDEFINED_PROCEDURE,
     REFERENCED_UNDEFINED_VARIABLE,
-    FUNCTION_WITHOUT_RETURN_STMT
+    FUNCTION_WITHOUT_RETURN_STMT,
+    OPERATOR_WRONG_DATA_TYPE
 };
 
 class SemanticError : public std::exception {
@@ -29,6 +30,9 @@ public:
                 break;
             case FUNCTION_WITHOUT_RETURN_STMT:
                 messagePrefix = "Missing return statement";
+                break;
+            case OPERATOR_WRONG_DATA_TYPE:
+                messagePrefix = "Wrong data type for operator";
                 break;
         }
         errorMessage = messagePrefix + ": " + message;

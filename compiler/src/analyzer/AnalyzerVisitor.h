@@ -33,7 +33,10 @@ public:
     antlrcpp::Any visitPrefixUnary(SpiceParser::PrefixUnaryContext *ctx) override;
     antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext *ctx) override;
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
+    antlrcpp::Any visitValue(SpiceParser::ValueContext *ctx) override;
 private:
     // Members
     SymbolTable* currentScope = new SymbolTable(nullptr);
+    // Private functions
+    static SymbolType getSymbolTypeFromDataType(SpiceParser::DataTypeContext*);
 };

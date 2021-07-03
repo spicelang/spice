@@ -26,6 +26,16 @@ void SymbolTable::update(const std::string& name, SymbolState newState) {
     symbols.at(name).updateState(newState);
 }
 
+void SymbolTable::update(const std::string& name, SymbolType newType) {
+    // If not available in the current scope, search in the parent scope
+    if (symbols.find(name) == symbols.end()) {
+        if (parent == nullptr) throw std::runtime_error("Updating a non-existent symbol: " + name);
+        parent->update(name, newType);
+    }
+    // Otherwise update the entry
+    symbols.at(name).updateType(newType);
+}
+
 SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
     children.insert({ blockName, SymbolTable(this) });
     return &children.at(blockName);

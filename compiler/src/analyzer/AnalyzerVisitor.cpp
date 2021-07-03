@@ -73,12 +73,7 @@ antlrcpp::Any AnalyzerVisitor::visitParamLst(SpiceParser::ParamLstContext *ctx) 
 
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
     // Insert variable name to symbol table
-    SymbolType type;
-    if (ctx->dataType()->TYPE_DOUBLE() != nullptr) type = TYPE_DOUBLE;
-    if (ctx->dataType()->TYPE_INT() != nullptr) type = TYPE_INT;
-    if (ctx->dataType()->TYPE_STRING() != nullptr) type = TYPE_STRING;
-    if (ctx->dataType()->TYPE_BOOL() != nullptr) type = TYPE_BOOL;
-    if (ctx->dataType()->TYPE_DYN() != nullptr) type = TYPE_DYN;
+    auto type = getSymbolTypeFromDataType(ctx->dataType());
     currentScope->insert(ctx->IDENTIFIER()->toString(), type, DECLARED);
     return SpiceBaseVisitor::visitDeclStmt(ctx);
 }
@@ -103,17 +98,34 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext *ctx) {
-    /*ctx->declStmt()->
-    std::string variableName = ctx->IDENTIFIER()->toString();
-    // Check if function call exists in symbol table
-    if (!currentScope->lookup(variableName))
-        throw SemanticError(REFERENCED_UNDEFINED_FUNCTION,
-                            "Function " + variableName + " was called before initialized.");*/
-    return SpiceBaseVisitor::visitAssignment(ctx);
+    // Visit children
+    antlrcpp::Any childrenResult = SpiceBaseVisitor::visitAssignment(ctx);
+
+    /*if (ctx->IDENTIFIER() != nullptr) { // Assigning to an identifier, which was already declared
+        std::string variableName = ctx->IDENTIFIER()->toString();
+        // Check if variable exists in symbol table
+        if (!currentScope->lookup(variableName))
+            throw SemanticError(REFERENCED_UNDEFINED_VARIABLE,
+                                "Variable " + variableName + " was reference before initialized.");
+        // Update variable in symbol table
+        currentScope->update(variableName, type);
+        currentScope->update(variableName, INITIALIZED);
+    } else { // Assigning to an identifier, which is declared in the current statement
+        auto type = getSymbolTypeFromDataType(ctx->declStmt()->dataType());
+
+    }
+
+    // Update variable in symbol table
+    currentScope->update(variableName, type);
+    currentScope->update(variableName, INITIALIZED);
+
+    if (ctx->)*/
+    return childrenResult;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext *ctx) {
-    return SpiceBaseVisitor::visitTernary(ctx);
+    antlrcpp::Any childrenResult = SpiceBaseVisitor::visitTernary(ctx);
+    return childrenResult;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
@@ -145,17 +157,127 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
-    return SpiceBaseVisitor::visitMultiplicativeExpr(ctx);
+    // Check if at least one multiplicative operator is applied
+    if (ctx->children.size() > 1) {
+        antlrcpp::Any currentType = visit(ctx->prefixUnary()[0]);
+        // Check if data types are compatible
+        for (int i = 1; i < ctx->prefixUnary().size(); i++) {
+            antlrcpp::Any nextType = visit(ctx->prefixUnary()[i]);
+            // Check all combinations
+            if (currentType.as<SymbolType>() == TYPE_DOUBLE) {
+                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: 4.3 * 6.1
+                    currentType = TYPE_DOUBLE;
+                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4.3 * 4
+                    currentType = TYPE_DOUBLE;
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4.3 * "Test"
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands double and string for multiplicative operator");
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4.3 * true
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands double and bool for multiplicative operator");
+                }
+            } else if (currentType.as<SymbolType>() == TYPE_INT) {
+                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: 4 * 6.1
+                    currentType = TYPE_DOUBLE;
+                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4 * 5
+                    currentType = TYPE_INT;
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4.3 * "Test"
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands int and string for multiplicative operator");
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4.3 * true
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands int and bool for multiplicative operator");
+                }
+            } else if (currentType.as<SymbolType>() == TYPE_STRING) {
+                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: "Test" * 6.1
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and double for multiplicative operator");
+                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: "Test" * 5
+                    currentType = TYPE_STRING;
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: "Test" * "Test"
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and string for multiplicative operator");
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: "Test" * true
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and bool for multiplicative operator");
+                }
+            } else if (currentType.as<SymbolType>() == TYPE_BOOL) {
+                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: true * 6.1
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and double for multiplicative operator");
+                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: true * 5
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and int for multiplicative operator");
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: true * "Test"
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and string for multiplicative operator");
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: true * false
+                    throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and bool for multiplicative operator");
+                }
+            }
+        }
+        return currentType;
+    }
+    return visit(ctx->prefixUnary()[0]);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext *ctx) {
-    return SpiceBaseVisitor::visitPrefixUnary(ctx);
+    antlrcpp::Any prefixUnary = SpiceBaseVisitor::visitPrefixUnary(ctx);
+
+    // Ensure integer when '++' or '--' is applied
+    if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) && prefixUnary.as<SymbolType>() != TYPE_INT)
+        throw SemanticError(OPERATOR_WRONG_DATA_TYPE, "'++' or '--' only can be applied to an integer");
+
+    // Ensure right return type if not is applied
+    if (ctx->NOT()) {
+        /* If not applied to double, return bool (evaluates later to variable == 0.0)
+           If not applied to int, return bool (evaluates later to variable == 0)
+           If not applied to string, return bool (evaluates later to variable == "")
+           If not applied to bool, return bool (evaluates later to variable == false)*/
+        return TYPE_BOOL;
+    }
+
+    return prefixUnary;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContext *ctx) {
-    return SpiceBaseVisitor::visitPostfixUnary(ctx);
+    antlrcpp::Any atomicExpr = visit(ctx->atomicExpr());
+
+    // Ensure integer when '++' or '--' is applied
+    if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) && atomicExpr.as<SymbolType>() != TYPE_INT)
+        throw SemanticError(OPERATOR_WRONG_DATA_TYPE, "'++' or '--' only can be applied to an integer");
+
+    return atomicExpr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
-    return SpiceBaseVisitor::visitAtomicExpr(ctx);
+    if (ctx->LPAREN()) // Rule: '(' assignment ')'
+        return visit(ctx->assignment());
+    return visit(ctx->value()); // Rule: value
+}
+
+antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+    if (ctx->DOUBLE()) return TYPE_DOUBLE;
+    if (ctx->INTEGER()) return TYPE_INT;
+    if (ctx->STRING()) return TYPE_STRING;
+    if (ctx->TRUE() || ctx->FALSE()) return TYPE_BOOL;
+    if (ctx->IDENTIFIER()) {
+        std::string variableName = ctx->IDENTIFIER()->toString();
+        std::cout << "Variable name: " << variableName << std::endl;
+        SymbolTableEntry* entry = currentScope->lookup(variableName);
+        if (entry == nullptr)
+            throw SemanticError(REFERENCED_UNDEFINED_VARIABLE, "Variable " + variableName +
+                " was referenced before initialized.");
+        return entry->getType();
+    }
+    return visit(ctx->functionCall());
+}
+
+SymbolType AnalyzerVisitor::getSymbolTypeFromDataType(SpiceParser::DataTypeContext *ctx) {
+    if (ctx->TYPE_DOUBLE() != nullptr) return TYPE_DOUBLE;
+    if (ctx->TYPE_INT() != nullptr) return TYPE_INT;
+    if (ctx->TYPE_STRING() != nullptr) return TYPE_STRING;
+    if (ctx->TYPE_BOOL() != nullptr) return TYPE_BOOL;
+    return TYPE_DYN;
 }

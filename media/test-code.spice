@@ -1,4 +1,4 @@
-int testInt = 0;
+int testInt = (0);
 double testDouble = 1.5;
 string testString = "";
 bool testBool = true;

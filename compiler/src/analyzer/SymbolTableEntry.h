@@ -3,6 +3,7 @@
 #pragma once
 
 #include <string>
+#include <stdexcept>
 
 enum SymbolType {
     TYPE_INT, TYPE_DOUBLE, TYPE_STRING, TYPE_BOOL,
@@ -23,7 +24,9 @@ public:
 
     // Public methods
     SymbolState getState();
+    SymbolType getType();
     void updateState(SymbolState);
+    void updateType(SymbolType);
     std::string toString();
 private:
     // Members
