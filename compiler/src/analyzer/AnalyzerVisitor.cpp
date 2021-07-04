@@ -9,7 +9,7 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
     antlrcpp::Any result = visitChildren(ctx);
 
     // Post traversing actions
-    //std::cout << currentScope->toString() << std::endl;
+    std::cout << currentScope->toString() << std::endl;
     return result;
 }
 
@@ -57,13 +57,13 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
             std::to_string(ctx->FOR()->getSymbol()->getCharPositionInLine());
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit assignment in new scope
-    visit(ctx->assignment());
+    visit(ctx->assignment()[0]);
     // Visit condition in new scope
-    SymbolType conditionType = visit(ctx->topLvlExpr()[0]).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignment()[1]).as<SymbolType>();
     if (conditionType != TYPE_BOOL)
         throw SemanticError(CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool");
     // Visit incrementer in new scope
-    visit(ctx->topLvlExpr()[1]);
+    visit(ctx->assignment()[2]);
     // Visit statement list in new scope
     visit(ctx->stmtLst());
     // Return to old scope
@@ -71,13 +71,20 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
     return TYPE_BOOL;
 }
 
+/*antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
+    // Create a new scope
+    std::string scopeId = "foreach:" + std::to_string(ctx->FOR()->getSymbol()->getLine()) + ":" +
+                          std::to_string(ctx->FOR()->getSymbol()->getCharPositionInLine());
+    currentScope = currentScope->createChildBlock(scopeId);
+}*/
+
 antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
     // Create a new scope
     std::string scopeId = "while:" + std::to_string(ctx->WHILE()->getSymbol()->getLine()) + ":" +
                           std::to_string(ctx->WHILE()->getSymbol()->getCharPositionInLine());
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
-    SymbolType conditionType = visit(ctx->topLvlExpr()).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
     if (conditionType != TYPE_BOOL)
         throw SemanticError(CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool");
     // Visit statement list in new scope
@@ -93,7 +100,7 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
     // Create a new scope
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
-    SymbolType conditionType = visit(ctx->topLvlExpr()).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
     if (conditionType != TYPE_BOOL)
         throw SemanticError(CONDITION_MUST_BE_BOOL, "If condition must be of type bool");
     // Visit statement list in new scope
@@ -132,7 +139,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
-    SymbolType returnType = visit(ctx->topLvlExpr()).as<SymbolType>();
+    SymbolType returnType = visit(ctx->assignment()).as<SymbolType>();
     // Check if return variable is in the symbol table
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (!returnVariable)

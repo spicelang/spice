@@ -10,10 +10,6 @@ SymbolType SymbolTableEntry::getType() {
     return type;
 }
 
-bool SymbolTableEntry::isConst() {
-    return isConstant;
-}
-
 void SymbolTableEntry::updateState(SymbolState newState) {
     if (state == INITIALIZED && isConstant)
         throw SemanticError(REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
