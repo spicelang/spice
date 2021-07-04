@@ -1,0 +1,27 @@
+SymbolTable(
+    (Name: testAuto, Type: 4, State: 1)
+    (Name: testBool, Type: 3, State: 1)
+    (Name: testDouble, Type: 0, State: 1)
+    (Name: testFunction, Type: 5, State: 1)
+    (Name: testInt, Type: 1, State: 1)
+    (Name: testProcedure, Type: 6, State: 1)
+    (Name: testString, Type: 2, State: 1)
+) {
+    SymbolTable(
+        (Name: result, Type: 1, State: 1)
+    ) {
+        SymbolTable(
+        ) {
+            SymbolTable(
+                (Name: i, Type: 1, State: 1)
+            ) {
+            }
+        }
+    }
+    SymbolTable(
+        (Name: boolParam, Type: 3, State: 1)
+        (Name: result, Type: 0, State: 1)
+        (Name: stringParam, Type: 2, State: 0)
+    ) {
+    }
+}
