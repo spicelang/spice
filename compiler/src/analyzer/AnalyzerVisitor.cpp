@@ -6,25 +6,29 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
     // Pre-traversing action
 
     // Traverse AST
-    antlrcpp::Any result = visitChildren(ctx);
+    visitChildren(ctx);
 
     // Post traversing actions
     std::cout << currentScope->toString() << std::endl;
-    return result;
+
+    // Return the symbol table to the main program for further compile phases
+    return currentScope;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     // Insert function name into the root symbol table
-    currentScope->insert(ctx->IDENTIFIER()->toString(), TYPE_FUNCTION, INITIALIZED, true);
+    std::string functionName = ctx->IDENTIFIER()->toString();
+    currentScope->insert(functionName, TYPE_FUNCTION, INITIALIZED, true, false);
     // Create a new scope
-    std::string scopeId = "f:" + std::to_string(ctx->F()->getSymbol()->getLine()) + ":" +
-                          std::to_string(ctx->F()->getSymbol()->getCharPositionInLine());
+    std::string scopeId = "f:" + functionName;
     currentScope = currentScope->createChildBlock(scopeId);
     // Declare variable for the return value
     SymbolType returnType = getSymbolTypeFromDataType(ctx->dataType());
-    currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false);
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);
     // Visit parameters
+    parameterMode = true;
     if (ctx->paramLstDef()) visit(ctx->paramLstDef());
+    parameterMode = false;
     // Visit statements in new scope
     visit(ctx->stmtLst());
     // Check if return variable is now initialized
@@ -37,13 +41,15 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
 
 antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
     // Insert procedure name into the root symbol table
-    currentScope->insert(ctx->IDENTIFIER()->toString(), TYPE_PROCEDURE, INITIALIZED, true);
+    std::string procedureName = ctx->IDENTIFIER()->toString();
+    currentScope->insert(procedureName, TYPE_PROCEDURE, INITIALIZED, true, false);
     // Create a new scope
-    std::string scopeId = "p:" + std::to_string(ctx->P()->getSymbol()->getLine()) + ":" +
-                          std::to_string(ctx->P()->getSymbol()->getCharPositionInLine());
+    std::string scopeId = "p:" + procedureName;
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit params in new scope
+    parameterMode = true;
     if (ctx->paramLstDef()) visit(ctx->paramLstDef());
+    parameterMode = false;
     // Visit statement list in new scope
     visit(ctx->stmtLst());
     // Return to old scope
@@ -118,17 +124,39 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
                             "The variable '" + variableName + "' was declared more than once");
     // Insert variable name to symbol table
     SymbolType type = getSymbolTypeFromDataType(ctx->dataType());
-    currentScope->insert(variableName, type, DECLARED, ctx->CONST());
+    currentScope->insert(variableName, type, DECLARED, ctx->CONST(), parameterMode);
     return type;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
-    std::string functionName = ctx->IDENTIFIER()->toString();
+    std::string name = ctx->IDENTIFIER()->toString();
     // Check if function call exists in symbol table
-    SymbolTableEntry* entry = currentScope->lookup(functionName);
-    if (!entry) throw SemanticError(REFERENCED_UNDEFINED_FUNCTION,
-                                    "Function " + functionName + " was called before initialized.");
-    return entry->getType();
+    SymbolTableEntry* entry = currentScope->lookup(name);
+    if (!entry)
+        throw SemanticError(REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
+                            "Function/Procedure " + name + " was called before initialized.");
+    if (entry->getType() != TYPE_FUNCTION && entry->getType() != TYPE_PROCEDURE)
+        throw SemanticError(CAN_ONLY_CALL_FUNCTION_OR_PROCEDURE,
+                            "Object '" + name + "' is not of type function or procedure");
+    // Get root symbol table to check the function/procedure definition there
+    SymbolTable* rootTable = currentScope;
+    while (rootTable->getParent()) rootTable = rootTable->getParent();
+    // Check if child table exists for function
+    std::string scopeId = entry->getType() == TYPE_FUNCTION ? "f:" + name : "p:" + name;
+    SymbolTable* symbolTable = rootTable->getChild(scopeId);
+    std::vector<std::string> paramNames = symbolTable->getParamNames();
+    // Check if types match for parameter list
+    for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
+        SymbolType type = visit(ctx->paramLstCall()->assignment()[i]).as<SymbolType>();
+        SymbolTableEntry* param = symbolTable->lookup(paramNames[i]);
+        if (!param)
+            throw SemanticError(REFERENCED_UNDEFINED_VARIABLE,
+                                "Parameter '" + paramNames[i] + "' was not found in declaration");
+        if (type != param->getType())
+            throw SemanticError(PARAMETER_TYPES_DO_NOT_MATCH,
+                                "Type of parameter '" + paramNames[i] + "' does not match the declaration");
+    }
+    return symbolTable->lookup(RETURN_VARIABLE_NAME)->getType();
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {

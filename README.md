@@ -4,18 +4,15 @@
 The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTLR grammar configuration file.
 
 ## Semantic analysis checks
-- Data type compatibility
-	- Function call matches function def
-	- Procedure call matches procedure def
-	- Assignments
-	- If condition is bool
-	- While condition is bool
-	- For condition is bool
-	- Foreach is list
-- Check for usage of undefined
-	- Variables
-	- Functions
-	- Procedures
+- [x] Data type compatibility
+	- [x] Function/procedure call matches function def
+	- [x] Assignments
+	- [x] If condition is bool
+	- [x] While condition is bool
+	- [x] For condition is bool
+- [x] Check for usage before defined
+	- [x] Variables
+	- [x] Functions/Procedures
 
 ## Special language features
 - Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"`

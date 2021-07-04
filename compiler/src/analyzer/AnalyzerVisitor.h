@@ -40,6 +40,8 @@ public:
 private:
     // Members
     SymbolTable* currentScope = new SymbolTable(nullptr);
+    bool parameterMode = false;
+
     // Private functions
     static SymbolType getSymbolTypeFromDataType(SpiceParser::DataTypeContext*);
 };
