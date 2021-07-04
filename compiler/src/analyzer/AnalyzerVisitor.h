@@ -7,6 +7,8 @@
 #include "SymbolTable.h"
 #include <exception/SemanticError.h>
 
+const std::string RETURN_VARIABLE_NAME = "result";
+
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
     // Public methods
@@ -27,7 +29,7 @@ public:
     antlrcpp::Any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) override;
     antlrcpp::Any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) override;
     antlrcpp::Any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) override;
-    antlrcpp::Any visitEquality(SpiceParser::EqualityContext *ctx) override;
+    antlrcpp::Any visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) override;
     antlrcpp::Any visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) override;
     antlrcpp::Any visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) override;
     antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) override;

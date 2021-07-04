@@ -13,7 +13,7 @@ public:
     // Constructors
     explicit SymbolTable(SymbolTable* parent): parent(parent) {};
     // Public methods
-    void insert(const std::string&, SymbolType, SymbolState);
+    void insert(const std::string&, SymbolType, SymbolState, bool);
     SymbolTableEntry* lookup(const std::string&);
     void update(const std::string&, SymbolState);
     void update(const std::string&, SymbolType);

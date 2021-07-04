@@ -20,5 +20,5 @@ p testProcedure(bool boolParam = false, string stringParam) {
     /* Test
     block
     comment */
-    double result = testString == "" ? 5.0 : 1.4;
+    double result = testString == "" || testBool ? 5.0 : 1.4;
 }

@@ -9,21 +9,21 @@ whileLoop: WHILE topLvlExpr LBRACE stmtLst RBRACE;
 ifStmt: IF topLvlExpr LBRACE stmtLst RBRACE;
 
 stmtLst: (stmt | forLoop /*| foreachLoop*/ | whileLoop | ifStmt)*;
-paramLst: (CONST? declStmt | assignment)? (COMMA (CONST? declStmt | assignment))*;
-stmt: (CONST? declStmt | assignment | functionCall | topLvlExpr | importStmt | returnStmt) SEMICOLON;
-declStmt: dataType IDENTIFIER;
+paramLst: (declStmt | assignment)? (COMMA (declStmt | assignment))*;
+stmt: (declStmt | assignment | functionCall | topLvlExpr | importStmt | returnStmt) SEMICOLON;
+declStmt: CONST? dataType IDENTIFIER;
 functionCall: IDENTIFIER LPAREN paramLst RPAREN;
 importStmt: IMPORT STRING;
 returnStmt: RETURN topLvlExpr;
 
 topLvlExpr: assignment;
-assignment: ((CONST? declStmt | IDENTIFIER) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? ternary;
+assignment: ((declStmt | IDENTIFIER) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? ternary;
 ternary: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
 bitwiseOrExpr: bitwiseAndExpr (BITWISE_OR bitwiseAndExpr)*;
-bitwiseAndExpr: equality (BITWISE_AND equality)*;
-equality: relationalExpr ((EQUAL | NOT_EQUAL) relationalExpr)?;
+bitwiseAndExpr: equalityExpr (BITWISE_AND equalityExpr)*;
+equalityExpr: relationalExpr ((EQUAL | NOT_EQUAL) relationalExpr)?;
 relationalExpr: additiveExpr ((LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) additiveExpr)?;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: prefixUnary ((MUL | DIV) prefixUnary)*;

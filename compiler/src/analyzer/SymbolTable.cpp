@@ -2,8 +2,8 @@
 
 #include "SymbolTable.h"
 
-void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state) {
-    symbols.insert({ name, SymbolTableEntry(name, type, state) });
+void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, bool isConstant) {
+    symbols.insert({ name, SymbolTableEntry(name, type, state, isConstant) });
 }
 
 SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
