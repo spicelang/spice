@@ -13,7 +13,8 @@ enum SemanticErrorType {
     FUNCTION_WITHOUT_RETURN_STMT,
     RETURN_STMT_WITHOUT_FUNCTION,
     OPERATOR_WRONG_DATA_TYPE,
-    REASSIGN_CONST_VARIABLE
+    REASSIGN_CONST_VARIABLE,
+    CONDITION_MUST_BE_BOOL
 };
 
 class SemanticError : public std::exception {
@@ -45,6 +46,9 @@ public:
                 break;
             case REASSIGN_CONST_VARIABLE:
                 messagePrefix = "Cannot re-assign constant variable";
+                break;
+            case CONDITION_MUST_BE_BOOL:
+                messagePrefix = "Condition must be bool";
                 break;
         }
         errorMessage = messagePrefix + ": " + message;

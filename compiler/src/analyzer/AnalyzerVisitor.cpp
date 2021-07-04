@@ -23,6 +23,8 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     // Declare variable for the return value
     SymbolType returnType = getSymbolTypeFromDataType(ctx->dataType());
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false);
+    // Visit parameters
+    if (ctx->paramLstDef()) visit(ctx->paramLstDef());
     // Visit statements in new scope
     visit(ctx->stmtLst());
     // Check if return variable is now initialized
@@ -40,11 +42,13 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     std::string scopeId = "p:" + std::to_string(ctx->P()->getSymbol()->getLine()) + ":" +
                           std::to_string(ctx->P()->getSymbol()->getCharPositionInLine());
     currentScope = currentScope->createChildBlock(scopeId);
-    // Visit children in new scope
-    antlrcpp::Any childrenResult = SpiceBaseVisitor::visitProcedureDef(ctx);
+    // Visit params in new scope
+    if (ctx->paramLstDef()) visit(ctx->paramLstDef());
+    // Visit statement list in new scope
+    visit(ctx->stmtLst());
     // Return to old scope
     currentScope = currentScope->getParent();
-    return childrenResult;
+    return TYPE_BOOL;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
@@ -52,11 +56,19 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
     std::string scopeId = "for:" + std::to_string(ctx->FOR()->getSymbol()->getLine()) + ":" +
             std::to_string(ctx->FOR()->getSymbol()->getCharPositionInLine());
     currentScope = currentScope->createChildBlock(scopeId);
-    // Visit children in new scope
-    antlrcpp::Any childrenResult = SpiceBaseVisitor::visitForLoop(ctx);
+    // Visit assignment in new scope
+    visit(ctx->assignment());
+    // Visit condition in new scope
+    SymbolType conditionType = visit(ctx->topLvlExpr()[0]).as<SymbolType>();
+    if (conditionType != TYPE_BOOL)
+        throw SemanticError(CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool");
+    // Visit incrementer in new scope
+    visit(ctx->topLvlExpr()[1]);
+    // Visit statement list in new scope
+    visit(ctx->stmtLst());
     // Return to old scope
     currentScope = currentScope->getParent();
-    return childrenResult;
+    return TYPE_BOOL;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
@@ -64,11 +76,15 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx
     std::string scopeId = "while:" + std::to_string(ctx->WHILE()->getSymbol()->getLine()) + ":" +
                           std::to_string(ctx->WHILE()->getSymbol()->getCharPositionInLine());
     currentScope = currentScope->createChildBlock(scopeId);
-    // Visit children in new scope
-    antlrcpp::Any childrenResult = SpiceBaseVisitor::visitWhileLoop(ctx);
+    // Visit condition
+    SymbolType conditionType = visit(ctx->topLvlExpr()).as<SymbolType>();
+    if (conditionType != TYPE_BOOL)
+        throw SemanticError(CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool");
+    // Visit statement list in new scope
+    visit(ctx->stmtLst());
     // Return to old scope
     currentScope = currentScope->getParent();
-    return childrenResult;
+    return TYPE_BOOL;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
@@ -76,11 +92,15 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
                           std::to_string(ctx->IF()->getSymbol()->getCharPositionInLine());
     // Create a new scope
     currentScope = currentScope->createChildBlock(scopeId);
-    // Visit children in new scope
-    antlrcpp::Any childrenResult = SpiceBaseVisitor::visitIfStmt(ctx);
+    // Visit condition
+    SymbolType conditionType = visit(ctx->topLvlExpr()).as<SymbolType>();
+    if (conditionType != TYPE_BOOL)
+        throw SemanticError(CONDITION_MUST_BE_BOOL, "If condition must be of type bool");
+    // Visit statement list in new scope
+    visit(ctx->stmtLst());
     // Return to old scope
     currentScope = currentScope->getParent();
-    return childrenResult;
+    return TYPE_BOOL;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
@@ -209,7 +229,6 @@ antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext *ctx) {
                                 "True operand and false operand in ternary must be from same data type");
         return trueType;
     }
-    antlrcpp::Any childrenResult = SpiceBaseVisitor::visitTernary(ctx);
     return visit(ctx->logicalOrExpr()[0]);
 }
 
@@ -457,7 +476,7 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext *ctx) {
-    antlrcpp::Any prefixUnary = SpiceBaseVisitor::visitPrefixUnary(ctx);
+    antlrcpp::Any prefixUnary = visit(ctx->postfixUnary());
 
     // Ensure integer when '++' or '--' is applied
     if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) && prefixUnary.as<SymbolType>() != TYPE_INT)

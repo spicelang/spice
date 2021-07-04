@@ -1,18 +1,19 @@
 grammar Spice;
 
 entry: (stmt | functionDef | procedureDef)*;
-functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLst RPAREN LBRACE stmtLst RBRACE;
-procedureDef: P IDENTIFIER LPAREN paramLst RPAREN LBRACE stmtLst RBRACE;
+functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 forLoop: FOR assignment SEMICOLON topLvlExpr SEMICOLON topLvlExpr LBRACE stmtLst RBRACE;
 //foreachLoop: FOREACH IDENTIFIER COLON value LBRACE stmtLst RBRACE;
 whileLoop: WHILE topLvlExpr LBRACE stmtLst RBRACE;
 ifStmt: IF topLvlExpr LBRACE stmtLst RBRACE;
 
 stmtLst: (stmt | forLoop /*| foreachLoop*/ | whileLoop | ifStmt)*;
-paramLst: (declStmt | assignment)? (COMMA (declStmt | assignment))*;
+paramLstDef: (declStmt | assignment)? (COMMA (declStmt | assignment))*;
+paramLstCall: assignment (COMMA assignment)*;
 stmt: (declStmt | assignment | functionCall | topLvlExpr | importStmt | returnStmt) SEMICOLON;
 declStmt: CONST? dataType IDENTIFIER;
-functionCall: IDENTIFIER LPAREN paramLst RPAREN;
+functionCall: IDENTIFIER LPAREN paramLstCall? RPAREN;
 importStmt: IMPORT STRING;
 returnStmt: RETURN topLvlExpr;
 

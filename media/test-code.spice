@@ -10,12 +10,13 @@ dyn testAuto = false;
 f<int> testFunction(double doubleParam) {
     dyn number;
     number = 123;
-    result = number | true;
+    result = number | 5;
 
     while testDouble < 2.5 {
         for int i = 12; i < 15; i+=2 {
             return 12;
         }
+        testDouble += 2.0;
     }
     return result;
 }
@@ -25,4 +26,5 @@ p testProcedure(bool boolParam = false, string stringParam) {
     block
     comment */
     double result = testString == "" || testBool ? 5.0 : 1.4;
+    if result == 5.0 { result = 3.0; }
 }
