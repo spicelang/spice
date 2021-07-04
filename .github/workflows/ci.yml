@@ -3,7 +3,7 @@ name: C++ CI
 on:
   push:
     paths:
-      - 'compiler/cpp/**'
+      - 'compiler/**'
   pull_request:
     branches: [ main, dev, feature/** ]
 

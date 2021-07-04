@@ -1,22 +1,22 @@
 grammar Spice;
 
 entry: (stmt | functionDef | procedureDef)*;
-functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLst RPAREN LBRACE stmtLst RBRACE;
-procedureDef: P IDENTIFIER LPAREN paramLst RPAREN LBRACE stmtLst RBRACE;
-forLoop: FOR assignment SEMICOLON topLvlExpr SEMICOLON topLvlExpr LBRACE stmtLst RBRACE;
-//foreachLoop: FOREACH IDENTIFIER COLON value LBRACE stmtLst RBRACE;
-whileLoop: WHILE topLvlExpr LBRACE stmtLst RBRACE;
-ifStmt: IF topLvlExpr LBRACE stmtLst RBRACE;
+functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
+forLoop: FOR assignment SEMICOLON assignment SEMICOLON assignment LBRACE stmtLst RBRACE;
+//foreachLoop: FOREACH IDENTIFIER COLON assignment LBRACE stmtLst RBRACE;
+whileLoop: WHILE assignment LBRACE stmtLst RBRACE;
+ifStmt: IF assignment LBRACE stmtLst RBRACE;
 
-stmtLst: (stmt | forLoop /*| foreachLoop*/ | whileLoop | ifStmt)*;
-paramLst: (declStmt | assignment)? (COMMA (declStmt | assignment))*;
-stmt: (declStmt | assignment | functionCall | topLvlExpr | importStmt | returnStmt) SEMICOLON;
+stmtLst: (stmt | forLoop | /*foreachLoop |*/ whileLoop | ifStmt)*;
+paramLstDef: (declStmt | assignment) (COMMA (declStmt | assignment))*;
+paramLstCall: assignment (COMMA assignment)*;
+stmt: (declStmt | assignment | functionCall | assignment | importStmt | returnStmt) SEMICOLON;
 declStmt: CONST? dataType IDENTIFIER;
-functionCall: IDENTIFIER LPAREN paramLst RPAREN;
+functionCall: IDENTIFIER LPAREN paramLstCall? RPAREN;
 importStmt: IMPORT STRING;
-returnStmt: RETURN topLvlExpr;
+returnStmt: RETURN assignment;
 
-topLvlExpr: assignment;
 assignment: ((declStmt | IDENTIFIER) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? ternary;
 ternary: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
@@ -42,7 +42,7 @@ F: 'f';
 P: 'p';
 IF: 'if';
 FOR: 'for';
-FOREACH: 'foreach';
+//FOREACH: 'foreach';
 WHILE: 'while';
 CONST: 'const';
 IMPORT: 'import';

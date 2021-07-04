@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
 
     // Execute syntactical analysis
     antlr4::tree::ParseTree *tree = parser.entry();
-    AnalyzerVisitor().visit(tree);
+    SymbolTable* symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>();
 
     // Return with positive result code
     return 0;

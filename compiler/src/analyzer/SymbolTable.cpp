@@ -2,8 +2,9 @@
 
 #include "SymbolTable.h"
 
-void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, bool isConstant) {
+void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, bool isConstant, bool isParameter) {
     symbols.insert({ name, SymbolTableEntry(name, type, state, isConstant) });
+    if (isParameter) paramNames.push_back(name);
 }
 
 SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
@@ -43,6 +44,14 @@ SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
 
 SymbolTable* SymbolTable::getParent() {
     return parent;
+}
+
+SymbolTable *SymbolTable::getChild(std::string& scopeId) {
+    return &children.at(scopeId);
+}
+
+std::vector<std::string> SymbolTable::getParamNames() {
+    return paramNames;
 }
 
 std::string SymbolTable::toString() {

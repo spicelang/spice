@@ -8,7 +8,7 @@
 
 enum SymbolType {
     TYPE_DOUBLE, TYPE_INT, TYPE_STRING, TYPE_BOOL, TYPE_DYN,
-    TYPE_FUNCTION, TYPE_PROCEDURE, TYPE_WHILE, TYPE_FOR, TYPE_IF
+    TYPE_FUNCTION, TYPE_PROCEDURE
 };
 
 enum SymbolState {
@@ -25,7 +25,6 @@ public:
     // Public methods
     SymbolState getState();
     SymbolType getType();
-    bool isConst();
     void updateState(SymbolState);
     void updateType(SymbolType);
     std::string toString();

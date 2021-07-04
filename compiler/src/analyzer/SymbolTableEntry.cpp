@@ -10,10 +10,6 @@ SymbolType SymbolTableEntry::getType() {
     return type;
 }
 
-bool SymbolTableEntry::isConst() {
-    return isConstant;
-}
-
 void SymbolTableEntry::updateState(SymbolState newState) {
     if (state == INITIALIZED && isConstant)
         throw SemanticError(REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
@@ -29,5 +25,6 @@ void SymbolTableEntry::updateType(SymbolType newType) {
 }
 
 std::string SymbolTableEntry::toString() {
-    return "Name: " + name + ", Type: " + std::to_string(type) + ", State: " + std::to_string(state);
+    return "Name: " + name + ", Type: " + std::to_string(type) + ", State: " + std::to_string(state) + ", Const: " +
+        std::to_string(isConstant);
 }
