@@ -1,1 +1,9 @@
+# Build output
+compiler/cmake-build-debug/*
 bin/*
+
+# Third party libs
+compiler/lib/*
+
+# CLion
+compiler/.idea/*

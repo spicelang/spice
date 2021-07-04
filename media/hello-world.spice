@@ -1,0 +1,4 @@
+f<int> main() {
+    string output = "Hello world!";
+    sout.println(output);
+}

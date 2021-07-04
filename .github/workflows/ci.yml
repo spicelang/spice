@@ -1,0 +1,30 @@
+name: C++ CI
+
+on:
+  push:
+    paths:
+      - 'compiler/cpp/**'
+  pull_request:
+    branches: [ main, dev, feature/** ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+        
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Download Libs
+        run: |
+          mkdir -p ./compiler/lib
+          cd ./compiler/lib
+          git clone https://github.com/google/googletest.git
+          git clone https://github.com/antlr/antlr4.git
+
+      - name: Build
+        run: |
+          mkdir bin
+          cd bin
+          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON ../compiler
+          cmake --build . --target Spice_run -- -j 6
