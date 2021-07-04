@@ -134,7 +134,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     SymbolTableEntry* entry = currentScope->lookup(name);
     if (!entry)
         throw SemanticError(REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
-                            "Function/Procedure " + name + " was called before initialized.");
+                            "Function/Procedure " + name + " was called before initialized");
     if (entry->getType() != TYPE_FUNCTION && entry->getType() != TYPE_PROCEDURE)
         throw SemanticError(CAN_ONLY_CALL_FUNCTION_OR_PROCEDURE,
                             "Object '" + name + "' is not of type function or procedure");
@@ -197,7 +197,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext *c
         SymbolTableEntry* symbolTableEntry = currentScope->lookup(variableName);
         if (symbolTableEntry == nullptr)
             throw SemanticError(REFERENCED_UNDEFINED_VARIABLE, "Variable " + variableName +
-                                                               " was referenced before initialized.");
+                                                               " was referenced before declared.");
         leftType = symbolTableEntry->getType();
 
         // Take a look at the right side
