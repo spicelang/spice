@@ -1,4 +1,4 @@
-int testInt = 0;
+const int testInt = 0;
 double testDouble = 1.5;
 string testString = "";
 bool testBool = true;
@@ -8,12 +8,16 @@ dyn testAuto = false;
 
 // This is a test comment
 f<int> testFunction(double doubleParam) {
+    dyn number;
+    number = 123;
+    result = number | true;
+
     while testDouble < 2.5 {
         for int i = 12; i < 15; i+=2 {
             return 12;
         }
     }
-    return 10;
+    return result;
 }
 
 p testProcedure(bool boolParam = false, string stringParam) {

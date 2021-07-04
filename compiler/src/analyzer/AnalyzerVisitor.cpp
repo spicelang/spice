@@ -9,7 +9,7 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
     antlrcpp::Any result = visitChildren(ctx);
 
     // Post traversing actions
-    std::cout << currentScope->toString() << std::endl; // ToDo: This line is only for testing, remove it in the future
+    //std::cout << currentScope->toString() << std::endl;
     return result;
 }
 
@@ -83,10 +83,6 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
     return childrenResult;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitParamLst(SpiceParser::ParamLstContext *ctx) {
-    return SpiceBaseVisitor::visitParamLst(ctx);
-}
-
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
     std::string variableName = ctx->IDENTIFIER()->toString();
     // Check if symbol already exists in the symbol table
@@ -152,7 +148,10 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext *c
         // Take a look at the right side
         SymbolType rightType = visit(ctx->ternary()).as<SymbolType>();
         // If left type is dyn, set left type to right type
-        if (leftType == TYPE_DYN) leftType = rightType;
+        if (leftType == TYPE_DYN) {
+            leftType = rightType;
+            symbolTableEntry->updateType(rightType);
+        }
 
         // Take a look at the operator
 
@@ -265,7 +264,8 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
                 continue;
             }
             // Every other combination is invalid
-            throw SemanticError(OPERATOR_WRONG_DATA_TYPE, "Can only apply bitwise or to booleans");
+            throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                "Can only apply bitwise or to booleans and integers");
         }
         return leftType;
     }
@@ -287,7 +287,8 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
                 continue;
             }
             // Every other combination is invalid
-            throw SemanticError(OPERATOR_WRONG_DATA_TYPE, "Can only apply bitwise and to booleans");
+            throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
+                                "Can only apply bitwise and to booleans and integers");
         }
         return leftType;
     }
