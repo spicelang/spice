@@ -15,22 +15,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Prepare environment
-        run: |
-          shopt -s extglob
-          rm -rf !("compiler")
-          cp -fR ./compiler/* .
-          rm -rf ./compiler
-
       - name: Download Libs
         run: |
+          mkdir lib
           cd lib
           git clone https://github.com/google/googletest.git
+          git clone https://github.com/antlr/antlr4.git
 
-      - name: Build project
-        uses: nicledomaS/cmake_build_action@v1.4
-        with:
-          submodule_update: ON
-          run_tests: ON
-          cmake_args: -DWITH_TESTS=ON
-          unit_test_build: -Dtest=ON
+      - name: Build
+        run: |
+          mkdir bin
+          cd bin
+          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON ../compiler
+          cmake --build . --target Spice_run -- -j 6
