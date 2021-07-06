@@ -95,5 +95,10 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
-    return SpiceBaseVisitor::visitValue(ctx);
+    if (ctx->DOUBLE())
+        return llvm::ConstantFP::get(context, llvm::APFloat(std::stod(ctx->DOUBLE()->toString())));
+    if (ctx->INTEGER())
+        return llvm::ConstantInt::get(context, llvm::APInt(32,
+           std::stoi(ctx->INTEGER()->toString()), false));
+
 }
