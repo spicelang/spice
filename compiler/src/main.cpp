@@ -22,7 +22,8 @@ int main(int argc, char** argv) {
 
     // Execute syntactical analysis
     antlr4::tree::ParseTree *tree = parser.entry();
-    SymbolTable* symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>();
+    AnalyzerVisitor().visit(tree);
+    //SymbolTable* symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>();
 
     // Execute ir generator
     GeneratorVisitor().visit(tree);
