@@ -1,5 +1,5 @@
 set(BINARY ${CMAKE_PROJECT_NAME})
-set(LLVM_DIR C:/Users/i516467/Documents/JustForFunGitHubClones/llvm-project/build/lib/cmake/llvm)
+set(LLVM_DIR C:/Users/i516467/Documents/JustForFunGitHubClones/llvm-project/build-release/lib/cmake/llvm)
 
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -37,24 +37,22 @@ set(SOURCES
 add_executable(${BINARY}_run ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 llvm_map_components_to_libnames(LLVM_LIBS aarch64asmparser aarch64codegen aarch64desc aarch64disassembler
-        aarch64info aarch64utils aggressiveinstcombine amdgpuasmparser amdgpucodegen amdgpudesc amdgpudisassembler
-        amdgpuinfo amdgpuutils analysis armasmparser armcodegen armdesc armdisassembler arminfo armutils asmparser
-        asmprinter avrasmparser avrcodegen avrdesc avrdisassembler avrinfo binaryformat bitreader bitstreamreader
-        bitwriter bpfasmparser bpfcodegen bpfdesc bpfdisassembler bpfinfo cfguard codegen core coroutines coverage
-        debuginfocodeview debuginfodwarf debuginfogsym debuginfomsf debuginfopdb demangle dlltooldriver dwarflinker
-        executionengine extensions filecheck frontendopenacc frontendopenmp fuzzmutate globalisel hexagonasmparser
-        hexagoncodegen hexagondesc hexagondisassembler hexagoninfo instcombine instrumentation interfacestub
-        interpreter ipo irreader lanaiasmparser lanaicodegen lanaidesc lanaidisassembler lanaiinfo libdriver lineeditor
-        linker lto mc mca mcdisassembler mcparser mipsasmparser mipscodegen mipsdesc mipsdisassembler mipsinfo
-        mirparser msp430asmparser msp430codegen msp430desc msp430disassembler msp430info native nativecodegen
-        nvptxcodegen nvptxdesc nvptxinfo objcarcopts object objectyaml option orcshared orctargetprocess passes
-        powerpcasmparser powerpccodegen powerpcdesc powerpcdisassembler powerpcinfo profiledata remarks riscvasmparser
-        riscvcodegen riscvdesc riscvdisassembler riscvinfo runtimedyld scalaropts selectiondag sparcasmparser
-        sparccodegen sparcdesc sparcdisassembler sparcinfo support symbolize systemzasmparser systemzcodegen
-        systemzdesc systemzdisassembler systemzinfo tablegen target textapi transformutils vectorize
+        aarch64info aarch64utils amdgpuasmparser amdgpucodegen amdgpudesc amdgpudisassembler
+        amdgpuinfo amdgpuutils armasmparser armcodegen armdesc armdisassembler arminfo armutils asmparser
+        asmprinter avrasmparser avrcodegen avrdesc avrdisassembler avrinfo
+        bpfasmparser bpfcodegen bpfdesc bpfdisassembler bpfinfo codegen core
+        hexagonasmparser hexagoncodegen hexagondesc hexagondisassembler hexagoninfo
+        irreader lanaiasmparser lanaicodegen lanaidesc lanaidisassembler lanaiinfo
+        mipsasmparser mipscodegen mipsdesc mipsdisassembler mipsinfo
+        mirparser msp430asmparser msp430codegen msp430desc msp430disassembler msp430info
+        nvptxcodegen nvptxdesc nvptxinfo
+        powerpcasmparser powerpccodegen powerpcdesc powerpcdisassembler powerpcinfo riscvasmparser
+        riscvcodegen riscvdesc riscvdisassembler riscvinfo sparcasmparser
+        sparccodegen sparcdesc sparcdisassembler sparcinfo support systemzasmparser systemzcodegen
+        systemzdesc systemzdisassembler systemzinfo
         webassemblyasmparser webassemblycodegen webassemblydesc webassemblydisassembler webassemblyinfo
-        webassemblyutils windowsmanifest x86asmparser x86codegen x86desc x86disassembler x86info xcorecodegen xcoredesc
-        xcoredisassembler xcoreinfo xray)
+        webassemblyutils x86asmparser x86codegen x86desc x86disassembler x86info xcorecodegen xcoredesc
+        xcoredisassembler xcoreinfo)
 
 include_directories(${ANTLR4CPP_INCLUDE_DIRS})
 include_directories(${ANTLR_Spice_OUTPUT_DIR})
