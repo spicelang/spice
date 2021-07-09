@@ -92,11 +92,73 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
-    return SpiceBaseVisitor::visitForLoop(ctx);
+    auto parentFct = builder->GetInsertBlock()->getParent();
+
+    // Create blocks
+    auto bLoop = llvm::BasicBlock::Create(*context, "loop");
+    auto bLoopPre = llvm::BasicBlock::Create(*context, "loop pre");
+    auto bLoopPost = llvm::BasicBlock::Create(*context, "loop post");
+    auto bLoopEnd = llvm::BasicBlock::Create(*context, "loop end");
+
+    // Fill loop pre block
+    parentFct->getBasicBlockList().push_back(bLoopPre);
+    builder->SetInsertPoint(bLoopPre);
+    visit(ctx->assignment()[0]);
+    // Check if entering the loop is necessary
+    auto conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
+    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
+
+    // Fill loop block
+    parentFct->getBasicBlockList().push_back(bLoop);
+    builder->SetInsertPoint(bLoop);
+    // Generate IR for nested statements
+    for (auto &stmt : ctx->stmtLst()->stmt())visit(stmt);
+    // Check if condition is now false
+    conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
+    builder->CreateCondBr(conditionValue, bLoopPost, bLoopEnd);
+
+    // Fill loop post block
+    parentFct->getBasicBlockList().push_back(bLoopPost);
+    builder->SetInsertPoint(bLoopPost);
+    visit(ctx->assignment()[2]);
+    builder->CreateBr(bLoop);
+
+    // Fil loop end block
+    parentFct->getBasicBlockList().push_back(bLoopEnd);
+    builder->SetInsertPoint(bLoopEnd);
+
+    // Return true as result for the loop
+    return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
-    return SpiceBaseVisitor::visitWhileLoop(ctx);
+    auto conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
+    auto parentFct = builder->GetInsertBlock()->getParent();
+
+    // Create blocks
+    auto bLoop = llvm::BasicBlock::Create(*context, "loop");
+    auto bLoopEnd = llvm::BasicBlock::Create(*context, "loop end");
+
+    // Check if entering the loop is necessary
+    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
+
+    // Fill loop block
+    parentFct->getBasicBlockList().push_back(bLoop);
+    builder->SetInsertPoint(bLoop);
+    // Generate IR for nested statements
+    for (auto &stmt : ctx->stmtLst()->stmt())visit(stmt);
+    // Visit condition again
+    conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
+    // Check if condition is now false
+    bLoop = builder->GetInsertBlock();
+    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
+
+    // Fill loop end block
+    parentFct->getBasicBlockList().push_back(bLoopEnd);
+    builder->SetInsertPoint(bLoopEnd);
+
+    // Return true as result for the loop
+    return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
@@ -287,7 +349,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 
     // Value is a boolean constant
     if (ctx->TRUE() || ctx->FALSE())
-        return llvm::ConstantInt::getSigned((llvm::Type::getInt1Ty(*context)), ctx->TRUE() ? 1 : 0);
+        return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), ctx->TRUE() ? 1 : 0);
 
     // Value is an identifier
     if (ctx->IDENTIFIER()) {
