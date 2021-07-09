@@ -31,10 +31,9 @@
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
-    // Constructors
-    GeneratorVisitor();
-
     // Public methods
+    void init();
+    void emit();
     antlrcpp::Any visitEntry(SpiceParser::EntryContext *ctx) override;
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;

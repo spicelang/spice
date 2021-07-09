@@ -2,14 +2,16 @@
 
 #include "GeneratorVisitor.h"
 
-GeneratorVisitor::GeneratorVisitor() {
+void GeneratorVisitor::init() {
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
     llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmParsers();
     llvm::InitializeAllAsmPrinters();
+}
 
+void GeneratorVisitor::emit() {
     // Configure output target
     // ToDo: Make target customizable by setting an cli arg or similar
     auto targetTriple = llvm::sys::getDefaultTargetTriple();
@@ -29,6 +31,7 @@ GeneratorVisitor::GeneratorVisitor() {
 
     module->setDataLayout(targetMachine->createDataLayout());
 
+    // Open file output stream
     std::string filename = "output.o";
     std::error_code errorCode;
     llvm::raw_fd_ostream dest(filename, errorCode, llvm::sys::fs::OF_None);
@@ -39,6 +42,7 @@ GeneratorVisitor::GeneratorVisitor() {
     if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType))
         throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type");
 
+    // Emit object file
     pass.run(*module);
     dest.flush();
 }
@@ -136,12 +140,16 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+    // Value is a double constant
     if (ctx->DOUBLE())
         return llvm::ConstantFP::get(*context, llvm::APFloat(std::stod(ctx->DOUBLE()->toString())));
 
+    // Value is an integer constant
     if (ctx->INTEGER())
         return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context),
                                             std::stoi(ctx->INTEGER()->toString()));
+
+    // Value is a string constant
     if (ctx->STRING()) {
         std::string value = ctx->STRING()->toString();
         auto charType = llvm::IntegerType::get(*context, 8);
@@ -151,15 +159,19 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
         return llvm::ConstantArray::get(llvm::ArrayType::get(charType, chars.size()), chars);
     }
 
+    // Value is a boolean constant
     if (ctx->TRUE() || ctx->FALSE())
         return llvm::ConstantInt::getSigned((llvm::Type::getInt1Ty(*context)), ctx->TRUE() ? 1 : 0);
 
+    // Value is an identifier
     if (ctx->IDENTIFIER()) {
         llvm::Value* var = namedValues[ctx->IDENTIFIER()->toString()];
         if (!var) throw std::runtime_error("Internal compiler error - Variable not found in code generation step");
-        return builder->CreateLoad(llvm::Type::getDoubleTy(*context), var,
-                                   ctx->IDENTIFIER()->toString().c_str());
+        return var;
     }
+
+    // Value is a function call
+
 
     return nullptr;
 }
