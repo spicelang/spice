@@ -18,17 +18,19 @@ int main(int argc, char** argv) {
     // Parse input to AST
     SpiceLexer lexer(&input);
     antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
-    SpiceParser parser(&tokens);
+    SpiceParser parser(&tokens); // Check for syntax errors
 
     // Execute syntactical analysis
     antlr4::tree::ParseTree *tree = parser.entry();
-    AnalyzerVisitor().visit(tree);
+    AnalyzerVisitor().visit(tree); // Check for semantic errors
 
-    // Execute ir generator
+    // Execute generator
     GeneratorVisitor generator = GeneratorVisitor();
-    generator.init();
-    generator.visit(tree);
-    generator.emit();
+    generator.init(); // Initialize code generation
+    generator.visit(tree); // Generate IR code
+    generator.dumpIR();
+    generator.optimize(); // Optimize IR code
+    generator.emit(); // Emit object file for specified platform
 
     // Return with positive result code
     return 0;

@@ -11,6 +11,34 @@ void GeneratorVisitor::init() {
     llvm::InitializeAllAsmPrinters();
 }
 
+void GeneratorVisitor::optimize() {
+    /*// Register optimization passes
+    std::unique_ptr<llvm::legacy::FunctionPassManager> functionPassManager =
+            llvm::make_unique<llvm::legacy::FunctionPassManager>(module.get());
+
+    // Promote allocas to registers.
+    functionPassManager->add(llvm::createPromoteMemoryToRegisterPass());
+    // Do simple "peephole" optimizations
+    functionPassManager->add(llvm::createInstructionCombiningPass());
+    // Reassociate expressions.
+    functionPassManager->add(llvm::createReassociatePass());
+    // Eliminate Common SubExpressions.
+    functionPassManager->add(llvm::createGVNPass());
+    // Simplify the control flow graph (deleting unreachable blocks etc).
+    functionPassManager->add(llvm::createCFGSimplificationPass());
+
+    functionPassManager->doInitialization();
+
+    for (auto &function : functions) {
+        llvm::Function *llvmFun =
+                module->getFunction(llvm::StringRef(function->functionName));
+        functionPassManager->run(*llvmFun);
+    }
+
+    llvm::Function *llvmMainFun = module->getFunction(llvm::StringRef("main"));
+    functionPassManager->run(*llvmMainFun);*/
+}
+
 void GeneratorVisitor::emit() {
     // Configure output target
     // ToDo: Make target customizable by setting an cli arg or similar
@@ -45,6 +73,10 @@ void GeneratorVisitor::emit() {
     // Emit object file
     pass.run(*module);
     dest.flush();
+}
+
+void GeneratorVisitor::dumpIR() {
+    module->print(llvm::outs(), nullptr);
 }
 
 antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
@@ -120,23 +152,63 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
 }
 
 antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
-    return SpiceBaseVisitor::visitAdditiveExpr(ctx);
+    if (ctx->multiplicativeExpr().size() > 1) {
+        auto lhs = visit(ctx->multiplicativeExpr()[0]).as<llvm::Value*>();
+        for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
+            auto rhs = visit(ctx->multiplicativeExpr()[i]).as<llvm::Value*>();
+            if (ctx->PLUS()[i-1])
+                lhs = builder->CreateAdd(lhs, rhs, "add");
+            else
+                lhs = builder->CreateSub(lhs, rhs, "sub");
+        }
+    }
+    return visit(ctx->multiplicativeExpr()[0]);
 }
 
 antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
-    return SpiceBaseVisitor::visitMultiplicativeExpr(ctx);
+    if (ctx->prefixUnary().size() > 1) {
+        auto lhs = visit(ctx->prefixUnary()[0]).as<llvm::Value*>();
+        for (int i = 1; i < ctx->prefixUnary().size(); i++) {
+            auto rhs = visit(ctx->prefixUnary()[i]).as<llvm::Value*>();
+            if (ctx->MUL()[i-1])
+                lhs = builder->CreateMul(lhs, rhs, "mul");
+            else
+                lhs = builder->CreateSDiv(lhs, rhs, "div");
+        }
+        return lhs;
+    }
+    return visit(ctx->prefixUnary()[0]);
 }
 
 antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext *ctx) {
-    return SpiceBaseVisitor::visitPrefixUnary(ctx);
+    auto value = visit(ctx->postfixUnary()).as<llvm::Value*>();
+
+    // Prefix unary is: PLUS_PLUS postfixUnary
+    if (ctx->PLUS_PLUS()) return builder->CreateAdd(value, builder->getInt32(1), "++ prefix");
+
+    // Prefix unary is: MINUS_MINUS postfixUnary
+    if (ctx->MINUS_MINUS()) return builder->CreateSub(value, builder->getInt32(1), "-- prefix");
+
+    // Prefix unary is: NOT postfixUnary
+    return builder->CreateNot(value, "not");
 }
 
 antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContext *ctx) {
-    return SpiceBaseVisitor::visitPostfixUnary(ctx);
+    auto value = visit(ctx->atomicExpr()).as<llvm::Value*>();
+
+    // Postfix unary is: PLUS_PLUS atomicExpr
+    if (ctx->PLUS_PLUS()) return builder->CreateAdd(value, builder->getInt32(1), "++ postfix");
+
+    // Postfix unary is: MINUS_MINUS atomicExpr
+    return builder->CreateSub(value, builder->getInt32(1), "-- postfix");
 }
 
 antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
-    return SpiceBaseVisitor::visitAtomicExpr(ctx);
+    // Atomic expr is: LPAREN value RPAREN
+    if (ctx->LPAREN()) return visit(ctx->assignment());
+
+    // Atomic expr is: value
+    return visit(ctx->value());
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
