@@ -128,27 +128,81 @@ antlrcpp::Any GeneratorVisitor::visitTernary(SpiceParser::TernaryContext *ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
-    return SpiceBaseVisitor::visitLogicalOrExpr(ctx);
+    if (ctx->logicalAndExpr().size() > 1) {
+        auto lhs = visit(ctx->logicalAndExpr()[0]).as<llvm::Value*>();
+        for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
+            auto rhs = visit(ctx->logicalAndExpr()[i]).as<llvm::Value*>();
+            lhs = builder->CreateLogicalOr(lhs, rhs, "logical or");
+        }
+    }
+    return visit(ctx->logicalAndExpr()[0]);
 }
 
 antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
-    return SpiceBaseVisitor::visitLogicalAndExpr(ctx);
+    if (ctx->bitwiseOrExpr().size() > 1) {
+        auto lhs = visit(ctx->bitwiseOrExpr()[0]).as<llvm::Value*>();
+        for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
+            auto rhs = visit(ctx->bitwiseOrExpr()[i]).as<llvm::Value*>();
+            lhs = builder->CreateLogicalAnd(lhs, rhs, "logical and");
+        }
+    }
+    return visit(ctx->bitwiseOrExpr()[0]);
 }
 
 antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
-    return SpiceBaseVisitor::visitBitwiseOrExpr(ctx);
+    if (ctx->bitwiseAndExpr().size() > 1) {
+        auto lhs = visit(ctx->bitwiseAndExpr()[0]).as<llvm::Value*>();
+        for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
+            auto rhs = visit(ctx->bitwiseAndExpr()[i]).as<llvm::Value*>();
+            lhs = builder->CreateOr(lhs, rhs, "bitwise or");
+        }
+    }
+    return visit(ctx->bitwiseAndExpr()[0]);
 }
 
 antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
-    return SpiceBaseVisitor::visitBitwiseAndExpr(ctx);
+    if (ctx->equalityExpr().size() > 1) {
+        auto lhs = visit(ctx->equalityExpr()[0]).as<llvm::Value*>();
+        for (int i = 1; i < ctx->equalityExpr().size(); i++) {
+            auto rhs = visit(ctx->equalityExpr()[i]).as<llvm::Value*>();
+            lhs = builder->CreateAnd(lhs, rhs, "bitwise and");
+        }
+    }
+    return visit(ctx->equalityExpr()[0]);
 }
 
 antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
-    return SpiceBaseVisitor::visitEqualityExpr(ctx);
+    if (ctx->children.size() > 1) {
+        auto lhs = visit(ctx->relationalExpr()[0]).as<llvm::Value*>();
+        auto rhs = visit(ctx->relationalExpr()[1]).as<llvm::Value*>();
+
+        // Equality expr is: relationalExpr EQUAL relationalExpr
+        if (ctx->EQUAL()) return builder->CreateICmpEQ(lhs, rhs, "equal");
+
+        // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
+        return builder->CreateICmpNE(lhs, rhs, "not equal");
+    }
+    return visit(ctx->relationalExpr()[0]);
 }
 
 antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
-    return SpiceBaseVisitor::visitRelationalExpr(ctx);
+    if (ctx->children.size() > 1) {
+        auto lhs = visit(ctx->additiveExpr()[0]).as<llvm::Value*>();
+        auto rhs = visit(ctx->additiveExpr()[1]).as<llvm::Value*>();
+
+        // Relational expr is: additiveExpr LESS additiveExpr
+        if (ctx->LESS()) return builder->CreateICmpSLT(lhs, rhs, "less than");
+
+        // Relational expr is: additiveExpr GREATER additiveExpr
+        if (ctx->GREATER()) return builder->CreateICmpSGT(lhs, rhs, "greater than");
+
+        // Relational expr is: additiveExpr LESS_EQUAL additiveExpr
+        if (ctx->LESS_EQUAL()) return builder->CreateICmpSLE(lhs, rhs, "less equal");
+
+        // Relational expr is: additiveExpr GREATER_EQUAL additiveExpr
+        return builder->CreateICmpSGE(lhs, rhs, "greater equal");
+    }
+    return visit(ctx->additiveExpr()[0]);
 }
 
 antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
