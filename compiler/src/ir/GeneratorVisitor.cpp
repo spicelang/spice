@@ -80,14 +80,102 @@ void GeneratorVisitor::dumpIR() {
 }
 
 antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
-    return getIRString();
+    return SpiceBaseVisitor::visitEntry(ctx);
+}
+
+antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+    // Build function itself
+    auto mainType = llvm::FunctionType::get(llvm::IntegerType::getInt32Ty(*context),
+                                    std::vector<llvm::Type *>(), false);
+    auto main = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, "main", module.get());
+    auto mainBasicBlock = llvm::BasicBlock::Create(*context, "entry", main);
+    builder->SetInsertPoint(mainBasicBlock);
+    namedValues.clear();
+
+    // Generate IR for function body
+    //for (auto &stmt : ctx->stmtLst()->stmt()) visit(stmt);
+
+    // Build return value
+    llvm::APInt retVal(32, 0, true);
+    builder->CreateRet(llvm::ConstantInt::get(*context, retVal));
+    llvm::verifyFunction(*main);
+
+    // Return true as result for the function definition
+    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
+    //return SpiceBaseVisitor::visitMainFunctionDef(ctx);
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
+    /*std::string functionName = ctx->IDENTIFIER()->toString();
+    // Create function itself
+    auto function = module->getFunction(llvm::StringRef(functionName));
+
+    // Create entry block
+    auto bEntry = llvm::BasicBlock::Create(*context, "entry");
+    function->getBasicBlockList().push_back(bEntry);
+    builder->SetInsertPoint(bEntry);
+
+    // Store function params
+    namedValues.clear();
+    for (auto& param : function->args()) {
+        auto paramNo = param.getArgNo();
+        std::string paramName = ctx->paramLstDef()->assignment()[paramNo]->IDENTIFIER()->toString();
+        llvm::Type *paramType = function->getFunctionType()->getParamType(paramNo);
+        namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
+        builder->CreateStore(&param, namedValues[paramName]);
+    }
+
+    // Generate IR for function body
+    llvm::Value* returnValue;
+    for (auto &stmt : ctx->stmtLst()->stmt()) {
+        if (stmt->returnStmt()) {
+            returnValue = visit(stmt).as<llvm::Value*>();
+        } else {
+            visit(stmt);
+        }
+    }
+
+    // Create return value
+    builder->CreateRet(returnValue);
+
+    // Verify function
+    llvm::verifyFunction(*function);
+
+    // Return true as result for the function definition
+    return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);*/
     return SpiceBaseVisitor::visitFunctionDef(ctx);
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
+    /*// Create procedure itself
+    auto procedure = module->getFunction(llvm::StringRef(ctx->IDENTIFIER()->toString()));
+
+    // Create entry block
+    auto bEntry = llvm::BasicBlock::Create(*context, "entry");
+    procedure->getBasicBlockList().push_back(bEntry);
+    builder->SetInsertPoint(bEntry);
+
+    // Store procedure params
+    namedValues.clear();
+    for (auto& param : procedure->args()) {
+        auto paramNo = param.getArgNo();
+        std::string paramName = ctx->paramLstDef()->assignment()[paramNo]->IDENTIFIER()->toString();
+        llvm::Type *paramType = procedure->getFunctionType()->getParamType(paramNo);
+        namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
+        builder->CreateStore(&param, namedValues[paramName]);
+    }
+
+    // Generate IR for procedure body
+    for (auto &stmt : ctx->stmtLst()->stmt()) visit(stmt);
+
+    // Create return
+    builder->CreateRetVoid();
+
+    // Verify procedure
+    llvm::verifyFunction(*procedure);
+
+    // Return true as result for the function definition
+    return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);*/
     return SpiceBaseVisitor::visitProcedureDef(ctx);
 }
 
@@ -112,7 +200,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
     parentFct->getBasicBlockList().push_back(bLoop);
     builder->SetInsertPoint(bLoop);
     // Generate IR for nested statements
-    for (auto &stmt : ctx->stmtLst()->stmt())visit(stmt);
+    for (auto &stmt : ctx->stmtLst()->stmt()) visit(stmt);
     // Check if condition is now false
     conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
     builder->CreateCondBr(conditionValue, bLoopPost, bLoopEnd);
@@ -162,7 +250,29 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ct
 }
 
 antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
-    return SpiceBaseVisitor::visitIfStmt(ctx);
+    auto conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
+    auto parentFct = builder->GetInsertBlock()->getParent();
+
+    // Create blocks
+    auto bThen = llvm::BasicBlock::Create(*context, "then");
+    auto bExit = llvm::BasicBlock::Create(*context, "exit");
+
+    // Check if if condition is fulfilled
+    builder->CreateCondBr(conditionValue, bThen, bExit);
+
+    // Fill then block
+    parentFct->getBasicBlockList().push_back(bThen);
+    builder->SetInsertPoint(bThen);
+    // Generate IR for nested statements
+    for (auto &stmt : ctx->stmtLst()->stmt()) visit(stmt);
+    builder->CreateBr(bExit);
+
+    // Fill exit block
+    parentFct->getBasicBlockList().push_back(bExit);
+    builder->SetInsertPoint(bExit);
+
+    // Return conditional value as result for the if stmt
+    return conditionValue;
 }
 
 antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
@@ -179,6 +289,17 @@ antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
     return SpiceBaseVisitor::visitReturnStmt(ctx);
+}
+
+antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext *ctx) {
+    auto printf = module->getFunction("printf");
+    std::vector<llvm::Value*> printfArgs;
+    printfArgs.push_back(builder->CreateGlobalStringPtr(ctx->STRING()->toString()));
+    for (auto &arg : ctx->assignment()) {
+        auto argVal = visit(arg).as<llvm::Value*>();
+        printfArgs.push_back(argVal);
+    }
+    return builder->CreateCall(printf, printfArgs);
 }
 
 antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext *ctx) {
@@ -359,9 +480,17 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     }
 
     // Value is a function call
-
-
-    return nullptr;
+    auto calleeFun = module->getFunction(llvm::StringRef(ctx->functionCall()->IDENTIFIER()->toString()));
+    auto calleeFunTy = calleeFun->getFunctionType();
+    std::vector<llvm::Value*> argValues;
+    auto params = ctx->functionCall()->paramLstCall()->assignment();
+    for (int i = 0; i < params.size(); i++) {
+        auto argVal = visit(params[i]).as<llvm::Value*>();
+        llvm::Type *paramTy = calleeFunTy->getParamType(i);
+        llvm::Value *bitCastArgVal = builder->CreateBitCast(argVal, paramTy);
+        argValues.push_back(bitCastArgVal);
+    }
+    return builder->CreateCall(calleeFun, argValues);
 }
 
 std::string GeneratorVisitor::getIRString() {

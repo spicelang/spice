@@ -15,6 +15,29 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
     return currentScope;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+    // Insert function name into the root symbol table
+    currentScope->insert("main", TYPE_FUNCTION, INITIALIZED, true, false);
+    // Create a new scope
+    std::string scopeId = "f:main";
+    currentScope = currentScope->createChildBlock(scopeId);
+    // Declare variable for the return value
+    SymbolType returnType = TYPE_INT;
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);
+    // Visit parameters
+    parameterMode = true;
+    if (ctx->paramLstDef()) visit(ctx->paramLstDef());
+    parameterMode = false;
+    // Visit statements in new scope
+    visit(ctx->stmtLst());
+    // Check if return variable is now initialized
+    if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
+        throw SemanticError(FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
+    // Return to old scope
+    currentScope = currentScope->getParent();
+    return returnType;
+}
+
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     // Insert function name into the root symbol table
     std::string functionName = ctx->IDENTIFIER()->toString();
@@ -178,6 +201,10 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *c
     // Set the return variable to initialized
     returnVariable->updateState(INITIALIZED);
     return returnType;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext *ctx) {
+    return SpiceBaseVisitor::visitPrintfStmt(ctx);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext *ctx) {

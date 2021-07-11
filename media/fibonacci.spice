@@ -6,6 +6,7 @@ f<int> fibo(int n) {
 }
 
 f<int> main() {
-    fibo(5);
+    int result = fibo(5);
+    printf("%d", result);
     return 0;
 }

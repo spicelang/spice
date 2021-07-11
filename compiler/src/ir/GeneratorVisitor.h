@@ -37,6 +37,7 @@ public:
     void emit();
     void dumpIR();
     antlrcpp::Any visitEntry(SpiceParser::EntryContext *ctx) override;
+    antlrcpp::Any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
@@ -47,6 +48,7 @@ public:
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
+    antlrcpp::Any visitPrintfStmt(SpiceParser::PrintfStmtContext *ctx) override;
     antlrcpp::Any visitAssignment(SpiceParser::AssignmentContext *ctx) override;
     antlrcpp::Any visitTernary(SpiceParser::TernaryContext *ctx) override;
     antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override;
