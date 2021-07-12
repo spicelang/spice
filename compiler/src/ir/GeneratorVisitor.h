@@ -63,6 +63,7 @@ public:
     antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext *ctx) override;
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
     antlrcpp::Any visitValue(SpiceParser::ValueContext *ctx) override;
+    antlrcpp::Any visitDataType(SpiceParser::DataTypeContext *ctx) override;
 private:
     // Members
     std::unique_ptr<llvm::LLVMContext> context = std::make_unique<llvm::LLVMContext>();
@@ -72,4 +73,5 @@ private:
 
     // Private methods
     std::string getIRString();
+    void initializeExternalFunctions();
 };

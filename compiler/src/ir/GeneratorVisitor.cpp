@@ -80,6 +80,9 @@ void GeneratorVisitor::dumpIR() {
 }
 
 antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
+    // Generate code for external functions
+    initializeExternalFunctions();
+
     return SpiceBaseVisitor::visitEntry(ctx);
 }
 
@@ -93,7 +96,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     namedValues.clear();
 
     // Generate IR for function body
-    //for (auto &stmt : ctx->stmtLst()->stmt()) visit(stmt);
+    for (auto &stmt : ctx->stmtLst()->stmt()) visit(stmt);
 
     // Build return value
     llvm::APInt retVal(32, 0, true);
@@ -255,21 +258,21 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
 
     // Create blocks
     auto bThen = llvm::BasicBlock::Create(*context, "then");
-    auto bExit = llvm::BasicBlock::Create(*context, "exit");
+    auto bEnd = llvm::BasicBlock::Create(*context, "end");
 
     // Check if if condition is fulfilled
-    builder->CreateCondBr(conditionValue, bThen, bExit);
+    builder->CreateCondBr(conditionValue, bThen, bEnd);
 
     // Fill then block
     parentFct->getBasicBlockList().push_back(bThen);
     builder->SetInsertPoint(bThen);
     // Generate IR for nested statements
     for (auto &stmt : ctx->stmtLst()->stmt()) visit(stmt);
-    builder->CreateBr(bExit);
+    builder->CreateBr(bEnd);
 
-    // Fill exit block
-    parentFct->getBasicBlockList().push_back(bExit);
-    builder->SetInsertPoint(bExit);
+    // Fill end block
+    parentFct->getBasicBlockList().push_back(bEnd);
+    builder->SetInsertPoint(bEnd);
 
     // Return conditional value as result for the if stmt
     return conditionValue;
@@ -280,7 +283,16 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
-    return SpiceBaseVisitor::visitFunctionCall(ctx);
+    llvm::Function *calleeFun = module->getFunction(llvm::StringRef(ctx->IDENTIFIER()->toString()));
+    llvm::FunctionType *calleeFunTy = calleeFun->getFunctionType();
+    std::vector<llvm::Value *> argValues;
+    for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
+        auto argVal = visit(ctx->paramLstCall()->assignment()[i]).as<llvm::Value*>();
+        auto paramTy = calleeFunTy->getParamType(i);
+        auto bitCastArgVal = builder->CreateBitCast(argVal, paramTy);
+        argValues.push_back(bitCastArgVal);
+    }
+    return builder->CreateCall(calleeFun, argValues);
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
@@ -297,17 +309,69 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext *
     printfArgs.push_back(builder->CreateGlobalStringPtr(ctx->STRING()->toString()));
     for (auto &arg : ctx->assignment()) {
         auto argVal = visit(arg).as<llvm::Value*>();
+        if (argVal == nullptr) throw std::runtime_error("Printf has null arg");
         printfArgs.push_back(argVal);
     }
     return builder->CreateCall(printf, printfArgs);
 }
 
 antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext *ctx) {
-    return SpiceBaseVisitor::visitAssignment(ctx);
+    if (ctx->declStmt() || ctx->IDENTIFIER()) {
+        // Get value of left and right side
+        auto rhs = visit(ctx->ternary()).as<llvm::Value*>();
+        auto lhs = visit(ctx->IDENTIFIER()).as<llvm::Value*>();
+        // Store right side on the left one
+        builder->CreateStore(rhs, lhs);
+        // Return value of the right side
+        return rhs;
+    }
+    return visit(ctx->ternary());
+    //return SpiceBaseVisitor::visitAssignment(ctx);
 }
 
 antlrcpp::Any GeneratorVisitor::visitTernary(SpiceParser::TernaryContext *ctx) {
-    return SpiceBaseVisitor::visitTernary(ctx);
+    if (ctx->logicalOrExpr().size() > 1) {
+        auto conditionValue = visit(ctx->logicalOrExpr()[0]).as<llvm::Value*>();
+        auto parentFct = builder->GetInsertBlock()->getParent();
+
+        // Create blocks
+        auto bThen = llvm::BasicBlock::Create(*context, "then");
+        auto bElse = llvm::BasicBlock::Create(*context, "else");
+        auto bEnd = llvm::BasicBlock::Create(*context, "end");
+
+        // Conditional jump to respective block
+        builder->CreateCondBr(conditionValue, bThen, bElse);
+
+        // Fill then block
+        parentFct->getBasicBlockList().push_back(bThen);
+        builder->SetInsertPoint(bThen);
+        auto thenValue = visit(ctx->logicalOrExpr()[1]).as<llvm::Value*>();
+        builder->CreateBr(bEnd);
+
+        // Fill else block
+        parentFct->getBasicBlockList().push_back(bElse);
+        builder->SetInsertPoint(bElse);
+        auto elseValue = visit(ctx->logicalOrExpr()[2]).as<llvm::Value*>();
+        builder->CreateBr(bEnd);
+
+        // Fill end block
+        parentFct->getBasicBlockList().push_back(bEnd);
+        builder->SetInsertPoint(bEnd);
+        // if either is void or their types don't match (which indicates one of them
+        // returned the null value for void, then don't construct a phi node)
+        if (thenValue->getType() == llvm::Type::getVoidTy(*context) ||
+            elseValue->getType() == llvm::Type::getVoidTy(*context) ||
+            thenValue->getType() != elseValue->getType()) {
+            return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*context));
+        }
+        // Setup phi value
+        auto phi = builder->CreatePHI(thenValue->getType(), 2, "phi");
+        phi->addIncoming(thenValue, bThen);
+        phi->addIncoming(elseValue, bElse);
+        return phi;
+    }
+    return visit(ctx->logicalOrExpr()[0]);
+    //return SpiceBaseVisitor::visitTernary(ctx);
 }
 
 antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
@@ -317,6 +381,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
             auto rhs = visit(ctx->logicalAndExpr()[i]).as<llvm::Value*>();
             lhs = builder->CreateLogicalOr(lhs, rhs, "logical or");
         }
+        return lhs;
     }
     return visit(ctx->logicalAndExpr()[0]);
 }
@@ -328,6 +393,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
             auto rhs = visit(ctx->bitwiseOrExpr()[i]).as<llvm::Value*>();
             lhs = builder->CreateLogicalAnd(lhs, rhs, "logical and");
         }
+        return lhs;
     }
     return visit(ctx->bitwiseOrExpr()[0]);
 }
@@ -339,6 +405,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCon
             auto rhs = visit(ctx->bitwiseAndExpr()[i]).as<llvm::Value*>();
             lhs = builder->CreateOr(lhs, rhs, "bitwise or");
         }
+        return lhs;
     }
     return visit(ctx->bitwiseAndExpr()[0]);
 }
@@ -350,6 +417,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprC
             auto rhs = visit(ctx->equalityExpr()[i]).as<llvm::Value*>();
             lhs = builder->CreateAnd(lhs, rhs, "bitwise and");
         }
+        return lhs;
     }
     return visit(ctx->equalityExpr()[0]);
 }
@@ -398,6 +466,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
             else
                 lhs = builder->CreateSub(lhs, rhs, "sub");
         }
+        return lhs;
     }
     return visit(ctx->multiplicativeExpr()[0]);
 }
@@ -418,26 +487,35 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
 }
 
 antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext *ctx) {
-    auto value = visit(ctx->postfixUnary()).as<llvm::Value*>();
+    auto value = visit(ctx->postfixUnary());
 
     // Prefix unary is: PLUS_PLUS postfixUnary
-    if (ctx->PLUS_PLUS()) return builder->CreateAdd(value, builder->getInt32(1), "++ prefix");
+    if (ctx->PLUS_PLUS())
+        return builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "++ prefix");
 
     // Prefix unary is: MINUS_MINUS postfixUnary
-    if (ctx->MINUS_MINUS()) return builder->CreateSub(value, builder->getInt32(1), "-- prefix");
+    if (ctx->MINUS_MINUS())
+        return builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "-- prefix");
 
     // Prefix unary is: NOT postfixUnary
-    return builder->CreateNot(value, "not");
+    if (ctx->NOT())
+        return builder->CreateNot(value.as<llvm::Value*>(), "not");
+
+    return value;
 }
 
 antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContext *ctx) {
-    auto value = visit(ctx->atomicExpr()).as<llvm::Value*>();
+    auto value = visit(ctx->atomicExpr());
 
     // Postfix unary is: PLUS_PLUS atomicExpr
-    if (ctx->PLUS_PLUS()) return builder->CreateAdd(value, builder->getInt32(1), "++ postfix");
+    if (ctx->PLUS_PLUS())
+        return builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "++ postfix");
 
     // Postfix unary is: MINUS_MINUS atomicExpr
-    return builder->CreateSub(value, builder->getInt32(1), "-- postfix");
+    if (ctx->MINUS_MINUS())
+        return builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "-- postfix");
+
+    return value;
 }
 
 antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
@@ -493,9 +571,23 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     return builder->CreateCall(calleeFun, argValues);
 }
 
+antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
+    if (ctx->TYPE_DOUBLE()) return llvm::Type::getDoubleTy(*context);
+
+    if (ctx->TYPE_INT()) return llvm::Type::getInt32Ty(*context);
+
+    if (ctx->TYPE_BOOL()) return llvm::Type::getInt1Ty(*context);
+}
+
 std::string GeneratorVisitor::getIRString() {
     std::string output;
     llvm::raw_string_ostream oss(output);
     module->print(oss, nullptr);
     return oss.str();
+}
+
+void GeneratorVisitor::initializeExternalFunctions() {
+    module->getOrInsertFunction("printf", llvm::FunctionType::get(
+            llvm::IntegerType::getInt32Ty(*context),
+            llvm::Type::getInt8Ty(*context)->getPointerTo(), true));
 }

@@ -1,6 +1,10 @@
 f<int> main() {
-    if (1 == 1) {
-        printf("Test: %s", "Value");
+    /*if (true) {
+        return 1;
     }
+    while (true) {
+        return 2;
+    }*/
+    printf("Test");
     return 0;
 }
