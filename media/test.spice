@@ -1,18 +1,16 @@
 f<int> main() {
-    if false {
-        printf("If content!");
-    }
-    while true {
-        printf("While content!");
-    }
-    /*int i = 0;
+    int i = 1;
+
+    if !false { printf("If was true"); }
+
     while i < 5 {
+        printf("While 1 round: %d", i);
         i++;
-    }*/
-    /*for int i = 0; i < 3; i++ {
-        printf("For content!");
-    }*/
-    printf("Hello World!");
-    printf("Dies ist ein Test: %d, %d", 1, 5);
+    }
+
+    while i < 3 {
+        printf("While 2 round: %d", i);
+        i++;
+    }
     return 0;
 }

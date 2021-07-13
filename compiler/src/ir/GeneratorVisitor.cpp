@@ -91,7 +91,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     auto mainType = llvm::FunctionType::get(llvm::IntegerType::getInt32Ty(*context),
                                     std::vector<llvm::Type *>(), false);
     auto main = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, "main", module.get());
-    auto mainBasicBlock = llvm::BasicBlock::Create(*context, "entry", main);
+    auto mainBasicBlock = llvm::BasicBlock::Create(*context, "main_entry", main);
     builder->SetInsertPoint(mainBasicBlock);
     namedValues.clear();
 
@@ -173,10 +173,10 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
     auto parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    auto bLoop = llvm::BasicBlock::Create(*context, "loop");
-    auto bLoopPre = llvm::BasicBlock::Create(*context, "loop_pre");
-    auto bLoopPost = llvm::BasicBlock::Create(*context, "loop_post");
-    auto bLoopEnd = llvm::BasicBlock::Create(*context, "loop_end");
+    auto bLoop = llvm::BasicBlock::Create(*context, "for");
+    auto bLoopPre = llvm::BasicBlock::Create(*context, "for_pre");
+    auto bLoopPost = llvm::BasicBlock::Create(*context, "for_post");
+    auto bLoopEnd = llvm::BasicBlock::Create(*context, "for_end");
 
     // Fill loop pre block
     parentFct->getBasicBlockList().push_back(bLoopPre);
@@ -214,8 +214,8 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ct
     auto parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    auto bLoop = llvm::BasicBlock::Create(*context, "loop");
-    auto bLoopEnd = llvm::BasicBlock::Create(*context, "loop_end");
+    auto bLoop = llvm::BasicBlock::Create(*context, "while");
+    auto bLoopEnd = llvm::BasicBlock::Create(*context, "while_end");
 
     // Check if entering the loop is necessary
     builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
@@ -266,7 +266,15 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
-    return SpiceBaseVisitor::visitDeclStmt(ctx);
+    std::string varName = ctx->IDENTIFIER()->toString();
+
+    llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
+
+    llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
+    llvm::IRBuilder<> tmpBuilder(&parentFunction->getEntryBlock(), parentFunction->getEntryBlock().begin());
+    llvm::AllocaInst* var = tmpBuilder.CreateAlloca(varType, nullptr, varName);
+    namedValues[varName] = var;
+    return varName;
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
@@ -309,9 +317,12 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext *
 
 antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext *ctx) {
     if (ctx->declStmt() || ctx->IDENTIFIER()) {
+        std::string varName = ctx->declStmt() ? visit(ctx->declStmt()).as<std::string>() : ctx->IDENTIFIER()->toString();
+
         // Get value of left and right side
         auto rhs = visit(ctx->ternary()).as<llvm::Value*>();
-        auto lhs = visit(ctx->IDENTIFIER()).as<llvm::Value*>();
+        auto lhs = namedValues[varName];
+        if (!lhs) throw std::runtime_error("Internal compiler error - Variable not found in code generation step");
         // Store right side on the left one
         builder->CreateStore(rhs, lhs);
         // Return value of the right side
@@ -370,7 +381,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
         auto lhs = visit(ctx->logicalAndExpr()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
             auto rhs = visit(ctx->logicalAndExpr()[i]).as<llvm::Value*>();
-            lhs = builder->CreateLogicalOr(lhs, rhs, "logical or");
+            lhs = builder->CreateLogicalOr(lhs, rhs, "lg_or");
         }
         return lhs;
     }
@@ -382,7 +393,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
         auto lhs = visit(ctx->bitwiseOrExpr()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
             auto rhs = visit(ctx->bitwiseOrExpr()[i]).as<llvm::Value*>();
-            lhs = builder->CreateLogicalAnd(lhs, rhs, "logical and");
+            lhs = builder->CreateLogicalAnd(lhs, rhs, "lg_and");
         }
         return lhs;
     }
@@ -394,7 +405,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCon
         auto lhs = visit(ctx->bitwiseAndExpr()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
             auto rhs = visit(ctx->bitwiseAndExpr()[i]).as<llvm::Value*>();
-            lhs = builder->CreateOr(lhs, rhs, "bitwise or");
+            lhs = builder->CreateOr(lhs, rhs, "bw_or");
         }
         return lhs;
     }
@@ -406,7 +417,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprC
         auto lhs = visit(ctx->equalityExpr()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->equalityExpr().size(); i++) {
             auto rhs = visit(ctx->equalityExpr()[i]).as<llvm::Value*>();
-            lhs = builder->CreateAnd(lhs, rhs, "bitwise and");
+            lhs = builder->CreateAnd(lhs, rhs, "bw_and");
         }
         return lhs;
     }
@@ -419,10 +430,10 @@ antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprConte
         auto rhs = visit(ctx->relationalExpr()[1]).as<llvm::Value*>();
 
         // Equality expr is: relationalExpr EQUAL relationalExpr
-        if (ctx->EQUAL()) return builder->CreateICmpEQ(lhs, rhs, "equal");
+        if (ctx->EQUAL()) return builder->CreateICmpEQ(lhs, rhs, "eq");
 
         // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
-        return builder->CreateICmpNE(lhs, rhs, "not equal");
+        return builder->CreateICmpNE(lhs, rhs, "ne");
     }
     return visit(ctx->relationalExpr()[0]);
 }
@@ -433,16 +444,16 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
         auto rhs = visit(ctx->additiveExpr()[1]).as<llvm::Value*>();
 
         // Relational expr is: additiveExpr LESS additiveExpr
-        if (ctx->LESS()) return builder->CreateICmpSLT(lhs, rhs, "less than");
+        if (ctx->LESS()) return builder->CreateICmpSLT(lhs, rhs, "lt");
 
         // Relational expr is: additiveExpr GREATER additiveExpr
-        if (ctx->GREATER()) return builder->CreateICmpSGT(lhs, rhs, "greater than");
+        if (ctx->GREATER()) return builder->CreateICmpSGT(lhs, rhs, "gt");
 
         // Relational expr is: additiveExpr LESS_EQUAL additiveExpr
-        if (ctx->LESS_EQUAL()) return builder->CreateICmpSLE(lhs, rhs, "less equal");
+        if (ctx->LESS_EQUAL()) return builder->CreateICmpSLE(lhs, rhs, "le");
 
         // Relational expr is: additiveExpr GREATER_EQUAL additiveExpr
-        return builder->CreateICmpSGE(lhs, rhs, "greater equal");
+        return builder->CreateICmpSGE(lhs, rhs, "ge");
     }
     return visit(ctx->additiveExpr()[0]);
 }
@@ -481,12 +492,22 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     auto value = visit(ctx->postfixUnary());
 
     // Prefix unary is: PLUS_PLUS postfixUnary
-    if (ctx->PLUS_PLUS())
-        return builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "++ prefix");
+    if (ctx->PLUS_PLUS()) {
+        auto llvmValue = value.as<llvm::Value*>();
+        auto rhs = builder->CreateAdd(llvmValue, builder->getInt32(1), "pre_pp");
+        auto lhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
+        builder->CreateStore(rhs, lhs);
+        return lhs;
+    }
 
     // Prefix unary is: MINUS_MINUS postfixUnary
-    if (ctx->MINUS_MINUS())
-        return builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "-- prefix");
+    if (ctx->MINUS_MINUS()) {
+        auto llvmValue = value.as<llvm::Value*>();
+        auto rhs = builder->CreateSub(llvmValue, builder->getInt32(1), "pre_mm");
+        auto lhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
+        builder->CreateStore(rhs, lhs);
+        return lhs;
+    }
 
     // Prefix unary is: NOT postfixUnary
     if (ctx->NOT())
@@ -499,12 +520,22 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
     auto value = visit(ctx->atomicExpr());
 
     // Postfix unary is: PLUS_PLUS atomicExpr
-    if (ctx->PLUS_PLUS())
-        return builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "++ postfix");
+    if (ctx->PLUS_PLUS()) {
+        auto llvmValue = value.as<llvm::Value*>();
+        auto rhs = builder->CreateAdd(llvmValue, builder->getInt32(1), "post_pp");
+        auto lhs = namedValues[ctx->atomicExpr()->value()->IDENTIFIER()->toString()];
+        builder->CreateStore(rhs, lhs);
+        return rhs;
+    }
 
     // Postfix unary is: MINUS_MINUS atomicExpr
-    if (ctx->MINUS_MINUS())
-        return builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "-- postfix");
+    if (ctx->MINUS_MINUS()) {
+        auto llvmValue = value.as<llvm::Value*>();
+        auto rhs = builder->CreateSub(llvmValue, builder->getInt32(1), "post_mm");
+        auto lhs = namedValues[ctx->atomicExpr()->value()->IDENTIFIER()->toString()];
+        builder->CreateStore(rhs, lhs);
+        return rhs;
+    }
 
     return value;
 }
@@ -547,7 +578,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     if (ctx->IDENTIFIER()) {
         llvm::Value* var = namedValues[ctx->IDENTIFIER()->toString()];
         if (!var) throw std::runtime_error("Internal compiler error - Variable not found in code generation step");
-        return var;
+        return (llvm::Value*) builder->CreateLoad(var->getType()->getPointerElementType(), var);
     }
 
     // Value is a function call
@@ -565,11 +596,21 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
-    if (ctx->TYPE_DOUBLE()) return llvm::Type::getDoubleTy(*context);
+    // Data type is double
+    if (ctx->TYPE_DOUBLE()) return (llvm::Type*) llvm::Type::getDoubleTy(*context);
 
-    if (ctx->TYPE_INT()) return llvm::Type::getInt32Ty(*context);
+    // Data type is int
+    if (ctx->TYPE_INT()) return (llvm::Type*) llvm::Type::getInt32Ty(*context);
 
-    if (ctx->TYPE_BOOL()) return llvm::Type::getInt1Ty(*context);
+    // Data type is string
+    if (ctx->TYPE_STRING()) return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();
+
+    // Data type is bool
+    if (ctx->TYPE_BOOL()) return (llvm::Type*) llvm::Type::getInt1Ty(*context);
+
+    // Data type is dyn
+    // ToDo: Add support for dyn
+    return (llvm::Type*) nullptr;
 }
 
 std::string GeneratorVisitor::getIRString() {

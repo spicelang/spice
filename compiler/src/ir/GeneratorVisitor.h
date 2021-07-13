@@ -69,7 +69,7 @@ private:
     std::unique_ptr<llvm::LLVMContext> context = std::make_unique<llvm::LLVMContext>();
     std::unique_ptr<llvm::IRBuilder<>> builder = std::make_unique<llvm::IRBuilder<>>(*context);
     std::unique_ptr<llvm::Module> module = std::make_unique<llvm::Module>("Module", *context);
-    std::map<std::string, llvm::Value*> namedValues;
+    std::map<std::string, llvm::AllocaInst*> namedValues;
 
     // Private methods
     std::string getIRString();

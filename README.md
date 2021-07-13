@@ -26,6 +26,7 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 - [x] Multiplicative operators are only applied to some type combinations
 - [x] Prefix/postfix unary operators are only applied to integers
 - [ ] Program contains main function
+- [ ] `++` and `--` are only applied on identifiers
 
 ## Special language features
 - Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"`
