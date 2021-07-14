@@ -1,16 +1,7 @@
 f<int> main() {
-    int i = 1;
-
-    if !false { printf("If was true"); }
-
-    while i < 5 {
-        printf("While 1 round: %d", i);
-        i++;
-    }
-
-    while i < 3 {
-        printf("While 2 round: %d", i);
-        i++;
+    int j;
+    for j = 0; j < 5; j++ {
+        printf("For round: %d", j);
     }
     return 0;
 }

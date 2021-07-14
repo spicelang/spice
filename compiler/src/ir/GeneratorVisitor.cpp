@@ -174,13 +174,10 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 
     // Create blocks
     auto bLoop = llvm::BasicBlock::Create(*context, "for");
-    auto bLoopPre = llvm::BasicBlock::Create(*context, "for_pre");
     auto bLoopPost = llvm::BasicBlock::Create(*context, "for_post");
     auto bLoopEnd = llvm::BasicBlock::Create(*context, "for_end");
 
-    // Fill loop pre block
-    parentFct->getBasicBlockList().push_back(bLoopPre);
-    builder->SetInsertPoint(bLoopPre);
+    // Execute pre-loop stmts
     visit(ctx->assignment()[0]);
     // Check if entering the loop is necessary
     auto conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
