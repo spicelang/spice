@@ -1,7 +1,13 @@
+f<int> testFunc() {
+    printf("Hello from testFunc!\n");
+    return 1;
+}
+
 f<int> main() {
-    int j;
-    for j = 0; j < 5; j++ {
-        printf("For round: %d", j);
+    for int j = 0; j < 5; j++ {
+        printf("For round: %d \n", j);
     }
+    int testFuncResult = testFunc();
+    printf("Result of testFunc: %d \n", testFuncResult);
     return 0;
 }

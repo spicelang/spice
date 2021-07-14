@@ -89,38 +89,41 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
 antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
     // Build function itself
     auto mainType = llvm::FunctionType::get(llvm::IntegerType::getInt32Ty(*context),
-                                    std::vector<llvm::Type *>(), false);
-    auto main = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, "main", module.get());
-    auto mainBasicBlock = llvm::BasicBlock::Create(*context, "main_entry", main);
-    builder->SetInsertPoint(mainBasicBlock);
+                                    std::vector<llvm::Type*>(), false);
+    auto fct = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, "main", module.get());
+    auto bMain = llvm::BasicBlock::Create(*context, "main_entry", fct);
+    builder->SetInsertPoint(bMain);
     namedValues.clear();
 
     // Generate IR for function body
     visit(ctx->stmtLst());
 
     // Verify function
-    llvm::verifyFunction(*main);
+    llvm::verifyFunction(*fct);
 
     // Return true as result for the function definition
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
-    /*std::string functionName = ctx->IDENTIFIER()->toString();
+    std::string functionName = ctx->IDENTIFIER()->toString();
     // Create function itself
-    auto function = module->getFunction(llvm::StringRef(functionName));
+    auto returnType = visit(ctx->dataType()).as<llvm::Type*>();
+    auto fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
+    auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, functionName, module.get());
+    //auto function = module->getFunction(llvm::StringRef(functionName));
 
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
-    function->getBasicBlockList().push_back(bEntry);
+    fct->getBasicBlockList().push_back(bEntry);
     builder->SetInsertPoint(bEntry);
 
     // Store function params
     namedValues.clear();
-    for (auto& param : function->args()) {
+    for (auto& param : fct->args()) {
         auto paramNo = param.getArgNo();
         std::string paramName = ctx->paramLstDef()->assignment()[paramNo]->IDENTIFIER()->toString();
-        llvm::Type *paramType = function->getFunctionType()->getParamType(paramNo);
+        llvm::Type *paramType = fct->getFunctionType()->getParamType(paramNo);
         namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
         builder->CreateStore(&param, namedValues[paramName]);
     }
@@ -129,11 +132,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     visit(ctx->stmtLst());
 
     // Verify function
-    llvm::verifyFunction(*function);
+    llvm::verifyFunction(*fct);
 
     // Return true as result for the function definition
-    return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);*/
-    return SpiceBaseVisitor::visitFunctionDef(ctx);
+    return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
@@ -275,16 +277,17 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
-    llvm::Function* calleeFun = module->getFunction(llvm::StringRef(ctx->IDENTIFIER()->toString()));
-    llvm::FunctionType* calleeFunTy = calleeFun->getFunctionType();
+    auto fctName = ctx->IDENTIFIER()->toString();
+    auto fct = module->getFunction(fctName);
+    auto fctType = fct->getFunctionType();
     std::vector<llvm::Value*> argValues;
     for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
         auto argValue = visit(ctx->paramLstCall()->assignment()[i]).as<llvm::Value*>();
-        auto paramTy = calleeFunTy->getParamType(i);
-        auto bitCastArgValue = builder->CreateBitCast(argValue, paramTy);
+        auto argType = fctType->getParamType(i);
+        auto bitCastArgValue = builder->CreateBitCast(argValue, argType);
         argValues.push_back(bitCastArgValue);
     }
-    return builder->CreateCall(calleeFun, argValues);
+    return builder->CreateCall(fct, argValues);
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
@@ -582,12 +585,14 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     auto calleeFun = module->getFunction(llvm::StringRef(ctx->functionCall()->IDENTIFIER()->toString()));
     auto calleeFunTy = calleeFun->getFunctionType();
     std::vector<llvm::Value*> argValues;
-    auto params = ctx->functionCall()->paramLstCall()->assignment();
-    for (int i = 0; i < params.size(); i++) {
-        auto argVal = visit(params[i]).as<llvm::Value*>();
-        llvm::Type* paramTy = calleeFunTy->getParamType(i);
-        llvm::Value* bitCastArgVal = builder->CreateBitCast(argVal, paramTy);
-        argValues.push_back(bitCastArgVal);
+    if (ctx->functionCall()->paramLstCall()) {
+        auto params = ctx->functionCall()->paramLstCall()->assignment();
+        for (int i = 0; i < params.size(); i++) {
+            auto argVal = visit(params[i]).as<llvm::Value*>();
+            llvm::Type* paramTy = calleeFunTy->getParamType(i);
+            llvm::Value* bitCastArgVal = builder->CreateBitCast(argVal, paramTy);
+            argValues.push_back(bitCastArgVal);
+        }
     }
     return (llvm::Value*) builder->CreateCall(calleeFun, argValues);
 }

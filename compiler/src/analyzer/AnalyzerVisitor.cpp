@@ -169,15 +169,17 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     SymbolTable* symbolTable = rootTable->getChild(scopeId);
     std::vector<std::string> paramNames = symbolTable->getParamNames();
     // Check if types match for parameter list
-    for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
-        SymbolType type = visit(ctx->paramLstCall()->assignment()[i]).as<SymbolType>();
-        SymbolTableEntry* param = symbolTable->lookup(paramNames[i]);
-        if (!param)
-            throw SemanticError(REFERENCED_UNDEFINED_VARIABLE,
-                                "Parameter '" + paramNames[i] + "' was not found in declaration");
-        if (type != param->getType())
-            throw SemanticError(PARAMETER_TYPES_DO_NOT_MATCH,
-                                "Type of parameter '" + paramNames[i] + "' does not match the declaration");
+    if (ctx->paramLstCall()) {
+        for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
+            SymbolType type = visit(ctx->paramLstCall()->assignment()[i]).as<SymbolType>();
+            SymbolTableEntry* param = symbolTable->lookup(paramNames[i]);
+            if (!param)
+                throw SemanticError(REFERENCED_UNDEFINED_VARIABLE,
+                                    "Parameter '" + paramNames[i] + "' was not found in declaration");
+            if (type != param->getType())
+                throw SemanticError(PARAMETER_TYPES_DO_NOT_MATCH,
+                                    "Type of parameter '" + paramNames[i] + "' does not match the declaration");
+        }
     }
     return symbolTable->lookup(RETURN_VARIABLE_NAME)->getType();
 }
