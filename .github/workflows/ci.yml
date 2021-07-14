@@ -15,6 +15,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: ../llvm
+          key: llvm-12-0-1
+
+      - name: Setup LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ../llvm
+          cd ../llvm
+          curl -fsSL https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-12.0.1.tar.gz -o llvm.tar.gz
+          tar -zxf llvm.tar.gz
+          mkdir ./llvm-project-llvmorg-12.0.1/build
+          cd ./llvm-project-llvmorg-12.0.1/build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
+          cmake --build .
+          export LLVM_DIR=/home/runner/work/spice/llvm/llvm-project-llvmorg-12.0.1/build/lib/cmake/llvm
+
       - name: Download Libs
         run: |
           mkdir -p ./compiler/lib

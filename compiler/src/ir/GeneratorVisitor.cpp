@@ -291,10 +291,6 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     return builder->CreateCall(fct, argValues);
 }
 
-antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
-    return SpiceBaseVisitor::visitImportStmt(ctx);
-}
-
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
     auto returnValue = visit(ctx->assignment()).as<llvm::Value*>();
     // Build return value

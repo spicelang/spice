@@ -1,5 +1,5 @@
 set(BINARY ${CMAKE_PROJECT_NAME})
-set(LLVM_DIR C:/Users/i516467/Documents/JustForFunGitHubClones/llvm-project/build-release/lib/cmake/llvm)
+set(LLVM_DIR $ENV{LLVM_DIR})
 
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 

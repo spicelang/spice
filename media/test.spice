@@ -1,19 +1,8 @@
-f<int> testFunc() {
-    printf("Hello from testFunc!\n");
-    return 1;
-}
-
-p testProcedure() {
-    double result = true || false ? 5.1 : 4.12;
-    printf("Computation result: %d", result);
-}
-
 f<int> main() {
-    for int j = 0; j < 5; j++ {
-        printf("For round: %d \n", j);
-    }
-    int testFuncResult = testFunc();
-    printf("Result of testFunc: %d \n", testFuncResult);
-    testProcedure();
+    int operand1 = 6;
+    int operand2 = 5;
+    int res = operand1 | operand2;
+    printf("Computation result is: %d", res);
+
     return 0;
 }
