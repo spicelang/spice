@@ -111,7 +111,6 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     auto returnType = visit(ctx->dataType()).as<llvm::Type*>();
     auto fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
     auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, functionName, module.get());
-    //auto function = module->getFunction(llvm::StringRef(functionName));
 
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -139,20 +138,23 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
-    /*// Create procedure itself
-    auto procedure = module->getFunction(llvm::StringRef(ctx->IDENTIFIER()->toString()));
+    auto procedureName = ctx->IDENTIFIER()->toString();
+    // Create procedure itself
+    auto procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
+                                            std::vector<llvm::Type*>(), false);
+    auto proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage, procedureName, module.get());
 
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
-    procedure->getBasicBlockList().push_back(bEntry);
+    proc->getBasicBlockList().push_back(bEntry);
     builder->SetInsertPoint(bEntry);
 
     // Store procedure params
     namedValues.clear();
-    for (auto& param : procedure->args()) {
+    for (auto& param : proc->args()) {
         auto paramNo = param.getArgNo();
         std::string paramName = ctx->paramLstDef()->assignment()[paramNo]->IDENTIFIER()->toString();
-        llvm::Type *paramType = procedure->getFunctionType()->getParamType(paramNo);
+        llvm::Type *paramType = proc->getFunctionType()->getParamType(paramNo);
         namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
         builder->CreateStore(&param, namedValues[paramName]);
     }
@@ -164,11 +166,10 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     builder->CreateRetVoid();
 
     // Verify procedure
-    llvm::verifyFunction(*procedure);
+    llvm::verifyFunction(*proc);
 
     // Return true as result for the function definition
-    return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);*/
-    return SpiceBaseVisitor::visitProcedureDef(ctx);
+    return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
@@ -370,10 +371,9 @@ antlrcpp::Any GeneratorVisitor::visitTernary(SpiceParser::TernaryContext *ctx) {
         auto phi = builder->CreatePHI(thenValue->getType(), 2, "phi");
         phi->addIncoming(thenValue, bThen);
         phi->addIncoming(elseValue, bElse);
-        return phi;
+        return (llvm::Value*) phi;
     }
     return visit(ctx->logicalOrExpr()[0]);
-    //return SpiceBaseVisitor::visitTernary(ctx);
 }
 
 antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
@@ -381,7 +381,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
         auto lhs = visit(ctx->logicalAndExpr()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
             auto rhs = visit(ctx->logicalAndExpr()[i]).as<llvm::Value*>();
-            lhs = builder->CreateLogicalOr(lhs, rhs, "lg_or");
+            lhs = builder->CreateLogicalOr(lhs, rhs, "log_or");
         }
         return lhs;
     }
@@ -393,7 +393,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
         auto lhs = visit(ctx->bitwiseOrExpr()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
             auto rhs = visit(ctx->bitwiseOrExpr()[i]).as<llvm::Value*>();
-            lhs = builder->CreateLogicalAnd(lhs, rhs, "lg_and");
+            lhs = builder->CreateLogicalAnd(lhs, rhs, "log_and");
         }
         return lhs;
     }
@@ -576,8 +576,10 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 
     // Value is an identifier
     if (ctx->IDENTIFIER()) {
-        llvm::Value* var = namedValues[ctx->IDENTIFIER()->toString()];
-        if (!var) throw std::runtime_error("Internal compiler error - Variable not found in code generation step");
+        auto variableName = ctx->IDENTIFIER()->toString();
+        llvm::Value* var = namedValues[variableName];
+        if (!var) throw std::runtime_error("Internal compiler error - Variable '" + variableName +
+            "' not found in code generation step");
         return (llvm::Value*) builder->CreateLoad(var->getType()->getPointerElementType(), var);
     }
 

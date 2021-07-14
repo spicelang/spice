@@ -3,11 +3,17 @@ f<int> testFunc() {
     return 1;
 }
 
+p testProcedure() {
+    double result = true || false ? 5.1 : 4.12;
+    printf("Computation result: %d", result);
+}
+
 f<int> main() {
     for int j = 0; j < 5; j++ {
         printf("For round: %d \n", j);
     }
     int testFuncResult = testFunc();
     printf("Result of testFunc: %d \n", testFuncResult);
+    testProcedure();
     return 0;
 }
