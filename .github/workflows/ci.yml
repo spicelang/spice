@@ -19,7 +19,7 @@ jobs:
         id: cache-llvm
         uses: actions/cache@v2
         with:
-          path: ../llvm
+          path: /home/runner/work/spice/llvm
           key: llvm-12-0-1
 
       - name: Setup LLVM
