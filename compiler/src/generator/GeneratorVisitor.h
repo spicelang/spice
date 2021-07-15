@@ -2,16 +2,40 @@
 
 #pragma once
 
-#include "SpiceBaseVisitor.h"
-#include "SpiceLexer.h"
-#include "SymbolTable.h"
-#include <exception/SemanticError.h>
+#include <SpiceBaseVisitor.h>
+#include <exception/IRError.h>
 
-const std::string RETURN_VARIABLE_NAME = "result";
+#include <llvm/ADT/APFloat.h>
+#include <llvm/ADT/Optional.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Host.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Target/TargetOptions.h>
 
-class AnalyzerVisitor : public SpiceBaseVisitor {
+#include <memory>
+
+class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Public methods
+    void init();
+    void optimize();
+    void emit();
+    void dumpIR();
     antlrcpp::Any visitEntry(SpiceParser::EntryContext *ctx) override;
     antlrcpp::Any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
@@ -22,7 +46,6 @@ public:
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
-    antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
     antlrcpp::Any visitPrintfStmt(SpiceParser::PrintfStmtContext *ctx) override;
     antlrcpp::Any visitAssignment(SpiceParser::AssignmentContext *ctx) override;
@@ -39,11 +62,15 @@ public:
     antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext *ctx) override;
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
     antlrcpp::Any visitValue(SpiceParser::ValueContext *ctx) override;
+    antlrcpp::Any visitDataType(SpiceParser::DataTypeContext *ctx) override;
 private:
     // Members
-    SymbolTable* currentScope = new SymbolTable(nullptr);
-    bool parameterMode = false;
+    std::unique_ptr<llvm::LLVMContext> context = std::make_unique<llvm::LLVMContext>();
+    std::unique_ptr<llvm::IRBuilder<>> builder = std::make_unique<llvm::IRBuilder<>>(*context);
+    std::unique_ptr<llvm::Module> module = std::make_unique<llvm::Module>("Module", *context);
+    std::map<std::string, llvm::AllocaInst*> namedValues;
 
-    // Private functions
-    static SymbolType getSymbolTypeFromDataType(SpiceParser::DataTypeContext*);
+    // Private methods
+    std::string getIRString();
+    void initializeExternalFunctions();
 };

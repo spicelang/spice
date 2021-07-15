@@ -1,6 +1,7 @@
 grammar Spice;
 
-entry: (stmt | functionDef | procedureDef)*;
+entry: (stmt | mainFunctionDef | functionDef | procedureDef)*;
+mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 forLoop: FOR assignment SEMICOLON assignment SEMICOLON assignment LBRACE stmtLst RBRACE;
@@ -11,11 +12,12 @@ ifStmt: IF assignment LBRACE stmtLst RBRACE;
 stmtLst: (stmt | forLoop | /*foreachLoop |*/ whileLoop | ifStmt)*;
 paramLstDef: (declStmt | assignment) (COMMA (declStmt | assignment))*;
 paramLstCall: assignment (COMMA assignment)*;
-stmt: (declStmt | assignment | functionCall | assignment | importStmt | returnStmt) SEMICOLON;
+stmt: (declStmt | assignment | functionCall | assignment | importStmt | returnStmt | printfStmt) SEMICOLON;
 declStmt: CONST? dataType IDENTIFIER;
 functionCall: IDENTIFIER LPAREN paramLstCall? RPAREN;
 importStmt: IMPORT STRING;
 returnStmt: RETURN assignment;
+printfStmt: PRINTF LPAREN STRING (COMMA assignment)* RPAREN;
 
 assignment: ((declStmt | IDENTIFIER) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? ternary;
 ternary: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
@@ -47,6 +49,8 @@ WHILE: 'while';
 CONST: 'const';
 IMPORT: 'import';
 RETURN: 'return';
+MAIN: 'main';
+PRINTF: 'printf';
 TRUE: 'true';
 FALSE: 'false';
 STRING: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';

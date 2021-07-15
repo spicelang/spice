@@ -1,0 +1,8 @@
+f<int> main() {
+    int operand1 = 6;
+    int operand2 = 5;
+    int res = operand1 | operand2;
+    printf("Computation result is: %d", res);
+
+    return 0;
+}

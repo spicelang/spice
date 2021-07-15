@@ -27,5 +27,5 @@ p testProcedure(string stringParam, bool boolParam = false) {
     double result = testString == "" || testBool ? 5.0 : 1.4;
     if result == 5.0 { result = 3.0; }
     int result1 = testFunction(3.0);
-    testProcedure("test", false, 123);
+    testProcedure("test", false);
 }

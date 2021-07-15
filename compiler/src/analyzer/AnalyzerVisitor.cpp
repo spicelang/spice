@@ -15,6 +15,29 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
     return currentScope;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+    // Insert function name into the root symbol table
+    currentScope->insert("main", TYPE_FUNCTION, INITIALIZED, true, false);
+    // Create a new scope
+    std::string scopeId = "f:main";
+    currentScope = currentScope->createChildBlock(scopeId);
+    // Declare variable for the return value
+    SymbolType returnType = TYPE_INT;
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);
+    // Visit parameters
+    parameterMode = true;
+    if (ctx->paramLstDef()) visit(ctx->paramLstDef());
+    parameterMode = false;
+    // Visit statements in new scope
+    visit(ctx->stmtLst());
+    // Check if return variable is now initialized
+    if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
+        throw SemanticError(FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
+    // Return to old scope
+    currentScope = currentScope->getParent();
+    return returnType;
+}
+
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     // Insert function name into the root symbol table
     std::string functionName = ctx->IDENTIFIER()->toString();
@@ -146,15 +169,17 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     SymbolTable* symbolTable = rootTable->getChild(scopeId);
     std::vector<std::string> paramNames = symbolTable->getParamNames();
     // Check if types match for parameter list
-    for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
-        SymbolType type = visit(ctx->paramLstCall()->assignment()[i]).as<SymbolType>();
-        SymbolTableEntry* param = symbolTable->lookup(paramNames[i]);
-        if (!param)
-            throw SemanticError(REFERENCED_UNDEFINED_VARIABLE,
-                                "Parameter '" + paramNames[i] + "' was not found in declaration");
-        if (type != param->getType())
-            throw SemanticError(PARAMETER_TYPES_DO_NOT_MATCH,
-                                "Type of parameter '" + paramNames[i] + "' does not match the declaration");
+    if (ctx->paramLstCall()) {
+        for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
+            SymbolType type = visit(ctx->paramLstCall()->assignment()[i]).as<SymbolType>();
+            SymbolTableEntry* param = symbolTable->lookup(paramNames[i]);
+            if (!param)
+                throw SemanticError(REFERENCED_UNDEFINED_VARIABLE,
+                                    "Parameter '" + paramNames[i] + "' was not found in declaration");
+            if (type != param->getType())
+                throw SemanticError(PARAMETER_TYPES_DO_NOT_MATCH,
+                                    "Type of parameter '" + paramNames[i] + "' does not match the declaration");
+        }
     }
     return symbolTable->lookup(RETURN_VARIABLE_NAME)->getType();
 }
@@ -178,6 +203,10 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *c
     // Set the return variable to initialized
     returnVariable->updateState(INITIALIZED);
     return returnType;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext *ctx) {
+    return SpiceBaseVisitor::visitPrintfStmt(ctx);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext *ctx) {

@@ -5,6 +5,7 @@
 #include "SpiceLexer.h"
 #include "SpiceParser.h"
 #include "analyzer/AnalyzerVisitor.h"
+#include "generator/GeneratorVisitor.h"
 
 using namespace antlr4;
 
@@ -17,11 +18,19 @@ int main(int argc, char** argv) {
     // Parse input to AST
     SpiceLexer lexer(&input);
     antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
-    SpiceParser parser(&tokens);
+    SpiceParser parser(&tokens); // Check for syntax errors
 
     // Execute syntactical analysis
     antlr4::tree::ParseTree *tree = parser.entry();
-    SymbolTable* symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>();
+    AnalyzerVisitor().visit(tree); // Check for semantic errors
+
+    // Execute generator
+    GeneratorVisitor generator = GeneratorVisitor();
+    generator.init(); // Initialize code generation
+    generator.visit(tree); // Generate IR code
+    generator.dumpIR();
+    generator.optimize(); // Optimize IR code
+    generator.emit(); // Emit object file for specified platform
 
     // Return with positive result code
     return 0;
