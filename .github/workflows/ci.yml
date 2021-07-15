@@ -39,11 +39,11 @@ jobs:
           git clone https://github.com/google/googletest.git
           git clone https://github.com/antlr/antlr4.git
 
-      #- name: Build
-      #  env:
-      #    LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
-      #  run: |
-      #    mkdir bin
-      #    cd bin
-      #    cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON ../compiler
-      #    cmake --build . --target Spice_run -- -j 6
+      - name: Build
+        env:
+          LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
+        run: |
+          mkdir bin
+          cd bin
+          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON ../compiler
+          cmake --build . --target Spice_run -- -j 6
