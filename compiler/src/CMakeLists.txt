@@ -27,8 +27,8 @@ set(SOURCES
         analyzer/SymbolTable.h
         analyzer/SymbolTableEntry.cpp
         analyzer/SymbolTableEntry.h
-        ir/GeneratorVisitor.cpp
-        ir/GeneratorVisitor.h
+        generator/GeneratorVisitor.cpp
+        generator/GeneratorVisitor.h
         exception/SemanticError.cpp
         exception/SemanticError.h
         exception/IRError.cpp

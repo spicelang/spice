@@ -5,7 +5,7 @@
 #include "SpiceLexer.h"
 #include "SpiceParser.h"
 #include "analyzer/AnalyzerVisitor.h"
-#include "ir/GeneratorVisitor.h"
+#include "generator/GeneratorVisitor.h"
 
 using namespace antlr4;
 

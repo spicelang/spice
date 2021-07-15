@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Cache LLVM and Clang
+      - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v2
         with:
@@ -25,15 +25,12 @@ jobs:
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          mkdir -p ../llvm
-          cd ../llvm
-          curl -fsSL https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-12.0.1.tar.gz -o llvm.tar.gz
-          tar -zxf llvm.tar.gz
-          mkdir ./llvm-project-llvmorg-12.0.1/build
-          cd ./llvm-project-llvmorg-12.0.1/build
+          cd ..
+          git clone https://github.com/llvm/llvm-project llvm
+          mkdir ./llvm/build
+          cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
           cmake --build .
-          export LLVM_DIR=/home/runner/work/spice/llvm/llvm-project-llvmorg-12.0.1/build/lib/cmake/llvm
 
       - name: Download Libs
         run: |
@@ -42,9 +39,11 @@ jobs:
           git clone https://github.com/google/googletest.git
           git clone https://github.com/antlr/antlr4.git
 
-      - name: Build
-        run: |
-          mkdir bin
-          cd bin
-          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON ../compiler
-          cmake --build . --target Spice_run -- -j 6
+      #- name: Build
+      #  env:
+      #    LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
+      #  run: |
+      #    mkdir bin
+      #    cd bin
+      #    cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON ../compiler
+      #    cmake --build . --target Spice_run -- -j 6
