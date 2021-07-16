@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "antlr4-runtime.h"
+
 #include "SpiceLexer.h"
 #include "SpiceParser.h"
 #include "analyzer/AnalyzerVisitor.h"
@@ -10,9 +11,14 @@
 using namespace antlr4;
 
 int main(int argc, char** argv) {
+    // Receive args from cli
+    auto filePath = argv[1];
+    auto targetTriple = argv[2]; // Default: x86_64-w64-windows-gnu
+    auto outputPath = argv[3];
+
     // Read from file
     std::ifstream stream;
-    stream.open(argv[1]);
+    stream.open(filePath);
     antlr4::ANTLRInputStream input(stream);
 
     // Parse input to AST
@@ -28,9 +34,12 @@ int main(int argc, char** argv) {
     GeneratorVisitor generator = GeneratorVisitor();
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
+    std::cout << "Normal IR code:" << std::endl;
     generator.dumpIR();
     generator.optimize(); // Optimize IR code
-    generator.emit(); // Emit object file for specified platform
+    std::cout << "Optimized IR code:" << std::endl;
+    generator.dumpIR();
+    generator.emit(targetTriple, outputPath); // Emit object file for specified platform
 
     // Return with positive result code
     return 0;

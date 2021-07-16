@@ -4,7 +4,7 @@ string testString = "";
 bool testBool = true;
 dyn testAuto = false;
 
-4++;
+testInt++;
 
 // This is a test comment
 f<int> testFunction(double doubleParam) {
@@ -28,4 +28,9 @@ p testProcedure(string stringParam, bool boolParam = false) {
     if result == 5.0 { result = 3.0; }
     int result1 = testFunction(3.0);
     testProcedure("test", false);
+}
+
+f<int> main() {
+    testProcedure();
+    return 0;
 }

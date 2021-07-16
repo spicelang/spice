@@ -43,6 +43,7 @@ private:
     // Members
     SymbolTable* currentScope = new SymbolTable(nullptr);
     bool parameterMode = false;
+    bool hasMainFunction = false;
 
     // Private functions
     static SymbolType getSymbolTypeFromDataType(SpiceParser::DataTypeContext*);
