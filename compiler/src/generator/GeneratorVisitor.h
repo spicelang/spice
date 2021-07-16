@@ -26,6 +26,10 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Scalar/GVN.h>
+#include <llvm/Transforms/Utils.h>
 
 #include <memory>
 
@@ -69,6 +73,7 @@ private:
     std::unique_ptr<llvm::IRBuilder<>> builder = std::make_unique<llvm::IRBuilder<>>(*context);
     std::unique_ptr<llvm::Module> module = std::make_unique<llvm::Module>("Module", *context);
     std::map<std::string, llvm::AllocaInst*> namedValues;
+    std::vector<llvm::Function*> functions;
 
     // Private methods
     std::string getIRString();

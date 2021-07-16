@@ -28,8 +28,11 @@ int main(int argc, char** argv) {
     GeneratorVisitor generator = GeneratorVisitor();
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
+    std::cout << "Normal IR code:" << std::endl;
     generator.dumpIR();
     generator.optimize(); // Optimize IR code
+    std::cout << "Optimized IR code:" << std::endl;
+    generator.dumpIR();
     generator.emit(); // Emit object file for specified platform
 
     // Return with positive result code

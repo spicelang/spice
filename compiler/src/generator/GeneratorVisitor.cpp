@@ -12,31 +12,23 @@ void GeneratorVisitor::init() {
 }
 
 void GeneratorVisitor::optimize() {
-    /*// Register optimization passes
-    std::unique_ptr<llvm::legacy::FunctionPassManager> functionPassManager =
-            llvm::make_unique<llvm::legacy::FunctionPassManager>(module.get());
+    // Register optimization passes
+    auto functionPassManager = std::make_unique<llvm::legacy::FunctionPassManager>(module.get());
 
     // Promote allocas to registers.
     functionPassManager->add(llvm::createPromoteMemoryToRegisterPass());
     // Do simple "peephole" optimizations
     functionPassManager->add(llvm::createInstructionCombiningPass());
-    // Reassociate expressions.
+    // Re-associate expressions.
     functionPassManager->add(llvm::createReassociatePass());
     // Eliminate Common SubExpressions.
     functionPassManager->add(llvm::createGVNPass());
     // Simplify the control flow graph (deleting unreachable blocks etc).
     functionPassManager->add(llvm::createCFGSimplificationPass());
 
+    // Run optimizing passes for all functions
     functionPassManager->doInitialization();
-
-    for (auto &function : functions) {
-        llvm::Function *llvmFun =
-                module->getFunction(llvm::StringRef(function->functionName));
-        functionPassManager->run(*llvmFun);
-    }
-
-    llvm::Function *llvmMainFun = module->getFunction(llvm::StringRef("main"));
-    functionPassManager->run(*llvmMainFun);*/
+    for (auto& fct : functions) functionPassManager->run(*fct);
 }
 
 void GeneratorVisitor::emit() {
@@ -101,6 +93,9 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     // Verify function
     llvm::verifyFunction(*fct);
 
+    // Add function to function list
+    functions.push_back(fct);
+
     // Return true as result for the function definition
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
 }
@@ -132,6 +127,9 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 
     // Verify function
     llvm::verifyFunction(*fct);
+
+    // Add function to function list
+    functions.push_back(fct);
 
     // Return true as result for the function definition
     return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);
@@ -167,6 +165,9 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 
     // Verify procedure
     llvm::verifyFunction(*proc);
+
+    // Add function to function list
+    functions.push_back(proc);
 
     // Return true as result for the function definition
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
