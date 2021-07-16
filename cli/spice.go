@@ -41,9 +41,10 @@ func main() {
 				Usage:   "Builds your Spice program and emits an executable",
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "target", Aliases: []string{"t"}, Usage: "Target triple for the emitted executable (for cross-compiling)"},
+					&cli.PathFlag{Name: "output", Aliases: []string{"o"}, Usage: "Path to the location where the output executable should go"},
 				},
 				Action: func(c *cli.Context) error {
-					cmd.Build(c.Args().Get(0), c.String("target"))
+					cmd.Build(c.Args().Get(0), c.String("target"), c.Path("output"))
 					return nil
 				},
 			},
@@ -54,6 +55,16 @@ func main() {
 				Flags:   []cli.Flag{},
 				Action: func(c *cli.Context) error {
 					cmd.Install(c.Args().Get(0))
+					return nil
+				},
+			},
+			{
+				Name:    "run",
+				Aliases: []string{"r"},
+				Usage:   "Builds your Spice program and runs it",
+				Flags:   []cli.Flag{},
+				Action: func(c *cli.Context) error {
+					cmd.Run(c.Args().Get(0))
 					return nil
 				},
 			},

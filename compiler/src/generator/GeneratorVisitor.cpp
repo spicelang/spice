@@ -31,7 +31,7 @@ void GeneratorVisitor::optimize() {
     for (auto& fct : functions) functionPassManager->run(*fct);
 }
 
-void GeneratorVisitor::emit(std::string targetTriple) {
+void GeneratorVisitor::emit(std::string targetTriple, const std::string& outputPath) {
     // Configure output target
     if (targetTriple.empty()) targetTriple = llvm::sys::getDefaultTargetTriple();
     std::cout << "Emitting executable for following triplet: " << targetTriple << " ..." << std::endl;
@@ -52,10 +52,9 @@ void GeneratorVisitor::emit(std::string targetTriple) {
     module->setDataLayout(targetMachine->createDataLayout());
 
     // Open file output stream
-    std::string filename = "output.o";
     std::error_code errorCode;
-    llvm::raw_fd_ostream dest(filename, errorCode, llvm::sys::fs::OF_None);
-    if (errorCode) throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + filename + "' could not be opened");
+    llvm::raw_fd_ostream dest(outputPath, errorCode, llvm::sys::fs::OF_None);
+    if (errorCode) throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + outputPath + "' could not be opened");
 
     llvm::legacy::PassManager pass;
     auto FileType = llvm::CGFT_ObjectFile;

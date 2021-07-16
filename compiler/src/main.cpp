@@ -14,6 +14,7 @@ int main(int argc, char** argv) {
     // Receive args from cli
     auto filePath = argv[1];
     auto targetTriple = argv[2]; // Default: x86_64-w64-windows-gnu
+    auto outputPath = argv[3];
 
     // Read from file
     std::ifstream stream;
@@ -38,7 +39,7 @@ int main(int argc, char** argv) {
     generator.optimize(); // Optimize IR code
     std::cout << "Optimized IR code:" << std::endl;
     generator.dumpIR();
-    generator.emit(targetTriple); // Emit object file for specified platform*
+    generator.emit(targetTriple, outputPath); // Emit object file for specified platform
 
     // Return with positive result code
     return 0;
