@@ -15,7 +15,8 @@ enum SemanticErrorType {
     OPERATOR_WRONG_DATA_TYPE,
     REASSIGN_CONST_VARIABLE,
     CONDITION_MUST_BE_BOOL,
-    PARAMETER_TYPES_DO_NOT_MATCH
+    PARAMETER_TYPES_DO_NOT_MATCH,
+    MISSING_MAIN_FUNCTION
 };
 
 class SemanticError : public std::exception {
@@ -53,6 +54,9 @@ public:
                 break;
             case PARAMETER_TYPES_DO_NOT_MATCH:
                 messagePrefix = "Parameter types do not match";
+                break;
+            case MISSING_MAIN_FUNCTION:
+                messagePrefix = "Spice programs must contain a main function";
                 break;
         }
         errorMessage = messagePrefix + ": " + message;

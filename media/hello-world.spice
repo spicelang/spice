@@ -1,4 +1,4 @@
 f<int> main() {
-    string output = "Hello world!";
-    sout.println(output);
+    printf("Hello World!");
+    return 0;
 }
