@@ -32,7 +32,8 @@ set(SOURCES
         exception/SemanticError.cpp
         exception/SemanticError.h
         exception/IRError.cpp
-        exception/IRError.h)
+        exception/IRError.h
+        ../lib/cli11/CLI11.hpp)
 
 add_executable(${BINARY}_run ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
@@ -64,4 +65,4 @@ include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
 target_link_libraries(${BINARY}_run antlr4_static)
 target_link_libraries(${BINARY}_run ${LLVM_LIBS})
 
-add_library(${BINARY}_lib STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+add_library(${BINARY}_lib STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS} util/TripleUtil.cpp util/TripleUtil.h)

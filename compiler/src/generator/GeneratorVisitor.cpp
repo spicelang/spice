@@ -31,10 +31,10 @@ void GeneratorVisitor::optimize() {
     for (auto& fct : functions) functionPassManager->run(*fct);
 }
 
-void GeneratorVisitor::emit() {
+void GeneratorVisitor::emit(std::string targetTriple) {
     // Configure output target
-    // ToDo: Make target customizable by setting an cli arg or similar
-    auto targetTriple = llvm::sys::getDefaultTargetTriple();
+    if (targetTriple.empty()) targetTriple = llvm::sys::getDefaultTargetTriple();
+    std::cout << "Emitting executable for following triplet: " << targetTriple << " ..." << std::endl;
     module->setTargetTriple(targetTriple);
 
     // Search after selected target

@@ -38,7 +38,7 @@ public:
     // Public methods
     void init();
     void optimize();
-    void emit();
+    void emit(std::string);
     void dumpIR();
     antlrcpp::Any visitEntry(SpiceParser::EntryContext *ctx) override;
     antlrcpp::Any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
