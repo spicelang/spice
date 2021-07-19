@@ -4,8 +4,6 @@ string testString = "";
 bool testBool = true;
 dyn testAuto = false;
 
-testInt++;
-
 // This is a test comment
 f<int> testFunction(double doubleParam) {
     dyn number;

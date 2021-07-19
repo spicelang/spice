@@ -37,6 +37,8 @@ void GeneratorVisitor::emit(std::string targetTriple, const std::string& outputP
     std::cout << "Emitting executable for following triplet: " << targetTriple << " ..." << std::endl;
     module->setTargetTriple(targetTriple);
 
+    std::cout << "Emitting to " << outputPath << " ..." << std::endl;
+
     // Search after selected target
     std::string error;
     auto target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
@@ -86,6 +88,9 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     builder->SetInsertPoint(bMain);
     namedValues.clear();
 
+    // Create result variable
+    //namedValues["result"] = builder->CreateAlloca(mainType, nullptr, "result");
+
     // Generate IR for function body
     visit(ctx->stmtLst());
 
@@ -103,7 +108,19 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     std::string functionName = ctx->IDENTIFIER()->toString();
     // Create function itself
     auto returnType = visit(ctx->dataType()).as<llvm::Type*>();
-    auto fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
+    std::vector<std::string> paramNames;
+    std::vector<llvm::Type*> paramTypes;
+    for (auto& param : ctx->paramLstDef()->declStmt()) {
+        paramNames.push_back(param->IDENTIFIER()->toString());
+        auto paramType = visit(param->dataType()).as<llvm::Type*>();
+        paramTypes.push_back(paramType);
+    }
+    for (auto& param : ctx->paramLstDef()->assignment()) {
+        paramNames.push_back(param->declStmt()->IDENTIFIER()->toString());
+        auto paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
+        paramTypes.push_back(paramType);
+    }
+    auto fctType = llvm::FunctionType::get(returnType, paramTypes, false);
     auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, functionName, module.get());
 
     // Create entry block
@@ -115,11 +132,21 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     namedValues.clear();
     for (auto& param : fct->args()) {
         auto paramNo = param.getArgNo();
-        std::string paramName = ctx->paramLstDef()->assignment()[paramNo]->IDENTIFIER()->toString();
-        llvm::Type *paramType = fct->getFunctionType()->getParamType(paramNo);
-        namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
-        builder->CreateStore(&param, namedValues[paramName]);
+        if (paramNo < ctx->paramLstDef()->declStmt().size()) {
+            auto paramName = paramNames[paramNo];
+            llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
+            namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
+            builder->CreateStore(&param, namedValues[paramName]);
+        } else {
+            auto paramName = paramNames[paramNo];
+            llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
+            namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
+            builder->CreateStore(&param, namedValues[paramName]);
+        }
     }
+
+    // Declare result variable
+    namedValues["result"] = builder->CreateAlloca(returnType, nullptr, "result");
 
     // Generate IR for function body
     visit(ctx->stmtLst());
@@ -319,7 +346,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext *
         // Get value of left and right side
         auto rhs = visit(ctx->ternary()).as<llvm::Value*>();
         auto lhs = namedValues[varName];
-        if (!lhs) throw std::runtime_error("Internal compiler error - Variable not found in code generation step");
+        if (!lhs) throw std::runtime_error("Internal compiler error - Variable " + varName + " not found in code generation step");
         // Store right side on the left one
         builder->CreateStore(rhs, lhs);
         // Return value of the right side
