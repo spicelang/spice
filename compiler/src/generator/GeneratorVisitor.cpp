@@ -24,7 +24,7 @@ void GeneratorVisitor::optimize() {
     // Eliminate Common SubExpressions.
     functionPassManager->add(llvm::createGVNPass());
     // Simplify the control flow graph (deleting unreachable blocks etc).
-    functionPassManager->add(llvm::createCFGSimplificationPass());
+    //functionPassManager->add(llvm::createCFGSimplificationPass());
 
     // Run optimizing passes for all functions
     functionPassManager->doInitialization();
@@ -34,10 +34,9 @@ void GeneratorVisitor::optimize() {
 void GeneratorVisitor::emit(std::string targetTriple, const std::string& outputPath) {
     // Configure output target
     if (targetTriple.empty()) targetTriple = llvm::sys::getDefaultTargetTriple();
-    std::cout << "Emitting executable for following triplet: " << targetTriple << " ..." << std::endl;
     module->setTargetTriple(targetTriple);
 
-    std::cout << "Emitting to " << outputPath << " ..." << std::endl;
+    std::cout << "Emitting executable for following triplet '" << targetTriple << "' to following path: " << outputPath << std::endl;
 
     // Search after selected target
     std::string error;
@@ -81,15 +80,15 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
     // Build function itself
-    auto mainType = llvm::FunctionType::get(llvm::IntegerType::getInt32Ty(*context),
-                                    std::vector<llvm::Type*>(), false);
+    auto returnType = llvm::IntegerType::getInt32Ty(*context);
+    auto mainType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
     auto fct = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, "main", module.get());
     auto bMain = llvm::BasicBlock::Create(*context, "main_entry", fct);
     builder->SetInsertPoint(bMain);
     namedValues.clear();
 
-    // Create result variable
-    //namedValues["result"] = builder->CreateAlloca(mainType, nullptr, "result");
+    // Declare result variable
+    namedValues["result"] = builder->CreateAlloca(returnType, nullptr, "result");
 
     // Generate IR for function body
     visit(ctx->stmtLst());
@@ -346,7 +345,8 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext *
         // Get value of left and right side
         auto rhs = visit(ctx->ternary()).as<llvm::Value*>();
         auto lhs = namedValues[varName];
-        if (!lhs) throw std::runtime_error("Internal compiler error - Variable " + varName + " not found in code generation step");
+        if (!lhs) throw std::runtime_error("Internal compiler error - Variable '" +
+            varName + "' not found in code generation step");
         // Store right side on the left one
         builder->CreateStore(rhs, lhs);
         // Return value of the right side
@@ -483,10 +483,11 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
 
 antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
     if (ctx->multiplicativeExpr().size() > 1) {
+        std::cout << "Additive: " << ctx->getText() << std::endl;
         auto lhs = visit(ctx->multiplicativeExpr()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
             auto rhs = visit(ctx->multiplicativeExpr()[i]).as<llvm::Value*>();
-            if (ctx->PLUS()[i-1])
+            if (ctx->PLUS(i-1))
                 lhs = builder->CreateAdd(lhs, rhs, "add");
             else
                 lhs = builder->CreateSub(lhs, rhs, "sub");
@@ -501,7 +502,7 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
         auto lhs = visit(ctx->prefixUnary()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->prefixUnary().size(); i++) {
             auto rhs = visit(ctx->prefixUnary()[i]).as<llvm::Value*>();
-            if (ctx->MUL()[i-1])
+            if (ctx->MUL(i-1))
                 lhs = builder->CreateMul(lhs, rhs, "mul");
             else
                 lhs = builder->CreateSDiv(lhs, rhs, "div");

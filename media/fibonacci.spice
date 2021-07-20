@@ -1,14 +1,9 @@
 f<int> fibo(int n) {
-    printf("Param: %d", n);
-    //if n <=1 { return n; }
-    //int fibo1 = fibo(n - 1);
-    //int fibo2 = fibo(n - 2);
-    //return fibo(n - 1) + fibo(n - 2);
-    return 0;
+    if n <= 1 { return n; }
+    return fibo(n - 1) + fibo(n - 2);
 }
 
 f<int> main() {
-    result = fibo(5);
-    printf("%d", result);
+    printf("Result: %d", fibo(30));
     return 0;
 }
