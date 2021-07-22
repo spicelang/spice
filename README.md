@@ -12,6 +12,7 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 - [x] True type and false type of ternary are matching
 - [x] Variables are declared before referenced
 - [x] Variables are declared exactly once
+- [x] Variables with `const` attached are not modified later
 - [x] Functions/Procedures are defined before called
 - [x] Can only call functions/procedures and no variables
 - [x] Only use parameters, that exist in the declaration
@@ -27,7 +28,6 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 - [x] Prefix/postfix unary operators are only applied to integers
 - [x] Program contains main function
 - [x] `++` and `--` are only applied on identifiers
-- [ ] Variables with `const` attached are not modified later
 
 ## Special language features
 - Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"`

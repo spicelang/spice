@@ -2,7 +2,7 @@
 
 #include "AnalyzerVisitor.h"
 
-antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Pre-traversing action
 
     // Traverse AST
@@ -18,7 +18,7 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
     return currentScope;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
     // Insert function name into the root symbol table
     currentScope->insert("main", TYPE_FUNCTION, INITIALIZED, true, false);
     // Create a new scope
@@ -43,7 +43,7 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
     return returnType;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
     // Insert function name into the root symbol table
     std::string functionName = ctx->IDENTIFIER()->toString();
     currentScope->insert(functionName, TYPE_FUNCTION, INITIALIZED, true, false);
@@ -67,7 +67,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     return returnType;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
     // Insert procedure name into the root symbol table
     std::string procedureName = ctx->IDENTIFIER()->toString();
     currentScope->insert(procedureName, TYPE_PROCEDURE, INITIALIZED, true, false);
@@ -85,7 +85,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     return TYPE_BOOL;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -104,14 +104,14 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
     return TYPE_BOOL;
 }
 
-/*antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
+/*antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
     // Create a new scope
     std::string scopeId = "foreach:" + std::to_string(ctx->FOR()->getSymbol()->getLine()) + ":" +
                           std::to_string(ctx->FOR()->getSymbol()->getCharPositionInLine());
     currentScope = currentScope->createChildBlock(scopeId);
 }*/
 
-antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -126,7 +126,7 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx
     return TYPE_BOOL;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -141,7 +141,7 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
     return TYPE_BOOL;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) {
     std::string variableName = ctx->IDENTIFIER()->toString();
     // Check if symbol already exists in the symbol table
     if (currentScope->lookup(variableName))
@@ -153,7 +153,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
     return type;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
     std::string name = ctx->IDENTIFIER()->toString();
     // Check if function call exists in symbol table
     SymbolTableEntry* entry = currentScope->lookup(name);
@@ -186,14 +186,14 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     return symbolTable->lookup(RETURN_VARIABLE_NAME)->getType();
 }
 
-antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
     std::string libraryIdentifier = ctx->STRING()->toString();
     // TODO: Add library check
     return TYPE_STRING;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
     SymbolType returnType = visit(ctx->assignment()).as<SymbolType>();
     // Check if return variable is in the symbol table
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
@@ -207,11 +207,11 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *c
     return returnType;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) {
     return SpiceBaseVisitor::visitPrintfStmt(ctx);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
     // Check if there is an assign operator applied
     if (ctx->children.size() > 1) {
         std::string variableName;
@@ -240,7 +240,6 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext *c
         }
 
         // Take a look at the operator
-
         if (ctx->ASSIGN_OP()) {
             if (leftType != rightType)
                 throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
@@ -280,7 +279,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext *c
     return visit(ctx->ternary());
 }
 
-antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
     // Check if there is a ternary operator applied
     if (ctx->children.size() > 1) {
         SymbolType conditionType = visit(ctx->logicalOrExpr()[0]).as<SymbolType>();
@@ -298,7 +297,7 @@ antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext *ctx) {
     return visit(ctx->logicalOrExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) {
     // Check if a logical or operator is applied
     if (ctx->children.size() > 1) {
         SymbolType leftType = visit(ctx->logicalAndExpr()[0]).as<SymbolType>();
@@ -316,7 +315,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
     return visit(ctx->logicalAndExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext* ctx) {
     // Check if a logical and operator is applied
     if (ctx->children.size() > 1) {
         SymbolType leftType = visit(ctx->bitwiseOrExpr()[0]).as<SymbolType>();
@@ -334,7 +333,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
     return visit(ctx->bitwiseOrExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext* ctx) {
     // Check if a bitwise or operator is applied
     if (ctx->children.size() > 1) {
         SymbolType leftType = visit(ctx->bitwiseAndExpr()[0]).as<SymbolType>();
@@ -357,7 +356,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
     return visit(ctx->bitwiseAndExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext* ctx) {
     // Check if a bitwise and operator is applied
     if (ctx->children.size() > 1) {
         SymbolType leftType = visit(ctx->equalityExpr()[0]).as<SymbolType>();
@@ -380,7 +379,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
     return visit(ctx->equalityExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext* ctx) {
     // Check if at least one equality operator is applied
     if (ctx->children.size() > 1) {
         SymbolType leftType = visit(ctx->relationalExpr()[0]).as<SymbolType>();
@@ -398,7 +397,7 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
     return visit(ctx->relationalExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext* ctx) {
     // Check if at least one relational operator is applied
     if (ctx->children.size() > 1) {
         SymbolType leftType = visit(ctx->additiveExpr()[0]).as<SymbolType>();
@@ -414,7 +413,7 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
     return visit(ctx->additiveExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext* ctx) {
     // Check if at least one additive operator is applied
     if (ctx->children.size() > 1) {
         antlrcpp::Any currentType = visit(ctx->multiplicativeExpr()[0]);
@@ -476,7 +475,7 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
     return visit(ctx->multiplicativeExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) {
     // Check if at least one multiplicative operator is applied
     if (ctx->children.size() > 1) {
         antlrcpp::Any currentType = visit(ctx->prefixUnary()[0]);
@@ -541,7 +540,7 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
     return visit(ctx->prefixUnary()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext* ctx) {
     antlrcpp::Any prefixUnary = visit(ctx->postfixUnary());
 
     // Ensure integer when '++' or '--' is applied
@@ -562,7 +561,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext 
     return prefixUnary;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContext* ctx) {
     antlrcpp::Any atomicExpr = visit(ctx->atomicExpr());
 
     // Ensure integer when '++' or '--' is applied
@@ -574,13 +573,13 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
     return atomicExpr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
     if (ctx->LPAREN()) // Rule: '(' assignment ')'
         return visit(ctx->assignment());
     return visit(ctx->value()); // Rule: value
 }
 
-antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->DOUBLE()) return TYPE_DOUBLE;
     if (ctx->INTEGER()) return TYPE_INT;
     if (ctx->STRING()) return TYPE_STRING;
@@ -596,7 +595,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     return visit(ctx->functionCall());
 }
 
-SymbolType AnalyzerVisitor::getSymbolTypeFromDataType(SpiceParser::DataTypeContext *ctx) {
+SymbolType AnalyzerVisitor::getSymbolTypeFromDataType(SpiceParser::DataTypeContext* ctx) {
     if (ctx->TYPE_DOUBLE()) return TYPE_DOUBLE;
     if (ctx->TYPE_INT()) return TYPE_INT;
     if (ctx->TYPE_STRING()) return TYPE_STRING;
