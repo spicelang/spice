@@ -24,7 +24,7 @@ void GeneratorVisitor::optimize() {
     // Eliminate Common SubExpressions.
     functionPassManager->add(llvm::createGVNPass());
     // Simplify the control flow graph (deleting unreachable blocks etc).
-    //functionPassManager->add(llvm::createCFGSimplificationPass());
+    //functionPassManager->add(llvm::createCFGSimplificationPass()); // Breaks recursion in fibonacci.spice
 
     // Run optimizing passes for all functions
     functionPassManager->doInitialization();
@@ -80,12 +80,17 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
     // Build function itself
+    std::string functionName = "main";
     auto returnType = llvm::IntegerType::getInt32Ty(*context);
     auto mainType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
-    auto fct = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, "main", module.get());
+    auto fct = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, functionName, module.get());
     auto bMain = llvm::BasicBlock::Create(*context, "main_entry", fct);
     builder->SetInsertPoint(bMain);
+
+    // Change scope
     namedValues.clear();
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
 
     // Declare result variable
     namedValues["result"] = builder->CreateAlloca(returnType, nullptr, "result");
@@ -98,6 +103,9 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
 
     // Add function to function list
     functions.push_back(fct);
+
+    // Change scope back
+    currentScope = currentScope->getParent();
 
     // Return true as result for the function definition
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
@@ -127,8 +135,12 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     fct->getBasicBlockList().push_back(bEntry);
     builder->SetInsertPoint(bEntry);
 
-    // Store function params
+    // Change scope
     namedValues.clear();
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+
+    // Store function params
     for (auto& param : fct->args()) {
         auto paramNo = param.getArgNo();
         if (paramNo < ctx->paramLstDef()->declStmt().size()) {
@@ -156,6 +168,9 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Add function to function list
     functions.push_back(fct);
 
+    // Change scope back
+    currentScope = currentScope->getParent();
+
     // Return true as result for the function definition
     return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);
 }
@@ -163,8 +178,19 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
     auto procedureName = ctx->IDENTIFIER()->toString();
     // Create procedure itself
-    auto procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
-                                            std::vector<llvm::Type*>(), false);
+    std::vector<std::string> paramNames;
+    std::vector<llvm::Type*> paramTypes;
+    for (auto& param : ctx->paramLstDef()->declStmt()) {
+        paramNames.push_back(param->IDENTIFIER()->toString());
+        auto paramType = visit(param->dataType()).as<llvm::Type*>();
+        paramTypes.push_back(paramType);
+    }
+    for (auto& param : ctx->paramLstDef()->assignment()) {
+        paramNames.push_back(param->declStmt()->IDENTIFIER()->toString());
+        auto paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
+        paramTypes.push_back(paramType);
+    }
+    auto procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), paramTypes, false);
     auto proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage, procedureName, module.get());
 
     // Create entry block
@@ -172,14 +198,25 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     proc->getBasicBlockList().push_back(bEntry);
     builder->SetInsertPoint(bEntry);
 
-    // Store procedure params
+    // Change scope
     namedValues.clear();
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+
+    // Store procedure params
     for (auto& param : proc->args()) {
         auto paramNo = param.getArgNo();
-        std::string paramName = ctx->paramLstDef()->assignment()[paramNo]->IDENTIFIER()->toString();
-        llvm::Type *paramType = proc->getFunctionType()->getParamType(paramNo);
-        namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
-        builder->CreateStore(&param, namedValues[paramName]);
+        if (paramNo < ctx->paramLstDef()->declStmt().size()) {
+            auto paramName = paramNames[paramNo];
+            llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
+            namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
+            builder->CreateStore(&param, namedValues[paramName]);
+        } else {
+            auto paramName = paramNames[paramNo];
+            llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
+            namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
+            builder->CreateStore(&param, namedValues[paramName]);
+        }
     }
 
     // Generate IR for procedure body
@@ -193,6 +230,9 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 
     // Add function to function list
     functions.push_back(proc);
+
+    // Change scope back
+    currentScope = currentScope->getParent();
 
     // Return true as result for the function definition
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
@@ -212,6 +252,10 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
     auto conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
     builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
 
+    // Change scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
     builder->SetInsertPoint(bLoop);
@@ -227,9 +271,12 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
     visit(ctx->assignment()[2]);
     builder->CreateBr(bLoop);
 
-    // Fil loop end block
+    // Fill loop end block
     parentFct->getBasicBlockList().push_back(bLoopEnd);
     builder->SetInsertPoint(bLoopEnd);
+
+    // Change scope back
+    currentScope = currentScope->getParent();
 
     // Return true as result for the loop
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
@@ -246,6 +293,10 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ct
     // Check if entering the loop is necessary
     builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
 
+    // Change scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
     builder->SetInsertPoint(bLoop);
@@ -260,6 +311,9 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ct
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bLoopEnd);
     builder->SetInsertPoint(bLoopEnd);
+
+    // Change scope back
+    currentScope = currentScope->getParent();
 
     // Return true as result for the loop
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
@@ -276,6 +330,10 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
     // Check if if condition is fulfilled
     builder->CreateCondBr(conditionValue, bThen, bEnd);
 
+    // Change scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+
     // Fill then block
     parentFct->getBasicBlockList().push_back(bThen);
     builder->SetInsertPoint(bThen);
@@ -287,12 +345,15 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
     parentFct->getBasicBlockList().push_back(bEnd);
     builder->SetInsertPoint(bEnd);
 
+    // Change scope back
+    currentScope = currentScope->getParent();
+
     // Return conditional value as result for the if stmt
     return conditionValue;
 }
 
 antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
-    std::string varName = ctx->IDENTIFIER()->toString();
+    std::string varName = currentVar = ctx->IDENTIFIER()->toString();
 
     llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
 
@@ -483,7 +544,6 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
 
 antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
     if (ctx->multiplicativeExpr().size() > 1) {
-        std::cout << "Additive: " << ctx->getText() << std::endl;
         auto lhs = visit(ctx->multiplicativeExpr()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
             auto rhs = visit(ctx->multiplicativeExpr()[i]).as<llvm::Value*>();
@@ -637,7 +697,22 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx)
     if (ctx->TYPE_BOOL()) return (llvm::Type*) llvm::Type::getInt1Ty(*context);
 
     // Data type is dyn
-    // ToDo: Add support for dyn
+    if (ctx->TYPE_DYN()) {
+        auto symbolTableEntry = currentScope->lookup(currentVar);
+        switch (symbolTableEntry->getType()) {
+            case TYPE_DOUBLE:
+                return (llvm::Type*) llvm::Type::getDoubleTy(*context);
+            case TYPE_INT:
+                return (llvm::Type*) llvm::Type::getInt32Ty(*context);
+            case TYPE_STRING:
+                return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();
+            case TYPE_BOOL:
+                return (llvm::Type*) llvm::Type::getInt1Ty(*context);
+            default:
+                throw IRError(UNEXPECTED_DYN_TYPE, "Dyn was " + std::to_string(symbolTableEntry->getType()));
+        }
+    }
+
     return (llvm::Type*) nullptr;
 }
 

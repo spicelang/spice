@@ -28,10 +28,10 @@ int main(int argc, char** argv) {
 
     // Execute syntactical analysis
     antlr4::tree::ParseTree *tree = parser.entry();
-    AnalyzerVisitor().visit(tree); // Check for semantic errors
+    SymbolTable* symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>(); // Check for semantic errors
 
     // Execute generator
-    GeneratorVisitor generator = GeneratorVisitor();
+    GeneratorVisitor generator = GeneratorVisitor(symbolTable);
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
     std::cout << "Normal IR code:" << std::endl;

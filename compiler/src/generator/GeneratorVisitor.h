@@ -4,6 +4,8 @@
 
 #include <SpiceBaseVisitor.h>
 #include <exception/IRError.h>
+#include <analyzer/SymbolTable.h>
+#include <util/ScopeIdUtil.h>
 
 #include <llvm/ADT/APFloat.h>
 #include <llvm/ADT/Optional.h>
@@ -35,6 +37,9 @@
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
+    // Constructors
+    explicit GeneratorVisitor(SymbolTable* symbolTable): currentScope(symbolTable) {}
+
     // Public methods
     void init();
     void optimize();
@@ -74,6 +79,8 @@ private:
     std::unique_ptr<llvm::Module> module = std::make_unique<llvm::Module>("Module", *context);
     std::map<std::string, llvm::AllocaInst*> namedValues;
     std::vector<llvm::Function*> functions;
+    SymbolTable* currentScope = new SymbolTable(nullptr);
+    std::string currentVar;
 
     // Private methods
     std::string getIRString();

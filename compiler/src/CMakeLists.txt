@@ -31,6 +31,8 @@ set(SOURCES
         generator/GeneratorVisitor.h
         exception/SemanticError.cpp
         exception/SemanticError.h
+        util/ScopeIdUtil.cpp
+        util/ScopeIdUtil.h
         exception/IRError.cpp
         exception/IRError.h)
 

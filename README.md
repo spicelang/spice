@@ -27,14 +27,15 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 - [x] Prefix/postfix unary operators are only applied to integers
 - [x] Program contains main function
 - [x] `++` and `--` are only applied on identifiers
+- [ ] Variables with `const` attached are not modified later
 
 ## Special language features
 - Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"`
-- Alternatively to the return statement in a function, you can also assign variable `result` with a value, which was automatically declared by the function header
-- Unary minus has to be applied without a space between (e.g.: `-3.4`) and binary minus has to be applied with a space between (e.g.: `n - 5`)
-- Default values of function/procedure parameters are possible e.g.: `f<int> test(int param = 2) {}`
-- Function/Procedure parameters with a default value have to be last in the param list
+- Alternatively to the return statement in a function, you can also assign variable `result` with a value, which was automatically declared by the function head
+- Binary minus has to be applied with a space between (e.g.: `n - 5`) and unary minus has to be applied without a space between (e.g.: `-3.4`)
+- Default values of function/procedure parameters are possible e.g.: `f<int> test(int param = 2) {...}`
+- Function/procedure parameters with a default value have to be last in the param list
 
 ## CMake instructions for building
-`cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "CodeBlocks - MinGW Makefiles" ../llvm`
+`cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "CodeBlocks - MinGW Makefiles" ../llvm` <br>
 `cmake --build .`

@@ -22,7 +22,7 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
     // Insert function name into the root symbol table
     currentScope->insert("main", TYPE_FUNCTION, INITIALIZED, true, false);
     // Create a new scope
-    std::string scopeId = "f:main";
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Declare variable for the return value
     SymbolType returnType = TYPE_INT;
@@ -48,7 +48,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     std::string functionName = ctx->IDENTIFIER()->toString();
     currentScope->insert(functionName, TYPE_FUNCTION, INITIALIZED, true, false);
     // Create a new scope
-    std::string scopeId = "f:" + functionName;
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Declare variable for the return value
     SymbolType returnType = getSymbolTypeFromDataType(ctx->dataType());
@@ -72,7 +72,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     std::string procedureName = ctx->IDENTIFIER()->toString();
     currentScope->insert(procedureName, TYPE_PROCEDURE, INITIALIZED, true, false);
     // Create a new scope
-    std::string scopeId = "p:" + procedureName;
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit params in new scope
     parameterMode = true;
@@ -87,8 +87,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
     // Create a new scope
-    std::string scopeId = "for:" + std::to_string(ctx->FOR()->getSymbol()->getLine()) + ":" +
-            std::to_string(ctx->FOR()->getSymbol()->getCharPositionInLine());
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit assignment in new scope
     visit(ctx->assignment()[0]);
@@ -114,8 +113,7 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 
 antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
     // Create a new scope
-    std::string scopeId = "while:" + std::to_string(ctx->WHILE()->getSymbol()->getLine()) + ":" +
-                          std::to_string(ctx->WHILE()->getSymbol()->getCharPositionInLine());
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
     SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
@@ -129,9 +127,8 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx
 }
 
 antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
-    std::string scopeId = "if:" + std::to_string(ctx->IF()->getSymbol()->getLine()) + ":" +
-                          std::to_string(ctx->IF()->getSymbol()->getCharPositionInLine());
     // Create a new scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
     SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();

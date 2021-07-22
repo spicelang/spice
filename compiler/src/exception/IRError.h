@@ -9,6 +9,7 @@ enum IRErrorType {
     TARGET_NOT_AVAILABLE,
     CANT_OPEN_OUTPUT_FILE,
     WRONG_TYPE,
+    UNEXPECTED_DYN_TYPE,
 };
 
 class IRError : public std::exception {
@@ -25,6 +26,9 @@ public:
                 break;
             case WRONG_TYPE:
                 messagePrefix = "Wrong type of output file";
+                break;
+            case UNEXPECTED_DYN_TYPE:
+                messagePrefix = "Unexpected type of dyn. Symbol table incomplete";
                 break;
         }
         errorMessage = messagePrefix + ": " + message;
