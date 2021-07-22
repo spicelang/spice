@@ -1,0 +1,10 @@
+f<double> calledFunction(int mandatoryParam, bool optionalParam = true) {
+    printf("Mandatory: %d", mandatoryParam);
+    printf("Optional: %d", optionalParam);
+    return 0.0;
+}
+
+f<int> main() {
+    calledFunction(1, false);
+    return 0;
+}
