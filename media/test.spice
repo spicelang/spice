@@ -1,8 +1,13 @@
-f<int> main() {
+/*f<int> main() {
     int operand1 = 6;
     int operand2 = 5;
     dyn res = operand1 | operand2;
     printf("Computation result is: %d", res);
 
+    return 0;
+}*/
+
+f<int> main() {
+    int test = "Test";
     return 0;
 }

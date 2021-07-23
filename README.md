@@ -29,6 +29,9 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 - [x] Program contains main function
 - [x] `++` and `--` are only applied on identifiers
 
+## To be tested
+- [ ] Dyn datatype for function args
+
 ## Special language features
 - Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"`
 - Alternatively to the return statement in a function, you can also assign variable `result` with a value, which was automatically declared by the function head

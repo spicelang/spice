@@ -45,4 +45,5 @@ include_directories(src)
 add_subdirectory(src)
 
 # Test module
+enable_testing()
 add_subdirectory(test)
