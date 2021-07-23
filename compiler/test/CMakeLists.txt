@@ -15,6 +15,7 @@ include_directories(${ANTLR4CPP_INCLUDE_DIRS})
 include_directories(${ANTLR_Spice_OUTPUT_DIR})
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
 
+enable_testing()
 add_test(NAME ${BINARY} COMMAND ${BINARY})
 target_link_libraries(${BINARY} PUBLIC ${CMAKE_PROJECT_NAME}_lib gtest antlr4_static ${LLVM_LIBS})
 
