@@ -21,14 +21,14 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"  # Light mode
       scheme: default
-      primary: red
+      primary: deep orange
       accent: red
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
     - media: "(prefers-color-scheme: dark)"  # Dark mode
       scheme: slate
-      primary: red
+      primary: deep orange
       accent: red
       toggle:
         icon: material/weather-night
