@@ -10,14 +10,12 @@ jobs:
   build-compiler:
     name: Build compiler binaries
     runs-on: ubuntu-latest
-    env:
-      LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
     strategy:
       matrix:
         arch_name:
           - linux-arm64
           - linux-armv5
-          #- linux-armv6
+          - linux-armv6
           - linux-armv7
           - linux-x86
           - linux-x64
@@ -37,18 +35,19 @@ jobs:
         id: cache-llvm
         uses: actions/cache@v2
         with:
-          path: /home/runner/work/spice/llvm
-          key: llvm-12-0-1
+          path: /home/runner/work/spice/spice/llvm
+          key: llvm-12-0-1-${{ matrix.arch_name }}
 
-      - name: Setup LLVM
+      - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          cd ..
           git clone https://github.com/llvm/llvm-project llvm
-          mkdir ./llvm/build
-          cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
-          cmake --build .
+          ./dockcross cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2"
+
+      - name: Setup LLVM - Build
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          ./dockcross ninja -C./llvm/build
 
       - name: Download Libs
         run: |
@@ -57,10 +56,10 @@ jobs:
           git clone https://github.com/antlr/antlr4.git
       
       - name: Configure
-        run: ./dockcross cmake -Bbin -H./compiler -GNinja
+        run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" cmake -Bbin -H./compiler -GNinja
 
       - name: Compile
-        run: ./dockcross ninja -Cbin
+        run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" ninja -Cbin
 
       - name: Process build output - Linux
         if: ${{ startsWith(matrix.arch_name, 'linux') }}
@@ -176,11 +175,11 @@ jobs:
       matrix:
         arch:
           - amd64
-          - 386
-          - arm64
-          - armv5
+          #- 386
+          #- arm64
+          #- armv5
           #- armv6
-          - armv7
+          #- armv7
     steps:
       - name: Get version name
         id: get_version
@@ -231,9 +230,9 @@ jobs:
           - {
               arch: amd64, label: x64
             }
-          - {
-              arch: 386, label: x86
-            }
+          #- {
+          #    arch: 386, label: x86
+          #  }
     steps:
       - name: Checkout
         uses: actions/checkout@v2

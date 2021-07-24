@@ -140,7 +140,7 @@ release:
   name_template: v{{ .Tag }}
   prerelease: auto
   footer: Visit [spicelang.com](https://www.spicelang.com) to test out the new features!
-announce:
-  twitter:
-    enabled: true
-    message_template: 'Spice {{ .Tag }} is now available! Check out the new features: www.spicelang.com!'
+#announce:
+#  twitter:
+#    enabled: true
+#    message_template: 'Spice {{ .Tag }} is now available! Check out the new features: www.spicelang.com!'
