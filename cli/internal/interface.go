@@ -11,6 +11,7 @@ import (
 
 const COMPILER_EXECUTABLE_NAME = "spicec"
 
+// Compile executes the compiler executable with the provided input arguments
 func Compile(sourceFile string, targetTriple string, outputPath string) {
 	// Check if compiler executable exists
 	if !CommandExists(COMPILER_EXECUTABLE_NAME) {

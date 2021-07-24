@@ -5,6 +5,7 @@ import (
 	"spice/internal"
 )
 
+// Run takes the passed code file, resolves its dependencies, emits an executable and runs it
 func Run(sourceFile string) {
 	// Compile program and emit executable file to tmp dir
 	tmpPath := os.TempDir()

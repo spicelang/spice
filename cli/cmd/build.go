@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Build takes the passed code file, resolves its dependencies and emits an executable, representing its functionality
 func Build(sourceFile string, targetTriple string, outputPath string) {
 	// Set default value for outputPath
 	if outputPath == "" {
