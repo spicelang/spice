@@ -10,6 +10,8 @@ jobs:
   build-compiler:
     name: Build compiler binaries
     runs-on: ubuntu-latest
+    env:
+      LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
     strategy:
       matrix:
         arch_name:
@@ -30,6 +32,23 @@ jobs:
           docker run --rm dockcross/${{ matrix.arch_name }} > ./dockcross
           chmod +x dockcross
           mkdir bin
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: /home/runner/work/spice/llvm
+          key: llvm-12-0-1
+
+      - name: Setup LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          cd ..
+          git clone https://github.com/llvm/llvm-project llvm
+          mkdir ./llvm/build
+          cd ./llvm/build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
+          cmake --build .
 
       - name: Download Libs
         run: |
