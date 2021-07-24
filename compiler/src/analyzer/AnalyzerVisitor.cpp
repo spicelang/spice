@@ -589,7 +589,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         SymbolTableEntry* entry = currentScope->lookup(variableName);
         if (entry == nullptr)
             throw SemanticError(REFERENCED_UNDEFINED_VARIABLE, "Variable " + variableName +
-                " was referenced before initialized.");
+                " was referenced before initialized");
         return entry->getType();
     }
     return visit(ctx->functionCall());
