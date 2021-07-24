@@ -18,6 +18,9 @@
 
 This is the home repo of the Spice programming language. Spice is a compiled language which sets a focus on performance and practicality. It is considered as a systems language, which means it is neither suitable for coding user interfaces nor any interface with the user, except cli tools. Spice supports cross-compilation to all target platforms, listed below.
 
+## Documentation
+Please visit the documentation at [spicelang.com](https://www.spicelang.com).
+
 ## Grammar
 The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTLR grammar configuration file.
 
@@ -64,3 +67,8 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 ## CMake instructions for building LLVM (required for building Spice itself)
 `cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "CodeBlocks - MinGW Makefiles" ../llvm` <br>
 `cmake --build .`
+
+## Contribute to the project
+If you want to contribute to this project, please ensure you comply with the [contribution guidelines](./CONTRIBUTING.md).
+
+© ChilliBits 2021
