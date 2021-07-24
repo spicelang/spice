@@ -16,7 +16,7 @@ You don't have to pull the image first. You also can skip this step.
 ### Use
 === "Docker Hub"
     ```sh
-    docker run --rm -it -v $(pwd):/ccom/out chillibits/spice
+    docker run --rm -it -v $(pwd):/spice/out chillibits/spice
     ```
 === "GitHub Container Registry"
     ```sh

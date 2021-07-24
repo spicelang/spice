@@ -1,6 +1,6 @@
 
 # Introduction
-Spice is a compiled language which sets a focus on performance and practicality. It is considered as a systems language, which means it is neither suitable for coding user interfaces nor any interface with the user, except cli tools. Spice has support for cross-compiling for multiple target platforms. In order to get started, visit our [quick-start guide](../quick-start).
+Spice is a compiled language which sets a focus on performance and practicality. It is considered as a systems language, which means that is rather not suitable for coding user interfaces, but for coding drivers and cli tools. Spice has support for cross-compiling for multiple target platforms. In order to get started, visit our [quick-start guide](../quick-start).
 
 Here you can see a demo, how to use Spice to process a YAML data file with conditional sections:
 
