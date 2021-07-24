@@ -29,15 +29,16 @@ int main(int argc, char** argv) {
     // Execute syntactical analysis
     antlr4::tree::ParseTree *tree = parser.entry();
     SymbolTable* symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>(); // Check for semantic errors
+    std::cout << symbolTable->toString() << std::endl; // ToDo: Remove in the future
 
     // Execute generator
     GeneratorVisitor generator = GeneratorVisitor(symbolTable);
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
-    std::cout << "Normal IR code:" << std::endl;
+    std::cout << "Normal IR code:" << std::endl; // ToDo: Remove in the future
     generator.dumpIR();
     generator.optimize(); // Optimize IR code
-    std::cout << "Optimized IR code:" << std::endl;
+    std::cout << "Optimized IR code:" << std::endl; // ToDo: Remove in the future
     generator.dumpIR();
     generator.emit(targetTriple, outputPath); // Emit object file for specified platform
 

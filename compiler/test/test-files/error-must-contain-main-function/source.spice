@@ -1,0 +1,3 @@
+f<string> testFunction() {
+    return "Hello World!";
+}

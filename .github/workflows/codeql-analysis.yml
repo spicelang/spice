@@ -20,6 +20,23 @@ jobs:
         with:
           languages: cpp
 
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: /home/runner/work/spice/llvm
+          key: llvm-12-0-1
+
+      - name: Setup LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          cd ..
+          git clone https://github.com/llvm/llvm-project llvm
+          mkdir ./llvm/build
+          cd ./llvm/build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
+          cmake --build .
+
       - name: Prepare environment
         run: |
           shopt -s extglob
@@ -29,11 +46,14 @@ jobs:
 
       - name: Download Libs
         run: |
-          cd lib
-          git clone https://github.com/google/googletest.git
+          mkdir ./lib
+          cd ./lib
+          git clone https://github.com/antlr/antlr4.git
 
       - name: Build project
         uses: nicledomaS/cmake_build_action@v1.4
+        env:
+          LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
         with:
           submodule_update: ON
           run_tests: ON

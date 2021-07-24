@@ -1,0 +1,10 @@
+f<int> main() {
+    double variable = 4.109;
+    while (variable > "test") {
+        printf("Hello World!");
+    }
+    while ("" <= "test") {
+        printf("Hello World!");
+    }
+    return 0;
+}

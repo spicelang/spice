@@ -1,0 +1,8 @@
+f<double> testFunction(double param1) {
+    result = 4.1;
+}
+
+f<int> main() {
+    testFunction();
+    return 0;
+}

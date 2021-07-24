@@ -1,0 +1,6 @@
+f<int> main() {
+    if 7 {
+        printf("Test");
+    }
+    return 0;
+}

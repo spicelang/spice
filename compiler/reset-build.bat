@@ -1,2 +1,2 @@
 @echo off
-rmdir /s /q .\cmake-build-debug\src\antlr4_runtime
+rmdir /s /q .\cmake-build-debug\antlr4_runtime
