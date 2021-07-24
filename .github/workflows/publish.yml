@@ -1,0 +1,264 @@
+# Publish Compiler binaries
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-compiler:
+    name: Build compiler binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch_name:
+          - linux-arm64
+          - linux-armv5
+          #- linux-armv6
+          - linux-armv7
+          - linux-x86
+          - linux-x64
+          - windows-static-x86
+          - windows-static-x64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Prepare builder
+        run: |
+          docker run --rm dockcross/${{ matrix.arch_name }} > ./dockcross
+          chmod +x dockcross
+          mkdir bin
+
+      - name: Download Libs
+        run: |
+          mkdir -p ./compiler/lib
+          cd ./compiler/lib
+          git clone https://github.com/antlr/antlr4.git
+      
+      - name: Configure
+        run: ./dockcross cmake -Bbin -H./compiler -GNinja
+
+      - name: Compile
+        run: ./dockcross ninja -Cbin
+
+      - name: Process build output - Linux
+        if: ${{ startsWith(matrix.arch_name, 'linux') }}
+        working-directory: bin
+        run: |
+          mv ./src/Spice_run spicec
+          chmod +x spicec
+          
+      - name: Process build output - Windows
+        if: ${{ startsWith(matrix.arch_name, 'windows') }}
+        working-directory: bin
+        run: mv ./src/Spice_run.exe spicec.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: spicec-${{ matrix.arch_name }}
+          path: ./bin/spicec**
+
+  build-cli:
+    name: Build CLI binaries
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-compiler
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_CLI_EXPERIMENTAL: enabled
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      - name: Restore Go modules cache
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.GPG_PACKAGE_SIGNING }}
+          passphrase: ${{ secrets.GPG_PACKAGE_SIGNING_PASSPHRASE }}
+
+      - name: Docker login GHCR
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Docker login Docker Hub
+        uses: docker/login-action@v1
+        with:
+          registry: docker.io
+          username: chillibits
+          password: ${{ secrets.DOCKER_HUB_SECRET }}
+
+      - name: Download all artifacts of compiler build
+        uses: actions/download-artifact@v2
+        with:
+          path: bin
+
+      - name: Rename compiler binaries & allow execution
+        working-directory: bin
+        run: |
+          mv spicec-linux-x86 spicec-linux-386
+          mv spicec-linux-x64 spicec-linux-amd64
+          mv spicec-windows-static-x86 spicec-windows-386
+          mv spicec-windows-static-x64 spicec-windows-amd64
+          chmod -R +x ./
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          version: v0.173.1
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          NFPM_PUBLISH_DEB_PASSPHRASE: ${{ secrets.GPG_PACKAGE_SIGNING_PASSPHRASE }}
+          NFPM_PUBLISH_RPM_PASSPHRASE: ${{ secrets.GPG_PACKAGE_SIGNING_PASSPHRASE }}
+          NFPM_PUBLISH_APK_PASSPHRASE: ${{ secrets.GPG_PACKAGE_SIGNING_PASSPHRASE }}
+          TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
+          TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist-output
+          path: dist/
+
+  deploy-nexus:
+    name: Deploy to Nexus
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-cli
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - 386
+          - arm64
+          - armv5
+          #- armv6
+          - armv7
+    steps:
+      - name: Get version name
+        id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Download dist output
+        uses: actions/download-artifact@v2
+        with:
+          name: dist-output
+
+      - name: Deploy to Debian / Raspbian repo
+        run: |
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-bullseye/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-buster/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-stretch/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-jessie/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-wheezy/"
+
+      - name: Deploy to Ubuntu repo
+        run: |
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-hirsute/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-groovy/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-focal/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-bionic/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-xenial/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-trusty/"
+      
+      - name: Deploy to CentOS repo
+        run: |
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --upload-file ./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.rpm ${{ secrets.NEXUS_URL }}/centos/spice-latest.rpm
+      
+      - name: Deploy to Fedora repo
+        run: |
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --upload-file ./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.rpm ${{ secrets.NEXUS_URL }}/fedora/spice-latest.rpm
+
+#      - name: Deploy to Alpine repo
+#        run: |
+#          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/"
+
+  build-win-installers:
+    name: Build installers
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-cli
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config:
+          - {
+              arch: amd64, label: x64
+            }
+          - {
+              arch: 386, label: x86
+            }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get version name
+        id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Download executables
+        id: download_exe
+        shell: bash
+        run: | # Remove the last command as soon as this is implemented: https://github.com/goreleaser/goreleaser/issues/1638
+          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_${{ matrix.config.arch }}*.zip'
+          printf "::set-output name=zip::%s\n" *.zip
+          unzip -o *.zip && rm -v *.zip
+          cp ./bin/spicec-windows-${{ matrix.config.arch }}/spicec.exe ./spicec.exe
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Install GoMSI
+        run: choco install -y go-msi
+
+      - name: Prepare PATH
+        shell: bash
+        run: |
+          echo "$WIX\\bin" >> $GITHUB_PATH
+          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
+
+      - name: Build MSI
+        shell: bash
+        id: build_msi
+        env:
+          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
+        run: |
+          mkdir -p build
+          msi="$(basename "$ZIP_FILE" ".zip").msi"
+          printf "::set-output name=msi::%s\n" "$msi"
+          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version ${{ steps.get_version.outputs.version }}
+          printf "::set-output name=msi::%s\n" *.msi
+
+      - name: Upload MSI
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ steps.build_msi.outputs.msi }}
+          asset_name: spice_${{ steps.get_version.outputs.version }}_${{ matrix.config.label }}_setup.msi
+          tag: ${{ github.ref }}

@@ -1,0 +1,31 @@
+{
+    "product": "Spice",
+    "company": "ChilliBits",
+    "license": "LICENSE",
+    "files": {
+        "guid": "064e9d15-7d0f-4800-869d-d097c2be9bd4",
+        "items": [
+            "spice.exe",
+            "spicec.exe"
+        ]
+    },
+    "env": {
+        "guid": "27bebd64-9bda-4b0f-b7ca-5bfc26b06cdb",
+        "vars": [
+            {
+                "name": "PATH",
+                "value": "[INSTALLDIR]",
+                "permanent": "yes",
+                "system": "no",
+                "action": "set",
+                "part": "last"
+            }
+        ]
+    },
+    "choco": {
+        "description": "Spice programming language",
+        "project-url": "https://github.com/chillibits/spice",
+        "tags": "programming-language language compiler cpp llvm antlr",
+        "license-url": "https://github.com/chillibits/spice/blob/main/LICENSE"
+    }
+}
