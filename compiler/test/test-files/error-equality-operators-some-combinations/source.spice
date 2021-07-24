@@ -1,0 +1,9 @@
+f<int> main() {
+    if ("test" == 5.6) {
+        printf("Hello World!");
+    }
+    if ("test" != 5) {
+        printf("Hello World!");
+    }
+    return 0;
+}

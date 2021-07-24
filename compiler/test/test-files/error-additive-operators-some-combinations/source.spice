@@ -1,0 +1,7 @@
+f<int> main() {
+    int calcResult = true + "test";
+    double calcResult = false - 3.90;
+    string calcResult = true - 4;
+    bool calcResult = true + false;
+    return 0;
+}

@@ -25,9 +25,9 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 - [x] Relational operators are only applied to doubles or integers
 - [x] Additive operators are only applied to some type combinations
 - [x] Multiplicative operators are only applied to some type combinations
-- [x] Prefix/postfix unary operators are only applied to integers
+- [x] Prefix unary operators are only applied to integers
+- [x] Postfix unary operators are only applied to intentifiers of type integer
 - [x] Program contains main function
-- [x] `++` and `--` are only applied on identifiers
 
 ## To be tested
 - [ ] Dyn datatype for function args

@@ -14,6 +14,7 @@ struct AnalyzerParams {
 };
 
 const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
+        // Failing tests
         {
             "error-assignment-same-type",
             "Wrong data type for operator: Cannot apply the assign operator to different data types"
@@ -54,6 +55,63 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "error-functions-defined-before-called",
             ""
         },*/
+        {
+            "error-cannot-call-variables",
+            "Can only call function or procedure: Object 'variable' is not of type function or procedure"
+        },
+        /*{
+            "error-function-params-match-declaration",
+            "Parameter types do not match: Type of parameter 'param1' does not match the declaration"
+        },*/
+        {
+            "error-function-param-types-match-declaration",
+            "Parameter types do not match: Type of parameter 'param1' does not match the declaration"
+        },
+        {
+            "error-return-only-inside-function",
+            "Return statement outside function: Cannot assign return statement to a function"
+        },
+        {
+            "error-return-type-matches-def",
+            "Wrong data type for operator: Passed wrong data type to return statement"
+        },
+        {
+            "error-logical-operators-are-booleans",
+            "Wrong data type for operator: Can only apply logical or to booleans"
+        },
+        {
+            "error-bitwise-operators-are-booleans-or-integers",
+            "Wrong data type for operator: Can only apply bitwise or to booleans and integers"
+        },
+        {
+            "error-equality-operators-some-combinations",
+            "Wrong data type for operator: Can only compare some type combinations with an equality operator"
+        },
+        {
+            "error-relational-operators-are-doubles-or-integers",
+            "Wrong data type for operator: Can only compare doubles or ints with one another with a relational operator"
+        },
+        {
+            "error-additive-operators-some-combinations",
+            "Wrong data type for operator: Incompatible operands string and string for additive operator"
+        },
+        {
+            "error-multiplicative-operators-some-combinations",
+            "Wrong data type for operator: Incompatible operands string and string for multiplicative operator"
+        },
+        {
+            "error-prefix-unary-only-integer-identifiers",
+            "Wrong data type for operator: Prefix '++' or '--' only can be applied to an identifier of type integer"
+        },
+        {
+            "error-postfix-unary-only-integer-identifiers",
+            "Wrong data type for operator: Postfix '++' or '--' only can be applied to an identifier of type integer"
+        },
+        {
+            "error-must-contain-main-function",
+            "Spice programs must contain a main function: No main function found."
+        },
+        // Successful tests
         {
             "success-fibonacci",
             ""

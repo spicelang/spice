@@ -12,7 +12,6 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     if (!hasMainFunction) throw SemanticError(MISSING_MAIN_FUNCTION, "No main function found.");
 
     // Post traversing actions
-    std::cout << currentScope->toString() << std::endl;
 
     // Return the symbol table to the main program for further compile phases
     return currentScope;
@@ -437,9 +436,9 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                     currentType = TYPE_DOUBLE;
                 } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4 + 5
                     currentType = TYPE_INT;
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4.3 + "Test"
+                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4 + "Test"
                     currentType = TYPE_STRING;
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4.3 + true
+                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4 + true
                     throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands int and bool for additive operator");
                 }
@@ -547,7 +546,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext*
     if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) &&
             (prefixUnary.as<SymbolType>() != TYPE_INT || !ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()))
         throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
-                            "'++' or '--' only can be applied to an identifier of type integer");
+                            "Prefix '++' or '--' only can be applied to an identifier of type integer");
 
     // Ensure right return type if not is applied
     if (ctx->NOT()) {
@@ -568,7 +567,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
     if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) &&
             (atomicExpr.as<SymbolType>() != TYPE_INT || !ctx->atomicExpr()->value()->IDENTIFIER()))
         throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
-                            "'++' or '--' only can be applied to an identifier of type integer");
+                            "Postfix '++' or '--' only can be applied to an identifier of type integer");
 
     return atomicExpr;
 }
