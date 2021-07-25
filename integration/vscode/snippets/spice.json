@@ -7,7 +7,7 @@
         },
         "main function": {
             "prefix": "fmain",
-            "body": "f<int> main() {\n\t$1\n}",
+            "body": "f<int> main() {\n\t$1\n\treturn 0;\n}",
             "description": "Snippet for a main function"
         },
         "function def": {
