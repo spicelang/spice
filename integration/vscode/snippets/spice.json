@@ -1,0 +1,59 @@
+{
+    ".source.spice": {
+        "import": {
+            "prefix": "im",
+            "body": "import \"${1:package}\";",
+            "description": "Snippet for an import statement"
+        },
+        "main function": {
+            "prefix": "fmain",
+            "body": "f<int> main() {\n\t$1\n\treturn 0;\n}",
+            "description": "Snippet for a main function"
+        },
+        "function def": {
+            "prefix": "func",
+            "body": "f<$1> ${2:functionName}($3) {\n\t$4\n}",
+            "description": "Snippet for a function definition"
+        },
+        "precedure def": {
+            "prefix": "proc",
+            "body": "p ${1:procedureName}($2) {\n\t$3\n}",
+            "description": "Snippet for a procedure definition"
+        },
+        "if": {
+            "prefix": "if",
+            "body": "if ${1:condition} {\n\t$0\n}",
+            "description": "Snippet for an if statement"
+        },
+        "for": {
+            "prefix": "for",
+            "body": "for ${1:int i = 0}; ${2:i < 10}; ${3:i++} {\n\t$4\n}",
+            "description": "Snippet for a for loop"
+        },
+        "while": {
+            "prefix": "while",
+            "body": "while ${1:condition} {\n\t$0\n}",
+            "description": "Snippet for a while loop"
+        },
+        "single constant": {
+			"prefix": "co",
+			"body": "const ${1:type} ${2:name} = ${3:value}",
+			"description": "Snippet for a constant"
+		},
+        "simple printf": {
+			"prefix": "pf",
+			"body": "printf(\"${1}\");",
+			"description": "Snippet for a prinf statement without parameters"
+		},
+        "printf with params": {
+			"prefix": "pff",
+			"body": "printf(\"${1}\", ${2:var});",
+			"description": "Snippet for a prinf statement with a parameter"
+		},
+        "hello world": {
+            "prefix": "helloworld",
+            "body": "f<int> main() {\n\tprintf(\"Hello World!\");\n\treturn 0;\n}",
+            "description": "Snippet for a hello world program"
+        }
+    }
+}

@@ -1,0 +1,51 @@
+{
+    "name": "spice",
+    "displayName": "Spice",
+    "description": "Spice language extension",
+    "version": "0.0.1",
+    "publisher": "ChilliBits",
+    "author": {
+        "name": "Marc Auberer <marc.auberer@chillibits.com>"
+    },
+    "license": "MIT",
+    "icon": "media/logo.png",
+    "categories": [
+        "Programming Languages",
+        "Snippets",
+        "Linters"
+    ],
+    "galleryBanner": {
+        "color": "#F2F2F2",
+        "theme": "light"
+    },
+    "private": true,
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/chillibits/spice"
+    },
+    "bugs": {
+        "url": "https://github.com/chillibits/spice/issues"
+    },
+    "engines": {
+        "vscode": "^1.58.0"
+    },
+    "contributes": {
+        "languages": [{
+            "id": "spice",
+            "aliases": ["Spice", "spice"],
+            "extensions": [".spice"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "spice",
+            "scopeName": "source.spice",
+            "path": "./syntaxes/spice.tmLanguage.json"
+        }],
+        "snippets": [
+            {
+                "language": "spice",
+                "path": "./snippets/spice.json"
+            }
+        ]
+    }
+}
