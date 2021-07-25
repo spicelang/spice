@@ -31,24 +31,6 @@
 			]
 		},
 		{
-			"comment": "Syntax error receiving channels",
-			"match": "<\\-([\\t ]+)chan\\b",
-			"captures": {
-				"1": {
-					"name": "invalid.illegal.receive-channel.spice"
-				}
-			}
-		},
-		{
-			"comment": "Syntax error sending channels",
-			"match": "\\bchan([\\t ]+)<-",
-			"captures": {
-				"1": {
-					"name": "invalid.illegal.send-channel.spice"
-				}
-			}
-		},
-		{
 			"comment": "Syntax error numeric literals",
 			"match": "\\b0[0-7]*[89]\\d*\\b",
 			"name": "invalid.illegal.numeric.spice"

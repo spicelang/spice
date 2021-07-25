@@ -35,6 +35,21 @@
             "body": "while ${1:condition} {\n\t$0\n}",
             "description": "Snippet for a while loop"
         },
+        "single constant": {
+			"prefix": "co",
+			"body": "const ${1:type} ${2:name} = ${3:value}",
+			"description": "Snippet for a constant"
+		},
+        "simple printf": {
+			"prefix": "pf",
+			"body": "printf(\"${1}\");",
+			"description": "Snippet for a prinf statement without parameters"
+		},
+        "printf with params": {
+			"prefix": "pff",
+			"body": "printf(\"${1}\", ${2:var});",
+			"description": "Snippet for a prinf statement with a parameter"
+		},
         "hello world": {
             "prefix": "helloworld",
             "body": "f<int> main() {\n\tprintf(\"Hello World!\");\n\treturn 0;\n}",
