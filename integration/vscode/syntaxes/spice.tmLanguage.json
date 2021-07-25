@@ -7,23 +7,58 @@
 		},
 		{
 			"include": "#strings"
+		},
+		{
+			"include": "#comments"
 		}
 	],
 	"repository": {
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.spice",
-				"match": "\\b(if|while|for|return)\\b"
+				"match": "\\b(const|f|false|for|if|p|return|true|while)\\b"
+			}]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"begin": "//",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.line-comment.spice"
+						}
+					},
+					"end": "$",
+					"name": "comment.line.double-slash.spice"
+				}
+			]
+		},
+		"datatypes": {
+			"patterns": [{
+				"name": "datatype.control.spice",
+				"match": "\\b(bool|double|dyn|int|string)\\b"
 			}]
 		},
 		"strings": {
 			"name": "string.quoted.double.spice",
 			"begin": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.go.mod"
+				}
+			},
 			"end": "\"",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.go.mod"
+				}
+			},
 			"patterns": [
 				{
-					"name": "constant.character.escape.spice",
-					"match": "\\\\."
+					"include": "#string_escaped_char"
+				},
+				{
+					"include": "#string_placeholder"
 				}
 			]
 		}
