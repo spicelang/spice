@@ -1,0 +1,14 @@
+{
+    ".source.spice": {
+        "import": {
+            "prefix": "im",
+            "body": "import \"${1:package}\";",
+            "description": "Snippet for import statement"
+        },
+        "main function": {
+            "prefix": "fmain",
+            "body": "f<int> main() {\n\t$1\n}",
+            "description": "Snippet for main function"
+        }
+    }
+}

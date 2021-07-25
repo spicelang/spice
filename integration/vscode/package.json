@@ -1,0 +1,25 @@
+{
+    "name": "spice",
+    "displayName": "Spice",
+    "description": "Spice language extension",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.58.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "spice",
+            "aliases": ["Spice", "spice"],
+            "extensions": [".spice"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "spice",
+            "scopeName": "source.spice",
+            "path": "./syntaxes/spice.tmLanguage.json"
+        }]
+    }
+}
