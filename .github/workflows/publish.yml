@@ -13,14 +13,14 @@ jobs:
     strategy:
       matrix:
         arch_name:
-          - linux-arm64
-          - linux-armv5
-          - linux-armv6
-          - linux-armv7
+          #- linux-arm64
+          #- linux-armv5
+          #- linux-armv6
+          #- linux-armv7
           - linux-x86
           - linux-x64
-          - windows-static-x86
-          - windows-static-x64
+          #- windows-static-x86
+          #- windows-static-x64
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -40,9 +40,9 @@ jobs:
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
+        run: | #-DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON
           git clone https://github.com/llvm/llvm-project llvm
-          ./dockcross cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_EH=ON
+          ./dockcross cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2"
 
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -55,29 +55,29 @@ jobs:
           cd ./compiler/lib
           git clone https://github.com/antlr/antlr4.git
       
-      - name: Configure
-        run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" cmake -Bbin -H./compiler -GNinja
+      #- name: Configure
+      #  run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" cmake -Bbin -H./compiler -GNinja
 
-      - name: Compile
-        run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" ninja -Cbin
+      #- name: Compile
+      #  run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" ninja -Cbin
 
-      - name: Process build output - Linux
-        if: ${{ startsWith(matrix.arch_name, 'linux') }}
-        working-directory: bin
-        run: |
-          mv ./src/Spice_run spicec
-          chmod +x spicec
+      #- name: Process build output - Linux
+      #  if: ${{ startsWith(matrix.arch_name, 'linux') }}
+      #  working-directory: bin
+      #  run: |
+      #    mv ./src/Spice_run spicec
+      #    chmod +x spicec
           
-      - name: Process build output - Windows
-        if: ${{ startsWith(matrix.arch_name, 'windows') }}
-        working-directory: bin
-        run: mv ./src/Spice_run.exe spicec.exe
+      #- name: Process build output - Windows
+      #  if: ${{ startsWith(matrix.arch_name, 'windows') }}
+      #  working-directory: bin
+      #  run: mv ./src/Spice_run.exe spicec.exe
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: spicec-${{ matrix.arch_name }}
-          path: ./bin/spicec**
+      #- name: Upload artifact
+      #  uses: actions/upload-artifact@v2
+      #  with:
+      #    name: spicec-${{ matrix.arch_name }}
+      #    path: ./bin/spicec**
 
   build-cli:
     name: Build CLI binaries
