@@ -3,16 +3,16 @@ builds:
   - dir: cli
     goos:
       - linux
-      - windows
+      #- windows
     goarch:
       - amd64
-      - arm
-      - arm64
+      #- arm
+      #- arm64
       - 386
-    goarm:
-      - 5
-      #- 6 # Waiting for third party fix
-      - 7
+    #goarm:
+    #  - 5
+    #  #- 6 # Waiting for third party fix
+    #  - 7
     mod_timestamp: '{{ .CommitTimestamp }}'
     ldflags:
       - -s -w -X main.version={{ .Version }} -X main.commit={{ .Commit }} -X main.date={{ .CommitDate }} -X main.builtBy=github-actions
@@ -74,68 +74,68 @@ dockers:
       - --label=org.opencontainers.image.source={{.GitURL}}
       - --build-arg=COMPILER_PATH=linux-386
       - --platform=linux/i386
-  - image_templates:
-      - ghcr.io/chillibits/spice:{{ .Version }}-arm32v7
-      - ghcr.io/chillibits/spice:latest-arm32v7
-      - chillibits/spice:{{ .Version }}-arm32v7
-      - chillibits/spice:latest-arm32v7
-    dockerfile: Dockerfile
-    use: buildx
-    goarch: arm
-    goarm: 7
-    extra_files:
-      - bin
-    build_flag_templates:
-      - --label=org.opencontainers.image.created={{.Date}}
-      - --label=org.opencontainers.image.name={{.ProjectName}}
-      - --label=org.opencontainers.image.revision={{.FullCommit}}
-      - --label=org.opencontainers.image.version={{.Version}}
-      - --label=org.opencontainers.image.source={{.GitURL}}
-      - --build-arg=COMPILER_PATH=linux-armv7
-      - --platform=linux/arm/v7
-  - image_templates:
-      - ghcr.io/chillibits/spice:{{ .Version }}-arm64v8
-      - ghcr.io/chillibits/spice:latest-arm64v8
-      - chillibits/spice:{{ .Version }}-arm64v8
-      - chillibits/spice:latest-arm64v8
-    dockerfile: Dockerfile
-    use: buildx
-    goarch: arm64
-    extra_files:
-      - bin
-    build_flag_templates:
-      - --label=org.opencontainers.image.created={{.Date}}
-      - --label=org.opencontainers.image.name={{.ProjectName}}
-      - --label=org.opencontainers.image.revision={{.FullCommit}}
-      - --label=org.opencontainers.image.version={{.Version}}
-      - --label=org.opencontainers.image.source={{.GitURL}}
-      - --build-arg=COMPILER_PATH=linux-arm64
-      - --platform=linux/arm64/v8
+  #- image_templates:
+  #    - ghcr.io/chillibits/spice:{{ .Version }}-arm32v7
+  #    - ghcr.io/chillibits/spice:latest-arm32v7
+  #    - chillibits/spice:{{ .Version }}-arm32v7
+  #    - chillibits/spice:latest-arm32v7
+  #  dockerfile: Dockerfile
+  #  use: buildx
+  #  goarch: arm
+  #  goarm: 7
+  #  extra_files:
+  #    - bin
+  #  build_flag_templates:
+  #    - --label=org.opencontainers.image.created={{.Date}}
+  #    - --label=org.opencontainers.image.name={{.ProjectName}}
+  #    - --label=org.opencontainers.image.revision={{.FullCommit}}
+  #    - --label=org.opencontainers.image.version={{.Version}}
+  #    - --label=org.opencontainers.image.source={{.GitURL}}
+  #    - --build-arg=COMPILER_PATH=linux-armv7
+  #    - --platform=linux/arm/v7
+  #- image_templates:
+  #    - ghcr.io/chillibits/spice:{{ .Version }}-arm64v8
+  #    - ghcr.io/chillibits/spice:latest-arm64v8
+  #    - chillibits/spice:{{ .Version }}-arm64v8
+  #    - chillibits/spice:latest-arm64v8
+  #  dockerfile: Dockerfile
+  #  use: buildx
+  #  goarch: arm64
+  #  extra_files:
+  #    - bin
+  #  build_flag_templates:
+  #    - --label=org.opencontainers.image.created={{.Date}}
+  #    - --label=org.opencontainers.image.name={{.ProjectName}}
+  #    - --label=org.opencontainers.image.revision={{.FullCommit}}
+  #    - --label=org.opencontainers.image.version={{.Version}}
+  #    - --label=org.opencontainers.image.source={{.GitURL}}
+  #    - --build-arg=COMPILER_PATH=linux-arm64
+  #    - --platform=linux/arm64/v8
 docker_manifests:
   - name_template: chillibits/spice:{{ .Version }}
     image_templates:
       - chillibits/spice:{{ .Version }}-amd64
       - chillibits/spice:{{ .Version }}-i386
-      - chillibits/spice:{{ .Version }}-arm32v7
-      - chillibits/spice:{{ .Version }}-arm64v8
+      #- chillibits/spice:{{ .Version }}-arm32v7
+      #- chillibits/spice:{{ .Version }}-arm64v8
   - name_template: chillibits/spice:latest
     image_templates:
       - chillibits/spice:{{ .Version }}-amd64
       - chillibits/spice:{{ .Version }}-i386
-      - chillibits/spice:{{ .Version }}-arm32v7
-      - chillibits/spice:{{ .Version }}-arm64v8
+      #- chillibits/spice:{{ .Version }}-arm32v7
+      #- chillibits/spice:{{ .Version }}-arm64v8
   - name_template: ghcr.io/chillibits/spice:{{ .Version }}
     image_templates:
       - ghcr.io/chillibits/spice:{{ .Version }}-amd64
       - ghcr.io/chillibits/spice:{{ .Version }}-i386
-      - ghcr.io/chillibits/spice:{{ .Version }}-arm32v7
-      - ghcr.io/chillibits/spice:{{ .Version }}-arm64v8
+      #- ghcr.io/chillibits/spice:{{ .Version }}-arm32v7
+      #- ghcr.io/chillibits/spice:{{ .Version }}-arm64v8
   - name_template: ghcr.io/chillibits/spice:latest
     image_templates:
       - ghcr.io/chillibits/spice:{{ .Version }}-amd64
       - ghcr.io/chillibits/spice:{{ .Version }}-i386
-      - ghcr.io/chillibits/spice:{{ .Version }}-arm32v7
-      - ghcr.io/chillibits/spice:{{ .Version }}-arm64v8
+      #- ghcr.io/chillibits/spice:{{ .Version }}-arm32v7
+      #- ghcr.io/chillibits/spice:{{ .Version }}-arm64v8
 release:
   name_template: v{{ .Tag }}
   prerelease: auto
