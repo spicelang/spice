@@ -1,0 +1,79 @@
+site_name: Spice
+site_url: https://www.spicelang.com
+site_description: Spice Programming Language
+site_author: Marc Auberer
+copyright: Made with ❤️ by Spice contributors, powered by ChilliBits.
+repo_name: chillibits/spice
+repo_url: https://github.com/chillibits/spice
+edit_uri: edit/main/docs/docs/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  language: en
+  logo: static/avatar.png
+  favicon: static/favicon-96x96.ico
+  include_search_page: false
+  search_index_only: true
+  features:
+    - navigation.instant
+    - navigation.tabs
+  palette:
+    - media: "(prefers-color-scheme: light)"  # Light mode
+      scheme: default
+      primary: deep orange
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: dark)"  # Dark mode
+      scheme: slate
+      primary: deep orange
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+plugins:
+  - search:
+      prebuild_index: python
+      lang:
+      - en
+  - minify:
+      minify_html: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/chillibits/spice
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/chillibits
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/chillibits/spice
+
+nav:
+  - Home: index.md
+  - intro.md
+  - Install:
+    - install/docker.md
+    - install/linux.md
+    - install/windows.md
+    - install/source.md
+  - quick-start.md
+  - usage.md
+  - contributing.md
+
+markdown_extensions:
+  - codehilite
+  - meta
+  - footnotes
+  - admonition
+  - pymdownx.details
+  - toc:
+      permalink: true
+  - pymdownx.tabbed
+  - pymdownx.superfences
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
