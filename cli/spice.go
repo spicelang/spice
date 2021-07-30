@@ -39,7 +39,6 @@ func main() {
 			return nil
 		},
 	}
-
 	installCommand := cli.Command{
 		Name:    "install",
 		Aliases: []string{"i"},
@@ -50,7 +49,6 @@ func main() {
 			return nil
 		},
 	}
-
 	runCommand := cli.Command{
 		Name:    "run",
 		Aliases: []string{"r"},
