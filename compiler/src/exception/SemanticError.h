@@ -16,7 +16,8 @@ enum SemanticErrorType {
     REASSIGN_CONST_VARIABLE,
     CONDITION_MUST_BE_BOOL,
     PARAMETER_TYPES_DO_NOT_MATCH,
-    MISSING_MAIN_FUNCTION
+    MISSING_MAIN_FUNCTION,
+    FCT_PARAM_IS_TYPE_DYN,
 };
 
 class SemanticError : public std::exception {
@@ -57,6 +58,9 @@ public:
                 break;
             case MISSING_MAIN_FUNCTION:
                 messagePrefix = "Spice programs must contain a main function";
+                break;
+            case FCT_PARAM_IS_TYPE_DYN:
+                messagePrefix = "Parameter type dyn not valid in function/procedure definition without default value";
                 break;
         }
         errorMessage = messagePrefix + ": " + message;

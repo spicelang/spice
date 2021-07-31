@@ -21,6 +21,7 @@ public:
     /*antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) override;*/
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
+    antlrcpp::Any visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) override;
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;

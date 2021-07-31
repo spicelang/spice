@@ -105,8 +105,7 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 
 /*antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
     // Create a new scope
-    std::string scopeId = "foreach:" + std::to_string(ctx->FOR()->getSymbol()->getLine()) + ":" +
-                          std::to_string(ctx->FOR()->getSymbol()->getCharPositionInLine());
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
 }*/
 
@@ -137,6 +136,19 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     visit(ctx->stmtLst());
     // Return to old scope
     currentScope = currentScope->getParent();
+    return TYPE_BOOL;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) {
+    for (auto& param : ctx->declStmt()) { // Parameters without default value
+        SymbolType paramType = visit(param).as<SymbolType>();
+        std::string paramName = param->IDENTIFIER()->toString();
+        if (paramType == TYPE_DYN)
+            throw SemanticError(FCT_PARAM_IS_TYPE_DYN, "Type of parameter '" + paramName + "' is invalid");
+    }
+    for (auto& param : ctx->assignment()) { // Parameters with default value
+        visit(param);
+    }
     return TYPE_BOOL;
 }
 
