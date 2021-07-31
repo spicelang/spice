@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build linux && (mips64 || mips64le)
 // +build linux
 // +build mips64 mips64le
 
 package unix
 
-//sys	dup2(oldfd int, newfd int) (err error)
+//sys	Dup2(oldfd int, newfd int) (err error)
 //sysnb	EpollCreate(size int) (fd int, err error)
 //sys	EpollWait(epfd int, events []EpollEvent, msec int) (n int, err error)
 //sys	Fadvise(fd int, offset int64, length int64, advice int) (err error) = SYS_FADVISE64
@@ -105,7 +104,7 @@ func Pipe(p []int) (err error) {
 	return
 }
 
-//sysnb	pipe2(p *[2]_C_int, flags int) (err error)
+//sysnb pipe2(p *[2]_C_int, flags int) (err error)
 
 func Pipe2(p []int, flags int) (err error) {
 	if len(p) != 2 {
@@ -215,10 +214,6 @@ func (msghdr *Msghdr) SetIovlen(length int) {
 
 func (cmsg *Cmsghdr) SetLen(length int) {
 	cmsg.Len = uint64(length)
-}
-
-func (rsa *RawSockaddrNFCLLCP) SetServiceNameLen(length int) {
-	rsa.Service_name_len = uint64(length)
 }
 
 func InotifyInit() (fd int, err error) {
