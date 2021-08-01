@@ -42,11 +42,18 @@ SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
     return &children.at(blockName);
 }
 
+void SymbolTable::renameChildBlock(const std::string& oldName, const std::string& newName) {
+    auto nodeHandler = children.extract(oldName);
+    nodeHandler.key() = newName;
+    children.insert(std::move(nodeHandler));
+}
+
 SymbolTable* SymbolTable::getParent() {
     return parent;
 }
 
-SymbolTable *SymbolTable::getChild(std::string& scopeId) {
+SymbolTable* SymbolTable::getChild(std::string& scopeId) {
+    if (children.empty()) return nullptr;
     return &children.at(scopeId);
 }
 

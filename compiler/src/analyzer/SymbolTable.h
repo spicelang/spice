@@ -18,6 +18,7 @@ public:
     void update(const std::string&, SymbolState);
     void update(const std::string&, SymbolType);
     SymbolTable* createChildBlock(const std::string&);
+    void renameChildBlock(const std::string&, const std::string&);
     SymbolTable* getParent();
     SymbolTable* getChild(std::string&);
     std::vector<std::string> getParamNames();

@@ -590,12 +590,10 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
         auto lhs = visit(ctx->prefixUnary()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->prefixUnary().size(); i++) {
             auto rhs = visit(ctx->prefixUnary()[i]).as<llvm::Value*>();
-            if (ctx->MUL(i-1)) {
-                if (rhs->getType())
+            if (ctx->MUL(i-1))
                 lhs = builder->CreateMul(lhs, rhs, "mul");
-            } else {
+            else
                 lhs = builder->CreateSDiv(lhs, rhs, "div");
-            }
         }
         return lhs;
     }

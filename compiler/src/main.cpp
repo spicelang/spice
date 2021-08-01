@@ -11,11 +11,16 @@
 using namespace antlr4;
 
 int main(int argc, char** argv) {
+    // Parse cli args
+    std::vector<std::string> args;
+    for (size_t iArg = 0; iArg < argc; ++iArg)
+        args.emplace_back(argv[iArg]);
+
     // Receive args from cli
-    std::string filePath = argv[1];
-    std::string targetTriple = argv[2]; // Default: x86_64-w64-windows-gnu
-    std::string outputPath = argv[3];
-    bool debugOutput = argv[4] == "true";
+    std::string filePath = args[1];
+    std::string targetTriple = args[2]; // Default: x86_64-w64-windows-gnu
+    std::string outputPath = args[3];
+    bool debugOutput = args[4] == "true";
 
     // Read from file
     std::ifstream stream;

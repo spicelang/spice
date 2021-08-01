@@ -144,3 +144,6 @@ release:
 #  twitter:
 #    enabled: true
 #    message_template: 'Spice {{ .Tag }} is now available! Check out the new features: www.spicelang.com!'
+milestones:
+  - close: true
+    fail_on_error: false
