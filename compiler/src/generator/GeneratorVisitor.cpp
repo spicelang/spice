@@ -415,10 +415,28 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
         // Get value of left and right side
         auto rhs = visit(ctx->ternary()).as<llvm::Value*>();
         auto lhs = namedValues[varName];
-        if (!lhs) throw std::runtime_error("Internal compiler error - Variable '" +
-            varName + "' not found in code generation step");
-        // Store right side on the left one
-        builder->CreateStore(rhs, lhs);
+        if (!lhs) throw std::runtime_error("Internal compiler error - Variable '" + varName +
+            "' not found in code generation step");
+        if (ctx->ASSIGN_OP()) {
+            // Store right side on the left one
+            builder->CreateStore(rhs, lhs);
+        } else if (ctx->PLUS_EQUAL()) {
+            auto loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+            rhs = builder->CreateAdd(loadLhs, rhs, "ple");
+            builder->CreateStore(rhs, lhs);
+        } else if (ctx->MINUS_EQUAL()) {
+            auto loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+            rhs = builder->CreateSub(loadLhs, rhs, "mie");
+            builder->CreateStore(rhs, lhs);
+        } else if (ctx->MUL_EQUAL()) {
+            auto loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+            rhs = builder->CreateMul(loadLhs, rhs, "mue");
+            builder->CreateStore(rhs, lhs);
+        } else if (ctx->DIV_EQUAL()) {
+            auto loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+            rhs = builder->CreateSDiv(loadLhs, rhs, "die");
+            builder->CreateStore(rhs, lhs);
+        }
         // Return value of the right side
         return rhs;
     }
@@ -571,10 +589,12 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
         auto lhs = visit(ctx->prefixUnary()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->prefixUnary().size(); i++) {
             auto rhs = visit(ctx->prefixUnary()[i]).as<llvm::Value*>();
-            if (ctx->MUL(i-1))
+            if (ctx->MUL(i-1)) {
+                if (rhs->getType())
                 lhs = builder->CreateMul(lhs, rhs, "mul");
-            else
+            } else {
                 lhs = builder->CreateSDiv(lhs, rhs, "div");
+            }
         }
         return lhs;
     }
@@ -603,8 +623,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     }
 
     // Prefix unary is: NOT postfixUnary
-    if (ctx->NOT())
-        return builder->CreateNot(value.as<llvm::Value*>(), "not");
+    if (ctx->NOT()) return builder->CreateNot(value.as<llvm::Value*>(), "not");
 
     return value;
 }

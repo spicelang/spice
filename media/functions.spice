@@ -1,6 +1,20 @@
 f<dyn> calledFunction(int mandatoryParam, dyn optionalParam = true) {
     printf("Mandatory: %d", mandatoryParam);
     printf("Optional: %d", optionalParam);
+
+    /*string output = "";
+    for int i = 0; i < 5; i++ {
+        output+="test";
+    }
+    printf("Output: %s", output);*/
+
+    int output = 0;
+    for int i = 0; i < 5; i++ {
+        output += 3;
+        printf("Output %d: %d", i, output);
+    }
+    printf("Output: %d", output);
+
     return 0.1;
 }
 
