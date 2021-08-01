@@ -4,7 +4,7 @@ f<dyn> calledFunction(int mandatoryParam, dyn optionalParam = true) {
 
     /*string output = "";
     for int i = 0; i < 5; i++ {
-        output+="test";
+        output += "test";
     }
     printf("Output: %s", output);*/
 

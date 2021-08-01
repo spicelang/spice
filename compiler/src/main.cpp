@@ -12,9 +12,10 @@ using namespace antlr4;
 
 int main(int argc, char** argv) {
     // Receive args from cli
-    auto filePath = argv[1];
-    auto targetTriple = argv[2]; // Default: x86_64-w64-windows-gnu
-    auto outputPath = argv[3];
+    std::string filePath = argv[1];
+    std::string targetTriple = argv[2]; // Default: x86_64-w64-windows-gnu
+    std::string outputPath = argv[3];
+    bool debugOutput = argv[4] == "true";
 
     // Read from file
     std::ifstream stream;
@@ -29,17 +30,25 @@ int main(int argc, char** argv) {
     // Execute syntactical analysis
     antlr4::tree::ParseTree *tree = parser.entry();
     SymbolTable* symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>(); // Check for semantic errors
-    std::cout << symbolTable->toString() << std::endl; // ToDo: Remove in the future
+    if (debugOutput) std::cout << symbolTable->toString() << std::endl;
 
     // Execute generator
     GeneratorVisitor generator = GeneratorVisitor(symbolTable);
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
-    std::cout << "Normal IR code:" << std::endl; // ToDo: Remove in the future
-    generator.dumpIR();
+    if (debugOutput) {
+        // Print IR code
+        std::cout << "IR code:" << std::endl;
+        generator.dumpIR();
+    }
+
     generator.optimize(); // Optimize IR code
-    std::cout << "Optimized IR code:" << std::endl; // ToDo: Remove in the future
-    generator.dumpIR();
+    if (debugOutput) {
+        // Print optimized IR code
+        std::cout << "Optimized IR code:" << std::endl;
+        generator.dumpIR();
+    }
+
     generator.emit(targetTriple, outputPath); // Emit object file for specified platform
 
     // Return with positive result code
