@@ -49,10 +49,10 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 - [x] Prefix unary operators are only applied to integers
 - [x] Postfix unary operators are only applied to intentifiers of type integer
 - [x] Program contains main function
+- [x] Dyn data type for function args
+- [x] Dyn data type as function return types
 
 ## To be tested / support missing
-- [ ] Dyn data type for function args
-- [ ] Dyn data type as function return types
 - [ ] Functions can be overloaded
 - [ ] Optional parameters can be omitted when calling functions/procedures
 
