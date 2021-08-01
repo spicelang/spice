@@ -251,34 +251,35 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     auto parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
+    auto bCond = llvm::BasicBlock::Create(*context, "for_cond");
     auto bLoop = llvm::BasicBlock::Create(*context, "for");
-    auto bLoopPost = llvm::BasicBlock::Create(*context, "for_post");
     auto bLoopEnd = llvm::BasicBlock::Create(*context, "for_end");
-
-    // Execute pre-loop stmts
-    visit(ctx->assignment()[0]);
-    // Check if entering the loop is necessary
-    auto conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
-    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+
+    // Execute pre-loop stmts
+    visit(ctx->assignment()[0]);
+    // Jump in condition block
+    builder->CreateBr(bCond);
+
+    // Fill condition block
+    parentFct->getBasicBlockList().push_back(bCond);
+    builder->SetInsertPoint(bCond);
+    auto conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
+    // Jump to loop body or to loop end
+    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
     builder->SetInsertPoint(bLoop);
     // Generate IR for nested statements
     visit(ctx->stmtLst());
-    // Check if condition is now false
-    conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
-    builder->CreateCondBr(conditionValue, bLoopPost, bLoopEnd);
-
-    // Fill loop post block
-    parentFct->getBasicBlockList().push_back(bLoopPost);
-    builder->SetInsertPoint(bLoopPost);
+    // Run post-loop actions
     visit(ctx->assignment()[2]);
-    builder->CreateBr(bLoop);
+    // Jump in condition block
+    builder->CreateBr(bCond);
 
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bLoopEnd);
