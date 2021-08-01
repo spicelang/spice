@@ -13,7 +13,7 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
         if (parent == nullptr) return nullptr;
         return parent->lookup(name);
     }
-    // Otherwise return the entry
+    // Otherwise, return the entry
     return &symbols.at(name);
 }
 
@@ -23,7 +23,7 @@ void SymbolTable::update(const std::string& name, SymbolState newState) {
         if (parent == nullptr) throw std::runtime_error("Updating a non-existent symbol: " + name);
         parent->update(name, newState);
     }
-    // Otherwise update the entry
+    // Otherwise, update the entry
     symbols.at(name).updateState(newState);
 }
 
@@ -33,7 +33,7 @@ void SymbolTable::update(const std::string& name, SymbolType newType) {
         if (parent == nullptr) throw std::runtime_error("Updating a non-existent symbol: " + name);
         parent->update(name, newType);
     }
-    // Otherwise update the entry
+    // Otherwise, update the entry
     symbols.at(name).updateType(newType);
 }
 

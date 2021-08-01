@@ -105,8 +105,7 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 
 /*antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
     // Create a new scope
-    std::string scopeId = "foreach:" + std::to_string(ctx->FOR()->getSymbol()->getLine()) + ":" +
-                          std::to_string(ctx->FOR()->getSymbol()->getCharPositionInLine());
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
 }*/
 
@@ -137,6 +136,19 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     visit(ctx->stmtLst());
     // Return to old scope
     currentScope = currentScope->getParent();
+    return TYPE_BOOL;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) {
+    for (auto& param : ctx->declStmt()) { // Parameters without default value
+        SymbolType paramType = visit(param).as<SymbolType>();
+        std::string paramName = param->IDENTIFIER()->toString();
+        if (paramType == TYPE_DYN)
+            throw SemanticError(FCT_PARAM_IS_TYPE_DYN, "Type of parameter '" + paramName + "' is invalid");
+    }
+    for (auto& param : ctx->assignment()) { // Parameters with default value
+        visit(param);
+    }
     return TYPE_BOOL;
 }
 
@@ -198,9 +210,15 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (!returnVariable)
         throw SemanticError(RETURN_STMT_WITHOUT_FUNCTION, "Cannot assign return statement to a function");
-    // Check if return type matches with function definition
-    if (returnType != returnVariable->getType())
-        throw SemanticError(OPERATOR_WRONG_DATA_TYPE, "Passed wrong data type to return statement");
+    // Check data type of return statement
+    if (returnVariable->getType() == TYPE_DYN) {
+        // Set explicit return type to the return variable
+        returnVariable->updateType(returnType);
+    } else {
+        // Check if return type matches with function definition
+        if (returnType != returnVariable->getType())
+            throw SemanticError(OPERATOR_WRONG_DATA_TYPE, "Passed wrong data type to return statement");
+    }
     // Set the return variable to initialized
     returnVariable->updateState(INITIALIZED);
     return returnType;
@@ -216,7 +234,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
         std::string variableName;
         SymbolType leftType;
 
-        // Take a look at the left side
+        // Take a look on the left side
         if (ctx->declStmt()) { // Variable was declared in this line
             visit(ctx->declStmt());
             variableName = ctx->declStmt()->IDENTIFIER()->toString();
@@ -230,7 +248,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
                                                                " was referenced before declared.");
         leftType = symbolTableEntry->getType();
 
-        // Take a look at the right side
+        // Take a look on the right side
         SymbolType rightType = visit(ctx->ternary()).as<SymbolType>();
         // If left type is dyn, set left type to right type
         if (leftType == TYPE_DYN) {

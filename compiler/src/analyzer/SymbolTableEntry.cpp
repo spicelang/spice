@@ -20,7 +20,7 @@ void SymbolTableEntry::updateState(SymbolState newState) {
 }
 
 void SymbolTableEntry::updateType(SymbolType newType) {
-    if (type != TYPE_DYN) throw std::runtime_error("Compiler error: Cannot change type of non-dyn");
+    if (type != TYPE_DYN) throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
     type = newType;
 }
 

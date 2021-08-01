@@ -113,17 +113,28 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
     std::string functionName = ctx->IDENTIFIER()->toString();
-    // Create function itself
+
+    // Change scope
+    namedValues.clear();
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+
+    // Get return type
+    currentVar = RETURN_VARIABLE_NAME;
     auto returnType = visit(ctx->dataType()).as<llvm::Type*>();
+
+    // Create function itself
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
-    for (auto& param : ctx->paramLstDef()->declStmt()) {
-        paramNames.push_back(param->IDENTIFIER()->toString());
+    for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
+        currentVar = param->IDENTIFIER()->toString();
+        paramNames.push_back(currentVar);
         auto paramType = visit(param->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
     }
-    for (auto& param : ctx->paramLstDef()->assignment()) {
-        paramNames.push_back(param->declStmt()->IDENTIFIER()->toString());
+    for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
+        currentVar = param->declStmt()->IDENTIFIER()->toString();
+        paramNames.push_back(currentVar);
         auto paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
     }
@@ -134,11 +145,6 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
     fct->getBasicBlockList().push_back(bEntry);
     builder->SetInsertPoint(bEntry);
-
-    // Change scope
-    namedValues.clear();
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
 
     // Store function params
     for (auto& param : fct->args()) {
@@ -177,16 +183,24 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
     auto procedureName = ctx->IDENTIFIER()->toString();
+
+    // Change scope
+    namedValues.clear();
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+
     // Create procedure itself
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
-    for (auto& param : ctx->paramLstDef()->declStmt()) {
-        paramNames.push_back(param->IDENTIFIER()->toString());
+    for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
+        currentVar = param->IDENTIFIER()->toString();
+        paramNames.push_back(currentVar);
         auto paramType = visit(param->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
     }
-    for (auto& param : ctx->paramLstDef()->assignment()) {
-        paramNames.push_back(param->declStmt()->IDENTIFIER()->toString());
+    for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
+        currentVar = param->declStmt()->IDENTIFIER()->toString();
+        paramNames.push_back(currentVar);
         auto paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
     }
@@ -197,11 +211,6 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
     proc->getBasicBlockList().push_back(bEntry);
     builder->SetInsertPoint(bEntry);
-
-    // Change scope
-    namedValues.clear();
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
 
     // Store procedure params
     for (auto& param : proc->args()) {

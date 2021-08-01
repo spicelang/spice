@@ -1,10 +1,11 @@
-f<double> calledFunction(int mandatoryParam, bool optionalParam = true) {
+f<dyn> calledFunction(int mandatoryParam, dyn optionalParam = true) {
     printf("Mandatory: %d", mandatoryParam);
     printf("Optional: %d", optionalParam);
-    return 0.0;
+    return 0.1;
 }
 
 f<int> main() {
-    calledFunction(1, false);
+    dyn res = calledFunction(1, false);
+    printf("Result: %d", res);
     return 0;
 }

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Spice_run" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="&quot;../../../media/fibonacci.spice&quot; &quot;&quot; &quot;output.o&quot;" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="Spice_run" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="Spice_run">
+  <configuration default="false" name="Spice_run" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="&quot;../../../media/functions.spice&quot; &quot;&quot; &quot;output.o&quot;" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="Spice_run" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="Spice_run">
     <envs>
       <env name="WITH_TESTS" value="OFF" />
     </envs>

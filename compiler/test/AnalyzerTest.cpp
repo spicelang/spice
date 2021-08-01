@@ -111,6 +111,14 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "error-must-contain-main-function",
             "Spice programs must contain a main function: No main function found."
         },
+        {
+            "error-function-arg-decl-type-dyn",
+            "Parameter type dyn not valid in function/procedure definition without default value: Type of parameter 'arg2' is invalid"
+        },
+        {
+            "error-dyn-return-types-not-matching",
+            "Wrong data type for operator: Passed wrong data type to return statement"
+        },
         // Successful tests
         {
             "success-fibonacci",

@@ -6,6 +6,7 @@
 #include <exception/IRError.h>
 #include <analyzer/SymbolTable.h>
 #include <util/ScopeIdUtil.h>
+#include <analyzer/AnalyzerVisitor.h>
 
 #include <llvm/ADT/APFloat.h>
 #include <llvm/ADT/Optional.h>
