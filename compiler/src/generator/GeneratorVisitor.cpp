@@ -119,8 +119,11 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
 
-    // Create function itself
+    // Get return type
+    currentVar = RETURN_VARIABLE_NAME;
     auto returnType = visit(ctx->dataType()).as<llvm::Type*>();
+
+    // Create function itself
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
     for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
@@ -704,8 +707,6 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
 
     // Data type is dyn
     if (ctx->TYPE_DYN()) {
-        std::cout << currentScope->toString() << std::endl;
-        std::cout << currentVar << std::endl;
         auto symbolTableEntry = currentScope->lookup(currentVar);
         switch (symbolTableEntry->getType()) {
             case TYPE_DOUBLE: return (llvm::Type*) llvm::Type::getDoubleTy(*context);

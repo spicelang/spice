@@ -8,7 +8,7 @@
 #include <util/ScopeIdUtil.h>
 #include <exception/SemanticError.h>
 
-const std::string RETURN_VARIABLE_NAME = "result";
+const static std::string RETURN_VARIABLE_NAME = "result";
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
