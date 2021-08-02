@@ -82,6 +82,7 @@ private:
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope = new SymbolTable(nullptr);
     std::string currentVar;
+    SymbolType currentSymbolType;
 
     // Private methods
     std::string getIRString();

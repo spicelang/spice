@@ -61,6 +61,15 @@ nav:
     - install/source.md
   - quick-start.md
   - usage.md
+  - Documentation:
+    - language/main-function.md
+    - language/data-types.md
+    - language/if-statements.md
+    - language/while-loops.md
+    - language/for-loops.md
+    - language/procedures.md
+    - language/functions.md
+    - language/modules.md
   - contributing.md
 
 markdown_extensions:

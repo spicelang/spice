@@ -42,10 +42,8 @@ SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
     return &children.at(blockName);
 }
 
-void SymbolTable::renameChildBlock(const std::string& oldName, const std::string& newName) {
-    auto nodeHandler = children.extract(oldName);
-    nodeHandler.key() = newName;
-    children.insert(std::move(nodeHandler));
+void SymbolTable::duplicateChildBlock(const std::string& oldName, const std::string& newName) {
+    children.insert({ newName, children.at(oldName)});
 }
 
 SymbolTable* SymbolTable::getParent() {
@@ -67,7 +65,7 @@ std::string SymbolTable::toString() {
         symbolsString.append("(" + symbol.second.toString() + ")\n");
     }
     for (auto& child : children) {
-        childrenString.append(child.second.toString() + "\n");
+        childrenString.append(child.first + ": " + child.second.toString() + "\n");
     }
     return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
 }

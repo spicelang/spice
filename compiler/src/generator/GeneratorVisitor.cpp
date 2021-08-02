@@ -126,20 +126,24 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Create function itself
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
+    std::vector<SymbolType> symbolTypes;
     for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
         currentVar = param->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
         auto paramType = visit(param->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
+        symbolTypes.push_back(currentScope->lookup(currentVar)->getType());
     }
     for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
         currentVar = param->declStmt()->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
         auto paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
+        symbolTypes.push_back(currentScope->lookup(currentVar)->getType());
     }
+    std::string signature = SignatureUtil::getSignature(functionName, symbolTypes);
     auto fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-    auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, functionName, module.get());
+    auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, signature, module.get());
 
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -192,20 +196,24 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Create procedure itself
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
+    std::vector<SymbolType> symbolTypes;
     for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
         currentVar = param->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
         auto paramType = visit(param->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
+        symbolTypes.push_back(currentScope->lookup(currentVar)->getType());
     }
     for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
         currentVar = param->declStmt()->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
         auto paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
+        symbolTypes.push_back(currentScope->lookup(currentVar)->getType());
     }
+    std::string signature = SignatureUtil::getSignature(procedureName, symbolTypes);
     auto procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), paramTypes, false);
-    auto proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage, procedureName, module.get());
+    auto proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage, signature, module.get());
 
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -376,16 +384,32 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
     auto fctName = ctx->IDENTIFIER()->toString();
-    auto fct = module->getFunction(fctName);
-    auto fctType = fct->getFunctionType();
+
+    // Get param symbol types
+    std::vector<SymbolType> symbolTypes;
     std::vector<llvm::Value*> argValues;
-    for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
-        auto argValue = visit(ctx->paramLstCall()->assignment()[i]).as<llvm::Value*>();
-        auto argType = fctType->getParamType(i);
-        auto bitCastArgValue = builder->CreateBitCast(argValue, argType);
-        argValues.push_back(bitCastArgValue);
+    if (ctx->paramLstCall()) {
+        for (auto& param : ctx->paramLstCall()->assignment()) {
+            auto argVal = visit(param).as<llvm::Value*>();
+            argValues.push_back(argVal);
+            symbolTypes.push_back(currentSymbolType);
+        }
     }
-    return builder->CreateCall(fct, argValues);
+    std::string signature = SignatureUtil::getSignature(fctName, symbolTypes);
+
+    auto fct = module->getFunction(signature);
+    auto fctType = fct->getFunctionType();
+
+    std::vector<llvm::Value*> argValuesCasted;
+    if (ctx->paramLstCall()) {
+        for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
+            llvm::Type* argType = fctType->getParamType(i);
+            llvm::Value* bitCastArgValue = builder->CreateBitCast(argValues.at(i), argType);
+            argValuesCasted.push_back(bitCastArgValue);
+        }
+    }
+
+    return (llvm::Value*) builder->CreateCall(fct, argValues);
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
@@ -662,18 +686,21 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     // Value is a double constant
     if (ctx->DOUBLE()) {
+        currentSymbolType = TYPE_DOUBLE;
         auto value = std::stod(ctx->DOUBLE()->toString());
         return (llvm::Value*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
+        currentSymbolType = TYPE_INT;
         auto value = std::stoi(ctx->INTEGER()->toString());
         return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value);
     }
 
     // Value is a string constant
     if (ctx->STRING()) {
+        currentSymbolType = TYPE_STRING;
         std::string value = ctx->STRING()->toString();
         auto charType = llvm::IntegerType::get(*context, 8);
         std::vector<llvm::Constant*> chars(value.size());
@@ -682,12 +709,15 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     }
 
     // Value is a boolean constant
-    if (ctx->TRUE() || ctx->FALSE())
+    if (ctx->TRUE() || ctx->FALSE()) {
+        currentSymbolType = TYPE_BOOL;
         return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt1Ty(*context), ctx->TRUE() ? 1 : 0);
+    }
 
     // Value is an identifier
     if (ctx->IDENTIFIER()) {
         auto variableName = ctx->IDENTIFIER()->toString();
+        currentSymbolType = currentScope->lookup(variableName)->getType();
         llvm::Value* var = namedValues[variableName];
         if (!var) throw std::runtime_error("Internal compiler error - Variable '" + variableName +
             "' not found in code generation step");
@@ -695,38 +725,39 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     }
 
     // Value is a function call
-    auto calleeFun = module->getFunction(llvm::StringRef(ctx->functionCall()->IDENTIFIER()->toString()));
-    auto calleeFunTy = calleeFun->getFunctionType();
-    std::vector<llvm::Value*> argValues;
-    if (ctx->functionCall()->paramLstCall()) {
-        auto params = ctx->functionCall()->paramLstCall()->assignment();
-        for (int i = 0; i < params.size(); i++) {
-            auto argVal = visit(params[i]).as<llvm::Value*>();
-            llvm::Type* paramTy = calleeFunTy->getParamType(i);
-            llvm::Value* bitCastArgVal = builder->CreateBitCast(argVal, paramTy);
-            argValues.push_back(bitCastArgVal);
-        }
-    }
-    return (llvm::Value*) builder->CreateCall(calleeFun, argValues);
+    return visit(ctx->functionCall());
 }
 
 antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
     // Data type is double
-    if (ctx->TYPE_DOUBLE()) return (llvm::Type*) llvm::Type::getDoubleTy(*context);
+    if (ctx->TYPE_DOUBLE()) {
+        currentSymbolType = TYPE_DOUBLE;
+        return (llvm::Type*) llvm::Type::getDoubleTy(*context);
+    }
 
     // Data type is int
-    if (ctx->TYPE_INT()) return (llvm::Type*) llvm::Type::getInt32Ty(*context);
+    if (ctx->TYPE_INT()) {
+        currentSymbolType = TYPE_INT;
+        return (llvm::Type*) llvm::Type::getInt32Ty(*context);
+    }
 
     // Data type is string
-    if (ctx->TYPE_STRING()) return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();
+    if (ctx->TYPE_STRING()) {
+        currentSymbolType = TYPE_STRING;
+        return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();
+    }
 
     // Data type is bool
-    if (ctx->TYPE_BOOL()) return (llvm::Type*) llvm::Type::getInt1Ty(*context);
+    if (ctx->TYPE_BOOL()) {
+        currentSymbolType = TYPE_BOOL;
+        return (llvm::Type*) llvm::Type::getInt1Ty(*context);
+    }
 
     // Data type is dyn
     if (ctx->TYPE_DYN()) {
         auto symbolTableEntry = currentScope->lookup(currentVar);
-        switch (symbolTableEntry->getType()) {
+        currentSymbolType = symbolTableEntry->getType();
+        switch (currentSymbolType) {
             case TYPE_DOUBLE: return (llvm::Type*) llvm::Type::getDoubleTy(*context);
             case TYPE_INT: return (llvm::Type*) llvm::Type::getInt32Ty(*context);
             case TYPE_STRING: return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();

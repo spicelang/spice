@@ -66,7 +66,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     // Return to old scope
     currentScope = currentScope->getParent();
     // Rename function scope block to support function overloading
-    currentScope->renameChildBlock(scopeId, "f:" + signature);
+    currentScope->duplicateChildBlock(scopeId, "f:" + signature);
     return returnType;
 }
 
@@ -88,7 +88,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     // Return to old scope
     currentScope = currentScope->getParent();
     // Rename function scope block to support procedure overloading
-    currentScope->renameChildBlock(scopeId, "p:" + signature);
+    currentScope->duplicateChildBlock(scopeId, "p:" + signature);
     return TYPE_BOOL;
 }
 

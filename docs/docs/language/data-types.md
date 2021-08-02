@@ -1,0 +1,3 @@
+---
+title: Primitive data types
+---
