@@ -42,6 +42,12 @@ SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
     return &children.at(blockName);
 }
 
+void SymbolTable::renameChildBlock(const std::string& oldName, const std::string& newName) {
+    auto nodeHandler = children.extract(oldName);
+    nodeHandler.key() = newName;
+    children.insert(std::move(nodeHandler));
+}
+
 void SymbolTable::duplicateChildBlock(const std::string& oldName, const std::string& newName) {
     children.insert({ newName, children.at(oldName)});
 }
@@ -55,17 +61,19 @@ SymbolTable* SymbolTable::getChild(std::string& scopeId) {
     return &children.at(scopeId);
 }
 
+bool SymbolTable::hasChild(std::string& scopeId) {
+    return children.find(scopeId) != children.end();
+}
+
 std::vector<std::string> SymbolTable::getParamNames() {
     return paramNames;
 }
 
 std::string SymbolTable::toString() {
     std::string symbolsString, childrenString;
-    for (auto& symbol : symbols) {
+    for (auto& symbol : symbols)
         symbolsString.append("(" + symbol.second.toString() + ")\n");
-    }
-    for (auto& child : children) {
+    for (auto& child : children)
         childrenString.append(child.first + ": " + child.second.toString() + "\n");
-    }
     return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
 }
