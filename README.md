@@ -52,9 +52,9 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 - [x] Dyn data type for function args with default value
 - [x] Dyn data type as function return types
 
-## To be tested / support missing
-- [ ] Functions can be overloaded
-- [ ] Optional parameters can be omitted when calling functions/procedures
+## Support missing / to be tested
+- [x] [ ] Functions can be overloaded
+- [ ] [ ] Optional parameters can be omitted when calling functions/procedures
 
 ## Special language features
 - Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"` (not implemented yet)

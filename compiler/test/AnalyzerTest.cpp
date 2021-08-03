@@ -51,21 +51,21 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "error-variable-const-not-modified",
             "Cannot re-assign constant variable: Not re-assignable variable 'variable'"
         },
-        /*{
+        {
             "error-functions-defined-before-called",
             ""
-        },*/
+        },
         {
             "error-cannot-call-variables",
             "Can only call function or procedure: Object 'variable' is not of type function or procedure"
         },
-        /*{
+        {
             "error-function-params-match-declaration",
-            "Parameter types do not match: Type of parameter 'param1' does not match the declaration"
-        },*/
+            "Referenced undefined function: Function/Procedure 'testFunction' could not be found"
+        },
         {
             "error-function-param-types-match-declaration",
-            "Parameter types do not match: Type of parameter 'param1' does not match the declaration"
+            "Referenced undefined function: Function/Procedure 'testFunction' could not be found"
         },
         {
             "error-return-only-inside-function",

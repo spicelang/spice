@@ -11,14 +11,14 @@ f<dyn> calledFunction(int mandatoryParam, dyn optionalParam = true) {
     return 0.1;
 }
 
-f<dyn> calledFunction(bool testBool) {
-    printf("Bool: %d", testBool);
+f<dyn> calledFunction(string testString) {
+    printf("String: %d", testString);
     return 0.3;
 }
 
 f<int> main() {
     dyn res = calledFunction(1, false);
     printf("Result: %d", res);
-    calledFunction(false);
+    calledFunction(5);
     return 0;
 }

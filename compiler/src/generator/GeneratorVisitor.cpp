@@ -400,14 +400,14 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     auto fct = module->getFunction(signature);
     auto fctType = fct->getFunctionType();
 
-    std::vector<llvm::Value*> argValuesCasted;
+    /*std::vector<llvm::Value*> argValuesCasted;
     if (ctx->paramLstCall()) {
         for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
             llvm::Type* argType = fctType->getParamType(i);
             llvm::Value* bitCastArgValue = builder->CreateBitCast(argValues.at(i), argType);
             argValuesCasted.push_back(bitCastArgValue);
         }
-    }
+    }*/
 
     return (llvm::Value*) builder->CreateCall(fct, argValues);
 }

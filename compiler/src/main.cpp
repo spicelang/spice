@@ -31,31 +31,42 @@ int main(int argc, char** argv) {
     SpiceLexer lexer(&input);
     antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
     SpiceParser parser(&tokens); // Check for syntax errors
+    antlr4::tree::ParseTree* tree = parser.entry(); // Get AST
 
     // Execute syntactical analysis
-    antlr4::tree::ParseTree *tree = parser.entry();
-    SymbolTable* symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>(); // Check for semantic errors
-    if (debugOutput) std::cout << symbolTable->toString() << std::endl;
+    SymbolTable* symbolTable;
+    try {
+        symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>(); // Check for semantic errors
+        if (debugOutput) std::cout << symbolTable->toString() << std::endl; // Print symbol table in debug mode
+    } catch (SemanticError& e) {
+        std::cout << e.what() << std::endl;
+        return 1; // Exit with negative result code
+    }
 
     // Execute generator
-    GeneratorVisitor generator = GeneratorVisitor(symbolTable);
-    generator.init(); // Initialize code generation
-    generator.visit(tree); // Generate IR code
-    if (debugOutput) {
-        // Print IR code
-        std::cout << "IR code:" << std::endl;
-        generator.dumpIR();
+    try {
+        GeneratorVisitor generator = GeneratorVisitor(symbolTable);
+        generator.init(); // Initialize code generation
+        generator.visit(tree); // Generate IR code
+        if (debugOutput) {
+            // Print IR code
+            std::cout << "IR code:" << std::endl;
+            generator.dumpIR();
+        }
+
+        generator.optimize(); // Optimize IR code
+        if (debugOutput) {
+            // Print optimized IR code
+            std::cout << "Optimized IR code:" << std::endl;
+            generator.dumpIR();
+        }
+
+        generator.emit(targetTriple, outputPath); // Emit object file for specified platform
+    } catch (IRError& e) {
+        std::cout << e.what() << std::endl;
+        return 1; // Exit with negative result code
     }
 
-    generator.optimize(); // Optimize IR code
-    if (debugOutput) {
-        // Print optimized IR code
-        std::cout << "Optimized IR code:" << std::endl;
-        generator.dumpIR();
-    }
-
-    generator.emit(targetTriple, outputPath); // Emit object file for specified platform
-
-    // Return with positive result code
+    // Exit with positive result code
     return 0;
 }

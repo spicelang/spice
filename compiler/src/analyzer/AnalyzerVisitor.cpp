@@ -190,35 +190,17 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     SymbolTableEntry* entry = currentScope->lookup(signature);
     if (!entry)
         throw SemanticError(REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
-                            "Function/Procedure " + functionName + " was called before initialized");
-    if (entry->getType() != TYPE_FUNCTION && entry->getType() != TYPE_PROCEDURE)
-        throw SemanticError(CAN_ONLY_CALL_FUNCTION_OR_PROCEDURE,
-                            "Object '" + functionName + "' is not of type function or procedure");
+                            "Function/Procedure '" + signature + "' could not be found");
     // Search for symbol table of called function/procedure to read parameters
-    std::string scopeId = entry->getType() == TYPE_FUNCTION ? "f:" + signature : "p:" + signature;
-    SymbolTable* originalSymbolTable = currentScope;
-    SymbolTable* symbolTable = currentScope;
-    while (symbolTable->getParent() && !symbolTable->getChild(scopeId)) symbolTable = symbolTable->getParent();
-    symbolTable = symbolTable->getChild(scopeId);
-    // Check if types match for parameter list
-    std::vector<std::string> paramNames = symbolTable->getParamNames();
-    if (ctx->paramLstCall()) {
-        for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
-            SymbolType type = visit(ctx->paramLstCall()->assignment()[i]).as<SymbolType>();
-            SymbolTableEntry* param = symbolTable->lookup(paramNames[i]);
-            if (!param)
-                throw SemanticError(REFERENCED_UNDEFINED_VARIABLE,
-                                    "Parameter '" + paramNames[i] + "' was not found in declaration");
-            if (type != param->getType())
-                throw SemanticError(PARAMETER_TYPES_DO_NOT_MATCH,
-                                    "Type of parameter '" + paramNames[i] + "' does not match the declaration");
-        }
+    if (entry->getType() == TYPE_FUNCTION) {
+        std::string scopeId = "f:" + signature;
+        SymbolTable* symbolTable = currentScope;
+        while (symbolTable->getParent() && !symbolTable->getChild(scopeId)) symbolTable = symbolTable->getParent();
+        symbolTable = symbolTable->getChild(scopeId);
+        // Get return type of called function
+        return symbolTable->lookup(RETURN_VARIABLE_NAME)->getType();
     }
-    // Get return type of called function
-    SymbolType returnType = symbolTable->lookup(RETURN_VARIABLE_NAME)->getType();
-    // Restore old symbol table
-    currentScope = originalSymbolTable;
-    return returnType;
+    return TYPE_BOOL;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
