@@ -18,11 +18,10 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 }
 
 antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     // Insert function name into the root symbol table
     currentScope->insert("main()", TYPE_FUNCTION, INITIALIZED, true, false);
     // Create a new scope
-    currentScope = currentScope->createChildBlock(scopeId);
+    currentScope = currentScope->createChildBlock("main()");
     // Declare variable for the return value
     SymbolType returnType = TYPE_INT;
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);

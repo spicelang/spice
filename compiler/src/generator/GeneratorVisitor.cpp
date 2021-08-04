@@ -388,6 +388,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
             auto argValue = visit(ctx->paramLstCall()->assignment()[i]).as<llvm::Value*>();
             auto argType = fctType->getParamType(i);
+            argType->dump();
+            argValue->dump();
             auto bitCastArgValue = builder->CreateBitCast(argValue, argType);
             argValues.push_back(bitCastArgValue);
         }
@@ -686,16 +688,14 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->STRING()) {
         currentSymbolType = TYPE_STRING;
         std::string value = ctx->STRING()->toString();
-        auto charType = llvm::IntegerType::get(*context, 8);
-        std::vector<llvm::Constant*> chars(value.size());
-        for(unsigned int i = 0; i < value.size(); i++) chars[i] = llvm::ConstantInt::get(charType, value[i]);
-        return (llvm::Value*) llvm::ConstantArray::get(llvm::ArrayType::get(charType, chars.size()), chars);
+        value = value.substr(1, value.size() - 2);
+        return (llvm::Value*) builder->CreateGlobalStringPtr(value);
     }
 
     // Value is a boolean constant
     if (ctx->TRUE() || ctx->FALSE()) {
         currentSymbolType = TYPE_BOOL;
-        bool value = ctx->TRUE() ? 1 : 0;
+        bool value = ctx->TRUE();
         return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt1Ty(*context), value);
     }
 

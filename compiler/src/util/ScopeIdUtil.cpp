@@ -3,7 +3,7 @@
 #include "ScopeIdUtil.h"
 
 std::string ScopeIdUtil::getScopeId(SpiceParser::MainFunctionDefContext* ctx) {
-    return "f:main";
+    return "main()";
 }
 
 std::string ScopeIdUtil::getScopeId(SpiceParser::FunctionDefContext* ctx) {

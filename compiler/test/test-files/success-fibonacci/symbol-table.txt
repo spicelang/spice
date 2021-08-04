@@ -2,7 +2,7 @@ SymbolTable(
 (Name: fibo(int), Type: 5, State: 1, Const: 1)
 (Name: main(), Type: 5, State: 1, Const: 1)
 ) {
-f:main: SymbolTable(
+main(): SymbolTable(
 (Name: result, Type: 1, State: 1, Const: 0)
 ) {
 }
