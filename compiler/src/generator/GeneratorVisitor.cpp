@@ -71,6 +71,13 @@ void GeneratorVisitor::dumpIR() {
     module->print(llvm::outs(), nullptr);
 }
 
+std::string GeneratorVisitor::getIRString() {
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    module->print(oss, nullptr);
+    return oss.str();
+}
+
 antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Generate code for external functions
     initializeExternalFunctions();
@@ -751,13 +758,6 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
     }
 
     return (llvm::Type*) nullptr;
-}
-
-std::string GeneratorVisitor::getIRString() {
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    module->print(oss, nullptr);
-    return oss.str();
 }
 
 void GeneratorVisitor::initializeExternalFunctions() {

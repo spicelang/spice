@@ -46,6 +46,7 @@ public:
     void optimize();
     void emit(std::string, const std::string&);
     void dumpIR();
+    std::string getIRString();
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;
     antlrcpp::Any visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) override;
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext* ctx) override;
@@ -85,6 +86,5 @@ private:
     SymbolType currentSymbolType;
 
     // Private methods
-    std::string getIRString();
     void initializeExternalFunctions();
 };

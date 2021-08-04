@@ -133,7 +133,7 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
 
     // Read source file
     std::ifstream sourceStream;
-    sourceStream.open("./test-files/" + param.testCaseName + "/source.spice");
+    sourceStream.open("./test-files/analyzer/" + param.testCaseName + "/source.spice");
     antlr4::ANTLRInputStream input(sourceStream);
 
     // Parse input to AST
@@ -153,7 +153,7 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
 
         // Check if the symbol table matches the expected output
         std::ifstream symbolTableStream;
-        symbolTableStream.open("./test-files/" + param.testCaseName + "/symbol-table.txt");
+        symbolTableStream.open("./test-files/analyzer/" + param.testCaseName + "/symbol-table.txt");
         std::ostringstream stringStream;
         stringStream << symbolTableStream.rdbuf();
         std::string expectedSymbolTable = stringStream.str();
