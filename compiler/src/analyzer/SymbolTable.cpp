@@ -42,25 +42,40 @@ SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
     return &children.at(blockName);
 }
 
+void SymbolTable::renameChildBlock(const std::string& oldName, const std::string& newName) {
+    auto nodeHandler = children.extract(oldName);
+    nodeHandler.key() = newName;
+    children.insert(std::move(nodeHandler));
+}
+
 SymbolTable* SymbolTable::getParent() {
     return parent;
 }
 
-SymbolTable *SymbolTable::getChild(std::string& scopeId) {
+SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
+    if (children.empty()) return nullptr;
     return &children.at(scopeId);
 }
 
-std::vector<std::string> SymbolTable::getParamNames() {
-    return paramNames;
+bool SymbolTable::hasChild(const std::string& scopeId) {
+    return children.find(scopeId) != children.end();
 }
 
 std::string SymbolTable::toString() {
     std::string symbolsString, childrenString;
-    for (auto& symbol : symbols) {
+    for (auto& symbol : symbols)
         symbolsString.append("(" + symbol.second.toString() + ")\n");
-    }
-    for (auto& child : children) {
-        childrenString.append(child.second.toString() + "\n");
-    }
+    for (auto& child : children)
+        childrenString.append(child.first + ": " + child.second.toString() + "\n");
     return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
+}
+
+void SymbolTable::pushSignature(const FunctionSignature& signature) {
+    functionSignatures.push(signature);
+}
+
+FunctionSignature SymbolTable::popSignature() {
+    auto signature = functionSignatures.front();
+    functionSignatures.pop();
+    return signature;
 }

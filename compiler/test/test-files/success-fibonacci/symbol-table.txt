@@ -1,16 +1,16 @@
 SymbolTable(
-(Name: fibo, Type: 5, State: 1, Const: 1)
-(Name: main, Type: 5, State: 1, Const: 1)
+(Name: fibo(int), Type: 5, State: 1, Const: 1)
+(Name: main(), Type: 5, State: 1, Const: 1)
 ) {
-SymbolTable(
+fibo(int): SymbolTable(
 (Name: n, Type: 1, State: 0, Const: 0)
 (Name: result, Type: 1, State: 1, Const: 0)
 ) {
-SymbolTable(
+if:2:4: SymbolTable(
 ) {
 }
 }
-SymbolTable(
+main(): SymbolTable(
 (Name: result, Type: 1, State: 1, Const: 0)
 ) {
 }

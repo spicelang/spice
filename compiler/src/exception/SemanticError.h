@@ -7,7 +7,6 @@
 
 enum SemanticErrorType {
     REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
-    CAN_ONLY_CALL_FUNCTION_OR_PROCEDURE,
     REFERENCED_UNDEFINED_VARIABLE,
     VARIABLE_DECLARED_TWICE,
     FUNCTION_WITHOUT_RETURN_STMT,
@@ -15,7 +14,6 @@ enum SemanticErrorType {
     OPERATOR_WRONG_DATA_TYPE,
     REASSIGN_CONST_VARIABLE,
     CONDITION_MUST_BE_BOOL,
-    PARAMETER_TYPES_DO_NOT_MATCH,
     MISSING_MAIN_FUNCTION,
     FCT_PARAM_IS_TYPE_DYN,
 };
@@ -28,9 +26,6 @@ public:
         switch (type) {
             case REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE:
                 messagePrefix = "Referenced undefined function";
-                break;
-            case CAN_ONLY_CALL_FUNCTION_OR_PROCEDURE:
-                messagePrefix = "Can only call function or procedure";
                 break;
             case REFERENCED_UNDEFINED_VARIABLE:
                 messagePrefix = "Referenced undefined variable";
@@ -52,9 +47,6 @@ public:
                 break;
             case CONDITION_MUST_BE_BOOL:
                 messagePrefix = "Condition must be bool";
-                break;
-            case PARAMETER_TYPES_DO_NOT_MATCH:
-                messagePrefix = "Parameter types do not match";
                 break;
             case MISSING_MAIN_FUNCTION:
                 messagePrefix = "Spice programs must contain a main function";

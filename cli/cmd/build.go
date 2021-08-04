@@ -6,7 +6,7 @@ import (
 )
 
 // Build takes the passed code file, resolves its dependencies and emits an executable, representing its functionality
-func Build(sourceFile string, targetTriple string, outputPath string) {
+func Build(sourceFile string, targetTriple string, outputPath string, debugOutput bool) {
 	// Set default value for outputPath
 	if outputPath == "" {
 		outputPath = "./output.o"
@@ -15,5 +15,5 @@ func Build(sourceFile string, targetTriple string, outputPath string) {
 	}
 
 	// Compile program ane emit executable to output file
-	internal.Compile(sourceFile, targetTriple, outputPath)
+	internal.Compile(sourceFile, targetTriple, outputPath, debugOutput)
 }

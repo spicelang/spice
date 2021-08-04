@@ -14,7 +14,8 @@ import (
 const COMPILER_EXECUTABLE_NAME = "spicec"
 
 // Compile executes the compiler executable with the provided input arguments
-func Compile(sourceFile string, targetTriple string, outputPath string) {
+func Compile(sourceFile string, targetTriple string, outputPath string, debugOutput bool) {
+	// Search for executable
 	executablePath, _ := osext.Executable()
 	executablePath = strings.ReplaceAll(executablePath, "\\", "/")
 	executablePath = executablePath[:strings.LastIndex(executablePath, "/")] + "/"
@@ -28,7 +29,7 @@ func Compile(sourceFile string, targetTriple string, outputPath string) {
 	}
 
 	// Execute compiler executable. e.g.: spicec "./sourceFile.spice" "x86_64-w64-windows-gnu"
-	cmd := exec.Command(executablePath+COMPILER_EXECUTABLE_NAME, sourceFile, targetTriple, outputPath)
+	cmd := exec.Command(executablePath+COMPILER_EXECUTABLE_NAME, sourceFile, targetTriple, outputPath, strconv.FormatBool(debugOutput))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {

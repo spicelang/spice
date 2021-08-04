@@ -139,8 +139,14 @@ docker_manifests:
 release:
   name_template: v{{ .Tag }}
   prerelease: auto
-  footer: Visit [spicelang.com](https://www.spicelang.com) to test out the new features!
+  footer: |
+    ---
+    
+    __Visit [spicelang.com](https://www.spicelang.com) to test the new features!__
 #announce:
 #  twitter:
 #    enabled: true
 #    message_template: 'Spice {{ .Tag }} is now available! Check out the new features: www.spicelang.com!'
+milestones:
+  - close: true
+    fail_on_error: false

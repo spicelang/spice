@@ -7,7 +7,7 @@
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
     </method>
   </configuration>
-  <configuration default="false" name="Spice_test" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="&quot;../../../media/fibonacci.spice&quot; &quot;&quot; &quot;output.o&quot;" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="Spice_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="Spice_test">
+  <configuration default="false" name="Spice_test" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="&quot;../../../media/functions.spice&quot; &quot;&quot; &quot;output.o&quot; &quot;true&quot;" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="Spice_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="Spice_test">
     <envs>
       <env name="WITH_TESTS" value="ON" />
     </envs>

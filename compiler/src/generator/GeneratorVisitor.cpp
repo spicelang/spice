@@ -115,9 +115,9 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     std::string functionName = ctx->IDENTIFIER()->toString();
 
     // Change scope
+    FunctionSignature signature = currentScope->popSignature();
+    currentScope = currentScope->getChild(signature.toString());
     namedValues.clear();
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
 
     // Get return type
     currentVar = RETURN_VARIABLE_NAME;
@@ -139,7 +139,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         paramTypes.push_back(paramType);
     }
     auto fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-    auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, functionName, module.get());
+    auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, signature.toString(), module.get());
 
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -185,9 +185,9 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     auto procedureName = ctx->IDENTIFIER()->toString();
 
     // Change scope
+    FunctionSignature signature = currentScope->popSignature();
+    currentScope = currentScope->getChild(signature.toString());
     namedValues.clear();
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
 
     // Create procedure itself
     std::vector<std::string> paramNames;
@@ -205,7 +205,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         paramTypes.push_back(paramType);
     }
     auto procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), paramTypes, false);
-    auto proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage, procedureName, module.get());
+    auto proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage, signature.toString(), module.get());
 
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -251,34 +251,35 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     auto parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
+    auto bCond = llvm::BasicBlock::Create(*context, "for_cond");
     auto bLoop = llvm::BasicBlock::Create(*context, "for");
-    auto bLoopPost = llvm::BasicBlock::Create(*context, "for_post");
     auto bLoopEnd = llvm::BasicBlock::Create(*context, "for_end");
-
-    // Execute pre-loop stmts
-    visit(ctx->assignment()[0]);
-    // Check if entering the loop is necessary
-    auto conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
-    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+
+    // Execute pre-loop stmts
+    visit(ctx->assignment()[0]);
+    // Jump in condition block
+    builder->CreateBr(bCond);
+
+    // Fill condition block
+    parentFct->getBasicBlockList().push_back(bCond);
+    builder->SetInsertPoint(bCond);
+    auto conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
+    // Jump to loop body or to loop end
+    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
     builder->SetInsertPoint(bLoop);
     // Generate IR for nested statements
     visit(ctx->stmtLst());
-    // Check if condition is now false
-    conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
-    builder->CreateCondBr(conditionValue, bLoopPost, bLoopEnd);
-
-    // Fill loop post block
-    parentFct->getBasicBlockList().push_back(bLoopPost);
-    builder->SetInsertPoint(bLoopPost);
+    // Run post-loop actions
     visit(ctx->assignment()[2]);
-    builder->CreateBr(bLoop);
+    // Jump in condition block
+    builder->CreateBr(bCond);
 
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bLoopEnd);
@@ -375,16 +376,24 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
     auto fctName = ctx->IDENTIFIER()->toString();
-    auto fct = module->getFunction(fctName);
+
+    // Get function by signature
+    FunctionSignature signature = currentScope->popSignature();
+    auto fct = module->getFunction(signature.toString());
     auto fctType = fct->getFunctionType();
+
+    // Fill parameter list
     std::vector<llvm::Value*> argValues;
-    for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
-        auto argValue = visit(ctx->paramLstCall()->assignment()[i]).as<llvm::Value*>();
-        auto argType = fctType->getParamType(i);
-        auto bitCastArgValue = builder->CreateBitCast(argValue, argType);
-        argValues.push_back(bitCastArgValue);
+    if (ctx->paramLstCall()) {
+        for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
+            auto argValue = visit(ctx->paramLstCall()->assignment()[i]).as<llvm::Value*>();
+            auto argType = fctType->getParamType(i);
+            auto bitCastArgValue = builder->CreateBitCast(argValue, argType);
+            argValues.push_back(bitCastArgValue);
+        }
     }
-    return builder->CreateCall(fct, argValues);
+
+    return (llvm::Value*) builder->CreateCall(fct, argValues);
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
@@ -415,10 +424,28 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
         // Get value of left and right side
         auto rhs = visit(ctx->ternary()).as<llvm::Value*>();
         auto lhs = namedValues[varName];
-        if (!lhs) throw std::runtime_error("Internal compiler error - Variable '" +
-            varName + "' not found in code generation step");
-        // Store right side on the left one
-        builder->CreateStore(rhs, lhs);
+        if (!lhs) throw std::runtime_error("Internal compiler error - Variable '" + varName +
+            "' not found in code generation step");
+        if (ctx->ASSIGN_OP()) {
+            // Store right side on the left one
+            builder->CreateStore(rhs, lhs);
+        } else if (ctx->PLUS_EQUAL()) {
+            auto loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+            rhs = builder->CreateAdd(loadLhs, rhs, "ple");
+            builder->CreateStore(rhs, lhs);
+        } else if (ctx->MINUS_EQUAL()) {
+            auto loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+            rhs = builder->CreateSub(loadLhs, rhs, "mie");
+            builder->CreateStore(rhs, lhs);
+        } else if (ctx->MUL_EQUAL()) {
+            auto loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+            rhs = builder->CreateMul(loadLhs, rhs, "mue");
+            builder->CreateStore(rhs, lhs);
+        } else if (ctx->DIV_EQUAL()) {
+            auto loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+            rhs = builder->CreateSDiv(loadLhs, rhs, "die");
+            builder->CreateStore(rhs, lhs);
+        }
         // Return value of the right side
         return rhs;
     }
@@ -603,8 +630,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     }
 
     // Prefix unary is: NOT postfixUnary
-    if (ctx->NOT())
-        return builder->CreateNot(value.as<llvm::Value*>(), "not");
+    if (ctx->NOT()) return builder->CreateNot(value.as<llvm::Value*>(), "not");
 
     return value;
 }
@@ -644,32 +670,37 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     // Value is a double constant
     if (ctx->DOUBLE()) {
-        auto value = std::stod(ctx->DOUBLE()->toString());
+        currentSymbolType = TYPE_DOUBLE;
+        double value = std::stod(ctx->DOUBLE()->toString());
         return (llvm::Value*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
-        auto value = std::stoi(ctx->INTEGER()->toString());
+        currentSymbolType = TYPE_INT;
+        int value = std::stoi(ctx->INTEGER()->toString());
         return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value);
     }
 
     // Value is a string constant
     if (ctx->STRING()) {
+        currentSymbolType = TYPE_STRING;
         std::string value = ctx->STRING()->toString();
-        auto charType = llvm::IntegerType::get(*context, 8);
-        std::vector<llvm::Constant*> chars(value.size());
-        for(unsigned int i = 0; i < value.size(); i++) chars[i] = llvm::ConstantInt::get(charType, value[i]);
-        return (llvm::Value*) llvm::ConstantArray::get(llvm::ArrayType::get(charType, chars.size()), chars);
+        value = value.substr(1, value.size() - 2);
+        return (llvm::Value*) builder->CreateGlobalStringPtr(value);
     }
 
     // Value is a boolean constant
-    if (ctx->TRUE() || ctx->FALSE())
-        return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt1Ty(*context), ctx->TRUE() ? 1 : 0);
+    if (ctx->TRUE() || ctx->FALSE()) {
+        currentSymbolType = TYPE_BOOL;
+        bool value = ctx->TRUE();
+        return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt1Ty(*context), value);
+    }
 
     // Value is an identifier
     if (ctx->IDENTIFIER()) {
-        auto variableName = ctx->IDENTIFIER()->toString();
+        std::string variableName = ctx->IDENTIFIER()->toString();
+        currentSymbolType = currentScope->lookup(variableName)->getType();
         llvm::Value* var = namedValues[variableName];
         if (!var) throw std::runtime_error("Internal compiler error - Variable '" + variableName +
             "' not found in code generation step");
@@ -677,38 +708,39 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     }
 
     // Value is a function call
-    auto calleeFun = module->getFunction(llvm::StringRef(ctx->functionCall()->IDENTIFIER()->toString()));
-    auto calleeFunTy = calleeFun->getFunctionType();
-    std::vector<llvm::Value*> argValues;
-    if (ctx->functionCall()->paramLstCall()) {
-        auto params = ctx->functionCall()->paramLstCall()->assignment();
-        for (int i = 0; i < params.size(); i++) {
-            auto argVal = visit(params[i]).as<llvm::Value*>();
-            llvm::Type* paramTy = calleeFunTy->getParamType(i);
-            llvm::Value* bitCastArgVal = builder->CreateBitCast(argVal, paramTy);
-            argValues.push_back(bitCastArgVal);
-        }
-    }
-    return (llvm::Value*) builder->CreateCall(calleeFun, argValues);
+    return visit(ctx->functionCall());
 }
 
 antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
     // Data type is double
-    if (ctx->TYPE_DOUBLE()) return (llvm::Type*) llvm::Type::getDoubleTy(*context);
+    if (ctx->TYPE_DOUBLE()) {
+        currentSymbolType = TYPE_DOUBLE;
+        return (llvm::Type*) llvm::Type::getDoubleTy(*context);
+    }
 
     // Data type is int
-    if (ctx->TYPE_INT()) return (llvm::Type*) llvm::Type::getInt32Ty(*context);
+    if (ctx->TYPE_INT()) {
+        currentSymbolType = TYPE_INT;
+        return (llvm::Type*) llvm::Type::getInt32Ty(*context);
+    }
 
     // Data type is string
-    if (ctx->TYPE_STRING()) return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();
+    if (ctx->TYPE_STRING()) {
+        currentSymbolType = TYPE_STRING;
+        return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();
+    }
 
     // Data type is bool
-    if (ctx->TYPE_BOOL()) return (llvm::Type*) llvm::Type::getInt1Ty(*context);
+    if (ctx->TYPE_BOOL()) {
+        currentSymbolType = TYPE_BOOL;
+        return (llvm::Type*) llvm::Type::getInt1Ty(*context);
+    }
 
     // Data type is dyn
     if (ctx->TYPE_DYN()) {
         auto symbolTableEntry = currentScope->lookup(currentVar);
-        switch (symbolTableEntry->getType()) {
+        currentSymbolType = symbolTableEntry->getType();
+        switch (currentSymbolType) {
             case TYPE_DOUBLE: return (llvm::Type*) llvm::Type::getDoubleTy(*context);
             case TYPE_INT: return (llvm::Type*) llvm::Type::getInt32Ty(*context);
             case TYPE_STRING: return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();

@@ -19,10 +19,9 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 
 antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
     // Insert function name into the root symbol table
-    currentScope->insert("main", TYPE_FUNCTION, INITIALIZED, true, false);
+    currentScope->insert("main()", TYPE_FUNCTION, INITIALIZED, true, false);
     // Create a new scope
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->createChildBlock(scopeId);
+    currentScope = currentScope->createChildBlock("main()");
     // Declare variable for the return value
     SymbolType returnType = TYPE_INT;
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);
@@ -43,19 +42,29 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
-    // Insert function name into the root symbol table
     std::string functionName = ctx->IDENTIFIER()->toString();
-    currentScope->insert(functionName, TYPE_FUNCTION, INITIALIZED, true, false);
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
-    // Declare variable for the return value
+    // Visit params in new scope
+    parameterMode = true;
+    std::vector<SymbolType> paramTypes;
+    if (ctx->paramLstDef())
+        paramTypes = visit(ctx->paramLstDef()).as<std::vector<SymbolType>>();
+    parameterMode = false;
+    // Declare variable for the return value in new scope
     SymbolType returnType = getSymbolTypeFromDataType(ctx->dataType());
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);
-    // Visit parameters
-    parameterMode = true;
-    if (ctx->paramLstDef()) visit(ctx->paramLstDef());
-    parameterMode = false;
+    // Return to old scope
+    currentScope = currentScope->getParent();
+    // Insert function into the symbol table
+    FunctionSignature signature = FunctionSignature(functionName, paramTypes);
+    currentScope->insert(signature.toString(), TYPE_FUNCTION, INITIALIZED, true, false);
+    currentScope->pushSignature(signature);
+    // Rename function scope block to support function overloading
+    currentScope->renameChildBlock(scopeId, signature.toString());
+    // Go down again in scope
+    currentScope = currentScope->getChild(signature.toString());
     // Visit statements in new scope
     visit(ctx->stmtLst());
     // Check if return variable is now initialized
@@ -67,16 +76,26 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
 }
 
 antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
-    // Insert procedure name into the root symbol table
     std::string procedureName = ctx->IDENTIFIER()->toString();
-    currentScope->insert(procedureName, TYPE_PROCEDURE, INITIALIZED, true, false);
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit params in new scope
     parameterMode = true;
-    if (ctx->paramLstDef()) visit(ctx->paramLstDef());
+    std::vector<SymbolType> paramTypes;
+    if (ctx->paramLstDef())
+        paramTypes = visit(ctx->paramLstDef()).as<std::vector<SymbolType>>();
     parameterMode = false;
+    // Return to old scope
+    currentScope = currentScope->getParent();
+    // Insert procedure into the symbol table
+    FunctionSignature signature = FunctionSignature(procedureName, paramTypes);
+    currentScope->insert(signature.toString(), TYPE_PROCEDURE, INITIALIZED, true, false);
+    currentScope->pushSignature(signature);
+    // Rename function scope block to support function overloading
+    currentScope->renameChildBlock(scopeId, signature.toString());
+    // Go down again in scope
+    currentScope = currentScope->getChild(signature.toString());
     // Visit statement list in new scope
     visit(ctx->stmtLst());
     // Return to old scope
@@ -140,16 +159,19 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
 }
 
 antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) {
+    std::vector<SymbolType> paramTypes;
     for (auto& param : ctx->declStmt()) { // Parameters without default value
         SymbolType paramType = visit(param).as<SymbolType>();
         std::string paramName = param->IDENTIFIER()->toString();
         if (paramType == TYPE_DYN)
             throw SemanticError(FCT_PARAM_IS_TYPE_DYN, "Type of parameter '" + paramName + "' is invalid");
+        paramTypes.push_back(paramType);
     }
     for (auto& param : ctx->assignment()) { // Parameters with default value
-        visit(param);
+        SymbolType paramType = visit(param).as<SymbolType>();
+        paramTypes.push_back(paramType);
     }
-    return TYPE_BOOL;
+    return paramTypes;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) {
@@ -165,36 +187,35 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
-    std::string name = ctx->IDENTIFIER()->toString();
-    // Check if function call exists in symbol table
-    SymbolTableEntry* entry = currentScope->lookup(name);
+    std::string functionName = ctx->IDENTIFIER()->toString();
+    // Visit params
+    std::vector<SymbolType> paramTypes;
+    if (ctx->paramLstCall()) {
+        for (auto& param : ctx->paramLstCall()->assignment())
+            paramTypes.push_back(visit(param).as<SymbolType>());
+    }
+    // Check if function signature exists in symbol table
+    FunctionSignature signature = FunctionSignature(functionName, paramTypes);
+    SymbolTableEntry* entry = currentScope->lookup(signature.toString());
     if (!entry)
         throw SemanticError(REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
-                            "Function/Procedure " + name + " was called before initialized");
-    if (entry->getType() != TYPE_FUNCTION && entry->getType() != TYPE_PROCEDURE)
-        throw SemanticError(CAN_ONLY_CALL_FUNCTION_OR_PROCEDURE,
-                            "Object '" + name + "' is not of type function or procedure");
-    // Get root symbol table to check the function/procedure definition there
-    SymbolTable* rootTable = currentScope;
-    while (rootTable->getParent()) rootTable = rootTable->getParent();
-    // Check if child table exists for function
-    std::string scopeId = entry->getType() == TYPE_FUNCTION ? "f:" + name : "p:" + name;
-    SymbolTable* symbolTable = rootTable->getChild(scopeId);
-    std::vector<std::string> paramNames = symbolTable->getParamNames();
-    // Check if types match for parameter list
-    if (ctx->paramLstCall()) {
-        for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
-            SymbolType type = visit(ctx->paramLstCall()->assignment()[i]).as<SymbolType>();
-            SymbolTableEntry* param = symbolTable->lookup(paramNames[i]);
-            if (!param)
-                throw SemanticError(REFERENCED_UNDEFINED_VARIABLE,
-                                    "Parameter '" + paramNames[i] + "' was not found in declaration");
-            if (type != param->getType())
-                throw SemanticError(PARAMETER_TYPES_DO_NOT_MATCH,
-                                    "Type of parameter '" + paramNames[i] + "' does not match the declaration");
+                            "Function/Procedure '" + signature.toString() + "' could not be found");
+    // Add function call to the signature queue of the current scope
+    currentScope->pushSignature(signature);
+    // Search for symbol table of called function/procedure to read parameters
+    if (entry->getType() == TYPE_FUNCTION) {
+        SymbolTable* symbolTable = currentScope;
+        while (!symbolTable->hasChild(signature.toString())) {
+            if (!symbolTable->getParent())
+                throw SemanticError(REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
+                    "Could not find child symbol table for function/procedure '" + signature.toString() +"'");
+            symbolTable = symbolTable->getParent();
         }
+        symbolTable = symbolTable->getChild(signature.toString());
+        // Get return type of called function
+        return symbolTable->lookup(RETURN_VARIABLE_NAME)->getType();
     }
-    return symbolTable->lookup(RETURN_VARIABLE_NAME)->getType();
+    return TYPE_BOOL;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {

@@ -1,0 +1,22 @@
+SymbolTable(
+(Name: calledFunction(int,bool), Type: 5, State: 1, Const: 1)
+(Name: calledFunction(string), Type: 5, State: 1, Const: 1)
+(Name: main(), Type: 5, State: 1, Const: 1)
+) {
+calledFunction(int,bool): SymbolTable(
+(Name: mandatoryParam, Type: 1, State: 0, Const: 0)
+(Name: optionalParam, Type: 3, State: 1, Const: 0)
+(Name: result, Type: 0, State: 1, Const: 0)
+) {
+}
+calledFunction(string): SymbolTable(
+(Name: result, Type: 0, State: 1, Const: 0)
+(Name: testString, Type: 2, State: 0, Const: 0)
+) {
+}
+main(): SymbolTable(
+(Name: res, Type: 0, State: 1, Const: 0)
+(Name: result, Type: 1, State: 1, Const: 0)
+) {
+}
+}

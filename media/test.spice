@@ -1,8 +1,14 @@
-f<int> main() {
-    int operand1 = 6;
-    int operand2 = 5;
-    dyn res = operand1 | operand2;
-    printf("Computation result is: %d", res);
+p testProcedure() {
+    printf("Test");
+}
 
+f<int> main() {
+    testProcedure();
+    double calcResult = testFunction(2);
+    printf("Calc result: %d", calcResult);
     return 0;
+}
+
+f<double> testFunction(int testArg) {
+    return 1.1432;
 }

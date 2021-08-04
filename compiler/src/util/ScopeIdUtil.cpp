@@ -3,15 +3,17 @@
 #include "ScopeIdUtil.h"
 
 std::string ScopeIdUtil::getScopeId(SpiceParser::MainFunctionDefContext* ctx) {
-    return "f:main";
+    return "main()";
 }
 
 std::string ScopeIdUtil::getScopeId(SpiceParser::FunctionDefContext* ctx) {
-    return "f:" + ctx->IDENTIFIER()->toString();
+    return "f:" + ctx->IDENTIFIER()->toString() + ":" + std::to_string(ctx->F()->getSymbol()->getLine()) + ":" +
+    std::to_string(ctx->F()->getSymbol()->getCharPositionInLine());
 }
 
 std::string ScopeIdUtil::getScopeId(SpiceParser::ProcedureDefContext* ctx) {
-    return "p:" + ctx->IDENTIFIER()->toString();
+    return "p:" + ctx->IDENTIFIER()->toString() + ":" + std::to_string(ctx->P()->getSymbol()->getLine()) + ":" +
+        std::to_string(ctx->P()->getSymbol()->getCharPositionInLine());
 }
 
 std::string ScopeIdUtil::getScopeId(SpiceParser::ForLoopContext* ctx) {

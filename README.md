@@ -49,15 +49,15 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 - [x] Prefix unary operators are only applied to integers
 - [x] Postfix unary operators are only applied to intentifiers of type integer
 - [x] Program contains main function
-- [x] Dyn data type for function args
+- [x] Dyn data type for function args with default value
 - [x] Dyn data type as function return types
 
-## To be tested / support missing
-- [ ] Functions can be overloaded
-- [ ] Optional parameters can be omitted when calling functions/procedures
+## Support missing / to be tested
+- [ ] [ ] Optional parameters can be omitted when calling functions/procedures
+- [ ] [ ] Variables also can be declared in the root scope
 
 ## Special language features
-- Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"`
+- Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"` (not implemented yet)
 - Alternatively to the return statement in a function, you can also assign variable `result` with a value, which was automatically declared by the function head
 - Binary minus has to be applied with a space between (e.g.: `n - 5`) and unary minus has to be applied without a space between (e.g.: `-3.4`)
 - Default values of function/procedure parameters are possible e.g.: `f<int> test(int param = 2) {...}`
