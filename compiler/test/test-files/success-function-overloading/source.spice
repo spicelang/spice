@@ -1,0 +1,17 @@
+f<dyn> calledFunction(int mandatoryParam, dyn optionalParam = true) {
+    printf("Mandatory: %d", mandatoryParam);
+    printf("Optional: %d", optionalParam);
+    return 0.1;
+}
+
+f<dyn> calledFunction(string testString) {
+    printf("String: %s", testString);
+    return 0.3;
+}
+
+f<int> main() {
+    dyn res = calledFunction(1, false);
+    printf("Result: %f", res);
+    calledFunction("test");
+    return 0;
+}

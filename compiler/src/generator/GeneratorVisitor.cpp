@@ -388,8 +388,6 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
             auto argValue = visit(ctx->paramLstCall()->assignment()[i]).as<llvm::Value*>();
             auto argType = fctType->getParamType(i);
-            argType->dump();
-            argValue->dump();
             auto bitCastArgValue = builder->CreateBitCast(argValue, argType);
             argValues.push_back(bitCastArgValue);
         }
