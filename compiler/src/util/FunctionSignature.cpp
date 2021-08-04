@@ -1,8 +1,8 @@
 // Copyright (c) 2021 ChilliBits. All rights reserved.
 
-#include "SignatureUtil.h"
+#include "FunctionSignature.h"
 
-std::string SignatureUtil::getSignature(const std::string& name, const std::vector<SymbolType>& paramTypes) {
+std::string FunctionSignature::toString() {
     std::string params;
     if (!paramTypes.empty()) {
         std::string typeName;
@@ -43,5 +43,5 @@ std::string SignatureUtil::getSignature(const std::string& name, const std::vect
         params.pop_back();
     }
 
-    return name + "(" + params + ")";
+    return functionName + "(" + params + ")";
 }

@@ -115,9 +115,9 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     std::string functionName = ctx->IDENTIFIER()->toString();
 
     // Change scope
+    FunctionSignature signature = currentScope->popSignature();
+    currentScope = currentScope->getChild(signature.toString());
     namedValues.clear();
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
 
     // Get return type
     currentVar = RETURN_VARIABLE_NAME;
@@ -126,24 +126,20 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Create function itself
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
-    std::vector<SymbolType> symbolTypes;
     for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
         currentVar = param->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
         auto paramType = visit(param->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(currentScope->lookup(currentVar)->getType());
     }
     for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
         currentVar = param->declStmt()->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
         auto paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(currentScope->lookup(currentVar)->getType());
     }
-    std::string signature = SignatureUtil::getSignature(functionName, symbolTypes);
     auto fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-    auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, signature, module.get());
+    auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, signature.toString(), module.get());
 
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -189,31 +185,27 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     auto procedureName = ctx->IDENTIFIER()->toString();
 
     // Change scope
+    FunctionSignature signature = currentScope->popSignature();
+    currentScope = currentScope->getChild(signature.toString());
     namedValues.clear();
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
 
     // Create procedure itself
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
-    std::vector<SymbolType> symbolTypes;
     for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
         currentVar = param->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
         auto paramType = visit(param->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(currentScope->lookup(currentVar)->getType());
     }
     for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
         currentVar = param->declStmt()->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
         auto paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(currentScope->lookup(currentVar)->getType());
     }
-    std::string signature = SignatureUtil::getSignature(procedureName, symbolTypes);
     auto procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), paramTypes, false);
-    auto proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage, signature, module.get());
+    auto proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage, signature.toString(), module.get());
 
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -385,29 +377,21 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
     auto fctName = ctx->IDENTIFIER()->toString();
 
-    // Get param symbol types
-    std::vector<SymbolType> symbolTypes;
-    std::vector<llvm::Value*> argValues;
-    if (ctx->paramLstCall()) {
-        for (auto& param : ctx->paramLstCall()->assignment()) {
-            auto argVal = visit(param).as<llvm::Value*>();
-            argValues.push_back(argVal);
-            symbolTypes.push_back(currentSymbolType);
-        }
-    }
-    std::string signature = SignatureUtil::getSignature(fctName, symbolTypes);
-
-    auto fct = module->getFunction(signature);
+    // Get function by signature
+    FunctionSignature signature = currentScope->popSignature();
+    auto fct = module->getFunction(signature.toString());
     auto fctType = fct->getFunctionType();
 
-    /*std::vector<llvm::Value*> argValuesCasted;
+    // Fill parameter list
+    std::vector<llvm::Value*> argValues;
     if (ctx->paramLstCall()) {
         for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
-            llvm::Type* argType = fctType->getParamType(i);
-            llvm::Value* bitCastArgValue = builder->CreateBitCast(argValues.at(i), argType);
-            argValuesCasted.push_back(bitCastArgValue);
+            auto argValue = visit(ctx->paramLstCall()->assignment()[i]).as<llvm::Value*>();
+            auto argType = fctType->getParamType(i);
+            auto bitCastArgValue = builder->CreateBitCast(argValue, argType);
+            argValues.push_back(bitCastArgValue);
         }
-    }*/
+    }
 
     return (llvm::Value*) builder->CreateCall(fct, argValues);
 }
@@ -687,14 +671,14 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     // Value is a double constant
     if (ctx->DOUBLE()) {
         currentSymbolType = TYPE_DOUBLE;
-        auto value = std::stod(ctx->DOUBLE()->toString());
+        double value = std::stod(ctx->DOUBLE()->toString());
         return (llvm::Value*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
         currentSymbolType = TYPE_INT;
-        auto value = std::stoi(ctx->INTEGER()->toString());
+        int value = std::stoi(ctx->INTEGER()->toString());
         return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value);
     }
 
@@ -711,12 +695,13 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     // Value is a boolean constant
     if (ctx->TRUE() || ctx->FALSE()) {
         currentSymbolType = TYPE_BOOL;
-        return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt1Ty(*context), ctx->TRUE() ? 1 : 0);
+        bool value = ctx->TRUE() ? 1 : 0;
+        return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt1Ty(*context), value);
     }
 
     // Value is an identifier
     if (ctx->IDENTIFIER()) {
-        auto variableName = ctx->IDENTIFIER()->toString();
+        std::string variableName = ctx->IDENTIFIER()->toString();
         currentSymbolType = currentScope->lookup(variableName)->getType();
         llvm::Value* var = namedValues[variableName];
         if (!var) throw std::runtime_error("Internal compiler error - Variable '" + variableName +

@@ -18,8 +18,8 @@ set(SOURCES
         exception/SemanticError.h
         util/ScopeIdUtil.cpp
         util/ScopeIdUtil.h
-        util/SignatureUtil.cpp
-        util/SignatureUtil.h
+        util/FunctionSignature.cpp
+        util/FunctionSignature.h
         exception/IRError.cpp
         exception/IRError.h)
 
