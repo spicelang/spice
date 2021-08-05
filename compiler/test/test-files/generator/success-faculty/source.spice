@@ -1,0 +1,13 @@
+f<int> faculty(int input) {
+    if input < 2 {
+        return 1;
+    }
+    result = input * faculty(input - 1);
+}
+
+f<int> main() {
+    dyn input = 1000;
+    int faculty = faculty(input);
+    printf("Faculty of %d is: %d", input, faculty);
+    return 0;
+}

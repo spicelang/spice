@@ -557,10 +557,16 @@ antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprConte
         auto rhs = visit(ctx->relationalExpr()[1]).as<llvm::Value*>();
 
         // Equality expr is: relationalExpr EQUAL relationalExpr
-        if (ctx->EQUAL()) return builder->CreateICmpEQ(lhs, rhs, "eq");
+        if (ctx->EQUAL()) {
+            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOEQ(lhs, rhs, "eq");
+            return builder->CreateICmpEQ(lhs, rhs, "eq");
+        }
 
         // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
-        return builder->CreateICmpNE(lhs, rhs, "ne");
+        if (ctx->NOT_EQUAL()) {
+            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpONE(lhs, rhs, "ne");
+            return builder->CreateICmpNE(lhs, rhs, "ne");
+        }
     }
     return visit(ctx->relationalExpr()[0]);
 }
@@ -571,16 +577,28 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
         auto rhs = visit(ctx->additiveExpr()[1]).as<llvm::Value*>();
 
         // Relational expr is: additiveExpr LESS additiveExpr
-        if (ctx->LESS()) return builder->CreateICmpSLT(lhs, rhs, "lt");
+        if (ctx->LESS()) {
+            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOLT(lhs, rhs, "lt");
+            return builder->CreateICmpSLT(lhs, rhs, "lt");
+        }
 
         // Relational expr is: additiveExpr GREATER additiveExpr
-        if (ctx->GREATER()) return builder->CreateICmpSGT(lhs, rhs, "gt");
+        if (ctx->GREATER()) {
+            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOGT(lhs, rhs, "gt");
+            return builder->CreateICmpSGT(lhs, rhs, "gt");
+        }
 
         // Relational expr is: additiveExpr LESS_EQUAL additiveExpr
-        if (ctx->LESS_EQUAL()) return builder->CreateICmpSLE(lhs, rhs, "le");
+        if (ctx->LESS_EQUAL()) {
+            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOLE(lhs, rhs, "le");
+            return builder->CreateICmpSLE(lhs, rhs, "le");
+        }
 
         // Relational expr is: additiveExpr GREATER_EQUAL additiveExpr
-        return builder->CreateICmpSGE(lhs, rhs, "ge");
+        if (ctx->GREATER_EQUAL()) {
+            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOGE(lhs, rhs, "ge");
+            return builder->CreateICmpSGE(lhs, rhs, "ge");
+        }
     }
     return visit(ctx->additiveExpr()[0]);
 }

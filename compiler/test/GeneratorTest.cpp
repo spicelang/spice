@@ -18,6 +18,22 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
         { // 0
             "success-fibonacci",
             "Wrong data type for operator: Cannot apply the assign operator to different data types"
+        },
+        { // 1
+            "success-faculty",
+            "s"
+        },
+        { // 2
+            "success-if-stmt",
+            "s"
+        },
+        { // 3
+            "success-for-loop",
+            "s"
+        },
+        { // 4
+            "success-while-loop",
+            "s"
         }
 };
 
