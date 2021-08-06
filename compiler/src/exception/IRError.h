@@ -47,7 +47,7 @@ public:
                 messagePrefix = "Invalid module";
                 break;
         }
-        errorMessage = messagePrefix + ": " + message;
+        errorMessage = "Internal compiler error - " + messagePrefix + ": " + message;
     }
 
     // Public methods
