@@ -2,5 +2,4 @@ f<int> main() {
     for int i = 0; "No bool"; i++ {
         printf("Test");
     }
-    return 0;
 }

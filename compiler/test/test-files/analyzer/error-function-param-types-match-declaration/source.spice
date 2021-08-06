@@ -4,5 +4,4 @@ f<double> testFunction(double param1, string param2 = "Default value") {
 
 f<int> main() {
     testFunction("No double");
-    return 0;
 }

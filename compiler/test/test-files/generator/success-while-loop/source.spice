@@ -4,5 +4,4 @@ f<int> main() {
         i += 1;
         printf("i is now at: %f", i);
     }
-    return 0;
 }

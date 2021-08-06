@@ -31,9 +31,6 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
     parameterMode = false;
     // Visit statements in new scope
     visit(ctx->stmtLst());
-    // Check if return variable is now initialized
-    if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
-        throw SemanticError(FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
     // Return to old scope
     currentScope = currentScope->getParent();
     // Confirm main function

@@ -5,5 +5,4 @@ f<int> fibo(int n) {
 
 f<int> main() {
     printf("Result: %d", fibo(30));
-    return 0;
 }

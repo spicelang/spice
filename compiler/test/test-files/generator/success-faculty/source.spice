@@ -9,5 +9,4 @@ f<int> main() {
     dyn input = 1000;
     int faculty = faculty(input);
     printf("Faculty of %d is: %d", input, faculty);
-    return 0;
 }

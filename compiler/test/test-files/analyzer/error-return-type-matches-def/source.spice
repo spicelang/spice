@@ -4,5 +4,4 @@ f<string> testFunction() {
 
 f<int> main() {
     testFunction();
-    return 0;
 }

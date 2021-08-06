@@ -6,5 +6,4 @@ f<int> main() {
     while ("" <= "test") {
         printf("Hello World!");
     }
-    return 0;
 }

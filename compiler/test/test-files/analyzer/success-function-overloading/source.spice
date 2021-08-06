@@ -13,5 +13,4 @@ f<int> main() {
     dyn res = calledFunction(1, false);
     printf("Result: %f", res);
     calledFunction("test");
-    return 0;
 }

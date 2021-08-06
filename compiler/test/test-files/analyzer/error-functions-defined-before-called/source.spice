@@ -6,7 +6,6 @@ f<int> main() {
     testProcedure();
     double calcResult = testFunction(2);
     printf("Calc result: %d", calcResult);
-    return 0;
 }
 
 f<double> testFunction(int testArg) {

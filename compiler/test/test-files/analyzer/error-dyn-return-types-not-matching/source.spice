@@ -6,5 +6,4 @@ f<dyn> testFunction() {
 f<int> main() {
     dyn ret = testFunction();
     printf("Result: ", ret);
-    return 0;
 }

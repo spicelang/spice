@@ -3,5 +3,4 @@ f<int> main() {
     double calcResult = false - 3.90;
     string calcResult = true - 4;
     bool calcResult = true + false;
-    return 0;
 }

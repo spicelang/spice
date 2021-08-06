@@ -5,5 +5,4 @@ f<int> main() {
         return 0;
     }
     printf("Condition false");
-    return 0;
 }

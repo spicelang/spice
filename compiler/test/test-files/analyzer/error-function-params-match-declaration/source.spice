@@ -4,5 +4,4 @@ f<double> testFunction(double param1) {
 
 f<int> main() {
     testFunction();
-    return 0;
 }

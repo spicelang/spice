@@ -1,4 +1,3 @@
 f<int> main() {
     int test = "Test";
-    return 0;
 }

@@ -84,7 +84,11 @@ private:
     SymbolTable* currentScope = new SymbolTable(nullptr);
     std::string currentVar;
     SymbolType currentSymbolType;
+    bool blockAlreadyTerminated = false;
 
     // Private methods
     void initializeExternalFunctions();
+    void moveInsertPointToBlock(llvm::BasicBlock*);
+    void createBr(llvm::BasicBlock*);
+    void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
 };

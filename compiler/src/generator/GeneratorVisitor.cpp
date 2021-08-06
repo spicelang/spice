@@ -13,22 +13,54 @@ void GeneratorVisitor::init() {
 
 void GeneratorVisitor::optimize() {
     // Register optimization passes
-    auto functionPassManager = std::make_unique<llvm::legacy::FunctionPassManager>(module.get());
+    auto fpm = std::make_unique<llvm::legacy::FunctionPassManager>(module.get());
 
-    // Promote allocas to registers.
-    functionPassManager->add(llvm::createPromoteMemoryToRegisterPass());
-    // Do simple "peephole" optimizations
-    functionPassManager->add(llvm::createInstructionCombiningPass());
-    // Re-associate expressions.
-    functionPassManager->add(llvm::createReassociatePass());
-    // Eliminate Common SubExpressions.
-    functionPassManager->add(llvm::createGVNPass());
-    // Simplify the control flow graph (deleting unreachable blocks etc).
-    //functionPassManager->add(llvm::createCFGSimplificationPass()); // Breaks recursion in fibonacci.spice
+    fpm->add(llvm::createCFGSimplificationPass());
+    fpm->add(llvm::createSROAPass());
+    fpm->add(llvm::createEarlyCSEPass());
+    fpm->add(llvm::createPromoteMemoryToRegisterPass());
+    fpm->add(llvm::createInstructionCombiningPass(true));
+    fpm->add(llvm::createCFGSimplificationPass());
+    fpm->add(llvm::createSROAPass());
+    fpm->add(llvm::createEarlyCSEPass(true));
+    fpm->add(llvm::createSpeculativeExecutionIfHasBranchDivergencePass());
+    fpm->add(llvm::createJumpThreadingPass());
+    fpm->add(llvm::createCorrelatedValuePropagationPass());
+    fpm->add(llvm::createCFGSimplificationPass());
+    fpm->add(llvm::createInstructionCombiningPass(true));
+    fpm->add(llvm::createLibCallsShrinkWrapPass());
+    fpm->add(llvm::createTailCallEliminationPass());
+    fpm->add(llvm::createCFGSimplificationPass());
+    fpm->add(llvm::createReassociatePass());
+    fpm->add(llvm::createLoopRotatePass(-1));
+    fpm->add(llvm::createGVNPass());
+    fpm->add(llvm::createLICMPass());
+    fpm->add(llvm::createLoopUnswitchPass());
+    fpm->add(llvm::createCFGSimplificationPass());
+    fpm->add(llvm::createInstructionCombiningPass(true));
+    fpm->add(llvm::createIndVarSimplifyPass());
+    fpm->add(llvm::createLoopIdiomPass());
+    fpm->add(llvm::createLoopDeletionPass());
+    fpm->add(llvm::createCFGSimplificationPass());
+    fpm->add(llvm::createSimpleLoopUnrollPass(3));
+    fpm->add(llvm::createMergedLoadStoreMotionPass());
+    fpm->add(llvm::createGVNPass());
+    fpm->add(llvm::createMemCpyOptPass());
+    fpm->add(llvm::createSCCPPass());
+    fpm->add(llvm::createBitTrackingDCEPass());
+    fpm->add(llvm::createInstructionCombiningPass(true));
+    fpm->add(llvm::createJumpThreadingPass());
+    fpm->add(llvm::createCorrelatedValuePropagationPass());
+    fpm->add(llvm::createDeadStoreEliminationPass());
+    fpm->add(llvm::createLICMPass());
+    fpm->add(llvm::createAggressiveDCEPass());
+    fpm->add(llvm::createCFGSimplificationPass());
+    fpm->add(llvm::createInstructionCombiningPass(true));
+    fpm->add(llvm::createFloat2IntPass());
 
     // Run optimizing passes for all functions
-    functionPassManager->doInitialization();
-    for (auto& fct : functions) functionPassManager->run(*fct);
+    fpm->doInitialization();
+    for (auto& fct : functions) fpm->run(*fct);
 }
 
 void GeneratorVisitor::emit(std::string targetTriple, const std::string& outputPath) {
@@ -82,7 +114,14 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Generate code for external functions
     initializeExternalFunctions();
 
-    return SpiceBaseVisitor::visitEntry(ctx);
+    auto result = SpiceBaseVisitor::visitEntry(ctx);
+
+    // Verify module to detect IR code bugs
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyModule(*module, &oss)) throw IRError(INVALID_MODULE, oss.str());
+
+    return result;
 }
 
 antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
@@ -91,22 +130,33 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     auto returnType = llvm::IntegerType::getInt32Ty(*context);
     auto mainType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
     auto fct = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, functionName, module.get());
-    auto bMain = llvm::BasicBlock::Create(*context, "main_entry", fct);
-    builder->SetInsertPoint(bMain);
+    auto bMain = llvm::BasicBlock::Create(*context, "main_entry");
+    fct->getBasicBlockList().push_back(bMain);
+    moveInsertPointToBlock(bMain);
 
     // Change scope
     namedValues.clear();
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
 
-    // Declare result variable
-    namedValues["result"] = builder->CreateAlloca(returnType, nullptr, "result");
+    // Declare result variable and set it to 0 for positive return code
+    namedValues[RETURN_VARIABLE_NAME] = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
+    builder->CreateStore(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), 0),
+                         namedValues[RETURN_VARIABLE_NAME]);
 
     // Generate IR for function body
     visit(ctx->stmtLst());
 
+    // Generate return statement for result variable
+    if (!blockAlreadyTerminated) {
+        llvm::Value* result = namedValues[RETURN_VARIABLE_NAME];
+        builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
+    }
+
     // Verify function
-    llvm::verifyFunction(*fct);
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyFunction(*fct, &oss)) throw IRError(INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(fct);
@@ -151,7 +201,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
     fct->getBasicBlockList().push_back(bEntry);
-    builder->SetInsertPoint(bEntry);
+    moveInsertPointToBlock(bEntry);
 
     // Store function params
     for (auto& param : fct->args()) {
@@ -170,13 +220,21 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     }
 
     // Declare result variable
-    namedValues["result"] = builder->CreateAlloca(returnType, nullptr, "result");
+    namedValues[RETURN_VARIABLE_NAME] = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
 
     // Generate IR for function body
     visit(ctx->stmtLst());
 
+    // Generate return statement for result variable
+    if (!blockAlreadyTerminated) {
+        llvm::Value* result = namedValues[RETURN_VARIABLE_NAME];
+        builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
+    }
+
     // Verify function
-    llvm::verifyFunction(*fct);
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyFunction(*fct, &oss)) throw IRError(INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(fct);
@@ -217,7 +275,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Create entry block
     auto bEntry = llvm::BasicBlock::Create(*context, "entry");
     proc->getBasicBlockList().push_back(bEntry);
-    builder->SetInsertPoint(bEntry);
+    moveInsertPointToBlock(bEntry);
 
     // Store procedure params
     for (auto& param : proc->args()) {
@@ -242,7 +300,9 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     builder->CreateRetVoid();
 
     // Verify procedure
-    llvm::verifyFunction(*proc);
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyFunction(*proc, &oss)) throw IRError(INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(proc);
@@ -269,28 +329,28 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Execute pre-loop stmts
     visit(ctx->assignment()[0]);
     // Jump in condition block
-    builder->CreateBr(bCond);
+    createBr(bCond);
 
     // Fill condition block
     parentFct->getBasicBlockList().push_back(bCond);
-    builder->SetInsertPoint(bCond);
+    moveInsertPointToBlock(bCond);
     auto conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
     // Jump to loop body or to loop end
-    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
+    createCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
-    builder->SetInsertPoint(bLoop);
+    moveInsertPointToBlock(bLoop);
     // Generate IR for nested statements
     visit(ctx->stmtLst());
     // Run post-loop actions
     visit(ctx->assignment()[2]);
     // Jump in condition block
-    builder->CreateBr(bCond);
+    createBr(bCond);
 
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bLoopEnd);
-    builder->SetInsertPoint(bLoopEnd);
+    moveInsertPointToBlock(bLoopEnd);
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -308,7 +368,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     auto bLoopEnd = llvm::BasicBlock::Create(*context, "while_end");
 
     // Check if entering the loop is necessary
-    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
+    createCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -316,18 +376,18 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
-    builder->SetInsertPoint(bLoop);
+    moveInsertPointToBlock(bLoop);
     // Generate IR for nested statements
     visit(ctx->stmtLst());
     // Visit condition again
     conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
     // Check if condition is now false
     bLoop = builder->GetInsertBlock();
-    builder->CreateCondBr(conditionValue, bLoop, bLoopEnd);
+    createCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bLoopEnd);
-    builder->SetInsertPoint(bLoopEnd);
+    moveInsertPointToBlock(bLoopEnd);
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -344,8 +404,8 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     auto bThen = llvm::BasicBlock::Create(*context, "then");
     auto bEnd = llvm::BasicBlock::Create(*context, "end");
 
-    // Check if if condition is fulfilled
-    builder->CreateCondBr(conditionValue, bThen, bEnd);
+    // Check if condition is fulfilled
+    createCondBr(conditionValue, bThen, bEnd);
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -353,14 +413,14 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
 
     // Fill then block
     parentFct->getBasicBlockList().push_back(bThen);
-    builder->SetInsertPoint(bThen);
+    moveInsertPointToBlock(bThen);
     // Generate IR for nested statements
     visit(ctx->stmtLst());
-    builder->CreateBr(bEnd);
+    createBr(bEnd);
 
     // Fill end block
     parentFct->getBasicBlockList().push_back(bEnd);
-    builder->SetInsertPoint(bEnd);
+    moveInsertPointToBlock(bEnd);
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -406,7 +466,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
     auto returnValue = visit(ctx->assignment()).as<llvm::Value*>();
     // Build return value
-    builder->CreateRet(returnValue);
+    if (!blockAlreadyTerminated) {
+        builder->CreateRet(returnValue);
+        blockAlreadyTerminated = true;
+    }
     return returnValue;
 }
 
@@ -418,7 +481,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
     for (auto &arg : ctx->assignment()) {
         auto argVal = visit(arg).as<llvm::Value*>();
-        if (argVal == nullptr) throw std::runtime_error("Printf has null arg");
+        if (argVal == nullptr) throw IRError(PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
         printfArgs.push_back(argVal);
     }
     return builder->CreateCall(printf, printfArgs);
@@ -431,7 +494,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
         // Get value of left and right side
         auto rhs = visit(ctx->ternary()).as<llvm::Value*>();
         auto lhs = namedValues[varName];
-        if (!lhs) throw std::runtime_error("Internal compiler error - Variable '" + varName +
+        if (!lhs) throw IRError(VARIABLE_NOT_FOUND, "Internal compiler error - Variable '" + varName +
             "' not found in code generation step");
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
@@ -470,23 +533,23 @@ antlrcpp::Any GeneratorVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
         auto bEnd = llvm::BasicBlock::Create(*context, "end");
 
         // Conditional jump to respective block
-        builder->CreateCondBr(conditionValue, bThen, bElse);
+        createCondBr(conditionValue, bThen, bElse);
 
         // Fill then block
         parentFct->getBasicBlockList().push_back(bThen);
-        builder->SetInsertPoint(bThen);
+        moveInsertPointToBlock(bThen);
         auto thenValue = visit(ctx->logicalOrExpr()[1]).as<llvm::Value*>();
-        builder->CreateBr(bEnd);
+        createBr(bEnd);
 
         // Fill else block
         parentFct->getBasicBlockList().push_back(bElse);
-        builder->SetInsertPoint(bElse);
+        moveInsertPointToBlock(bElse);
         auto elseValue = visit(ctx->logicalOrExpr()[2]).as<llvm::Value*>();
-        builder->CreateBr(bEnd);
+        createBr(bEnd);
 
         // Fill end block
         parentFct->getBasicBlockList().push_back(bEnd);
-        builder->SetInsertPoint(bEnd);
+        moveInsertPointToBlock(bEnd);
         // if either is void or their types don't match (which indicates one of them
         // returned the null value for void, then don't construct a phi node)
         if (thenValue->getType() == llvm::Type::getVoidTy(*context) ||
@@ -727,7 +790,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         std::string variableName = ctx->IDENTIFIER()->toString();
         currentSymbolType = currentScope->lookup(variableName)->getType();
         llvm::Value* var = namedValues[variableName];
-        if (!var) throw std::runtime_error("Internal compiler error - Variable '" + variableName +
+        if (!var) throw IRError(VARIABLE_NOT_FOUND, "Internal compiler error - Variable '" + variableName +
             "' not found in code generation step");
         return (llvm::Value*) builder->CreateLoad(var->getType()->getPointerElementType(), var);
     }
@@ -770,8 +833,8 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
             case TYPE_INT: return (llvm::Type*) llvm::Type::getInt32Ty(*context);
             case TYPE_STRING: return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();
             case TYPE_BOOL: return (llvm::Type*) llvm::Type::getInt1Ty(*context);
-            default: throw IRError(UNEXPECTED_DYN_TYPE,
-                                   "Dyn was " + std::to_string(symbolTableEntry->getType()));
+            default: throw IRError(UNEXPECTED_DYN_TYPE, "Dyn was " +
+                                    std::to_string(symbolTableEntry->getType()));
         }
     }
 
@@ -782,4 +845,23 @@ void GeneratorVisitor::initializeExternalFunctions() {
     module->getOrInsertFunction("printf", llvm::FunctionType::get(
             llvm::IntegerType::getInt32Ty(*context),
             llvm::Type::getInt8Ty(*context)->getPointerTo(), true));
+}
+
+void GeneratorVisitor::createBr(llvm::BasicBlock* targetBlock) {
+    if (!blockAlreadyTerminated) {
+        builder->CreateBr(targetBlock);
+        blockAlreadyTerminated = true;
+    }
+}
+
+void GeneratorVisitor::createCondBr(llvm::Value* condition, llvm::BasicBlock* trueBlock, llvm::BasicBlock* falseBlock) {
+    if (!blockAlreadyTerminated) {
+        builder->CreateCondBr(condition, trueBlock, falseBlock);
+        blockAlreadyTerminated = true;
+    }
+}
+
+void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
+    builder->SetInsertPoint(block);
+    blockAlreadyTerminated = false;
 }
