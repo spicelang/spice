@@ -1,4 +1,0 @@
-f<int> main() {
-    dyn var;
-    printf("Test %d", var);
-}

@@ -9,6 +9,7 @@ define i32 @main() {
 main_entry:
   %i = alloca i32, align 4
   %result = alloca i32, align 4
+  store i32 0, i32* %result, align 4
   store i32 0, i32* %i, align 4
   br label %for_cond
 
@@ -26,5 +27,6 @@ for:                                              ; preds = %for_cond
   br label %for_cond
 
 for_end:                                          ; preds = %for_cond
-  ret i32 0
+  %4 = load i32, i32* %result, align 4
+  ret i32 %4
 }

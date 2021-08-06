@@ -24,7 +24,7 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
     currentScope = currentScope->createChildBlock("main()");
     // Declare variable for the return value
     SymbolType returnType = TYPE_INT;
-    currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, INITIALIZED, false, false);
     // Visit parameters
     parameterMode = true;
     if (ctx->paramLstDef()) visit(ctx->paramLstDef());

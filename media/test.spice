@@ -1,5 +1,7 @@
 f<int> main() {
-    dyn var;
-    printf("Test %d", var);
-    return 0;
+    int i = 0;
+    while i < 10 {
+        i += 1;
+        printf("i is now at: %f", i);
+    }
 }
