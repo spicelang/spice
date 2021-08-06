@@ -17,23 +17,23 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
         // Succeeding tests
         { // 0
             "success-fibonacci",
-            "Wrong data type for operator: Cannot apply the assign operator to different data types"
+            ""
         },
         { // 1
             "success-faculty",
-            "s"
+            ""
         },
         { // 2
             "success-if-stmt",
-            "s"
+            ""
         },
         { // 3
             "success-for-loop",
-            "s"
+            ""
         },
         { // 4
             "success-while-loop",
-            "s"
+            ""
         }
 };
 
@@ -67,6 +67,10 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
         GeneratorVisitor generator = GeneratorVisitor(symbolTable);
         generator.init(); // Initialize code generation
         generator.visit(tree); // Generate IR code
+
+        // Fail if an error was expected
+        if (param.errorMessage.length() > 0)
+            FAIL() << "Expected error message '" + param.errorMessage + "', but got no error";
 
         // Check if the symbol table matches the expected output
         std::ifstream symbolTableStream;
