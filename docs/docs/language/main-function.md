@@ -2,7 +2,7 @@
 title: Main Function
 ---
 
-The `main` function is the entry point of every Spice program. When the compiled executable gets executed, the `main` function is the function, which is called by the system. Therefore it is mandatory and must have the signature `main(): int`. It does not accept any parameters and has a return value of type `int`, which represents the return code / exit status code of the executable.
+The `main` function is the entry point of every Spice program. When the system runs your compiled executable, the `main` function is the first function, which is called by the system. Therefore it is mandatory and must have the signature `main(): int`. It does not accept any parameters and has a return value of type `int`, which represents the return code / exit status code of the executable.
 
 The `main` function can be declared like this:
 ```spice
