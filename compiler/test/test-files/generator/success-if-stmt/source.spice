@@ -1,0 +1,8 @@
+f<int> main() {
+    dyn condition = 3 == 3;
+    if condition {
+        printf("Condition true");
+        return 0;
+    }
+    printf("Condition false");
+}

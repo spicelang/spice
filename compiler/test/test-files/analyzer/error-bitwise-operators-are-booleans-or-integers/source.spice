@@ -1,0 +1,4 @@
+f<int> main() {
+    int calcResult = "test" | 6;
+    double otherResult = false & 6.7;
+}

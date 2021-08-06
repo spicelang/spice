@@ -1,0 +1,4 @@
+f<int> main() {
+    const dyn variable = 4.3;
+    variable = 3.2;
+}

@@ -1,8 +1,0 @@
-f<string> testFunction() {
-    return 7;
-}
-
-f<int> main() {
-    testFunction();
-    return 0;
-}

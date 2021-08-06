@@ -46,6 +46,7 @@ public:
     void optimize();
     void emit(std::string, const std::string&);
     void dumpIR();
+    std::string getIRString();
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;
     antlrcpp::Any visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) override;
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext* ctx) override;
@@ -83,8 +84,11 @@ private:
     SymbolTable* currentScope = new SymbolTable(nullptr);
     std::string currentVar;
     SymbolType currentSymbolType;
+    bool blockAlreadyTerminated = false;
 
     // Private methods
-    std::string getIRString();
     void initializeExternalFunctions();
+    void moveInsertPointToBlock(llvm::BasicBlock*);
+    void createBr(llvm::BasicBlock*);
+    void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
 };

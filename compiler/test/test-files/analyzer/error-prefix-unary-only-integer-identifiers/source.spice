@@ -1,0 +1,10 @@
+f<int> main() {
+    --"test";
+    ++true;
+    --4.5;
+
+    double variable1 = 4.5;
+    variable1 = ++variable1;
+    bool variable2 = true;
+    variable2 = --variable2;
+}

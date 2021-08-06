@@ -1,4 +1,0 @@
-f<int> main() {
-    printf("Output: %s", test);
-    return 0;
-}

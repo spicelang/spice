@@ -1,4 +1,0 @@
-f<int> main() {
-    double calcResult = 1 != 2 ? false : 1.0;
-    return 0;
-}

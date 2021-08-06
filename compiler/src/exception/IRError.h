@@ -10,6 +10,10 @@ enum IRErrorType {
     CANT_OPEN_OUTPUT_FILE,
     WRONG_TYPE,
     UNEXPECTED_DYN_TYPE,
+    PRINTF_NULL_TYPE,
+    VARIABLE_NOT_FOUND,
+    INVALID_FUNCTION,
+    INVALID_MODULE
 };
 
 class IRError : public std::exception {
@@ -30,8 +34,20 @@ public:
             case UNEXPECTED_DYN_TYPE:
                 messagePrefix = "Unexpected type of dyn. Symbol table incomplete";
                 break;
+            case PRINTF_NULL_TYPE:
+                messagePrefix = "Printf has null type";
+                break;
+            case VARIABLE_NOT_FOUND:
+                messagePrefix = "Variable not found";
+                break;
+            case INVALID_FUNCTION:
+                messagePrefix = "Invalid function";
+                break;
+            case INVALID_MODULE:
+                messagePrefix = "Invalid module";
+                break;
         }
-        errorMessage = messagePrefix + ": " + message;
+        errorMessage = "Internal compiler error - " + messagePrefix + ": " + message;
     }
 
     // Public methods

@@ -1,9 +1,0 @@
-f<int> main() {
-    if ("test" || false) {
-        printf("Hello World!");
-    }
-    if (true && 6) {
-        printf("Hello World!");
-    }
-    return 0;
-}

@@ -1,0 +1,4 @@
+f<int> main() {
+    int variable = 5;
+    int calcResult = variable();
+}

@@ -1,0 +1,3 @@
+f<int> main() {
+    double calcResult = "No bool" ? 5.6 : 1.0;
+}

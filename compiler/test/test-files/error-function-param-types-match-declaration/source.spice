@@ -1,8 +1,0 @@
-f<double> testFunction(double param1, string param2 = "Default value") {
-    result = 4.1;
-}
-
-f<int> main() {
-    testFunction("No double");
-    return 0;
-}
