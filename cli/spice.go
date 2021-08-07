@@ -43,7 +43,7 @@ func main() {
 	installCommand := cli.Command{
 		Name:    "install",
 		Aliases: []string{"i"},
-		Usage:   "Builds your Spice program, installs it and adds it to the path env variable",
+		Usage:   "Builds your Spice program and installs it to a directory in the PATH variable",
 		Flags: []cli.Flag{
 			&cli.PathFlag{Name: "debug-output", Aliases: []string{"d"}, Usage: "Print compiler output for debugging"},
 		},
@@ -55,7 +55,7 @@ func main() {
 	runCommand := cli.Command{
 		Name:    "run",
 		Aliases: []string{"r"},
-		Usage:   "Builds your Spice program and runs it",
+		Usage:   "Builds your Spice program and runs it immediately",
 		Flags: []cli.Flag{
 			&cli.PathFlag{Name: "debug-output", Aliases: []string{"d"}, Usage: "Print compiler output for debugging"},
 		},
