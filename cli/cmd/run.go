@@ -29,5 +29,9 @@ func Run(sourceFile string) {
 	Build(sourceFile, "", buildPath, false)
 
 	// Run executable
-	exec.Command(buildPath).Run()
+	cmd := exec.Command(buildPath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Start()
+	cmd.Wait()
 }
