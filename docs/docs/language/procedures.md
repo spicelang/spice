@@ -2,7 +2,7 @@
 title: For Loops
 ---
 
-Spice distinguishes strictly between functions and procedures. Procedures are concise and enclosed blocks of functionality which a programmer can define within his souce code. Other than functions, procedures do not have a return value. The paradigma here is, that a function calculates and returns something whereas a procedure executes some action.
+Spice distinguishes strictly between functions and procedures. Procedures are concise and enclosed blocks of code which a programmer can define within his souce code holds a set of instructions to execute in the stated order. Other than functions, procedures do not have a return value. The paradigma here is, that a function calculates and returns something whereas a procedure executes some action.
 
 Procedures in Spice can be defined like this:
 ```spice
@@ -11,7 +11,7 @@ p procedureName() {
 }
 ```
 
-Spice also allows you to pass parameters to a procedure. This parameters may also have default values, which can then be omitted when calling the method. 
+Spice also allows you to pass parameters to a procedure. This parameters may also have default values, which can then be omitted when calling the procedure. 
 
 !!! note
     Parameters with default value / optional parameters have to go after those without default value in the procedure declaration.

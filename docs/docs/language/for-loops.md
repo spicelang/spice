@@ -12,4 +12,4 @@ for int i = 1; i <= 10; i++ {
 ```
 
 !!! tip "Usage of loop alternatives"
-    For loops should only be used when it is forseeable how often a block of code runs. If this is not the case, we recommend using the [while loop](../while-loops) instead.
+    For loops should only be used when it is foreseeable how often a block of code runs. If this is not the case, we recommend using the [while loop](../while-loops) instead.
