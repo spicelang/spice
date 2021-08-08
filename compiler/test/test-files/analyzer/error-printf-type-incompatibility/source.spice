@@ -1,0 +1,5 @@
+f<int> main() {
+    printf("This is a double: %f", 5.6);
+    printf("This is an int: %d", 5);
+    printf("This is a string: %c", "test");
+}

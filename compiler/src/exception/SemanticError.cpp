@@ -8,7 +8,7 @@ SemanticError::SemanticError(const antlr4::Token& token, SemanticErrorType type,
 }
 
 SemanticError::SemanticError(SemanticErrorType type, const std::string &message) {
-    errorMessage = "Semantic error at - " + getMessagePrefix(type) + ": " + message;
+    errorMessage = "Semantic error - " + getMessagePrefix(type) + ": " + message;
 }
 
 const char *SemanticError::what() const noexcept {

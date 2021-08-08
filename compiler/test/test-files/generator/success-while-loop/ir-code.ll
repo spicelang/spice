@@ -1,7 +1,7 @@
 ; ModuleID = 'Module'
 source_filename = "Module"
 
-@0 = private unnamed_addr constant [16 x i8] c"i is now at: %f\00", align 1
+@0 = private unnamed_addr constant [16 x i8] c"i is now at: %d\00", align 1
 
 declare i32 @printf(i8*, ...)
 
