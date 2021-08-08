@@ -1,4 +1,4 @@
-f<int> main() {
+f<int> main1() {
     int i = 0;
     while i < 10 {
         i += 1;
