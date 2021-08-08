@@ -325,10 +325,12 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+    currentScope->setContinueBlock(bCond);
+    currentScope->setBreakBlock(bLoopEnd);
 
     // Execute pre-loop stmts
     visit(ctx->assignment()[0]);
-    // Jump in condition block
+    // Jump into condition block
     createBr(bCond);
 
     // Fill condition block
@@ -345,7 +347,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     visit(ctx->stmtLst());
     // Run post-loop actions
     visit(ctx->assignment()[2]);
-    // Jump in condition block
+    // Jump into condition block
     createBr(bCond);
 
     // Fill loop end block
@@ -360,30 +362,35 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
-    auto conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
     auto parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
+    auto bCond = llvm::BasicBlock::Create(*context, "while_cond");
     auto bLoop = llvm::BasicBlock::Create(*context, "while");
     auto bLoopEnd = llvm::BasicBlock::Create(*context, "while_end");
-
-    // Check if entering the loop is necessary
-    createCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+    currentScope->setContinueBlock(bCond);
+    currentScope->setBreakBlock(bLoopEnd);
+
+    // Jump into condition block
+    createBr(bCond);
+
+    // Fill condition block
+    parentFct->getBasicBlockList().push_back(bCond);
+    moveInsertPointToBlock(bCond);
+    auto conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
+    createCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
     moveInsertPointToBlock(bLoop);
     // Generate IR for nested statements
     visit(ctx->stmtLst());
-    // Visit condition again
-    conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
-    // Check if condition is now false
-    bLoop = builder->GetInsertBlock();
-    createCondBr(conditionValue, bLoop, bLoopEnd);
+    // Jump into condition block
+    createBr(bCond);
 
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bLoopEnd);
@@ -394,6 +401,13 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
 
     // Return true as result for the loop
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
+}
+
+antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext* ctx) {
+    for (auto& child : ctx->children) {
+        if (!blockAlreadyTerminated) visit(child);
+    }
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
@@ -471,6 +485,44 @@ antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* 
         blockAlreadyTerminated = true;
     }
     return returnValue;
+}
+
+antlrcpp::Any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx) {
+    // Get number, how many loops we want to break
+    int breakCount = 1;
+    if (ctx->INTEGER()) breakCount = std::stoi(ctx->INTEGER()->toString());
+
+    // Get destination block
+    SymbolTable* scope = currentScope;
+    while (!scope->getBreakBlock()) scope = scope->getParent();
+    for (int i = 1; i < breakCount; i++) {
+        scope = scope->getParent();
+        while (!scope->getBreakBlock()) scope = scope->getParent();
+    }
+    llvm::BasicBlock* destinationBlock = scope->getBreakBlock();
+
+    // Jump to destination block
+    createBr(destinationBlock);
+    return nullptr;
+}
+
+antlrcpp::Any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) {
+    // Get number, how many loops we want to continue
+    int continueCount = 1;
+    if (ctx->INTEGER()) continueCount = std::stoi(ctx->INTEGER()->toString());
+
+    // Get destination block
+    SymbolTable* scope = currentScope;
+    while (!scope->getBreakBlock()) scope = scope->getParent();
+    for (int i = 1; i < continueCount; i++) {
+        scope = scope->getParent();
+        while (!scope->getBreakBlock()) scope = scope->getParent();
+    }
+    llvm::BasicBlock* destinationBlock = scope->getContinueBlock();
+
+    // Jump to destination block
+    createBr(destinationBlock);
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) {

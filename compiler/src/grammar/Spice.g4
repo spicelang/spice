@@ -18,7 +18,7 @@ functionCall: IDENTIFIER LPAREN paramLstCall? RPAREN;
 importStmt: IMPORT STRING;
 returnStmt: RETURN assignment;
 breakStmt: BREAK INTEGER?;
-continueStmt: CONTINUE;
+continueStmt: CONTINUE INTEGER?;
 printfStmt: PRINTF LPAREN STRING (COMMA assignment)* RPAREN;
 
 assignment: ((declStmt | IDENTIFIER) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? ternary;

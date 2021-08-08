@@ -115,7 +115,9 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Visit incrementer in new scope
     visit(ctx->assignment()[2]);
     // Visit statement list in new scope
+    nestedLoopCounter++;
     visit(ctx->stmtLst());
+    nestedLoopCounter--;
     // Return to old scope
     currentScope = currentScope->getParent();
     return TYPE_BOOL;
@@ -131,7 +133,9 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx
         throw SemanticError(*ctx->assignment()->start, CONDITION_MUST_BE_BOOL,
                             "While loop condition must be of type bool");
     // Visit statement list in new scope
+    nestedLoopCounter++;
     visit(ctx->stmtLst());
+    nestedLoopCounter--;
     // Return to old scope
     currentScope = currentScope->getParent();
     return TYPE_BOOL;
@@ -244,17 +248,35 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx) {
+    int breakCount = 1;
     if (ctx->INTEGER()) {
-        int breakCount = std::stoi(ctx->INTEGER()->toString());
+        // Check if the stated number is valid
+        breakCount = std::stoi(ctx->INTEGER()->toString());
         if (breakCount < 1)
             throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_BREAK_NUMBER,
-                                "Break count was: " + ctx->INTEGER()->toString());
+                                "Break count must be >= 1: " + ctx->INTEGER()->toString());
     }
+    // Check if we can break this often
+    if (breakCount > nestedLoopCounter)
+        throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_BREAK_NUMBER,
+                            "We only can break " + std::to_string(nestedLoopCounter) + " time(s) here");
     return TYPE_INT;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) {
-    return SpiceBaseVisitor::visitContinueStmt(ctx);
+    int continueCount = 1;
+    if (ctx->INTEGER()) {
+        // Check if the stated number is valid
+        continueCount = std::stoi(ctx->INTEGER()->toString());
+        if (continueCount < 1)
+            throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_CONTINUE_NUMBER,
+                                "Continue count must be >= 1: " + ctx->INTEGER()->toString());
+    }
+    // Check if we can continue this often
+    if (continueCount > nestedLoopCounter)
+        throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_CONTINUE_NUMBER,
+                            "We only can continue " + std::to_string(nestedLoopCounter) + " time(s) here");
+    return TYPE_INT;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) {

@@ -52,12 +52,14 @@ public:
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext* ctx) override;
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) override;
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
-    /*antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) override;*/
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
+    antlrcpp::Any visitStmtLst(SpiceParser::StmtLstContext* ctx) override;
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
+    antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
+    antlrcpp::Any visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) override;
     antlrcpp::Any visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) override;
     antlrcpp::Any visitAssignment(SpiceParser::AssignmentContext* ctx) override;
     antlrcpp::Any visitTernary(SpiceParser::TernaryContext* ctx) override;
