@@ -16,7 +16,6 @@ const char *SemanticError::what() const noexcept {
 }
 
 std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
-    std::string messagePrefix;
     switch (type) {
         case REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE: return "Referenced undefined function";
         case REFERENCED_UNDEFINED_VARIABLE: return "Referenced undefined variable";

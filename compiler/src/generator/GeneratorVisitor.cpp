@@ -119,7 +119,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Verify module to detect IR code bugs
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyModule(*module, &oss)) throw IRError(INVALID_MODULE, oss.str());
+    if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
 
     return result;
 }
@@ -156,7 +156,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     // Verify function
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*fct, &oss)) throw IRError(INVALID_FUNCTION, oss.str());
+    if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(fct);
@@ -234,7 +234,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Verify function
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*fct, &oss)) throw IRError(INVALID_FUNCTION, oss.str());
+    if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(fct);
@@ -302,7 +302,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Verify procedure
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*proc, &oss)) throw IRError(INVALID_FUNCTION, oss.str());
+    if (llvm::verifyFunction(*proc, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(proc);
@@ -481,7 +481,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
     for (auto &arg : ctx->assignment()) {
         auto argVal = visit(arg).as<llvm::Value*>();
-        if (argVal == nullptr) throw IRError(PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
+        if (argVal == nullptr) throw IRError(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
         printfArgs.push_back(argVal);
     }
     return builder->CreateCall(printf, printfArgs);
@@ -790,8 +790,8 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         std::string variableName = ctx->IDENTIFIER()->toString();
         currentSymbolType = currentScope->lookup(variableName)->getType();
         llvm::Value* var = namedValues[variableName];
-        if (!var) throw IRError(VARIABLE_NOT_FOUND, "Internal compiler error - Variable '" + variableName +
-            "' not found in code generation step");
+        if (!var) throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
+                        "Internal compiler error - Variable '" + variableName + "' not found in code generation step");
         return (llvm::Value*) builder->CreateLoad(var->getType()->getPointerElementType(), var);
     }
 
@@ -833,8 +833,8 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
             case TYPE_INT: return (llvm::Type*) llvm::Type::getInt32Ty(*context);
             case TYPE_STRING: return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();
             case TYPE_BOOL: return (llvm::Type*) llvm::Type::getInt1Ty(*context);
-            default: throw IRError(UNEXPECTED_DYN_TYPE, "Dyn was " +
-                                    std::to_string(symbolTableEntry->getType()));
+            default: throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE,
+                                   "Dyn was " + std::to_string(symbolTableEntry->getType()));
         }
     }
 
