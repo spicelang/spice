@@ -3,9 +3,5 @@ f<int> main() {
     while i < 10 {
         i += 1;
         printf("i is now at: %d\n", i);
-        if i > 5 {
-            continue;
-        }
-        printf("test");
     }
 }

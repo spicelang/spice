@@ -529,7 +529,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
     auto printf = module->getFunction("printf");
     std::vector<llvm::Value*> printfArgs;
     auto stringTemplate = ctx->STRING()->toString();
-    stringTemplate = stringTemplate.erase(stringTemplate.size() -1).erase(0, 1);
+    stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
     for (auto &arg : ctx->assignment()) {
         auto argVal = visit(arg).as<llvm::Value*>();
