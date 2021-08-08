@@ -26,6 +26,8 @@ public:
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
+    antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext* ctx) override;
+    antlrcpp::Any visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) override;
     antlrcpp::Any visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) override;
     antlrcpp::Any visitAssignment(SpiceParser::AssignmentContext* ctx) override;
     antlrcpp::Any visitTernary(SpiceParser::TernaryContext* ctx) override;

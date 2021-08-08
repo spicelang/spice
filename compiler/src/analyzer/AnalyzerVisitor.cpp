@@ -242,7 +242,63 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
     return returnType;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx) {
+    if (ctx->INTEGER()) {
+        int breakCount = std::stoi(ctx->INTEGER()->toString());
+        if (breakCount < 1)
+            throw SemanticError(INVALID_BREAK_NUMBER, "Break count was: " + ctx->INTEGER()->toString());
+    }
+    return TYPE_INT;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) {
+    return SpiceBaseVisitor::visitContinueStmt(ctx);
+}
+
 antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) {
+    std::string templateString = ctx->STRING()->toString();
+    templateString = templateString.substr(1, templateString.size() - 2);
+
+    // Check if assignment types match placeholder types
+    std::size_t index = templateString.find_first_of('%');
+    int placeholderCount = 0;
+    while (index != std::string::npos) {
+        switch (templateString[index + 1]) {
+            case 'd':
+            case 'i':
+            case 'o':
+            case 'x':
+            case 'X':
+            case 'c': {
+                SymbolType assignmentType = visit(ctx->assignment()[placeholderCount]).as<SymbolType>();
+                if (assignmentType != TYPE_INT && assignmentType != TYPE_BOOL)
+                    throw SemanticError(PRINTF_TYPE_ERROR, "Template string expects an int or a bool here");
+                placeholderCount++;
+                break;
+            }
+            case 'f':
+            case 'F':
+            case 'e':
+            case 'E':
+            case 'g':
+            case 'G': {
+                SymbolType assignmentType = visit(ctx->assignment()[placeholderCount]).as<SymbolType>();
+                if (assignmentType != TYPE_DOUBLE)
+                    throw SemanticError(PRINTF_TYPE_ERROR, "Template string expects a double here");
+                placeholderCount++;
+                break;
+            }
+            case 's': {
+                SymbolType assignmentType = visit(ctx->assignment()[placeholderCount]).as<SymbolType>();
+                if (assignmentType != TYPE_STRING)
+                    throw SemanticError(PRINTF_TYPE_ERROR, "Template string expects a string here");
+                placeholderCount++;
+                break;
+            }
+        }
+        index = templateString.find_first_of('%', index + 1);
+    }
+
     return SpiceBaseVisitor::visitPrintfStmt(ctx);
 }
 

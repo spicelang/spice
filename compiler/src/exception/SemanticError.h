@@ -16,6 +16,8 @@ enum SemanticErrorType {
     CONDITION_MUST_BE_BOOL,
     MISSING_MAIN_FUNCTION,
     FCT_PARAM_IS_TYPE_DYN,
+    INVALID_BREAK_NUMBER,
+    PRINTF_TYPE_ERROR
 };
 
 class SemanticError : public std::exception {
@@ -53,6 +55,12 @@ public:
                 break;
             case FCT_PARAM_IS_TYPE_DYN:
                 messagePrefix = "Parameter type dyn not valid in function/procedure definition without default value";
+                break;
+            case INVALID_BREAK_NUMBER:
+                messagePrefix = "Invalid number of breaks";
+                break;
+            case PRINTF_TYPE_ERROR:
+                messagePrefix = "Types of printf call not matching";
                 break;
         }
         errorMessage = messagePrefix + ": " + message;
