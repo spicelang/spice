@@ -41,7 +41,7 @@ jobs:
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: | #-DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON
-          git clone https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-12.0.1 https://github.com/llvm/llvm-project llvm
           ./dockcross cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2"
 
       - name: Setup LLVM - Build
@@ -53,7 +53,7 @@ jobs:
         run: |
           mkdir -p ./compiler/lib
           cd ./compiler/lib
-          git clone https://github.com/antlr/antlr4.git
+          git clone --depth 1 https://github.com/antlr/antlr4.git
       
       - name: Configure & compile project
         run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" sh -c "sudo mkdir -p /usr/share/man/man1 && sudo apt-get update -y && sudo apt-get install --ignore-missing --no-install-recommends --yes libc6-i386 openjdk-11-jre uuid-dev && cmake -Bbin -H./compiler -GNinja && ninja -Cbin"

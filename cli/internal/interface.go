@@ -44,6 +44,30 @@ func Compile(sourceFile string, targetTriple string, outputPath string, debugOut
 	}
 }
 
+// Link bundles the object files which were created by the compiler to an output executable
+func Link(sourceFile string, outputFile string) {
+	// Search for g++
+	gccPath := "g++"
+	if !CommandExists(gccPath) {
+		util.Error("g++ executable not found. Please make sure you have the package 'build-essential', containing the g++ executable installed", true)
+	}
+
+	// Execute g++
+	cmd := exec.Command(gccPath, "-no-pie", "-o", outputFile, sourceFile)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				util.Pel()
+				util.Pel()
+				util.Error("Linker exited with status code "+strconv.Itoa(status.ExitStatus())+"\nFailed to link: "+string(output), true)
+			}
+		} else {
+			util.Error("Failed to call linker executable", true)
+		}
+	}
+}
+
 // CommandExists checks if the stated command exists on the host system
 func CommandExists(cmd string) bool {
 	_, err := safeexec.LookPath(cmd)
