@@ -34,6 +34,8 @@ nfpms:
       - apk
       - deb
       - rpm
+    dependencies:
+      - build-essential
     contents:
       - src: bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/*
         dst: /usr/lib/spice/

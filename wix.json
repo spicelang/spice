@@ -9,12 +9,15 @@
             "spicec.exe"
         ]
     },
+    "directories": [
+        "[%USERPROFILE]spice\\bin"
+    ],
     "env": {
         "guid": "27bebd64-9bda-4b0f-b7ca-5bfc26b06cdb",
         "vars": [
             {
                 "name": "PATH",
-                "value": "[INSTALLDIR]",
+                "value": "[INSTALLDIR];%USERPROFILE%\\spice\\bin",
                 "permanent": "yes",
                 "system": "no",
                 "action": "set",
