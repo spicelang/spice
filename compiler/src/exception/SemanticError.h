@@ -4,6 +4,8 @@
 
 #include <exception>
 #include <string>
+#include <TokenSource.h>
+#include <Token.h>
 
 enum SemanticErrorType {
     REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
@@ -16,51 +18,21 @@ enum SemanticErrorType {
     CONDITION_MUST_BE_BOOL,
     MISSING_MAIN_FUNCTION,
     FCT_PARAM_IS_TYPE_DYN,
+    INVALID_BREAK_NUMBER,
+    INVALID_CONTINUE_NUMBER,
+    PRINTF_TYPE_ERROR
 };
 
 class SemanticError : public std::exception {
 public:
     // Constructors
-    explicit SemanticError(SemanticErrorType type, const std::string& message) {
-        std::string messagePrefix;
-        switch (type) {
-            case REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE:
-                messagePrefix = "Referenced undefined function";
-                break;
-            case REFERENCED_UNDEFINED_VARIABLE:
-                messagePrefix = "Referenced undefined variable";
-                break;
-            case VARIABLE_DECLARED_TWICE:
-                messagePrefix = "Multiple declarations of the same variable";
-                break;
-            case FUNCTION_WITHOUT_RETURN_STMT:
-                messagePrefix = "Missing return statement";
-                break;
-            case RETURN_STMT_WITHOUT_FUNCTION:
-                messagePrefix = "Return statement outside function";
-                break;
-            case OPERATOR_WRONG_DATA_TYPE:
-                messagePrefix = "Wrong data type for operator";
-                break;
-            case REASSIGN_CONST_VARIABLE:
-                messagePrefix = "Cannot re-assign constant variable";
-                break;
-            case CONDITION_MUST_BE_BOOL:
-                messagePrefix = "Condition must be bool";
-                break;
-            case MISSING_MAIN_FUNCTION:
-                messagePrefix = "Spice programs must contain a main function";
-                break;
-            case FCT_PARAM_IS_TYPE_DYN:
-                messagePrefix = "Parameter type dyn not valid in function/procedure definition without default value";
-                break;
-        }
-        errorMessage = messagePrefix + ": " + message;
-    }
+    explicit SemanticError(const antlr4::Token& token, SemanticErrorType type, const std::string& message);
+    explicit SemanticError(SemanticErrorType type, const std::string& message);
 
     // Public methods
     const char * what() const noexcept override;
 private:
     // Members
     std::string errorMessage {};
+    static std::string getMessagePrefix(SemanticErrorType);
 };

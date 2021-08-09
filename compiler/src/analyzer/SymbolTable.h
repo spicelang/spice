@@ -8,6 +8,7 @@
 #include <vector>
 #include <queue>
 #include <util/FunctionSignature.h>
+#include <llvm/IR/BasicBlock.h>
 #include "SymbolTableEntry.h"
 
 class SymbolTable {
@@ -26,6 +27,10 @@ public:
     bool hasChild(const std::string&);
     void pushSignature(const FunctionSignature&);
     FunctionSignature popSignature();
+    llvm::BasicBlock* getContinueBlock() const;
+    void setContinueBlock(llvm::BasicBlock*);
+    llvm::BasicBlock* getBreakBlock() const;
+    void setBreakBlock(llvm::BasicBlock*);
     std::string toString();
 private:
     // Members
@@ -34,4 +39,6 @@ private:
     std::map<std::string, SymbolTableEntry> symbols;
     std::vector<std::string> paramNames;
     std::queue<FunctionSignature> functionSignatures;
+    llvm::BasicBlock* continueBlock = nullptr;
+    llvm::BasicBlock* breakBlock = nullptr;
 };

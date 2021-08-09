@@ -18,7 +18,6 @@ public:
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext* ctx) override;
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) override;
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
-    /*antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) override;*/
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
     antlrcpp::Any visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) override;
@@ -26,6 +25,8 @@ public:
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
+    antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext* ctx) override;
+    antlrcpp::Any visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) override;
     antlrcpp::Any visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) override;
     antlrcpp::Any visitAssignment(SpiceParser::AssignmentContext* ctx) override;
     antlrcpp::Any visitTernary(SpiceParser::TernaryContext* ctx) override;
@@ -39,13 +40,13 @@ public:
     antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) override;
     antlrcpp::Any visitPrefixUnary(SpiceParser::PrefixUnaryContext* ctx) override;
     antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext* ctx) override;
-    antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
 private:
     // Members
     SymbolTable* currentScope = new SymbolTable(nullptr);
     bool parameterMode = false;
     bool hasMainFunction = false;
+    int nestedLoopCounter = 0;
 
     // Private functions
     static SymbolType getSymbolTypeFromDataType(SpiceParser::DataTypeContext*);

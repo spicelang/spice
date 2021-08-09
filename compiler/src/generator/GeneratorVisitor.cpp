@@ -119,7 +119,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Verify module to detect IR code bugs
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyModule(*module, &oss)) throw IRError(INVALID_MODULE, oss.str());
+    if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
 
     return result;
 }
@@ -156,7 +156,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     // Verify function
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*fct, &oss)) throw IRError(INVALID_FUNCTION, oss.str());
+    if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(fct);
@@ -234,7 +234,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Verify function
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*fct, &oss)) throw IRError(INVALID_FUNCTION, oss.str());
+    if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(fct);
@@ -302,7 +302,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Verify procedure
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*proc, &oss)) throw IRError(INVALID_FUNCTION, oss.str());
+    if (llvm::verifyFunction(*proc, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(proc);
@@ -325,10 +325,12 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+    currentScope->setContinueBlock(bCond);
+    currentScope->setBreakBlock(bLoopEnd);
 
     // Execute pre-loop stmts
     visit(ctx->assignment()[0]);
-    // Jump in condition block
+    // Jump into condition block
     createBr(bCond);
 
     // Fill condition block
@@ -345,7 +347,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     visit(ctx->stmtLst());
     // Run post-loop actions
     visit(ctx->assignment()[2]);
-    // Jump in condition block
+    // Jump into condition block
     createBr(bCond);
 
     // Fill loop end block
@@ -360,30 +362,35 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
-    auto conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
     auto parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
+    auto bCond = llvm::BasicBlock::Create(*context, "while_cond");
     auto bLoop = llvm::BasicBlock::Create(*context, "while");
     auto bLoopEnd = llvm::BasicBlock::Create(*context, "while_end");
-
-    // Check if entering the loop is necessary
-    createCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+    currentScope->setContinueBlock(bCond);
+    currentScope->setBreakBlock(bLoopEnd);
+
+    // Jump into condition block
+    createBr(bCond);
+
+    // Fill condition block
+    parentFct->getBasicBlockList().push_back(bCond);
+    moveInsertPointToBlock(bCond);
+    auto conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
+    createCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
     moveInsertPointToBlock(bLoop);
     // Generate IR for nested statements
     visit(ctx->stmtLst());
-    // Visit condition again
-    conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
-    // Check if condition is now false
-    bLoop = builder->GetInsertBlock();
-    createCondBr(conditionValue, bLoop, bLoopEnd);
+    // Jump into condition block
+    createBr(bCond);
 
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bLoopEnd);
@@ -394,6 +401,13 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
 
     // Return true as result for the loop
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
+}
+
+antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext* ctx) {
+    for (auto& child : ctx->children) {
+        if (!blockAlreadyTerminated) visit(child);
+    }
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
@@ -473,15 +487,53 @@ antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* 
     return returnValue;
 }
 
+antlrcpp::Any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx) {
+    // Get number, how many loops we want to break
+    int breakCount = 1;
+    if (ctx->INTEGER()) breakCount = std::stoi(ctx->INTEGER()->toString());
+
+    // Get destination block
+    SymbolTable* scope = currentScope;
+    while (!scope->getBreakBlock()) scope = scope->getParent();
+    for (int i = 1; i < breakCount; i++) {
+        scope = scope->getParent();
+        while (!scope->getBreakBlock()) scope = scope->getParent();
+    }
+    llvm::BasicBlock* destinationBlock = scope->getBreakBlock();
+
+    // Jump to destination block
+    createBr(destinationBlock);
+    return nullptr;
+}
+
+antlrcpp::Any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) {
+    // Get number, how many loops we want to continue
+    int continueCount = 1;
+    if (ctx->INTEGER()) continueCount = std::stoi(ctx->INTEGER()->toString());
+
+    // Get destination block
+    SymbolTable* scope = currentScope;
+    while (!scope->getBreakBlock()) scope = scope->getParent();
+    for (int i = 1; i < continueCount; i++) {
+        scope = scope->getParent();
+        while (!scope->getBreakBlock()) scope = scope->getParent();
+    }
+    llvm::BasicBlock* destinationBlock = scope->getContinueBlock();
+
+    // Jump to destination block
+    createBr(destinationBlock);
+    return nullptr;
+}
+
 antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) {
     auto printf = module->getFunction("printf");
     std::vector<llvm::Value*> printfArgs;
     auto stringTemplate = ctx->STRING()->toString();
-    stringTemplate = stringTemplate.erase(stringTemplate.size() -1).erase(0, 1);
+    stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
     for (auto &arg : ctx->assignment()) {
         auto argVal = visit(arg).as<llvm::Value*>();
-        if (argVal == nullptr) throw IRError(PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
+        if (argVal == nullptr) throw IRError(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
         printfArgs.push_back(argVal);
     }
     return builder->CreateCall(printf, printfArgs);
@@ -790,8 +842,8 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         std::string variableName = ctx->IDENTIFIER()->toString();
         currentSymbolType = currentScope->lookup(variableName)->getType();
         llvm::Value* var = namedValues[variableName];
-        if (!var) throw IRError(VARIABLE_NOT_FOUND, "Internal compiler error - Variable '" + variableName +
-            "' not found in code generation step");
+        if (!var) throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
+                        "Internal compiler error - Variable '" + variableName + "' not found in code generation step");
         return (llvm::Value*) builder->CreateLoad(var->getType()->getPointerElementType(), var);
     }
 
@@ -833,8 +885,8 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
             case TYPE_INT: return (llvm::Type*) llvm::Type::getInt32Ty(*context);
             case TYPE_STRING: return (llvm::Type*) llvm::Type::getInt8Ty(*context)->getPointerTo();
             case TYPE_BOOL: return (llvm::Type*) llvm::Type::getInt1Ty(*context);
-            default: throw IRError(UNEXPECTED_DYN_TYPE, "Dyn was " +
-                                    std::to_string(symbolTableEntry->getType()));
+            default: throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE,
+                                   "Dyn was " + std::to_string(symbolTableEntry->getType()));
         }
     }
 

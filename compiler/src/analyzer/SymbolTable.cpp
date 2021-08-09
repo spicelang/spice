@@ -61,15 +61,6 @@ bool SymbolTable::hasChild(const std::string& scopeId) {
     return children.find(scopeId) != children.end();
 }
 
-std::string SymbolTable::toString() {
-    std::string symbolsString, childrenString;
-    for (auto& symbol : symbols)
-        symbolsString.append("(" + symbol.second.toString() + ")\n");
-    for (auto& child : children)
-        childrenString.append(child.first + ": " + child.second.toString() + "\n");
-    return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
-}
-
 void SymbolTable::pushSignature(const FunctionSignature& signature) {
     functionSignatures.push(signature);
 }
@@ -78,4 +69,29 @@ FunctionSignature SymbolTable::popSignature() {
     auto signature = functionSignatures.front();
     functionSignatures.pop();
     return signature;
+}
+
+llvm::BasicBlock* SymbolTable::getContinueBlock() const {
+    return continueBlock;
+}
+
+void SymbolTable::setContinueBlock(llvm::BasicBlock* block) {
+    continueBlock = block;
+}
+
+llvm::BasicBlock* SymbolTable::getBreakBlock() const {
+    return breakBlock;
+}
+
+void SymbolTable::setBreakBlock(llvm::BasicBlock* block) {
+    breakBlock = block;
+}
+
+std::string SymbolTable::toString() {
+    std::string symbolsString, childrenString;
+    for (auto& symbol : symbols)
+        symbolsString.append("(" + symbol.second.toString() + ")\n");
+    for (auto& child : children)
+        childrenString.append(child.first + ": " + child.second.toString() + "\n");
+    return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
 }

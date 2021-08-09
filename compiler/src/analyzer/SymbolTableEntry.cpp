@@ -14,8 +14,7 @@ void SymbolTableEntry::updateState(SymbolState newState) {
     if (state == INITIALIZED && isConstant)
         throw SemanticError(REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
     if (newState == INITIALIZED && type == TYPE_DYN)
-        throw SemanticError(OPERATOR_WRONG_DATA_TYPE,
-                            "Internal compiler error: could not determine type of variable '" + name + "'");
+        throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'");
     state = newState;
 }
 
