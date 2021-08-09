@@ -544,56 +544,56 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
 antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext* ctx) {
     // Check if at least one additive operator is applied
     if (ctx->children.size() > 1) {
-        antlrcpp::Any currentType = visit(ctx->multiplicativeExpr()[0]);
+        SymbolType currentType = visit(ctx->multiplicativeExpr()[0]).as<SymbolType>();
         // Check if data types are compatible
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
             auto next = ctx->multiplicativeExpr()[i];
-            antlrcpp::Any nextType = visit(next);
+            SymbolType nextType = visit(next).as<SymbolType>();
             // Check all combinations
-            if (currentType.as<SymbolType>() == TYPE_DOUBLE) {
-                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: 4.3 + 6.1
+            if (currentType == TYPE_DOUBLE) {
+                if (nextType == TYPE_DOUBLE) { // e.g.: 4.3 + 6.1
                     currentType = TYPE_DOUBLE;
-                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4.3 + 4
+                } else if (nextType == TYPE_INT) { // e.g.: 4.3 + 4
                     currentType = TYPE_DOUBLE;
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4.3 + "Test"
+                } else if (nextType == TYPE_STRING) { // e.g.: 4.3 + "Test"
                     currentType = TYPE_STRING;
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4.3 + true
+                } else if (nextType == TYPE_BOOL) { // e.g.: 4.3 + true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands double and bool for additive operator");
                 }
-            } else if (currentType.as<SymbolType>() == TYPE_INT) {
-                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: 4 + 6.1
+            } else if (currentType == TYPE_INT) {
+                if (nextType == TYPE_DOUBLE) { // e.g.: 4 + 6.1
                     currentType = TYPE_DOUBLE;
-                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4 + 5
+                } else if (nextType == TYPE_INT) { // e.g.: 4 + 5
                     currentType = TYPE_INT;
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4 + "Test"
+                } else if (nextType == TYPE_STRING) { // e.g.: 4 + "Test"
                     currentType = TYPE_STRING;
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4 + true
+                } else if (nextType == TYPE_BOOL) { // e.g.: 4 + true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands int and bool for additive operator");
                 }
-            } else if (currentType.as<SymbolType>() == TYPE_STRING) {
-                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: "Test" + 6.1
+            } else if (currentType == TYPE_STRING) {
+                if (nextType == TYPE_DOUBLE) { // e.g.: "Test" + 6.1
                     currentType = TYPE_STRING;
-                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: "Test" + 5
+                } else if (nextType == TYPE_INT) { // e.g.: "Test" + 5
                     currentType = TYPE_STRING;
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: "Test" + "Test"
+                } else if (nextType == TYPE_STRING) { // e.g.: "Test" + "Test"
                     currentType = TYPE_STRING;
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: "Test" + true
+                } else if (nextType == TYPE_BOOL) { // e.g.: "Test" + true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and bool for additive operator");
                 }
-            } else if (currentType.as<SymbolType>() == TYPE_BOOL) {
-                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: true + 6.1
+            } else if (currentType == TYPE_BOOL) {
+                if (nextType == TYPE_DOUBLE) { // e.g.: true + 6.1
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and double for additive operator");
-                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: true + 5
+                } else if (nextType == TYPE_INT) { // e.g.: true + 5
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and int for additive operator");
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: true + "Test"
+                } else if (nextType == TYPE_STRING) { // e.g.: true + "Test"
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and string for additive operator");
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: true + false
+                } else if (nextType == TYPE_BOOL) { // e.g.: true + false
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and bool for additive operator");
                 }
@@ -607,59 +607,59 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
 antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) {
     // Check if at least one multiplicative operator is applied
     if (ctx->children.size() > 1) {
-        antlrcpp::Any currentType = visit(ctx->prefixUnary()[0]);
+        SymbolType currentType = visit(ctx->prefixUnary()[0]).as<SymbolType>();
         // Check if data types are compatible
         for (int i = 1; i < ctx->prefixUnary().size(); i++) {
             auto next = ctx->prefixUnary()[i];
-            antlrcpp::Any nextType = visit(next);
+            SymbolType nextType = visit(next).as<SymbolType>();
             // Check all combinations
-            if (currentType.as<SymbolType>() == TYPE_DOUBLE) {
-                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: 4.3 * 6.1
+            if (currentType == TYPE_DOUBLE) {
+                if (nextType == TYPE_DOUBLE) { // e.g.: 4.3 * 6.1
                     currentType = TYPE_DOUBLE;
-                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4.3 * 4
+                } else if (nextType == TYPE_INT) { // e.g.: 4.3 * 4
                     currentType = TYPE_DOUBLE;
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4.3 * "Test"
+                } else if (nextType == TYPE_STRING) { // e.g.: 4.3 * "Test"
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands double and string for multiplicative operator");
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4.3 * true
+                } else if (nextType == TYPE_BOOL) { // e.g.: 4.3 * true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands double and bool for multiplicative operator");
                 }
-            } else if (currentType.as<SymbolType>() == TYPE_INT) {
-                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: 4 * 6.1
+            } else if (currentType == TYPE_INT) {
+                if (nextType == TYPE_DOUBLE) { // e.g.: 4 * 6.1
                     currentType = TYPE_DOUBLE;
-                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: 4 * 5
+                } else if (nextType == TYPE_INT) { // e.g.: 4 * 5
                     currentType = TYPE_INT;
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: 4 * "Test"
+                } else if (nextType == TYPE_STRING) { // e.g.: 4 * "Test"
                     currentType = TYPE_STRING;
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: 4 * true
+                } else if (nextType == TYPE_BOOL) { // e.g.: 4 * true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands int and bool for multiplicative operator");
                 }
-            } else if (currentType.as<SymbolType>() == TYPE_STRING) {
-                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: "Test" * 6.1
+            } else if (currentType == TYPE_STRING) {
+                if (nextType == TYPE_DOUBLE) { // e.g.: "Test" * 6.1
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and double for multiplicative operator");
-                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: "Test" * 5
+                } else if (nextType == TYPE_INT) { // e.g.: "Test" * 5
                     currentType = TYPE_STRING;
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: "Test" * "Test"
+                } else if (nextType == TYPE_STRING) { // e.g.: "Test" * "Test"
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and string for multiplicative operator");
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: "Test" * true
+                } else if (nextType == TYPE_BOOL) { // e.g.: "Test" * true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and bool for multiplicative operator");
                 }
-            } else if (currentType.as<SymbolType>() == TYPE_BOOL) {
-                if (nextType.as<SymbolType>() == TYPE_DOUBLE) { // e.g.: true * 6.1
+            } else if (currentType == TYPE_BOOL) {
+                if (nextType == TYPE_DOUBLE) { // e.g.: true * 6.1
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and double for multiplicative operator");
-                } else if (nextType.as<SymbolType>() == TYPE_INT) { // e.g.: true * 5
+                } else if (nextType == TYPE_INT) { // e.g.: true * 5
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and int for multiplicative operator");
-                } else if (nextType.as<SymbolType>() == TYPE_STRING) { // e.g.: true * "Test"
+                } else if (nextType == TYPE_STRING) { // e.g.: true * "Test"
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and string for multiplicative operator");
-                } else if (nextType.as<SymbolType>() == TYPE_BOOL) { // e.g.: true * false
+                } else if (nextType == TYPE_BOOL) { // e.g.: true * false
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and bool for multiplicative operator");
                 }
