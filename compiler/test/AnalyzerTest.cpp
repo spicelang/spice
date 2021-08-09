@@ -118,13 +118,29 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         { // 25
             "error-dyn-return-types-not-matching",
             "Semantic error at 3:12: Wrong data type for operator: Passed wrong data type to return statement"
-        }, // 26
-        {
+        },
+        { // 26
             "error-printf-type-incompatibility",
             "Semantic error at 4:36: Types of printf call not matching: Template string expects an int or a bool here"
         },
-        // Successful tests
         { // 27
+            "error-break-count-valid",
+            "Semantic error at 7:23: Invalid number of break calls: Break count must be >= 1: -10"
+        },
+        { // 28
+            "error-break-count-not-too-high",
+            "Semantic error at 7:23: Invalid number of break calls: We only can break 2 time(s) here"
+        },
+        { // 29
+            "error-continue-count-valid",
+            "Semantic error at 7:26: Invalid number of continue calls: Continue count must be >= 1: -10"
+        },
+        { // 30
+            "error-continue-count-not-too-high",
+            "Semantic error at 7:26: Invalid number of continue calls: We only can continue 2 time(s) here"
+        },
+        // Successful tests
+        { // 31
             "success-fibonacci",
             ""
         }
