@@ -13,3 +13,17 @@ updates:
       - chillibits/compiler-team
     assignees:
       - chillibits/compiler-team
+
+  # Dockerfile
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: daily
+      time: "04:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 15
+    target-branch: main
+    reviewers:
+      - chillibits/compiler-team
+    assignees:
+      - chillibits/compiler-team
