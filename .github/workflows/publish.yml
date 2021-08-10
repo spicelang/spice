@@ -27,7 +27,7 @@ jobs:
       
       - name: Prepare builder
         run: |
-          docker run --rm dockcross/${{ matrix.arch_name }} > ./dockcross
+          docker run --rm dockcross/${{ matrix.arch_name }}:20210805-77da067 > ./dockcross
           chmod +x dockcross
           mkdir bin
 
@@ -41,13 +41,13 @@ jobs:
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: | #-DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON
-          git clone --depth 1 --branch llvmorg-12.0.1 https://github.com/llvm/llvm-project llvm
-          ./dockcross cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2"
+          git clone --depth 1 https://github.com/llvm/llvm-project llvm
+          ./dockcross --image dockcross/${{ matrix.arch_name }}:20210805-77da067 cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -Wno-dev
 
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          ./dockcross ninja -C./llvm/build
+          ./dockcross --image dockcross/${{ matrix.arch_name }}:20210805-77da067 ninja -C./llvm/build
 
       - name: Download Libs
         run: |
