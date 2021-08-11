@@ -1,7 +1,4 @@
 f<int> main() {
-    int i = 0;
-    while i < 10 {
-        i += 1;
-        printf("i is now at: %d\n", i);
-    }
+    dyn test = "string1" + "string2";
+    printf("Test: %s", test);
 }

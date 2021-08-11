@@ -723,10 +723,43 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
         auto lhs = visit(ctx->multiplicativeExpr()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
             auto rhs = visit(ctx->multiplicativeExpr()[i]).as<llvm::Value*>();
-            if (ctx->PLUS(i-1))
-                lhs = builder->CreateAdd(lhs, rhs, "add");
-            else
-                lhs = builder->CreateSub(lhs, rhs, "sub");
+            if (lhs->getType()->isDoubleTy()) {
+                if (rhs->getType()->isDoubleTy()) { // double + double / double - double
+                    if (ctx->PLUS(i-1))
+                        lhs = builder->CreateFAdd(lhs, rhs, "add");
+                    else
+                        lhs = builder->CreateFSub(lhs, rhs, "sub");
+                } else if (rhs->getType()->isIntegerTy(32)) { // double + int / double - int
+                    if (ctx->PLUS(i-1))
+                        lhs = builder->CreateFAdd(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "add");
+                    else
+                        lhs = builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
+                } else if (rhs->getType()->isPointerTy()) { // double + string / double - string
+
+                }
+            } else if (lhs->getType()->isIntegerTy(32)) {
+                if (rhs->getType()->isDoubleTy()) { // int + double / int - double
+                    if (ctx->PLUS(i-1))
+                        lhs = builder->CreateFAdd(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "add");
+                    else
+                        lhs = builder->CreateFSub(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "sub");
+                } else if (rhs->getType()->isIntegerTy(32)) { // int + int / int - int
+                    if (ctx->PLUS(i-1))
+                        lhs = builder->CreateAdd(lhs, rhs, "add");
+                    else
+                        lhs = builder->CreateSub(lhs, rhs, "sub");
+                } else if (rhs->getType()->isPointerTy()) { // int + string / int - string
+
+                }
+            } else if (lhs->getType()->isPointerTy()) {
+                if (rhs->getType()->isDoubleTy()) { // string + double / string - double
+
+                } else if (rhs->getType()->isIntegerTy(32)) { // string + int / string - int
+
+                } else if (rhs->getType()->isPointerTy()) { // string + string / string - string
+
+                }
+            }
         }
         return lhs;
     }
@@ -738,10 +771,37 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
         auto lhs = visit(ctx->prefixUnary()[0]).as<llvm::Value*>();
         for (int i = 1; i < ctx->prefixUnary().size(); i++) {
             auto rhs = visit(ctx->prefixUnary()[i]).as<llvm::Value*>();
-            if (ctx->MUL(i-1))
-                lhs = builder->CreateMul(lhs, rhs, "mul");
-            else
-                lhs = builder->CreateSDiv(lhs, rhs, "div");
+            if (lhs->getType()->isDoubleTy()) {
+                if (rhs->getType()->isDoubleTy()) { // double * double / double : double
+                    if (ctx->MUL(i-1))
+                        lhs = builder->CreateFMul(lhs, rhs, "mul");
+                    else
+                        lhs = builder->CreateFDiv(lhs, rhs, "div");
+                } else if (rhs->getType()->isIntegerTy(32)) { // double * int / double : int
+                    if (ctx->MUL(i-1))
+                        lhs = builder->CreateFMul(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "mul");
+                    else
+                        lhs = builder->CreateFDiv(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "div");
+                }
+            } else if (lhs->getType()->isIntegerTy(32)) {
+                if (rhs->getType()->isDoubleTy()) { // int * double / int : double
+                    if (ctx->MUL(i-1))
+                        lhs = builder->CreateFMul(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "mul");
+                    else
+                        lhs = builder->CreateFDiv(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "div");
+                } else if (rhs->getType()->isIntegerTy(32)) { // int * int / int : int
+                    if (ctx->MUL(i-1))
+                        lhs = builder->CreateMul(lhs, rhs, "mul");
+                    else
+                        lhs = builder->CreateSDiv(lhs, rhs, "div");
+                } else if (rhs->getType()->isPointerTy()) { // int * string / int : string
+
+                }
+            } else if (lhs->getType()->isPointerTy()) {
+                if (rhs->getType()->isIntegerTy(32)) { // string * int / string : int
+
+                }
+            }
         }
         return lhs;
     }
