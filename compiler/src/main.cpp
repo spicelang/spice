@@ -18,9 +18,10 @@ int main(int argc, char** argv) {
 
     // Receive args from cli
     std::string filePath = args[1];
-    std::string targetTriple = args[2]; // Default: x86_64-w64-windows-gnu
+    std::string targetTriple = args[2]; // Default for dev host: x86_64-w64-windows-gnu
     std::string outputPath = args[3];
     bool debugOutput = args[4] == "true";
+    int optimizerLevel = std::stoi(args[5]);
 
     // Read from file
     std::ifstream stream;
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
             generator.dumpIR();
         }
 
-        generator.optimize(); // Optimize IR code
+        generator.optimize(optimizerLevel); // Optimize IR code
         if (debugOutput) {
             // Print optimized IR code
             std::cout << "Optimized IR code:" << std::endl;

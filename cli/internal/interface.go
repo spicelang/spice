@@ -14,7 +14,7 @@ import (
 const COMPILER_EXECUTABLE_NAME = "spicec"
 
 // Compile executes the compiler executable with the provided input arguments
-func Compile(sourceFile string, targetTriple string, outputPath string, debugOutput bool) {
+func Compile(sourceFile string, targetTriple string, outputPath string, debugOutput bool, optLevel int) {
 	// Search for executable
 	executablePath, _ := osext.Executable()
 	executablePath = strings.ReplaceAll(executablePath, "\\", "/")
@@ -29,14 +29,22 @@ func Compile(sourceFile string, targetTriple string, outputPath string, debugOut
 	}
 
 	// Execute compiler executable. e.g.: spicec "./sourceFile.spice" "x86_64-w64-windows-gnu"
-	cmd := exec.Command(executablePath+COMPILER_EXECUTABLE_NAME, sourceFile, targetTriple, outputPath, strconv.FormatBool(debugOutput))
+	cmd := exec.Command(
+		executablePath+COMPILER_EXECUTABLE_NAME,
+		sourceFile,
+		targetTriple,
+		outputPath,
+		strconv.FormatBool(debugOutput),
+		strconv.Itoa(optLevel),
+	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 				util.Pel()
 				util.Pel()
-				util.Error("Compiler exited with status code "+strconv.Itoa(status.ExitStatus())+"\nFailed to compile: "+string(output), true)
+				util.Error("Compiler exited with status code "+strconv.Itoa(status.ExitStatus())+
+					"\nFailed to compile: "+string(output), true)
 			}
 		} else {
 			util.Error("Failed to call compiler executable", true)
@@ -49,7 +57,8 @@ func Link(sourceFile string, outputFile string) {
 	// Search for g++
 	gccPath := "g++"
 	if !CommandExists(gccPath) {
-		util.Error("g++ executable not found. Please make sure you have the package 'build-essential', containing the g++ executable installed", true)
+		util.Error("g++ executable not found. Please make sure you have the package 'build-essential', "+
+			"containing the g++ executable installed", true)
 	}
 
 	// Execute g++
@@ -60,7 +69,8 @@ func Link(sourceFile string, outputFile string) {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 				util.Pel()
 				util.Pel()
-				util.Error("Linker exited with status code "+strconv.Itoa(status.ExitStatus())+"\nFailed to link: "+string(output), true)
+				util.Error("Linker exited with status code "+strconv.Itoa(status.ExitStatus())+
+					"\nFailed to link: "+string(output), true)
 			}
 		} else {
 			util.Error("Failed to call linker executable", true)

@@ -8,7 +8,7 @@ import (
 )
 
 // Install takes the passed code file, resolves its dependencies, emits an executable and installs it to a directory in the system PATH
-func Install(sourceFile string, debugOutput bool) {
+func Install(sourceFile string, debugOutput bool, optLevel int) {
 	sourceFileName := filepath.Base(sourceFile)
 	sourceFileNameWithoutExt := strings.TrimSuffix(sourceFileName, filepath.Ext(sourceFileName))
 
@@ -26,5 +26,5 @@ func Install(sourceFile string, debugOutput bool) {
 	}
 
 	// Build executable to the install path
-	Build(sourceFile, "", installPath, debugOutput)
+	Build(sourceFile, "", installPath, debugOutput, optLevel)
 }

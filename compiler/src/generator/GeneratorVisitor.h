@@ -43,7 +43,7 @@ public:
 
     // Public methods
     void init();
-    void optimize();
+    void optimize(int);
     void emit(std::string, const std::string&);
     void dumpIR();
     std::string getIRString();
@@ -86,10 +86,13 @@ private:
     SymbolTable* currentScope = new SymbolTable(nullptr);
     std::string currentVar;
     SymbolType currentSymbolType;
+    llvm::Value* currentAssignValue = nullptr;
     bool blockAlreadyTerminated = false;
+    //llvm::StructType* stringType = nullptr;
 
     // Private methods
     void initializeExternalFunctions();
+    //void initStringType();
     void moveInsertPointToBlock(llvm::BasicBlock*);
     void createBr(llvm::BasicBlock*);
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);

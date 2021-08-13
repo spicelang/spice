@@ -1,0 +1,20 @@
+// Prints the given string to the console
+p print(string text) {
+    printf(text);
+}
+
+// Prints the given string to the console with a trailing line break
+p println(string text) {
+    printf(text + "\n");
+}
+
+// Prints one or several line breaks to the console
+p lineBreak(int number = 1) {
+    for int i = 0; i < number; i++ {
+        printf("\n");
+    }
+}
+
+p beep() {
+    printf("\a");
+}
