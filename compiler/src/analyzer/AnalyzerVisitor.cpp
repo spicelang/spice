@@ -220,14 +220,21 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
-    std::string sourceFileIdentifier = ctx->STRING()->toString();
+    std::string importIden = ctx->STRING()->toString();
 
     // Check if source file exists
-    if (sourceFileIdentifier.rfind("std/", 0) == 0) { // Include source file from standard library
-        sourceFileIdentifier = sourceFileIdentifier.substr(sourceFileIdentifier.find("std/") + 1);
-
+    if (importIden.rfind("std/", 0) == 0) { // Include source file from standard library
+        std::string sourceFileIden = importIden.substr(importIden.find("std/") + 1);
+        if (!FileUtil::fileExists("/usr/lib/spice/std/" + sourceFileIden) &&
+            !FileUtil::fileExists(std::string(std::getenv("SPICE_STD_DIR")) + "/" + sourceFileIden)) {
+            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importIden
+                + "' was not found in std library");
+        }
     } else { // Include own source file
-
+        if (!FileUtil::fileExists("./" + importIden)) {
+            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importIden
+                + "' does not exist");
+        }
     }
 
     return TYPE_STRING;

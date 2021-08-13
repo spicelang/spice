@@ -6,6 +6,7 @@
 #include "SpiceLexer.h"
 #include "SymbolTable.h"
 #include <util/ScopeIdUtil.h>
+#include <util/FileUtil.h>
 #include <exception/SemanticError.h>
 
 const static std::string RETURN_VARIABLE_NAME = "result";

@@ -20,6 +20,8 @@ set(SOURCES
         util/ScopeIdUtil.h
         util/FunctionSignature.cpp
         util/FunctionSignature.h
+        util/FileUtil.cpp
+        util/FileUtil.h
         exception/IRError.cpp
         exception/IRError.h)
 

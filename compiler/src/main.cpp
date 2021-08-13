@@ -1,28 +1,12 @@
 // Copyright (c) 2021 ChilliBits. All rights reserved.
 
 #include <iostream>
-#include <filesystem>
 #include "antlr4-runtime.h"
 
 #include "SpiceLexer.h"
 #include "SpiceParser.h"
 #include "analyzer/AnalyzerVisitor.h"
 #include "generator/GeneratorVisitor.h"
-
-/**
- * Extracts the name of a file from its full path and returns it
- *
- * @param filePath Full path to the file (absolute or relative)
- */
-std::string getFileName(const std::string& filePath) {
-    char sep = '/';
-#ifdef _WIN32
-    sep = '\\';
-#endif
-    size_t i = filePath.rfind(sep, filePath.length());
-    if (i != std::string::npos) return(filePath.substr(i + 1, filePath.length() - i));
-    return "";
-}
 
 /**
  * Compiles a single source file to an object
@@ -64,7 +48,7 @@ int compileSourceFile(
 
     try {
         // Get file name from file path
-        std::string fileName = getFileName(filePath);
+        std::string fileName = FileUtil::getFileName(filePath);
         std::cout << fileName << std::endl;
 
         // Execute generator

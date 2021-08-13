@@ -12,3 +12,7 @@ f<int> main() {
 }*/
 
 import "functions"
+
+f<int> main() {
+    printf("Test\n");
+}
