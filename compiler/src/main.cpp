@@ -1,6 +1,7 @@
 // Copyright (c) 2021 ChilliBits. All rights reserved.
 
 #include <iostream>
+#include <filesystem>
 #include "antlr4-runtime.h"
 
 #include "SpiceLexer.h"
@@ -8,21 +9,38 @@
 #include "analyzer/AnalyzerVisitor.h"
 #include "generator/GeneratorVisitor.h"
 
-using namespace antlr4;
+/**
+ * Extracts the name of a file from its full path and returns it
+ *
+ * @param filePath Full path to the file (absolute or relative)
+ */
+std::string getFileName(const std::string& filePath) {
+    char sep = '/';
+#ifdef _WIN32
+    sep = '\\';
+#endif
+    size_t i = filePath.rfind(sep, filePath.length());
+    if (i != std::string::npos) return(filePath.substr(i + 1, filePath.length() - i));
+    return "";
+}
 
-int main(int argc, char** argv) {
-    // Parse cli args
-    std::vector<std::string> args;
-    for (size_t iArg = 0; iArg < argc; ++iArg)
-        args.emplace_back(argv[iArg]);
-
-    // Receive args from cli
-    std::string filePath = args[1];
-    std::string targetTriple = args[2]; // Default for dev host: x86_64-w64-windows-gnu
-    std::string outputPath = args[3];
-    bool debugOutput = args[4] == "true";
-    int optimizerLevel = std::stoi(args[5]);
-
+/**
+ * Compiles a single source file to an object
+ *
+ * @param filePath Full path to a file (absolute or relative)
+ * @param targetTriple Target triplet string: e.g.: x86_64-w64-windows-gnu
+ * @param outputPath Full path to an output file (absolute or relative)
+ * @param debugOutput Set to true to show compiler debug output
+ * @param optimizerLevel Number in range 1-3 to control optimization level
+ * @return Return code of the compile process
+ */
+int compileSourceFile(
+        const std::string& filePath,
+        const std::string& targetTriple,
+        const std::string& outputPath,
+        bool debugOutput,
+        int optimizerLevel
+) {
     // Read from file
     std::ifstream stream;
     stream.open(filePath);
@@ -44,21 +62,23 @@ int main(int argc, char** argv) {
         return 1; // Exit with negative result code
     }
 
-    // Execute generator
     try {
+        // Get file name from file path
+        std::string fileName = getFileName(filePath);
+        std::cout << fileName << std::endl;
+
+        // Execute generator
         GeneratorVisitor generator = GeneratorVisitor(symbolTable);
-        generator.init(); // Initialize code generation
+        generator.init(fileName); // Initialize code generation
         generator.visit(tree); // Generate IR code
-        if (debugOutput) {
-            // Print IR code
-            std::cout << "IR code:" << std::endl;
+        if (debugOutput) { // Dump un-optimized IR code, if debug output is enabled
+            std::cout << "\nIR code:" << std::endl;
             generator.dumpIR();
         }
 
         generator.optimize(optimizerLevel); // Optimize IR code
-        if (debugOutput) {
-            // Print optimized IR code
-            std::cout << "Optimized IR code:" << std::endl;
+        if (debugOutput) { // Dump optimized IR code, if debug output is enabled
+            std::cout << "\nOptimized IR code:" << std::endl;
             generator.dumpIR();
         }
 
@@ -67,7 +87,32 @@ int main(int argc, char** argv) {
         std::cout << e.what() << std::endl;
         return 1; // Exit with negative result code
     }
-
-    // Exit with positive result code
     return 0;
+}
+
+/**
+ * Entry point to the Spice compiler
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Return code
+ */
+int main(int argc, char** argv) {
+    // Parse cli args
+    std::vector<std::string> args;
+    for (size_t iArg = 0; iArg < argc; ++iArg)
+        args.emplace_back(argv[iArg]);
+
+    // Extract args from cli
+    std::string filePath = args[1];
+    std::string targetTriple = args[2]; // Default for dev host: x86_64-w64-windows-gnu
+    std::string outputPath = args[3];
+    bool debugOutput = args[4] == "true";
+    int optimizerLevel = std::stoi(args[5]);
+
+    /*
+     * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
+     * function again.
+     */
+    return compileSourceFile(filePath, targetTriple, outputPath, debugOutput, optimizerLevel);
 }

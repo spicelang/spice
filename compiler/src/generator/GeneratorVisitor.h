@@ -42,7 +42,7 @@ public:
     explicit GeneratorVisitor(SymbolTable* symbolTable): currentScope(symbolTable) {}
 
     // Public methods
-    void init();
+    void init(const std::string&);
     void optimize(int);
     void emit(std::string, const std::string&);
     void dumpIR();
@@ -78,9 +78,9 @@ public:
     antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
 private:
     // Members
-    std::unique_ptr<llvm::LLVMContext> context = std::make_unique<llvm::LLVMContext>();
-    std::unique_ptr<llvm::IRBuilder<>> builder = std::make_unique<llvm::IRBuilder<>>(*context);
-    std::unique_ptr<llvm::Module> module = std::make_unique<llvm::Module>("Module", *context);
+    std::unique_ptr<llvm::LLVMContext> context;
+    std::unique_ptr<llvm::IRBuilder<>> builder;
+    std::unique_ptr<llvm::Module> module;
     std::map<std::string, llvm::AllocaInst*> namedValues;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope = new SymbolTable(nullptr);

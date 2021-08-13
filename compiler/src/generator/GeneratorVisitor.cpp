@@ -2,7 +2,12 @@
 
 #include "GeneratorVisitor.h"
 
-void GeneratorVisitor::init() {
+void GeneratorVisitor::init(const std::string& sourceFileName) {
+    // Create LLVM base components
+    context = std::make_unique<llvm::LLVMContext>();
+    builder = std::make_unique<llvm::IRBuilder<>>(*context);
+    module = std::make_unique<llvm::Module>("Module", *context);
+
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
