@@ -5,34 +5,36 @@ import (
 	"path/filepath"
 	"runtime"
 	"spice/internal"
+	"spice/util"
 	"strings"
 )
 
 // Build takes the passed code file, resolves its dependencies and emits an executable, representing its functionality
-func Build(sourceFile string, targetTriple string, outputPath string, debugOutput bool, optLevel int) {
+func Build(sourceFile string, targetTriple string, outputFile string, debugOutput bool, optLevel int) {
 	sourceFileName := filepath.Base(sourceFile)
 	sourceFileNameWithoutExt := strings.TrimSuffix(sourceFileName, filepath.Ext(sourceFileName))
 
 	// Get temp dir as location for object files
 	tmpDir := os.TempDir()
-	objectPath := tmpDir + "/spice-output.o"
+	objectDir := tmpDir + "/spice-output"
 
 	// Compile program ane emit object file to temp dir
-	internal.Compile(sourceFile, targetTriple, objectPath, debugOutput, optLevel)
+	internal.Compile(sourceFile, targetTriple, objectDir, debugOutput, optLevel)
 
-	// Set default value for outputPath
+	// Set default value for outputFile
 	if runtime.GOOS == "windows" {
-		if outputPath == "" {
-			outputPath = ".\\" + sourceFileNameWithoutExt + ".exe"
-		} else if !strings.HasSuffix(outputPath, ".exe") {
-			outputPath += ".exe"
+		if outputFile == "" {
+			outputFile = ".\\" + sourceFileNameWithoutExt + ".exe"
+		} else if !strings.HasSuffix(outputFile, ".exe") {
+			outputFile += ".exe"
 		}
 	} else if runtime.GOOS == "linux" {
-		if outputPath == "" {
-			outputPath = "./" + sourceFileNameWithoutExt
+		if outputFile == "" {
+			outputFile = "./" + sourceFileNameWithoutExt
 		}
 	}
 
-	// Run g++ with output file
-	internal.Link(objectPath, outputPath)
+	// Run g++ with all object files
+	objectFiles := util.GetObjectFileTree(objectDir)
+	internal.Link(objectFiles, outputFile)
 }

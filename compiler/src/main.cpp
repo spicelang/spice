@@ -37,7 +37,7 @@ std::string getFileName(const std::string& filePath) {
 int compileSourceFile(
         const std::string& filePath,
         const std::string& targetTriple,
-        const std::string& outputPath,
+        const std::string& objectDir,
         bool debugOutput,
         int optimizerLevel
 ) {
@@ -82,7 +82,7 @@ int compileSourceFile(
             generator.dumpIR();
         }
 
-        generator.emit(targetTriple, outputPath); // Emit object file for specified platform
+        generator.emit(targetTriple, objectDir + "/" + fileName + ".o"); // Emit object file for specified platform
     } catch (IRError& e) {
         std::cout << e.what() << std::endl;
         return 1; // Exit with negative result code

@@ -220,8 +220,16 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
-    std::string libraryIdentifier = ctx->STRING()->toString();
-    // TODO: Add library check
+    std::string sourceFileIdentifier = ctx->STRING()->toString();
+
+    // Check if source file exists
+    if (sourceFileIdentifier.rfind("std/", 0) == 0) { // Include source file from standard library
+        sourceFileIdentifier = sourceFileIdentifier.substr(sourceFileIdentifier.find("std/") + 1);
+
+    } else { // Include own source file
+
+    }
+
     return TYPE_STRING;
 }
 

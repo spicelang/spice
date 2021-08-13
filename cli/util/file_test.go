@@ -17,3 +17,11 @@ func TestFileExists_Failure(t *testing.T) {
 	result := FileExists("../test-files/non-existing.txt")
 	assert.False(t, result)
 }
+
+// ---------------------------------------- GetObjectFileTree ------------------------------------------
+
+func TestGetObjectFileTree(t *testing.T) {
+	result := GetObjectFileTree("../test-files/object-dir")
+	expected := []string{"objectFile1.o", "objectFile2.o", "nestedDir/objectFile1.o"}
+	assert.Equal(t, expected, result)
+}
