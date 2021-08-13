@@ -9,7 +9,7 @@ import (
 )
 
 // Build takes the passed code file, resolves its dependencies and emits an executable, representing its functionality
-func Build(sourceFile string, targetTriple string, outputPath string, debugOutput bool) {
+func Build(sourceFile string, targetTriple string, outputPath string, debugOutput bool, optLevel int) {
 	sourceFileName := filepath.Base(sourceFile)
 	sourceFileNameWithoutExt := strings.TrimSuffix(sourceFileName, filepath.Ext(sourceFileName))
 
@@ -18,7 +18,7 @@ func Build(sourceFile string, targetTriple string, outputPath string, debugOutpu
 	objectPath := tmpDir + "/spice-output.o"
 
 	// Compile program ane emit object file to temp dir
-	internal.Compile(sourceFile, targetTriple, objectPath, debugOutput)
+	internal.Compile(sourceFile, targetTriple, objectPath, debugOutput, optLevel)
 
 	// Set default value for outputPath
 	if runtime.GOOS == "windows" {

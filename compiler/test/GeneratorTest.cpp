@@ -34,6 +34,10 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
         { // 4
             "success-while-loop",
             ""
+        },
+        { // 5
+            "success-global-variables",
+            ""
         }
 };
 

@@ -9,7 +9,7 @@ import (
 )
 
 // Run takes the passed code file, resolves its dependencies, emits an executable and runs it
-func Run(sourceFile string) {
+func Run(sourceFile string, debugOutput bool, optLevel int) {
 	sourceFileName := filepath.Base(sourceFile)
 	sourceFileNameWithoutExt := strings.TrimSuffix(sourceFileName, filepath.Ext(sourceFileName))
 
@@ -26,7 +26,7 @@ func Run(sourceFile string) {
 	}
 
 	// Compile program and emit executable file to tmp dir
-	Build(sourceFile, "", buildPath, false)
+	Build(sourceFile, "", buildPath, debugOutput, optLevel)
 
 	// Run executable
 	cmd := exec.Command(buildPath)

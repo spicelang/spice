@@ -1,0 +1,19 @@
+// Returns the name of the current operating system in lower case
+f<string> getOSName() {
+    return "windows";
+}
+
+// Returns if the current OS is Linux
+f<bool> isLinux() {
+    return false;
+}
+
+// Returns if the current OS is Windows
+f<bool> isWindows() {
+    return true;
+}
+
+// Returns the path separator of the current system
+f<string> getPathSeparator() {
+    return "\\";
+}

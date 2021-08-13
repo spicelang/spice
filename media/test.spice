@@ -1,4 +1,12 @@
+int test1 = 10;
+//string test2 = "test string";
+double test3 = 5.83;
+bool test4 = true;
+
 f<int> main() {
-    dyn test = "string1" + "string2";
-    printf("Test: %s", test);
-}
+    test1 = 11;
+    //test2 = "test";
+    test3 = 5.84;
+    //test4 = false;
+    printf("Variable values: %d, %f, %d", test4, test3, test1);
+}<
