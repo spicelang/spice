@@ -8,23 +8,13 @@
 #include <util/ScopeIdUtil.h>
 #include <analyzer/AnalyzerVisitor.h>
 
-#include <llvm/ADT/APFloat.h>
-#include <llvm/ADT/Optional.h>
-#include <llvm/ADT/STLExtras.h>
-#include <llvm/IR/BasicBlock.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/DerivedTypes.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/Instructions.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
-#include <llvm/IR/Type.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
-#include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
@@ -33,8 +23,6 @@
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/GVN.h>
 #include <llvm/Transforms/Utils.h>
-
-#include <memory>
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
@@ -57,6 +45,7 @@ public:
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
+    antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
     antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
     antlrcpp::Any visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) override;

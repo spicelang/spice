@@ -6,7 +6,7 @@ void GeneratorVisitor::init(const std::string& sourceFileName) {
     // Create LLVM base components
     context = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
-    module = std::make_unique<llvm::Module>("Module", *context);
+    module = std::make_unique<llvm::Module>(sourceFileName, *context);
 
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();
@@ -79,7 +79,7 @@ void GeneratorVisitor::emit(std::string targetTriple, const std::string& outputP
     if (targetTriple.empty()) targetTriple = llvm::sys::getDefaultTargetTriple();
     module->setTargetTriple(targetTriple);
 
-    std::cout << "Emitting executable for triplet '" << targetTriple << "' to path: " << outputPath << std::endl;
+    std::cout << "\nEmitting executable for triplet '" << targetTriple << "' to path: " << outputPath << std::endl;
 
     // Search after selected target
     std::string error;
@@ -492,6 +492,11 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     }
 
     return (llvm::Value*) builder->CreateCall(fct, argValues);
+}
+
+antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
+    // Ignore sub-tree
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {

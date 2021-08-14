@@ -20,11 +20,5 @@ bool FileUtil::fileExists(const std::string& filePath) {
  * @param filePath Full path to the file (absolute or relative)
  */
 std::string FileUtil::getFileName(const std::string& filePath) {
-    char sep = '/';
-#ifdef _WIN32
-    sep = '\\';
-#endif
-    size_t i = filePath.rfind(sep, filePath.length());
-    if (i != std::string::npos) return(filePath.substr(i + 1, filePath.length() - i));
-    return "";
+    return filePath.substr(filePath.find_last_of("/\\") + 1);
 }

@@ -49,7 +49,6 @@ int compileSourceFile(
     try {
         // Get file name from file path
         std::string fileName = FileUtil::getFileName(filePath);
-        std::cout << fileName << std::endl;
 
         // Execute generator
         GeneratorVisitor generator = GeneratorVisitor(symbolTable);
@@ -81,7 +80,7 @@ int compileSourceFile(
  * @param argv Argument vector
  * @return Return code
  */
-int main(int argc, char** argv) {
+int main(int argc, char** argv) { // Call ./spicec filePath targetTriplet outputDir debugOutput optimizerLevel
     // Parse cli args
     std::vector<std::string> args;
     for (size_t iArg = 0; iArg < argc; ++iArg)
@@ -90,7 +89,7 @@ int main(int argc, char** argv) {
     // Extract args from cli
     std::string filePath = args[1];
     std::string targetTriple = args[2]; // Default for dev host: x86_64-w64-windows-gnu
-    std::string outputPath = args[3];
+    std::string outputDir = args[3];
     bool debugOutput = args[4] == "true";
     int optimizerLevel = std::stoi(args[5]);
 
@@ -98,5 +97,5 @@ int main(int argc, char** argv) {
      * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
      * function again.
      */
-    return compileSourceFile(filePath, targetTriple, outputPath, debugOutput, optimizerLevel);
+    return compileSourceFile(filePath, targetTriple, outputDir, debugOutput, optimizerLevel);
 }

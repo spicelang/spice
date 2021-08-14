@@ -11,7 +11,8 @@ f<int> main() {
     printf("Variable values: %d, %f, %d", test4, test3, test1);
 }*/
 
-import "functions"
+import "std/type/convert";
+import "test/functions";
 
 f<int> main() {
     printf("Test\n");

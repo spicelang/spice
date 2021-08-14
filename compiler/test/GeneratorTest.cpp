@@ -69,7 +69,7 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
     // Execute generator
     try {
         GeneratorVisitor generator = GeneratorVisitor(symbolTable);
-        generator.init(); // Initialize code generation
+        generator.init("source.spice"); // Initialize code generation
         generator.visit(tree); // Generate IR code
 
         // Fail if an error was expected
