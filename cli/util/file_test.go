@@ -22,6 +22,10 @@ func TestFileExists_Failure(t *testing.T) {
 
 func TestGetObjectFileTree(t *testing.T) {
 	result := GetObjectFileTree("../test-files/object-dir")
-	expected := []string{"objectFile1.o", "objectFile2.o", "nestedDir/objectFile1.o"}
-	assert.Equal(t, expected, result)
+	expected := []string{
+		"../test-files/object-dir/objectFile1.o",
+		"../test-files/object-dir/objectFile2.o",
+		"../test-files/object-dir/nestedDir/objectFile1.o",
+	}
+	assert.ElementsMatch(t, expected, result)
 }

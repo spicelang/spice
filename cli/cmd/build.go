@@ -17,6 +17,7 @@ func Build(sourceFile string, targetTriple string, outputFile string, debugOutpu
 	// Get temp dir as location for object files
 	tmpDir := os.TempDir()
 	objectDir := tmpDir + "/spice-output"
+	os.MkdirAll(objectDir, 0755)
 
 	// Compile program ane emit object file to temp dir
 	internal.Compile(sourceFile, targetTriple, objectDir, debugOutput, optLevel)

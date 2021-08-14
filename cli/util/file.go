@@ -3,6 +3,7 @@ package util
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // FileExists checks if a file or directory exists
@@ -15,7 +16,7 @@ func FileExists(path string) bool {
 }
 
 func GetObjectFileTree(objectDir string) (objectFiles []string) {
-	filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+	filepath.Walk(objectDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -24,6 +25,7 @@ func GetObjectFileTree(objectDir string) (objectFiles []string) {
 			return err
 		}
 		if !fi.IsDir() && filepath.Ext(path) == ".o" {
+			path = strings.ReplaceAll(path, "\\", "/")
 			objectFiles = append(objectFiles, path)
 		}
 		return nil
