@@ -2,11 +2,11 @@
 
 #include "GeneratorVisitor.h"
 
-void GeneratorVisitor::init(const std::string& sourceFileName) {
+void GeneratorVisitor::init() {
     // Create LLVM base components
     context = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
-    module = std::make_unique<llvm::Module>(sourceFileName, *context);
+    module = std::make_unique<llvm::Module>(sourceFile, *context);
 
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();
@@ -16,8 +16,8 @@ void GeneratorVisitor::init(const std::string& sourceFileName) {
     llvm::InitializeAllAsmPrinters();
 }
 
-void GeneratorVisitor::optimize(int optimizerLevel) {
-    std::cout << "Optimizing with optLevel " + std::to_string(optimizerLevel) << " ..." << std::endl;
+void GeneratorVisitor::optimize() {
+    std::cout << "Optimizing on level " + std::to_string(optLevel) << " ..." << std::endl;
 
     // Declare map with all optimization passes in the required order
     llvm::Pass* passes[] = {
@@ -48,7 +48,7 @@ void GeneratorVisitor::optimize(int optimizerLevel) {
             llvm::createLoopIdiomPass(),
             llvm::createLoopDeletionPass(),
             llvm::createCFGSimplificationPass(),
-            llvm::createSimpleLoopUnrollPass(optimizerLevel),
+            llvm::createSimpleLoopUnrollPass(optLevel),
             llvm::createMergedLoadStoreMotionPass(),
             llvm::createGVNPass(),
             llvm::createMemCpyOptPass(),
@@ -74,7 +74,7 @@ void GeneratorVisitor::optimize(int optimizerLevel) {
     for (llvm::Function* fct : functions) fpm->run(*fct);
 }
 
-void GeneratorVisitor::emit(std::string targetTriple, const std::string& outputPath) {
+void GeneratorVisitor::emit() {
     // Configure output target
     if (targetTriple.empty()) targetTriple = llvm::sys::getDefaultTargetTriple();
     module->setTargetTriple(targetTriple);
@@ -101,8 +101,7 @@ void GeneratorVisitor::emit(std::string targetTriple, const std::string& outputP
     if (errorCode) throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + outputPath + "' could not be opened");
 
     llvm::legacy::PassManager pass;
-    auto fileType = llvm::CGFT_ObjectFile;
-    if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, fileType))
+    if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, llvm::CGFT_ObjectFile))
         throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type");
 
     // Emit object file
@@ -125,7 +124,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Generate code for external functions
     initializeExternalFunctions();
 
-    auto result = SpiceBaseVisitor::visitEntry(ctx);
+    antlrcpp::Any result = SpiceBaseVisitor::visitEntry(ctx);
 
     // Verify module to detect IR code bugs
     std::string output;
@@ -139,8 +138,9 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     // Build function itself
     std::string functionName = "main";
     llvm::Type* returnType = llvm::IntegerType::getInt32Ty(*context);
-    auto mainType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
-    auto fct = llvm::Function::Create(mainType, llvm::Function::ExternalLinkage, functionName, module.get());
+    llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
+    llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
+                                                 functionName, module.get());
     llvm::BasicBlock* bMain = llvm::BasicBlock::Create(*context, "main_entry");
     fct->getBasicBlockList().push_back(bMain);
     moveInsertPointToBlock(bMain);
@@ -190,6 +190,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Get return type
     currentVar = RETURN_VARIABLE_NAME;
     llvm::Type* returnType = visit(ctx->dataType()).as<llvm::Type*>();
+    std::vector<SymbolType> symbolTypes;
+    symbolTypes.push_back(currentSymbolType);
 
     // Create function itself
     std::vector<std::string> paramNames;
@@ -199,15 +201,18 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         paramNames.push_back(currentVar);
         llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
+        symbolTypes.push_back(currentSymbolType);
     }
     for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
         currentVar = param->declStmt()->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
         llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
+        symbolTypes.push_back(currentSymbolType);
     }
-    auto fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-    auto fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, signature.toString(), module.get());
+    llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
+    llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
+                                      signature.toString(), module.get());
 
     // Create entry block
     llvm::BasicBlock* bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -216,14 +221,14 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 
     // Store function params
     for (auto& param : fct->args()) {
-        auto paramNo = param.getArgNo();
+        unsigned paramNo = param.getArgNo();
         if (paramNo < ctx->paramLstDef()->declStmt().size()) {
-            auto paramName = paramNames[paramNo];
+            std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
             namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
             builder->CreateStore(&param, namedValues[paramName]);
         } else {
-            auto paramName = paramNames[paramNo];
+            std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
             namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
             builder->CreateStore(&param, namedValues[paramName]);
@@ -253,6 +258,9 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Change scope back
     currentScope = currentScope->getParent();
 
+    // Insert function declaration to symbol table
+    currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
+
     // Return true as result for the function definition
     return llvm::ConstantInt::get((llvm::Type::getInt1Ty(*context)), 1);
 }
@@ -268,20 +276,25 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Create procedure itself
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
+    std::vector<SymbolType> symbolTypes;
     for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
         currentVar = param->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
-        auto paramType = visit(param->dataType()).as<llvm::Type*>();
+        llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
+        symbolTypes.push_back(currentSymbolType);
     }
     for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
         currentVar = param->declStmt()->IDENTIFIER()->toString();
         paramNames.push_back(currentVar);
-        auto paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
+        llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
         paramTypes.push_back(paramType);
+        symbolTypes.push_back(currentSymbolType);
     }
-    auto procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), paramTypes, false);
-    auto proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage, signature.toString(), module.get());
+    llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
+                                                           paramTypes, false);
+    llvm::Function* proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage,
+                                       signature.toString(), module.get());
 
     // Create entry block
     llvm::BasicBlock* bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -290,14 +303,14 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 
     // Store procedure params
     for (auto& param : proc->args()) {
-        auto paramNo = param.getArgNo();
+        unsigned paramNo = param.getArgNo();
         if (paramNo < ctx->paramLstDef()->declStmt().size()) {
-            auto paramName = paramNames[paramNo];
+            std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
             namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
             builder->CreateStore(&param, namedValues[paramName]);
         } else {
-            auto paramName = paramNames[paramNo];
+            std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
             namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
             builder->CreateStore(&param, namedValues[paramName]);
@@ -321,12 +334,15 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Change scope back
     currentScope = currentScope->getParent();
 
+    // Insert function declaration to symbol table
+    currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
+
     // Return true as result for the function definition
     return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
-    auto parentFct = builder->GetInsertBlock()->getParent();
+    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
     llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "for_cond");
@@ -373,7 +389,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
-    auto parentFct = builder->GetInsertBlock()->getParent();
+    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
     llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "while_cond");
@@ -473,10 +489,109 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
-    std::string fctName = ctx->IDENTIFIER()->toString();
+    std::vector<std::string> functionNamespace;
+    for (auto& segment : ctx->IDENTIFIER()) functionNamespace.push_back(segment->toString());
+    std::string functionName = functionNamespace.back();
 
     // Get function by signature
     FunctionSignature signature = currentScope->popSignature();
+    functionNamespace.back() = signature.toString();
+    // Check if function exists in module
+    bool functionFound = false;
+    for (auto& function : module->getFunctionList()) {
+        if (function.getName() == signature.toString()) {
+            functionFound = true;
+            break;
+        }
+    }
+    if (!functionFound) { // Not found => Declare function, which will be linked to later
+        SymbolTable* table = currentScope->lookupTable(functionNamespace);
+        // Check if it is a function or a procedure
+        if (!table->getFunctionDeclaration(signature.toString()).empty()) {
+            std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
+            // Get return type
+            llvm::Type* returnType;
+            switch (symbolTypes[0]) {
+                case TYPE_DOUBLE: {
+                    returnType = llvm::Type::getDoubleTy(*context);
+                    break;
+                }
+                case TYPE_INT: {
+                    returnType = llvm::Type::getInt32Ty(*context);
+                    break;
+                }
+                case TYPE_STRING: {
+                    returnType = llvm::Type::getInt8Ty(*context)->getPointerTo();
+                    break;
+                }
+                case TYPE_BOOL: {
+                    returnType = llvm::Type::getInt1Ty(*context);
+                    break;
+                }
+                default: throw std::runtime_error("Internal error");
+            }
+
+            // Get parameter types
+            std::vector<llvm::Type*> paramTypes;
+            for (int i = 1; i < symbolTypes.size(); i++) {
+                llvm::Type* paramType;
+                switch (symbolTypes[i]) {
+                    case TYPE_DOUBLE: {
+                        paramType = llvm::Type::getDoubleTy(*context);
+                        break;
+                    }
+                    case TYPE_INT: {
+                        paramType = llvm::Type::getInt32Ty(*context);
+                        break;
+                    }
+                    case TYPE_STRING: {
+                        paramType = llvm::Type::getInt8Ty(*context)->getPointerTo();
+                        break;
+                    }
+                    case TYPE_BOOL: {
+                        paramType = llvm::Type::getInt1Ty(*context);
+                        break;
+                    }
+                    default: throw std::runtime_error("Internal error");
+                }
+                paramTypes.push_back(paramType);
+            }
+
+            llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
+            module->getOrInsertFunction(signature.toString(), fctType);
+        } else if (!table->getProcedureDeclaration(signature.toString()).empty()) {
+            std::vector<SymbolType> symbolTypes = table->getProcedureDeclaration(signature.toString());
+            // Get parameter types
+            std::vector<llvm::Type*> paramTypes;
+            for (int i = 1; i < symbolTypes.size(); i++) {
+                llvm::Type* paramType;
+                switch (symbolTypes[i]) {
+                    case TYPE_DOUBLE: {
+                        paramType = llvm::Type::getDoubleTy(*context);
+                        break;
+                    }
+                    case TYPE_INT: {
+                        paramType = llvm::Type::getInt32Ty(*context);
+                        break;
+                    }
+                    case TYPE_STRING: {
+                        paramType = llvm::Type::getInt8Ty(*context)->getPointerTo();
+                        break;
+                    }
+                    case TYPE_BOOL: {
+                        paramType = llvm::Type::getInt1Ty(*context);
+                        break;
+                    }
+                    default: throw std::runtime_error("Internal error");
+                }
+                paramTypes.push_back(paramType);
+            }
+
+            llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
+                                                                   paramTypes, false);
+            module->getOrInsertFunction(signature.toString(), procType);
+        }
+    }
     auto fct = module->getFunction(signature.toString());
     auto fctType = fct->getFunctionType();
 

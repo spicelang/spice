@@ -744,7 +744,7 @@
 			"patterns": [
 				{
 					"comment": "Flow control keywords",
-					"match": "\\b(for|if|return|while)\\b",
+					"match": "\\b(as|for|if|return|while)\\b",
 					"name": "keyword.control.spice"
 				},
 				{

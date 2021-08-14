@@ -17,6 +17,27 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
     return &symbols.at(name);
 }
 
+SymbolTableEntry* SymbolTable::lookup(const std::vector<std::string>& nameSpace) {
+    return &lookupTable(nameSpace)->symbols.at(nameSpace[nameSpace.size() - 1]);
+}
+
+SymbolTable* SymbolTable::lookupTable(const std::vector<std::string>& nameSpace) {
+    // Check if scope contains this namespace
+    SymbolTable* currentTable = this;
+    for (int i = 0; i < nameSpace.size(); i++) {
+        if (i == nameSpace.size() -1) {
+            if (currentTable->symbols.find(nameSpace[i]) == currentTable->symbols.end()) break;
+            return currentTable;
+        } else {
+            if (currentTable->children.find(nameSpace[i]) == currentTable->children.end()) break;
+            currentTable = &children.at(nameSpace[i]);
+        }
+    }
+    // Current scope does not contain the namespace => go up one table
+    if (parent == nullptr) return nullptr;
+    return parent->lookupTable(nameSpace);
+}
+
 void SymbolTable::update(const std::string& name, SymbolState newState) {
     // If not available in the current scope, search in the parent scope
     if (symbols.find(name) == symbols.end()) {
@@ -42,6 +63,10 @@ SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
     return &children.at(blockName);
 }
 
+void SymbolTable::mountChildBlock(const std::string& blockName, SymbolTable* childBlock) {
+    children.insert({ blockName, *childBlock });
+}
+
 void SymbolTable::renameChildBlock(const std::string& oldName, const std::string& newName) {
     auto nodeHandler = children.extract(oldName);
     nodeHandler.key() = newName;
@@ -57,8 +82,22 @@ SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
     return &children.at(scopeId);
 }
 
-bool SymbolTable::hasChild(const std::string& scopeId) {
-    return children.find(scopeId) != children.end();
+void SymbolTable::insertFunctionDeclaration(const std::string& signature, const std::vector<SymbolType>& types) {
+    functionDeclarations.insert({ signature, types });
+}
+
+std::vector<SymbolType> SymbolTable::getFunctionDeclaration(const std::string& signature) {
+    if (functionDeclarations.find(signature) == functionDeclarations.end()) return {};
+    return functionDeclarations.at(signature);
+}
+
+void SymbolTable::insertProcedureDeclaration(const std::string& signature, const std::vector<SymbolType>& types) {
+    procedureDeclarations.insert({ signature, types });
+}
+
+std::vector<SymbolType> SymbolTable::getProcedureDeclaration(const std::string& signature) {
+    if (procedureDeclarations.find(signature) == procedureDeclarations.end()) return {};
+    return procedureDeclarations.at(signature);
 }
 
 void SymbolTable::pushSignature(const FunctionSignature& signature) {

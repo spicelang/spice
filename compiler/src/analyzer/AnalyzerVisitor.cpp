@@ -3,13 +3,13 @@
 #include "AnalyzerVisitor.h"
 
 antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
-    // Pre-traversing action
+    // Pre-traversing actions
 
     // Traverse AST
     visitChildren(ctx);
 
     // Check if the visitor got a main function
-    if (!hasMainFunction)
+    if (mustHaveMainFunction && !hasMainFunction)
         throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found.");
 
     // Post traversing actions
@@ -187,7 +187,9 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
-    std::string functionName = ctx->IDENTIFIER()->toString();
+    std::vector<std::string> functionNamespace;
+    for (auto& segment : ctx->IDENTIFIER()) functionNamespace.push_back(segment->toString());
+    std::string functionName = functionNamespace.back();
     // Visit params
     std::vector<SymbolType> paramTypes;
     if (ctx->paramLstCall()) {
@@ -196,7 +198,9 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     }
     // Check if function signature exists in symbol table
     FunctionSignature signature = FunctionSignature(functionName, paramTypes);
-    SymbolTableEntry* entry = currentScope->lookup(signature.toString());
+    functionNamespace.back() = signature.toString();
+    SymbolTable* entryTable = currentScope->lookupTable(functionNamespace);
+    SymbolTableEntry* entry = entryTable->lookup(signature.toString());
     if (!entry)
         throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
                             "Function/Procedure '" + signature.toString() + "' could not be found");
@@ -204,39 +208,49 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     currentScope->pushSignature(signature);
     // Search for symbol table of called function/procedure to read parameters
     if (entry->getType() == TYPE_FUNCTION) {
-        SymbolTable* symbolTable = currentScope;
-        while (!symbolTable->hasChild(signature.toString())) {
-            if (!symbolTable->getParent())
-                throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
-                    "Could not find child symbol table for function/procedure '" + signature.toString() +"'");
-            symbolTable = symbolTable->getParent();
-        }
-        symbolTable = symbolTable->getChild(signature.toString());
+        entryTable = entryTable->getChild(signature.toString());
         // Get return type of called function
-        return symbolTable->lookup(RETURN_VARIABLE_NAME)->getType();
+        return entryTable->lookup(RETURN_VARIABLE_NAME)->getType();
     }
     return TYPE_BOOL;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
-    std::string importIden = ctx->STRING()->toString();
-    importIden = importIden.substr(1, importIden.size() - 2) + ".spice";
+    std::string importPath = ctx->STRING()->toString();
+    importPath = importPath.substr(1, importPath.size() - 2) + ".spice";
 
     // Check if source file exists
-    if (importIden.rfind("std/", 0) == 0) { // Include source file from standard library
-        std::string sourceFileIden = importIden.substr(importIden.find("std/") + 4);
-        if (!FileUtil::fileExists("/usr/lib/spice/std/" + sourceFileIden) &&
-            !FileUtil::fileExists(std::string(std::getenv("SPICE_STD_DIR")) + "/" + sourceFileIden)) {
-            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importIden
-                + "' was not found in std library");
+    std::string filePath;
+    if (importPath.rfind("std/", 0) == 0) { // Include source file from standard library
+        std::string sourceFileIden = importPath.substr(importPath.find("std/") + 4);
+        if (FileUtil::fileExists("/usr/lib/spice/std/" + sourceFileIden)) {
+            filePath = "/usr/lib/spice/std/" + sourceFileIden;
+        } else if (FileUtil::fileExists(std::string(std::getenv("SPICE_STD_DIR")) + "/" + sourceFileIden)) {
+            filePath = std::string(std::getenv("SPICE_STD_DIR")) + "/" + sourceFileIden;
+        } else {
+            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath
+                                                            + "' was not found in std library");
         }
     } else { // Include own source file
-        if (!FileUtil::fileExists("./" + importIden)) {
-            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importIden
-                + "' does not exist");
+        if (FileUtil::fileExists("./" + importPath)) {
+            filePath = "./" + importPath;
+        } else {
+            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath
+                                                            + "' does not exist");
         }
     }
+
+    // Kick off the compilation of the imported source file
+    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetTriple, outputPath, debugOutput,
+                                                                   optLevel, false);
+
+    // Create symbol of type TYPE_IMPORT in the current scope
+    std::string importIden = ctx->IDENTIFIER()->toString();
+    currentScope->insert(importIden, TYPE_IMPORT, INITIALIZED, true, false);
+
+    // Mount symbol table of the imported source file into the current scope
+    currentScope->mountChildBlock(importIden, nestedTable);
 
     return TYPE_STRING;
 }

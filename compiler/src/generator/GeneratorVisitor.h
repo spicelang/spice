@@ -24,15 +24,20 @@
 #include <llvm/Transforms/Scalar/GVN.h>
 #include <llvm/Transforms/Utils.h>
 
+#include <utility>
+
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
-    explicit GeneratorVisitor(SymbolTable* symbolTable): currentScope(symbolTable) {}
+    explicit GeneratorVisitor(SymbolTable* symbolTable, std::string sourceFile, std::string targetTriple,
+                              std::string outputPath, bool debugOutput, int optLevel): currentScope(symbolTable),
+                              sourceFile(std::move(sourceFile)), targetTriple(std::move(targetTriple)),
+                              outputPath(std::move(outputPath)), debugOutput(debugOutput), optLevel(optLevel) {}
 
     // Public methods
-    void init(const std::string&);
-    void optimize(int);
-    void emit(std::string, const std::string&);
+    void init();
+    void optimize();
+    void emit();
     void dumpIR();
     std::string getIRString();
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;
@@ -67,6 +72,11 @@ public:
     antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
 private:
     // Members
+    std::string sourceFile;
+    std::string targetTriple;
+    std::string outputPath;
+    bool debugOutput;
+    int optLevel;
     std::unique_ptr<llvm::LLVMContext> context;
     std::unique_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<llvm::Module> module;
