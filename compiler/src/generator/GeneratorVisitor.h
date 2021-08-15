@@ -95,4 +95,5 @@ private:
     void moveInsertPointToBlock(llvm::BasicBlock*);
     void createBr(llvm::BasicBlock*);
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
+    llvm::Type* getTypeFromSymbolType(SymbolType);
 };
