@@ -863,7 +863,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
                         lhs = builder->CreateFAdd(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "add");
                     else
                         lhs = builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
-                } else if (rhsType->isPointerTy()) { // double + string / double - string
+                } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // double + string / double - string
 
                 }
             } else if (lhsType->isIntegerTy(32)) {
@@ -877,7 +877,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
                         lhs = builder->CreateAdd(lhs, rhs, "add");
                     else
                         lhs = builder->CreateSub(lhs, rhs, "sub");
-                } else if (rhsType->isPointerTy()) { // int + string / int - string
+                } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int + string / int - string
 
                 }
             } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
@@ -885,7 +885,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
 
                 } else if (rhsType->isIntegerTy(32)) { // string + int / string - int
 
-                } else if (rhsType->isPointerTy()) { // string + string / string - string
+                } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string + string / string - string
 
                 }
             }
@@ -925,10 +925,10 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
                         lhs = builder->CreateMul(lhs, rhs, "mul");
                     else
                         lhs = builder->CreateSDiv(lhs, rhs, "div");
-                } else if (rhsType->isPointerTy()) { // int * string / int : string
+                } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int * string / int : string
 
                 }
-            } else if (lhsType->isPointerTy()) {
+            } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
                 if (rhsType->isIntegerTy(32)) { // string * int / string : int
 
                 }
@@ -1014,8 +1014,6 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         currentSymbolType = TYPE_STRING;
         std::string value = ctx->STRING()->toString();
         value = value.substr(1, value.size() - 2);
-        /*initStringType();
-        return (llvm::Value*) builder->CreateAlloca(stringType, );*/
         return (llvm::Value*) builder->CreateGlobalStringPtr(value);
     }
 
@@ -1072,21 +1070,6 @@ void GeneratorVisitor::initializeExternalFunctions() {
             getTypeFromSymbolType(TYPE_INT),
             getTypeFromSymbolType(TYPE_STRING), true));
 }
-
-/*void GeneratorVisitor::initStringType() {
-    if (!stringType) {
-        // Create string type
-        llvm::ArrayRef<llvm::Type*> types = {
-                getTypeFromSymbolType(TYPE_STRING), // Pointer to the char buffer
-                getTypeFromSymbolType(TYPE_INT), // Length in chars
-                getTypeFromSymbolType(TYPE_INT), // Max length in chars
-                getTypeFromSymbolType(TYPE_INT) // Growth factor to preallocate when growing
-        };
-        stringType = llvm::StructType::create(*context, types, "string", false);
-
-
-    }
-}*/
 
 void GeneratorVisitor::createBr(llvm::BasicBlock* targetBlock) {
     if (!blockAlreadyTerminated) {
