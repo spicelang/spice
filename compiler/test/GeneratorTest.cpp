@@ -82,7 +82,8 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
                 "",
                 ".",
                 true,
-                3
+                3,
+                true
         );
         generator.init(); // Initialize code generation
         generator.visit(tree); // Generate IR code
