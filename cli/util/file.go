@@ -16,7 +16,7 @@ func FileExists(path string) bool {
 }
 
 func GetObjectFileTree(objectDir string) (objectFiles []string) {
-	filepath.Walk(objectDir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(objectDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -30,5 +30,8 @@ func GetObjectFileTree(objectDir string) (objectFiles []string) {
 		}
 		return nil
 	})
+	if err != nil {
+		Error("Unable to search in object directory", true)
+	}
 	return
 }

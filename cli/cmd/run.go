@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"spice/util"
 	"strings"
 )
 
@@ -17,11 +18,15 @@ func Run(sourceFile string, debugOutput bool, optLevel int) {
 	buildPath := "./" + sourceFileNameWithoutExt
 	if runtime.GOOS == "windows" {
 		buildPath = os.TempDir()
-		os.MkdirAll(buildPath, 0755)
+		if err := os.MkdirAll(buildPath, 0750); err != nil {
+			util.Error("Could not find output dir", true)
+		}
 		buildPath += "\\spice-executable.exe"
 	} else if runtime.GOOS == "linux" {
 		buildPath = os.TempDir()
-		os.MkdirAll(buildPath, 0755)
+		if err := os.MkdirAll(buildPath, 0750); err != nil {
+			util.Error("Could not find output dir", true)
+		}
 		buildPath += "/spice-executable"
 	}
 
@@ -32,6 +37,12 @@ func Run(sourceFile string, debugOutput bool, optLevel int) {
 	cmd := exec.Command(buildPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Start()
-	cmd.Wait()
+	err := cmd.Start()
+	if err != nil {
+		util.Error("Could not run executable", true)
+	}
+	err = cmd.Wait()
+	if err != nil {
+		util.Error("Could not run executable", true)
+	}
 }
