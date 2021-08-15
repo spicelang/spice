@@ -135,48 +135,52 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
-    // Build function itself
-    std::string functionName = "main";
-    llvm::Type* returnType = getTypeFromSymbolType(TYPE_INT);
-    llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
-    llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
-                                                 functionName, module.get());
-    llvm::BasicBlock* bMain = llvm::BasicBlock::Create(*context, "main_entry");
-    fct->getBasicBlockList().push_back(bMain);
-    moveInsertPointToBlock(bMain);
+    if (mustHaveMainFunction) { // Only create main function when it is required
+        // Build function itself
+        std::string functionName = "main";
+        llvm::Type* returnType = getTypeFromSymbolType(TYPE_INT);
+        llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
+        llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
+                                                     functionName, module.get());
+        llvm::BasicBlock* bMain = llvm::BasicBlock::Create(*context, "main_entry");
+        fct->getBasicBlockList().push_back(bMain);
+        moveInsertPointToBlock(bMain);
 
-    // Change scope
-    namedValues.clear();
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
+        // Change scope
+        namedValues.clear();
+        std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+        currentScope = currentScope->getChild(scopeId);
 
-    // Declare result variable and set it to 0 for positive return code
-    namedValues[RETURN_VARIABLE_NAME] = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
-    builder->CreateStore(llvm::ConstantInt::getSigned(getTypeFromSymbolType(TYPE_INT), 0),
-                         namedValues[RETURN_VARIABLE_NAME]);
+        // Declare result variable and set it to 0 for positive return code
+        namedValues[RETURN_VARIABLE_NAME] = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
+        builder->CreateStore(llvm::ConstantInt::getSigned(getTypeFromSymbolType(TYPE_INT), 0),
+                             namedValues[RETURN_VARIABLE_NAME]);
 
-    // Generate IR for function body
-    visit(ctx->stmtLst());
+        // Generate IR for function body
+        visit(ctx->stmtLst());
 
-    // Generate return statement for result variable
-    if (!blockAlreadyTerminated) {
-        llvm::Value* result = namedValues[RETURN_VARIABLE_NAME];
-        builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
+        // Generate return statement for result variable
+        if (!blockAlreadyTerminated) {
+            llvm::Value* result = namedValues[RETURN_VARIABLE_NAME];
+            builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
+        }
+
+        // Verify function
+        std::string output;
+        llvm::raw_string_ostream oss(output);
+        if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
+
+        // Add function to function list
+        functions.push_back(fct);
+
+        // Change scope back
+        currentScope = currentScope->getParent();
+
+        // Return true as result for the function definition
+        return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
     }
-
-    // Verify function
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
-
-    // Add function to function list
-    functions.push_back(fct);
-
-    // Change scope back
-    currentScope = currentScope->getParent();
-
-    // Return true as result for the function definition
-    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
+    // Return false as result for the function definition
+    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 0);
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
@@ -936,8 +940,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
 
     // Prefix unary is: PLUS_PLUS postfixUnary
     if (ctx->PLUS_PLUS()) {
-        llvm::Value* llvmValue = value.as<llvm::Value*>();
-        llvm::Value* rhs = builder->CreateAdd(llvmValue, builder->getInt32(1), "pre_pp");
+        llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "pre_pp");
         llvm::Value* lhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
         builder->CreateStore(rhs, lhs);
         return lhs;
@@ -945,8 +948,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
 
     // Prefix unary is: MINUS_MINUS postfixUnary
     if (ctx->MINUS_MINUS()) {
-        llvm::Value* llvmValue = value.as<llvm::Value*>();
-        llvm::Value* rhs = builder->CreateSub(llvmValue, builder->getInt32(1), "pre_mm");
+        llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "pre_mm");
         llvm::Value* lhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
         builder->CreateStore(rhs, lhs);
         return lhs;
@@ -963,8 +965,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
 
     // Postfix unary is: PLUS_PLUS atomicExpr
     if (ctx->PLUS_PLUS()) {
-        llvm::Value* llvmValue = value.as<llvm::Value*>();
-        llvm::Value* rhs = builder->CreateAdd(llvmValue, builder->getInt32(1), "post_pp");
+        llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "post_pp");
         llvm::Value* lhs = namedValues[ctx->atomicExpr()->value()->IDENTIFIER()->toString()];
         builder->CreateStore(rhs, lhs);
         return rhs;
@@ -972,8 +973,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
 
     // Postfix unary is: MINUS_MINUS atomicExpr
     if (ctx->MINUS_MINUS()) {
-        llvm::Value* llvmValue = value.as<llvm::Value*>();
-        llvm::Value* rhs = builder->CreateSub(llvmValue, builder->getInt32(1), "post_mm");
+        llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "post_mm");
         llvm::Value* lhs = namedValues[ctx->atomicExpr()->value()->IDENTIFIER()->toString()];
         builder->CreateStore(rhs, lhs);
         return rhs;

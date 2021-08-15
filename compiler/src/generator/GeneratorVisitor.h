@@ -30,9 +30,10 @@ class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
     explicit GeneratorVisitor(SymbolTable* symbolTable, std::string sourceFile, std::string targetTriple,
-                              std::string outputPath, bool debugOutput, int optLevel): currentScope(symbolTable),
-                              sourceFile(std::move(sourceFile)), targetTriple(std::move(targetTriple)),
-                              outputPath(std::move(outputPath)), debugOutput(debugOutput), optLevel(optLevel) {}
+                              std::string outputPath, bool debugOutput, int optLevel, bool mustHaveMainFunction):
+                              currentScope(symbolTable), sourceFile(std::move(sourceFile)),
+                              targetTriple(std::move(targetTriple)), outputPath(std::move(outputPath)),
+                              debugOutput(debugOutput), optLevel(optLevel), mustHaveMainFunction(mustHaveMainFunction) {}
 
     // Public methods
     void init();
@@ -77,6 +78,7 @@ private:
     std::string outputPath;
     bool debugOutput;
     int optLevel;
+    bool mustHaveMainFunction = true;
     std::unique_ptr<llvm::LLVMContext> context;
     std::unique_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<llvm::Module> module;

@@ -64,7 +64,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
                 targetTriple,
                 objectDir + "/" + fileName + ".o",
                 debugOutput,
-                optLevel
+                optLevel,
+                mustHaveMainFunction
         );
         generator.init(); // Initialize code generation
         generator.visit(tree); // Generate IR code
