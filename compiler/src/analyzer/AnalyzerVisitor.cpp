@@ -200,6 +200,9 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     FunctionSignature signature = FunctionSignature(functionName, paramTypes);
     functionNamespace.back() = signature.toString();
     SymbolTable* entryTable = currentScope->lookupTable(functionNamespace);
+    if (!entryTable)
+        throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
+                            "Function/Procedure '" + signature.toString() + "' could not be found");
     SymbolTableEntry* entry = entryTable->lookup(signature.toString());
     if (!entry)
         throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,

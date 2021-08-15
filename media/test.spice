@@ -1,10 +1,10 @@
-//import "std/type/convert" as conv;
+import "std/type/convert" as conv;
 import "test/functions" as functions;
 
 f<int> main() {
     functions.calledFunction("Called Function");
     printf("Test\n");
-}
+}*/
 
 /*int test1 = 10;
 //string test2 = "test string";

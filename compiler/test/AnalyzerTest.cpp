@@ -165,7 +165,15 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
     antlr4::tree::ParseTree *tree = parser.entry();
     try {
         // Execute semantic analysis
-        SymbolTable* symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>();
+        AnalyzerVisitor analyzer = AnalyzerVisitor(
+                "source.spice",
+                "",
+                ".",
+                true,
+                3,
+                true
+        );
+        SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected
         if (param.errorMessage.length() > 0)

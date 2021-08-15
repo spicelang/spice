@@ -38,7 +38,7 @@ f<string> toString(bool value) {
     return value ? "true" : "false";
 }
 
-// Converts a double to a bool
+/*// Converts a double to a bool
 f<bool> toString(double number) {
     return number >= 0.5 ? true : false;
 }
@@ -51,4 +51,4 @@ f<bool> toString(int number) {
 // Converts a string to a bool
 f<bool> toString(string text) {
     return text == "true" ? true : false;
-}
+}*/
