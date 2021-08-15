@@ -1,0 +1,12 @@
+int test1 = 10;
+string test2 = "test string";
+double test3 = 5.83;
+bool test4 = false;
+
+f<int> main() {
+    test1 = 11;
+    test2 = "test";
+    test3 = 5.84;
+    test4 = true;
+    printf("Variable values: %d, %s, %f, %d", test1, test2, test3, test4);
+}

@@ -4,14 +4,23 @@
 
 #include "SpiceBaseVisitor.h"
 #include "SpiceLexer.h"
+
+#include <CompilerInstance.h>
 #include "SymbolTable.h"
 #include <util/ScopeIdUtil.h>
+#include <util/FileUtil.h>
 #include <exception/SemanticError.h>
 
 const static std::string RETURN_VARIABLE_NAME = "result";
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
+    // Constructors
+    explicit AnalyzerVisitor(std::string sourceFile, std::string targetTriple, std::string outputPath, bool debugOutput,
+                             int optLevel, bool mustHaveMainFunction): sourceFile(std::move(sourceFile)),
+                             targetTriple(std::move(targetTriple)), outputPath(std::move(outputPath)),
+                             debugOutput(debugOutput), optLevel(optLevel), mustHaveMainFunction(mustHaveMainFunction) {}
+
     // Public methods
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;
     antlrcpp::Any visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) override;
@@ -43,6 +52,12 @@ public:
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
 private:
     // Members
+    std::string sourceFile;
+    std::string targetTriple;
+    std::string outputPath;
+    bool debugOutput;
+    int optLevel;
+    bool mustHaveMainFunction = true;
     SymbolTable* currentScope = new SymbolTable(nullptr);
     bool parameterMode = false;
     bool hasMainFunction = false;

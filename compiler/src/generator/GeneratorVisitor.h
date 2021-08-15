@@ -8,23 +8,13 @@
 #include <util/ScopeIdUtil.h>
 #include <analyzer/AnalyzerVisitor.h>
 
-#include <llvm/ADT/APFloat.h>
-#include <llvm/ADT/Optional.h>
-#include <llvm/ADT/STLExtras.h>
-#include <llvm/IR/BasicBlock.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/DerivedTypes.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/Instructions.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
-#include <llvm/IR/Type.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
-#include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
@@ -34,17 +24,21 @@
 #include <llvm/Transforms/Scalar/GVN.h>
 #include <llvm/Transforms/Utils.h>
 
-#include <memory>
+#include <utility>
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
-    explicit GeneratorVisitor(SymbolTable* symbolTable): currentScope(symbolTable) {}
+    explicit GeneratorVisitor(SymbolTable* symbolTable, std::string sourceFile, std::string targetTriple,
+                              std::string outputPath, bool debugOutput, int optLevel, bool mustHaveMainFunction):
+                              currentScope(symbolTable), sourceFile(std::move(sourceFile)),
+                              targetTriple(std::move(targetTriple)), outputPath(std::move(outputPath)),
+                              debugOutput(debugOutput), optLevel(optLevel), mustHaveMainFunction(mustHaveMainFunction) {}
 
     // Public methods
     void init();
     void optimize();
-    void emit(std::string, const std::string&);
+    void emit();
     void dumpIR();
     std::string getIRString();
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;
@@ -57,6 +51,7 @@ public:
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
+    antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
     antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
     antlrcpp::Any visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) override;
@@ -78,19 +73,29 @@ public:
     antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
 private:
     // Members
-    std::unique_ptr<llvm::LLVMContext> context = std::make_unique<llvm::LLVMContext>();
-    std::unique_ptr<llvm::IRBuilder<>> builder = std::make_unique<llvm::IRBuilder<>>(*context);
-    std::unique_ptr<llvm::Module> module = std::make_unique<llvm::Module>("Module", *context);
+    std::string sourceFile;
+    std::string targetTriple;
+    std::string outputPath;
+    bool debugOutput;
+    int optLevel;
+    bool mustHaveMainFunction = true;
+    std::unique_ptr<llvm::LLVMContext> context;
+    std::unique_ptr<llvm::IRBuilder<>> builder;
+    std::unique_ptr<llvm::Module> module;
     std::map<std::string, llvm::AllocaInst*> namedValues;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope = new SymbolTable(nullptr);
     std::string currentVar;
     SymbolType currentSymbolType;
+    llvm::Value* currentAssignValue = nullptr;
     bool blockAlreadyTerminated = false;
+    //llvm::StructType* stringType = nullptr;
 
     // Private methods
     void initializeExternalFunctions();
+    //void initStringType();
     void moveInsertPointToBlock(llvm::BasicBlock*);
     void createBr(llvm::BasicBlock*);
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
+    llvm::Type* getTypeFromSymbolType(SymbolType);
 };

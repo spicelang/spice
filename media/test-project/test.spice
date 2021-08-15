@@ -1,0 +1,20 @@
+import "std/type/convert" as conv;
+import "test/functions" as functions;
+
+f<int> main() {
+    functions.calledFunction("Called Function");
+    printf("Test\n");
+}*/
+
+/*int test1 = 10;
+//string test2 = "test string";
+double test3 = 5.83;
+bool test4 = true;
+
+f<int> main() {
+    test1 = 11;
+    //test2 = "test";
+    test3 = 5.84;
+    //test4 = false;
+    printf("Variable values: %d, %f, %d", test4, test3, test1);
+}*/

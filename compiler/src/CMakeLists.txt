@@ -6,6 +6,8 @@ antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/grammar/Spice.g4 VISITOR)
 
 set(SOURCES
         main.cpp
+        CompilerInstance.cpp
+        CompilerInstance.h
         analyzer/AnalyzerVisitor.cpp
         analyzer/AnalyzerVisitor.h
         analyzer/SymbolTable.cpp
@@ -20,6 +22,8 @@ set(SOURCES
         util/ScopeIdUtil.h
         util/FunctionSignature.cpp
         util/FunctionSignature.h
+        util/FileUtil.cpp
+        util/FileUtil.h
         exception/IRError.cpp
         exception/IRError.h)
 

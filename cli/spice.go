@@ -31,12 +31,13 @@ func main() {
 		Aliases: []string{"b"},
 		Usage:   "Builds your Spice program and emits an executable",
 		Flags: []cli.Flag{
+			&cli.BoolFlag{Name: "debug-output", Aliases: []string{"d"}, Usage: "Print compiler output for debugging", Value: false},
 			&cli.StringFlag{Name: "target", Aliases: []string{"t"}, Usage: "Target triple for the emitted executable (for cross-compiling)"},
-			&cli.PathFlag{Name: "output", Aliases: []string{"o"}, Usage: "Path to the location where the output executable should go"},
-			&cli.PathFlag{Name: "debug-output", Aliases: []string{"d"}, Usage: "Print compiler output for debugging"},
+			&cli.IntFlag{Name: "opt-level", Aliases: []string{"o"}, Usage: "Set optimization level", Value: 2},
+			&cli.PathFlag{Name: "output", Usage: "Path to the location where the output executable should go"},
 		},
 		Action: func(c *cli.Context) error {
-			cmd.Build(c.Args().Get(0), c.String("target"), c.Path("output"), c.Bool("debug-output"))
+			cmd.Build(c.Args().Get(0), c.String("target"), c.Path("output"), c.Bool("debug-output"), c.Int("opt-level"))
 			return nil
 		},
 	}
@@ -45,10 +46,11 @@ func main() {
 		Aliases: []string{"i"},
 		Usage:   "Builds your Spice program and installs it to a directory in the PATH variable",
 		Flags: []cli.Flag{
-			&cli.PathFlag{Name: "debug-output", Aliases: []string{"d"}, Usage: "Print compiler output for debugging"},
+			&cli.BoolFlag{Name: "debug-output", Aliases: []string{"d"}, Usage: "Print compiler output for debugging", Value: false},
+			&cli.IntFlag{Name: "opt-level", Aliases: []string{"o"}, Usage: "Set optimization level", Value: 2},
 		},
 		Action: func(c *cli.Context) error {
-			cmd.Install(c.Args().Get(0), c.Bool("debug-output"))
+			cmd.Install(c.Args().Get(0), c.Bool("debug-output"), c.Int("opt-level"))
 			return nil
 		},
 	}
@@ -57,10 +59,11 @@ func main() {
 		Aliases: []string{"r"},
 		Usage:   "Builds your Spice program and runs it immediately",
 		Flags: []cli.Flag{
-			&cli.PathFlag{Name: "debug-output", Aliases: []string{"d"}, Usage: "Print compiler output for debugging"},
+			&cli.BoolFlag{Name: "debug-output", Aliases: []string{"d"}, Usage: "Print compiler output for debugging", Value: false},
+			&cli.IntFlag{Name: "opt-level", Aliases: []string{"o"}, Usage: "Set optimization level", Value: 2},
 		},
 		Action: func(c *cli.Context) error {
-			cmd.Run(c.Args().Get(0))
+			cmd.Run(c.Args().Get(0), c.Bool("debug-output"), c.Int("opt-level"))
 			return nil
 		},
 	}

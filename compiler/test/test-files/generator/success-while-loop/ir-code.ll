@@ -1,5 +1,5 @@
-; ModuleID = 'Module'
-source_filename = "Module"
+; ModuleID = 'source.spice'
+source_filename = "source.spice"
 
 @0 = private unnamed_addr constant [16 x i8] c"i is now at: %d\00", align 1
 
@@ -7,9 +7,9 @@ declare i32 @printf(i8*, ...)
 
 define i32 @main() {
 main_entry:
-  %i = alloca i32, align 4
   %result = alloca i32, align 4
   store i32 0, i32* %result, align 4
+  %i = alloca i32, align 4
   store i32 0, i32* %i, align 4
   br label %while_cond
 

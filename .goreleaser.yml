@@ -39,6 +39,8 @@ nfpms:
     contents:
       - src: bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/*
         dst: /usr/lib/spice/
+      - src: std/*
+        dst: /usr/lib/spice/std/
 dockers:
   - image_templates:
       - ghcr.io/chillibits/spice:{{ .Version }}-amd64
@@ -50,6 +52,7 @@ dockers:
     goarch: amd64
     extra_files:
       - bin
+      - std
     build_flag_templates:
       - --label=org.opencontainers.image.created={{.Date}}
       - --label=org.opencontainers.image.name={{.ProjectName}}
