@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// ----------------------------------------- TestIsDockerized ------------------------------------------
+
 func TestIsDockerized(t *testing.T) {
 	os.Setenv("SPICE_DOCKERIZED", "1")
 	assert.True(t, IsDockerized())

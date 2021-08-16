@@ -67,8 +67,17 @@ func main() {
 			return nil
 		},
 	}
+	uninstallCommand := cli.Command{
+		Name:    "uninstall",
+		Aliases: []string{"u"},
+		Usage:   "Deletes an installed executable from the binary directory",
+		Action: func(c *cli.Context) error {
+			cmd.Uninstall(c.Args().Get(0))
+			return nil
+		},
+	}
 
-	commands := []*cli.Command{&buildCommand, &runCommand}
+	commands := []*cli.Command{&buildCommand, &runCommand, &uninstallCommand}
 	if !util.IsDockerized() {
 		commands = append(commands, &installCommand)
 	}
