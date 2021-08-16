@@ -20,7 +20,8 @@ enum SemanticErrorType {
     FCT_PARAM_IS_TYPE_DYN,
     INVALID_BREAK_NUMBER,
     INVALID_CONTINUE_NUMBER,
-    PRINTF_TYPE_ERROR
+    PRINTF_TYPE_ERROR,
+    IMPORTED_FILE_NOT_EXISTING,
 };
 
 class SemanticError : public std::exception {

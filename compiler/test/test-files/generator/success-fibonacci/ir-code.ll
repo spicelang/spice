@@ -1,5 +1,5 @@
-; ModuleID = 'Module'
-source_filename = "Module"
+; ModuleID = 'source.spice'
+source_filename = "source.spice"
 
 @0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
 

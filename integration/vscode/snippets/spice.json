@@ -2,7 +2,7 @@
     ".source.spice": {
         "import": {
             "prefix": "im",
-            "body": "import \"${1:package}\";",
+            "body": "import \"${1:package}\" as ${2:identifier};",
             "description": "Snippet for an import statement"
         },
         "main function": {

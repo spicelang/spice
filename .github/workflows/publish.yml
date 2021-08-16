@@ -12,22 +12,30 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch_name:
+        config:
           #- linux-arm64
           #- linux-armv5
           #- linux-armv6
           #- linux-armv7
-          - linux-x86
-          - linux-x64
-          #- windows-static-x86
-          #- windows-static-x64
+          - {
+              arch: linux-x86, dockcross: 20210805-77da067
+            }
+          - {
+              arch: linux-x64, dockcross: 20210805-77da067
+            }
+          - {
+              arch: windows-static-x86, dockcross: 20210804-76ae808
+            }
+          - {
+              arch: windows-static-x64, dockcross: 20210805-77da067
+            }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       
       - name: Prepare builder
         run: |
-          docker run --rm dockcross/${{ matrix.arch_name }} > ./dockcross
+          docker run --rm dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} > ./dockcross
           chmod +x dockcross
           mkdir bin
 
@@ -36,18 +44,18 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-12-0-1-${{ matrix.arch_name }}
+          key: llvm-12-0-1-${{ matrix.config.arch }}
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: | #-DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON
           git clone --depth 1 https://github.com/llvm/llvm-project llvm
-          ./dockcross cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -Wno-dev
+          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -Wno-dev
 
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          ./dockcross ninja -C./llvm/build
+          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} ninja -C./llvm/build
 
       - name: Download Libs
         run: |
@@ -59,21 +67,21 @@ jobs:
         run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" sh -c "sudo mkdir -p /usr/share/man/man1 && sudo apt-get update -y && sudo apt-get install --ignore-missing --no-install-recommends --yes libc6-i386 openjdk-11-jre uuid-dev && cmake -Bbin -H./compiler -GNinja && ninja -Cbin"
 
       - name: Process build output - Linux
-        if: ${{ startsWith(matrix.arch_name, 'linux') }}
+        if: ${{ startsWith(matrix.config.arch, 'linux') }}
         working-directory: bin
         run: |
           mv ./src/Spice_run spicec
           chmod +x spicec
           
       - name: Process build output - Windows
-        if: ${{ startsWith(matrix.arch_name, 'windows') }}
+        if: ${{ startsWith(matrix.config.arch, 'windows') }}
         working-directory: bin
         run: mv ./src/Spice_run.exe spicec.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: spicec-${{ matrix.arch_name }}
+          name: spicec-${{ matrix.config.arch }}
           path: ./bin/spicec**
 
   build-cli:
@@ -138,6 +146,8 @@ jobs:
         run: | # mv spicec-windows-static-x86 spicec-windows-386 \n mv spicec-windows-static-x64 spicec-windows-amd64
           mv spicec-linux-x86 spicec-linux-386
           mv spicec-linux-x64 spicec-linux-amd64
+          mv spicec-windows-static-x86 spicec-windows-386
+          mv spicec-windows-static-x64 spicec-windows-amd64
           chmod -R +x ./
 
       - name: Run GoReleaser
@@ -214,64 +224,64 @@ jobs:
 #        run: |
 #          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ steps.get_version.outputs.version }}_linux_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/"
 
-#  build-win-installers:
-#    name: Build installers
-#    if: startsWith(github.ref, 'refs/tags/')
-#    needs: build-cli
-#    runs-on: windows-latest
-#    strategy:
-#      matrix:
-#        config:
-#          - {
-#              arch: amd64, label: x64
-#            }
-#          - {
-#              arch: 386, label: x86
-#            }
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-#
-#      - name: Get version name
-#        id: get_version
-#        uses: battila7/get-version-action@v2
-#
-#      - name: Download executables
-#        id: download_exe
-#        shell: bash
-#        run: | # Remove the last command as soon as this is implemented: https://github.com/goreleaser/goreleaser/issues/1638
-#          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_${{ matrix.config.arch }}*.zip'
-#          printf "::set-output name=zip::%s\n" *.zip
-#          unzip -o *.zip && rm -v *.zip
-#          cp ./bin/spicec-windows-${{ matrix.config.arch }}/spicec.exe ./spicec.exe
-#        env:
-#          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-#
-#      - name: Install GoMSI
-#        run: choco install -y go-msi
-#
-#      - name: Prepare PATH
-#        shell: bash
-#        run: |
-#          echo "$WIX\\bin" >> $GITHUB_PATH
-#          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
-#
-#      - name: Build MSI
-#        shell: bash
-#        id: build_msi
-#        env:
-#          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
-#        run: |
-#          mkdir -p build
-#          msi="$(basename "$ZIP_FILE" ".zip").msi"
-#          printf "::set-output name=msi::%s\n" "$msi"
-#          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version ${{ steps.get_version.outputs.version }}
-#          printf "::set-output name=msi::%s\n" *.msi
-#
-#      - name: Upload MSI
-#        uses: svenstaro/upload-release-action@v2
-#        with:
-#          repo_token: ${{ secrets.GITHUB_TOKEN }}
-#          file: ${{ steps.build_msi.outputs.msi }}
-#          asset_name: spice_${{ steps.get_version.outputs.version }}_${{ matrix.config.label }}_setup.msi
-#          tag: ${{ github.ref }}
+  build-win-installers:
+    name: Build installers
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-cli
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config:
+          - {
+              arch: amd64, label: x64
+            }
+          - {
+              arch: 386, label: x86
+            }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get version name
+        id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Download executables
+        id: download_exe
+        shell: bash
+        run: | # Remove the last command as soon as this is implemented: https://github.com/goreleaser/goreleaser/issues/1638
+          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_${{ matrix.config.arch }}*.zip'
+          printf "::set-output name=zip::%s\n" *.zip
+          unzip -o *.zip && rm -v *.zip
+          cp ./bin/spicec-windows-${{ matrix.config.arch }}/spicec.exe ./spicec.exe
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Install GoMSI
+        run: choco install -y go-msi
+
+      - name: Prepare PATH
+        shell: bash
+        run: |
+          echo "$WIX\\bin" >> $GITHUB_PATH
+          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
+
+      - name: Build MSI
+        shell: bash
+        id: build_msi
+        env:
+          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
+        run: |
+          mkdir -p build
+          msi="$(basename "$ZIP_FILE" ".zip").msi"
+          printf "::set-output name=msi::%s\n" "$msi"
+          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version ${{ steps.get_version.outputs.version }}
+          printf "::set-output name=msi::%s\n" *.msi
+
+      - name: Upload MSI
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ steps.build_msi.outputs.msi }}
+          asset_name: spice_${{ steps.get_version.outputs.version }}_${{ matrix.config.label }}_setup.msi
+          tag: ${{ github.ref }}

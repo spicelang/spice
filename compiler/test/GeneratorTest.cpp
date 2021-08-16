@@ -34,7 +34,11 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
         { // 4
             "success-while-loop",
             ""
-        }
+        },
+        /*{ // 5
+            "success-global-variables",
+            ""
+        }*/
 };
 
 class GeneratorTests : public ::testing::TestWithParam<GeneratorParams> {};
@@ -57,14 +61,30 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
     SymbolTable* symbolTable;
     try {
         // Execute semantic analysis
-        symbolTable = AnalyzerVisitor().visit(tree).as<SymbolTable*>();
+        AnalyzerVisitor analyzer = AnalyzerVisitor(
+                "source.spice",
+                "",
+                ".",
+                true,
+                3,
+                true
+        );
+        symbolTable = analyzer.visit(tree).as<SymbolTable*>();
     } catch (SemanticError &error) {
         FAIL() << "Error thrown in semantic analysis while testing the generator: " << error.what();
     }
 
     // Execute generator
     try {
-        GeneratorVisitor generator = GeneratorVisitor(symbolTable);
+        GeneratorVisitor generator = GeneratorVisitor(
+                symbolTable,
+                "source.spice",
+                "",
+                ".",
+                true,
+                3,
+                true
+        );
         generator.init(); // Initialize code generation
         generator.visit(tree); // Generate IR code
 

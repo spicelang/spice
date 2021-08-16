@@ -30,6 +30,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
         case INVALID_BREAK_NUMBER: return "Invalid number of break calls";
         case INVALID_CONTINUE_NUMBER: return "Invalid number of continue calls";
         case PRINTF_TYPE_ERROR: return "Types of printf call not matching";
+        case IMPORTED_FILE_NOT_EXISTING: return "Imported source file not existing";
     }
     return "Unknown error";
 }

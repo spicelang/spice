@@ -4,11 +4,12 @@
 
 #include <string>
 #include <stdexcept>
+
 #include <exception/SemanticError.h>
 
 enum SymbolType {
     TYPE_DOUBLE, TYPE_INT, TYPE_STRING, TYPE_BOOL, TYPE_DYN,
-    TYPE_FUNCTION, TYPE_PROCEDURE
+    TYPE_FUNCTION, TYPE_PROCEDURE, TYPE_IMPORT
 };
 
 enum SymbolState {
@@ -20,7 +21,7 @@ class SymbolTableEntry {
 public:
     // Constructors
     SymbolTableEntry(std::string name, SymbolType type, SymbolState state, bool isConstant):
-            name(std::move(name)), type(type), state(state), isConstant(isConstant) {};
+        name(std::move(name)), type(type), state(state), isConstant(isConstant) {};
 
     // Public methods
     SymbolState getState();

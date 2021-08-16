@@ -70,7 +70,10 @@ The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTL
 *All LLVM output platforms. To be extended ...*
 
 ## CMake instructions for building LLVM (required for building Spice itself)
-`cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "CodeBlocks - MinGW Makefiles" ../llvm` <br>
+**Configure:**
+`cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "CodeBlocks - MinGW Makefiles" ../llvm`
+
+**Build:**
 `cmake --build .`
 
 ## Contribute to the project

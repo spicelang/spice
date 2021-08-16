@@ -10,7 +10,9 @@ import (
 
 // P prints text in white to the console without a line break at the end
 func P(text string) {
-	color.New(color.FgWhite).Print(text)
+	if _, err := color.New(color.FgWhite).Print(text); err != nil {
+		fmt.Print(text)
+	}
 }
 
 // Pl prints text in white to the console with a like break at the end
