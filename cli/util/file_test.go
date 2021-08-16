@@ -1,6 +1,8 @@
 package util
 
 import (
+	"os"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,6 +18,17 @@ func TestFileExists_Success(t *testing.T) {
 func TestFileExists_Failure(t *testing.T) {
 	result := FileExists("../test-files/non-existing.txt")
 	assert.False(t, result)
+}
+
+// -------------------------------------- SourceFileToInstallPath --------------------------------------
+
+func TestSourceFileToInstallPath(t *testing.T) {
+	result := SourceFileToInstallPath("../test-files/test-file.spice")
+	if runtime.GOOS == "windows" {
+		assert.Equal(t, os.Getenv("USERPROFILE")+"\\spice\\bin\\test-file.exe", result)
+	} else if runtime.GOOS == "linux" {
+		assert.Equal(t, "/usr/local/bin/test-file", result)
+	}
 }
 
 // ---------------------------------------- GetObjectFileTree ------------------------------------------

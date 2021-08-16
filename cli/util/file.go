@@ -3,6 +3,7 @@ package util
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -15,6 +16,31 @@ func FileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
+// SourceFileToInstallPath converts a source file name to a path where to install to
+func SourceFileToInstallPath(sourceFile string) (installPath string) {
+	sourceFileName := filepath.Base(sourceFile)
+	sourceFileNameWithoutExt := strings.TrimSuffix(sourceFileName, filepath.Ext(sourceFileName))
+
+	// Get path to install to
+	installDir := "./"
+	installPath = installDir + sourceFileNameWithoutExt
+	if runtime.GOOS == "windows" {
+		installDir = os.Getenv("USERPROFILE") + "\\spice\\bin"
+		if err := os.MkdirAll(installDir, 0750); err != nil {
+			Error("Could not create binary dir", true)
+		}
+		installPath = installDir + "\\" + sourceFileNameWithoutExt + ".exe"
+	} else if runtime.GOOS == "linux" {
+		installDir = "/usr/local/bin"
+		if err := os.MkdirAll(installDir, 0750); err != nil {
+			Error("Could not create binary dir", true)
+		}
+		installPath = installDir + "/" + sourceFileNameWithoutExt
+	}
+	return
+}
+
+// GetObjectFileTree searches for object files in a certain directory
 func GetObjectFileTree(objectDir string) (objectFiles []string) {
 	err := filepath.Walk(objectDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
