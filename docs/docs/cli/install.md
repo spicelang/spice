@@ -17,7 +17,7 @@ The `install` command can be used to compile your Spice project to an executable
     ```
 
 ## Options
-You can apply following options to the `build` command:
+You can apply following options to the `install` command:
 
 | Option           | Short | Description                                                     |
 | ---------------- | ----- | --------------------------------------------------------------- |
