@@ -60,7 +60,11 @@ nav:
     - install/windows.md
     - install/source.md
   - quick-start.md
-  - usage.md
+  - CLI Usage:
+    - cli/build.md
+    - cli/run.md
+    - cli/install.md
+    - cli/uninstall.md
   - Documentation:
     - language/hello-world.md
     - language/main-function.md
