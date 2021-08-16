@@ -13,22 +13,46 @@ jobs:
     strategy:
       matrix:
         config:
-          #- linux-arm64
-          #- linux-armv5
-          #- linux-armv6
-          #- linux-armv7
+          #- {
+          #    arch: linux-arm64,
+          #    dockcross: 20210805-77da067,
+          #    cmake_params:
+          #  }
+          #- {
+          #    arch: linux-armv5,
+          #    dockcross: 20210805-77da067,
+          #    cmake_params:
+          #  }
+          #- {
+          #    arch: linux-armv6,
+          #    dockcross: 20210805-77da067,
+          #    cmake_params:
+          #  }
+          #- {
+          #    arch: linux-armv7,
+          #    dockcross: 20210805-77da067,
+          #    cmake_params:
+          #  }
           - {
-              arch: linux-x86, dockcross: 20210805-77da067
+              arch: linux-x86,
+              dockcross: 20210805-77da067,
+              cmake_params:
             }
           - {
-              arch: linux-x64, dockcross: 20210805-77da067
+              arch: linux-x64,
+              dockcross: 20210805-77da067,
+              cmake_params:
             }
-          - {
-              arch: windows-static-x86, dockcross: 20210804-76ae808
-            }
-          - {
-              arch: windows-static-x64, dockcross: 20210805-77da067
-            }
+          #- {
+          #    arch: windows-static-x86,
+          #    dockcross: 20210804-76ae808,
+          #    cmake_params: -DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0
+          #  }
+          #- {
+          #    arch: windows-static-x64,
+          #    dockcross: 20210805-77da067,
+          #    cmake_params: -DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0
+          #  }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -50,7 +74,7 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: | #-DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON
           git clone --depth 1 https://github.com/llvm/llvm-project llvm
-          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -Wno-dev
+          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" ${{ matrix.config.cmake_params }} -Wno-dev
 
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
