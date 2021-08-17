@@ -13,4 +13,6 @@ public:
     static std::string getScopeId(SpiceParser::ForLoopContext*);
     static std::string getScopeId(SpiceParser::WhileLoopContext*);
     static std::string getScopeId(SpiceParser::IfStmtContext*);
+    static std::string getScopeId(SpiceParser::ElseIfStmtContext*);
+    static std::string getScopeId(SpiceParser::ElseStmtContext*);
 };
