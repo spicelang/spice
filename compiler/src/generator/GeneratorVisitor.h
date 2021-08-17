@@ -93,7 +93,10 @@ private:
 
     // Private methods
     void initializeExternalFunctions();
-    //void initStringType();
+    llvm::Value* createAddInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+    llvm::Value* createSubInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+    llvm::Value* createMulInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+    llvm::Value* createDivInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
     void moveInsertPointToBlock(llvm::BasicBlock*);
     void createBr(llvm::BasicBlock*);
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);

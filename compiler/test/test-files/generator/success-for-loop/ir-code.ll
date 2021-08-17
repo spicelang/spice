@@ -22,8 +22,8 @@ for:                                              ; preds = %for_cond
   %1 = load i32, i32* %i, align 4
   %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0), i32 %1)
   %3 = load i32, i32* %i, align 4
-  %ple = add i32 %3, 2
-  store i32 %ple, i32* %i, align 4
+  %add = add i32 %3, 2
+  store i32 %add, i32* %i, align 4
   br label %for_cond
 
 for_end:                                          ; preds = %for_cond
