@@ -10,4 +10,5 @@ class FileUtil {
 public:
     static bool fileExists(const std::string&);
     static std::string getFileName(const std::string&);
+    static std::string getFileDir(const std::string&);
 };

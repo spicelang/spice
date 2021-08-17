@@ -17,9 +17,9 @@ class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
     explicit AnalyzerVisitor(std::string sourceFile, std::string targetTriple, std::string outputPath, bool debugOutput,
-                             int optLevel, bool mustHaveMainFunction) : sourceFile(std::move(sourceFile)),
+                             int optLevel, bool mustHaveMainFunction) : mainSourceFile(std::move(sourceFile)),
                                                                         targetTriple(std::move(targetTriple)),
-                                                                        outputPath(std::move(outputPath)),
+                                                                        objectDir(std::move(outputPath)),
                                                                         debugOutput(debugOutput), optLevel(optLevel),
                                                                         mustHaveMainFunction(mustHaveMainFunction) {}
 
@@ -84,9 +84,9 @@ public:
 
 private:
     // Members
-    std::string sourceFile;
+    std::string mainSourceFile;
     std::string targetTriple;
-    std::string outputPath;
+    std::string objectDir;
     bool debugOutput;
     int optLevel;
     bool mustHaveMainFunction = true;

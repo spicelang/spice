@@ -5,7 +5,7 @@
 /**
  * Compiles a single source file to an object
  *
- * @param filePath Full path to a file (absolute or relative)
+ * @param mainSourceFile Full path to a file (absolute or relative)
  * @param targetTriple Target triplet string: e.g.: x86_64-w64-windows-gnu
  * @param outputPath Full path to an output file (absolute or relative)
  * @param debugOutput Set to true to show compiler debug output
@@ -14,7 +14,7 @@
  * @return Symbol table of this program part
  */
 SymbolTable* CompilerInstance::CompileSourceFile(
-        const std::string& filePath,
+        std::string& mainSourceFile,
         const std::string& targetTriple,
         const std::string& objectDir,
         bool debugOutput,
@@ -23,7 +23,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
 ) {
     // Read from file
     std::ifstream stream;
-    stream.open(filePath);
+    stream.open(mainSourceFile);
     antlr4::ANTLRInputStream input(stream);
 
     // Parse input to AST
@@ -36,7 +36,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     SymbolTable* symbolTable;
     try {
         AnalyzerVisitor analyzer = AnalyzerVisitor(
-                filePath,
+                mainSourceFile,
                 targetTriple,
                 objectDir,
                 debugOutput,
@@ -45,7 +45,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         );
         symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
         if (debugOutput) { // Print symbol table in debug mode
-            std::cout << "\nSymbol table of file " << filePath << ":\n" << std::endl;
+            std::cout << "\nSymbol table of file " << mainSourceFile << ":\n" << std::endl;
             std::cout << symbolTable->toString() << std::endl;
         }
     } catch (SemanticError& e) {
@@ -55,7 +55,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
 
     try {
         // Get file name from file path
-        std::string fileName = FileUtil::getFileName(filePath);
+        std::string fileName = FileUtil::getFileName(mainSourceFile);
 
         // Execute generator
         GeneratorVisitor generator = GeneratorVisitor(

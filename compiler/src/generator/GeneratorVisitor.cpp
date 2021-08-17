@@ -6,7 +6,7 @@ void GeneratorVisitor::init() {
     // Create LLVM base components
     context = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
-    module = std::make_unique<llvm::Module>(sourceFile, *context);
+    module = std::make_unique<llvm::Module>(FileUtil::getFileName(mainSourceFile), *context);
 
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();
@@ -17,7 +17,8 @@ void GeneratorVisitor::init() {
 }
 
 void GeneratorVisitor::optimize() {
-    std::cout << "\nOptimizing on level " + std::to_string(optLevel) << " ..." << std::endl;
+    if (debugOutput)
+        std::cout << "\nOptimizing on level " + std::to_string(optLevel) << " ..." << std::endl;
 
     // Declare map with all optimization passes in the required order
     llvm::Pass* passes[] = {
@@ -80,7 +81,8 @@ void GeneratorVisitor::emit() {
     if (targetTriple.empty()) targetTriple = llvm::sys::getDefaultTargetTriple();
     module->setTargetTriple(targetTriple);
 
-    std::cout << "\nEmitting executable for triplet '" << targetTriple << "' to path: " << outputPath << std::endl;
+    if (debugOutput)
+        std::cout << "\nEmitting executable for triplet '" << targetTriple << "' to path: " << objectDir << std::endl;
 
     // Search after selected target
     std::string error;
@@ -97,8 +99,8 @@ void GeneratorVisitor::emit() {
 
     // Open file output stream
     std::error_code errorCode;
-    llvm::raw_fd_ostream dest(outputPath, errorCode, llvm::sys::fs::OF_None);
-    if (errorCode) throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + outputPath + "' could not be opened");
+    llvm::raw_fd_ostream dest(objectDir, errorCode, llvm::sys::fs::OF_None);
+    if (errorCode) throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + objectDir + "' could not be opened");
 
     llvm::legacy::PassManager pass;
     if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, llvm::CGFT_ObjectFile))
@@ -142,7 +144,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
         llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
                                                      functionName, module.get());
-        llvm::BasicBlock* bMain = llvm::BasicBlock::Create(*context, "main_entry");
+        llvm::BasicBlock* bMain = llvm::BasicBlock::Create(*context, "entry");
         fct->getBasicBlockList().push_back(bMain);
         moveInsertPointToBlock(bMain);
 
@@ -200,19 +202,21 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Create function itself
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
-    for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
-        currentVar = param->IDENTIFIER()->toString();
-        paramNames.push_back(currentVar);
-        llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
-        paramTypes.push_back(paramType);
-        symbolTypes.push_back(currentSymbolType);
-    }
-    for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
-        currentVar = param->declStmt()->IDENTIFIER()->toString();
-        paramNames.push_back(currentVar);
-        llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
-        paramTypes.push_back(paramType);
-        symbolTypes.push_back(currentSymbolType);
+    if (ctx->paramLstDef()) {
+        for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
+            currentVar = param->IDENTIFIER()->toString();
+            paramNames.push_back(currentVar);
+            llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
+            paramTypes.push_back(paramType);
+            symbolTypes.push_back(currentSymbolType);
+        }
+        for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
+            currentVar = param->declStmt()->IDENTIFIER()->toString();
+            paramNames.push_back(currentVar);
+            llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
+            paramTypes.push_back(paramType);
+            symbolTypes.push_back(currentSymbolType);
+        }
     }
     llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
     llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
@@ -281,19 +285,21 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
     std::vector<SymbolType> symbolTypes;
-    for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
-        currentVar = param->IDENTIFIER()->toString();
-        paramNames.push_back(currentVar);
-        llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
-        paramTypes.push_back(paramType);
-        symbolTypes.push_back(currentSymbolType);
-    }
-    for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
-        currentVar = param->declStmt()->IDENTIFIER()->toString();
-        paramNames.push_back(currentVar);
-        llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
-        paramTypes.push_back(paramType);
-        symbolTypes.push_back(currentSymbolType);
+    if (ctx->paramLstDef()) {
+        for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
+            currentVar = param->IDENTIFIER()->toString();
+            paramNames.push_back(currentVar);
+            llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
+            paramTypes.push_back(paramType);
+            symbolTypes.push_back(currentSymbolType);
+        }
+        for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
+            currentVar = param->declStmt()->IDENTIFIER()->toString();
+            paramNames.push_back(currentVar);
+            llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
+            paramTypes.push_back(paramType);
+            symbolTypes.push_back(currentSymbolType);
+        }
     }
     llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
                                                            paramTypes, false);
@@ -827,13 +833,13 @@ antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprConte
 
         // Equality expr is: relationalExpr EQUAL relationalExpr
         if (ctx->EQUAL()) {
-            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOEQ(lhs, rhs, "eq");
+            if (lhs->getType()->isDoubleTy()) return builder->CreateFCmpOEQ(lhs, rhs, "eq");
             return builder->CreateICmpEQ(lhs, rhs, "eq");
         }
 
         // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
         if (ctx->NOT_EQUAL()) {
-            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpONE(lhs, rhs, "ne");
+            if (lhs->getType()->isDoubleTy()) return builder->CreateFCmpONE(lhs, rhs, "ne");
             return builder->CreateICmpNE(lhs, rhs, "ne");
         }
     }
@@ -847,25 +853,25 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
 
         // Relational expr is: additiveExpr LESS additiveExpr
         if (ctx->LESS()) {
-            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOLT(lhs, rhs, "lt");
+            if (lhs->getType()->isDoubleTy()) return builder->CreateFCmpOLT(lhs, rhs, "lt");
             return builder->CreateICmpSLT(lhs, rhs, "lt");
         }
 
         // Relational expr is: additiveExpr GREATER additiveExpr
         if (ctx->GREATER()) {
-            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOGT(lhs, rhs, "gt");
+            if (lhs->getType()->isDoubleTy()) return builder->CreateFCmpOGT(lhs, rhs, "gt");
             return builder->CreateICmpSGT(lhs, rhs, "gt");
         }
 
         // Relational expr is: additiveExpr LESS_EQUAL additiveExpr
         if (ctx->LESS_EQUAL()) {
-            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOLE(lhs, rhs, "le");
+            if (lhs->getType()->isDoubleTy()) return builder->CreateFCmpOLE(lhs, rhs, "le");
             return builder->CreateICmpSLE(lhs, rhs, "le");
         }
 
         // Relational expr is: additiveExpr GREATER_EQUAL additiveExpr
         if (ctx->GREATER_EQUAL()) {
-            if (lhs->getType()->isFloatTy()) return builder->CreateFCmpOGE(lhs, rhs, "ge");
+            if (lhs->getType()->isDoubleTy()) return builder->CreateFCmpOGE(lhs, rhs, "ge");
             return builder->CreateICmpSGE(lhs, rhs, "ge");
         }
     }

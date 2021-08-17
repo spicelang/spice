@@ -31,8 +31,8 @@ public:
     // Constructors
     explicit GeneratorVisitor(SymbolTable* symbolTable, std::string sourceFile, std::string targetTriple,
                               std::string outputPath, bool debugOutput, int optLevel, bool mustHaveMainFunction) :
-            currentScope(symbolTable), sourceFile(std::move(sourceFile)),
-            targetTriple(std::move(targetTriple)), outputPath(std::move(outputPath)),
+            currentScope(symbolTable), mainSourceFile(std::move(sourceFile)),
+            targetTriple(std::move(targetTriple)), objectDir(std::move(outputPath)),
             debugOutput(debugOutput), optLevel(optLevel), mustHaveMainFunction(mustHaveMainFunction) {}
 
     // Public methods
@@ -110,9 +110,9 @@ public:
 
 private:
     // Members
-    std::string sourceFile;
+    std::string mainSourceFile;
     std::string targetTriple;
-    std::string outputPath;
+    std::string objectDir;
     bool debugOutput;
     int optLevel;
     bool mustHaveMainFunction = true;
@@ -126,7 +126,6 @@ private:
     SymbolType currentSymbolType;
     llvm::Value* currentAssignValue = nullptr;
     bool blockAlreadyTerminated = false;
-    llvm::BasicBlock* ifEndBlock = nullptr;
 
     // Private methods
     void initializeExternalFunctions();

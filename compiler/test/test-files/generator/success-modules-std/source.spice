@@ -1,0 +1,5 @@
+import "std/type/convert" as conv;
+
+f<int> main() {
+    printf("Result: %f", conv.toDouble(5));
+}

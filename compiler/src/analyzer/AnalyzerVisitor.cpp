@@ -67,7 +67,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     visit(ctx->stmtLst());
     // Check if return variable is now initialized
     if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
-        throw SemanticError(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT,"Function without return statement");
+        throw SemanticError(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
     // Return to old scope
     currentScope = currentScope->getParent();
     return returnType;
@@ -159,7 +159,7 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     return TYPE_BOOL;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) {
     if (ctx->ifStmt()) { // Visit if statement in the case of an else if branch
         visit(ctx->ifStmt());
     } else { // Make a new scope in case of an else branch
@@ -174,7 +174,7 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) 
     return TYPE_BOOL;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) {
+antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) {
     std::vector<SymbolType> paramTypes;
     for (auto& param : ctx->declStmt()) { // Parameters without default value
         SymbolType paramType = visit(param).as<SymbolType>();
@@ -253,16 +253,15 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
                                                             + "' was not found in std library");
         }
     } else { // Include own source file
-        if (FileUtil::fileExists("./" + importPath)) {
-            filePath = "./" + importPath;
+        if (FileUtil::fileExists(FileUtil::getFileDir(mainSourceFile) + "/" + importPath)) {
+            filePath = FileUtil::getFileDir(mainSourceFile) + "/" + importPath;
         } else {
-            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath
-                                                            + "' does not exist");
+            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath + "' does not exist");
         }
     }
 
     // Kick off the compilation of the imported source file
-    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetTriple, outputPath, debugOutput,
+    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetTriple, objectDir, debugOutput,
                                                                    optLevel, false);
 
     // Create symbol of type TYPE_IMPORT in the current scope
@@ -725,7 +724,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext*
 
     // Ensure integer when '++' or '--' is applied
     if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) &&
-            (prefixUnary.as<SymbolType>() != TYPE_INT || !ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()))
+        (prefixUnary.as<SymbolType>() != TYPE_INT || !ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()))
         throw SemanticError(*ctx->postfixUnary()->start, OPERATOR_WRONG_DATA_TYPE,
                             "Prefix '++' or '--' only can be applied to an identifier of type integer");
 
@@ -746,7 +745,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
 
     // Ensure integer when '++' or '--' is applied
     if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) &&
-            (atomicExpr.as<SymbolType>() != TYPE_INT || !ctx->atomicExpr()->value()->IDENTIFIER()))
+        (atomicExpr.as<SymbolType>() != TYPE_INT || !ctx->atomicExpr()->value()->IDENTIFIER()))
         throw SemanticError(*ctx->atomicExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                             "Postfix '++' or '--' only can be applied to an identifier of type integer");
 

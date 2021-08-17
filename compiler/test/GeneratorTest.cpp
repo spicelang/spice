@@ -35,10 +35,18 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             "success-while-loop",
             ""
         },
+        { // 5
+            "success-modules",
+            ""
+        },
+        { // 6
+            "success-modules-std",
+            ""
+            },
         /*{ // 5
             "success-global-variables",
             ""
-        }*/
+        },*/
 };
 
 class GeneratorTests : public ::testing::TestWithParam<GeneratorParams> {};
@@ -46,9 +54,11 @@ class GeneratorTests : public ::testing::TestWithParam<GeneratorParams> {};
 TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
     GeneratorParams param = GetParam();
 
+    std::string sourceFile = "./test-files/generator/" + param.testCaseName + "/source.spice";
+
     // Read source file
     std::ifstream sourceStream;
-    sourceStream.open("./test-files/generator/" + param.testCaseName + "/source.spice");
+    sourceStream.open(sourceFile);
     antlr4::ANTLRInputStream input(sourceStream);
 
     // Parse input to AST
@@ -62,10 +72,10 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
     try {
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
-                "source.spice",
+                sourceFile,
                 "",
                 ".",
-                true,
+                false,
                 3,
                 true
         );
@@ -78,10 +88,10 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
     try {
         GeneratorVisitor generator = GeneratorVisitor(
                 symbolTable,
-                "source.spice",
+                sourceFile,
                 "",
                 ".",
-                true,
+                false,
                 3,
                 true
         );
