@@ -6,14 +6,14 @@ source_filename = "source.spice"
 declare i32 @printf(i8*, ...)
 
 define i32 @main() {
-main_entry:
+entry:
   %result = alloca i32, align 4
   store i32 0, i32* %result, align 4
   %i = alloca i32, align 4
   store i32 0, i32* %i, align 4
   br label %for_cond
 
-for_cond:                                         ; preds = %for, %main_entry
+for_cond:                                         ; preds = %for, %entry
   %0 = load i32, i32* %i, align 4
   %lt = icmp slt i32 %0, 10
   br i1 %lt, label %for, label %for_end

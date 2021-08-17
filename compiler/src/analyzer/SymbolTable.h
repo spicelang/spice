@@ -16,30 +16,53 @@
 class SymbolTable {
 public:
     // Constructors
-    explicit SymbolTable(SymbolTable* parent): parent(parent) {};
+    explicit SymbolTable(SymbolTable* parent) : parent(parent) {};
+
     // Public methods
     void insert(const std::string&, SymbolType, SymbolState, bool, bool);
+
     SymbolTableEntry* lookup(const std::string&);
+
     SymbolTableEntry* lookup(const std::vector<std::string>&);
+
     SymbolTable* lookupTable(const std::vector<std::string>&);
+
     void update(const std::string&, SymbolState);
+
     void update(const std::string&, SymbolType);
+
     SymbolTable* createChildBlock(const std::string&);
+
     void mountChildBlock(const std::string&, SymbolTable*);
+
     void renameChildBlock(const std::string&, const std::string&);
+
     SymbolTable* getParent();
+
     SymbolTable* getChild(const std::string&);
+
     void insertFunctionDeclaration(const std::string&, const std::vector<SymbolType>&);
+
     std::vector<SymbolType> getFunctionDeclaration(const std::string&);
+
     void insertProcedureDeclaration(const std::string&, const std::vector<SymbolType>&);
+
     std::vector<SymbolType> getProcedureDeclaration(const std::string&);
+
     void pushSignature(const FunctionSignature&);
+
     FunctionSignature popSignature();
+
     llvm::BasicBlock* getContinueBlock() const;
+
     void setContinueBlock(llvm::BasicBlock*);
+
     llvm::BasicBlock* getBreakBlock() const;
+
     void setBreakBlock(llvm::BasicBlock*);
+
     std::string toString();
+
 private:
     // Members
     SymbolTable* parent;

@@ -29,7 +29,7 @@ end:                                              ; preds = %entry
 }
 
 define i32 @main() {
-main_entry:
+entry:
   %result = alloca i32, align 4
   store i32 0, i32* %result, align 4
   %input = alloca i32, align 4

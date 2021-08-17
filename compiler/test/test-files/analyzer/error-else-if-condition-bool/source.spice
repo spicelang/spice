@@ -1,0 +1,7 @@
+f<int> main() {
+    if false {
+        printf("If branch");
+    } else if "not a bool" {
+        printf("Else if branch");
+    }
+}

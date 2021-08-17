@@ -16,17 +16,21 @@ int main(int argc, char** argv) { // Call ./spicec filePath targetTriplet output
         args.emplace_back(argv[iArg]);
 
     // Extract args from cli
-    std::string filePath = args[1];
+    std::string mainSourceFile = args[1];
     std::string targetTriple = args[2]; // Default for dev host: x86_64-w64-windows-gnu
-    std::string outputDir = args[3];
+    std::string objectDir = args[3];
     bool debugOutput = args[4] == "true";
-    int optimizerLevel = std::stoi(args[5]);
+    int optLevel = std::stoi(args[5]);
+
+    // Add relative prefix to filename
+    if (mainSourceFile.find("/\\") != std::string::npos)
+        mainSourceFile = "./" + mainSourceFile;
 
     /*
      * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
      * function again.
      */
-    CompilerInstance::CompileSourceFile(filePath, targetTriple, outputDir, debugOutput, optimizerLevel, true);
+    CompilerInstance::CompileSourceFile(mainSourceFile, targetTriple, objectDir, debugOutput, optLevel, true);
 
     return 0;
 }

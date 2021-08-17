@@ -37,6 +37,9 @@ std::string FunctionSignature::toString() {
                     typeName = "procedure";
                     break;
                 }
+                case TYPE_IMPORT:
+                    typeName = "import";
+                    break;
             }
             params.append(typeName + ",");
         }

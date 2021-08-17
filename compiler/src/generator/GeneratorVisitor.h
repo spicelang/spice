@@ -30,52 +30,89 @@ class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
     explicit GeneratorVisitor(SymbolTable* symbolTable, std::string sourceFile, std::string targetTriple,
-                              std::string outputPath, bool debugOutput, int optLevel, bool mustHaveMainFunction):
-                              currentScope(symbolTable), sourceFile(std::move(sourceFile)),
-                              targetTriple(std::move(targetTriple)), outputPath(std::move(outputPath)),
-                              debugOutput(debugOutput), optLevel(optLevel), mustHaveMainFunction(mustHaveMainFunction) {}
+                              std::string outputPath, bool debugOutput, int optLevel, bool mustHaveMainFunction) :
+            currentScope(symbolTable), mainSourceFile(std::move(sourceFile)),
+            targetTriple(std::move(targetTriple)), objectDir(std::move(outputPath)),
+            debugOutput(debugOutput), optLevel(optLevel), mustHaveMainFunction(mustHaveMainFunction) {}
 
     // Public methods
     void init();
+
     void optimize();
+
     void emit();
+
     void dumpIR();
+
     std::string getIRString();
+
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;
+
     antlrcpp::Any visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) override;
+
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext* ctx) override;
+
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) override;
+
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
+
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
+
     antlrcpp::Any visitStmtLst(SpiceParser::StmtLstContext* ctx) override;
+
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
+
+    antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext* ctx) override;
+
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
+
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
+
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
+
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
-    antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
+
+    antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext* ctx) override;
+
     antlrcpp::Any visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) override;
+
     antlrcpp::Any visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) override;
+
     antlrcpp::Any visitAssignment(SpiceParser::AssignmentContext* ctx) override;
+
     antlrcpp::Any visitTernary(SpiceParser::TernaryContext* ctx) override;
+
     antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) override;
+
     antlrcpp::Any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext* ctx) override;
+
     antlrcpp::Any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext* ctx) override;
+
     antlrcpp::Any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext* ctx) override;
+
     antlrcpp::Any visitEqualityExpr(SpiceParser::EqualityExprContext* ctx) override;
+
     antlrcpp::Any visitRelationalExpr(SpiceParser::RelationalExprContext* ctx) override;
+
     antlrcpp::Any visitAdditiveExpr(SpiceParser::AdditiveExprContext* ctx) override;
+
     antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) override;
+
     antlrcpp::Any visitPrefixUnary(SpiceParser::PrefixUnaryContext* ctx) override;
+
     antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext* ctx) override;
+
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
+
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
+
     antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
+
 private:
     // Members
-    std::string sourceFile;
+    std::string mainSourceFile;
     std::string targetTriple;
-    std::string outputPath;
+    std::string objectDir;
     bool debugOutput;
     int optLevel;
     bool mustHaveMainFunction = true;
@@ -89,16 +126,23 @@ private:
     SymbolType currentSymbolType;
     llvm::Value* currentAssignValue = nullptr;
     bool blockAlreadyTerminated = false;
-    //llvm::StructType* stringType = nullptr;
 
     // Private methods
     void initializeExternalFunctions();
+
     llvm::Value* createAddInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+
     llvm::Value* createSubInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+
     llvm::Value* createMulInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+
     llvm::Value* createDivInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+
     void moveInsertPointToBlock(llvm::BasicBlock*);
+
     void createBr(llvm::BasicBlock*);
+
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
+
     llvm::Type* getTypeFromSymbolType(SymbolType);
 };

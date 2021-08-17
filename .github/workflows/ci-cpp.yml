@@ -58,6 +58,7 @@ jobs:
         uses: nicledomaS/cmake_build_action@v1.4
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
+          SPICE_STD_DIR: /home/runner/work/spice/spice/std
         with:
           submodule_update: ON
           run_tests: ON

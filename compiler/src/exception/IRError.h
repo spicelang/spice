@@ -21,12 +21,15 @@ class IRError : public std::exception {
 public:
     // Constructors
     explicit IRError(const antlr4::Token&, IRErrorType, const std::string&);
+
     explicit IRError(IRErrorType, const std::string&);
 
     // Public methods
-    const char * what() const noexcept override;
+    const char* what() const noexcept override;
+
 private:
     // Members
-    std::string errorMessage {};
+    std::string errorMessage{};
+
     static std::string getMessagePrefix(IRErrorType);
 };

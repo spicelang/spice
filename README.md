@@ -24,48 +24,6 @@ Please visit the documentation at [spicelang.com](https://www.spicelang.com).
 ## Grammar
 The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTLR grammar configuration file.
 
-## Semantic analysis checks
-- [x] Assignments have the same type
-- [x] If condition is bool
-- [x] While condition is bool
-- [x] For condition is bool
-- [x] Condition of ternery is bool
-- [x] True type and false type of ternary are matching
-- [x] Variables are declared before referenced
-- [x] Variables are declared exactly once
-- [x] Variables with `const` attached are not modified later
-- [x] Functions/Procedures are defined before called
-- [x] Can only call functions/procedures and no variables
-- [x] Only use parameters, that exist in the declaration
-- [x] Parameter types are matching
-- [x] Return statement only inside of function
-- [x] Return data type matches function def
-- [x] Logical operators are only applied to booleans
-- [x] Bitwise operators are only applied to booleans or integers
-- [x] Equality operators are only applied to some type combinations
-- [x] Relational operators are only applied to doubles or integers
-- [x] Additive operators are only applied to some type combinations
-- [x] Multiplicative operators are only applied to some type combinations
-- [x] Prefix unary operators are only applied to integers
-- [x] Postfix unary operators are only applied to intentifiers of type integer
-- [x] Program contains main function
-- [x] Dyn data type for function args with default value
-- [x] Dyn data type as function return types
-
-## Support missing / to be tested
-- [ ] Optional parameters can be omitted when calling functions/procedures (implemented)
-- [ ] Optional parameters can be omitted when calling functions/procedures (tested)
-- [ ] Variables also can be declared in the root scope (implemented)
-- [ ] Variables also can be declared in the root scope (tested)
-- [ ] Cannot compare int with double or vice versa (tested)
-
-## Special language features
-- Something like `"Test" * 3` is valid and will evaluate to `"TestTestTest"` (not implemented yet)
-- Alternatively to the return statement in a function, you can also assign variable `result` with a value, which was automatically declared by the function head
-- Binary minus has to be applied with a space between (e.g.: `n - 5`) and unary minus has to be applied without a space between (e.g.: `-3.4`)
-- Default values of function/procedure parameters are possible e.g.: `f<int> test(int param = 2) {...}`
-- Function/procedure parameters with a default value have to be last in the param list
-
 ## Available target platforms
 *All LLVM output platforms. To be extended ...*
 

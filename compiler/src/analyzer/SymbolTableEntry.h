@@ -20,15 +20,20 @@ enum SymbolState {
 class SymbolTableEntry {
 public:
     // Constructors
-    SymbolTableEntry(std::string name, SymbolType type, SymbolState state, bool isConstant):
-        name(std::move(name)), type(type), state(state), isConstant(isConstant) {};
+    SymbolTableEntry(std::string name, SymbolType type, SymbolState state, bool isConstant) :
+            name(std::move(name)), type(type), state(state), isConstant(isConstant) {};
 
     // Public methods
     SymbolState getState();
+
     SymbolType getType();
+
     void updateState(SymbolState);
+
     void updateType(SymbolType);
+
     std::string toString();
+
 private:
     // Members
     std::string name;

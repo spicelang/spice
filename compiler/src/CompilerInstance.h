@@ -14,5 +14,5 @@
 
 class CompilerInstance {
 public:
-    static SymbolTable* CompileSourceFile(const std::string&, const std::string&, const std::string&, bool, int, bool);
+    static SymbolTable* CompileSourceFile(std::string&, const std::string&, const std::string&, bool, int, bool);
 };

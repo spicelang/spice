@@ -25,5 +25,5 @@ void SymbolTableEntry::updateType(SymbolType newType) {
 
 std::string SymbolTableEntry::toString() {
     return "Name: " + name + ", Type: " + std::to_string(type) + ", State: " + std::to_string(state) + ", Const: " +
-        std::to_string(isConstant);
+           std::to_string(isConstant);
 }
