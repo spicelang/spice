@@ -7,9 +7,8 @@ procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 forLoop: FOR assignment SEMICOLON assignment SEMICOLON assignment LBRACE stmtLst RBRACE;
 //foreachLoop: FOREACH IDENTIFIER COLON assignment LBRACE stmtLst RBRACE;
 whileLoop: WHILE assignment LBRACE stmtLst RBRACE;
-ifStmt: IF assignment LBRACE stmtLst RBRACE elseIfStmt* elseStmt?;
-elseIfStmt: ELSE IF assignment LBRACE stmtLst RBRACE;
-elseStmt: ELSE LBRACE stmtLst RBRACE;
+ifStmt: IF assignment LBRACE stmtLst RBRACE elseStmt?;
+elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 
 stmtLst: (stmt | forLoop | /*foreachLoop |*/ whileLoop | ifStmt)*;
 paramLstDef: (declStmt | assignment) (COMMA (declStmt | assignment))*;

@@ -33,11 +33,6 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::IfStmtContext* ctx) {
     return "if:" + std::to_string(symbol->getLine()) + ":" + std::to_string(symbol->getCharPositionInLine());
 }
 
-std::string ScopeIdUtil::getScopeId(SpiceParser::ElseIfStmtContext* ctx) {
-    auto symbol = ctx->ELSE()->getSymbol();
-    return "elseif:" + std::to_string(symbol->getLine()) + ":" + std::to_string(symbol->getCharPositionInLine());
-}
-
 std::string ScopeIdUtil::getScopeId(SpiceParser::ElseStmtContext* ctx) {
     auto symbol = ctx->ELSE()->getSymbol();
     return "else:" + std::to_string(symbol->getLine()) + ":" + std::to_string(symbol->getCharPositionInLine());

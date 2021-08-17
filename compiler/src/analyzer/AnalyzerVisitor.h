@@ -38,8 +38,6 @@ public:
 
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
 
-    antlrcpp::Any visitElseIfStmt(SpiceParser::ElseIfStmtContext* ctx) override;
-
     antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext* ctx) override;
 
     antlrcpp::Any visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) override;

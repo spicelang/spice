@@ -447,10 +447,11 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
 
     // Create blocks
     llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "then");
+    llvm::BasicBlock* bElse = llvm::BasicBlock::Create(*context, "else");
     llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "end");
 
     // Check if condition is fulfilled
-    createCondBr(conditionValue, bThen, bEnd);
+    createCondBr(conditionValue, bThen, ctx->elseStmt() ? bElse : bEnd);
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -463,28 +464,39 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     visit(ctx->stmtLst());
     createBr(bEnd);
 
+    // Change scope back
+    currentScope = currentScope->getParent();
+
+    // Fill else block
+    if (ctx->elseStmt()) {
+        parentFct->getBasicBlockList().push_back(bElse);
+        moveInsertPointToBlock(bElse);
+        visit(ctx->elseStmt()); // Generate IR for else block
+        createBr(bEnd);
+    }
+
     // Fill end block
     parentFct->getBasicBlockList().push_back(bEnd);
     moveInsertPointToBlock(bEnd);
-
-    // Change scope back
-    currentScope = currentScope->getParent();
 
     // Return conditional value as result for the if stmt
     return conditionValue;
 }
 
-antlrcpp::Any GeneratorVisitor::visitElseIfStmt(SpiceParser::ElseIfStmtContext* ctx) {
-    llvm::Value* conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
-    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
-
-    return conditionValue;
-}
-
 antlrcpp::Any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) {
-    return SpiceBaseVisitor::visitElseStmt(ctx);
+    if (ctx->ifStmt()) { // It is an else if branch
+        visit(ctx->ifStmt());
+    } else { // It is an else branch
+        // Change scope
+        std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+        currentScope = currentScope->getChild(scopeId);
 
+        // Generate IR for nested statements
+        visit(ctx->stmtLst());
 
+        // Change scope back
+        currentScope = currentScope->getParent();
+    }
     return nullptr;
 }
 
