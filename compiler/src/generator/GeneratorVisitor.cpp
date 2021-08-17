@@ -650,48 +650,48 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             if (isLocal) { // Local variable
                 llvm::AllocaInst* lhs = namedValues[varName];
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = builder->CreateAdd(loadLhs, rhs, "ple");
+                rhs = createAddInst(loadLhs, loadLhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = builder->CreateAdd(loadLhs, rhs, "ple");
+                rhs = createAddInst(loadLhs, loadLhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             }
         } else if (ctx->MINUS_EQUAL()) {
             if (isLocal) { // Local variable
                 llvm::AllocaInst* lhs = namedValues[varName];
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = builder->CreateSub(loadLhs, rhs, "mie");
+                rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = builder->CreateSub(loadLhs, rhs, "mie");
+                rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             }
         } else if (ctx->MUL_EQUAL()) {
             if (isLocal) { // Local variable
                 llvm::AllocaInst* lhs = namedValues[varName];
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = builder->CreateMul(loadLhs, rhs, "mue");
+                rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = builder->CreateMul(loadLhs, rhs, "mue");
+                rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             }
         } else if (ctx->DIV_EQUAL()) {
             if (isLocal) { // Local variable
                 llvm::AllocaInst* lhs = namedValues[varName];
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = builder->CreateSDiv(loadLhs, rhs, "die");
+                rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = builder->CreateSDiv(loadLhs, rhs, "die");
+                rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             }
         }
@@ -852,43 +852,11 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
             llvm::Value* rhs = visit(ctx->multiplicativeExpr()[i]).as<llvm::Value*>();
             llvm::Type* rhsType = rhs->getType();
-            if (lhsType->isDoubleTy()) {
-                if (rhsType->isDoubleTy()) { // double + double / double - double
-                    if (ctx->PLUS(i-1))
-                        lhs = builder->CreateFAdd(lhs, rhs, "add");
-                    else
-                        lhs = builder->CreateFSub(lhs, rhs, "sub");
-                } else if (rhsType->isIntegerTy(32)) { // double + int / double - int
-                    if (ctx->PLUS(i-1))
-                        lhs = builder->CreateFAdd(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "add");
-                    else
-                        lhs = builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
-                } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // double + string / double - string
 
-                }
-            } else if (lhsType->isIntegerTy(32)) {
-                if (rhsType->isDoubleTy()) { // int + double / int - double
-                    if (ctx->PLUS(i-1))
-                        lhs = builder->CreateFAdd(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "add");
-                    else
-                        lhs = builder->CreateFSub(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "sub");
-                } else if (rhsType->isIntegerTy(32)) { // int + int / int - int
-                    if (ctx->PLUS(i-1))
-                        lhs = builder->CreateAdd(lhs, rhs, "add");
-                    else
-                        lhs = builder->CreateSub(lhs, rhs, "sub");
-                } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int + string / int - string
-
-                }
-            } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
-                if (rhsType->isDoubleTy()) { // string + double / string - double
-
-                } else if (rhsType->isIntegerTy(32)) { // string + int / string - int
-
-                } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string + string / string - string
-
-                }
-            }
+            if (ctx->PLUS(i-1))
+                lhs = createAddInst(lhs, lhsType, rhs, rhsType);
+            else
+                lhs = createSubInst(lhs, lhsType, rhs, rhsType);
         }
         return lhs;
     }
@@ -902,37 +870,11 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
         for (int i = 1; i < ctx->prefixUnary().size(); i++) {
             llvm::Value* rhs = visit(ctx->prefixUnary()[i]).as<llvm::Value*>();
             llvm::Type* rhsType = rhs->getType();
-            if (lhsType->isDoubleTy()) {
-                if (rhsType->isDoubleTy()) { // double * double / double : double
-                    if (ctx->MUL(i-1))
-                        lhs = builder->CreateFMul(lhs, rhs, "mul");
-                    else
-                        lhs = builder->CreateFDiv(lhs, rhs, "div");
-                } else if (rhsType->isIntegerTy(32)) { // double * int / double : int
-                    if (ctx->MUL(i-1))
-                        lhs = builder->CreateFMul(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "mul");
-                    else
-                        lhs = builder->CreateFDiv(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "div");
-                }
-            } else if (lhsType->isIntegerTy(32)) {
-                if (rhsType->isDoubleTy()) { // int * double / int : double
-                    if (ctx->MUL(i-1))
-                        lhs = builder->CreateFMul(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "mul");
-                    else
-                        lhs = builder->CreateFDiv(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "div");
-                } else if (rhsType->isIntegerTy(32)) { // int * int / int : int
-                    if (ctx->MUL(i-1))
-                        lhs = builder->CreateMul(lhs, rhs, "mul");
-                    else
-                        lhs = builder->CreateSDiv(lhs, rhs, "div");
-                } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int * string / int : string
 
-                }
-            } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
-                if (rhsType->isIntegerTy(32)) { // string * int / string : int
-
-                }
-            }
+            if (ctx->MUL(i-1))
+                lhs = createMulInst(lhs, lhsType, rhs, rhsType);
+            else
+                lhs = createDivInst(lhs, lhsType, rhs, rhsType);
         }
         return lhs;
     }
@@ -1069,6 +1011,110 @@ void GeneratorVisitor::initializeExternalFunctions() {
     module->getOrInsertFunction("printf", llvm::FunctionType::get(
             getTypeFromSymbolType(TYPE_INT),
             getTypeFromSymbolType(TYPE_STRING), true));
+}
+
+llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
+    if (lhsType->isDoubleTy()) {
+        if (rhsType->isDoubleTy()) { // double + double / double - double
+            return builder->CreateFAdd(lhs, rhs, "add");
+        } else if (rhsType->isIntegerTy(32)) { // double + int / double - int
+            return builder->CreateFAdd(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "add");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // double + string / double - string
+
+        }
+    } else if (lhsType->isIntegerTy(32)) {
+        if (rhsType->isDoubleTy()) { // int + double / int - double
+            return builder->CreateFAdd(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "add");
+        } else if (rhsType->isIntegerTy(32)) { // int + int / int - int
+            return builder->CreateAdd(lhs, rhs, "add");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int + string / int - string
+
+        }
+    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
+        if (rhsType->isDoubleTy()) { // string + double / string - double
+
+        } else if (rhsType->isIntegerTy(32)) { // string + int / string - int
+
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string + string / string - string
+
+        }
+    }
+    return lhs;
+}
+
+llvm::Value* GeneratorVisitor::createSubInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
+    if (lhsType->isDoubleTy()) {
+        if (rhsType->isDoubleTy()) { // double + double / double - double
+            return builder->CreateFSub(lhs, rhs, "sub");
+        } else if (rhsType->isIntegerTy(32)) { // double + int / double - int
+            return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // double + string / double - string
+
+        }
+    } else if (lhsType->isIntegerTy(32)) {
+        if (rhsType->isDoubleTy()) { // int + double / int - double
+            return builder->CreateFSub(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "sub");
+        } else if (rhsType->isIntegerTy(32)) { // int + int / int - int
+            return builder->CreateSub(lhs, rhs, "sub");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int + string / int - string
+
+        }
+    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
+        if (rhsType->isDoubleTy()) { // string + double / string - double
+
+        } else if (rhsType->isIntegerTy(32)) { // string + int / string - int
+
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string + string / string - string
+
+        }
+    }
+    return lhs;
+}
+
+llvm::Value* GeneratorVisitor::createMulInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
+    if (lhsType->isDoubleTy()) {
+        if (rhsType->isDoubleTy()) { // double * double / double : double
+            lhs = builder->CreateFMul(lhs, rhs, "mul");
+        } else if (rhsType->isIntegerTy(32)) { // double * int / double : int
+            lhs = builder->CreateFMul(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "mul");
+        }
+    } else if (lhsType->isIntegerTy(32)) {
+        if (rhsType->isDoubleTy()) { // int * double / int : double
+            lhs = builder->CreateFMul(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "mul");
+        } else if (rhsType->isIntegerTy(32)) { // int * int / int : int
+            lhs = builder->CreateMul(lhs, rhs, "mul");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int * string / int : string
+
+        }
+    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
+        if (rhsType->isIntegerTy(32)) { // string * int / string : int
+
+        }
+    }
+    return lhs;
+}
+
+llvm::Value* GeneratorVisitor::createDivInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
+    if (lhsType->isDoubleTy()) {
+        if (rhsType->isDoubleTy()) { // double * double / double : double
+            lhs = builder->CreateFDiv(lhs, rhs, "div");
+        } else if (rhsType->isIntegerTy(32)) { // double * int / double : int
+            lhs = builder->CreateFDiv(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "div");
+        }
+    } else if (lhsType->isIntegerTy(32)) {
+        if (rhsType->isDoubleTy()) { // int * double / int : double
+            lhs = builder->CreateFDiv(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "div");
+        } else if (rhsType->isIntegerTy(32)) { // int * int / int : int
+            lhs = builder->CreateSDiv(lhs, rhs, "div");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int * string / int : string
+
+        }
+    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
+        if (rhsType->isIntegerTy(32)) { // string * int / string : int
+
+        }
+    }
+    return lhs;
 }
 
 void GeneratorVisitor::createBr(llvm::BasicBlock* targetBlock) {

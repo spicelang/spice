@@ -20,8 +20,8 @@ while_cond:                                       ; preds = %while, %main_entry
 
 while:                                            ; preds = %while_cond
   %1 = load i32, i32* %i, align 4
-  %ple = add i32 %1, 1
-  store i32 %ple, i32* %i, align 4
+  %add = add i32 %1, 1
+  store i32 %add, i32* %i, align 4
   %2 = load i32, i32* %i, align 4
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0), i32 %2)
   br label %while_cond
