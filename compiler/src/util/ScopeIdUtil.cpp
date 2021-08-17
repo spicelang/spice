@@ -9,13 +9,13 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::MainFunctionDefContext*) {
 std::string ScopeIdUtil::getScopeId(SpiceParser::FunctionDefContext* ctx) {
     auto symbol = ctx->F()->getSymbol();
     return "f:" + ctx->IDENTIFIER()->toString() + ":" + std::to_string(symbol->getLine()) + ":" +
-        std::to_string(symbol->getCharPositionInLine());
+           std::to_string(symbol->getCharPositionInLine());
 }
 
 std::string ScopeIdUtil::getScopeId(SpiceParser::ProcedureDefContext* ctx) {
     auto symbol = ctx->P()->getSymbol();
     return "p:" + ctx->IDENTIFIER()->toString() + ":" + std::to_string(symbol->getLine()) + ":" +
-        std::to_string(symbol->getCharPositionInLine());
+           std::to_string(symbol->getCharPositionInLine());
 }
 
 std::string ScopeIdUtil::getScopeId(SpiceParser::ForLoopContext* ctx) {
@@ -33,7 +33,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::IfStmtContext* ctx) {
     return "if:" + std::to_string(symbol->getLine()) + ":" + std::to_string(symbol->getCharPositionInLine());
 }
 
-std::string ScopeIdUtil::getScopeId(SpiceParser::ElseIfStmtContext *ctx) {
+std::string ScopeIdUtil::getScopeId(SpiceParser::ElseIfStmtContext* ctx) {
     auto symbol = ctx->ELSE()->getSymbol();
     return "elseif:" + std::to_string(symbol->getLine()) + ":" + std::to_string(symbol->getCharPositionInLine());
 }

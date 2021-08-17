@@ -3,7 +3,7 @@
 #include "SymbolTable.h"
 
 void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, bool isConstant, bool isParameter) {
-    symbols.insert({ name, SymbolTableEntry(name, type, state, isConstant) });
+    symbols.insert({name, SymbolTableEntry(name, type, state, isConstant)});
     if (isParameter) paramNames.push_back(name);
 }
 
@@ -25,7 +25,7 @@ SymbolTable* SymbolTable::lookupTable(const std::vector<std::string>& nameSpace)
     // Check if scope contains this namespace
     SymbolTable* currentTable = this;
     for (int i = 0; i < nameSpace.size(); i++) {
-        if (i == nameSpace.size() -1) {
+        if (i == nameSpace.size() - 1) {
             if (currentTable->symbols.find(nameSpace[i]) == currentTable->symbols.end()) break;
             return currentTable;
         } else {
@@ -59,12 +59,12 @@ void SymbolTable::update(const std::string& name, SymbolType newType) {
 }
 
 SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
-    children.insert({ blockName, SymbolTable(this) });
+    children.insert({blockName, SymbolTable(this)});
     return &children.at(blockName);
 }
 
 void SymbolTable::mountChildBlock(const std::string& blockName, SymbolTable* childBlock) {
-    children.insert({ blockName, *childBlock });
+    children.insert({blockName, *childBlock});
 }
 
 void SymbolTable::renameChildBlock(const std::string& oldName, const std::string& newName) {
@@ -83,7 +83,7 @@ SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
 }
 
 void SymbolTable::insertFunctionDeclaration(const std::string& signature, const std::vector<SymbolType>& types) {
-    functionDeclarations.insert({ signature, types });
+    functionDeclarations.insert({signature, types});
 }
 
 std::vector<SymbolType> SymbolTable::getFunctionDeclaration(const std::string& signature) {
@@ -92,7 +92,7 @@ std::vector<SymbolType> SymbolTable::getFunctionDeclaration(const std::string& s
 }
 
 void SymbolTable::insertProcedureDeclaration(const std::string& signature, const std::vector<SymbolType>& types) {
-    procedureDeclarations.insert({ signature, types });
+    procedureDeclarations.insert({signature, types});
 }
 
 std::vector<SymbolType> SymbolTable::getProcedureDeclaration(const std::string& signature) {

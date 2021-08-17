@@ -157,6 +157,33 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     return TYPE_BOOL;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitElseIfStmt(SpiceParser::ElseIfStmtContext *ctx) {
+    // Create a new scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->createChildBlock(scopeId);
+    // Visit condition
+    SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
+    if (conditionType != TYPE_BOOL)
+        throw SemanticError(*ctx->assignment()->start, CONDITION_MUST_BE_BOOL,
+                            "Elseif condition must be of type bool");
+    // Visit statement list in new scope
+    visit(ctx->stmtLst());
+    // Return to old scope
+    currentScope = currentScope->getParent();
+    return TYPE_BOOL;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
+    // Create a new scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->createChildBlock(scopeId);
+    // Visit statement list in new scope
+    visit(ctx->stmtLst());
+    // Return to old scope
+    currentScope = currentScope->getParent();
+    return TYPE_BOOL;
+}
+
 antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) {
     std::vector<SymbolType> paramTypes;
     for (auto& param : ctx->declStmt()) { // Parameters without default value

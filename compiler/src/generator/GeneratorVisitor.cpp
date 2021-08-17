@@ -216,7 +216,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     }
     llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
     llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
-                                      signature.toString(), module.get());
+                                                 signature.toString(), module.get());
 
     // Create entry block
     llvm::BasicBlock* bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -298,7 +298,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
                                                            paramTypes, false);
     llvm::Function* proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage,
-                                       signature.toString(), module.get());
+                                                  signature.toString(), module.get());
 
     // Create entry block
     llvm::BasicBlock* bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -474,6 +474,20 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     return conditionValue;
 }
 
+antlrcpp::Any GeneratorVisitor::visitElseIfStmt(SpiceParser::ElseIfStmtContext* ctx) {
+    llvm::Value* conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
+    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
+
+    return conditionValue;
+}
+
+antlrcpp::Any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) {
+    return SpiceBaseVisitor::visitElseStmt(ctx);
+
+
+    return nullptr;
+}
+
 antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) {
     currentVar = ctx->IDENTIFIER()->toString();
     llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
@@ -561,7 +575,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     return (llvm::Value*) builder->CreateCall(fct, argValues);
 }
 
-antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
+antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Ignore sub-tree
     return nullptr;
 }
@@ -634,7 +648,8 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
         llvm::Value* rhs = currentAssignValue = visit(ctx->ternary()).as<llvm::Value*>();
 
         // Get value of left side
-        std::string varName = ctx->declStmt() ? visit(ctx->declStmt()).as<std::string>() : ctx->IDENTIFIER()->toString();
+        std::string varName = ctx->declStmt() ? visit(ctx->declStmt()).as<std::string>()
+                                              : ctx->IDENTIFIER()->toString();
         bool isLocal = namedValues.find(varName) != namedValues.end();
 
         if (ctx->ASSIGN_OP()) {
@@ -853,7 +868,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
             llvm::Value* rhs = visit(ctx->multiplicativeExpr()[i]).as<llvm::Value*>();
             llvm::Type* rhsType = rhs->getType();
 
-            if (ctx->PLUS(i-1))
+            if (ctx->PLUS(i - 1))
                 lhs = createAddInst(lhs, lhsType, rhs, rhsType);
             else
                 lhs = createSubInst(lhs, lhsType, rhs, rhsType);
@@ -871,7 +886,7 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
             llvm::Value* rhs = visit(ctx->prefixUnary()[i]).as<llvm::Value*>();
             llvm::Type* rhsType = rhs->getType();
 
-            if (ctx->MUL(i-1))
+            if (ctx->MUL(i - 1))
                 lhs = createMulInst(lhs, lhsType, rhs, rhsType);
             else
                 lhs = createDivInst(lhs, lhsType, rhs, rhsType);
@@ -972,13 +987,15 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         currentSymbolType = currentScope->lookup(variableName)->getType();
         if (namedValues.find(variableName) != namedValues.end()) { // Local variable
             llvm::Value* var = namedValues[variableName];
-            if (!var) throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
-                                    "Variable '" + variableName +"' not found in code generation step");
+            if (!var)
+                throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
+                              "Variable '" + variableName + "' not found in code generation step");
             return (llvm::Value*) builder->CreateLoad(var->getType()->getPointerElementType(), var);
         } else { // Global variable
             llvm::GlobalVariable* var = module->getNamedGlobal(variableName);
-            if (!var) throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
-                                    "Variable '" + variableName +"' not found in code generation step");
+            if (!var)
+                throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
+                              "Variable '" + variableName + "' not found in code generation step");
             return (llvm::Value*) builder->CreateLoad(var->getType()->getPointerElementType(), var);
         }
     }
@@ -1002,8 +1019,9 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
     }
 
     llvm::Type* type = getTypeFromSymbolType(currentSymbolType);
-    if (!type) throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE,
-                             "Dyn was " + std::to_string(currentSymbolType));
+    if (!type)
+        throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE,
+                      "Dyn was " + std::to_string(currentSymbolType));
     return type;
 }
 
@@ -1013,104 +1031,138 @@ void GeneratorVisitor::initializeExternalFunctions() {
             getTypeFromSymbolType(TYPE_STRING), true));
 }
 
-llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
+llvm::Value*
+GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
     if (lhsType->isDoubleTy()) {
-        if (rhsType->isDoubleTy()) { // double + double / double - double
+        if (rhsType->isDoubleTy()) {
+            // double + double / double - double
             return builder->CreateFAdd(lhs, rhs, "add");
-        } else if (rhsType->isIntegerTy(32)) { // double + int / double - int
+        } else if (rhsType->isIntegerTy(32)) {
+            // double + int / double - int
             return builder->CreateFAdd(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "add");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // double + string / double - string
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+            // double + string / double - string
 
         }
     } else if (lhsType->isIntegerTy(32)) {
-        if (rhsType->isDoubleTy()) { // int + double / int - double
+        if (rhsType->isDoubleTy()) {
+            // int + double / int - double
             return builder->CreateFAdd(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "add");
-        } else if (rhsType->isIntegerTy(32)) { // int + int / int - int
+        } else if (rhsType->isIntegerTy(32)) {
+            // int + int / int - int
             return builder->CreateAdd(lhs, rhs, "add");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int + string / int - string
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+            // int + string / int - string
 
         }
     } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
-        if (rhsType->isDoubleTy()) { // string + double / string - double
+        if (rhsType->isDoubleTy()) {
+            // string + double / string - double
 
-        } else if (rhsType->isIntegerTy(32)) { // string + int / string - int
+        } else if (rhsType->isIntegerTy(32)) {
+            // string + int / string - int
 
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string + string / string - string
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+            // string + string / string - string
 
         }
     }
     return lhs;
 }
 
-llvm::Value* GeneratorVisitor::createSubInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
+llvm::Value*
+GeneratorVisitor::createSubInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
     if (lhsType->isDoubleTy()) {
-        if (rhsType->isDoubleTy()) { // double + double / double - double
+        if (rhsType->isDoubleTy()) {
+            // double + double / double - double
             return builder->CreateFSub(lhs, rhs, "sub");
-        } else if (rhsType->isIntegerTy(32)) { // double + int / double - int
+        } else if (rhsType->isIntegerTy(32)) {
+            // double + int / double - int
             return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // double + string / double - string
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+            // double + string / double - string
 
         }
     } else if (lhsType->isIntegerTy(32)) {
-        if (rhsType->isDoubleTy()) { // int + double / int - double
+        if (rhsType->isDoubleTy()) {
+            // int + double / int - double
             return builder->CreateFSub(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "sub");
-        } else if (rhsType->isIntegerTy(32)) { // int + int / int - int
+        } else if (rhsType->isIntegerTy(32)) {
+            // int + int / int - int
             return builder->CreateSub(lhs, rhs, "sub");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int + string / int - string
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+            // int + string / int - string
 
         }
     } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
-        if (rhsType->isDoubleTy()) { // string + double / string - double
+        if (rhsType->isDoubleTy()) {
+            // string + double / string - double
 
-        } else if (rhsType->isIntegerTy(32)) { // string + int / string - int
+        } else if (rhsType->isIntegerTy(32)) {
+            // string + int / string - int
 
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string + string / string - string
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+            // string + string / string - string
 
         }
     }
     return lhs;
 }
 
-llvm::Value* GeneratorVisitor::createMulInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
+llvm::Value*
+GeneratorVisitor::createMulInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
     if (lhsType->isDoubleTy()) {
-        if (rhsType->isDoubleTy()) { // double * double / double : double
+        if (rhsType->isDoubleTy()) {
+            // double * double / double : double
             lhs = builder->CreateFMul(lhs, rhs, "mul");
-        } else if (rhsType->isIntegerTy(32)) { // double * int / double : int
+        } else if (rhsType->isIntegerTy(32)) {
+            // double * int / double : int
             lhs = builder->CreateFMul(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "mul");
         }
     } else if (lhsType->isIntegerTy(32)) {
-        if (rhsType->isDoubleTy()) { // int * double / int : double
+        if (rhsType->isDoubleTy()) {
+            // int * double / int : double
             lhs = builder->CreateFMul(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "mul");
-        } else if (rhsType->isIntegerTy(32)) { // int * int / int : int
+        } else if (rhsType->isIntegerTy(32)) {
+            // int * int / int : int
             lhs = builder->CreateMul(lhs, rhs, "mul");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int * string / int : string
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+            // int * string / int : string
 
         }
     } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
-        if (rhsType->isIntegerTy(32)) { // string * int / string : int
+        if (rhsType->isIntegerTy(32)) {
+            // string * int / string : int
 
         }
     }
     return lhs;
 }
 
-llvm::Value* GeneratorVisitor::createDivInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
+llvm::Value*
+GeneratorVisitor::createDivInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
     if (lhsType->isDoubleTy()) {
-        if (rhsType->isDoubleTy()) { // double * double / double : double
+        if (rhsType->isDoubleTy()) {
+            // double * double / double : double
             lhs = builder->CreateFDiv(lhs, rhs, "div");
-        } else if (rhsType->isIntegerTy(32)) { // double * int / double : int
+        } else if (rhsType->isIntegerTy(32)) {
+            // double * int / double : int
             lhs = builder->CreateFDiv(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "div");
         }
     } else if (lhsType->isIntegerTy(32)) {
-        if (rhsType->isDoubleTy()) { // int * double / int : double
+        if (rhsType->isDoubleTy()) {
+            // int * double / int : double
             lhs = builder->CreateFDiv(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "div");
-        } else if (rhsType->isIntegerTy(32)) { // int * int / int : int
+        } else if (rhsType->isIntegerTy(32)) {
+            // int * int / int : int
             lhs = builder->CreateSDiv(lhs, rhs, "div");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // int * string / int : string
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+            // int * string / int : string
 
         }
     } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
-        if (rhsType->isIntegerTy(32)) { // string * int / string : int
+        if (rhsType->isIntegerTy(32)) {
+            // string * int / string : int
 
         }
     }
@@ -1138,11 +1190,16 @@ void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
 
 llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
     switch (symbolType) {
-        case TYPE_DOUBLE: return llvm::Type::getDoubleTy(*context);
-        case TYPE_INT: return llvm::Type::getInt32Ty(*context);
-        case TYPE_STRING: return llvm::Type::getInt8Ty(*context)->getPointerTo();
-        case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
-        default: return nullptr;
+        case TYPE_DOUBLE:
+            return llvm::Type::getDoubleTy(*context);
+        case TYPE_INT:
+            return llvm::Type::getInt32Ty(*context);
+        case TYPE_STRING:
+            return llvm::Type::getInt8Ty(*context)->getPointerTo();
+        case TYPE_BOOL:
+            return llvm::Type::getInt1Ty(*context);
+        default:
+            return nullptr;
     }
     return nullptr;
 }
