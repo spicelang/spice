@@ -71,6 +71,7 @@ dockers:
     goarch: 386
     extra_files:
       - bin
+      - std
     build_flag_templates:
       - --label=org.opencontainers.image.created={{.Date}}
       - --label=org.opencontainers.image.name={{.ProjectName}}
@@ -90,6 +91,7 @@ dockers:
   #  goarm: 7
   #  extra_files:
   #    - bin
+  #    - std
   #  build_flag_templates:
   #    - --label=org.opencontainers.image.created={{.Date}}
   #    - --label=org.opencontainers.image.name={{.ProjectName}}
@@ -108,6 +110,7 @@ dockers:
   #  goarch: arm64
   #  extra_files:
   #    - bin
+  #    - std
   #  build_flag_templates:
   #    - --label=org.opencontainers.image.created={{.Date}}
   #    - --label=org.opencontainers.image.name={{.ProjectName}}
