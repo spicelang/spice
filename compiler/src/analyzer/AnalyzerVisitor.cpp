@@ -10,7 +10,7 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 
     // Check if the visitor got a main function
     if (mustHaveMainFunction && !hasMainFunction)
-        throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found.");
+        throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
 
     // Post traversing actions
 

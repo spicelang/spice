@@ -12,7 +12,7 @@ public:
 private:
     ModuleRegistry() {}
     ModuleRegistry(ModuleRegistry const&) {}
-    ModuleRegistry& operator=(ModuleRegistry const&) {}
+    ModuleRegistry& operator=(ModuleRegistry const&);
 
     static ModuleRegistry* instance;
     std::vector<std::string> modulePaths;
