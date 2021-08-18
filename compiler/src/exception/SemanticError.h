@@ -22,6 +22,7 @@ enum SemanticErrorType {
     INVALID_CONTINUE_NUMBER,
     PRINTF_TYPE_ERROR,
     IMPORTED_FILE_NOT_EXISTING,
+    CIRCULAR_DEPENDENCY,
 };
 
 class SemanticError : public std::exception {

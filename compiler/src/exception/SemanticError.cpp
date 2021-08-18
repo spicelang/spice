@@ -45,6 +45,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Types of printf call not matching";
         case IMPORTED_FILE_NOT_EXISTING:
             return "Imported source file not existing";
+        case CIRCULAR_DEPENDENCY:
+            return "Circular import detected";
     }
     return "Unknown error";
 }
