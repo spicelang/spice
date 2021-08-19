@@ -68,7 +68,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-12-0-1-${{ matrix.config.arch }}
+          key: llvm-13-0-0-${{ matrix.config.arch }}
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'

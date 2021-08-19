@@ -20,13 +20,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-12-0-1
+          key: llvm-13-0-0
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
-          git clone --depth 1 --branch llvmorg-12.0.1 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
@@ -52,8 +52,8 @@ jobs:
         run: |
           mkdir bin
           cd bin
-          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON ../compiler -Wattributes
-          cmake --build --target Spice_test .
+          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON -Wattributes ..
+          cmake --build . --target Spice_test
 
       #- name: Build project
       #  uses: nicledomaS/cmake_build_action@v1.4
