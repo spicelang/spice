@@ -10,9 +10,7 @@ public:
     // Public methods
     void addModule(const std::string&);
 private:
-    ModuleRegistry() {}
-    ModuleRegistry(ModuleRegistry const&) {}
-    ModuleRegistry& operator=(ModuleRegistry const&);
+    explicit ModuleRegistry() {}
 
     static ModuleRegistry* instance;
     std::vector<std::string> modulePaths;
