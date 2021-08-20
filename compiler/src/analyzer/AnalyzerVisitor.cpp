@@ -244,13 +244,22 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     std::string filePath;
     if (importPath.rfind("std/", 0) == 0) { // Include source file from standard library
         std::string sourceFileIden = importPath.substr(importPath.find("std/") + 4);
-        if (FileUtil::fileExists("/usr/lib/spice/std/" + sourceFileIden)) {
-            filePath = "/usr/lib/spice/std/" + sourceFileIden;
-        } else if (FileUtil::fileExists(std::string(std::getenv("SPICE_STD_DIR")) + "/" + sourceFileIden)) {
-            filePath = std::string(std::getenv("SPICE_STD_DIR")) + "/" + sourceFileIden;
+        // Find std library
+        std::string stdPath;
+        if (FileUtil::fileExists("/usr/lib/spice/std")) {
+            stdPath = "/usr/lib/spice/std/";
+        } else if (FileUtil::fileExists(std::string(std::getenv("SPICE_STD_DIR")))) {
+            stdPath = std::string(std::getenv("SPICE_STD_DIR"));
         } else {
-            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath
-                                                            + "' was not found in std library");
+            throw SemanticError(STD_NOT_FOUND,
+                                "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
+        }
+        // Check if source file exists
+        if (FileUtil::fileExists(stdPath + sourceFileIden)) {
+            filePath = "/usr/lib/spice/std/" + sourceFileIden;
+        } else {
+            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath +
+                                                            "' was not found in std library");
         }
     } else { // Include own source file
         // Check in module registry if the file can be imported

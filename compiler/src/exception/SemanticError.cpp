@@ -43,6 +43,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Invalid number of continue calls";
         case PRINTF_TYPE_ERROR:
             return "Types of printf call not matching";
+        case STD_NOT_FOUND:
+            return "Std lib not found";
         case IMPORTED_FILE_NOT_EXISTING:
             return "Imported source file not existing";
         case CIRCULAR_DEPENDENCY:
