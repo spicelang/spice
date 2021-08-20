@@ -45,10 +45,9 @@ jobs:
           cd ./lib
           git clone --depth 1 https://github.com/antlr/antlr4.git
 
-      - name: Build
+      - name: Build Test target
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
-          SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
           mkdir bin
           cd bin
@@ -65,3 +64,10 @@ jobs:
       #    run_tests: ON
       #    cmake_args: -DWITH_TESTS=ON -Wattributes
       #    unit_test_build: -Dtest=ON
+
+      - name: Run Test target
+        env:
+          SPICE_STD_DIR: /home/runner/work/spice/spice/std
+        run: |
+          cd ./bin/test
+          ./Spice_test
