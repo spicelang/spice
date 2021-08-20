@@ -30,7 +30,15 @@ int main(int argc, char** argv) { // Call ./spicec filePath targetTriplet output
      * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
      * function again.
      */
-    CompilerInstance::CompileSourceFile(mainSourceFile, targetTriple, objectDir, debugOutput, optLevel, true);
+    try {
+        CompilerInstance::CompileSourceFile(mainSourceFile, targetTriple, objectDir, debugOutput, optLevel, true);
+    } catch (SemanticError& e) {
+        std::cout << e.what() << std::endl;
+        std::exit(1); // Exit with negative result code
+    } catch (IRError& e) {
+        std::cout << e.what() << std::endl;
+        std::exit(1); // Exit with negative result code
+    }
 
     return 0;
 }

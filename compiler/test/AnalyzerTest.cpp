@@ -113,7 +113,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 24
             "error-must-contain-main-function",
-            "Semantic error at 1:1: Spice programs must contain a main function: No main function found."
+            "Semantic error at 1:1: Spice programs must contain a main function: No main function found"
         },
         { // 25
             "error-function-arg-decl-type-dyn",
@@ -142,13 +142,17 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         { // 31
             "error-continue-count-not-too-high",
             "Semantic error at 7:26: Invalid number of continue calls: We only can continue 2 time(s) here"
+        }, // 32
+        {
+            "error-circular-import",
+            "Semantic error - Circular import detected: ./test-files/analyzer/error-circular-import/source1.spice"
         },
         // Successful tests
-        { // 32
+        { // 33
             "success-fibonacci",
             ""
         },
-        { // 33
+        { // 34
             "success-function-overloading",
             ""
         }
@@ -159,9 +163,11 @@ class AnalyzerTests : public ::testing::TestWithParam<AnalyzerParams> {};
 TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
     AnalyzerParams param = GetParam();
 
+    std::string sourceFile = "./test-files/analyzer/" + param.testCaseName + "/source.spice";
+
     // Read source file
     std::ifstream sourceStream;
-    sourceStream.open("./test-files/analyzer/" + param.testCaseName + "/source.spice");
+    sourceStream.open(sourceFile);
     antlr4::ANTLRInputStream input(sourceStream);
 
     // Parse input to AST
@@ -174,10 +180,10 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
     try {
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
-                "source.spice",
+                sourceFile,
                 "",
                 ".",
-                true,
+                false,
                 3,
                 true
         );

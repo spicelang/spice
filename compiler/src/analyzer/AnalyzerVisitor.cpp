@@ -10,7 +10,7 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 
     // Check if the visitor got a main function
     if (mustHaveMainFunction && !hasMainFunction)
-        throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found.");
+        throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
 
     // Post traversing actions
 
@@ -253,6 +253,10 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
                                                             + "' was not found in std library");
         }
     } else { // Include own source file
+        // Check in module registry if the file can be imported
+        ModuleRegistry* registry = ModuleRegistry::getInstance();
+        registry->addModule(FileUtil::getFileDir(mainSourceFile) + "/" + importPath);
+        // Import file
         if (FileUtil::fileExists(FileUtil::getFileDir(mainSourceFile) + "/" + importPath)) {
             filePath = FileUtil::getFileDir(mainSourceFile) + "/" + importPath;
         } else {

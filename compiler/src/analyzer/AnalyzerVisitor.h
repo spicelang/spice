@@ -7,6 +7,7 @@
 
 #include <CompilerInstance.h>
 #include "SymbolTable.h"
+#include "ModuleRegistry.h"
 #include <util/ScopeIdUtil.h>
 #include <util/FileUtil.h>
 #include <exception/SemanticError.h>
