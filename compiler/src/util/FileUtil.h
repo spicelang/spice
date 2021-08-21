@@ -6,6 +6,9 @@
 #include <iostream>
 #include <fstream>
 
+/**
+ * Util class for file-related work
+ */
 class FileUtil {
 public:
     static bool fileExists(const std::string&);

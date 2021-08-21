@@ -2,19 +2,43 @@
 
 #include "SemanticError.h"
 
+/**
+ * Constructor: Used in case that the exact code position where the error occurred is known
+ *
+ * @param token Syntax token, where the error occurred
+ * @param type Type of the error
+ * @param message Error message suffix
+ */
 SemanticError::SemanticError(const antlr4::Token& token, SemanticErrorType type, const std::string& message) {
     auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
     errorMessage = "Semantic error at " + codeLoc + ": " + getMessagePrefix(type) + ": " + message;
 }
 
+/**
+ * Constructor: Used in case that the exact code position where the error occurred is unknown
+ *
+ * @param type Type of the error
+ * @param message Error message suffix
+ */
 SemanticError::SemanticError(SemanticErrorType type, const std::string& message) {
     errorMessage = "Semantic error - " + getMessagePrefix(type) + ": " + message;
 }
 
+/**
+ * Get the message for this particular error instance
+ *
+ * @return Error message in form of a char array
+ */
 const char* SemanticError::what() const noexcept {
     return errorMessage.c_str();
 }
 
+/**
+ * Get the prefix of the error message for a particular error
+ *
+ * @param type Type of the error
+ * @return Prefix string for the error type
+ */
 std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     switch (type) {
         case REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE:

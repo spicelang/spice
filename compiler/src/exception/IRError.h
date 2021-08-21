@@ -17,6 +17,9 @@ enum IRErrorType {
     INVALID_MODULE
 };
 
+/**
+ * Custom exception for errors, occurring in the code generation phase
+ */
 class IRError : public std::exception {
 public:
     // Constructors

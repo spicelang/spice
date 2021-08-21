@@ -26,6 +26,9 @@ enum SemanticErrorType {
     CIRCULAR_DEPENDENCY,
 };
 
+/**
+ * Custom exception for errors, occurring in the semantic analysis phase
+ */
 class SemanticError : public std::exception {
 public:
     // Constructors
