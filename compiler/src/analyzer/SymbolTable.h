@@ -13,6 +13,10 @@
 #include <SpiceParser.h>
 #include "SymbolTableEntry.h"
 
+/**
+ * Class for storing information about symbols of the AST. Symbol tables are meant to be arranged in a tree structure,
+ * so that you can navigate with the getParent() and getChild() methods up and down the tree.
+ */
 class SymbolTable {
 public:
     // Constructors
@@ -22,8 +26,6 @@ public:
     void insert(const std::string&, SymbolType, SymbolState, bool, bool);
 
     SymbolTableEntry* lookup(const std::string&);
-
-    SymbolTableEntry* lookup(const std::vector<std::string>&);
 
     SymbolTable* lookupTable(const std::vector<std::string>&);
 
