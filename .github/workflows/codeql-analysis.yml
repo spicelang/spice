@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v2
 
       - name: Initialize CodeQL
@@ -25,13 +25,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-12-0-1
+          key: llvm-13-0-0
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
-          git clone https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
@@ -50,15 +50,21 @@ jobs:
           cd ./lib
           git clone https://github.com/antlr/antlr4.git
 
-      - name: Build project
-        uses: nicledomaS/cmake_build_action@v1.4
+      #- name: Build project
+      #  uses: nicledomaS/cmake_build_action@v1.4
+      #  env:
+      #    LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
+      #  with:
+      #    submodule_update: ON
+      #    run_tests: ON
+      #    cmake_args: -DWITH_TESTS=ON
+      #    unit_test_build: -Dtest=ON
+
+      - name: Run Test target
         env:
-          LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
-        with:
-          submodule_update: ON
-          run_tests: ON
-          cmake_args: -DWITH_TESTS=ON
-          unit_test_build: -Dtest=ON
+          SPICE_STD_DIR: /home/runner/work/spice/spice/std
+        run: |
+          cd ./bin/test
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
