@@ -78,22 +78,22 @@ void GeneratorVisitor::optimize() {
 
 void GeneratorVisitor::emit() {
     // Configure output target
-    if (targetTriple.empty()) targetTriple = llvm::sys::getDefaultTargetTriple();
-    module->setTargetTriple(targetTriple);
+    std::string tripletString = targetTriple.getTriple();
+    module->setTargetTriple(tripletString);
 
     if (debugOutput)
-        std::cout << "\nEmitting executable for triplet '" << targetTriple << "' to path: " << objectDir << std::endl;
+        std::cout << "\nEmitting executable for triplet '" << tripletString << "' to path: " << objectDir << std::endl;
 
     // Search after selected target
     std::string error;
-    const llvm::Target* target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
+    const llvm::Target* target = llvm::TargetRegistry::lookupTarget(tripletString, error);
     if (!target) throw IRError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error);
 
     std::string cpu = "generic";
 
     llvm::TargetOptions opt;
     llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
-    llvm::TargetMachine* targetMachine = target->createTargetMachine(targetTriple, cpu, "", opt, rm);
+    llvm::TargetMachine* targetMachine = target->createTargetMachine(tripletString, cpu, "", opt, rm);
 
     module->setDataLayout(targetMachine->createDataLayout());
 

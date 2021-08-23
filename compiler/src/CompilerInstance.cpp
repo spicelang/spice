@@ -15,7 +15,9 @@
  */
 SymbolTable* CompilerInstance::CompileSourceFile(
         std::string& mainSourceFile,
-        const std::string& targetTriple,
+        const std::string& targetArch,
+        const std::string& targetVendor,
+        const std::string& targetOs,
         const std::string& objectDir,
         bool debugOutput,
         int optLevel,
@@ -36,14 +38,16 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     SymbolTable* symbolTable;
     AnalyzerVisitor analyzer = AnalyzerVisitor(
             mainSourceFile,
-            targetTriple,
+            targetArch,
+            targetVendor,
+            targetOs,
             objectDir,
             debugOutput,
             optLevel,
-            mustHaveMainFunction
-            );
+            mustHaveMainFunction);
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
-    if (debugOutput) { // Print symbol table in debug mode
+    if (debugOutput) {
+        // Print symbol table
         std::cout << "\nSymbol table of file " << mainSourceFile << ":\n" << std::endl;
         std::cout << symbolTable->toString() << std::endl;
     }
@@ -55,21 +59,24 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     GeneratorVisitor generator = GeneratorVisitor(
             symbolTable,
             fileName,
-            targetTriple,
+            targetArch,
+            targetVendor,
+            targetOs,
             objectDir + "/" + fileName + ".o",
             debugOutput,
             optLevel,
-            mustHaveMainFunction
-            );
+            mustHaveMainFunction);
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
-    if (debugOutput) { // Dump un-optimized IR code, if debug output is enabled
+    if (debugOutput) {
+        // Dump unoptimized IR code
         std::cout << "\nIR code:" << std::endl;
         generator.dumpIR();
     }
 
     generator.optimize(); // Optimize IR code
-    if (debugOutput) { // Dump optimized IR code, if debug output is enabled
+    if (debugOutput) {
+        // Dump optimized IR code
         std::cout << "\nOptimized IR code:" << std::endl;
         generator.dumpIR();
     }

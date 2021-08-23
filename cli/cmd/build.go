@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,7 +11,11 @@ import (
 )
 
 // Build takes the passed code file, resolves its dependencies and emits an executable, representing its functionality
-func Build(sourceFile string, targetTriple string, outputFile string, debugOutput bool, optLevel int) {
+func Build(
+	sourceFile, targetArch, targetVendor, targetOs, outputFile string,
+	debugOutput bool,
+	optLevel int,
+) {
 	sourceFileName := filepath.Base(sourceFile)
 	sourceFileNameWithoutExt := strings.TrimSuffix(sourceFileName, filepath.Ext(sourceFileName))
 
@@ -22,20 +27,23 @@ func Build(sourceFile string, targetTriple string, outputFile string, debugOutpu
 	}
 
 	// Compile program ane emit object file to temp dir
-	internal.Compile(sourceFile, targetTriple, objectDir, debugOutput, optLevel)
+	internal.Compile(sourceFile, targetArch, targetVendor, targetOs, objectDir, debugOutput, optLevel)
 
 	// Set default value for outputFile
-	if runtime.GOOS == "windows" {
+	if strings.HasPrefix(targetOs, "windows") || (targetOs == "" && runtime.GOOS == "windows") {
 		if outputFile == "" {
 			outputFile = ".\\" + sourceFileNameWithoutExt + ".exe"
 		} else if !strings.HasSuffix(outputFile, ".exe") {
 			outputFile += ".exe"
 		}
-	} else if runtime.GOOS == "linux" {
+	} else if strings.HasPrefix(targetOs, "linux") || (targetOs == "" && runtime.GOOS == "linux") {
 		if outputFile == "" {
 			outputFile = "./" + sourceFileNameWithoutExt
 		}
+	} else {
+		util.Error("Unable to build. You have to specify a target kernel", true)
 	}
+	fmt.Println(outputFile)
 
 	// Run g++ with all object files
 	objectFiles := util.GetObjectFileTree(objectDir)

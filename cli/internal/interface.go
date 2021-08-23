@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"os/exec"
 	"spice/util"
 	"strconv"
@@ -15,7 +16,7 @@ import (
 const COMPILER_EXECUTABLE_NAME = "spicec"
 
 // Compile executes the compiler executable with the provided input arguments
-func Compile(sourceFile string, targetTriple string, objectDir string, debugOutput bool, optLevel int) {
+func Compile(sourceFile, targetArch, targetVendor, targetOs, objectDir string, debugOutput bool, optLevel int) {
 	// Search for executable
 	executablePath, _ := osext.Executable()
 	executablePath = strings.ReplaceAll(executablePath, "\\", "/")
@@ -29,11 +30,13 @@ func Compile(sourceFile string, targetTriple string, objectDir string, debugOutp
 		util.Error("Compiler executable not found. Please check your installation / re-install Spice", true)
 	}
 
-	// Execute compiler executable for main source file. e.g.: spicec "./sourceFile.spice" "x86_64-w64-windows-gnu"
+	// Execute compiler executable for main source file. e.g.: spicec "./sourceFile.spice" "x86_64" "w64" "windows" "." "true", "3"
 	cmd := exec.Command(
 		executablePath+COMPILER_EXECUTABLE_NAME,
 		sourceFile,
-		targetTriple,
+		targetArch,
+		targetVendor,
+		targetOs,
 		objectDir,
 		strconv.FormatBool(debugOutput),
 		strconv.Itoa(optLevel),
@@ -50,6 +53,8 @@ func Compile(sourceFile string, targetTriple string, objectDir string, debugOutp
 		} else {
 			util.Error("Failed to call compiler executable", true)
 		}
+	} else if debugOutput {
+		fmt.Println(string(output))
 	}
 }
 
