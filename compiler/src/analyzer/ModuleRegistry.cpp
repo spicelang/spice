@@ -14,7 +14,7 @@ ModuleRegistry* ModuleRegistry::instance = nullptr;
  */
 void ModuleRegistry::addModule(const std::string& modulePath) {
     if (std::find(modulePaths.begin(), modulePaths.end(), modulePath) != modulePaths.end())
-        throw SemanticError(CIRCULAR_DEPENDENCY, modulePath);
+        throw SemanticError(CIRCULAR_DEPENDENCY, "'" + modulePath + ".spice'");
     modulePaths.push_back(modulePath);
 }
 

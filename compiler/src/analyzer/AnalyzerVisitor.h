@@ -12,6 +12,9 @@
 #include <util/FileUtil.h>
 #include <exception/SemanticError.h>
 
+#include <llvm/ADT/Triple.h>
+#include <llvm/Support/Host.h>
+
 #include <utility>
 
 const static std::string RETURN_VARIABLE_NAME = "result";
@@ -19,16 +22,23 @@ const static std::string RETURN_VARIABLE_NAME = "result";
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
-    explicit AnalyzerVisitor(std::string sourceFile, std::string  targetArch, std::string  targetVendor,
-                             std::string targetOs, std::string outputPath, bool debugOutput, int optLevel,
-                             bool mustHaveMainFunction) : mainSourceFile(std::move(sourceFile)),
-                                                          targetArch(std::move(targetArch)),
-                                                          targetVendor(std::move(targetVendor)),
-                                                          targetOs(std::move(targetOs)),
-                                                          objectDir(std::move(outputPath)),
-                                                          debugOutput(debugOutput),
-                                                          optLevel(optLevel),
-                                                          mustHaveMainFunction(mustHaveMainFunction) {}
+    explicit AnalyzerVisitor(std::string sourceFile, std::string targetArch, std::string targetVendor, std::string targetOs,
+                             std::string outputPath, bool debugOutput, int optLevel, bool mustHaveMainFunction) :
+            mainSourceFile(std::move(sourceFile)),
+            targetArch(std::move(targetArch)),
+            targetVendor(std::move(targetVendor)),
+            targetOs(std::move(targetOs)),
+            objectDir(std::move(outputPath)),
+            debugOutput(debugOutput),
+            optLevel(optLevel),
+            mustHaveMainFunction(mustHaveMainFunction) {
+        if (targetArch.empty()) {
+            llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+            targetArch = targetTriple.getArchName();
+            targetVendor = targetTriple.getVendorName();
+            targetOs = targetTriple.getOSName();
+        }
+    }
 
     // Public methods
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;

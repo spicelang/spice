@@ -17,8 +17,7 @@ void GeneratorVisitor::init() {
 }
 
 void GeneratorVisitor::optimize() {
-    if (debugOutput)
-        std::cout << "\nOptimizing on level " + std::to_string(optLevel) << " ..." << std::endl;
+    if (debugOutput) std::cout << "\nOptimizing on level " + std::to_string(optLevel) << " ..." << std::endl;
 
     // Declare map with all optimization passes in the required order
     llvm::Pass* passes[] = {

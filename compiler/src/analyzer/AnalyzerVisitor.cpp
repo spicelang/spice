@@ -238,7 +238,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
     std::string importPath = ctx->STRING()->toString();
-    importPath = importPath.substr(1, importPath.size() - 2) + ".spice";
+    importPath = importPath.substr(1, importPath.size() - 2);
 
     // Check if source file exists
     std::string filePath;
@@ -255,21 +255,31 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
                                 "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
         }
         // Check if source file exists
-        if (FileUtil::fileExists(stdPath + sourceFileIden)) {
-            filePath = "/usr/lib/spice/std/" + sourceFileIden;
+        if (FileUtil::fileExists(stdPath + sourceFileIden + ".spice")) {
+            filePath = "/usr/lib/spice/std/" + sourceFileIden + ".spice";
+        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + targetOs + ".spice")) {
+            filePath = "/usr/lib/spice/std/" + sourceFileIden + "_" + targetOs + ".spice";
+        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice")) {
+            filePath = "/usr/lib/spice/std/" + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice";
         } else {
             throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath +
-                                                            "' was not found in std library");
+                                                            ".spice' was not found in std library");
         }
     } else { // Include own source file
         // Check in module registry if the file can be imported
+        std::string sourceFileDir = FileUtil::getFileDir(mainSourceFile);
         ModuleRegistry* registry = ModuleRegistry::getInstance();
-        registry->addModule(FileUtil::getFileDir(mainSourceFile) + "/" + importPath);
+        registry->addModule(sourceFileDir + "/" + importPath);
         // Import file
-        if (FileUtil::fileExists(FileUtil::getFileDir(mainSourceFile) + "/" + importPath)) {
-            filePath = FileUtil::getFileDir(mainSourceFile) + "/" + importPath;
+        if (FileUtil::fileExists(sourceFileDir + "/" + importPath + ".spice")) {
+            filePath = sourceFileDir + "/" + importPath + ".spice";
+        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + targetOs + ".spice")) {
+            filePath = sourceFileDir + "/" + importPath + "_" + targetOs + ".spice";
+        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice")) {
+            filePath = sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice";
         } else {
-            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath + "' does not exist");
+            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath +
+                                                            ".spice' does not exist");
         }
     }
 

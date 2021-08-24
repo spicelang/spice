@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -43,7 +42,6 @@ func Build(
 	} else {
 		util.Error("Unable to build. You have to specify a target kernel", true)
 	}
-	fmt.Println(outputFile)
 
 	// Run g++ with all object files
 	objectFiles := util.GetObjectFileTree(objectDir)

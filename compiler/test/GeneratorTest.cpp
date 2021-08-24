@@ -74,6 +74,8 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
         AnalyzerVisitor analyzer = AnalyzerVisitor(
                 sourceFile,
                 "",
+                "",
+                "",
                 ".",
                 false,
                 3,
@@ -89,6 +91,8 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
         GeneratorVisitor generator = GeneratorVisitor(
                 symbolTable,
                 sourceFile,
+                "",
+                "",
                 "",
                 ".",
                 false,

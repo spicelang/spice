@@ -1,3 +1,5 @@
+import "os" as os;
+
 f<int> main() {
-    printf("Hello World");
+    printf("Os: %s", getOsName());
 }
