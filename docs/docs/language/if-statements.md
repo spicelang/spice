@@ -14,7 +14,7 @@ if counter <= 10 {
 ```
 The block between the curly braces only gets executed when the variable `counter` is less or equal 10, otherwise it is going to be ignored.
 
-Let's take a loop at a more complex condition:
+Let's take a look at a more complex condition:
 ```spice
 dyn counter = 1;
 bool otherCondition = false;
