@@ -45,14 +45,14 @@ jobs:
           cd ./lib
           git clone --depth 1 https://github.com/antlr/antlr4.git
 
-      #- name: Build Test target
-      #  env:
-      #    LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
-      #  run: |
-      #    mkdir bin
-      #    cd bin
-      #    cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON -Wattributes ..
-      #    cmake --build . --target Spice_test
+      - name: Build Test target
+        env:
+          LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
+        run: |
+          mkdir bin
+          cd bin
+          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON -Wattributes ..
+          cmake --build . --target Spice_test
 
       #- name: Build project
       #  uses: nicledomaS/cmake_build_action@v1.4
@@ -65,9 +65,9 @@ jobs:
       #    cmake_args: -DWITH_TESTS=ON -Wattributes
       #    unit_test_build: -Dtest=ON
 
-      #- name: Run Test target
-      #  env:
-      #    SPICE_STD_DIR: /home/runner/work/spice/spice/std
-      #  run: |
-      #    cd ./bin/test
-      #    ./Spice_test
+      - name: Run Test target
+        env:
+          SPICE_STD_DIR: /home/runner/work/spice/spice/std
+        run: |
+          cd ./bin/test
+          ./Spice_test
