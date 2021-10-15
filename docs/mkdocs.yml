@@ -2,7 +2,7 @@ site_name: Spice
 site_url: https://www.spicelang.com
 site_description: Spice Programming Language
 site_author: Marc Auberer
-copyright: Made with ❤️ by Spice contributors, powered by ChilliBits.
+copyright: Made with ❤️ by Spice contributors, powered by <a href="https://www.chillibits.com" target="_blank">ChilliBits</a>.
 repo_name: chillibits/spice
 repo_url: https://github.com/chillibits/spice
 edit_uri: edit/main/docs/docs/
@@ -33,6 +33,9 @@ theme:
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
+
+extra_css:
+  - stylesheets/styles.css
 
 plugins:
   - search:

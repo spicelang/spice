@@ -2,7 +2,7 @@
 title: Primitive data types
 ---
 
-Spice supports five different primitive data types: `double`, `int`, `string`, `bool` and `dyn`.
+Spice supports four different primitive data types out of the box: `double`, `int`, `string` and `bool`. In addition, there is a builtin type-inferred type, called `dyn`.
 Let us take a look at each one individually!
 
 ## The `double` data type
@@ -39,7 +39,7 @@ variable2 = "Hello World!";
 ```
 
 ## The `bool` data type
-Booleans are 1-bit integers and can be assigned with the exactly two values `true` or `false`.
+Booleans are 1-bit integers and can be assigned with the exactly two values: `true` or `false`.
 
 In Spice, variables of type `bool` can be defined like this:
 ```spice
@@ -68,4 +68,4 @@ variable3 = "demo string";
 ```
 
 !!! note "Usage of the dyn data type"
-    The dyn data type can not be used everywhere. Function arguments can only be declared as `dyn`, when they have a default value attached to them. For more information about [functions](../functions), visit the respective section.
+    The dyn data type can not be used everywhere. Function arguments can only be declared as `dyn`, when they have a default value attached to them. For more information about [functions](../functions), visit the respective documentation section.

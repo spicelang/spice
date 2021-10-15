@@ -24,7 +24,7 @@ If you want to build the executable, you can use the `build.sh` for Linux or the
     ```
 === "Windows"
     ```sh
-    build.bat
+    .\build.bat
     ```
 
 The executables will end up in the `bin` subfolder.
@@ -38,7 +38,7 @@ If you don't care about the executable and you just want to use Spice, you can u
     ```
 === "Windows"
     ```sh
-    install.bat
+    .\install.bat
     ```
 
 ### Use
