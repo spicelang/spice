@@ -9,6 +9,7 @@ Here is an example of a simple `while` loop:
 ```spice
 int counter = 0;
 while counter < 20 {
+	printf("Loop run %d", counter);
 	counter++;
 }
 ```

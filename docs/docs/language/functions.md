@@ -2,7 +2,7 @@
 title: Functions
 ---
 
-Spice distinguishes strictly between functions and procedures. Functions are used to calculate something from a given input. Other than procedures, functions must have a return value. The paradigma here is, that a function calculates and returns something whereas a procedure executes some action.
+Spice distinguishes strictly between functions and procedures. Functions are used to return something, that was calculated from a given input. Other than procedures, functions must have a return value. The paradigma here is, that a function calculates and returns something whereas a procedure executes some action without a result.
 
 Functions in Spice can be defined like this:
 ```spice

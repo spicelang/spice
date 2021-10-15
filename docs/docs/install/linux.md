@@ -3,9 +3,10 @@ title: Install on Linux
 ---
 
 ### Install from repository
-=== "Debian/Ubuntu/Raspbian"
+=== "Debian/Ubuntu"
     To install Spice on Debian, execute the following commands in your terminal:
     ```sh
+    sudo apt-get install ca-certificates
     curl -fsSL https://server.chillibits.com/files/repo/gpg | sudo apt-key add -
 	sudo add-apt-repository "deb https://repo.chillibits.com/$(lsb_release -is | awk '{print tolower($0)}')-$(lsb_release -cs) $(lsb_release -cs) main"
 	sudo apt-get install spice
@@ -27,8 +28,18 @@ title: Install on Linux
 	sudo yum install spice
     ```
 
-=== "Alpine"
-    *Spice will be published for Alpine soon ...*
+=== "Raspbian"
+    To install Spice on Debian, execute the following commands in your terminal:
+    ```sh
+    sudo apt-get install ca-certificates
+    curl -fsSL https://server.chillibits.com/files/repo/gpg | sudo apt-key add -
+    sudo echo "deb [arch=armhf] https://repo.chillibits.com/$(lsb_release -is | awk '{print tolower($0)}')-$(lsb_release -cs) $(lsb_release -cs) main" > /etc/apt/sources.list.d/chillibits.list
+    sudo apt-get update
+    sudo apt-get install spice
+    ```
+
+    !!! warning
+        The support for Raspbian is at the experimental stage. Please File a bug ticket on <a href="https://github.com/chillibits/spice/issues/new/choose" target="_blank">GitHub</a> if there occurs a bug for you while installing.
 
 ### Install from package file
 You can also install Spice from a Linux package.
