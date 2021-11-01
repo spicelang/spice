@@ -7,6 +7,7 @@ on:
       - 'main'
       - 'docs/**'
       - 'feature/**'
+      - 'fix/**'
     paths:
       - 'docs/**'
   workflow_dispatch:

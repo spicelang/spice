@@ -45,11 +45,11 @@ title: Install on Linux
 You can also install Spice from a Linux package.
 
 === "Debian/Ubuntu/Raspbian"
-    [Download amd64](https://github.com/chillibits/spice/releases/latest/download/spice_amd64.deb){ .md-button .md-button--primary }
-    [Download arm64](https://github.com/chillibits/spice/releases/latest/download/spice_arm64.deb){ .md-button .md-button--primary }
-    [Download armv5](https://github.com/chillibits/spice/releases/latest/download/spice_armv5.deb){ .md-button .md-button--primary }
-    [Download armv6](https://github.com/chillibits/spice/releases/latest/download/spice_armv6.deb){ .md-button .md-button--primary }
-    [Download armv7](https://github.com/chillibits/spice/releases/latest/download/spice_armv7.deb){ .md-button .md-button--primary }
+    [Download amd64](https://github.com/chillibits/spice/releases/latest/download/spice_amd64.deb){ .md-button .md-button--primary .md-button--small }
+    [Download arm64](https://github.com/chillibits/spice/releases/latest/download/spice_arm64.deb){ .md-button .md-button--primary .md-button--small }
+    [Download armv5](https://github.com/chillibits/spice/releases/latest/download/spice_armv5.deb){ .md-button .md-button--primary .md-button--small }
+    [Download armv6](https://github.com/chillibits/spice/releases/latest/download/spice_armv6.deb){ .md-button .md-button--primary .md-button--small }
+    [Download armv7](https://github.com/chillibits/spice/releases/latest/download/spice_armv7.deb){ .md-button .md-button--primary .md-button--small }
 
     To install it, execute the following command:
     ```sh
@@ -57,11 +57,11 @@ You can also install Spice from a Linux package.
     ```
 
 === "Fedora/CentOS"
-    [Download amd64](https://github.com/chillibits/spice/releases/latest/download/spice_amd64.rpm){ .md-button .md-button--primary }
-    [Download arm64](https://github.com/chillibits/spice/releases/latest/download/spice_arm64.rpm){ .md-button .md-button--primary }
-    [Download armv5](https://github.com/chillibits/spice/releases/latest/download/spice_armv5.rpm){ .md-button .md-button--primary }
-    [Download armv6](https://github.com/chillibits/spice/releases/latest/download/spice_armv6.rpm){ .md-button .md-button--primary }
-    [Download armv7](https://github.com/chillibits/spice/releases/latest/download/spice_armv7.rpm){ .md-button .md-button--primary }
+    [Download amd64](https://github.com/chillibits/spice/releases/latest/download/spice_amd64.rpm){ .md-button .md-button--primary .md-button--small }
+    [Download arm64](https://github.com/chillibits/spice/releases/latest/download/spice_arm64.rpm){ .md-button .md-button--primary .md-button--small }
+    [Download armv5](https://github.com/chillibits/spice/releases/latest/download/spice_armv5.rpm){ .md-button .md-button--primary .md-button--small }
+    [Download armv6](https://github.com/chillibits/spice/releases/latest/download/spice_armv6.rpm){ .md-button .md-button--primary .md-button--small }
+    [Download armv7](https://github.com/chillibits/spice/releases/latest/download/spice_armv7.rpm){ .md-button .md-button--primary .md-button--small }
 
     To install it, execute the following command:
     ```sh
@@ -69,11 +69,11 @@ You can also install Spice from a Linux package.
     ```
 
 === "Alpine"
-    [Download amd64](https://github.com/chillibits/spice/releases/latest/download/spice_amd64.apk){ .md-button .md-button--primary }
-    [Download arm64](https://github.com/chillibits/spice/releases/latest/download/spice_arm64.apk){ .md-button .md-button--primary }
-    [Download armv5](https://github.com/chillibits/spice/releases/latest/download/spice_armv5.apk){ .md-button .md-button--primary }
-    [Download armv6](https://github.com/chillibits/spice/releases/latest/download/spice_armv6.apk){ .md-button .md-button--primary }
-    [Download armv7](https://github.com/chillibits/spice/releases/latest/download/spice_armv7.apk){ .md-button .md-button--primary }
+    [Download amd64](https://github.com/chillibits/spice/releases/latest/download/spice_amd64.apk){ .md-button .md-button--primary .md-button--small }
+    [Download arm64](https://github.com/chillibits/spice/releases/latest/download/spice_arm64.apk){ .md-button .md-button--primary .md-button--small }
+    [Download armv5](https://github.com/chillibits/spice/releases/latest/download/spice_armv5.apk){ .md-button .md-button--primary .md-button--small }
+    [Download armv6](https://github.com/chillibits/spice/releases/latest/download/spice_armv6.apk){ .md-button .md-button--primary .md-button--small }
+    [Download armv7](https://github.com/chillibits/spice/releases/latest/download/spice_armv7.apk){ .md-button .md-button--primary .md-button--small }
 
     To install it, execute the following command:
     ```sh
