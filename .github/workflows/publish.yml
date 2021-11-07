@@ -139,13 +139,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-
 
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v3
-        with:
-          gpg-private-key: ${{ secrets.GPG_PACKAGE_SIGNING }}
-          passphrase: ${{ secrets.GPG_PACKAGE_SIGNING_PASSPHRASE }}
-
       - name: Docker login GHCR
         uses: docker/login-action@v1
         with:
@@ -175,18 +168,14 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
-          version: v0.182.1
+          version: v0.184.0
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          NFPM_PUBLISH_DEB_PASSPHRASE: ${{ secrets.GPG_PACKAGE_SIGNING_PASSPHRASE }}
-          NFPM_PUBLISH_RPM_PASSPHRASE: ${{ secrets.GPG_PACKAGE_SIGNING_PASSPHRASE }}
-          NFPM_PUBLISH_APK_PASSPHRASE: ${{ secrets.GPG_PACKAGE_SIGNING_PASSPHRASE }}
-          TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
-          TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
-          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+          #TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
+          #TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
+          #TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          #TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
 
       - uses: actions/upload-artifact@v2
         with:
@@ -236,15 +225,15 @@ jobs:
       
       - name: Deploy to CentOS repo
         run: |
-          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --upload-file ./spice_${{ matrix.arch }}.rpm ${{ secrets.NEXUS_URL }}/centos/spice-latest.rpm
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --upload-file ./spice_${{ matrix.arch }}.rpm ${{ secrets.NEXUS_URL }}/centos/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.rpm
       
       - name: Deploy to Fedora repo
         run: |
-          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --upload-file ./spice_${{ matrix.arch }}.rpm ${{ secrets.NEXUS_URL }}/fedora/spice-latest.rpm
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --upload-file ./spice_${{ matrix.arch }}.rpm ${{ secrets.NEXUS_URL }}/fedora/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.rpm
 
 #      - name: Deploy to Alpine repo
 #        run: |
-#          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/"
+#          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.apk"
 
 #  build-win-installers:
 #    name: Build installers
