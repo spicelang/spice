@@ -41,7 +41,5 @@ func Install(c *cli.Context) error {
 	installPath := util.SourceFileToInstallPath(sourceFile)
 
 	// Build executable to the install path
-	buildFromSourceFile(sourceFile, "", "", "", installPath, debugOutput, optLevel)
-
-	return nil
+	return buildFromSourceFile(sourceFile, "", "", "", installPath, debugOutput, optLevel)
 }

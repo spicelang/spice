@@ -58,13 +58,17 @@ func Run(c *cli.Context) error {
 	}
 
 	// Compile program and emit executable file to tmp dir
-	buildFromSourceFile(sourceFile, "", "", "", buildPath, debugOutput, optLevel)
+	err := buildFromSourceFile(sourceFile, "", "", "", buildPath, debugOutput, optLevel)
+	if err != nil {
+		util.Error("Building source file failed", true)
+		return err
+	}
 
 	// Run executable
 	cmd := exec.Command(buildPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		util.Error("Could not run executable", true)
 	}
