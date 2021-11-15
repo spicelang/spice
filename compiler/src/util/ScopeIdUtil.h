@@ -5,6 +5,9 @@
 #include <string>
 #include <SpiceParser.h>
 
+/**
+ * Util class to generate scope identifiers for different AST nodes
+ */
 class ScopeIdUtil {
 public:
     static std::string getScopeId(SpiceParser::MainFunctionDefContext*);

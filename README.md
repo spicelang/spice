@@ -25,7 +25,25 @@ Please visit the documentation at [spicelang.com](https://www.spicelang.com).
 The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTLR grammar configuration file.
 
 ## Available target platforms
-*All LLVM output platforms. To be extended ...*
+### Target architecture
+- `aarch64`
+- `amdgpu`
+- `armv5`, `armv6`, `armv7`
+- `avr`
+- `bpf`
+- `hexagon`
+- `lanai`
+- `mips`
+- `msp430`
+- `nvptx`
+- `powerpc`
+- `riscv`
+- `sparc`
+- `systemz`
+- `webassembly`
+- `x86`
+- `x86_64`
+- `xcore`
 
 ## CMake instructions for building LLVM (required for building Spice itself)
 **Configure:**

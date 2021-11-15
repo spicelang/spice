@@ -22,4 +22,5 @@ if (otherCondition ? counter : 5) != 1 {
 	counter--;
 }
 ```
+
 This peace of code is a bit pointless but you can see, that you can also have more complex conditions in there.

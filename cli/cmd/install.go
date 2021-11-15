@@ -9,5 +9,5 @@ func Install(sourceFile string, debugOutput bool, optLevel int) {
 	installPath := util.SourceFileToInstallPath(sourceFile)
 
 	// Build executable to the install path
-	Build(sourceFile, "", installPath, debugOutput, optLevel)
+	Build(sourceFile, "", "", "", installPath, debugOutput, optLevel)
 }

@@ -17,6 +17,9 @@ enum SymbolState {
     INITIALIZED
 };
 
+/**
+ * Entry of a symbol table, representing an individual symbol with all its properties
+ */
 class SymbolTableEntry {
 public:
     // Constructors

@@ -1,6 +1,7 @@
 project_name: spice
 builds:
   - dir: cli
+    main: ./spice.go
     goos:
       - linux
       #- windows
@@ -33,7 +34,7 @@ nfpms:
     file_name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     maintainer: Marc Auberer <marc.auberer@chillibits.com>
     description: Spice programming language.
-    homepage: https://github.com/chillibits/spice
+    homepage: https://www.spicelang.com
     license: MIT
     bindir: /usr/bin
     formats:

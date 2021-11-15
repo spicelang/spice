@@ -5,7 +5,7 @@
 /**
  * Compiles a single source file to an object
  *
- * @param mainSourceFile Full path to a file (absolute or relative)
+ * @param sourceFile Full path to a file (absolute or relative)
  * @param targetTriple Target triplet string: e.g.: x86_64-w64-windows-gnu
  * @param outputPath Full path to an output file (absolute or relative)
  * @param debugOutput Set to true to show compiler debug output
@@ -14,8 +14,10 @@
  * @return Symbol table of this program part
  */
 SymbolTable* CompilerInstance::CompileSourceFile(
-        std::string& mainSourceFile,
-        const std::string& targetTriple,
+        std::string& sourceFile,
+        const std::string& targetArch,
+        const std::string& targetVendor,
+        const std::string& targetOs,
         const std::string& objectDir,
         bool debugOutput,
         int optLevel,
@@ -23,7 +25,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
 ) {
     // Read from file
     std::ifstream stream;
-    stream.open(mainSourceFile);
+    stream.open(sourceFile);
     antlr4::ANTLRInputStream input(stream);
 
     // Parse input to AST
@@ -35,41 +37,46 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     // Execute syntactical analysis
     SymbolTable* symbolTable;
     AnalyzerVisitor analyzer = AnalyzerVisitor(
-            mainSourceFile,
-            targetTriple,
+            sourceFile,
+            targetArch,
+            targetVendor,
+            targetOs,
             objectDir,
             debugOutput,
             optLevel,
-            mustHaveMainFunction
-            );
+            mustHaveMainFunction);
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
-    if (debugOutput) { // Print symbol table in debug mode
-        std::cout << "\nSymbol table of file " << mainSourceFile << ":\n" << std::endl;
+    if (debugOutput) {
+        // Print symbol table
+        std::cout << "\nSymbol table of file " << sourceFile << ":\n" << std::endl;
         std::cout << symbolTable->toString() << std::endl;
     }
 
     // Get file name from file path
-    std::string fileName = FileUtil::getFileName(mainSourceFile);
+    std::string fileName = FileUtil::getFileName(sourceFile);
 
     // Execute generator
     GeneratorVisitor generator = GeneratorVisitor(
             symbolTable,
             fileName,
-            targetTriple,
+            targetArch,
+            targetVendor,
+            targetOs,
             objectDir + "/" + fileName + ".o",
             debugOutput,
             optLevel,
-            mustHaveMainFunction
-            );
+            mustHaveMainFunction);
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
-    if (debugOutput) { // Dump un-optimized IR code, if debug output is enabled
+    if (debugOutput) {
+        // Dump unoptimized IR code
         std::cout << "\nIR code:" << std::endl;
         generator.dumpIR();
     }
 
     generator.optimize(); // Optimize IR code
-    if (debugOutput) { // Dump optimized IR code, if debug output is enabled
+    if (debugOutput) {
+        // Dump optimized IR code
         std::cout << "\nOptimized IR code:" << std::endl;
         generator.dumpIR();
     }

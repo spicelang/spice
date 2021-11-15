@@ -7,6 +7,9 @@
 #include <vector>
 #include <analyzer/SymbolTableEntry.h>
 
+/**
+ * Util class for generating function/procedure signatures
+ */
 class FunctionSignature {
 public:
     // Constructors

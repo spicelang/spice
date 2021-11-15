@@ -238,35 +238,57 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
     std::string importPath = ctx->STRING()->toString();
-    importPath = importPath.substr(1, importPath.size() - 2) + ".spice";
+    importPath = importPath.substr(1, importPath.size() - 2);
 
     // Check if source file exists
     std::string filePath;
     if (importPath.rfind("std/", 0) == 0) { // Include source file from standard library
         std::string sourceFileIden = importPath.substr(importPath.find("std/") + 4);
-        if (FileUtil::fileExists("/usr/lib/spice/std/" + sourceFileIden)) {
-            filePath = "/usr/lib/spice/std/" + sourceFileIden;
-        } else if (FileUtil::fileExists(std::string(std::getenv("SPICE_STD_DIR")) + "/" + sourceFileIden)) {
-            filePath = std::string(std::getenv("SPICE_STD_DIR")) + "/" + sourceFileIden;
+        // Find std library
+        std::string stdPath;
+        if (FileUtil::fileExists("/usr/lib/spice/std")) {
+            stdPath = "/usr/lib/spice/std/";
+        } else if (FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
+            stdPath = std::string(std::getenv("SPICE_STD_DIR"));
+            if (stdPath.rfind("/") != stdPath.size() - 1) {
+                stdPath += "/";
+            }
         } else {
-            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath
-                                                            + "' was not found in std library");
+            throw SemanticError(STD_NOT_FOUND,
+                                "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
+        }
+        // Check if source file exists
+        if (FileUtil::fileExists(stdPath + sourceFileIden + ".spice")) {
+            filePath = stdPath + sourceFileIden + ".spice";
+        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + targetOs + ".spice")) {
+            filePath = stdPath + sourceFileIden + "_" + targetOs + ".spice";
+        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice")) {
+            filePath = stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice";
+        } else {
+            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath +
+                                                            ".spice' was not found in std library");
         }
     } else { // Include own source file
         // Check in module registry if the file can be imported
+        std::string sourceFileDir = FileUtil::getFileDir(mainSourceFile);
         ModuleRegistry* registry = ModuleRegistry::getInstance();
-        registry->addModule(FileUtil::getFileDir(mainSourceFile) + "/" + importPath);
+        registry->addModule(sourceFileDir + "/" + importPath);
         // Import file
-        if (FileUtil::fileExists(FileUtil::getFileDir(mainSourceFile) + "/" + importPath)) {
-            filePath = FileUtil::getFileDir(mainSourceFile) + "/" + importPath;
+        if (FileUtil::fileExists(sourceFileDir + "/" + importPath + ".spice")) {
+            filePath = sourceFileDir + "/" + importPath + ".spice";
+        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + targetOs + ".spice")) {
+            filePath = sourceFileDir + "/" + importPath + "_" + targetOs + ".spice";
+        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice")) {
+            filePath = sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice";
         } else {
-            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath + "' does not exist");
+            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath +
+                                                            ".spice' does not exist");
         }
     }
 
     // Kick off the compilation of the imported source file
-    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetTriple, objectDir, debugOutput,
-                                                                   optLevel, false);
+    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetArch, targetVendor, targetOs, objectDir,
+                                                                   debugOutput, optLevel, false);
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();

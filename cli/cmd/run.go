@@ -31,7 +31,7 @@ func Run(sourceFile string, debugOutput bool, optLevel int) {
 	}
 
 	// Compile program and emit executable file to tmp dir
-	Build(sourceFile, "", buildPath, debugOutput, optLevel)
+	Build(sourceFile, "", "", "", buildPath, debugOutput, optLevel)
 
 	// Run executable
 	cmd := exec.Command(buildPath)

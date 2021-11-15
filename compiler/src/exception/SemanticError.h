@@ -21,10 +21,14 @@ enum SemanticErrorType {
     INVALID_BREAK_NUMBER,
     INVALID_CONTINUE_NUMBER,
     PRINTF_TYPE_ERROR,
+    STD_NOT_FOUND,
     IMPORTED_FILE_NOT_EXISTING,
     CIRCULAR_DEPENDENCY,
 };
 
+/**
+ * Custom exception for errors, occurring in the semantic analysis phase
+ */
 class SemanticError : public std::exception {
 public:
     // Constructors

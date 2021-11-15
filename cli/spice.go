@@ -32,12 +32,22 @@ func main() {
 		Usage:   "Builds your Spice program and emits an executable",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{Name: "debug-output", Aliases: []string{"d"}, Usage: "Print compiler output for debugging", Value: false},
-			&cli.StringFlag{Name: "target", Aliases: []string{"t"}, Usage: "Target triple for the emitted executable (for cross-compiling)"},
+			&cli.StringFlag{Name: "target-arch", Aliases: []string{"ta"}, Usage: "Target CPU architecture for the emitted executable (for cross-compiling)"},
+			&cli.StringFlag{Name: "target-vendor", Aliases: []string{"tv"}, Usage: "Target vendor for the emitted executable (for cross-compiling)"},
+			&cli.StringFlag{Name: "target-os", Aliases: []string{"to"}, Usage: "Target os for the emitted executable (for cross-compiling)"},
 			&cli.IntFlag{Name: "opt-level", Aliases: []string{"o"}, Usage: "Set optimization level", Value: 2},
 			&cli.PathFlag{Name: "output", Usage: "Path to the location where the output executable should go"},
 		},
 		Action: func(c *cli.Context) error {
-			cmd.Build(c.Args().Get(0), c.String("target"), c.Path("output"), c.Bool("debug-output"), c.Int("opt-level"))
+			cmd.Build(
+				c.Args().Get(0),
+				c.String("target-arch"),
+				c.String("target-vendor"),
+				c.String("target-os"),
+				c.Path("output"),
+				c.Bool("debug-output"),
+				c.Int("opt-level"),
+			)
 			return nil
 		},
 	}

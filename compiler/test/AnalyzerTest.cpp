@@ -145,7 +145,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         }, // 32
         {
             "error-circular-import",
-            "Semantic error - Circular import detected: ./test-files/analyzer/error-circular-import/source1.spice"
+            "Semantic error - Circular import detected: './test-files/analyzer/error-circular-import/source1.spice'"
         },
         // Successful tests
         { // 33
@@ -181,6 +181,8 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
                 sourceFile,
+                "",
+                "",
                 "",
                 ".",
                 false,
