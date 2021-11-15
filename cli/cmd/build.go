@@ -104,7 +104,12 @@ func buildFromSourceFile(
 	internal.Link(objectFiles, outputFile)
 
 	// Clear object files
-	// ToDo: Implement
+	for _, objectFile := range objectFiles {
+		if err := os.Remove(objectFile); err != nil {
+			util.Error("Problem with object file cleanup. This could cause problems with future builds", true)
+			return err
+		}
+	}
 
 	return nil
 }
