@@ -1,11 +1,15 @@
+# C++ CI
 name: C++ CI
 
 on:
   push:
     paths:
-      - 'compiler/**'
+      - compiler/**
   pull_request:
-    branches: [ main, dev, feature/** ]
+    branches:
+      - main
+      - dev
+      - feature/**
 
 jobs:
   build:
