@@ -14,6 +14,15 @@ bool FileUtil::fileExists(const std::string& filePath) {
     return false;
 }
 
+bool FileUtil::dirExists(const std::string& dirPath) {
+    struct stat info;
+    if (stat(dirPath.c_str(), &info) != 0)
+        return false;
+    else if( info.st_mode & S_IFDIR )  // S_ISDIR() doesn't exist on my windows 
+        return true;
+    return false;
+}
+
 /**
  * Extracts the name of a file from its full path and returns it
  *

@@ -5,7 +5,7 @@
 /**
  * Compiles a single source file to an object
  *
- * @param mainSourceFile Full path to a file (absolute or relative)
+ * @param sourceFile Full path to a file (absolute or relative)
  * @param targetTriple Target triplet string: e.g.: x86_64-w64-windows-gnu
  * @param outputPath Full path to an output file (absolute or relative)
  * @param debugOutput Set to true to show compiler debug output
@@ -14,7 +14,7 @@
  * @return Symbol table of this program part
  */
 SymbolTable* CompilerInstance::CompileSourceFile(
-        std::string& mainSourceFile,
+        std::string& sourceFile,
         const std::string& targetArch,
         const std::string& targetVendor,
         const std::string& targetOs,
@@ -25,7 +25,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
 ) {
     // Read from file
     std::ifstream stream;
-    stream.open(mainSourceFile);
+    stream.open(sourceFile);
     antlr4::ANTLRInputStream input(stream);
 
     // Parse input to AST
@@ -37,7 +37,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     // Execute syntactical analysis
     SymbolTable* symbolTable;
     AnalyzerVisitor analyzer = AnalyzerVisitor(
-            mainSourceFile,
+            sourceFile,
             targetArch,
             targetVendor,
             targetOs,
@@ -48,12 +48,12 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
     if (debugOutput) {
         // Print symbol table
-        std::cout << "\nSymbol table of file " << mainSourceFile << ":\n" << std::endl;
+        std::cout << "\nSymbol table of file " << sourceFile << ":\n" << std::endl;
         std::cout << symbolTable->toString() << std::endl;
     }
 
     // Get file name from file path
-    std::string fileName = FileUtil::getFileName(mainSourceFile);
+    std::string fileName = FileUtil::getFileName(sourceFile);
 
     // Execute generator
     GeneratorVisitor generator = GeneratorVisitor(
