@@ -19,42 +19,14 @@ builds:
     mod_timestamp: '{{ .CommitTimestamp }}'
     ldflags:
       - -s -w -X main.version={{ .Version }} -X main.commit={{ .Commit }} -X main.date={{ .CommitDate }} -X main.builtBy=github-actions
-archives:
-  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-    files:
-      - LICENSE
-      - bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/*
-    format_overrides:
-      - goos: windows
-        format: zip
-checksum:
-  name_template: '{{ .ProjectName }}_checksums.txt'
-nfpms:
-  - id: publish
-    file_name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-    maintainer: Marc Auberer <marc.auberer@chillibits.com>
-    description: Spice programming language.
-    homepage: https://www.spicelang.com
-    license: MIT
-    bindir: /usr/bin
-    formats:
-      - apk
-      - deb
-      - rpm
-    dependencies:
-      - build-essential
-    contents:
-      - src: bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/*
-        dst: /usr/lib/spice/
-      - src: std/*
-        dst: /usr/lib/spice/std/
 dockers:
   - image_templates:
-      - ghcr.io/chillibits/spice:{{ .Version }}-amd64
+      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
       - ghcr.io/chillibits/spice:latest-amd64
-      - chillibits/spice:{{ .Version }}-amd64
+      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
       - chillibits/spice:latest-amd64
     dockerfile: Dockerfile
+    skip_push: auto
     use: buildx
     goarch: amd64
     extra_files:
@@ -69,11 +41,12 @@ dockers:
       - --build-arg=COMPILER_PATH=linux-amd64
       - --platform=linux/amd64
   - image_templates:
-      - ghcr.io/chillibits/spice:{{ .Version }}-i386
+      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
       - ghcr.io/chillibits/spice:latest-i386
-      - chillibits/spice:{{ .Version }}-i386
+      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
       - chillibits/spice:latest-i386
     dockerfile: Dockerfile
+    skip_push: auto
     use: buildx
     goarch: 386
     extra_files:
@@ -88,11 +61,12 @@ dockers:
       - --build-arg=COMPILER_PATH=linux-386
       - --platform=linux/i386
   #- image_templates:
-  #    - ghcr.io/chillibits/spice:{{ .Version }}-arm32v7
+  #    - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
   #    - ghcr.io/chillibits/spice:latest-arm32v7
-  #    - chillibits/spice:{{ .Version }}-arm32v7
+  #    - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
   #    - chillibits/spice:latest-arm32v7
   #  dockerfile: Dockerfile
+  #  skip_push: auto
   #  use: buildx
   #  goarch: arm
   #  goarm: 7
@@ -113,6 +87,7 @@ dockers:
   #    - chillibits/spice:{{ .Version }}-arm64v8
   #    - chillibits/spice:latest-arm64v8
   #  dockerfile: Dockerfile
+  #  skip_push: auto
   #  use: buildx
   #  goarch: arm64
   #  extra_files:
@@ -127,41 +102,78 @@ dockers:
   #    - --build-arg=COMPILER_PATH=linux-arm64
   #    - --platform=linux/arm64/v8
 docker_manifests:
-  - name_template: chillibits/spice:{{ .Version }}
+  - name_template: chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
     image_templates:
-      - chillibits/spice:{{ .Version }}-amd64
-      - chillibits/spice:{{ .Version }}-i386
-      #- chillibits/spice:{{ .Version }}-arm32v7
-      #- chillibits/spice:{{ .Version }}-arm64v8
+      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
+      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
+      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
+    skip_push: auto
   - name_template: chillibits/spice:latest
     image_templates:
-      - chillibits/spice:{{ .Version }}-amd64
-      - chillibits/spice:{{ .Version }}-i386
-      #- chillibits/spice:{{ .Version }}-arm32v7
-      #- chillibits/spice:{{ .Version }}-arm64v8
-  - name_template: ghcr.io/chillibits/spice:{{ .Version }}
+      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
+      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
+      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
+    skip_push: auto
+
+  - name_template: ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
     image_templates:
-      - ghcr.io/chillibits/spice:{{ .Version }}-amd64
-      - ghcr.io/chillibits/spice:{{ .Version }}-i386
-      #- ghcr.io/chillibits/spice:{{ .Version }}-arm32v7
-      #- ghcr.io/chillibits/spice:{{ .Version }}-arm64v8
+      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
+      #- ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
+      #- ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
+    skip_push: auto
   - name_template: ghcr.io/chillibits/spice:latest
     image_templates:
-      - ghcr.io/chillibits/spice:{{ .Version }}-amd64
-      - ghcr.io/chillibits/spice:{{ .Version }}-i386
-      #- ghcr.io/chillibits/spice:{{ .Version }}-arm32v7
-      #- ghcr.io/chillibits/spice:{{ .Version }}-arm64v8
+      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
+      #- ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
+      #- ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
+    skip_push: auto
+archives:
+  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    files:
+      - LICENSE
+      - bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/*
+    format_overrides:
+      - goos: windows
+        format: zip
+checksum:
+  name_template: '{{ .ProjectName }}_checksums.txt'
+nfpms:
+  - id: publish
+    file_name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    maintainer: Marc Auberer <marc.auberer@chillibits.com>
+    vendor: ChilliBits
+    description: Spice programming language.
+    homepage: https://www.spicelang.com
+    license: MIT
+    bindir: /usr/bin
+    formats:
+      - apk
+      - deb
+      - rpm
+    dependencies:
+      - build-essential
+    contents:
+      - src: bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/*
+        dst: /usr/lib/spice/
+      - src: std/*
+        dst: /usr/lib/spice/std/
 release:
   name_template: v{{ .Tag }}
   prerelease: auto
   footer: |
-    ---
-    
-    __Visit [spicelang.com](https://www.spicelang.com) to test the new features!__
-#announce:
-#  twitter:
-#    enabled: true
-#    message_template: 'Spice {{ .Tag }} is now available! Check out the new features: www.spicelang.com!'
+    ## What to do next?
+    - [Install Spice](https://www.spicelang.com/install/linux/)
+    - Visit [www.spicelang.com](https://www.spicelang.com) to test the new features
+changelog:
+  use: github
+  filters:
+    exclude:
+    - Merge pull request
+    - Merge branch
 milestones:
   - close: true
     fail_on_error: false
