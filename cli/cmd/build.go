@@ -7,14 +7,68 @@ import (
 	"spice/internal"
 	"spice/util"
 	"strings"
+
+	"github.com/urfave/cli/v2"
 )
 
+// BuildCliFlags are the cli flags for the build command
+var BuildCliFlags = []cli.Flag{
+	&cli.BoolFlag{
+		Name:    "debug-output",
+		Aliases: []string{"d"},
+		Usage:   "Print compiler output for debugging",
+		Value:   false,
+	},
+	&cli.StringFlag{
+		Name:    "target-arch",
+		Aliases: []string{"ta"},
+		Usage:   "Target CPU architecture for the emitted executable (for cross-compiling)",
+	},
+	&cli.StringFlag{
+		Name:    "target-vendor",
+		Aliases: []string{"tv"},
+		Usage:   "Target vendor for the emitted executable (for cross-compiling)",
+	},
+	&cli.StringFlag{
+		Name:    "target-os",
+		Aliases: []string{"to"},
+		Usage:   "Target os for the emitted executable (for cross-compiling)",
+	},
+	&cli.IntFlag{
+		Name:    "opt-level",
+		Aliases: []string{"o"},
+		Usage:   "Set optimization level",
+		Value:   2,
+	},
+	&cli.PathFlag{
+		Name:  "output",
+		Usage: "Path to the location where the output executable should go",
+	},
+}
+
+// ---------------------------------------------------------------- Public functions ---------------------------------------------------------------
+
 // Build takes the passed code file, resolves its dependencies and emits an executable, representing its functionality
-func Build(
+func Build(c *cli.Context) error {
+	// Extract flags
+	sourceFile := c.Args().Get(0)
+	targetArch := c.String("target-arch")
+	targetVendor := c.String("target-vendor")
+	targetOs := c.String("target-os")
+	outputFile := c.Path("output")
+	debugOutput := c.Bool("debug-output")
+	optLevel := c.Int("opt-level")
+
+	return buildFromSourceFile(sourceFile, targetArch, targetVendor, targetOs, outputFile, debugOutput, optLevel)
+}
+
+// ---------------------------------------------------------------- Private functions --------------------------------------------------------------
+
+func buildFromSourceFile(
 	sourceFile, targetArch, targetVendor, targetOs, outputFile string,
 	debugOutput bool,
 	optLevel int,
-) {
+) error {
 	sourceFileName := filepath.Base(sourceFile)
 	sourceFileNameWithoutExt := strings.TrimSuffix(sourceFileName, filepath.Ext(sourceFileName))
 
@@ -23,9 +77,10 @@ func Build(
 	objectDir := tmpDir + "/spice-output"
 	if err := os.MkdirAll(objectDir, 0750); err != nil {
 		util.Error("Could not create output dir", true)
+		return err
 	}
 
-	// Compile program ane emit object file to temp dir
+	// Compile source and emit object file to temp dir
 	internal.Compile(sourceFile, targetArch, targetVendor, targetOs, objectDir, debugOutput, optLevel)
 
 	// Set default value for outputFile
@@ -40,10 +95,21 @@ func Build(
 			outputFile = "./" + sourceFileNameWithoutExt
 		}
 	} else {
-		util.Error("Unable to build. You have to specify a target kernel", true)
+		util.Error("Unable to build. You have to specify a target OS", true)
+		return nil
 	}
 
-	// Run g++ with all object files
+	// Link all object files together
 	objectFiles := util.GetObjectFileTree(objectDir)
 	internal.Link(objectFiles, outputFile)
+
+	// Clear object files
+	for _, objectFile := range objectFiles {
+		if err := os.Remove(objectFile); err != nil {
+			util.Error("Problem with object file cleanup. This could cause problems with future builds", true)
+			return err
+		}
+	}
+
+	return nil
 }

@@ -1,11 +1,13 @@
 # Workflow to detect typos in docs and source code
 name: Misspell
+
 on:
   push:
     branches:
       - main
       - docs/**
   pull_request:
+
 jobs:
   spellcheck:
     runs-on: ubuntu-latest
@@ -18,4 +20,4 @@ jobs:
         with:
           github_token: ${{ secrets.github_token }}
           exclude: ./cli/vendor/**
-          locale: "US"
+          locale: US

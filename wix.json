@@ -10,7 +10,7 @@
         ]
     },
     "directories": [
-        "[%USERPROFILE]spice\\bin"
+        "[%USERPROFILE]\\spice\\bin"
     ],
     "env": {
         "guid": "27bebd64-9bda-4b0f-b7ca-5bfc26b06cdb",

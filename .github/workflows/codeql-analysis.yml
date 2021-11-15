@@ -1,3 +1,4 @@
+# CodeQL workflow
 name: CodeQL
 
 on:
@@ -18,7 +19,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v1
         with:
-          languages: cpp
+          languages: cpp, go
 
       - name: Cache LLVM
         id: cache-llvm

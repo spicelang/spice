@@ -4,12 +4,12 @@ name: Publish documentation
 on:
   push:
     branches:
-      - 'main'
-      - 'docs/**'
-      - 'feature/**'
-      - 'fix/**'
+      - main
+      - docs/**
+      - feature/**
+      - fix/**
     paths:
-      - 'docs/**'
+      - docs/**
   workflow_dispatch:
 
 jobs:
@@ -28,6 +28,5 @@ jobs:
         run: pip install mkdocs-material mkdocs-minify-plugin
 
       - name: Build and deploy
-        run: |
-          cd docs
-          mkdocs gh-deploy --force
+        working-directory: docs
+        run: mkdocs gh-deploy --force
