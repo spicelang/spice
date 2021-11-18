@@ -1,0 +1,18 @@
+type string struct {
+    int* value;
+    len int;
+}
+
+f<string> concatStrings(string a, string b) {
+    // Return b if a is empty
+    int aLen = len(a);
+    if aLen == 0 { return b; }
+    // Return a if b is empty
+    int bLen = len(b);
+    if bLen == 0 { return a; }
+    
+    // Create a new string on the heap
+    // ToDo @marcauberer
+
+    return "";
+}
