@@ -1,0 +1,6 @@
+f<int> main() {
+    string food = "Pizza";
+    string* ptr = &food;
+
+    printf("Pointer address: %p, value: %s", ptr, *ptr);
+}

@@ -530,7 +530,7 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
     if (!currentScope->getParent()) { // Global scope
         module->getOrInsertGlobal(currentVar, varType);
         llvm::GlobalVariable* global = module->getNamedGlobal(currentVar);
-        global->setLinkage(llvm::GlobalValue::ExternalLinkage);
+        global->setLinkage(llvm::GlobalValue::PrivateLinkage);
         global->setConstant(ctx->CONST());
         global->setAlignment(llvm::MaybeAlign(4));
         if (currentAssignValue) global->setInitializer((llvm::Constant*) currentAssignValue);
@@ -677,7 +677,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
 }
 
 antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
-    if (ctx->declStmt() || ctx->IDENTIFIER().size() > 0) {
+    if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
         // Get value of right side
         llvm::Value* rhs = currentAssignValue = visit(ctx->ternary()).as<llvm::Value*>();
 
@@ -949,6 +949,19 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
         return lhs;
     }
 
+    // Prefix unary is: MUL postfixUnary
+    if (ctx->MUL()) {
+
+    }
+
+    // Prefix unary is: BITWISE_AND postfixUnary
+    if (ctx->BITWISE_AND()) {
+        llvm::Value* rhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
+        llvm::Value* lhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
+        llvm::Value* ptr = builder->CreateStore(rhs, lhs);
+        return lhs;
+    }
+
     // Prefix unary is: NOT postfixUnary
     if (ctx->NOT()) return builder->CreateNot(value.as<llvm::Value*>(), "not");
 
@@ -1052,10 +1065,17 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
         currentSymbolType = symbolTableEntry->getType();
     }
 
+    // Come up with the llvm type
     llvm::Type* type = getTypeFromSymbolType(currentSymbolType);
+    // Throw an error if something went wrong.
+    // This should technically never occur because of the semantic analysis
     if (!type)
         throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE,
                       "Dyn was " + std::to_string(currentSymbolType));
+
+    // Consider possible pointer
+    if (ctx->MUL()) type = type->getPointerTo();
+
     return type;
 }
 
