@@ -1,6 +1,6 @@
 grammar Spice;
 
-entry: (stmt | mainFunctionDef | functionDef | procedureDef)*;
+entry: (stmt | mainFunctionDef | functionDef | procedureDef | structDef)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;

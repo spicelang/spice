@@ -1,0 +1,8 @@
+type TestStruct struct {
+    int value
+    len int
+}
+
+f<int> main() {
+    printf("Test");
+}

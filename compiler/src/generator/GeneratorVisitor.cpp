@@ -350,6 +350,23 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
 }
 
+antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ctx) {
+    std::string structName = ctx->IDENTIFIER()->toString();
+
+    // Collect member types
+    std::vector<llvm::Type*> memberTypes;
+    for (auto& field : ctx->fieldLst()->declStmt()) {
+        llvm::Type* memberType = visit(field->dataType()).as<llvm::Type*>();
+        memberTypes.push_back(memberType);
+    }
+
+    // Create global struct
+    llvm::StructType::create(*context, memberTypes, structName, false);
+
+    // Return true as result for the struct definition
+    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
+}
+
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
@@ -660,13 +677,13 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
 }
 
 antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
-    if (ctx->declStmt() || ctx->IDENTIFIER()) {
+    if (ctx->declStmt() || ctx->IDENTIFIER().size() > 0) {
         // Get value of right side
         llvm::Value* rhs = currentAssignValue = visit(ctx->ternary()).as<llvm::Value*>();
 
         // Get value of left side
         std::string varName = ctx->declStmt() ? visit(ctx->declStmt()).as<std::string>()
-                                              : ctx->IDENTIFIER()->toString();
+                                              : ctx->IDENTIFIER()[0]->toString();
         bool isLocal = namedValues.find(varName) != namedValues.end();
 
         if (ctx->ASSIGN_OP()) {
@@ -1043,9 +1060,29 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
 }
 
 void GeneratorVisitor::initializeExternalFunctions() {
+    // printf function
     module->getOrInsertFunction("printf", llvm::FunctionType::get(
-            getTypeFromSymbolType(TYPE_INT),
-            getTypeFromSymbolType(TYPE_STRING), true));
+            llvm::Type::getInt32Ty(*context),
+            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            true));
+    // malloc function
+    module->getOrInsertFunction("malloc", llvm::FunctionType::get(
+            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            llvm::Type::getInt32Ty(*context),
+            false));
+    // free function
+    module->getOrInsertFunction("free", llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*context),
+            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            false));
+    // memcpy function
+    std::vector<llvm::Type*> paramTypes = {
+            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            llvm::Type::getInt32Ty(*context)
+    };
+    module->getOrInsertFunction("memcpy", llvm::FunctionType::get(
+            llvm::Type::getInt8Ty(*context)->getPointerTo(), paramTypes, false));
 }
 
 llvm::Value*

@@ -427,8 +427,8 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
             variableName = ctx->declStmt()->IDENTIFIER()->toString();
             token = ctx->declStmt()->IDENTIFIER()->getSymbol();
         } else { // Variable was declared before and is referenced here
-            variableName = ctx->IDENTIFIER()[0].toString();
-            token = ctx->IDENTIFIER()[0].getSymbol();
+            variableName = ctx->IDENTIFIER()[0]->toString();
+            token = ctx->IDENTIFIER()[0]->getSymbol();
         }
         // Retrieve the left type from the symbol table
         SymbolTableEntry* symbolTableEntry = currentScope->lookup(variableName);

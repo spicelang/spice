@@ -1,4 +1,0 @@
-f<int> malloc(int size) {
-    // ToDo: Implement @marcauberer
-    return 0;
-}
