@@ -34,10 +34,10 @@ equalityExpr: relationalExpr ((EQUAL | NOT_EQUAL) relationalExpr)?;
 relationalExpr: additiveExpr ((LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) additiveExpr)?;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: prefixUnary ((MUL | DIV) prefixUnary)*;
-prefixUnary: (NOT | PLUS_PLUS | MINUS_MINUS | MUL | BITWISE_AND)? postfixUnary;
+prefixUnary: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnary;
 postfixUnary: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
 atomicExpr: value | LPAREN assignment RPAREN;
-value: STRING | TRUE | FALSE | INTEGER | DOUBLE | IDENTIFIER | functionCall;
+value: STRING | TRUE | FALSE | INTEGER | DOUBLE | (BITWISE_AND | MUL)? IDENTIFIER | functionCall;
 dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN) MUL?;
 
 TYPE_DOUBLE: 'double';

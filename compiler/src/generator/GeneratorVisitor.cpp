@@ -949,19 +949,6 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
         return lhs;
     }
 
-    // Prefix unary is: MUL postfixUnary
-    if (ctx->MUL()) {
-
-    }
-
-    // Prefix unary is: BITWISE_AND postfixUnary
-    if (ctx->BITWISE_AND()) {
-        llvm::Value* rhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
-        llvm::Value* lhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
-        llvm::Value* ptr = builder->CreateStore(rhs, lhs);
-        return lhs;
-    }
-
     // Prefix unary is: NOT postfixUnary
     if (ctx->NOT()) return builder->CreateNot(value.as<llvm::Value*>(), "not");
 
@@ -1034,16 +1021,38 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         currentSymbolType = currentScope->lookup(variableName)->getType();
         if (namedValues.find(variableName) != namedValues.end()) { // Local variable
             llvm::Value* var = namedValues[variableName];
+            // Throw an error when the variable is null
             if (!var)
                 throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
                               "Variable '" + variableName + "' not found in code generation step");
-            return (llvm::Value*) builder->CreateLoad(var->getType()->getPointerElementType(), var);
+            // If the reference operator is attached, return immediately. Load and return otherwise
+            if (ctx->BITWISE_AND()) {
+                return var;
+            }
+            // If the de-reference operator is attached load twice, otherwise load once
+            llvm::Value* loadedVar = builder->CreateLoad(var->getType()->getPointerElementType(), var);
+            if (ctx->MUL()) {
+                return (llvm::Value*) builder->CreateLoad(loadedVar->getType()->getPointerElementType(), loadedVar);
+            } else {
+                return loadedVar;
+            }
         } else { // Global variable
             llvm::GlobalVariable* var = module->getNamedGlobal(variableName);
+            // Throw an error when the variable is null
             if (!var)
                 throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
                               "Variable '" + variableName + "' not found in code generation step");
-            return (llvm::Value*) builder->CreateLoad(var->getType()->getPointerElementType(), var);
+            // If the reference operator is attached, return immediately. Load and return otherwise
+            if (ctx->BITWISE_AND()) {
+                return var;
+            }
+            // If the de-reference operator is attached load twice, otherwise load once
+            llvm::Value* loadedVar = builder->CreateLoad(var->getType()->getPointerElementType(), var);
+            if (ctx->MUL()) {
+                return (llvm::Value*) builder->CreateLoad(loadedVar->getType()->getPointerElementType(), loadedVar);
+            } else {
+                return loadedVar;
+            }
         }
     }
 
