@@ -68,6 +68,8 @@ public:
 
     antlrcpp::Any visitStmtLst(SpiceParser::StmtLstContext* ctx) override;
 
+    antlrcpp::Any visitFieldLstAssignment(SpiceParser::FieldLstAssignmentContext* ctx) override;
+
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
 
     antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext* ctx) override;
@@ -75,6 +77,8 @@ public:
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
 
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
+
+    antlrcpp::Any visitNewStmt(SpiceParser::NewStmtContext* ctx) override;
 
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
 

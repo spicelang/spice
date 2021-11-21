@@ -34,6 +34,17 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::ProcedureDefContext* ctx) {
 }
 
 /**
+ * Get scope id for the StructDef AST node
+ *
+ * @return Scope id
+ */
+std::string ScopeIdUtil::getScopeId(SpiceParser::StructDefContext* ctx) {
+    auto symbol = ctx->TYPE()->getSymbol();
+    return "struct:" + ctx->IDENTIFIER()->toString() + ":" + std::to_string(symbol->getLine()) + ":" +
+           std::to_string(symbol->getCharPositionInLine());
+}
+
+/**
  * Get scope id for the ForLoop AST node
  *
  * @return Scope id

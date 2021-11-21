@@ -102,7 +102,18 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx) {
-
+    std::string structName = ctx->IDENTIFIER()->toString();
+    // Check if struct already exists in this scope
+    if (currentScope->lookup(structName))
+        throw SemanticError(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate struct '" + structName + "'");
+    // Create a new table entry for the struct
+    currentScope->insert(structName, TYPE_STRUCT, DECLARED, true, false);
+    // Visit field list in a new scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->createChildBlock(scopeId);
+    visit(ctx->fieldLst());
+    // Return to the old scope
+    currentScope = currentScope->getParent();
     return TYPE_BOOL;
 }
 
@@ -179,6 +190,11 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) 
     return TYPE_BOOL;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitFieldLstAssignment(SpiceParser::FieldLstAssignmentContext* ctx) {
+    // ToDo
+    return TYPE_BOOL;
+}
+
 antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) {
     std::vector<SymbolType> paramTypes;
     for (auto& param : ctx->declStmt()) { // Parameters without default value
@@ -198,6 +214,7 @@ antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext*
 
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) {
     std::string variableName = ctx->IDENTIFIER()->toString();
+    std::cout << "Field: " << variableName << std::endl;
     // Check if symbol already exists in the symbol table
     if (currentScope->lookup(variableName))
         throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
@@ -240,6 +257,10 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     return TYPE_BOOL;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
+    // ToDo
+}
+
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
     std::string importPath = ctx->STRING()->toString();
@@ -255,7 +276,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
             stdPath = "/usr/lib/spice/std/";
         } else if (FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
             stdPath = std::string(std::getenv("SPICE_STD_DIR"));
-            if (stdPath.rfind("/") != stdPath.size() - 1) {
+            if (stdPath.rfind('/') != stdPath.size() - 1) {
                 stdPath += "/";
             }
         } else {
@@ -420,7 +441,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
 
 antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
     // Check if there is an assign operator applied
-    if (ctx->children.size() > 1) {
+    if (ctx->declStmt() || ctx->IDENTIFIER().size() > 0) {
         std::string variableName;
         SymbolType leftType;
         antlr4::Token* token;
@@ -431,7 +452,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
             variableName = ctx->declStmt()->IDENTIFIER()->toString();
             token = ctx->declStmt()->IDENTIFIER()->getSymbol();
         } else { // Variable was declared before and is referenced here
-            variableName = ctx->IDENTIFIER()[0]->toString();
+            variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
             token = ctx->IDENTIFIER()[0]->getSymbol();
         }
         // Retrieve the left type from the symbol table
@@ -762,7 +783,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext*
 
     // Ensure integer when '++' or '--' is applied
     if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) &&
-        (prefixUnary.as<SymbolType>() != TYPE_INT || !ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()))
+        (prefixUnary.as<SymbolType>() != TYPE_INT || ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER().empty()))
         throw SemanticError(*ctx->postfixUnary()->start, OPERATOR_WRONG_DATA_TYPE,
                             "Prefix '++' or '--' only can be applied to an identifier of type integer");
 
@@ -783,7 +804,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
 
     // Ensure integer when '++' or '--' is applied
     if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) &&
-        (atomicExpr.as<SymbolType>() != TYPE_INT || !ctx->atomicExpr()->value()->IDENTIFIER()))
+        (atomicExpr.as<SymbolType>() != TYPE_INT || !ctx->atomicExpr()->value()->IDENTIFIER().empty()))
         throw SemanticError(*ctx->atomicExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                             "Postfix '++' or '--' only can be applied to an identifier of type integer");
 
@@ -795,11 +816,11 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->INTEGER()) return TYPE_INT;
     if (ctx->STRING()) return TYPE_STRING;
     if (ctx->TRUE() || ctx->FALSE()) return TYPE_BOOL;
-    if (ctx->IDENTIFIER()) {
-        std::string variableName = ctx->IDENTIFIER()->toString();
+    if (!ctx->IDENTIFIER().empty()) {
+        std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
         SymbolTableEntry* entry = currentScope->lookup(variableName);
         if (entry == nullptr)
-            throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), REFERENCED_UNDEFINED_VARIABLE,
+            throw SemanticError(*ctx->IDENTIFIER()[0]->getSymbol(), REFERENCED_UNDEFINED_VARIABLE,
                                 "Variable " + variableName + " was referenced before initialized");
         SymbolType valueType = entry->getType();
         // Check for referencing operator

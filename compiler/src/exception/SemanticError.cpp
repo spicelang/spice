@@ -47,6 +47,12 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Referenced undefined variable";
         case VARIABLE_DECLARED_TWICE:
             return "Multiple declarations of the same variable";
+        case FUNCTION_DECLARED_TWICE:
+            return "Multiple declarations of a function with the same name";
+        case PROCEDURE_DECLARED_TWICE:
+            return "Multiple declarations of a procedure with the same name";
+        case STRUCT_DECLARED_TWICE:
+            return "Multiple declarations of a struct with the same name";
         case FUNCTION_WITHOUT_RETURN_STMT:
             return "Missing return statement";
         case RETURN_STMT_WITHOUT_FUNCTION:

@@ -10,6 +10,7 @@
 #include "ModuleRegistry.h"
 #include <util/ScopeIdUtil.h>
 #include <util/FileUtil.h>
+#include <util/IdentifierUtil.h>
 #include <exception/SemanticError.h>
 
 #include <llvm/ADT/Triple.h>
@@ -59,11 +60,15 @@ public:
 
     antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext* ctx) override;
 
+    antlrcpp::Any visitFieldLstAssignment(SpiceParser::FieldLstAssignmentContext* ctx) override;
+
     antlrcpp::Any visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) override;
 
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
 
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
+
+    antlrcpp::Any visitNewStmt(SpiceParser::NewStmtContext* ctx) override;
 
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
 

@@ -1,9 +1,14 @@
 type TestStruct struct {
-    int field1
+    int* field1
     double field2
 }
 
 f<int> main() {
-    dyn instance = new TestStruct { 1, 46.34 }
+    int input = 12;
+    dyn instance1 = new TestStruct { &input, 46.34 };
+    dyn instance2 = new TestStruct {
+        field1 = &input,
+        field2 = 46.34
+    };
     printf("Field1: %d, field2: %f", instance.field1, instance.field2);
 }

@@ -26,6 +26,8 @@ set(SOURCES
         util/FunctionSignature.h
         util/FileUtil.cpp
         util/FileUtil.h
+        util/IdentifierUtil.cpp
+        util/IdentifierUtil.h
         exception/IRError.cpp
         exception/IRError.h)
 

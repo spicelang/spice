@@ -13,18 +13,20 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 
 stmtLst: (stmt | forLoop | /*foreachLoop |*/ whileLoop | ifStmt)*;
 fieldLst: declStmt*;
+fieldLstAssignment: (assignment COMMA) assignment | (value COMMA) value;
 paramLstDef: (declStmt | assignment) (COMMA (declStmt | assignment))*;
 paramLstCall: assignment (COMMA assignment)*;
 stmt: (declStmt | assignment | functionCall | importStmt | returnStmt | breakStmt | continueStmt | printfStmt) SEMICOLON;
 declStmt: CONST? dataType IDENTIFIER;
 functionCall: (IDENTIFIER DOT)* IDENTIFIER LPAREN paramLstCall? RPAREN;
+newStmt: NEW IDENTIFIER LBRACE fieldLstAssignment? RBRACE;
 importStmt: IMPORT STRING AS IDENTIFIER;
 returnStmt: RETURN assignment;
 breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
 printfStmt: PRINTF LPAREN STRING (COMMA assignment)* RPAREN;
 
-assignment: ((declStmt | MUL? (IDENTIFIER DOT)* IDENTIFIER) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? ternary;
+assignment: ((declStmt | MUL? (IDENTIFIER DOT)* IDENTIFIER) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? (ternary | newStmt);
 ternary: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
@@ -37,7 +39,7 @@ multiplicativeExpr: prefixUnary ((MUL | DIV) prefixUnary)*;
 prefixUnary: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnary;
 postfixUnary: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
 atomicExpr: value | LPAREN assignment RPAREN;
-value: STRING | TRUE | FALSE | INTEGER | DOUBLE | (BITWISE_AND | MUL)? IDENTIFIER | functionCall;
+value: STRING | TRUE | FALSE | INTEGER | DOUBLE | (BITWISE_AND | MUL)? (IDENTIFIER DOT)* IDENTIFIER | functionCall;
 dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN) MUL?;
 
 TYPE_DOUBLE: 'double';
@@ -60,6 +62,7 @@ RETURN: 'return';
 AS: 'as';
 STRUCT: 'struct';
 TYPE: 'type';
+NEW: 'new';
 MAIN: 'main';
 PRINTF: 'printf';
 TRUE: 'true';
@@ -102,6 +105,6 @@ COLON: ':';
 COMMA: ',';
 DOT: '.';
 
-COMMENT: '/*' .*? '*/' -> skip;
+BLOCK_COMMENT: '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 WS: [ \t\r\n]+ -> channel(HIDDEN);

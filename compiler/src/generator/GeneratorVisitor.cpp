@@ -1,5 +1,6 @@
 // Copyright (c) 2021 ChilliBits. All rights reserved.
 
+#include <util/IdentifierUtil.h>
 #include "GeneratorVisitor.h"
 
 void GeneratorVisitor::init() {
@@ -463,6 +464,11 @@ antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext* ctx) {
     return nullptr;
 }
 
+antlrcpp::Any GeneratorVisitor::visitFieldLstAssignment(SpiceParser::FieldLstAssignmentContext* ctx) {
+
+    return nullptr;
+}
+
 antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     llvm::Value* conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
@@ -609,6 +615,12 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     return (llvm::Value*) builder->CreateCall(fct, argValues);
 }
 
+antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
+    std::string structName = ctx->IDENTIFIER()->toString();
+
+    //return ;
+}
+
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Ignore sub-tree
     return nullptr;
@@ -682,8 +694,15 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
         llvm::Value* rhs = currentAssignValue = visit(ctx->ternary()).as<llvm::Value*>();
 
         // Get value of left side
-        std::string varName = ctx->declStmt() ? visit(ctx->declStmt()).as<std::string>()
-                                              : ctx->IDENTIFIER()[0]->toString();
+        std::string varName;
+        if (ctx->declStmt()) {
+            varName = visit(ctx->declStmt()).as<std::string>();
+        } else {
+            varName = ctx->IDENTIFIER()[0]->toString();
+            for (int i = 1; i < ctx->IDENTIFIER().size(); i++) {
+                varName += "." + ctx->IDENTIFIER()[i]->toString();
+            }
+        }
         bool isLocal = namedValues.find(varName) != namedValues.end();
 
         if (ctx->ASSIGN_OP()) {
@@ -941,7 +960,8 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     // Prefix unary is: PLUS_PLUS postfixUnary
     if (ctx->PLUS_PLUS()) {
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "pre_pp");
-        llvm::Value* lhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
+        std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = namedValues[varName];
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -949,7 +969,8 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     // Prefix unary is: MINUS_MINUS postfixUnary
     if (ctx->MINUS_MINUS()) {
         llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "pre_mm");
-        llvm::Value* lhs = namedValues[ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER()->toString()];
+        std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = namedValues[varName];
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -966,7 +987,8 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
     // Postfix unary is: PLUS_PLUS atomicExpr
     if (ctx->PLUS_PLUS()) {
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "post_pp");
-        llvm::Value* lhs = namedValues[ctx->atomicExpr()->value()->IDENTIFIER()->toString()];
+        std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = namedValues[varName];
         builder->CreateStore(rhs, lhs);
         return rhs;
     }
@@ -974,7 +996,8 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
     // Postfix unary is: MINUS_MINUS atomicExpr
     if (ctx->MINUS_MINUS()) {
         llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "post_mm");
-        llvm::Value* lhs = namedValues[ctx->atomicExpr()->value()->IDENTIFIER()->toString()];
+        std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = namedValues[varName];
         builder->CreateStore(rhs, lhs);
         return rhs;
     }
@@ -1021,14 +1044,14 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     }
 
     // Value is an identifier
-    if (ctx->IDENTIFIER()) {
-        std::string variableName = ctx->IDENTIFIER()->toString();
+    if (!ctx->IDENTIFIER().empty()) {
+        std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
         currentSymbolType = currentScope->lookup(variableName)->getType();
         if (namedValues.find(variableName) != namedValues.end()) { // Local variable
             llvm::Value* var = namedValues[variableName];
             // Throw an error when the variable is null
             if (!var)
-                throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
+                throw IRError(*ctx->IDENTIFIER()[0]->getSymbol(), VARIABLE_NOT_FOUND,
                               "Variable '" + variableName + "' not found in code generation step");
             // If the reference operator is attached, return immediately. Load and return otherwise
             if (ctx->BITWISE_AND()) {
@@ -1045,7 +1068,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
             llvm::GlobalVariable* var = module->getNamedGlobal(variableName);
             // Throw an error when the variable is null
             if (!var)
-                throw IRError(*ctx->IDENTIFIER()->getSymbol(), VARIABLE_NOT_FOUND,
+                throw IRError(*ctx->IDENTIFIER()[0]->getSymbol(), VARIABLE_NOT_FOUND,
                               "Variable '" + variableName + "' not found in code generation step");
             // If the reference operator is attached, return immediately. Load and return otherwise
             if (ctx->BITWISE_AND()) {
