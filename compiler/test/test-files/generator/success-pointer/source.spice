@@ -3,4 +3,9 @@ f<int> main() {
     string* ptr = &food;
 
     printf("Pointer address: %p, value: %s", ptr, *ptr);
+
+    dyn restoredFood = *ptr;
+    printf("Restored value: %s", restoredFood);
+
+    printf("Restored value address: %p", &restoredFood);
 }

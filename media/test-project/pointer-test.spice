@@ -1,6 +1,5 @@
 f<int> main() {
-    int test = 12;
-    int* testPtr = &test;
-    int test1 = testPtr;
-    printf("Value1: %d, pointer: %p, value: %d", test, testPtr, test1);
+    string test = "Hello World!";
+    string* testPtr = &test;
+    printf("Value1: %s, pointer: %p, value: %s", test, testPtr, *testPtr);
 }

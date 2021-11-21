@@ -125,7 +125,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 27
             "error-printf-type-incompatibility",
-            "Semantic error at 4:36: Types of printf call not matching: Template string expects an int or a bool here"
+            "Semantic error at 6:36: Types of printf call not matching: Template string expects an int or a bool here"
         },
         { // 28
             "error-break-count-valid",

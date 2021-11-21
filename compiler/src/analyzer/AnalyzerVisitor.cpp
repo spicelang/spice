@@ -367,6 +367,8 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
     std::size_t index = templateString.find_first_of('%');
     int placeholderCount = 0;
     while (index != std::string::npos) {
+        auto assignment = ctx->assignment()[placeholderCount];
+        SymbolType assignmentType = visit(assignment).as<SymbolType>();
         switch (templateString[index + 1]) {
             case 'c':
             case 'd':
@@ -374,8 +376,6 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
             case 'o':
             case 'x':
             case 'X': {
-                auto assignment = ctx->assignment()[placeholderCount];
-                SymbolType assignmentType = visit(assignment).as<SymbolType>();
                 if (assignmentType != TYPE_INT && assignmentType != TYPE_BOOL)
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects an int or a bool here");
@@ -390,8 +390,6 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
             case 'E':
             case 'g':
             case 'G': {
-                auto assignment = ctx->assignment()[placeholderCount];
-                SymbolType assignmentType = visit(assignment).as<SymbolType>();
                 if (assignmentType != TYPE_DOUBLE)
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects a double here");
@@ -399,11 +397,17 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
                 break;
             }
             case 's': {
-                auto assignment = ctx->assignment()[placeholderCount];
-                SymbolType assignmentType = visit(assignment).as<SymbolType>();
                 if (assignmentType != TYPE_STRING)
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects a string here");
+                placeholderCount++;
+                break;
+            }
+            case 'p': {
+                if (assignmentType != TYPE_DOUBLE_PTR && assignmentType != TYPE_INT_PTR &&
+                    assignmentType != TYPE_STRING_PTR && assignmentType != TYPE_BOOL_PTR)
+                    throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
+                                        "Template string expects a pointer here");
                 placeholderCount++;
                 break;
             }
@@ -794,15 +798,40 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         if (entry == nullptr)
             throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), REFERENCED_UNDEFINED_VARIABLE,
                                 "Variable " + variableName + " was referenced before initialized");
-        return entry->getType();
+        SymbolType valueType = entry->getType();
+        // Check for referencing operator
+        if (ctx->BITWISE_AND()) valueType = getReferenceTypeFromType(valueType);
+        // Check for de-referencing operator
+        if (ctx->MUL()) valueType = getTypeFromReferenceType(valueType);
+        return valueType;
     }
     return visit(ctx->functionCall());
 }
 
 SymbolType AnalyzerVisitor::getSymbolTypeFromDataType(SpiceParser::DataTypeContext* ctx) {
-    if (ctx->TYPE_DOUBLE()) return TYPE_DOUBLE;
-    if (ctx->TYPE_INT()) return TYPE_INT;
-    if (ctx->TYPE_STRING()) return TYPE_STRING;
-    if (ctx->TYPE_BOOL()) return TYPE_BOOL;
+    if (ctx->TYPE_DOUBLE()) return ctx->MUL() ? TYPE_DOUBLE_PTR : TYPE_DOUBLE;
+    if (ctx->TYPE_INT()) return ctx->MUL() ? TYPE_INT_PTR : TYPE_INT;
+    if (ctx->TYPE_STRING()) return ctx->MUL() ? TYPE_STRING_PTR : TYPE_STRING;
+    if (ctx->TYPE_BOOL()) return ctx->MUL() ? TYPE_BOOL_PTR : TYPE_BOOL;
     return TYPE_DYN;
+}
+
+SymbolType AnalyzerVisitor::getReferenceTypeFromType(SymbolType type) {
+    switch (type) {
+        case TYPE_DOUBLE: return TYPE_DOUBLE_PTR;
+        case TYPE_INT: return TYPE_INT_PTR;
+        case TYPE_STRING: return TYPE_STRING_PTR;
+        case TYPE_BOOL: return TYPE_BOOL_PTR;
+        default: return TYPE_DYN; // ToDo: Test if we need an error message here
+    }
+}
+
+SymbolType AnalyzerVisitor::getTypeFromReferenceType(SymbolType type) {
+    switch (type) {
+        case TYPE_DOUBLE_PTR: return TYPE_DOUBLE;
+        case TYPE_INT_PTR: return TYPE_INT;
+        case TYPE_STRING_PTR: return TYPE_STRING;
+        case TYPE_BOOL_PTR: return TYPE_BOOL;
+        default: return TYPE_DYN; // ToDo: Test if we need an error message here
+    }
 }
