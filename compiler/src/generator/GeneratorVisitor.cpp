@@ -690,7 +690,12 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             // Store right side on the left one
             if (isLocal) { // Local variable
                 llvm::AllocaInst* lhs = namedValues[varName];
-                builder->CreateStore(rhs, lhs);
+                if (ctx->MUL()) {
+                    llvm::Value* lhsValue = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+                    builder->CreateStore(rhs, lhsValue);
+                } else {
+                    builder->CreateStore(rhs, lhs);
+                }
             } else if (currentScope->getParent()) { // Global variable
                 llvm::GlobalVariable* global = module->getNamedGlobal(varName);
                 builder->CreateStore(rhs, global);

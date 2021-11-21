@@ -4,6 +4,8 @@ f<int> main() {
 
     printf("Pointer address: %p, value: %s", ptr, *ptr);
 
+    *ptr = "Burger";
+
     dyn restoredFood = *ptr;
     printf("Restored value: %s", restoredFood);
 

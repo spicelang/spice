@@ -441,6 +441,9 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
                                 "Variable " + variableName + " was referenced before declared.");
         leftType = symbolTableEntry->getType();
 
+        // If it is a pointer to the value, resolve the type
+        if (ctx->MUL()) leftType = getTypeFromReferenceType(leftType);
+
         // Take a look on the right side
         SymbolType rightType = visit(ctx->ternary()).as<SymbolType>();
         // If left type is dyn, set left type to right type
