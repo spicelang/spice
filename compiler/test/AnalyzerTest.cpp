@@ -105,11 +105,11 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 22
             "error-prefix-unary-only-integer-identifiers",
-            "Semantic error at 2:7: Wrong data type for operator: Prefix '++' or '--' only can be applied to an identifier of type integer"
+            "Semantic error at 2:7: Wrong data type for operator: Prefix '++' or '--' can only be applied to an identifier of type integer"
         },
         { // 23
             "error-postfix-unary-only-integer-identifiers",
-            "Semantic error at 2:5: Wrong data type for operator: Postfix '++' or '--' only can be applied to an identifier of type integer"
+            "Semantic error at 2:5: Wrong data type for operator: Postfix '++' or '--' can only be applied to an identifier of type integer"
         },
         { // 24
             "error-must-contain-main-function",
@@ -133,7 +133,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 29
             "error-break-count-not-too-high",
-            "Semantic error at 7:23: Invalid number of break calls: We only can break 2 time(s) here"
+            "Semantic error at 7:23: Invalid number of break calls: We can only break 2 time(s) here"
         },
         { // 30
             "error-continue-count-valid",
@@ -141,7 +141,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 31
             "error-continue-count-not-too-high",
-            "Semantic error at 7:26: Invalid number of continue calls: We only can continue 2 time(s) here"
+            "Semantic error at 7:26: Invalid number of continue calls: We can only continue 2 time(s) here"
         }, // 32
         {
             "error-circular-import",

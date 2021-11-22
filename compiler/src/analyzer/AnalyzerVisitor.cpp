@@ -214,7 +214,6 @@ antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext*
 
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) {
     std::string variableName = ctx->IDENTIFIER()->toString();
-    std::cout << "Field: " << variableName << std::endl;
     // Check if symbol already exists in the symbol table
     if (currentScope->lookup(variableName))
         throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
@@ -360,7 +359,7 @@ antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx
     // Check if we can break this often
     if (breakCount > nestedLoopCounter)
         throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_BREAK_NUMBER,
-                            "We only can break " + std::to_string(nestedLoopCounter) + " time(s) here");
+                            "We can only break " + std::to_string(nestedLoopCounter) + " time(s) here");
     return TYPE_INT;
 }
 
@@ -376,7 +375,7 @@ antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContex
     // Check if we can continue this often
     if (continueCount > nestedLoopCounter)
         throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_CONTINUE_NUMBER,
-                            "We only can continue " + std::to_string(nestedLoopCounter) + " time(s) here");
+                            "We can only continue " + std::to_string(nestedLoopCounter) + " time(s) here");
     return TYPE_INT;
 }
 
@@ -441,12 +440,11 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
 
 antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
     // Check if there is an assign operator applied
-    if (ctx->declStmt() || ctx->IDENTIFIER().size() > 0) {
+    if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
+        // Take a look on the left side
         std::string variableName;
         SymbolType leftType;
         antlr4::Token* token;
-
-        // Take a look on the left side
         if (ctx->declStmt()) { // Variable was declared in this line
             visit(ctx->declStmt());
             variableName = ctx->declStmt()->IDENTIFIER()->toString();
@@ -782,10 +780,12 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext*
     antlrcpp::Any prefixUnary = visit(ctx->postfixUnary());
 
     // Ensure integer when '++' or '--' is applied
-    if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) &&
-        (prefixUnary.as<SymbolType>() != TYPE_INT || ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER().empty()))
-        throw SemanticError(*ctx->postfixUnary()->start, OPERATOR_WRONG_DATA_TYPE,
-                            "Prefix '++' or '--' only can be applied to an identifier of type integer");
+    if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
+        if (prefixUnary.as<SymbolType>() != TYPE_INT || ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER().empty()) {
+            throw SemanticError(*ctx->postfixUnary()->start, OPERATOR_WRONG_DATA_TYPE,
+                                "Prefix '++' or '--' can only be applied to an identifier of type integer");
+        }
+    }
 
     // Ensure right return type if not is applied
     if (ctx->NOT()) {
@@ -803,10 +803,12 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
     antlrcpp::Any atomicExpr = visit(ctx->atomicExpr());
 
     // Ensure integer when '++' or '--' is applied
-    if ((ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) &&
-        (atomicExpr.as<SymbolType>() != TYPE_INT || !ctx->atomicExpr()->value()->IDENTIFIER().empty()))
-        throw SemanticError(*ctx->atomicExpr()->start, OPERATOR_WRONG_DATA_TYPE,
-                            "Postfix '++' or '--' only can be applied to an identifier of type integer");
+    if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
+        if (atomicExpr.as<SymbolType>() != TYPE_INT || ctx->atomicExpr()->value()->IDENTIFIER().empty()) {
+            throw SemanticError(*ctx->atomicExpr()->start, OPERATOR_WRONG_DATA_TYPE,
+                                "Postfix '++' or '--' can only be applied to an identifier of type integer");
+        }
+    }
 
     return atomicExpr;
 }
