@@ -19,8 +19,14 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 }
 
 antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
+    std::string mainSignature = "main()";
+    // Check if the function is already defined
+    if (currentScope->lookup(mainSignature)) {
+        throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE,
+                            "Main function is declared twice");
+    }
     // Insert function name into the root symbol table
-    currentScope->insert("main()", TYPE_FUNCTION, INITIALIZED, true, false);
+    currentScope->insert(mainSignature, TYPE_FUNCTION, INITIALIZED, true, false);
     // Create a new scope
     currentScope = currentScope->createChildBlock("main()");
     // Declare variable for the return value
@@ -57,6 +63,11 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     currentScope = currentScope->getParent();
     // Insert function into the symbol table
     FunctionSignature signature = FunctionSignature(functionName, paramTypes);
+    // Check if the function is already defined
+    if (currentScope->lookup(signature.toString())) {
+        throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE,
+                            "Function '" + signature.toString() + "' is declared twice");
+    }
     currentScope->insert(signature.toString(), TYPE_FUNCTION, INITIALIZED, true, false);
     currentScope->pushSignature(signature);
     // Rename function scope block to support function overloading
@@ -88,6 +99,11 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     currentScope = currentScope->getParent();
     // Insert procedure into the symbol table
     FunctionSignature signature = FunctionSignature(procedureName, paramTypes);
+    // Check if the procedure is already defined
+    if (currentScope->lookup(signature.toString())) {
+        throw SemanticError(*ctx->start, PROCEDURE_DECLARED_TWICE,
+                            "Procedure '" + signature.toString() + "' is declared twice");
+    }
     currentScope->insert(signature.toString(), TYPE_PROCEDURE, INITIALIZED, true, false);
     currentScope->pushSignature(signature);
     // Rename function scope block to support function overloading

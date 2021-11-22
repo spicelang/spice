@@ -142,17 +142,33 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         { // 31
             "error-continue-count-not-too-high",
             "Semantic error at 7:26: Invalid number of continue calls: We can only continue 2 time(s) here"
-        }, // 32
-        {
+        },
+        { // 32
             "error-circular-import",
             "Semantic error - Circular import detected: './test-files/analyzer/error-circular-import/source1.spice'"
         },
-        // Successful tests
         { // 33
+            "error-duplicate-struct-def",
+            "Semantic error at 7:1: Multiple declarations of a struct with the same name: Duplicate struct 'Person'"
+        },
+        { // 34
+            "error-duplicate-function-def",
+            "Semantic error at 5:1: Multiple declarations of a function with the same name: Function 'exampleFunc()' is declared twice"
+        },
+        { // 35
+            "error-duplicate-main-function-def",
+            "Semantic error at 5:1: Multiple declarations of a function with the same name: Main function is declared twice"
+        },
+        { // 36
+            "error-duplicate-procedure-def",
+            "Semantic error at 5:1: Multiple declarations of a procedure with the same name: Procedure 'exampleProcedure()' is declared twice"
+        },
+        // Successful tests
+        { // 37
             "success-fibonacci",
             ""
         },
-        { // 34
+        { // 38
             "success-function-overloading",
             ""
         }
@@ -168,6 +184,7 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
     // Read source file
     std::ifstream sourceStream;
     sourceStream.open(sourceFile);
+    if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
     antlr4::ANTLRInputStream input(sourceStream);
 
     // Parse input to AST

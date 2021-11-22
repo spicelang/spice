@@ -1,0 +1,7 @@
+f<int> main() {
+    return 0;
+}
+
+f<int> main() {
+    return 1;
+}

@@ -1,0 +1,11 @@
+f<dyn> exampleFunc() {
+    return "Hello";
+}
+
+f<dyn> exampleFunc() {
+    return "World";
+}
+
+f<int> main() {
+    printf("%s %s!", exampleFunc(), exampleFunc());
+}

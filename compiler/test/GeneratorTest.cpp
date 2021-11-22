@@ -63,6 +63,7 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
     // Read source file
     std::ifstream sourceStream;
     sourceStream.open(sourceFile);
+    if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
     antlr4::ANTLRInputStream input(sourceStream);
 
     // Parse input to AST
