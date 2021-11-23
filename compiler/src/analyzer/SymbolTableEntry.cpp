@@ -21,6 +21,15 @@ SymbolType SymbolTableEntry::getType() {
 }
 
 /**
+ * Retrieve the llvm type of the current symbol
+ *
+ * @return LLVM type of the current symbol
+ */
+llvm::Type* SymbolTableEntry::getLLVMType() {
+    return llvmType;
+}
+
+/**
  * Retrieve the address of the assigned value
  *
  * @return
@@ -61,6 +70,15 @@ void SymbolTableEntry::updateState(SymbolState newState) {
 void SymbolTableEntry::updateType(SymbolType newType) {
     if (type != TYPE_DYN) throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
     type = newType;
+}
+
+/**
+ * Update the LLVM type of a symbol
+ *
+ * @param type New LLVM type
+ */
+void SymbolTableEntry::updateLLVMType(llvm::Type* type) {
+    llvmType = type;
 }
 
 /**

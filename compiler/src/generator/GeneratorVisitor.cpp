@@ -366,6 +366,7 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
 
     // Create global struct
     llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, structName, false);
+    currentScope->lookup(structName)->updateLLVMType(structType);
 
     // Return true as result for the struct definition
     return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
@@ -622,7 +623,16 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     std::string structName = ctx->IDENTIFIER()->toString();
 
-    //return ;
+    // Get struct type from symbol table
+    llvm::Type* structType = currentScope->lookup(structName)->getLLVMType();
+
+    // Allocate space for struct
+    llvm::Value* memAddress = builder->CreateAlloca(structType, nullptr, TMP_VARIABLE_NAME);
+
+    // Fill the struct with the stated values
+    llvm::Value* filledStruct = ;
+
+    return (llvm::Value*) builder->CreateStore(filledStruct, memAddress);
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -1060,9 +1070,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                 throw IRError(*ctx->IDENTIFIER()[0]->getSymbol(), VARIABLE_NOT_FOUND,
                               "Variable '" + variableName + "' not found in code generation step");
             // If the reference operator is attached, return immediately. Load and return otherwise
-            if (ctx->BITWISE_AND()) {
-                return var;
-            }
+            if (ctx->BITWISE_AND()) return var;
             // If the de-reference operator is attached load twice, otherwise load once
             llvm::Value* loadedVar = builder->CreateLoad(var->getType()->getPointerElementType(), var);
             if (ctx->MUL()) {
@@ -1077,9 +1085,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                 throw IRError(*ctx->IDENTIFIER()[0]->getSymbol(), VARIABLE_NOT_FOUND,
                               "Variable '" + variableName + "' not found in code generation step");
             // If the reference operator is attached, return immediately. Load and return otherwise
-            if (ctx->BITWISE_AND()) {
-                return var;
-            }
+            if (ctx->BITWISE_AND()) return var;
             // If the de-reference operator is attached load twice, otherwise load once
             llvm::Value* loadedVar = builder->CreateLoad(var->getType()->getPointerElementType(), var);
             if (ctx->MUL()) {

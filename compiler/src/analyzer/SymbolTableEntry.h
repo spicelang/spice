@@ -36,6 +36,8 @@ public:
 
     SymbolType getType();
 
+    llvm::Type* getLLVMType();
+
     llvm::Value* getAddress();
 
     bool isLocal();
@@ -43,6 +45,8 @@ public:
     void updateState(SymbolState);
 
     void updateType(SymbolType);
+
+    void updateLLVMType(llvm::Type*);
 
     void updateAddress(llvm::Value*);
 
@@ -52,6 +56,7 @@ private:
     // Members
     std::string name;
     SymbolType type;
+    llvm::Type* llvmType;
     SymbolState state;
     llvm::Value* memAddress;
     bool isConstant;

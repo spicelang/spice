@@ -19,6 +19,7 @@
 #include <utility>
 
 const static std::string RETURN_VARIABLE_NAME = "result";
+const static std::string TMP_VARIABLE_NAME = "tmp";
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
