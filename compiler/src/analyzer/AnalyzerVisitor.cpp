@@ -273,7 +273,31 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
-    // ToDo
+    std::string structName = ctx->IDENTIFIER()->toString();
+    // Check if the struct is defined
+    SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+    if (!structSymbol || structSymbol->getType() != TYPE_STRUCT)
+        throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                            "Struct '" + structName + "' was used before defined.");
+    // Check if field types are matching
+    if (!ctx->fieldLstAssignment()->assignment().empty()) {
+        for (int i = 0; i < ctx->fieldLstAssignment()->assignment().size(); i++) {
+            // ToDo implement @marcauberer
+        }
+    } else if (!ctx->fieldLstAssignment()->value().empty()) {
+        for (int i = 0; i < ctx->fieldLstAssignment()->value().size(); i++) {
+            auto value = ctx->fieldLstAssignment()->value()[i];
+            // Retrieve expected and actual datatype
+            SymbolType expected = currentScope->lookupTable({ structName })->lookup()->getType();
+            SymbolType actual = visit(value).as<SymbolType>();
+            if (actual != expected) {
+                throw SemanticError(value->start, OPERATOR_WRONG_DATA_TYPE,
+                                    "Type of field '" +  + "' does not match the declaration");
+            }
+        }
+    }
+    // ToDo implement @marcauberer
+    return TYPE_STRUCT;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -480,7 +504,12 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
         if (ctx->MUL()) leftType = getTypeFromReferenceType(leftType);
 
         // Take a look on the right side
-        SymbolType rightType = visit(ctx->ternary()).as<SymbolType>();
+        SymbolType rightType;
+        if (ctx->ternary()) {
+            rightType = visit(ctx->ternary()).as<SymbolType>();
+        } else {
+            rightType = visit(ctx->newStmt()).as<SymbolType>();
+        }
         // If left type is dyn, set left type to right type
         if (leftType == TYPE_DYN) {
             leftType = rightType;

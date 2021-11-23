@@ -4,7 +4,7 @@ type TestStruct struct {
 }
 
 f<int> main() {
-    input = 12;
+    int input = 12;
     dyn instance1 = new TestStruct { 12, 46.34 };
     /*dyn instance2 = new TestStruct {
         field1 = &input,

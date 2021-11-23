@@ -624,15 +624,33 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     std::string structName = ctx->IDENTIFIER()->toString();
 
     // Get struct type from symbol table
-    llvm::Type* structType = currentScope->lookup(structName)->getLLVMType();
+    /*llvm::Type* structType = currentScope->lookup(structName)->getLLVMType();
 
     // Allocate space for struct
-    llvm::Value* memAddress = builder->CreateAlloca(structType, nullptr, TMP_VARIABLE_NAME);
+    llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr);
 
     // Fill the struct with the stated values
-    llvm::Value* filledStruct = ;
+    if (!ctx->fieldLstAssignment()->assignment().empty()) {
+        for (int i = 0; i < ctx->fieldLstAssignment()->assignment().size(); i++) {
+            // ToDo implement @marcauberer
+        }
+    } else if (!ctx->fieldLstAssignment()->value().empty()) {
+        for (int i = 0; i < ctx->fieldLstAssignment()->value().size(); i++) {
+            // Visit value
+            llvm::Value* value = visit(ctx->fieldLstAssignment()->value()[i]).as<llvm::Value*>();
+            // Get pointer to struct element
+            std::vector<llvm::Value*> offset;
+            offset.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_INT), 0)); // Array index
+            offset.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_INT), i)); // Field index
+            llvm::Value* fieldAddress = builder->CreateGEP(value->getType(), structAddress, offset);
+            std::cout << "Field address: " << i << fieldAddress << std::endl;
+            // Store value to address
+            builder->CreateStore(value, fieldAddress, false);
+        }
+    }*/
 
-    return (llvm::Value*) builder->CreateStore(filledStruct, memAddress);
+    //return structAddress;
+    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -705,7 +723,12 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
 antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
     if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
         // Get value of right side
-        llvm::Value* rhs = currentAssignValue = visit(ctx->ternary()).as<llvm::Value*>();
+        llvm::Value* rhs = currentAssignValue;
+        if (ctx->ternary()) {
+            rhs = visit(ctx->ternary()).as<llvm::Value*>();
+        } else {
+            rhs = visit(ctx->newStmt()).as<llvm::Value*>();
+        }
 
         // Get value of left side
         std::string varName;
