@@ -21,6 +21,24 @@ SymbolType SymbolTableEntry::getType() {
 }
 
 /**
+ * Retrieve the address of the assigned value
+ *
+ * @return
+ */
+llvm::Value* SymbolTableEntry::getAddress() {
+    return memAddress;
+}
+
+/**
+ * Returns if the symbol is in a local scope or in the global scope
+ *
+ * @return isLocal
+ */
+bool SymbolTableEntry::isLocal() {
+    return !isGlobal;
+}
+
+/**
  * Update the state of the current symbol
  *
  * @throws SemanticError When trying to re-assign a constant variable
@@ -43,6 +61,15 @@ void SymbolTableEntry::updateState(SymbolState newState) {
 void SymbolTableEntry::updateType(SymbolType newType) {
     if (type != TYPE_DYN) throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
     type = newType;
+}
+
+/**
+ * Update the value of a symbol. This is used to save the allocated address where the symbol lives
+ *
+ * @param address Address of the value in memory
+ */
+void SymbolTableEntry::updateAddress(llvm::Value* address) {
+    memAddress = address;
 }
 
 /**

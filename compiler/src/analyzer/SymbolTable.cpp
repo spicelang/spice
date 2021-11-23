@@ -12,7 +12,8 @@
  * @param isParameter Enabled if the symbol is a function/procedure parameter
  */
 void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, bool isConstant, bool isParameter) {
-    symbols.insert({name, SymbolTableEntry(name, type, state, isConstant)});
+    bool isGlobal = getParent() == nullptr;
+    symbols.insert({name, SymbolTableEntry(name, type, state, isConstant, isGlobal)});
     if (isParameter) paramNames.push_back(name);
 }
 

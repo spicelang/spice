@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 #include <exception/SemanticError.h>
+#include <llvm/IR/Value.h>
 
 enum SymbolType {
     TYPE_DOUBLE,     TYPE_INT,     TYPE_STRING,     TYPE_BOOL,
@@ -27,17 +28,23 @@ enum SymbolState {
 class SymbolTableEntry {
 public:
     // Constructors
-    SymbolTableEntry(std::string name, SymbolType type, SymbolState state, bool isConstant) :
-            name(std::move(name)), type(type), state(state), isConstant(isConstant) {};
+    SymbolTableEntry(std::string name, SymbolType type, SymbolState state, bool isConstant, bool isGlobal) :
+            name(std::move(name)), type(type), state(state), isConstant(isConstant), isGlobal(isGlobal) {};
 
     // Public methods
     SymbolState getState();
 
     SymbolType getType();
 
+    llvm::Value* getAddress();
+
+    bool isLocal();
+
     void updateState(SymbolState);
 
     void updateType(SymbolType);
+
+    void updateAddress(llvm::Value*);
 
     std::string toString();
 
@@ -46,5 +53,7 @@ private:
     std::string name;
     SymbolType type;
     SymbolState state;
+    llvm::Value* memAddress;
     bool isConstant;
+    bool isGlobal;
 };

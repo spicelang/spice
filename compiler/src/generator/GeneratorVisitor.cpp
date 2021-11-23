@@ -149,21 +149,21 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         moveInsertPointToBlock(bMain);
 
         // Change scope
-        namedValues.clear();
         std::string scopeId = ScopeIdUtil::getScopeId(ctx);
         currentScope = currentScope->getChild(scopeId);
 
         // Declare result variable and set it to 0 for positive return code
-        namedValues[RETURN_VARIABLE_NAME] = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
+        llvm::Value* memAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
+        currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(memAddress);
         builder->CreateStore(llvm::ConstantInt::getSigned(getTypeFromSymbolType(TYPE_INT), 0),
-                             namedValues[RETURN_VARIABLE_NAME]);
+                             currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
 
         // Generate IR for function body
         visit(ctx->stmtLst());
 
         // Generate return statement for result variable
         if (!blockAlreadyTerminated) {
-            llvm::Value* result = namedValues[RETURN_VARIABLE_NAME];
+            llvm::Value* result = currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress();
             builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
         }
 
@@ -191,7 +191,6 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Change scope
     FunctionSignature signature = currentScope->popSignature();
     currentScope = currentScope->getChild(signature.toString());
-    namedValues.clear();
 
     // Get return type
     currentVar = RETURN_VARIABLE_NAME;
@@ -233,25 +232,28 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         if (paramNo < ctx->paramLstDef()->declStmt().size()) {
             std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
-            namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
-            builder->CreateStore(&param, namedValues[paramName]);
+            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+            currentScope->lookup(paramName)->updateAddress(memAddress);
+            builder->CreateStore(&param, memAddress);
         } else {
             std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
-            namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
-            builder->CreateStore(&param, namedValues[paramName]);
+            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+            currentScope->lookup(paramName)->updateAddress(memAddress);
+            builder->CreateStore(&param, memAddress);
         }
     }
 
     // Declare result variable
-    namedValues[RETURN_VARIABLE_NAME] = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
+    llvm::Value* returnMemAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
+    currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(returnMemAddress);
 
     // Generate IR for function body
     visit(ctx->stmtLst());
 
     // Generate return statement for result variable
     if (!blockAlreadyTerminated) {
-        llvm::Value* result = namedValues[RETURN_VARIABLE_NAME];
+        llvm::Value* result = currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress();
         builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
     }
 
@@ -279,7 +281,6 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Change scope
     FunctionSignature signature = currentScope->popSignature();
     currentScope = currentScope->getChild(signature.toString());
-    namedValues.clear();
 
     // Create procedure itself
     std::vector<std::string> paramNames;
@@ -317,13 +318,15 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         if (paramNo < ctx->paramLstDef()->declStmt().size()) {
             std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
-            namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
-            builder->CreateStore(&param, namedValues[paramName]);
+            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+            currentScope->lookup(paramName)->updateAddress(memAddress);
+            builder->CreateStore(&param, memAddress);
         } else {
             std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
-            namedValues[paramName] = builder->CreateAlloca(paramType, nullptr, paramName);
-            builder->CreateStore(&param, namedValues[paramName]);
+            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+            currentScope->lookup(paramName)->updateAddress(memAddress);
+            builder->CreateStore(&param, memAddress);
         }
     }
 
@@ -362,7 +365,7 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
     }
 
     // Create global struct
-    llvm::StructType::create(*context, memberTypes, structName, false);
+    llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, structName, false);
 
     // Return true as result for the struct definition
     return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
@@ -541,7 +544,8 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
         global->setAlignment(llvm::MaybeAlign(4));
         if (currentAssignValue) global->setInitializer((llvm::Constant*) currentAssignValue);
     } else { // Local scope
-        namedValues[currentVar] = builder->CreateAlloca(varType, nullptr, currentVar);
+        llvm::Value* memAddress = builder->CreateAlloca(varType, nullptr, currentVar);
+        currentScope->lookup(currentVar)->updateAddress(memAddress);
     }
     return currentVar;
 }
@@ -703,12 +707,13 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
                 varName += "." + ctx->IDENTIFIER()[i]->toString();
             }
         }
-        bool isLocal = namedValues.find(varName) != namedValues.end();
+        //bool isLocal = namedValues.find(varName) != namedValues.end();
+        bool isLocal = currentScope->lookup(varName)->isLocal();
 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (isLocal) { // Local variable
-                llvm::AllocaInst* lhs = namedValues[varName];
+                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
                 if (ctx->MUL()) {
                     llvm::Value* lhsValue = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                     builder->CreateStore(rhs, lhsValue);
@@ -721,7 +726,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->PLUS_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::AllocaInst* lhs = namedValues[varName];
+                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createAddInst(loadLhs, loadLhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -733,7 +738,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->MINUS_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::AllocaInst* lhs = namedValues[varName];
+                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -745,7 +750,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->MUL_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::AllocaInst* lhs = namedValues[varName];
+                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -757,7 +762,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->DIV_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::AllocaInst* lhs = namedValues[varName];
+                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -961,7 +966,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     if (ctx->PLUS_PLUS()) {
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "pre_pp");
         std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = namedValues[varName];
+        llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -970,7 +975,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     if (ctx->MINUS_MINUS()) {
         llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "pre_mm");
         std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = namedValues[varName];
+        llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -988,7 +993,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
     if (ctx->PLUS_PLUS()) {
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "post_pp");
         std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = namedValues[varName];
+        llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
         builder->CreateStore(rhs, lhs);
         return rhs;
     }
@@ -997,7 +1002,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
     if (ctx->MINUS_MINUS()) {
         llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "post_mm");
         std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = namedValues[varName];
+        llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
         builder->CreateStore(rhs, lhs);
         return rhs;
     }
@@ -1047,8 +1052,9 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (!ctx->IDENTIFIER().empty()) {
         std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
         currentSymbolType = currentScope->lookup(variableName)->getType();
-        if (namedValues.find(variableName) != namedValues.end()) { // Local variable
-            llvm::Value* var = namedValues[variableName];
+        SymbolTableEntry* variableSymbol = currentScope->lookup(variableName);
+        if (variableSymbol->isLocal()) { // Local variable
+            llvm::Value* var = variableSymbol->getAddress();
             // Throw an error when the variable is null
             if (!var)
                 throw IRError(*ctx->IDENTIFIER()[0]->getSymbol(), VARIABLE_NOT_FOUND,
