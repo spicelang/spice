@@ -16,6 +16,8 @@ public:
 
     static std::string getScopeId(SpiceParser::StructDefContext*);
 
+    static std::string getScopeId(SpiceParser::NewStmtContext*);
+
     static std::string getScopeId(SpiceParser::ProcedureDefContext*);
 
     static std::string getScopeId(SpiceParser::ForLoopContext*);

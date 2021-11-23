@@ -3,6 +3,15 @@
 #include "SymbolTableEntry.h"
 
 /**
+ * Retrieve the name of the current symbol
+ *
+ * @return Name of the curren symbol
+ */
+std::string SymbolTableEntry::getName() {
+    return name;
+}
+
+/**
  * Retrieve the state of the current symbol
  *
  * @return State of the current symbol
@@ -39,11 +48,20 @@ llvm::Value* SymbolTableEntry::getAddress() {
 }
 
 /**
+ * Retrieve the order index of the symbol table entry
+ *
+ * @return Order index
+ */
+unsigned int SymbolTableEntry::getOrderIndex() const {
+    return orderIndex;
+}
+
+/**
  * Returns if the symbol is in a local scope or in the global scope
  *
  * @return isLocal
  */
-bool SymbolTableEntry::isLocal() {
+bool SymbolTableEntry::isLocal() const {
     return !isGlobal;
 }
 
@@ -75,10 +93,10 @@ void SymbolTableEntry::updateType(SymbolType newType) {
 /**
  * Update the LLVM type of a symbol
  *
- * @param type New LLVM type
+ * @param newType New LLVM type
  */
-void SymbolTableEntry::updateLLVMType(llvm::Type* type) {
-    llvmType = type;
+void SymbolTableEntry::updateLLVMType(llvm::Type* newType) {
+    llvmType = newType;
 }
 
 /**
@@ -96,6 +114,6 @@ void SymbolTableEntry::updateAddress(llvm::Value* address) {
  * @return Symbol table entry in form of a string
  */
 std::string SymbolTableEntry::toString() {
-    return "Name: " + name + ", Type: " + std::to_string(type) + ", State: " + std::to_string(state) + ", Const: " +
-           std::to_string(isConstant);
+    return "Name: " + name + ", Type: " + std::to_string(type) + ", OrderIndex: " + std::to_string(orderIndex) + ", State: " + std::to_string(state) + ", Const: " +
+           std::to_string(isConstant) + ", IsGlobal: " + std::to_string(isGlobal);
 }

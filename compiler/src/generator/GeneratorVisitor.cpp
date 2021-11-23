@@ -568,7 +568,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         }
     }
     if (!functionFound) { // Not found => Declare function, which will be linked to later
-        SymbolTable* table = currentScope->lookupTable(functionNamespace);
+        SymbolTable* table = currentScope->lookupTableWithSymbol(functionNamespace);
         // Check if it is a function or a procedure
         if (!table->getFunctionDeclaration(signature.toString()).empty()) {
             std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
@@ -622,32 +622,29 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     std::string structName = ctx->IDENTIFIER()->toString();
+    std::string structScope = ScopeIdUtil::getScopeId(ctx);
 
     // Get struct type from symbol table
-    /*llvm::Type* structType = currentScope->lookup(structName)->getLLVMType();
+    llvm::Type* structType = currentScope->lookup(structName)->getLLVMType();
 
     // Allocate space for struct
     llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr);
 
     // Fill the struct with the stated values
-    if (!ctx->fieldLstAssignment()->assignment().empty()) {
-        for (int i = 0; i < ctx->fieldLstAssignment()->assignment().size(); i++) {
-            // ToDo implement @marcauberer
-        }
-    } else if (!ctx->fieldLstAssignment()->value().empty()) {
-        for (int i = 0; i < ctx->fieldLstAssignment()->value().size(); i++) {
-            // Visit value
-            llvm::Value* value = visit(ctx->fieldLstAssignment()->value()[i]).as<llvm::Value*>();
-            // Get pointer to struct element
-            std::vector<llvm::Value*> offset;
-            offset.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_INT), 0)); // Array index
-            offset.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_INT), i)); // Field index
-            llvm::Value* fieldAddress = builder->CreateGEP(value->getType(), structAddress, offset);
-            std::cout << "Field address: " << i << fieldAddress << std::endl;
-            // Store value to address
-            builder->CreateStore(value, fieldAddress, false);
-        }
-    }*/
+    SymbolTable* structSymbolTable = currentScope->lookupTable({ structScope });
+    std::cout << structSymbolTable->toString() << std::endl;
+    for (int i = 0; i < ctx->fieldLstAssignment()->ternary().size(); i++) {
+        // Visit assignment
+        llvm::Value* assignment = visit(ctx->fieldLstAssignment()->ternary()[i]).as<llvm::Value*>();
+        // Get pointer to struct element
+        std::vector<llvm::Value*> offset;
+        offset.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_INT), 0)); // Array index
+        offset.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_INT), i)); // Field index
+        llvm::Value* fieldAddress = builder->CreateGEP(assignment->getType(), structAddress, offset);
+        std::cout << "Field address: " << i << fieldAddress << std::endl;
+        // Store value to address
+        builder->CreateStore(assignment, fieldAddress, false);
+    }
 
     //return structAddress;
     return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);

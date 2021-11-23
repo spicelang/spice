@@ -19,6 +19,7 @@
 #include <utility>
 
 const static std::string RETURN_VARIABLE_NAME = "result";
+const static std::string TMP_VARIABLE_NAME = "tmp";
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
@@ -59,8 +60,6 @@ public:
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
 
     antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext* ctx) override;
-
-    antlrcpp::Any visitFieldLstAssignment(SpiceParser::FieldLstAssignmentContext* ctx) override;
 
     antlrcpp::Any visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) override;
 

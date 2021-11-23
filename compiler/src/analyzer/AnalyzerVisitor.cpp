@@ -206,11 +206,6 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) 
     return TYPE_BOOL;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitFieldLstAssignment(SpiceParser::FieldLstAssignmentContext* ctx) {
-    // ToDo
-    return TYPE_BOOL;
-}
-
 antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) {
     std::vector<SymbolType> paramTypes;
     for (auto& param : ctx->declStmt()) { // Parameters without default value
@@ -253,7 +248,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     // Check if function signature exists in symbol table
     FunctionSignature signature = FunctionSignature(functionName, paramTypes);
     functionNamespace.back() = signature.toString();
-    SymbolTable* entryTable = currentScope->lookupTable(functionNamespace);
+    SymbolTable* entryTable = currentScope->lookupTableWithSymbol(functionNamespace);
     if (!entryTable)
         throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
                             "Function/Procedure '" + signature.toString() + "' could not be found");
@@ -274,29 +269,32 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 
 antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     std::string structName = ctx->IDENTIFIER()->toString();
+    std::string structScope = ScopeIdUtil::getScopeId(ctx);
     // Check if the struct is defined
     SymbolTableEntry* structSymbol = currentScope->lookup(structName);
     if (!structSymbol || structSymbol->getType() != TYPE_STRUCT)
         throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                             "Struct '" + structName + "' was used before defined.");
-    // Check if field types are matching
-    if (!ctx->fieldLstAssignment()->assignment().empty()) {
-        for (int i = 0; i < ctx->fieldLstAssignment()->assignment().size(); i++) {
-            // ToDo implement @marcauberer
+
+    // Change temporarily to the scope of the struct
+
+    // Check if the field types are matching
+    /*for (int i = 0; i < ctx->fieldLstAssignment()->assignment().size(); i++) {
+        auto assignment = ctx->fieldLstAssignment()->assignment()[i];
+        SymbolType assignmentType = visit(assignment).as<SymbolType>();
+        // Check if the field is set as a whole assignment or just as a value
+        if (assignment->declStmt() || !assignment->IDENTIFIER().empty()) {
+            // All the checks have already happened
+
+        } else {
+            // Check if the value type matches the struct declaration
+
         }
-    } else if (!ctx->fieldLstAssignment()->value().empty()) {
-        for (int i = 0; i < ctx->fieldLstAssignment()->value().size(); i++) {
-            auto value = ctx->fieldLstAssignment()->value()[i];
-            // Retrieve expected and actual datatype
-            SymbolType expected = currentScope->lookupTable({ structName })->lookup()->getType();
-            SymbolType actual = visit(value).as<SymbolType>();
-            if (actual != expected) {
-                throw SemanticError(value->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Type of field '" +  + "' does not match the declaration");
-            }
-        }
-    }
-    // ToDo implement @marcauberer
+    }*/
+
+    // Delete the scope again, since it was only for checking the types
+    //currentScope = currentScope->getParent();
+
     return TYPE_STRUCT;
 }
 
@@ -505,11 +503,12 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
 
         // Take a look on the right side
         SymbolType rightType;
-        if (ctx->ternary()) {
+        if (ctx->ternary()) { // Ternary
             rightType = visit(ctx->ternary()).as<SymbolType>();
-        } else {
+        } else { // NewStmt
             rightType = visit(ctx->newStmt()).as<SymbolType>();
         }
+
         // If left type is dyn, set left type to right type
         if (leftType == TYPE_DYN) {
             leftType = rightType;

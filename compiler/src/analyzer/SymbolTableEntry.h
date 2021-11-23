@@ -4,6 +4,7 @@
 
 #include <string>
 #include <stdexcept>
+#include <utility>
 
 #include <exception/SemanticError.h>
 #include <llvm/IR/Value.h>
@@ -28,10 +29,14 @@ enum SymbolState {
 class SymbolTableEntry {
 public:
     // Constructors
-    SymbolTableEntry(std::string name, SymbolType type, SymbolState state, bool isConstant, bool isGlobal) :
-            name(std::move(name)), type(type), state(state), isConstant(isConstant), isGlobal(isGlobal) {};
+    SymbolTableEntry(std::string  name, SymbolType type, SymbolState state, unsigned int orderIndex,
+                     bool isConstant, bool isGlobal) :
+            name(std::move(name)), type(type), state(state),
+            orderIndex(orderIndex), isConstant(isConstant), isGlobal(isGlobal) {};
 
     // Public methods
+    std::string getName();
+
     SymbolState getState();
 
     SymbolType getType();
@@ -40,7 +45,9 @@ public:
 
     llvm::Value* getAddress();
 
-    bool isLocal();
+    unsigned int getOrderIndex() const;
+
+    bool isLocal() const;
 
     void updateState(SymbolState);
 
@@ -59,6 +66,7 @@ private:
     llvm::Type* llvmType;
     SymbolState state;
     llvm::Value* memAddress;
+    unsigned int orderIndex;
     bool isConstant;
     bool isGlobal;
 };

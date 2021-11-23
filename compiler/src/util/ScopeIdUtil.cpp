@@ -39,9 +39,16 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::ProcedureDefContext* ctx) {
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::StructDefContext* ctx) {
-    auto symbol = ctx->TYPE()->getSymbol();
-    return "struct:" + ctx->IDENTIFIER()->toString() + ":" + std::to_string(symbol->getLine()) + ":" +
-           std::to_string(symbol->getCharPositionInLine());
+    return "struct:" + ctx->IDENTIFIER()->toString();
+}
+
+/**
+ * Get scope id for the NewStmtContext AST node
+ *
+ * @return Scope id
+ */
+std::string ScopeIdUtil::getScopeId(SpiceParser::NewStmtContext* ctx) {
+    return "struct:" + ctx->IDENTIFIER()->toString();
 }
 
 /**
