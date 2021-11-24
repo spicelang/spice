@@ -75,7 +75,7 @@ bool SymbolTableEntry::isLocal() const {
 void SymbolTableEntry::updateState(SymbolState newState) {
     if (state == INITIALIZED && isConstant)
         throw SemanticError(REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
-    if (newState == INITIALIZED && type == TYPE_DYN)
+    if (newState == INITIALIZED && type == SymbolType(TYPE_DYN))
         throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'");
     state = newState;
 }
@@ -86,7 +86,7 @@ void SymbolTableEntry::updateState(SymbolState newState) {
  * @param newType New type of the current symbol
  */
 void SymbolTableEntry::updateType(SymbolType newType) {
-    if (type != TYPE_DYN) throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
+    if (type != SymbolType(TYPE_DYN)) throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
     type = newType;
 }
 
@@ -114,6 +114,7 @@ void SymbolTableEntry::updateAddress(llvm::Value* address) {
  * @return Symbol table entry in form of a string
  */
 std::string SymbolTableEntry::toString() {
-    return "Name: " + name + ", Type: " + std::to_string(type) + ", OrderIndex: " + std::to_string(orderIndex) + ", State: " + std::to_string(state) + ", Const: " +
-           std::to_string(isConstant) + ", IsGlobal: " + std::to_string(isGlobal);
+    return "Name: " + name + ", Type: " + std::to_string(type.getSuperType()) + ", OrderIndex: " +
+        std::to_string(orderIndex) + ", State: " + std::to_string(state) + ", Const: " + std::to_string(isConstant) +
+        ", IsGlobal: " + std::to_string(isGlobal);
 }

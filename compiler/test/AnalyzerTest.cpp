@@ -163,12 +163,16 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "error-duplicate-procedure-def",
             "Semantic error at 5:1: Multiple declarations of a procedure with the same name: Procedure 'exampleProcedure()' is declared twice"
         },
-        // Successful tests
         { // 37
+            "error-custom-type-unknown",
+            ""
+        },
+        // Successful tests
+        { // 38
             "success-fibonacci",
             ""
         },
-        { // 38
+        { // 39
             "success-function-overloading",
             ""
         }

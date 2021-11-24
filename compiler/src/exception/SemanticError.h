@@ -28,6 +28,7 @@ enum SemanticErrorType {
     STD_NOT_FOUND,
     IMPORTED_FILE_NOT_EXISTING,
     CIRCULAR_DEPENDENCY,
+    UNKNOWN_DATATYPE,
 };
 
 /**

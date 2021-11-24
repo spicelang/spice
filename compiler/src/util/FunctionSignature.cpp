@@ -12,7 +12,7 @@ std::string FunctionSignature::toString() {
     if (!paramTypes.empty()) {
         std::string typeName;
         for (auto& param : paramTypes) {
-            switch (param) {
+            switch (param.getSuperType()) {
                 case TYPE_DOUBLE: {
                     typeName = "double";
                     break;
@@ -29,6 +29,18 @@ std::string FunctionSignature::toString() {
                     typeName = "bool";
                     break;
                 }
+                case TYPE_DOUBLE_PTR:
+                    typeName = "double*";
+                    break;
+                case TYPE_INT_PTR:
+                    typeName = "int*";
+                    break;
+                case TYPE_STRING_PTR:
+                    typeName = "string*";
+                    break;
+                case TYPE_BOOL_PTR:
+                    typeName = "bool*";
+                    break;
                 case TYPE_DYN: {
                     throw std::runtime_error("Internal compiler error: Parameter type was dyn when generating signature");
                 }
@@ -42,6 +54,9 @@ std::string FunctionSignature::toString() {
                     typeName = "procedure";
                     break;
                 }
+                case TYPE_STRUCT:
+                    typeName = "struct(" + param.getSubType() + "";
+                    break;
                 case TYPE_IMPORT:
                     typeName = "import";
                     break;

@@ -40,7 +40,7 @@ prefixUnary: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnary;
 postfixUnary: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
 atomicExpr: value | LPAREN assignment RPAREN;
 value: STRING | TRUE | FALSE | INTEGER | DOUBLE | (BITWISE_AND | MUL)? IDENTIFIER (DOT IDENTIFIER)* | functionCall;
-dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN) MUL?;
+dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER) MUL?;
 
 TYPE_DOUBLE: 'double';
 TYPE_INT: 'int';

@@ -26,11 +26,11 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
                             "Main function is declared twice");
     }
     // Insert function name into the root symbol table
-    currentScope->insert(mainSignature, TYPE_FUNCTION, INITIALIZED, true, false);
+    currentScope->insert(mainSignature, SymbolType(TYPE_FUNCTION), INITIALIZED, true, false);
     // Create a new scope
     currentScope = currentScope->createChildBlock("main()");
     // Declare variable for the return value
-    SymbolType returnType = TYPE_INT;
+    SymbolType returnType = SymbolType(TYPE_INT);
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, INITIALIZED, false, false);
     // Visit parameters
     parameterMode = true;
@@ -68,7 +68,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
         throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE,
                             "Function '" + signature.toString() + "' is declared twice");
     }
-    currentScope->insert(signature.toString(), TYPE_FUNCTION, INITIALIZED, true, false);
+    currentScope->insert(signature.toString(), SymbolType(TYPE_FUNCTION), INITIALIZED, true, false);
     currentScope->pushSignature(signature);
     // Rename function scope block to support function overloading
     currentScope->renameChildBlock(scopeId, signature.toString());
@@ -104,7 +104,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
         throw SemanticError(*ctx->start, PROCEDURE_DECLARED_TWICE,
                             "Procedure '" + signature.toString() + "' is declared twice");
     }
-    currentScope->insert(signature.toString(), TYPE_PROCEDURE, INITIALIZED, true, false);
+    currentScope->insert(signature.toString(), SymbolType(TYPE_PROCEDURE), INITIALIZED, true, false);
     currentScope->pushSignature(signature);
     // Rename function scope block to support function overloading
     currentScope->renameChildBlock(scopeId, signature.toString());
@@ -114,7 +114,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     visit(ctx->stmtLst());
     // Return to old scope
     currentScope = currentScope->getParent();
-    return TYPE_BOOL;
+    return SymbolType(TYPE_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx) {
@@ -123,14 +123,14 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
     if (currentScope->lookup(structName))
         throw SemanticError(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate struct '" + structName + "'");
     // Create a new table entry for the struct
-    currentScope->insert(structName, TYPE_STRUCT, DECLARED, true, false);
+    currentScope->insert(structName, SymbolType(TYPE_STRUCT, structName), DECLARED, true, false);
     // Visit field list in a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     visit(ctx->fieldLst());
     // Return to the old scope
     currentScope = currentScope->getParent();
-    return TYPE_BOOL;
+    return SymbolType(TYPE_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -141,7 +141,7 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     visit(ctx->assignment()[0]);
     // Visit condition in new scope
     SymbolType conditionType = visit(ctx->assignment()[1]).as<SymbolType>();
-    if (conditionType != TYPE_BOOL)
+    if (conditionType.getSuperType() != TYPE_BOOL)
         throw SemanticError(*ctx->assignment()[1]->start, CONDITION_MUST_BE_BOOL,
                             "For loop condition must be of type bool");
     // Visit incrementer in new scope
@@ -152,7 +152,7 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     nestedLoopCounter--;
     // Return to old scope
     currentScope = currentScope->getParent();
-    return TYPE_BOOL;
+    return SymbolType(TYPE_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
@@ -161,7 +161,7 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
     SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
-    if (conditionType != TYPE_BOOL)
+    if (conditionType.getSuperType() != TYPE_BOOL)
         throw SemanticError(*ctx->assignment()->start, CONDITION_MUST_BE_BOOL,
                             "While loop condition must be of type bool");
     // Visit statement list in new scope
@@ -170,7 +170,7 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx
     nestedLoopCounter--;
     // Return to old scope
     currentScope = currentScope->getParent();
-    return TYPE_BOOL;
+    return SymbolType(TYPE_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
@@ -179,7 +179,7 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
     SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
-    if (conditionType != TYPE_BOOL)
+    if (conditionType.getSuperType() != TYPE_BOOL)
         throw SemanticError(*ctx->assignment()->start, CONDITION_MUST_BE_BOOL,
                             "If condition must be of type bool");
     // Visit statement list in new scope
@@ -188,7 +188,7 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     currentScope = currentScope->getParent();
     // Visit else statement if it exists
     if (ctx->elseStmt()) visit(ctx->elseStmt());
-    return TYPE_BOOL;
+    return SymbolType(TYPE_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) {
@@ -203,7 +203,7 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) 
         // Return to old scope
         currentScope = currentScope->getParent();
     }
-    return TYPE_BOOL;
+    return SymbolType(TYPE_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) {
@@ -211,7 +211,7 @@ antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext*
     for (auto& param : ctx->declStmt()) { // Parameters without default value
         SymbolType paramType = visit(param).as<SymbolType>();
         std::string paramName = param->IDENTIFIER()->toString();
-        if (paramType == TYPE_DYN)
+        if (paramType.getSuperType() == TYPE_DYN)
             throw SemanticError(*param->start, FCT_PARAM_IS_TYPE_DYN,
                                 "Type of parameter '" + paramName + "' is invalid");
         paramTypes.push_back(paramType);
@@ -259,12 +259,12 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     // Add function call to the signature queue of the current scope
     currentScope->pushSignature(signature);
     // Search for symbol table of called function/procedure to read parameters
-    if (entry->getType() == TYPE_FUNCTION) {
+    if (entry->getType().getSuperType() == TYPE_FUNCTION) {
         entryTable = entryTable->getChild(signature.toString());
         // Get return type of called function
         return entryTable->lookup(RETURN_VARIABLE_NAME)->getType();
     }
-    return TYPE_BOOL;
+    return SymbolType(TYPE_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
@@ -272,9 +272,11 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     std::string structScope = ScopeIdUtil::getScopeId(ctx);
     // Check if the struct is defined
     SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-    if (!structSymbol || structSymbol->getType() != TYPE_STRUCT)
+    if (!structSymbol || structSymbol->getType().getSuperType() != TYPE_STRUCT ||
+        structSymbol->getType().getSubType() != structName) {
         throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                             "Struct '" + structName + "' was used before defined.");
+    }
 
     // Change temporarily to the scope of the struct
 
@@ -295,7 +297,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     // Delete the scope again, since it was only for checking the types
     //currentScope = currentScope->getParent();
 
-    return TYPE_STRUCT;
+    return SymbolType(TYPE_STRUCT, structName);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -355,12 +357,12 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();
-    currentScope->insert(importIden, TYPE_IMPORT, INITIALIZED, true, false);
+    currentScope->insert(importIden, SymbolType(TYPE_IMPORT), INITIALIZED, true, false);
 
     // Mount symbol table of the imported source file into the current scope
     currentScope->mountChildBlock(importIden, nestedTable);
 
-    return TYPE_STRING;
+    return SymbolType(TYPE_STRING);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
@@ -371,7 +373,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
         throw SemanticError(*ctx->start, RETURN_STMT_WITHOUT_FUNCTION,
                             "Cannot assign return statement to a function");
     // Check data type of return statement
-    if (returnVariable->getType() == TYPE_DYN) {
+    if (returnVariable->getType().getSuperType() == TYPE_DYN) {
         // Set explicit return type to the return variable
         returnVariable->updateType(returnType);
     } else {
@@ -398,7 +400,7 @@ antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx
     if (breakCount > nestedLoopCounter)
         throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_BREAK_NUMBER,
                             "We can only break " + std::to_string(nestedLoopCounter) + " time(s) here");
-    return TYPE_INT;
+    return SymbolType(TYPE_INT);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) {
@@ -414,7 +416,7 @@ antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContex
     if (continueCount > nestedLoopCounter)
         throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_CONTINUE_NUMBER,
                             "We can only continue " + std::to_string(nestedLoopCounter) + " time(s) here");
-    return TYPE_INT;
+    return SymbolType(TYPE_INT);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) {
@@ -434,7 +436,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
             case 'o':
             case 'x':
             case 'X': {
-                if (assignmentType != TYPE_INT && assignmentType != TYPE_BOOL)
+                if (assignmentType.getSuperType() != TYPE_INT && assignmentType.getSuperType() != TYPE_BOOL)
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects an int or a bool here");
                 placeholderCount++;
@@ -448,22 +450,22 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
             case 'E':
             case 'g':
             case 'G': {
-                if (assignmentType != TYPE_DOUBLE)
+                if (assignmentType.getSuperType() != TYPE_DOUBLE)
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects a double here");
                 placeholderCount++;
                 break;
             }
             case 's': {
-                if (assignmentType != TYPE_STRING)
+                if (assignmentType.getSuperType() != TYPE_STRING)
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects a string here");
                 placeholderCount++;
                 break;
             }
             case 'p': {
-                if (assignmentType != TYPE_DOUBLE_PTR && assignmentType != TYPE_INT_PTR &&
-                    assignmentType != TYPE_STRING_PTR && assignmentType != TYPE_BOOL_PTR)
+                if (assignmentType.getSuperType() != TYPE_DOUBLE_PTR && assignmentType.getSuperType() != TYPE_INT_PTR &&
+                    assignmentType.getSuperType() != TYPE_STRING_PTR && assignmentType.getSuperType() != TYPE_BOOL_PTR)
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects a pointer here");
                 placeholderCount++;
@@ -510,7 +512,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
         if (ctx->MUL()) leftType = getTypeFromReferenceType(leftType);
 
         // If left type is dyn, set left type to right type
-        if (leftType == TYPE_DYN) {
+        if (leftType.getSuperType() == TYPE_DYN) {
             leftType = rightType;
             symbolTableEntry->updateType(rightType);
         }
@@ -521,27 +523,27 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
                 throw SemanticError(*ctx->ASSIGN_OP()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Cannot apply the assign operator to different data types");
         } else if (ctx->PLUS_EQUAL()) {
-            if (!(leftType == TYPE_DOUBLE && rightType == TYPE_DOUBLE) &&
-                !(leftType == TYPE_INT && rightType == TYPE_INT) &&
-                !(leftType == TYPE_STRING && rightType == TYPE_STRING)) {
+            if (!(leftType.getSuperType() == TYPE_DOUBLE && rightType.getSuperType() == TYPE_DOUBLE) &&
+                !(leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_INT) &&
+                !(leftType.getSuperType() == TYPE_STRING && rightType.getSuperType() == TYPE_STRING)) {
                 throw SemanticError(*ctx->PLUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Cannot apply += operator on this combination of types");
             }
         } else if (ctx->MINUS_EQUAL()) {
-            if (!(leftType == TYPE_DOUBLE && rightType == TYPE_DOUBLE) &&
-                !(leftType == TYPE_INT && rightType == TYPE_INT)) {
+            if (!(leftType.getSuperType() == TYPE_DOUBLE && rightType.getSuperType() == TYPE_DOUBLE) &&
+                !(leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_INT)) {
                 throw SemanticError(*ctx->MINUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Cannot apply -= operator on this combination of types");
             }
         } else if (ctx->MUL_EQUAL()) {
-            if (!(leftType == TYPE_DOUBLE && rightType == TYPE_DOUBLE) &&
-                !(leftType == TYPE_INT && rightType == TYPE_INT)) {
+            if (!(leftType.getSuperType() == TYPE_DOUBLE && rightType.getSuperType() == TYPE_DOUBLE) &&
+                !(leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_INT)) {
                 throw SemanticError(*ctx->MUL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Cannot apply *= operator on this combination of types");
             }
         } else if (ctx->DIV_EQUAL()) {
-            if (!(leftType == TYPE_DOUBLE && rightType == TYPE_DOUBLE) &&
-                !(leftType == TYPE_INT && rightType == TYPE_INT)) {
+            if (!(leftType.getSuperType() == TYPE_DOUBLE && rightType.getSuperType() == TYPE_DOUBLE) &&
+                !(leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_INT)) {
                 throw SemanticError(*ctx->DIV_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Cannot apply /= operator on this combination of types");
             }
@@ -562,7 +564,7 @@ antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
         SymbolType trueType = visit(ctx->logicalOrExpr()[1]).as<SymbolType>();
         SymbolType falseType = visit(ctx->logicalOrExpr()[2]).as<SymbolType>();
         // Check if the condition evaluates to boolean
-        if (conditionType != TYPE_BOOL)
+        if (conditionType.getSuperType() != TYPE_BOOL)
             throw SemanticError(*condition->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Condition operand in ternary must be a bool");
         // Check if trueType and falseType are matching
@@ -580,13 +582,13 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
         SymbolType leftType = visit(ctx->logicalAndExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
             SymbolType rightType = visit(ctx->logicalAndExpr()[i]).as<SymbolType>();
-            if (leftType == TYPE_BOOL && rightType == TYPE_BOOL) { // Allow logical or operator for booleans
-                leftType = TYPE_BOOL;
+            // Allow logical or operator for booleans
+            if (leftType.getSuperType() == TYPE_BOOL && rightType.getSuperType() == TYPE_BOOL) {
+                leftType = SymbolType(TYPE_BOOL);
                 continue;
             }
             // Every other combination is invalid
-            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Can only apply logical or to booleans");
+            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,"Can only apply logical or to booleans");
         }
         return leftType;
     }
@@ -599,8 +601,9 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
         SymbolType leftType = visit(ctx->bitwiseOrExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
             SymbolType rightType = visit(ctx->bitwiseOrExpr()[i]).as<SymbolType>();
-            if (leftType == TYPE_BOOL && rightType == TYPE_BOOL) { // Allow logical and operator for booleans
-                leftType = TYPE_BOOL;
+            // Allow logical and operator for booleans
+            if (leftType.getSuperType() == TYPE_BOOL && rightType.getSuperType() == TYPE_BOOL) {
+                leftType = SymbolType(TYPE_BOOL);
                 continue;
             }
             // Every other combination is invalid
@@ -618,12 +621,14 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
         SymbolType leftType = visit(ctx->bitwiseAndExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
             SymbolType rightType = visit(ctx->bitwiseAndExpr()[i]).as<SymbolType>();
-            if (leftType == TYPE_BOOL && rightType == TYPE_BOOL) { // Allow bitwise or operator for booleans
-                leftType = TYPE_BOOL;
+            // Allow bitwise or operator for booleans
+            if (leftType.getSuperType() == TYPE_BOOL && rightType.getSuperType() == TYPE_BOOL) {
+                leftType = SymbolType(TYPE_BOOL);
                 continue;
             }
-            if (leftType == TYPE_INT && rightType == TYPE_INT) { // Allow bitwise or operator for integers
-                leftType = TYPE_INT;
+            // Allow bitwise or operator for integers
+            if (leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_INT) {
+                leftType = SymbolType(TYPE_INT);
                 continue;
             }
             // Every other combination is invalid
@@ -641,12 +646,14 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
         SymbolType leftType = visit(ctx->equalityExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->equalityExpr().size(); i++) {
             SymbolType rightType = visit(ctx->equalityExpr()[i]).as<SymbolType>();
-            if (leftType == TYPE_BOOL && rightType == TYPE_BOOL) { // Allow bitwise and operator for booleans
-                leftType = TYPE_BOOL;
+            // Allow bitwise and operator for booleans
+            if (leftType.getSuperType() == TYPE_BOOL && rightType.getSuperType() == TYPE_BOOL) {
+                leftType = SymbolType(TYPE_BOOL);
                 continue;
             }
-            if (leftType == TYPE_INT && rightType == TYPE_INT) { // Allow bitwise and operator for integers
-                leftType = TYPE_INT;
+            // Allow bitwise and operator for integers
+            if (leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_INT) {
+                leftType = SymbolType(TYPE_INT);
                 continue;
             }
             // Every other combination is invalid
@@ -663,12 +670,18 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
     if (ctx->children.size() > 1) {
         SymbolType leftType = visit(ctx->relationalExpr()[0]).as<SymbolType>();
         SymbolType rightType = visit(ctx->relationalExpr()[1]).as<SymbolType>();
-        if (leftType == TYPE_DOUBLE && rightType == TYPE_DOUBLE) return TYPE_BOOL; // Can compare double with double
-        if (leftType == TYPE_DOUBLE && rightType == TYPE_INT) return TYPE_BOOL; // Can compare double with int
-        if (leftType == TYPE_INT && rightType == TYPE_DOUBLE) return TYPE_BOOL; // Can compare int with double
-        if (leftType == TYPE_INT && rightType == TYPE_INT) return TYPE_BOOL; // Can compare int with int
-        if (leftType == TYPE_STRING && rightType == TYPE_STRING) return TYPE_BOOL; // Can compare string with string
-        if (leftType == TYPE_BOOL && rightType == TYPE_BOOL) return TYPE_BOOL; // Can compare bool with bool
+        if (leftType.getSuperType() == TYPE_DOUBLE && rightType.getSuperType() == TYPE_DOUBLE)
+            return SymbolType(TYPE_BOOL); // Can compare double with double
+        if (leftType.getSuperType() == TYPE_DOUBLE && rightType.getSuperType() == TYPE_INT)
+            return SymbolType(TYPE_BOOL); // Can compare double with int
+        if (leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_DOUBLE)
+            return SymbolType(TYPE_BOOL); // Can compare int with double
+        if (leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_INT)
+            return SymbolType(TYPE_BOOL); // Can compare int with int
+        if (leftType.getSuperType() == TYPE_STRING && rightType.getSuperType() == TYPE_STRING)
+            return SymbolType(TYPE_BOOL); // Can compare string with string
+        if (leftType.getSuperType() == TYPE_BOOL && rightType.getSuperType() == TYPE_BOOL)
+            return SymbolType(TYPE_BOOL); // Can compare bool with bool
         // Every other combination is invalid
         throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                             "Can only compare some type combinations with an equality operator");
@@ -681,10 +694,14 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
     if (ctx->children.size() > 1) {
         SymbolType leftType = visit(ctx->additiveExpr()[0]).as<SymbolType>();
         SymbolType rightType = visit(ctx->additiveExpr()[1]).as<SymbolType>();
-        if (leftType == TYPE_DOUBLE && rightType == TYPE_DOUBLE) return TYPE_BOOL; // Can compare double with double
-        if (leftType == TYPE_DOUBLE && rightType == TYPE_INT) return TYPE_BOOL; // Can compare double with int
-        if (leftType == TYPE_INT && rightType == TYPE_DOUBLE) return TYPE_BOOL; // Can compare int with double
-        if (leftType == TYPE_INT && rightType == TYPE_INT) return TYPE_BOOL; // Can compare int with int
+        if (leftType.getSuperType() == TYPE_DOUBLE && rightType.getSuperType() == TYPE_DOUBLE)
+            return SymbolType(TYPE_BOOL); // Can compare double with double
+        if (leftType.getSuperType() == TYPE_DOUBLE && rightType.getSuperType() == TYPE_INT)
+            return SymbolType(TYPE_BOOL); // Can compare double with int
+        if (leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_DOUBLE)
+            return SymbolType(TYPE_BOOL); // Can compare int with double
+        if (leftType.getSuperType() == TYPE_INT && rightType.getSuperType() == TYPE_INT)
+            return SymbolType(TYPE_BOOL); // Can compare int with int
         // Every other combination is invalid
         throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                             "Can only compare doubles or ints with one another with a relational operator");
@@ -701,50 +718,50 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
             auto next = ctx->multiplicativeExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
             // Check all combinations
-            if (currentType == TYPE_DOUBLE) {
-                if (nextType == TYPE_DOUBLE) { // e.g.: 4.3 + 6.1
-                    currentType = TYPE_DOUBLE;
-                } else if (nextType == TYPE_INT) { // e.g.: 4.3 + 4
-                    currentType = TYPE_DOUBLE;
-                } else if (nextType == TYPE_STRING) { // e.g.: 4.3 + "Test"
-                    currentType = TYPE_STRING;
-                } else if (nextType == TYPE_BOOL) { // e.g.: 4.3 + true
+            if (currentType.getSuperType() == TYPE_DOUBLE) {
+                if (nextType.getSuperType() == TYPE_DOUBLE) { // e.g.: 4.3 + 6.1
+                    currentType = SymbolType(TYPE_DOUBLE);
+                } else if (nextType.getSuperType() == TYPE_INT) { // e.g.: 4.3 + 4
+                    currentType = SymbolType(TYPE_DOUBLE);
+                } else if (nextType.getSuperType() == TYPE_STRING) { // e.g.: 4.3 + "Test"
+                    currentType = SymbolType(TYPE_STRING);
+                } else if (nextType.getSuperType() == TYPE_BOOL) { // e.g.: 4.3 + true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands double and bool for additive operator");
                 }
-            } else if (currentType == TYPE_INT) {
-                if (nextType == TYPE_DOUBLE) { // e.g.: 4 + 6.1
-                    currentType = TYPE_DOUBLE;
-                } else if (nextType == TYPE_INT) { // e.g.: 4 + 5
-                    currentType = TYPE_INT;
-                } else if (nextType == TYPE_STRING) { // e.g.: 4 + "Test"
-                    currentType = TYPE_STRING;
-                } else if (nextType == TYPE_BOOL) { // e.g.: 4 + true
+            } else if (currentType.getSuperType() == TYPE_INT) {
+                if (nextType.getSuperType() == TYPE_DOUBLE) { // e.g.: 4 + 6.1
+                    currentType = SymbolType(TYPE_DOUBLE);
+                } else if (nextType.getSuperType() == TYPE_INT) { // e.g.: 4 + 5
+                    currentType = SymbolType(TYPE_INT);
+                } else if (nextType.getSuperType() == TYPE_STRING) { // e.g.: 4 + "Test"
+                    currentType = SymbolType(TYPE_STRING);
+                } else if (nextType.getSuperType() == TYPE_BOOL) { // e.g.: 4 + true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands int and bool for additive operator");
                 }
-            } else if (currentType == TYPE_STRING) {
-                if (nextType == TYPE_DOUBLE) { // e.g.: "Test" + 6.1
-                    currentType = TYPE_STRING;
-                } else if (nextType == TYPE_INT) { // e.g.: "Test" + 5
-                    currentType = TYPE_STRING;
-                } else if (nextType == TYPE_STRING) { // e.g.: "Test" + "Test"
-                    currentType = TYPE_STRING;
-                } else if (nextType == TYPE_BOOL) { // e.g.: "Test" + true
+            } else if (currentType.getSuperType() == TYPE_STRING) {
+                if (nextType.getSuperType() == TYPE_DOUBLE) { // e.g.: "Test" + 6.1
+                    currentType = SymbolType(TYPE_STRING);
+                } else if (nextType.getSuperType() == TYPE_INT) { // e.g.: "Test" + 5
+                    currentType = SymbolType(TYPE_STRING);
+                } else if (nextType.getSuperType() == TYPE_STRING) { // e.g.: "Test" + "Test"
+                    currentType = SymbolType(TYPE_STRING);
+                } else if (nextType.getSuperType() == TYPE_BOOL) { // e.g.: "Test" + true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and bool for additive operator");
                 }
-            } else if (currentType == TYPE_BOOL) {
-                if (nextType == TYPE_DOUBLE) { // e.g.: true + 6.1
+            } else if (currentType.getSuperType() == TYPE_BOOL) {
+                if (nextType.getSuperType() == TYPE_DOUBLE) { // e.g.: true + 6.1
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and double for additive operator");
-                } else if (nextType == TYPE_INT) { // e.g.: true + 5
+                } else if (nextType.getSuperType() == TYPE_INT) { // e.g.: true + 5
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and int for additive operator");
-                } else if (nextType == TYPE_STRING) { // e.g.: true + "Test"
+                } else if (nextType.getSuperType() == TYPE_STRING) { // e.g.: true + "Test"
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and string for additive operator");
-                } else if (nextType == TYPE_BOOL) { // e.g.: true + false
+                } else if (nextType.getSuperType() == TYPE_BOOL) { // e.g.: true + false
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and bool for additive operator");
                 }
@@ -764,53 +781,53 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
             auto next = ctx->prefixUnary()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
             // Check all combinations
-            if (currentType == TYPE_DOUBLE) {
-                if (nextType == TYPE_DOUBLE) { // e.g.: 4.3 * 6.1
-                    currentType = TYPE_DOUBLE;
-                } else if (nextType == TYPE_INT) { // e.g.: 4.3 * 4
-                    currentType = TYPE_DOUBLE;
-                } else if (nextType == TYPE_STRING) { // e.g.: 4.3 * "Test"
+            if (currentType.getSuperType() == TYPE_DOUBLE) {
+                if (nextType.getSuperType() == TYPE_DOUBLE) { // e.g.: 4.3 * 6.1
+                    currentType = SymbolType(TYPE_DOUBLE);
+                } else if (nextType.getSuperType() == TYPE_INT) { // e.g.: 4.3 * 4
+                    currentType = SymbolType(TYPE_DOUBLE);
+                } else if (nextType.getSuperType() == TYPE_STRING) { // e.g.: 4.3 * "Test"
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands double and string for multiplicative operator");
-                } else if (nextType == TYPE_BOOL) { // e.g.: 4.3 * true
+                } else if (nextType.getSuperType() == TYPE_BOOL) { // e.g.: 4.3 * true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands double and bool for multiplicative operator");
                 }
-            } else if (currentType == TYPE_INT) {
-                if (nextType == TYPE_DOUBLE) { // e.g.: 4 * 6.1
-                    currentType = TYPE_DOUBLE;
-                } else if (nextType == TYPE_INT) { // e.g.: 4 * 5
-                    currentType = TYPE_INT;
-                } else if (nextType == TYPE_STRING) { // e.g.: 4 * "Test"
-                    currentType = TYPE_STRING;
-                } else if (nextType == TYPE_BOOL) { // e.g.: 4 * true
+            } else if (currentType.getSuperType() == TYPE_INT) {
+                if (nextType.getSuperType() == TYPE_DOUBLE) { // e.g.: 4 * 6.1
+                    currentType = SymbolType(TYPE_DOUBLE);
+                } else if (nextType.getSuperType() == TYPE_INT) { // e.g.: 4 * 5
+                    currentType = SymbolType(TYPE_INT);
+                } else if (nextType.getSuperType() == TYPE_STRING) { // e.g.: 4 * "Test"
+                    currentType = SymbolType(TYPE_STRING);
+                } else if (nextType.getSuperType() == TYPE_BOOL) { // e.g.: 4 * true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands int and bool for multiplicative operator");
                 }
-            } else if (currentType == TYPE_STRING) {
-                if (nextType == TYPE_DOUBLE) { // e.g.: "Test" * 6.1
+            } else if (currentType.getSuperType() == TYPE_STRING) {
+                if (nextType.getSuperType() == TYPE_DOUBLE) { // e.g.: "Test" * 6.1
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and double for multiplicative operator");
-                } else if (nextType == TYPE_INT) { // e.g.: "Test" * 5
-                    currentType = TYPE_STRING;
-                } else if (nextType == TYPE_STRING) { // e.g.: "Test" * "Test"
+                } else if (nextType.getSuperType() ==TYPE_INT) { // e.g.: "Test" * 5
+                    currentType = SymbolType(TYPE_STRING);
+                } else if (nextType.getSuperType() == TYPE_STRING) { // e.g.: "Test" * "Test"
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and string for multiplicative operator");
-                } else if (nextType == TYPE_BOOL) { // e.g.: "Test" * true
+                } else if (nextType.getSuperType() == TYPE_BOOL) { // e.g.: "Test" * true
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and bool for multiplicative operator");
                 }
-            } else if (currentType == TYPE_BOOL) {
-                if (nextType == TYPE_DOUBLE) { // e.g.: true * 6.1
+            } else if (currentType.getSuperType() == TYPE_BOOL) {
+                if (nextType.getSuperType() == TYPE_DOUBLE) { // e.g.: true * 6.1
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and double for multiplicative operator");
-                } else if (nextType == TYPE_INT) { // e.g.: true * 5
+                } else if (nextType.getSuperType() == TYPE_INT) { // e.g.: true * 5
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and int for multiplicative operator");
-                } else if (nextType == TYPE_STRING) { // e.g.: true * "Test"
+                } else if (nextType.getSuperType() == TYPE_STRING) { // e.g.: true * "Test"
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands string and string for multiplicative operator");
-                } else if (nextType == TYPE_BOOL) { // e.g.: true * false
+                } else if (nextType.getSuperType() == TYPE_BOOL) { // e.g.: true * false
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and bool for multiplicative operator");
                 }
@@ -826,7 +843,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext*
 
     // Ensure integer when '++' or '--' is applied
     if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
-        if (prefixUnary.as<SymbolType>() != TYPE_INT || ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER().empty()) {
+        if (prefixUnary.as<SymbolType>().getSuperType() != TYPE_INT || ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER().empty()) {
             throw SemanticError(*ctx->postfixUnary()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Prefix '++' or '--' can only be applied to an identifier of type integer");
         }
@@ -838,7 +855,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext*
            If not applied to int, return bool (evaluates later to variable == 0)
            If not applied to string, return bool (evaluates later to variable == "")
            If not applied to bool, return bool (evaluates later to variable == false)*/
-        return TYPE_BOOL;
+        return SymbolType(TYPE_BOOL);
     }
 
     return prefixUnary;
@@ -849,7 +866,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
 
     // Ensure integer when '++' or '--' is applied
     if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
-        if (atomicExpr.as<SymbolType>() != TYPE_INT || ctx->atomicExpr()->value()->IDENTIFIER().empty()) {
+        if (atomicExpr.as<SymbolType>().getSuperType() != TYPE_INT || ctx->atomicExpr()->value()->IDENTIFIER().empty()) {
             throw SemanticError(*ctx->atomicExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Postfix '++' or '--' can only be applied to an identifier of type integer");
         }
@@ -859,10 +876,10 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
-    if (ctx->DOUBLE()) return TYPE_DOUBLE;
-    if (ctx->INTEGER()) return TYPE_INT;
-    if (ctx->STRING()) return TYPE_STRING;
-    if (ctx->TRUE() || ctx->FALSE()) return TYPE_BOOL;
+    if (ctx->DOUBLE()) return SymbolType(TYPE_DOUBLE);
+    if (ctx->INTEGER()) return SymbolType(TYPE_INT);
+    if (ctx->STRING()) return SymbolType(TYPE_STRING);
+    if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TYPE_BOOL);
     if (!ctx->IDENTIFIER().empty()) {
         std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
         SymbolTableEntry* entry = currentScope->lookup(variableName);
@@ -879,30 +896,43 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     return visit(ctx->functionCall());
 }
 
+antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
+    if (ctx->IDENTIFIER()) {
+        std::string structName = ctx->IDENTIFIER()->toString();
+        SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+        if (structSymbol == nullptr)
+            throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+    }
+    return SymbolType(TYPE_BOOL);
+}
+
 SymbolType AnalyzerVisitor::getSymbolTypeFromDataType(SpiceParser::DataTypeContext* ctx) {
-    if (ctx->TYPE_DOUBLE()) return ctx->MUL() ? TYPE_DOUBLE_PTR : TYPE_DOUBLE;
-    if (ctx->TYPE_INT()) return ctx->MUL() ? TYPE_INT_PTR : TYPE_INT;
-    if (ctx->TYPE_STRING()) return ctx->MUL() ? TYPE_STRING_PTR : TYPE_STRING;
-    if (ctx->TYPE_BOOL()) return ctx->MUL() ? TYPE_BOOL_PTR : TYPE_BOOL;
-    return TYPE_DYN;
+    if (ctx->TYPE_DOUBLE()) return ctx->MUL() ? SymbolType(TYPE_DOUBLE_PTR) : SymbolType(TYPE_DOUBLE);
+    if (ctx->TYPE_INT()) return ctx->MUL() ? SymbolType(TYPE_INT_PTR) : SymbolType(TYPE_INT);
+    if (ctx->TYPE_STRING()) return ctx->MUL() ? SymbolType(TYPE_STRING_PTR) : SymbolType(TYPE_STRING);
+    if (ctx->TYPE_BOOL()) return ctx->MUL() ? SymbolType(TYPE_BOOL_PTR) : SymbolType(TYPE_BOOL);
+    if (ctx->IDENTIFIER()) {
+        std::string structName = ctx->IDENTIFIER()->toString();
+        return ctx->MUL() ? SymbolType(TYPE_STRUCT_PTR, structName) :
+            SymbolType(TYPE_STRUCT, structName);
+    }
+    return SymbolType(TYPE_DYN);
 }
 
 SymbolType AnalyzerVisitor::getReferenceTypeFromType(SymbolType type) {
-    switch (type) {
-        case TYPE_DOUBLE: return TYPE_DOUBLE_PTR;
-        case TYPE_INT: return TYPE_INT_PTR;
-        case TYPE_STRING: return TYPE_STRING_PTR;
-        case TYPE_BOOL: return TYPE_BOOL_PTR;
-        default: return TYPE_DYN; // ToDo: Test if we need an error message here
-    }
+    if (type.getSuperType() == TYPE_DOUBLE) return SymbolType(TYPE_DOUBLE_PTR);
+    if (type.getSuperType() == TYPE_INT) return SymbolType(TYPE_INT_PTR);
+    if (type.getSuperType() == TYPE_STRING) return SymbolType(TYPE_STRING_PTR);
+    if (type.getSuperType() == TYPE_BOOL) return SymbolType(TYPE_BOOL_PTR);
+    if (type.getSuperType() == TYPE_STRUCT) return SymbolType(TYPE_STRUCT_PTR, type.getSubType());
+    return SymbolType(TYPE_DYN);
 }
 
 SymbolType AnalyzerVisitor::getTypeFromReferenceType(SymbolType type) {
-    switch (type) {
-        case TYPE_DOUBLE_PTR: return TYPE_DOUBLE;
-        case TYPE_INT_PTR: return TYPE_INT;
-        case TYPE_STRING_PTR: return TYPE_STRING;
-        case TYPE_BOOL_PTR: return TYPE_BOOL;
-        default: return TYPE_DYN; // ToDo: Test if we need an error message here
-    }
+    if (type.getSuperType() == TYPE_DOUBLE_PTR) return SymbolType(TYPE_DOUBLE);
+    if (type.getSuperType() == TYPE_INT_PTR) return SymbolType(TYPE_INT);
+    if (type.getSuperType() == TYPE_STRING_PTR) return SymbolType(TYPE_STRING);
+    if (type.getSuperType() == TYPE_BOOL_PTR) return SymbolType(TYPE_BOOL);
+    if (type.getSuperType() == TYPE_STRUCT_PTR) return SymbolType(TYPE_STRUCT, type.getSubType());
+    return SymbolType(TYPE_DYN);
 }

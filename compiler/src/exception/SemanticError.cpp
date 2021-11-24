@@ -81,6 +81,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Imported source file not existing";
         case CIRCULAR_DEPENDENCY:
             return "Circular import detected";
+        case UNKNOWN_DATATYPE:
+            return "Unknown datatype";
     }
     return "Unknown error";
 }

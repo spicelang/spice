@@ -105,6 +105,8 @@ public:
 
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
 
+    antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
+
 private:
     // Members
     std::string mainSourceFile;

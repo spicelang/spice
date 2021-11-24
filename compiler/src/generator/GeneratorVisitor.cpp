@@ -140,7 +140,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     if (mustHaveMainFunction) { // Only create main function when it is required
         // Build function itself
         std::string functionName = "main";
-        llvm::Type* returnType = getTypeFromSymbolType(TYPE_INT);
+        llvm::Type* returnType = getTypeFromSymbolType(SymbolType(TYPE_INT));
         llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
         llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
                                                      functionName, module.get());
@@ -155,7 +155,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         // Declare result variable and set it to 0 for positive return code
         llvm::Value* memAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
         currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(memAddress);
-        builder->CreateStore(llvm::ConstantInt::getSigned(getTypeFromSymbolType(TYPE_INT), 0),
+        builder->CreateStore(llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), 0),
                              currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
 
         // Generate IR for function body
@@ -179,10 +179,10 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         currentScope = currentScope->getParent();
 
         // Return true as result for the function definition
-        return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
+        return llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_BOOL)), 1);
     }
     // Return false as result for the function definition
-    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 0);
+    return llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_BOOL)), 0);
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
@@ -272,7 +272,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
 
     // Return true as result for the function definition
-    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
+    return llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_BOOL)), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
@@ -351,7 +351,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
 
     // Return true as result for the function definition
-    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
+    return llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_BOOL)), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ctx) {
@@ -369,7 +369,7 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
     currentScope->lookup(structName)->updateLLVMType(structType);
 
     // Return true as result for the struct definition
-    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
+    return llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_BOOL)), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -416,7 +416,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     currentScope = currentScope->getParent();
 
     // Return true as result for the loop
-    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
+    return llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_BOOL)), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
@@ -458,7 +458,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     currentScope = currentScope->getParent();
 
     // Return true as result for the loop
-    return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
+    return llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_BOOL)), 1);
 }
 
 antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext* ctx) {
@@ -838,7 +838,7 @@ antlrcpp::Any GeneratorVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
         if (thenValue->getType() == llvm::Type::getVoidTy(*context) ||
             elseValue->getType() == llvm::Type::getVoidTy(*context) ||
             thenValue->getType() != elseValue->getType()) {
-            return llvm::Constant::getNullValue(getTypeFromSymbolType(TYPE_INT));
+            return llvm::Constant::getNullValue(getTypeFromSymbolType(SymbolType(TYPE_INT)));
         }
         // Setup phi value
         llvm::PHINode* phi = builder->CreatePHI(thenValue->getType(), 2, "phi");
@@ -1047,21 +1047,21 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     // Value is a double constant
     if (ctx->DOUBLE()) {
-        currentSymbolType = TYPE_DOUBLE;
+        currentSymbolType = SymbolType(TYPE_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
         return (llvm::Value*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
-        currentSymbolType = TYPE_INT;
+        currentSymbolType = SymbolType(TYPE_INT);
         int value = std::stoi(ctx->INTEGER()->toString());
-        return (llvm::Value*) llvm::ConstantInt::getSigned(getTypeFromSymbolType(TYPE_INT), value);
+        return (llvm::Value*) llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), value);
     }
 
     // Value is a string constant
     if (ctx->STRING()) {
-        currentSymbolType = TYPE_STRING;
+        currentSymbolType = SymbolType(TYPE_STRING);
         std::string value = ctx->STRING()->toString();
         value = value.substr(1, value.size() - 2);
         return (llvm::Value*) builder->CreateGlobalStringPtr(value);
@@ -1069,9 +1069,9 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
     // Value is a boolean constant
     if (ctx->TRUE() || ctx->FALSE()) {
-        currentSymbolType = TYPE_BOOL;
+        currentSymbolType = SymbolType(TYPE_BOOL);
         bool value = ctx->TRUE();
-        return (llvm::Value*) llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), value);
+        return (llvm::Value*) llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_BOOL)), value);
     }
 
     // Value is an identifier
@@ -1118,25 +1118,25 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
     if (ctx->TYPE_DOUBLE()) { // Data type is double
-        currentSymbolType = TYPE_DOUBLE;
+        currentSymbolType = SymbolType(TYPE_DOUBLE);
     } else if (ctx->TYPE_INT()) { // Data type is int
-        currentSymbolType = TYPE_INT;
+        currentSymbolType = SymbolType(TYPE_INT);
     } else if (ctx->TYPE_STRING()) { // Data type is string
-        currentSymbolType = TYPE_STRING;
+        currentSymbolType = SymbolType(TYPE_STRING);
     } else if (ctx->TYPE_BOOL()) { // Data type is bool
-        currentSymbolType = TYPE_BOOL;
+        currentSymbolType = SymbolType(TYPE_BOOL);
     } else if (ctx->TYPE_DYN()) { // Data type is dyn
         SymbolTableEntry* symbolTableEntry = currentScope->lookup(currentVar);
         currentSymbolType = symbolTableEntry->getType();
+    } else if (ctx->IDENTIFIER()) { // Custom data type
+        currentSymbolType = SymbolType(TYPE_STRUCT, ctx->IDENTIFIER()->toString());
     }
 
     // Come up with the llvm type
     llvm::Type* type = getTypeFromSymbolType(currentSymbolType);
     // Throw an error if something went wrong.
     // This should technically never occur because of the semantic analysis
-    if (!type)
-        throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE,
-                      "Dyn was " + std::to_string(currentSymbolType));
+    if (!type) throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE, "Dyn was other");
 
     // Consider possible pointer
     if (ctx->MUL()) type = type->getPointerTo();
@@ -1328,17 +1328,16 @@ void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
 }
 
 llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
-    switch (symbolType) {
-        case TYPE_DOUBLE:
-            return llvm::Type::getDoubleTy(*context);
-        case TYPE_INT:
-            return llvm::Type::getInt32Ty(*context);
-        case TYPE_STRING:
-            return llvm::Type::getInt8Ty(*context)->getPointerTo();
-        case TYPE_BOOL:
-            return llvm::Type::getInt1Ty(*context);
-        default:
-            return nullptr;
+    switch (symbolType.getSuperType()) {
+        case TYPE_DOUBLE: return llvm::Type::getDoubleTy(*context);
+        case TYPE_INT: return llvm::Type::getInt32Ty(*context);
+        case TYPE_STRING: return llvm::Type::getInt8Ty(*context)->getPointerTo();
+        case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
+        case TYPE_DOUBLE_PTR: return llvm::Type::getDoubleTy(*context)->getPointerTo();
+        case TYPE_INT_PTR: return llvm::Type::getInt32Ty(*context)->getPointerTo();
+        case TYPE_STRING_PTR: return llvm::Type::getInt8Ty(*context)->getPointerTo()->getPointerTo();
+        case TYPE_BOOL_PTR: return llvm::Type::getInt1Ty(*context)->getPointerTo();
+        default: return nullptr;
     }
     return nullptr;
 }
