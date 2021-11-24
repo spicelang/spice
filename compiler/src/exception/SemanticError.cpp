@@ -83,6 +83,10 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Circular import detected";
         case UNKNOWN_DATATYPE:
             return "Unknown datatype";
+        case NUMBER_OF_FIELDS_NOT_MATCHING:
+            return "Number of struct fields not matching declaration";
+        case FIELD_TYPE_NOT_MATCHING:
+            return "The type of a field value does not match the declaration";
     }
     return "Unknown error";
 }

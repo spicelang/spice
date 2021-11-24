@@ -4,7 +4,7 @@ type TestStruct struct {
 }
 
 f<int> main() {
-    int input = 12;
+    dyn input = 12;
     TestStruct instance = new TestStruct { input, 46.34 };
-    //printf("Field1: %d, field2: %f", instance.field1, instance.field2);
+    printf("Field1: %d, field2: %f", instance.field1, instance.field2);
 }

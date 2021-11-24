@@ -165,7 +165,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 37
             "error-custom-type-unknown",
-            ""
+            "Semantic error at 8:26: Wrong data type for operator: Cannot apply the assign operator to different data types"
         },
         // Successful tests
         { // 38

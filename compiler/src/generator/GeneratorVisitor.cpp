@@ -155,8 +155,8 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         // Declare result variable and set it to 0 for positive return code
         llvm::Value* memAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
         currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(memAddress);
-        builder->CreateStore(llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), 0),
-                             currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
+        llvm::Value* zero = llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), 0);
+        builder->CreateStore(zero, currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
 
         // Generate IR for function body
         visit(ctx->stmtLst());
@@ -1337,6 +1337,8 @@ llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
         case TYPE_INT_PTR: return llvm::Type::getInt32Ty(*context)->getPointerTo();
         case TYPE_STRING_PTR: return llvm::Type::getInt8Ty(*context)->getPointerTo()->getPointerTo();
         case TYPE_BOOL_PTR: return llvm::Type::getInt1Ty(*context)->getPointerTo();
+        case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
+        case TYPE_STRUCT_PTR: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
         default: return nullptr;
     }
     return nullptr;

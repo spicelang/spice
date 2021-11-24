@@ -181,6 +181,15 @@ SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
 }
 
 /**
+ * Returns the number of symbols in the table
+ *
+ * @return Number of symbols
+ */
+unsigned int SymbolTable::getSymbolsCount() {
+    return symbols.size();
+}
+
+/**
  * Insert an item to the list of function declarations. This list is used to link in functions from other modules and
  * therefore not storing their definition, but their declaration.
  *

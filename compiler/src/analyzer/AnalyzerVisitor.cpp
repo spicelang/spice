@@ -278,24 +278,26 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
                             "Struct '" + structName + "' was used before defined.");
     }
 
-    // Change temporarily to the scope of the struct
+    // Get the symbol table where the struct is defined
+    SymbolTable* structTable = currentScope->lookupTable(structScope);
+    std::cout << "Struct table: " << structTable->toString() << std::endl;
+    // Check if the number of fields matches
+    if (structTable->getSymbolsCount() != ctx->fieldLstAssignment()->ternary().size())
+        throw SemanticError(*ctx->start, NUMBER_OF_FIELDS_NOT_MATCHING, "You've passed too less/many field values");
 
     // Check if the field types are matching
-    /*for (int i = 0; i < ctx->fieldLstAssignment()->assignment().size(); i++) {
-        auto assignment = ctx->fieldLstAssignment()->assignment()[i];
-        SymbolType assignmentType = visit(assignment).as<SymbolType>();
-        // Check if the field is set as a whole assignment or just as a value
-        if (assignment->declStmt() || !assignment->IDENTIFIER().empty()) {
-            // All the checks have already happened
-
-        } else {
-            // Check if the value type matches the struct declaration
-
-        }
-    }*/
-
-    // Delete the scope again, since it was only for checking the types
-    //currentScope = currentScope->getParent();
+    for (int i = 0; i < ctx->fieldLstAssignment()->ternary().size(); i++) {
+        // Get actual type
+        auto ternary = ctx->fieldLstAssignment()->ternary()[i];
+        SymbolType actualType = visit(ternary).as<SymbolType>();
+        // Get expected type
+        SymbolTableEntry* expectedField = structTable->lookupByIndexInCurrentScope(i);
+        SymbolType expectedType = expectedField->getType();
+        // Check if type matches declaration
+        if (actualType != expectedType)
+            throw SemanticError(*ternary->start, FIELD_TYPE_NOT_MATCHING,
+                                "The type of the field '" + expectedField->getName() + "' does not match the declaration");
+    }
 
     return SymbolType(TYPE_STRUCT, structName);
 }
@@ -873,6 +875,11 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
     }
 
     return atomicExpr;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
+    if (ctx->assignment()) return visit(ctx->assignment());
+    return visit(ctx->value());
 }
 
 antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
