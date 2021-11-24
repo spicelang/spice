@@ -477,6 +477,14 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
+    // Take a look on the right side
+    SymbolType rightType;
+    if (ctx->ternary()) { // Ternary
+        rightType = visit(ctx->ternary()).as<SymbolType>();
+    } else { // NewStmt
+        rightType = visit(ctx->newStmt()).as<SymbolType>();
+    }
+
     // Check if there is an assign operator applied
     if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
         // Take a look on the left side
@@ -500,14 +508,6 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
 
         // If it is a pointer to the value, resolve the type
         if (ctx->MUL()) leftType = getTypeFromReferenceType(leftType);
-
-        // Take a look on the right side
-        SymbolType rightType;
-        if (ctx->ternary()) { // Ternary
-            rightType = visit(ctx->ternary()).as<SymbolType>();
-        } else { // NewStmt
-            rightType = visit(ctx->newStmt()).as<SymbolType>();
-        }
 
         // If left type is dyn, set left type to right type
         if (leftType == TYPE_DYN) {
@@ -548,9 +548,10 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
         }
         // Update variable in symbol table
         symbolTableEntry->updateState(INITIALIZED);
-        return leftType;
     }
-    return visit(ctx->ternary());
+
+    // Return the rhs type
+    return rightType;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
