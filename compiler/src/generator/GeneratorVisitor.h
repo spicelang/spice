@@ -156,4 +156,6 @@ private:
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
 
     llvm::Type* getTypeFromSymbolType(SymbolType);
+
+    llvm::Value* getAddressByIdenList(SymbolTable*, std::vector<std::string>);
 };

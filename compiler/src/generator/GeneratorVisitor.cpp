@@ -641,8 +641,6 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
         builder->CreateStore(assignment, fieldAddress, false);
     }
 
-    //return structAddress;
-    //return llvm::ConstantInt::get(getTypeFromSymbolType(TYPE_BOOL), 1);
     return (llvm::Value*) builder->CreateLoad(structType, structAddress, structName);
 }
 
@@ -731,14 +729,14 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             // Get symbol table entry
             symbolTableEntry = currentScope->lookup(varName);
         } else { // Variable was declared before and is referenced here
-            // Get identifier segment list
-            std::vector<std::string> idenSegments;
-            for (auto& segment : ctx->IDENTIFIER()) idenSegments.push_back(segment->toString());
             // Get symbol table entry
-            symbolTableEntry = IdentifierUtil::getSymbolTableEntryByIdenList(*ctx->IDENTIFIER()[0]->getSymbol(), currentScope,
-                                                                             idenSegments);
+            /*symbolTableEntry = IdentifierUtil::getSymbolTableEntryByIdenList(*ctx->IDENTIFIER()[0]->getSymbol(), currentScope,
+                                                                             idenSegments);*/
+            varName = ctx->IDENTIFIER()[0]->toString();
+            // Get symbol table entry
+            symbolTableEntry = currentScope->lookup(varName);
         }
-        //bool isLocal = namedValues.find(varName) != namedValues.end();
+
         bool isLocal = symbolTableEntry->isLocal();
 
         if (ctx->ASSIGN_OP()) {
@@ -1089,7 +1087,12 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         SymbolTableEntry* variableSymbol = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
         currentSymbolType = variableSymbol->getType();
         if (variableSymbol->isLocal()) { // Local variable
-            llvm::Value* var = variableSymbol->getAddress();
+            // Get identifier segment list
+            std::vector<std::string> idenSegments;
+            idenSegments.reserve(ctx->IDENTIFIER().size()); // Set the size fixed due to performance reasons
+            for (auto& segment : ctx->IDENTIFIER()) idenSegments.push_back(segment->toString());
+            // Get Address of value
+            llvm::Value* var = getAddressByIdenList(currentScope, idenSegments);
             // Throw an error when the variable is null
             if (!var)
                 throw IRError(*ctx->IDENTIFIER()[0]->getSymbol(), VARIABLE_NOT_FOUND,
@@ -1351,4 +1354,25 @@ llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
         default: return nullptr;
     }
     return nullptr;
+}
+
+llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<std::string> idenList) {
+    SymbolTableEntry* symbolTableEntry = subTable->lookup(idenList[0]);
+    // If it is a one-dimensional identifier return the address immediately
+    if (idenList.size() <= 1) return symbolTableEntry->getAddress();
+
+    llvm::Value* currentAddress = symbolTableEntry->getAddress();
+    for (int i = 1; i < idenList.size(); i++) {
+        // Get name of struct
+        std::string structName = symbolTableEntry->getType().getSubType();
+        // Get symbol table entry of struct
+        SymbolTableEntry* structEntry = subTable->lookup(structName);
+        // Get symbol table of struct
+        SymbolTable* structTable = subTable->lookupTable("struct:" + structName);
+        // Get field index of next identifier segment
+        symbolTableEntry = structTable->lookup(idenList[i]);
+        // Calculate field address
+        currentAddress = builder->CreateStructGEP(structEntry->getLLVMType(), currentAddress, symbolTableEntry->getOrderIndex());
+    }
+    return currentAddress;
 }

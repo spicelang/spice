@@ -1,17 +1,21 @@
 type NestedStruct struct {
     bool testField
+    double dbl
+    string str
 }
 
 type TestStruct struct {
     int field1
     double field2
-    NestedStruct* nested
+    NestedStruct nested
 }
 
 f<int> main() {
     dyn input = 12;
-    NestedStruct nested = new NestedStruct { false };
-    TestStruct instance = new TestStruct { input, 46.34, &nested };
-    instance.nested.testField = true;
-    //printf("Field1: %d, field2: %f", instance.field1, instance.field2);
+    NestedStruct nested = new NestedStruct { true, 6.124, "Hello World!" };
+    TestStruct instance = new TestStruct { input, 46.34, nested };
+    printf("TestField: %s", instance.nested.testField);
+    //instance.nested.testField = true;
+    /*printf("Field1: %d, field2: %f, nested: %d", instance.field1,
+        instance.field2, instance.nested.testField);*/
 }
