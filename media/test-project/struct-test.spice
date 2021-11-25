@@ -11,12 +11,10 @@ type TestStruct struct {
 }
 
 f<int> main() {
-    printf("%s", "Test");
-    /*dyn input = 12;
+    dyn input = 12;
     NestedStruct nested = new NestedStruct { true, 6.124, "Hello World!" };
     TestStruct instance = new TestStruct { input, 46.34, &nested };
-    instance.nested.testField = true;
-    printf("TestField: %d", instance.nested.testField);*/
-    /*printf("Field1: %d, field2: %f, nested: %d", instance.field1,
-        instance.field2, instance.nested.testField);*/
+    instance.nested.testField = false;
+    printf("Field1: %d, field2: %f, nested: %d", instance.field1,
+        instance.field2, instance.nested.testField);
 }

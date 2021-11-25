@@ -725,10 +725,12 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
         // Get value of left side
         std::string varName;
         SymbolTableEntry* symbolTableEntry;
+        std::vector<antlr4::tree::TerminalNode*> idenList;
         if (ctx->declStmt()) { // Variable was declared in this line
             varName = visit(ctx->declStmt()).as<std::string>();
             // Get symbol table entry
             symbolTableEntry = currentScope->lookup(varName);
+            idenList.push_back(ctx->declStmt()->IDENTIFIER());
         } else { // Variable was declared before and is referenced here
             // Get symbol table entry
             /*symbolTableEntry = IdentifierUtil::getSymbolTableEntryByIdenList(*ctx->IDENTIFIER()[0]->getSymbol(), currentScope,
@@ -736,6 +738,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             varName = ctx->IDENTIFIER()[0]->toString();
             // Get symbol table entry
             symbolTableEntry = currentScope->lookup(varName);
+            idenList = ctx->IDENTIFIER();
         }
 
         bool isLocal = symbolTableEntry->isLocal();
@@ -743,7 +746,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (isLocal) { // Local variable
-                llvm::Value* lhs = symbolTableEntry->getAddress();
+                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
                 if (ctx->MUL()) {
                     llvm::Value* lhsValue = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                     builder->CreateStore(rhs, lhsValue);
@@ -756,7 +759,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->PLUS_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::Value* lhs = symbolTableEntry->getAddress();
+                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createAddInst(loadLhs, loadLhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -768,7 +771,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->MINUS_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::Value* lhs = symbolTableEntry->getAddress();
+                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -780,7 +783,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->MUL_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::Value* lhs = symbolTableEntry->getAddress();
+                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -792,7 +795,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->DIV_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::Value* lhs = symbolTableEntry->getAddress();
+                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -1095,12 +1098,8 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         SymbolTableEntry* variableSymbol = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
         currentSymbolType = variableSymbol->getType();
         if (variableSymbol->isLocal()) { // Local variable
-            // Get identifier segment list
-            std::vector<std::string> idenSegments;
-            idenSegments.reserve(ctx->IDENTIFIER().size()); // Set the size fixed due to performance reasons
-            for (auto& segment : ctx->IDENTIFIER()) idenSegments.push_back(segment->toString());
             // Get Address of value
-            llvm::Value* var = getAddressByIdenList(currentScope, idenSegments);
+            llvm::Value* var = getAddressByIdenList(currentScope, ctx->IDENTIFIER());
             // Throw an error when the variable is null
             if (!var)
                 throw IRError(*ctx->IDENTIFIER()[0]->getSymbol(), VARIABLE_NOT_FOUND,
@@ -1366,9 +1365,9 @@ llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
     return nullptr;
 }
 
-llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<std::string> idenList) {
-    SymbolTableEntry* symbolTableEntry = subTable->lookup(idenList[0]);
+llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<antlr4::tree::TerminalNode*> idenList) {
     // If it is a one-dimensional identifier return the address immediately
+    SymbolTableEntry* symbolTableEntry = subTable->lookup(idenList[0]->toString());
     if (idenList.size() <= 1) return symbolTableEntry->getAddress();
 
     // Get address for (nested) structs
@@ -1381,7 +1380,7 @@ llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::
         // Get symbol table of struct
         SymbolTable* structTable = subTable->lookupTable("struct:" + structName);
         // Get field index of next identifier segment
-        symbolTableEntry = structTable->lookup(idenList[i]);
+        symbolTableEntry = structTable->lookup(idenList[i]->toString());
         // Calculate field address
         currentAddress = builder->CreateStructGEP(structEntry->getLLVMType(), currentAddress, symbolTableEntry->getOrderIndex());
         // If the result is a pointer -> de-reference it

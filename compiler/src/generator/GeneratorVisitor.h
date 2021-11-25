@@ -158,5 +158,5 @@ private:
 
     llvm::Type* getTypeFromSymbolType(SymbolType);
 
-    llvm::Value* getAddressByIdenList(SymbolTable*, std::vector<std::string>);
+    llvm::Value* getAddressByIdenList(SymbolTable*, std::vector<antlr4::tree::TerminalNode*>);
 };
