@@ -637,7 +637,7 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
         // Get pointer to struct element
         llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
         // Store value to address
-        builder->CreateStore(assignment, fieldAddress, false);
+        builder->CreateStore(assignment, fieldAddress);
     }
 
     return (llvm::Value*) builder->CreateLoad(structType, structAddress, structName);
@@ -704,6 +704,8 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
     for (auto& arg : ctx->assignment()) {
         llvm::Value* argVal = visit(arg).as<llvm::Value*>();
+        if (argVal->getType()->isIntegerTy(1))
+            argVal = builder->CreateZExt(argVal, llvm::Type::getInt32Ty(*context));
         if (argVal == nullptr) throw IRError(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
         printfArgs.push_back(argVal);
     }
@@ -1073,11 +1075,18 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         return (llvm::Value*) builder->CreateGlobalStringPtr(value);
     }
 
-    // Value is a boolean constant
-    if (ctx->TRUE() || ctx->FALSE()) {
+    // Value is a boolean constant with value false
+    if (ctx->FALSE()) {
         currentSymbolType = SymbolType(TYPE_BOOL);
-        bool value = ctx->TRUE();
-        return (llvm::Value*) llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_BOOL)), value);
+        return (llvm::Value*) llvm::ConstantInt::getFalse(*context);
+        //return (llvm::Value*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
+    }
+
+    // Value is a boolean constant with value true
+    if (ctx->TRUE()) {
+        currentSymbolType = SymbolType(TYPE_BOOL);
+        return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+        //return (llvm::Value*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1);
     }
 
     // Value is an identifier
@@ -1344,10 +1353,12 @@ llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
         case TYPE_INT: return llvm::Type::getInt32Ty(*context);
         case TYPE_STRING: return llvm::Type::getInt8Ty(*context)->getPointerTo();
         case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
+        //case TYPE_BOOL: return llvm::Type::getInt8Ty(*context);
         case TYPE_DOUBLE_PTR: return llvm::Type::getDoubleTy(*context)->getPointerTo();
         case TYPE_INT_PTR: return llvm::Type::getInt32Ty(*context)->getPointerTo();
         case TYPE_STRING_PTR: return llvm::Type::getInt8Ty(*context)->getPointerTo()->getPointerTo();
         case TYPE_BOOL_PTR: return llvm::Type::getInt1Ty(*context)->getPointerTo();
+        //case TYPE_BOOL_PTR: return llvm::Type::getInt8Ty(*context)->getPointerTo();
         case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
         case TYPE_STRUCT_PTR: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
         default: return nullptr;

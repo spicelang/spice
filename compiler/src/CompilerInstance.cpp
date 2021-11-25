@@ -77,11 +77,13 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         generator.dumpIR();
     }
 
-    generator.optimize(); // Optimize IR code
-    if (debugOutput) {
-        // Dump optimized IR code
-        std::cout << "\nOptimized IR code:" << std::endl;
-        generator.dumpIR();
+    if (optLevel >= 1 && optLevel <= 3) {
+        generator.optimize(); // Optimize IR code
+        if (debugOutput) {
+            // Dump optimized IR code
+            std::cout << "\nOptimized IR code:" << std::endl;
+            generator.dumpIR();
+        }
     }
 
     generator.emit(); // Emit object file for specified platform
