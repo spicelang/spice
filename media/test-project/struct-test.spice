@@ -1,10 +1,17 @@
+type NestedStruct struct {
+    bool testField
+}
+
 type TestStruct struct {
     int field1
     double field2
+    NestedStruct* nested
 }
 
 f<int> main() {
     dyn input = 12;
-    TestStruct instance = new TestStruct { input, 46.34 };
-    printf("Field1: %d, field2: %f", instance.field1, instance.field2);
+    NestedStruct nested = new NestedStruct { false };
+    TestStruct instance = new TestStruct { input, 46.34, &nested };
+    instance.nested.testField = true;
+    //printf("Field1: %d, field2: %f", instance.field1, instance.field2);
 }

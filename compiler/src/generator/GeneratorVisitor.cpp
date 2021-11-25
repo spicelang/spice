@@ -725,34 +725,39 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
     if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
         // Get value of left side
         std::string varName;
-        if (ctx->declStmt()) {
+        SymbolTableEntry* symbolTableEntry;
+        if (ctx->declStmt()) { // Variable was declared in this line
             varName = visit(ctx->declStmt()).as<std::string>();
-        } else {
-            varName = ctx->IDENTIFIER()[0]->toString();
-            for (int i = 1; i < ctx->IDENTIFIER().size(); i++) {
-                varName += "." + ctx->IDENTIFIER()[i]->toString();
-            }
+            // Get symbol table entry
+            symbolTableEntry = currentScope->lookup(varName);
+        } else { // Variable was declared before and is referenced here
+            // Get identifier segment list
+            std::vector<std::string> idenSegments;
+            for (auto& segment : ctx->IDENTIFIER()) idenSegments.push_back(segment->toString());
+            // Get symbol table entry
+            symbolTableEntry = IdentifierUtil::getSymbolTableEntryByIdenList(*ctx->IDENTIFIER()[0]->getSymbol(), currentScope,
+                                                                             idenSegments);
         }
         //bool isLocal = namedValues.find(varName) != namedValues.end();
-        bool isLocal = currentScope->lookup(varName)->isLocal();
+        bool isLocal = symbolTableEntry->isLocal();
 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (isLocal) { // Local variable
-                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
+                llvm::Value* lhs = symbolTableEntry->getAddress();
                 if (ctx->MUL()) {
                     llvm::Value* lhsValue = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                     builder->CreateStore(rhs, lhsValue);
                 } else {
                     builder->CreateStore(rhs, lhs);
                 }
-            } else if (currentScope->getParent()) { // Global variable
+            } else { // Global variable
                 llvm::GlobalVariable* global = module->getNamedGlobal(varName);
                 builder->CreateStore(rhs, global);
             }
         } else if (ctx->PLUS_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
+                llvm::Value* lhs = symbolTableEntry->getAddress();
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createAddInst(loadLhs, loadLhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -764,7 +769,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->MINUS_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
+                llvm::Value* lhs = symbolTableEntry->getAddress();
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -776,7 +781,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->MUL_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
+                llvm::Value* lhs = symbolTableEntry->getAddress();
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -788,7 +793,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
             }
         } else if (ctx->DIV_EQUAL()) {
             if (isLocal) { // Local variable
-                llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
+                llvm::Value* lhs = symbolTableEntry->getAddress();
                 llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
@@ -991,8 +996,9 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     // Prefix unary is: PLUS_PLUS postfixUnary
     if (ctx->PLUS_PLUS()) {
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "pre_pp");
-        std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
+        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope,
+                                    ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = entry->getAddress();
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -1000,8 +1006,9 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     // Prefix unary is: MINUS_MINUS postfixUnary
     if (ctx->MINUS_MINUS()) {
         llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "pre_mm");
-        std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
+        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope,
+                                    ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = entry->getAddress();
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -1018,8 +1025,9 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
     // Postfix unary is: PLUS_PLUS atomicExpr
     if (ctx->PLUS_PLUS()) {
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "post_pp");
-        std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
+        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope,
+                                            ctx->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = entry->getAddress();
         builder->CreateStore(rhs, lhs);
         return rhs;
     }
@@ -1027,8 +1035,9 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
     // Postfix unary is: MINUS_MINUS atomicExpr
     if (ctx->MINUS_MINUS()) {
         llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "post_mm");
-        std::string varName = IdentifierUtil::getVarNameFromIdentList(ctx->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = currentScope->lookup(varName)->getAddress();
+        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope,
+                                            ctx->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = entry->getAddress();
         builder->CreateStore(rhs, lhs);
         return rhs;
     }
@@ -1077,8 +1086,8 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     // Value is an identifier
     if (!ctx->IDENTIFIER().empty()) {
         std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
-        currentSymbolType = currentScope->lookup(variableName)->getType();
-        SymbolTableEntry* variableSymbol = currentScope->lookup(variableName);
+        SymbolTableEntry* variableSymbol = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
+        currentSymbolType = variableSymbol->getType();
         if (variableSymbol->isLocal()) { // Local variable
             llvm::Value* var = variableSymbol->getAddress();
             // Throw an error when the variable is null

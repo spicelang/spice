@@ -47,6 +47,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Referenced undefined variable";
         case REFERENCED_UNDEFINED_STRUCT:
             return "Referenced undefined struct";
+        case REFERENCED_UNDEFINED_STRUCT_FIELD:
+            return "Referenced undefined struct field";
         case VARIABLE_DECLARED_TWICE:
             return "Multiple declarations of the same variable";
         case FUNCTION_DECLARED_TWICE:

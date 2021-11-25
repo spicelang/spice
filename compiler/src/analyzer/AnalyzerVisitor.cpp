@@ -280,7 +280,6 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 
     // Get the symbol table where the struct is defined
     SymbolTable* structTable = currentScope->lookupTable(structScope);
-    std::cout << "Struct table: " << structTable->toString() << std::endl;
     // Check if the number of fields matches
     if (structTable->getSymbolsCount() != ctx->fieldLstAssignment()->ternary().size())
         throw SemanticError(*ctx->start, NUMBER_OF_FIELDS_NOT_MATCHING, "You've passed too less/many field values");
@@ -495,19 +494,25 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
         std::string variableName;
         SymbolType leftType;
         antlr4::Token* token;
+        SymbolTableEntry* symbolTableEntry;
         if (ctx->declStmt()) { // Variable was declared in this line
             visit(ctx->declStmt());
             variableName = ctx->declStmt()->IDENTIFIER()->toString();
             token = ctx->declStmt()->IDENTIFIER()->getSymbol();
+            // Get symbol table entry
+            symbolTableEntry = currentScope->lookup(variableName);
         } else { // Variable was declared before and is referenced here
-            variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
+            variableName = ctx->IDENTIFIER()[0]->toString();
             token = ctx->IDENTIFIER()[0]->getSymbol();
+            variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
+            // Get symbol table entry
+            symbolTableEntry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
         }
-        // Retrieve the left type from the symbol table
-        SymbolTableEntry* symbolTableEntry = currentScope->lookup(variableName);
+
         if (symbolTableEntry == nullptr)
             throw SemanticError(*token, REFERENCED_UNDEFINED_VARIABLE,
                                 "Variable " + variableName + " was referenced before declared.");
+
         leftType = symbolTableEntry->getType();
 
         // If it is a pointer to the value, resolve the type
@@ -889,7 +894,8 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TYPE_BOOL);
     if (!ctx->IDENTIFIER().empty()) {
         std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
-        SymbolTableEntry* entry = currentScope->lookup(variableName);
+        // Get symbol table entry
+        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
         if (entry == nullptr)
             throw SemanticError(*ctx->IDENTIFIER()[0]->getSymbol(), REFERENCED_UNDEFINED_VARIABLE,
                                 "Variable " + variableName + " was referenced before initialized");
