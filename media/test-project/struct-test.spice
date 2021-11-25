@@ -7,14 +7,14 @@ type NestedStruct struct {
 type TestStruct struct {
     int field1
     double field2
-    NestedStruct nested
+    NestedStruct* nested
 }
 
 f<int> main() {
     dyn input = 12;
     NestedStruct nested = new NestedStruct { true, 6.124, "Hello World!" };
-    TestStruct instance = new TestStruct { input, 46.34, nested };
-    printf("TestField: %s", instance.nested.testField);
+    TestStruct instance = new TestStruct { input, 46.34, &nested };
+    printf("TestField: %f", instance.nested.dbl);
     //instance.nested.testField = true;
     /*printf("Field1: %d, field2: %f, nested: %d", instance.field1,
         instance.field2, instance.nested.testField);*/

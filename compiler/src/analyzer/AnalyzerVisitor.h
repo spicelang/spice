@@ -126,6 +126,4 @@ private:
 
     // Private functions
     static SymbolType getSymbolTypeFromDataType(SpiceParser::DataTypeContext*);
-    static SymbolType getReferenceTypeFromType(SymbolType);
-    static SymbolType getTypeFromReferenceType(SymbolType);
 };

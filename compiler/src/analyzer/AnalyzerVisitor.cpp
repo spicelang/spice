@@ -516,7 +516,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
         leftType = symbolTableEntry->getType();
 
         // If it is a pointer to the value, resolve the type
-        if (ctx->MUL()) leftType = getTypeFromReferenceType(leftType);
+        if (ctx->MUL()) leftType = leftType.getNormalVersion();
 
         // If left type is dyn, set left type to right type
         if (leftType.getSuperType() == TYPE_DYN) {
@@ -901,9 +901,9 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                                 "Variable " + variableName + " was referenced before initialized");
         SymbolType valueType = entry->getType();
         // Check for referencing operator
-        if (ctx->BITWISE_AND()) valueType = getReferenceTypeFromType(valueType);
+        if (ctx->BITWISE_AND()) valueType = valueType.getPointerVersion();
         // Check for de-referencing operator
-        if (ctx->MUL()) valueType = getTypeFromReferenceType(valueType);
+        if (ctx->MUL()) valueType = valueType.getNormalVersion();
         return valueType;
     }
     return visit(ctx->functionCall());
@@ -929,23 +929,5 @@ SymbolType AnalyzerVisitor::getSymbolTypeFromDataType(SpiceParser::DataTypeConte
         return ctx->MUL() ? SymbolType(TYPE_STRUCT_PTR, structName) :
             SymbolType(TYPE_STRUCT, structName);
     }
-    return SymbolType(TYPE_DYN);
-}
-
-SymbolType AnalyzerVisitor::getReferenceTypeFromType(SymbolType type) {
-    if (type.getSuperType() == TYPE_DOUBLE) return SymbolType(TYPE_DOUBLE_PTR);
-    if (type.getSuperType() == TYPE_INT) return SymbolType(TYPE_INT_PTR);
-    if (type.getSuperType() == TYPE_STRING) return SymbolType(TYPE_STRING_PTR);
-    if (type.getSuperType() == TYPE_BOOL) return SymbolType(TYPE_BOOL_PTR);
-    if (type.getSuperType() == TYPE_STRUCT) return SymbolType(TYPE_STRUCT_PTR, type.getSubType());
-    return SymbolType(TYPE_DYN);
-}
-
-SymbolType AnalyzerVisitor::getTypeFromReferenceType(SymbolType type) {
-    if (type.getSuperType() == TYPE_DOUBLE_PTR) return SymbolType(TYPE_DOUBLE);
-    if (type.getSuperType() == TYPE_INT_PTR) return SymbolType(TYPE_INT);
-    if (type.getSuperType() == TYPE_STRING_PTR) return SymbolType(TYPE_STRING);
-    if (type.getSuperType() == TYPE_BOOL_PTR) return SymbolType(TYPE_BOOL);
-    if (type.getSuperType() == TYPE_STRUCT_PTR) return SymbolType(TYPE_STRUCT, type.getSubType());
     return SymbolType(TYPE_DYN);
 }

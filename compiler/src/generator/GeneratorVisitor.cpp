@@ -1,6 +1,5 @@
 // Copyright (c) 2021 ChilliBits. All rights reserved.
 
-#include <util/IdentifierUtil.h>
 #include "GeneratorVisitor.h"
 
 void GeneratorVisitor::init() {
@@ -1361,6 +1360,7 @@ llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::
     // If it is a one-dimensional identifier return the address immediately
     if (idenList.size() <= 1) return symbolTableEntry->getAddress();
 
+    // Get address for (nested) structs
     llvm::Value* currentAddress = symbolTableEntry->getAddress();
     for (int i = 1; i < idenList.size(); i++) {
         // Get name of struct
@@ -1373,6 +1373,11 @@ llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::
         symbolTableEntry = structTable->lookup(idenList[i]);
         // Calculate field address
         currentAddress = builder->CreateStructGEP(structEntry->getLLVMType(), currentAddress, symbolTableEntry->getOrderIndex());
+        // If the result is a pointer -> de-reference it
+        if (symbolTableEntry->getType().isPointer()) {
+            //SymbolType deRefType = symbolTableEntry->getType().getNormalVersion();
+            currentAddress = builder->CreateLoad(getTypeFromSymbolType(symbolTableEntry->getType()), currentAddress);
+        }
     }
     return currentAddress;
 }
