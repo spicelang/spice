@@ -29,10 +29,11 @@
     "engines": {
         "vscode": "^1.62.0"
     },
+    "main": "./dist/spiceMain.js",
     "contributes": {
         "languages": [{
             "id": "spice",
-            "aliases": ["Spice", "spice"],
+            "aliases": ["Spice"],
             "extensions": [".spice"],
             "configuration": "./language-configuration.json"
         }],
@@ -47,5 +48,30 @@
                 "path": "./snippets/spice.json"
             }
         ]
-    }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "bundle": "esbuild src/spiceMain.ts --bundle --outdir=dist --external:vscode --format=cjs --platform=node",
+        "bundle-dev": "npm run bundle -- --sourcemap",
+        "bundle-watch": "npm run bundle -- --sourcemap --watch",
+        "test-compile": "tsc -p ./",
+        "compile": "npm run bundle",
+        "watch": "tsc -watch -p ./",
+        "test": "npm run test-compile && node ./out/test/runTest.js",
+        "lint": "gts lint src test",
+        "fix-lint": "gts fix src test",
+        "unit-test": "npm run test-compile && node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
+        "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
+      },
+    "dependencies": {},
+    "devDependencies": {
+        "@types/vscode": "^1.62.0",
+        "tslint": "^6.1.1",
+        "typescript": "^3.8.3",
+        "yarn": "^1.22.4"
+    },
+    "activationEvents": [
+        "workspaceContains:**/*.spice",
+        "onLanguage:spice"
+    ]
 }
