@@ -44,6 +44,10 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             ""
         },
         { // 7
+            "success-pointer-functions",
+            ""
+        },
+        { // 8
             "success-struct",
             ""
         },

@@ -1,0 +1,10 @@
+type TestStruct struct {
+    double* dbl
+    string str
+    bool bl
+}
+
+f<int> main() {
+    dyn testInstance = new TestStruct { 6.987, "Hello!", false };
+    printf("Double: %f", testInstance.dbl);
+}

@@ -35,7 +35,7 @@ bool SymbolType::isPointer() {
  *
  * @return Pointer version: e.g. TYPE_STRUCT_PTR for TYPE_STRUCT
  */
-SymbolType SymbolType::getPointerVersion() {
+SymbolType SymbolType::getPointerType() {
     if (superType == TYPE_DOUBLE) return SymbolType(TYPE_DOUBLE_PTR);
     if (superType == TYPE_INT) return SymbolType(TYPE_INT_PTR);
     if (superType == TYPE_STRING) return SymbolType(TYPE_STRING_PTR);
@@ -49,7 +49,7 @@ SymbolType SymbolType::getPointerVersion() {
  *
  * @return Normal version: e.g. TYPE_DOUBLE for TYPE_DOUBLE_PTR
  */
-SymbolType SymbolType::getNormalVersion() {
+SymbolType SymbolType::getScalarType() {
     if (superType == TYPE_DOUBLE_PTR) return SymbolType(TYPE_DOUBLE);
     if (superType == TYPE_INT_PTR) return SymbolType(TYPE_INT);
     if (superType == TYPE_STRING_PTR) return SymbolType(TYPE_STRING);

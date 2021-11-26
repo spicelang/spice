@@ -25,8 +25,8 @@ public:
     SymbolSuperType getSuperType();
     std::string getSubType();
     bool isPointer();
-    SymbolType getPointerVersion();
-    SymbolType getNormalVersion();
+    SymbolType getPointerType();
+    SymbolType getScalarType();
     friend bool operator== (const SymbolType& lhs, const SymbolType& rhs);
     friend bool operator!= (const SymbolType& lhs, const SymbolType& rhs);
 private:

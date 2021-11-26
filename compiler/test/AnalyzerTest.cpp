@@ -167,12 +167,28 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "error-custom-type-unknown",
             "Semantic error at 8:26: Wrong data type for operator: Cannot apply the assign operator to different data types"
         },
-        // Successful tests
         { // 38
+            "error-struct-defined-before-used",
+            "Semantic error at 2:21: Referenced undefined struct: Struct 'Test' was used before defined"
+        },
+        { // 39
+            "error-struct-fields-match-declaration",
+            "Semantic error at 8:41: The type of a field value does not match the declaration: The type of the field 'dbl' does not match the declaration"
+        },
+        { // 40
+            "error-struct-passed-too-many-less-values",
+            "Semantic error at 9:24: Number of struct fields not matching declaration: You've passed too less/many field values"
+        },
+        { // 41
+            "error-struct-types-not-matching",
+            "Semantic error at 12:32: Wrong data type for operator: Cannot apply the assign operator to different data types"
+        },
+        // Successful tests
+        { // 41
             "success-fibonacci",
             ""
         },
-        { // 39
+        { // 42
             "success-function-overloading",
             ""
         }

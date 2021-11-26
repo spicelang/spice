@@ -275,7 +275,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     if (!structSymbol || structSymbol->getType().getSuperType() != TYPE_STRUCT ||
         structSymbol->getType().getSubType() != structName) {
         throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                            "Struct '" + structName + "' was used before defined.");
+                            "Struct '" + structName + "' was used before defined");
     }
 
     // Get the symbol table where the struct is defined
@@ -516,7 +516,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
         leftType = symbolTableEntry->getType();
 
         // If it is a pointer to the value, resolve the type
-        if (ctx->MUL()) leftType = leftType.getNormalVersion();
+        if (ctx->MUL()) leftType = leftType.getScalarType();
 
         // If left type is dyn, set left type to right type
         if (leftType.getSuperType() == TYPE_DYN) {
@@ -898,9 +898,9 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
         SymbolType valueType = entry->getType();
         // Check for referencing operator
-        if (ctx->BITWISE_AND()) valueType = valueType.getPointerVersion();
+        if (ctx->BITWISE_AND()) valueType = valueType.getPointerType();
         // Check for de-referencing operator
-        if (ctx->MUL()) valueType = valueType.getNormalVersion();
+        if (ctx->MUL()) valueType = valueType.getScalarType();
         return valueType;
     }
     return visit(ctx->functionCall());
