@@ -7,7 +7,7 @@
         },
         "main function": {
             "prefix": "fmain",
-            "body": "f<int> main() {\n\t$1\n\treturn 0;\n}",
+            "body": "f<int> main() {\n\t$1\n}",
             "description": "Snippet for a main function"
         },
         "function def": {
@@ -19,6 +19,10 @@
             "prefix": "proc",
             "body": "p ${1:procedureName}($2) {\n\t$3\n}",
             "description": "Snippet for a procedure definition"
+        },
+        "struct def": {
+            "prefix": "struct",
+            "body": "type ${1:StructName} struct {\n\t$2\n}"
         },
         "if": {
             "prefix": "if",

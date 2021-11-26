@@ -1,4 +1,4 @@
-# Publish Compiler binaries
+# Publish Spice
 name: Release
 
 on:
@@ -73,13 +73,12 @@ jobs:
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: | #-DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON
-          git clone --depth 1 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-13.0.0 https://github.com/llvm/llvm-project llvm
           ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" ${{ matrix.config.cmake_params }} -Wno-dev -Wattributes
 
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
-          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} ninja -C./llvm/build
+        run: ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} ninja -C./llvm/build
 
       - name: Download Libs
         run: |
