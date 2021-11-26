@@ -45,8 +45,18 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Referenced undefined function";
         case REFERENCED_UNDEFINED_VARIABLE:
             return "Referenced undefined variable";
+        case REFERENCED_UNDEFINED_STRUCT:
+            return "Referenced undefined struct";
+        case REFERENCED_UNDEFINED_STRUCT_FIELD:
+            return "Referenced undefined struct field";
         case VARIABLE_DECLARED_TWICE:
             return "Multiple declarations of the same variable";
+        case FUNCTION_DECLARED_TWICE:
+            return "Multiple declarations of a function with the same name";
+        case PROCEDURE_DECLARED_TWICE:
+            return "Multiple declarations of a procedure with the same name";
+        case STRUCT_DECLARED_TWICE:
+            return "Multiple declarations of a struct with the same name";
         case FUNCTION_WITHOUT_RETURN_STMT:
             return "Missing return statement";
         case RETURN_STMT_WITHOUT_FUNCTION:
@@ -73,6 +83,12 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Imported source file not existing";
         case CIRCULAR_DEPENDENCY:
             return "Circular import detected";
+        case UNKNOWN_DATATYPE:
+            return "Unknown datatype";
+        case NUMBER_OF_FIELDS_NOT_MATCHING:
+            return "Number of struct fields not matching declaration";
+        case FIELD_TYPE_NOT_MATCHING:
+            return "The type of a field value does not match the declaration";
     }
     return "Unknown error";
 }

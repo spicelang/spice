@@ -45,7 +45,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 7
             "error-variable-declared-before-referenced",
-            "Semantic error at 2:26: Referenced undefined variable: Variable test was referenced before initialized"
+            "Semantic error at 2:26: Referenced undefined variable: Variable test was referenced before declared"
         },
         { // 8
             "error-variable-declared-only-once",
@@ -105,11 +105,11 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 22
             "error-prefix-unary-only-integer-identifiers",
-            "Semantic error at 2:7: Wrong data type for operator: Prefix '++' or '--' only can be applied to an identifier of type integer"
+            "Semantic error at 2:7: Wrong data type for operator: Prefix '++' or '--' can only be applied to an identifier of type integer"
         },
         { // 23
             "error-postfix-unary-only-integer-identifiers",
-            "Semantic error at 2:5: Wrong data type for operator: Postfix '++' or '--' only can be applied to an identifier of type integer"
+            "Semantic error at 2:5: Wrong data type for operator: Postfix '++' or '--' can only be applied to an identifier of type integer"
         },
         { // 24
             "error-must-contain-main-function",
@@ -125,7 +125,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 27
             "error-printf-type-incompatibility",
-            "Semantic error at 4:36: Types of printf call not matching: Template string expects an int or a bool here"
+            "Semantic error at 6:36: Types of printf call not matching: Template string expects an int or a bool here"
         },
         { // 28
             "error-break-count-valid",
@@ -133,7 +133,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 29
             "error-break-count-not-too-high",
-            "Semantic error at 7:23: Invalid number of break calls: We only can break 2 time(s) here"
+            "Semantic error at 7:23: Invalid number of break calls: We can only break 2 time(s) here"
         },
         { // 30
             "error-continue-count-valid",
@@ -141,18 +141,54 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 31
             "error-continue-count-not-too-high",
-            "Semantic error at 7:26: Invalid number of continue calls: We only can continue 2 time(s) here"
-        }, // 32
-        {
+            "Semantic error at 7:26: Invalid number of continue calls: We can only continue 2 time(s) here"
+        },
+        { // 32
             "error-circular-import",
             "Semantic error - Circular import detected: './test-files/analyzer/error-circular-import/source1.spice'"
         },
-        // Successful tests
         { // 33
+            "error-duplicate-struct-def",
+            "Semantic error at 7:1: Multiple declarations of a struct with the same name: Duplicate struct 'Person'"
+        },
+        { // 34
+            "error-duplicate-function-def",
+            "Semantic error at 5:1: Multiple declarations of a function with the same name: Function 'exampleFunc()' is declared twice"
+        },
+        { // 35
+            "error-duplicate-main-function-def",
+            "Semantic error at 5:1: Multiple declarations of a function with the same name: Main function is declared twice"
+        },
+        { // 36
+            "error-duplicate-procedure-def",
+            "Semantic error at 5:1: Multiple declarations of a procedure with the same name: Procedure 'exampleProcedure()' is declared twice"
+        },
+        { // 37
+            "error-custom-type-unknown",
+            "Semantic error at 8:26: Wrong data type for operator: Cannot apply the assign operator to different data types"
+        },
+        { // 38
+            "error-struct-defined-before-used",
+            "Semantic error at 2:21: Referenced undefined struct: Struct 'Test' was used before defined"
+        },
+        { // 39
+            "error-struct-fields-match-declaration",
+            "Semantic error at 8:41: The type of a field value does not match the declaration: The type of the field 'dbl' does not match the declaration"
+        },
+        { // 40
+            "error-struct-passed-too-many-less-values",
+            "Semantic error at 9:24: Number of struct fields not matching declaration: You've passed too less/many field values"
+        },
+        { // 41
+            "error-struct-types-not-matching",
+            "Semantic error at 12:32: Wrong data type for operator: Cannot apply the assign operator to different data types"
+        },
+        // Successful tests
+        { // 41
             "success-fibonacci",
             ""
         },
-        { // 34
+        { // 42
             "success-function-overloading",
             ""
         }
@@ -168,6 +204,7 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
     // Read source file
     std::ifstream sourceStream;
     sourceStream.open(sourceFile);
+    if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
     antlr4::ANTLRInputStream input(sourceStream);
 
     // Parse input to AST

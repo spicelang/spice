@@ -1,0 +1,9 @@
+type Test struct {
+    string field1
+    bool* field2
+}
+
+f<int> main() {
+    bool boolean = false;
+    NonExisting instance = new Test { "test", &boolean };
+}

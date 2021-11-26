@@ -12,7 +12,11 @@
  * @param isParameter Enabled if the symbol is a function/procedure parameter
  */
 void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, bool isConstant, bool isParameter) {
-    symbols.insert({name, SymbolTableEntry(name, type, state, isConstant)});
+    bool isGlobal = getParent() == nullptr;
+    unsigned int orderIndex = symbols.size();
+    // Insert into symbols map
+    symbols.insert({name, SymbolTableEntry(name, type, state, orderIndex, isConstant, isGlobal)});
+    // If the symbol is a parameter, add it to the parameters list
     if (isParameter) paramNames.push_back(name);
 }
 
@@ -20,7 +24,7 @@ void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState s
  * Check if a symbol exists in the current or any parent scope and return it if possible
  *
  * @param name Name of the desired symbol
- * @return Desired symbol / nullptr if the symbol was not round
+ * @return Desired symbol / nullptr if the symbol was not found
  */
 SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
     // If not available in the current scope, search in the parent scope
@@ -33,13 +37,44 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
 }
 
 /**
+ * Check if an order index exists in the current or any parent scope and returns it if possible.
+ * Warning: Unlike the `lookup` method, this one doesn't consider the parent scopes
+ *
+ * @param orderIndex Order index of the desired symbol
+ * @return Desired symbol / nullptr if the symbol was not found
+ */
+SymbolTableEntry* SymbolTable::lookupByIndexInCurrentScope(unsigned int orderIndex) {
+    for (auto& [key, val] : symbols) {
+        if (val.getOrderIndex() == orderIndex) return &val;
+    }
+    return nullptr;
+}
+
+/**
  * Search for a symbol table by its name, where a function is defined. Used for function calls to function/procedures
+ * which were linked in from other modules
+ *
+ * @param scopeId Scope ID of the desired symbol table
+ * @return Desired symbol table
+ */
+SymbolTable* SymbolTable::lookupTable(const std::string& scopeId) {
+    // If not available in the current scope, search in the parent scope
+    if (children.find(scopeId) == children.end()) {
+        if (parent == nullptr) return nullptr;
+        return parent->lookupTable(scopeId);
+    }
+    // Otherwise, return the entry
+    return &children.at(scopeId);
+}
+
+/**
+ * Search for a symbol table by its name, where a symbol is defined. Used for function calls to function/procedures
  * which were linked in from other modules
  *
  * @param nameSpace Name of the scope of the desired symbol table
  * @return Desired symbol table
  */
-SymbolTable* SymbolTable::lookupTable(const std::vector<std::string>& nameSpace) {
+SymbolTable* SymbolTable::lookupTableWithSymbol(const std::vector<std::string>& nameSpace) {
     // Check if scope contains this namespace
     SymbolTable* currentTable = this;
     for (int i = 0; i < nameSpace.size(); i++) {
@@ -53,7 +88,7 @@ SymbolTable* SymbolTable::lookupTable(const std::vector<std::string>& nameSpace)
     }
     // Current scope does not contain the namespace => go up one table
     if (parent == nullptr) return nullptr;
-    return parent->lookupTable(nameSpace);
+    return parent->lookupTableWithSymbol(nameSpace);
 }
 
 /**
@@ -143,6 +178,15 @@ SymbolTable* SymbolTable::getParent() {
 SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
     if (children.empty()) return nullptr;
     return &children.at(scopeId);
+}
+
+/**
+ * Returns the number of symbols in the table
+ *
+ * @return Number of symbols
+ */
+unsigned int SymbolTable::getSymbolsCount() {
+    return symbols.size();
 }
 
 /**
@@ -254,9 +298,13 @@ void SymbolTable::setBreakBlock(llvm::BasicBlock* block) {
  */
 std::string SymbolTable::toString() {
     std::string symbolsString, childrenString;
+    // Build symbols string
     for (auto& symbol : symbols)
         symbolsString.append("(" + symbol.second.toString() + ")\n");
+    // Build children string
     for (auto& child : children)
         childrenString.append(child.first + ": " + child.second.toString() + "\n");
+    if (childrenString.empty())
+        return "SymbolTable(\n" + symbolsString + ")";
     return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
 }

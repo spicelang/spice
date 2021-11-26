@@ -39,11 +39,23 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             "success-modules",
             ""
         },
-        /*{ // 6 (currently not working in GH actions, therefore disabled)
+        { // 6
+            "success-pointer",
+            ""
+        },
+        { // 7
+            "success-pointer-functions",
+            ""
+        },
+        { // 8
+            "success-struct",
+            ""
+        },
+        /*{ // 7 (currently not working in GH actions, therefore disabled)
             "success-modules-std",
             ""
             },*/
-        /*{ // 5
+        /*{ // 8
             "success-global-variables",
             ""
         },*/
@@ -59,6 +71,7 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
     // Read source file
     std::ifstream sourceStream;
     sourceStream.open(sourceFile);
+    if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
     antlr4::ANTLRInputStream input(sourceStream);
 
     // Parse input to AST

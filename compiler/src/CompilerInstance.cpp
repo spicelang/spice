@@ -6,10 +6,13 @@
  * Compiles a single source file to an object
  *
  * @param sourceFile Full path to a file (absolute or relative)
- * @param targetTriple Target triplet string: e.g.: x86_64-w64-windows-gnu
- * @param outputPath Full path to an output file (absolute or relative)
+ * @param targetArch Target architecture: e.g.: x86_64
+ * @param targetVendor Target vendor: e.g.: w64
+ * @param targetOs Target OS: e.g.: windows
+ * @param objectDir Full path to an output file (absolute or relative)
  * @param debugOutput Set to true to show compiler debug output
  * @param optLevel Number in range 1-3 to control optimization level
+ * @param mustHaveMainFunction true = main source file, false = not main source file
  *
  * @return Symbol table of this program part
  */
@@ -24,11 +27,11 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         bool mustHaveMainFunction
 ) {
     // Read from file
-    std::ifstream stream;
-    stream.open(sourceFile);
-    antlr4::ANTLRInputStream input(stream);
+    std::ifstream stream(sourceFile);
+    if (!stream) throw std::runtime_error("Source file at path '" + sourceFile + "' does not exist.");
 
     // Parse input to AST
+    antlr4::ANTLRInputStream input(stream);
     SpiceLexer lexer(&input);
     antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
     SpiceParser parser(&tokens); // Check for syntax errors
@@ -74,11 +77,13 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         generator.dumpIR();
     }
 
-    generator.optimize(); // Optimize IR code
-    if (debugOutput) {
-        // Dump optimized IR code
-        std::cout << "\nOptimized IR code:" << std::endl;
-        generator.dumpIR();
+    if (optLevel >= 1 && optLevel <= 3) {
+        generator.optimize(); // Optimize IR code
+        if (debugOutput) {
+            // Dump optimized IR code
+            std::cout << "\nOptimized IR code:" << std::endl;
+            generator.dumpIR();
+        }
     }
 
     generator.emit(); // Emit object file for specified platform

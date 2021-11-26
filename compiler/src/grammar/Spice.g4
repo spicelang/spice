@@ -1,9 +1,10 @@
 grammar Spice;
 
-entry: (stmt | mainFunctionDef | functionDef | procedureDef)*;
+entry: (stmt | mainFunctionDef | functionDef | procedureDef | structDef)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
+structDef: TYPE IDENTIFIER STRUCT LBRACE fieldLst RBRACE;
 forLoop: FOR assignment SEMICOLON assignment SEMICOLON assignment LBRACE stmtLst RBRACE;
 //foreachLoop: FOREACH IDENTIFIER COLON assignment LBRACE stmtLst RBRACE;
 whileLoop: WHILE assignment LBRACE stmtLst RBRACE;
@@ -11,18 +12,21 @@ ifStmt: IF assignment LBRACE stmtLst RBRACE elseStmt?;
 elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 
 stmtLst: (stmt | forLoop | /*foreachLoop |*/ whileLoop | ifStmt)*;
+fieldLst: declStmt*;
+fieldLstAssignment: ternary (COMMA ternary)*;
 paramLstDef: (declStmt | assignment) (COMMA (declStmt | assignment))*;
 paramLstCall: assignment (COMMA assignment)*;
 stmt: (declStmt | assignment | functionCall | importStmt | returnStmt | breakStmt | continueStmt | printfStmt) SEMICOLON;
 declStmt: CONST? dataType IDENTIFIER;
-functionCall: (IDENTIFIER DOT)* IDENTIFIER LPAREN paramLstCall? RPAREN;
+functionCall: IDENTIFIER (DOT IDENTIFIER)* LPAREN paramLstCall? RPAREN;
+newStmt: NEW IDENTIFIER LBRACE fieldLstAssignment? RBRACE;
 importStmt: IMPORT STRING AS IDENTIFIER;
 returnStmt: RETURN assignment;
 breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
 printfStmt: PRINTF LPAREN STRING (COMMA assignment)* RPAREN;
 
-assignment: ((declStmt | IDENTIFIER) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? ternary;
+assignment: ((declStmt | MUL? IDENTIFIER (DOT IDENTIFIER)*) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? (ternary | newStmt);
 ternary: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
@@ -35,8 +39,8 @@ multiplicativeExpr: prefixUnary ((MUL | DIV) prefixUnary)*;
 prefixUnary: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnary;
 postfixUnary: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
 atomicExpr: value | LPAREN assignment RPAREN;
-value: STRING | TRUE | FALSE | INTEGER | DOUBLE | IDENTIFIER | functionCall;
-dataType: TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN;
+value: STRING | TRUE | FALSE | INTEGER | DOUBLE | (BITWISE_AND | MUL)? IDENTIFIER (DOT IDENTIFIER)* | functionCall;
+dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER) MUL?;
 
 TYPE_DOUBLE: 'double';
 TYPE_INT: 'int';
@@ -56,6 +60,9 @@ BREAK: 'break';
 CONTINUE: 'continue';
 RETURN: 'return';
 AS: 'as';
+STRUCT: 'struct';
+TYPE: 'type';
+NEW: 'new';
 MAIN: 'main';
 PRINTF: 'printf';
 TRUE: 'true';
@@ -98,6 +105,6 @@ COLON: ':';
 COMMA: ',';
 DOT: '.';
 
-COMMENT: '/*' .*? '*/' -> skip;
+BLOCK_COMMENT: '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 WS: [ \t\r\n]+ -> channel(HIDDEN);

@@ -1,0 +1,12 @@
+p exampleProcedure() {
+    printf("Hello ");
+}
+
+p exampleProcedure() {
+    printf("World!");
+}
+
+f<int> main() {
+    exampleProcedure();
+    exampleProcedure();
+}

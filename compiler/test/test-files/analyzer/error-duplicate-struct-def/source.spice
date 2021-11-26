@@ -1,0 +1,13 @@
+type Person struct {
+    string* firstName
+    string* lastName
+    int age
+}
+
+type Person struct {
+    int age
+    double* height
+    Person* person
+}
+
+f<int> main() {}

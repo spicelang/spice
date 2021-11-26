@@ -1,0 +1,28 @@
+// Max length is always the next highter power of two. Thus, the growing factor is two
+type string struct {
+    int* value;
+    len int;
+}
+
+p createString(string* strRef) {
+    strRef.value = null;
+    strRef.len = 0;
+}
+
+p deleteString(string* strRef) {
+
+}
+
+f<string> concatStrings(string a, string b) {
+    // Return b if a is empty
+    int aLen = len(a);
+    if aLen == 0 { return b; }
+    // Return a if b is empty
+    int bLen = len(b);
+    if bLen == 0 { return a; }
+    
+    // Create a new string on the heap
+    // ToDo @marcauberer
+
+    return "";
+}

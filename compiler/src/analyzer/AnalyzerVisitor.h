@@ -10,6 +10,7 @@
 #include "ModuleRegistry.h"
 #include <util/ScopeIdUtil.h>
 #include <util/FileUtil.h>
+#include <util/IdentifierUtil.h>
 #include <exception/SemanticError.h>
 
 #include <llvm/ADT/Triple.h>
@@ -18,6 +19,7 @@
 #include <utility>
 
 const static std::string RETURN_VARIABLE_NAME = "result";
+const static std::string TMP_VARIABLE_NAME = "tmp";
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
@@ -49,6 +51,8 @@ public:
 
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) override;
 
+    antlrcpp::Any visitStructDef(SpiceParser::StructDefContext* ctx) override;
+
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
 
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
@@ -62,6 +66,8 @@ public:
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
 
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
+
+    antlrcpp::Any visitNewStmt(SpiceParser::NewStmtContext* ctx) override;
 
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
 
@@ -97,7 +103,11 @@ public:
 
     antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext* ctx) override;
 
+    antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
+
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
+
+    antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
 
 private:
     // Members

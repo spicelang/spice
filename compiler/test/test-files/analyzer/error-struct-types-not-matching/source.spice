@@ -1,0 +1,14 @@
+type TestStruct struct {
+    double dbl
+    string str
+    bool bl
+}
+
+type AnotherStruct struct {
+    int i
+}
+
+f<int> main() {
+    AnotherStruct testInstance = new TestStruct { 6.456, "Hi!", false };
+    printf("Double: %f", testInstance.dbl);
+}

@@ -78,6 +78,8 @@ nav:
     - language/procedures.md
     - language/functions.md
     - language/modules.md
+    - language/pointers.md
+    - language/structs.md
   - contributing.md
 
 markdown_extensions:

@@ -6,6 +6,7 @@
 #include <exception/IRError.h>
 #include <analyzer/SymbolTable.h>
 #include <util/ScopeIdUtil.h>
+#include <util/IdentifierUtil.h>
 #include <analyzer/AnalyzerVisitor.h>
 
 #include <llvm/IR/IRBuilder.h>
@@ -60,11 +61,15 @@ public:
 
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) override;
 
+    antlrcpp::Any visitStructDef(SpiceParser::StructDefContext* ctx) override;
+
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
 
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
 
     antlrcpp::Any visitStmtLst(SpiceParser::StmtLstContext* ctx) override;
+
+    antlrcpp::Any visitFieldLstAssignment(SpiceParser::FieldLstAssignmentContext* ctx) override;
 
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
 
@@ -73,6 +78,8 @@ public:
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
 
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
+
+    antlrcpp::Any visitNewStmt(SpiceParser::NewStmtContext* ctx) override;
 
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
 
@@ -125,7 +132,6 @@ private:
     std::unique_ptr<llvm::LLVMContext> context;
     std::unique_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<llvm::Module> module;
-    std::map<std::string, llvm::AllocaInst*> namedValues;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope = new SymbolTable(nullptr);
     std::string currentVar;
@@ -151,4 +157,6 @@ private:
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
 
     llvm::Type* getTypeFromSymbolType(SymbolType);
+
+    llvm::Value* getAddressByIdenList(SymbolTable*, std::vector<antlr4::tree::TerminalNode*>);
 };

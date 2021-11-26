@@ -27,7 +27,11 @@ public:
 
     SymbolTableEntry* lookup(const std::string&);
 
-    SymbolTable* lookupTable(const std::vector<std::string>&);
+    SymbolTableEntry* lookupByIndexInCurrentScope(unsigned int);
+
+    SymbolTable* lookupTable(const std::string&);
+
+    SymbolTable* lookupTableWithSymbol(const std::vector<std::string>&);
 
     void update(const std::string&, SymbolState);
 
@@ -42,6 +46,8 @@ public:
     SymbolTable* getParent();
 
     SymbolTable* getChild(const std::string&);
+
+    unsigned int getSymbolsCount();
 
     void insertFunctionDeclaration(const std::string&, const std::vector<SymbolType>&);
 
