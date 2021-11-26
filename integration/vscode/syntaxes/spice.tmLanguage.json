@@ -757,7 +757,15 @@
 				},
 				{
 					"match": "\\bp\\b",
-					"name": "keyword.function.spice"
+					"name": "keyword.procedure.spice"
+				},
+				{
+					"match": "\\btype\\b",
+					"name": "keyword.type.spice"
+				},
+				{
+					"match": "\\bnew\\b",
+					"name": "keyword.new.spice"
 				}
 			]
 		},
@@ -782,6 +790,10 @@
 				{
 					"match": "\\bstring\\b",
 					"name": "storage.type.string.spice"
+				},
+				{
+					"match": "\\bstruct\\b",
+					"name": "storage.type.struct.spice"
 				}
 			]
 		}
