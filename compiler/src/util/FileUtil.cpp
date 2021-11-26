@@ -9,11 +9,15 @@
  * @return Existence of the file
  */
 bool FileUtil::fileExists(const std::string& filePath) {
-    std::ifstream file(filePath.c_str());
-    if (file) return true;
-    return false;
+    return std::ifstream(filePath.c_str()).good();
 }
 
+/**
+ * Checks if a certain dir exists on the file system
+ *
+ * @param dirPath Path to the dir
+ * @return Existence of the dir
+ */
 bool FileUtil::dirExists(const std::string& dirPath) {
     struct stat info;
     if (stat(dirPath.c_str(), &info) != 0)
@@ -21,6 +25,7 @@ bool FileUtil::dirExists(const std::string& dirPath) {
     else if( info.st_mode & S_IFDIR )  // S_ISDIR() doesn't exist on my windows 
         return true;
     return false;
+    //return is_directory(std::filesystem::status(dirPath));
 }
 
 /**

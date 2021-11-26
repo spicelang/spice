@@ -27,11 +27,11 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         bool mustHaveMainFunction
 ) {
     // Read from file
-    std::ifstream stream;
-    stream.open(sourceFile);
-    antlr4::ANTLRInputStream input(stream);
+    std::ifstream stream(sourceFile);
+    if (!stream) throw std::runtime_error("Source file at path '" + sourceFile + "' does not exist.");
 
     // Parse input to AST
+    antlr4::ANTLRInputStream input(stream);
     SpiceLexer lexer(&input);
     antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
     SpiceParser parser(&tokens); // Check for syntax errors

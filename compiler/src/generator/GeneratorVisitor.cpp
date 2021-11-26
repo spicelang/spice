@@ -1066,8 +1066,8 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     // Value is an integer constant
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TYPE_INT);
-        int value = std::stoi(ctx->INTEGER()->toString());
-        return (llvm::Value*) llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), value);
+        int v = std::stoi(ctx->INTEGER()->toString());
+        return (llvm::Value*) llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), v);
     }
 
     // Value is a string constant
@@ -1082,14 +1082,12 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->FALSE()) {
         currentSymbolType = SymbolType(TYPE_BOOL);
         return (llvm::Value*) llvm::ConstantInt::getFalse(*context);
-        //return (llvm::Value*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0);
     }
 
     // Value is a boolean constant with value true
     if (ctx->TRUE()) {
         currentSymbolType = SymbolType(TYPE_BOOL);
         return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
-        //return (llvm::Value*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1);
     }
 
     // Value is an identifier
@@ -1108,11 +1106,8 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
             if (ctx->BITWISE_AND()) return var;
             // If the de-reference operator is attached load twice, otherwise load once
             llvm::Value* loadedVar = builder->CreateLoad(var->getType()->getPointerElementType(), var);
-            if (ctx->MUL()) {
-                return (llvm::Value*) builder->CreateLoad(loadedVar->getType()->getPointerElementType(), loadedVar);
-            } else {
-                return loadedVar;
-            }
+            if (ctx->MUL()) return (llvm::Value*) builder->CreateLoad(loadedVar->getType()->getPointerElementType(), loadedVar);
+            return loadedVar;
         } else { // Global variable
             llvm::GlobalVariable* var = module->getNamedGlobal(variableName);
             // Throw an error when the variable is null
@@ -1123,11 +1118,8 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
             if (ctx->BITWISE_AND()) return var;
             // If the de-reference operator is attached load twice, otherwise load once
             llvm::Value* loadedVar = builder->CreateLoad(var->getType()->getPointerElementType(), var);
-            if (ctx->MUL()) {
-                return (llvm::Value*) builder->CreateLoad(loadedVar->getType()->getPointerElementType(), loadedVar);
-            } else {
-                return loadedVar;
-            }
+            if (ctx->MUL()) return (llvm::Value*) builder->CreateLoad(loadedVar->getType()->getPointerElementType(), loadedVar);
+            return loadedVar;
         }
     }
 
@@ -1352,12 +1344,10 @@ llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
         case TYPE_INT: return llvm::Type::getInt32Ty(*context);
         case TYPE_STRING: return llvm::Type::getInt8Ty(*context)->getPointerTo();
         case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
-        //case TYPE_BOOL: return llvm::Type::getInt8Ty(*context);
         case TYPE_DOUBLE_PTR: return llvm::Type::getDoubleTy(*context)->getPointerTo();
         case TYPE_INT_PTR: return llvm::Type::getInt32Ty(*context)->getPointerTo();
         case TYPE_STRING_PTR: return llvm::Type::getInt8Ty(*context)->getPointerTo()->getPointerTo();
         case TYPE_BOOL_PTR: return llvm::Type::getInt1Ty(*context)->getPointerTo();
-        //case TYPE_BOOL_PTR: return llvm::Type::getInt8Ty(*context)->getPointerTo();
         case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
         case TYPE_STRUCT_PTR: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
         default: return nullptr;
