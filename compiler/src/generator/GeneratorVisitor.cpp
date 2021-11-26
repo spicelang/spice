@@ -1374,7 +1374,7 @@ llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::
         // Calculate field address
         currentAddress = builder->CreateStructGEP(structEntry->getLLVMType(), currentAddress, symbolTableEntry->getOrderIndex());
         // If the result is a pointer -> de-reference it
-        if (symbolTableEntry->getType().isPointer()) {
+        if (symbolTableEntry->getType().isPointer() && i < idenList.size() -1) {
             //SymbolType deRefType = symbolTableEntry->getType().getNormalVersion();
             currentAddress = builder->CreateLoad(getTypeFromSymbolType(symbolTableEntry->getType()), currentAddress);
         }
