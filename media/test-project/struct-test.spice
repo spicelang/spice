@@ -1,20 +1,16 @@
-type NestedStruct struct {
-    bool testField
-    double dbl
-    string str
+type Person struct {
+    string firstName
+    string lastName
+    int age
 }
 
-type TestStruct struct {
-    int field1
-    double field2
-    NestedStruct* nested
+p birthday(Person* person) {
+    person.age++;
 }
 
 f<int> main() {
-    dyn input = 12;
-    NestedStruct nested = new NestedStruct { true, 6.124, "Hello World!" };
-    TestStruct instance = new TestStruct { input, 46.34, &nested };
-    instance.nested.testField = false;
-    printf("Field1: %d, field2: %f, nested: %d", instance.field1,
-        instance.field2, instance.nested.testField);
+    dyn mike = new Person { "Mike", "Miller", 32 };
+    printf("Age before birthday: %d", mike.age);
+    birthday(&mike);
+    printf("Age after birthday: %d", mike.age);
 }

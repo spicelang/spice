@@ -4,13 +4,13 @@ type Person struct {
     int age
 }
 
-p birthday(Person* person) {
-    *person.age++;
+p birthday(Person person) {
+    person.age++;
 }
 
 f<int> main() {
     dyn mike = new Person { "Mike", "Miller", 32 };
     printf("Age before birthday: %d", mike.age);
-    birthday(&mike);
+    birthday(mike);
     printf("Age after birthday: %d", mike.age);
 }

@@ -715,41 +715,33 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
 antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
     // Get value of right side
     llvm::Value* rhs = currentAssignValue;
-    if (ctx->ternary()) {
-        rhs = visit(ctx->ternary()).as<llvm::Value*>();
-    } else {
-        rhs = visit(ctx->newStmt()).as<llvm::Value*>();
-    }
+    if (ctx->ternary()) rhs = visit(ctx->ternary()).as<llvm::Value*>();
+    if (ctx->newStmt()) rhs = visit(ctx->newStmt()).as<llvm::Value*>();
 
     if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
         // Get value of left side
         std::string varName;
-        SymbolTableEntry* symbolTableEntry;
+        bool isLocal = true;
         std::vector<antlr4::tree::TerminalNode*> idenList;
         if (ctx->declStmt()) { // Variable was declared in this line
             varName = visit(ctx->declStmt()).as<std::string>();
             // Get symbol table entry
-            symbolTableEntry = currentScope->lookup(varName);
+            isLocal = currentScope->lookup(varName)->isLocal();
             idenList.push_back(ctx->declStmt()->IDENTIFIER());
         } else { // Variable was declared before and is referenced here
-            // Get symbol table entry
-            /*symbolTableEntry = IdentifierUtil::getSymbolTableEntryByIdenList(*ctx->IDENTIFIER()[0]->getSymbol(), currentScope,
-                                                                             idenSegments);*/
             varName = ctx->IDENTIFIER()[0]->toString();
             // Get symbol table entry
-            symbolTableEntry = currentScope->lookup(varName);
+            isLocal = currentScope->lookup(varName)->isLocal();
             idenList = ctx->IDENTIFIER();
         }
-
-        bool isLocal = symbolTableEntry->isLocal();
 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (isLocal) { // Local variable
                 llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
                 if (ctx->MUL()) {
-                    llvm::Value* lhsValue = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                    builder->CreateStore(rhs, lhsValue);
+                    llvm::Value* lhsAddress = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+                    builder->CreateStore(rhs, lhsAddress);
                 } else {
                     builder->CreateStore(rhs, lhs);
                 }
@@ -998,9 +990,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     // Prefix unary is: PLUS_PLUS postfixUnary
     if (ctx->PLUS_PLUS()) {
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "pre_pp");
-        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope,
-                                    ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = entry->getAddress();
+        llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -1008,9 +998,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     // Prefix unary is: MINUS_MINUS postfixUnary
     if (ctx->MINUS_MINUS()) {
         llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "pre_mm");
-        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope,
-                                    ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = entry->getAddress();
+        llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -1027,9 +1015,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
     // Postfix unary is: PLUS_PLUS atomicExpr
     if (ctx->PLUS_PLUS()) {
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "post_pp");
-        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope,
-                                            ctx->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = entry->getAddress();
+        llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->atomicExpr()->value()->IDENTIFIER());
         builder->CreateStore(rhs, lhs);
         return rhs;
     }
@@ -1037,9 +1023,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
     // Postfix unary is: MINUS_MINUS atomicExpr
     if (ctx->MINUS_MINUS()) {
         llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "post_mm");
-        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope,
-                                            ctx->atomicExpr()->value()->IDENTIFIER());
-        llvm::Value* lhs = entry->getAddress();
+        llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->atomicExpr()->value()->IDENTIFIER());
         builder->CreateStore(rhs, lhs);
         return rhs;
     }
@@ -1362,6 +1346,10 @@ llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::
 
     // Get address for (nested) structs
     llvm::Value* currentAddress = symbolTableEntry->getAddress();
+
+    if (symbolTableEntry->getType().isPointer())
+        currentAddress = builder->CreateLoad(getTypeFromSymbolType(symbolTableEntry->getType()), currentAddress);
+
     for (int i = 1; i < idenList.size(); i++) {
         // Get name of struct
         std::string structName = symbolTableEntry->getType().getSubType();
@@ -1374,10 +1362,8 @@ llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::
         // Calculate field address
         currentAddress = builder->CreateStructGEP(structEntry->getLLVMType(), currentAddress, symbolTableEntry->getOrderIndex());
         // If the result is a pointer -> de-reference it
-        if (symbolTableEntry->getType().isPointer() && i < idenList.size() -1) {
-            //SymbolType deRefType = symbolTableEntry->getType().getNormalVersion();
+        if (symbolTableEntry->getType().isPointer() && i < idenList.size() -1)
             currentAddress = builder->CreateLoad(getTypeFromSymbolType(symbolTableEntry->getType()), currentAddress);
-        }
     }
     return currentAddress;
 }

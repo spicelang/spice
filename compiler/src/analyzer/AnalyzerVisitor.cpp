@@ -850,7 +850,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext*
 
     // Ensure integer when '++' or '--' is applied
     if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
-        if (prefixUnary.as<SymbolType>().getSuperType() != TYPE_INT || ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER().empty()) {
+        if (prefixUnary.as<SymbolType>().getSuperType() != TYPE_INT) {
             throw SemanticError(*ctx->postfixUnary()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Prefix '++' or '--' can only be applied to an identifier of type integer");
         }
@@ -873,7 +873,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
 
     // Ensure integer when '++' or '--' is applied
     if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
-        if (atomicExpr.as<SymbolType>().getSuperType() != TYPE_INT || ctx->atomicExpr()->value()->IDENTIFIER().empty()) {
+        if (atomicExpr.as<SymbolType>().getSuperType() != TYPE_INT) {
             throw SemanticError(*ctx->atomicExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Postfix '++' or '--' can only be applied to an identifier of type integer");
         }
