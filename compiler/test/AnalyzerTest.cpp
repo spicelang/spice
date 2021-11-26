@@ -45,7 +45,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 7
             "error-variable-declared-before-referenced",
-            "Semantic error at 2:26: Referenced undefined variable: Variable test was referenced before initialized"
+            "Semantic error at 2:26: Referenced undefined variable: Variable test was referenced before declared"
         },
         { // 8
             "error-variable-declared-only-once",

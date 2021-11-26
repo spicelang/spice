@@ -40,8 +40,12 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             ""
         },
         { // 6
-                "success-pointer",
-                ""
+            "success-pointer",
+            ""
+        },
+        { // 7
+            "success-struct",
+            ""
         },
         /*{ // 7 (currently not working in GH actions, therefore disabled)
             "success-modules-std",

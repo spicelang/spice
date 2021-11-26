@@ -501,6 +501,10 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
             token = ctx->declStmt()->IDENTIFIER()->getSymbol();
             // Get symbol table entry
             symbolTableEntry = currentScope->lookup(variableName);
+
+            if (symbolTableEntry == nullptr)
+                throw SemanticError(*token, REFERENCED_UNDEFINED_VARIABLE,
+                                    "Variable " + variableName + " was referenced before declared.");
         } else { // Variable was declared before and is referenced here
             variableName = ctx->IDENTIFIER()[0]->toString();
             token = ctx->IDENTIFIER()[0]->getSymbol();
@@ -508,10 +512,6 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
             // Get symbol table entry
             symbolTableEntry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
         }
-
-        if (symbolTableEntry == nullptr)
-            throw SemanticError(*token, REFERENCED_UNDEFINED_VARIABLE,
-                                "Variable " + variableName + " was referenced before declared.");
 
         leftType = symbolTableEntry->getType();
 
@@ -896,9 +896,6 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
         // Get symbol table entry
         SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
-        if (entry == nullptr)
-            throw SemanticError(*ctx->IDENTIFIER()[0]->getSymbol(), REFERENCED_UNDEFINED_VARIABLE,
-                                "Variable " + variableName + " was referenced before initialized");
         SymbolType valueType = entry->getType();
         // Check for referencing operator
         if (ctx->BITWISE_AND()) valueType = valueType.getPointerVersion();

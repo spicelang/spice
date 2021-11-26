@@ -27,6 +27,10 @@ SymbolTableEntry* IdentifierUtil::getSymbolTableEntryByIdenList(const antlr4::To
                                                                  std::vector<std::string> idenList) {
     // Check the variable and return it if
     SymbolTableEntry* entry = subTable->lookup(idenList[0]);
+    // Check if the entry exists
+    if (!entry)
+        throw SemanticError(token, REFERENCED_UNDEFINED_VARIABLE,
+                            "Variable " + idenList[0] + " was referenced before declared");
     // If it is no struct and the idenList has one item, return immediately
     if (entry->getType().getSuperType() != TYPE_STRUCT && entry->getType().getSuperType() != TYPE_STRUCT_PTR) {
         if (idenList.size() == 1) return entry;
