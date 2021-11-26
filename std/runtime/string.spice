@@ -1,7 +1,7 @@
 // Max length is always the next highter power of two. Thus, the growing factor is two
 type string struct {
-    int* value;
-    len int;
+    int* value
+    len int
 }
 
 p createString(string* strRef) {
