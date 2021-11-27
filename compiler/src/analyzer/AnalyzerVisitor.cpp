@@ -701,61 +701,122 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
 
 antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext* ctx) {
     // Check if at least one additive operator is applied
-    if (ctx->children.size() > 1) {
+    if (ctx->multiplicativeExpr().size() > 1) {
         SymbolType currentType = visit(ctx->multiplicativeExpr()[0]).as<SymbolType>();
         // Check if data types are compatible
+        unsigned int operatorIndex = 1;
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
+            auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
             auto next = ctx->multiplicativeExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
-            // Check all combinations
-            if (currentType.is(TYPE_DOUBLE)) {
-                if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 + 6.1
-                    currentType = SymbolType(TYPE_DOUBLE);
-                } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 + 4
-                    currentType = SymbolType(TYPE_DOUBLE);
-                } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 + "Test"
-                    currentType = SymbolType(TYPE_STRING);
-                } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 + true
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands double and bool for additive operator");
+
+            if (op == ctx->getToken(SpiceParser::PLUS, 0)) { // Operator was plus
+                // Check all combinations
+                if (currentType.is(TYPE_DOUBLE)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 + 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 + 4
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 + "Test"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 + true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands double and bool for '+' operator");
+                    }
+                } else if (currentType.is(TYPE_INT)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 + 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 + 5
+                        currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 + "Test"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 + true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands int and bool for '+' operator");
+                    }
+                } else if (currentType.is(TYPE_STRING)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" + 6.1
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" + 5
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" + "Test"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" + true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and bool for '+' operator");
+                    }
+                } else if (currentType.is(TYPE_BOOL)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true + 6.1
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and double for '+' operator");
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: true + 5
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and int for '+' operator");
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true + "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and string for '+' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true + false
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and bool for '+' operator");
+                    }
                 }
-            } else if (currentType.is(TYPE_INT)) {
-                if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 + 6.1
-                    currentType = SymbolType(TYPE_DOUBLE);
-                } else if (nextType.is(TYPE_INT)) { // e.g.: 4 + 5
-                    currentType = SymbolType(TYPE_INT);
-                } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 + "Test"
-                    currentType = SymbolType(TYPE_STRING);
-                } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 + true
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands int and bool for additive operator");
-                }
-            } else if (currentType.is(TYPE_STRING)) {
-                if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" + 6.1
-                    currentType = SymbolType(TYPE_STRING);
-                } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" + 5
-                    currentType = SymbolType(TYPE_STRING);
-                } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" + "Test"
-                    currentType = SymbolType(TYPE_STRING);
-                } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" + true
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands string and bool for additive operator");
-                }
-            } else if (currentType.is(TYPE_BOOL)) {
-                if (nextType.is(TYPE_DOUBLE)) { // e.g.: true + 6.1
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and double for additive operator");
-                } else if (nextType.is(TYPE_INT)) { // e.g.: true + 5
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and int for additive operator");
-                } else if (nextType.is(TYPE_STRING)) { // e.g.: true + "Test"
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands string and string for additive operator");
-                } else if (nextType.is(TYPE_BOOL)) { // e.g.: true + false
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and bool for additive operator");
+            } else { // Operator was minus
+                // Check all combinations
+                if (currentType.is(TYPE_DOUBLE)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 - 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 - 4
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 - "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands double and string for '-' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 - true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands double and bool for '-' operator");
+                    }
+                } else if (currentType.is(TYPE_INT)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 - 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 - 5
+                        currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 - "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands int and string for '-' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 - true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands int and bool for '-' operator");
+                    }
+                } else if (currentType.is(TYPE_STRING)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" - 6.1
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and double for '-' operator");
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" - 5
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and int for '-' operator");
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" - "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and string for '-' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" - true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and bool for '-' operator");
+                    }
+                } else if (currentType.is(TYPE_BOOL)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true - 6.1
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and double for '-' operator");
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: true - 5
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and int for '-' operator");
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true - "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and string for '-' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true - false
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and bool for '-' operator");
+                    }
                 }
             }
+            operatorIndex += 2;
         }
         return currentType;
     }
@@ -764,64 +825,123 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
 
 antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) {
     // Check if at least one multiplicative operator is applied
-    if (ctx->children.size() > 1) {
+    if (ctx->prefixUnary().size() > 1) {
         SymbolType currentType = visit(ctx->prefixUnary()[0]).as<SymbolType>();
         // Check if data types are compatible
+        unsigned int operatorIndex = 1;
         for (int i = 1; i < ctx->prefixUnary().size(); i++) {
+            auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
             auto next = ctx->prefixUnary()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
-            // Check all combinations
-            if (currentType.is(TYPE_DOUBLE)) {
-                if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 * 6.1
-                    currentType = SymbolType(TYPE_DOUBLE);
-                } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 * 4
-                    currentType = SymbolType(TYPE_DOUBLE);
-                } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 * "Test"
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands double and string for multiplicative operator");
-                } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 * true
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands double and bool for multiplicative operator");
+
+            if (op == ctx->getToken(SpiceParser::MUL, 0)) { // Operator was mul
+                if (currentType.is(TYPE_DOUBLE)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 * 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 * 4
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 * "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands double and string for '*' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 * true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands double and bool for '*' operator");
+                    }
+                } else if (currentType.is(TYPE_INT)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 * 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 * 5
+                        currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 * "Test"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 * true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands int and bool for '*' operator");
+                    }
+                } else if (currentType.is(TYPE_STRING)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" * 6.1
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and double for '*' operator");
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" * 5
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" * "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and string for '*' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" * true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and bool for '*' operator");
+                    }
+                } else if (currentType.is(TYPE_BOOL)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true * 6.1
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and double for '*' operator");
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: true * 5
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and int for '*' operator");
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true * "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and string for '*' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true * false
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and bool for '*' operator");
+                    }
                 }
-            } else if (currentType.is(TYPE_INT)) {
-                if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 * 6.1
-                    currentType = SymbolType(TYPE_DOUBLE);
-                } else if (nextType.is(TYPE_INT)) { // e.g.: 4 * 5
-                    currentType = SymbolType(TYPE_INT);
-                } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 * "Test"
-                    currentType = SymbolType(TYPE_STRING);
-                } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 * true
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands int and bool for multiplicative operator");
-                }
-            } else if (currentType.is(TYPE_STRING)) {
-                if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" * 6.1
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands string and double for multiplicative operator");
-                } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" * 5
-                    currentType = SymbolType(TYPE_STRING);
-                } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" * "Test"
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands string and string for multiplicative operator");
-                } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" * true
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands string and bool for multiplicative operator");
-                }
-            } else if (currentType.is(TYPE_BOOL)) {
-                if (nextType.is(TYPE_DOUBLE)) { // e.g.: true * 6.1
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and double for multiplicative operator");
-                } else if (nextType.is(TYPE_INT)) { // e.g.: true * 5
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and int for multiplicative operator");
-                } else if (nextType.is(TYPE_STRING)) { // e.g.: true * "Test"
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands string and string for multiplicative operator");
-                } else if (nextType.is(TYPE_BOOL)) { // e.g.: true * false
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and bool for multiplicative operator");
+            } else { // Operator was a div
+                if (currentType.is(TYPE_DOUBLE)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 / 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 / 4
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 / "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands double and string for '/' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 / true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands double and bool for '/' operator");
+                    }
+                } else if (currentType.is(TYPE_INT)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 / 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 / 5
+                        currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 / "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands int and string for '/' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 / true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands int and bool for '/' operator");
+                    }
+                } else if (currentType.is(TYPE_STRING)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" / 6.1
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and double for '/' operator");
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" / 5
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and int for '/' operator");
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" / "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and string for '/' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" / true
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and bool for '/' operator");
+                    }
+                } else if (currentType.is(TYPE_BOOL)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true / 6.1
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and double for '/' operator");
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: true / 5
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and int for '/' operator");
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true / "Test"
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands string and string for '/' operator");
+                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true / false
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands bool and bool for '/' operator");
+                    }
                 }
             }
+            operatorIndex += 2;
         }
         return currentType;
     }

@@ -51,14 +51,14 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             "success-struct",
             ""
         },
-        /*{ // 7 (currently not working in GH actions, therefore disabled)
-            "success-modules-std",
-            ""
-            },*/
-        /*{ // 8
+        /*{ // 7
             "success-global-variables",
             ""
         },*/
+        /*{ // 8 (currently not working in GH actions, therefore disabled)
+            "success-modules-std",
+            ""
+            },*/
 };
 
 class GeneratorTests : public ::testing::TestWithParam<GeneratorParams> {};

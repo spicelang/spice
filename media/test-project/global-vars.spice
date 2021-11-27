@@ -1,4 +1,4 @@
-int test1 = 10;
+/*int test1 = 10;
 string test2 = "test string";
 double test3 = 5.83;
 bool test4 = false;
@@ -9,4 +9,10 @@ f<int> main() {
     test3 = 5.84;
     test4 = true;
     printf("Variable values: %d, %s, %f, %u", test1, test2, test3, test4);
+}*/
+
+f<int> main() {
+    int i = 6 - 5 + 6 * 5 / 6 - 1 / 4;
+    //int i = 6 - 4 + 7;
+    printf("%d", i);
 }
