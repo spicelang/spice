@@ -647,6 +647,12 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitArrayInit(SpiceParser::ArrayInitContext* ctx) {
+    // Get data type
+    llvm::Type* dataType = visit(ctx->dataType()).as<llvm::Type*>();
+    // Get value
+    llvm::Value* index = visit(ctx->value()).as<llvm::Value*>();
+
+
     return SpiceBaseVisitor::visitArrayInit(ctx);
 }
 
@@ -1144,14 +1150,14 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
         currentSymbolType = SymbolType(TYPE_STRUCT, ctx->IDENTIFIER()->toString());
     }
 
+    // Consider possible pointer
+    if (ctx->MUL()) currentSymbolType = currentSymbolType.getPointerType();
+
     // Come up with the llvm type
     llvm::Type* type = getTypeFromSymbolType(currentSymbolType);
     // Throw an error if something went wrong.
     // This should technically never occur because of the semantic analysis
     if (!type) throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE, "Dyn was other");
-
-    // Consider possible pointer
-    if (ctx->MUL()) type = type->getPointerTo();
 
     return type;
 }
