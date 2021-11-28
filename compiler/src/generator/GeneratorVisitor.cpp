@@ -546,8 +546,9 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
         currentScope->lookup(currentVar)->updateAddress(memAddress);
         // Set some attributes to it
         llvm::GlobalVariable* global = module->getNamedGlobal(currentVar);
-        global->setLinkage(llvm::GlobalValue::PrivateLinkage);
+        //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
         global->setConstant(ctx->CONST());
+        global->setDSOLocal(true);
     }
     return currentVar;
 }
@@ -716,7 +717,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
 
 antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
     // Get value of right side
-    llvm::Value* rhs = currentAssignValue;
+    llvm::Value* rhs;
     if (ctx->ternary()) rhs = visit(ctx->ternary()).as<llvm::Value*>();
     if (ctx->newStmt()) rhs = visit(ctx->newStmt()).as<llvm::Value*>();
 
@@ -745,7 +746,11 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
                 builder->CreateStore(rhs, lhs);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                builder->CreateStore(rhs, lhs);
+                if (ctx->declStmt()) {
+                    lhs->setInitializer((llvm::Constant*) rhs);
+                } else {
+                    builder->CreateStore(rhs, lhs);
+                }
             }
         } else if (ctx->PLUS_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
@@ -1067,7 +1072,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         currentSymbolType = SymbolType(TYPE_STRING);
         std::string value = ctx->STRING()->toString();
         value = value.substr(1, value.size() - 2);
-        return (llvm::Value*) builder->CreateGlobalStringPtr(value);
+        return (llvm::Value*) builder->CreateGlobalStringPtr(value, "", 0, module.get());
     }
 
     // Value is a boolean constant with value false

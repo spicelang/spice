@@ -136,7 +136,6 @@ private:
     SymbolTable* currentScope = new SymbolTable(nullptr);
     std::string currentVar;
     SymbolType currentSymbolType;
-    llvm::Value* currentAssignValue = nullptr;
     bool blockAlreadyTerminated = false;
 
     // Private methods
