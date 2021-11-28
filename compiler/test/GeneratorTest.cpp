@@ -51,10 +51,10 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             "success-struct",
             ""
         },
-        /*{ // 7
+        { // 7
             "success-global-variables",
             ""
-        },*/
+        },
         /*{ // 8 (currently not working in GH actions, therefore disabled)
             "success-modules-std",
             ""
@@ -120,10 +120,12 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
             FAIL() << "Expected error message '" + param.errorMessage + "', but got no error";
 
         // Check if the symbol table matches the expected output
-        std::ifstream symbolTableStream;
-        symbolTableStream.open("./test-files/generator/" + param.testCaseName + "/ir-code.ll");
+        std::string irCodeFile = "./test-files/generator/" + param.testCaseName + "/ir-code.ll";
+        std::ifstream irCodeStream;
+        irCodeStream.open(irCodeFile);
+        if (!sourceStream) throw std::runtime_error("Test file '" + irCodeFile + "' does not exist");
         std::ostringstream stringStream;
-        stringStream << symbolTableStream.rdbuf();
+        stringStream << irCodeStream.rdbuf();
         std::string expectedIR = stringStream.str();
         EXPECT_EQ(expectedIR, generator.getIRString());
 
