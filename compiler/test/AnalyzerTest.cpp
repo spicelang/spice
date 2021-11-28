@@ -17,7 +17,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         // Failing tests
         { // 0
             "error-assignment-same-type",
-            "Semantic error at 2:14: Wrong data type for operator: Cannot apply the assign operator to different data types"
+            "Semantic error at 2:14: Wrong data type for operator: Can only apply the assign operator on same data types"
         },
         { // 1
             "error-if-condition-bool",
@@ -41,7 +41,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 6
             "error-ternary-types-match",
-            "Semantic error at 2:25: Wrong data type for operator: True operand and false operand in ternary must be from same data type"
+            "Semantic error at 2:25: Wrong data type for operator: True and false operands in ternary must be of same data type"
         },
         { // 7
             "error-variable-declared-before-referenced",
@@ -77,19 +77,19 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 15
             "error-return-type-matches-def",
-            "Semantic error at 2:12: Wrong data type for operator: Passed wrong data type to return statement"
+            "Semantic error at 2:12: Wrong data type for operator: Passed wrong data type to return statement. Expected int but got string"
         },
         { // 16
             "error-logical-operators-are-booleans",
-            "Semantic error at 2:9: Wrong data type for operator: Can only apply logical or to booleans"
+            "Semantic error at 2:9: Wrong data type for operator: Can only apply '||' operator to booleans"
         },
         { // 17
             "error-bitwise-operators-are-booleans-or-integers",
-            "Semantic error at 2:22: Wrong data type for operator: Can only apply bitwise or to booleans and integers"
+            "Semantic error at 2:22: Wrong data type for operator: Can only apply '|' operator to booleans and integers"
         },
         { // 18
             "error-equality-operators-some-combinations",
-            "Semantic error at 2:9: Wrong data type for operator: Can only compare some type combinations with an equality operator"
+            "Semantic error at 2:9: Wrong data type for operator: Can't compare string and double with '==' or '!=' operators"
         },
         { // 19
             "error-relational-operators-are-doubles-or-integers",
@@ -97,11 +97,11 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 20
             "error-additive-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands string and string for '+' operator"
+            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands bool and string for '+' operator"
         },
         { // 21
             "error-multiplicative-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands string and string for '*' operator"
+            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands bool and string for '*' operator"
         },
         { // 22
             "error-prefix-unary-only-integer-identifiers",
@@ -121,15 +121,15 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 26
             "error-dyn-return-types-not-matching",
-            "Semantic error at 3:12: Wrong data type for operator: Passed wrong data type to return statement"
+            "Semantic error at 3:12: Wrong data type for operator: Passed wrong data type to return statement. Expected double but got string"
         },
         { // 27
             "error-printf-type-incompatibility",
-            "Semantic error at 6:36: Types of printf call not matching: Template string expects an int or a bool here"
+            "Semantic error at 6:36: Types of printf call not matching: Template string expects int or bool, but got string"
         },
         { // 28
             "error-break-count-valid",
-            "Semantic error at 7:23: Invalid number of break calls: Break count must be >= 1: -10"
+            "Semantic error at 7:23: Invalid number of break calls: Break count must be >= 1, you provided -10"
         },
         { // 29
             "error-break-count-not-too-high",
@@ -137,7 +137,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 30
             "error-continue-count-valid",
-            "Semantic error at 7:26: Invalid number of continue calls: Continue count must be >= 1: -10"
+            "Semantic error at 7:26: Invalid number of continue calls: Continue count must be >= 1, you provided -10"
         },
         { // 31
             "error-continue-count-not-too-high",
@@ -165,7 +165,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 37
             "error-custom-type-unknown",
-            "Semantic error at 8:26: Wrong data type for operator: Cannot apply the assign operator to different data types"
+            "Semantic error at 8:26: Wrong data type for operator: Can only apply the assign operator on same data types"
         },
         { // 38
             "error-struct-defined-before-used",
@@ -173,7 +173,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 39
             "error-struct-fields-match-declaration",
-            "Semantic error at 8:41: The type of a field value does not match the declaration: The type of the field 'dbl' does not match the declaration"
+            "Semantic error at 8:41: The type of a field value does not match the declaration: Expected type double* for the field 'dbl', but got double"
         },
         { // 40
             "error-struct-passed-too-many-less-values",
@@ -181,7 +181,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 41
             "error-struct-types-not-matching",
-            "Semantic error at 12:32: Wrong data type for operator: Cannot apply the assign operator to different data types"
+            "Semantic error at 12:32: Wrong data type for operator: Can only apply the assign operator on same data types"
         },
         // Successful tests
         { // 41

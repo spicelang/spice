@@ -25,6 +25,7 @@ public:
     // Public methods
     SymbolSuperType getSuperType();
     std::string getSubType();
+    std::string getName();
     bool isPointer();
     SymbolType getPointerType();
     SymbolType getScalarType();

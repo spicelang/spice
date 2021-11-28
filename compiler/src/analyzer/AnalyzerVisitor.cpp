@@ -295,7 +295,8 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
         // Check if type matches declaration
         if (actualType != expectedType)
             throw SemanticError(*ternary->start, FIELD_TYPE_NOT_MATCHING,
-                                "The type of the field '" + expectedField->getName() + "' does not match the declaration");
+                                "Expected type " + expectedType.getName() + " for the field '" +
+                                expectedField->getName() + "', but got " + actualType.getName());
     }
 
     return SymbolType(TYPE_STRUCT, structName);
@@ -316,9 +317,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
             stdPath = "/usr/lib/spice/std/";
         } else if (FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
             stdPath = std::string(std::getenv("SPICE_STD_DIR"));
-            if (stdPath.rfind('/') != stdPath.size() - 1) {
-                stdPath += "/";
-            }
+            if (stdPath.rfind('/') != stdPath.size() - 1) stdPath += "/";
         } else {
             throw SemanticError(STD_NOT_FOUND,
                                 "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
@@ -381,7 +380,8 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
         // Check if return type matches with function definition
         if (returnType != returnVariable->getType())
             throw SemanticError(*ctx->assignment()->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Passed wrong data type to return statement");
+                                "Passed wrong data type to return statement. Expected " + returnType.getName() +
+                                " but got " + returnVariable->getType().getName());
     }
     // Set the return variable to initialized
     returnVariable->updateState(INITIALIZED);
@@ -395,7 +395,7 @@ antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx
         breakCount = std::stoi(ctx->INTEGER()->toString());
         if (breakCount < 1)
             throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_BREAK_NUMBER,
-                                "Break count must be >= 1: " + ctx->INTEGER()->toString());
+                                "Break count must be >= 1, you provided " + ctx->INTEGER()->toString());
     }
     // Check if we can break this often
     if (breakCount > nestedLoopCounter)
@@ -411,7 +411,7 @@ antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContex
         continueCount = std::stoi(ctx->INTEGER()->toString());
         if (continueCount < 1)
             throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_CONTINUE_NUMBER,
-                                "Continue count must be >= 1: " + ctx->INTEGER()->toString());
+                                "Continue count must be >= 1, you provided " + ctx->INTEGER()->toString());
     }
     // Check if we can continue this often
     if (continueCount > nestedLoopCounter)
@@ -439,7 +439,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
             case 'X': {
                 if (!assignmentType.isOneOf({ TYPE_INT, TYPE_BOOL }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects an int or a bool here");
+                                        "Template string expects int or bool, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
@@ -453,21 +453,21 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
             case 'G': {
                 if (!assignmentType.is(TYPE_DOUBLE))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects a double here");
+                                        "Template string expects double, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
             case 's': {
                 if (!assignmentType.is(TYPE_STRING))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects a string here");
+                                        "Template string expects string, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
             case 'p': {
                 if (!assignmentType.isOneOf({ TYPE_DOUBLE_PTR, TYPE_INT_PTR, TYPE_STRING_PTR, TYPE_BOOL_PTR, TYPE_STRUCT_PTR }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects a pointer here");
+                                        "Template string expects pointer, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
@@ -500,7 +500,6 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
             token = ctx->declStmt()->IDENTIFIER()->getSymbol();
             // Get symbol table entry
             symbolTableEntry = currentScope->lookup(variableName);
-
             if (symbolTableEntry == nullptr)
                 throw SemanticError(*token, REFERENCED_UNDEFINED_VARIABLE,
                                     "Variable " + variableName + " was referenced before declared.");
@@ -527,23 +526,23 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
         if (ctx->ASSIGN_OP()) {
             if (lhsTy != rhsTy)
                 throw SemanticError(*ctx->ASSIGN_OP()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply the assign operator to different data types");
+                                    "Can only apply the assign operator on same data types");
         } else if (ctx->PLUS_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_STRING))
                 throw SemanticError(*ctx->PLUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply += operator on this combination of types");
+                                    "Can only apply '+=' operator on two doubles, two ints or two strings");
         } else if (ctx->MINUS_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
                 throw SemanticError(*ctx->MINUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply -= operator on this combination of types");
+                                    "Can only apply '-=' operator on two doubles or two ints");
         } else if (ctx->MUL_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
                 throw SemanticError(*ctx->MUL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply *= operator on this combination of types");
+                                    "Can only apply '*=' operator on two doubles or two ints");
         } else if (ctx->DIV_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
                 throw SemanticError(*ctx->DIV_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply /= operator on this combination of types");
+                                    "Can only apply '/=' operator on two doubles or two ints");
         }
         // Update variable in symbol table
         symbolTableEntry->updateState(INITIALIZED);
@@ -567,7 +566,7 @@ antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
         // Check if trueType and falseType are matching
         if (trueType != falseType)
             throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                "True operand and false operand in ternary must be from same data type");
+                                "True and false operands in ternary must be of same data type");
         return trueType;
     }
     return visit(ctx->logicalOrExpr()[0]);
@@ -585,7 +584,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
                 continue;
             }
             // Every other combination is invalid
-            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,"Can only apply logical or to booleans");
+            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,"Can only apply '||' operator to booleans");
         }
         return lhsTy;
     }
@@ -604,7 +603,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
                 continue;
             }
             // Every other combination is invalid
-            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE, "Can only apply logical and to booleans");
+            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE, "Can only apply '&&' operator to booleans");
         }
         return lhsTy;
     }
@@ -629,7 +628,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
             }
             // Every other combination is invalid
             throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Can only apply bitwise or to booleans and integers");
+                                "Can only apply '|' operator to booleans and integers");
         }
         return lhsTy;
     }
@@ -654,7 +653,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
             }
             // Every other combination is invalid
             throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Can only apply bitwise and to booleans and integers");
+                                "Can only apply '&' operator to booleans and integers");
         }
         return lhsTy;
     }
@@ -674,7 +673,8 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
         if (lhsTy.matches(rhsTy, TYPE_BOOL)) return SymbolType(TYPE_BOOL); // Can compare bool with bool
         // Every other combination is invalid
         throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                            "Can only compare some type combinations with an equality operator");
+                            "Can't compare " + lhsTy.getName() + " and " + rhsTy.getName() +
+                            " with '==' or '!=' operators");
     }
     return visit(ctx->relationalExpr()[0]);
 }
@@ -746,19 +746,8 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                                             "Incompatible operands string and bool for '+' operator");
                     }
                 } else if (currentType.is(TYPE_BOOL)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true + 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and double for '+' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: true + 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and int for '+' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true + "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '+' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true + false
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and bool for '+' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and " + nextType.getName() + " for '+' operator");
                 }
             } else { // Operator was minus
                 // Check all combinations
@@ -787,33 +776,11 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                                             "Incompatible operands int and bool for '-' operator");
                     }
                 } else if (currentType.is(TYPE_STRING)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" - 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and double for '-' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" - 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and int for '-' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" - "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '-' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" - true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and bool for '-' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and " + nextType.getName() + " for '-' operator");
                 } else if (currentType.is(TYPE_BOOL)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true - 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and double for '-' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: true - 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and int for '-' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true - "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '-' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true - false
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and bool for '-' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and " + nextType.getName() + " for '-' operator");
                 }
             }
             operatorIndex += 2;
@@ -872,19 +839,8 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                                             "Incompatible operands string and bool for '*' operator");
                     }
                 } else if (currentType.is(TYPE_BOOL)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true * 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and double for '*' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: true * 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and int for '*' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true * "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '*' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true * false
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and bool for '*' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and " + nextType.getName() + " for '*' operator");
                 }
             } else { // Operator was a div
                 if (currentType.is(TYPE_DOUBLE)) {
@@ -912,33 +868,11 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                                             "Incompatible operands int and bool for '/' operator");
                     }
                 } else if (currentType.is(TYPE_STRING)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" / 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and double for '/' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" / 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and int for '/' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" / "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '/' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" / true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and bool for '/' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and " + nextType.getName() + " for '/' operator");
                 } else if (currentType.is(TYPE_BOOL)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true / 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and double for '/' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: true / 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and int for '/' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true / "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '/' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true / false
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and bool for '/' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and " + nextType.getName() + " for '/' operator");
                 }
             }
             operatorIndex += 2;

@@ -97,3 +97,23 @@ bool SymbolType::matches(SymbolType type) {
 bool SymbolType::matches(SymbolType symbolType, SymbolSuperType superSymbolType) {
     return superType == superSymbolType && symbolType.getSuperType() == superSymbolType;
 }
+
+std::string SymbolType::getName() {
+    switch (superType) {
+        case TYPE_DOUBLE: return "double";
+        case TYPE_INT: return "int";
+        case TYPE_STRING: return "string";
+        case TYPE_BOOL: return "bool";
+        case TYPE_DOUBLE_PTR: return "double*";
+        case TYPE_INT_PTR: return "int*";
+        case TYPE_STRING_PTR: return "string*";
+        case TYPE_BOOL_PTR: return "bool*";
+        case TYPE_DYN: return "dyn";
+        case TYPE_FUNCTION: return "function";
+        case TYPE_PROCEDURE: return "procedure";
+        case TYPE_STRUCT: return "struct(" + subType + ")";
+        case TYPE_STRUCT_PTR: return "struct(" + subType + ")*";;
+        case TYPE_IMPORT: return "import";
+    }
+    return "";
+}
