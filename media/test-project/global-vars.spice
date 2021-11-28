@@ -4,9 +4,9 @@ double test3 = 5.83;
 bool test4 = false;
 
 f<int> main() {
-    test1 = 11;
+    test1++;
     test2 = "test";
     test3 = 5.84;
-    test4 = true;
+    test4 = !test4;
     printf("Variable values: %d, %s, %f, %u", test1, test2, test3, test4);
 }

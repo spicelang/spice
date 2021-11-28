@@ -97,11 +97,11 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 20
             "error-additive-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands string and string for additive operator"
+            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands string and string for '+' operator"
         },
         { // 21
             "error-multiplicative-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands string and string for multiplicative operator"
+            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands string and string for '*' operator"
         },
         { // 22
             "error-prefix-unary-only-integer-identifiers",

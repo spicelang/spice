@@ -54,9 +54,33 @@ SymbolType SymbolType::getScalarType() {
     if (superType == TYPE_INT_PTR) return SymbolType(TYPE_INT);
     if (superType == TYPE_STRING_PTR) return SymbolType(TYPE_STRING);
     if (superType == TYPE_BOOL_PTR) return SymbolType(TYPE_BOOL);
-    if (superType == TYPE_STRUCT_PTR) return SymbolType(TYPE_STRUCT, subType);
+    if (superType == TYPE_STRUCT_PTR) return {TYPE_STRUCT, subType};
     return SymbolType(TYPE_DYN);
 }
+
+/**
+ * Checks if this SymbolType's super type is one of the passed
+ *
+ * @param superTypes Super types to check
+ * @return True = super type is one of the stated, otherwise false
+ */
+bool SymbolType::isOneOf(const std::vector<SymbolSuperType>& superTypes) {
+    for (auto& type : superTypes) {
+        if (type == superType) return true;
+    }
+    return false;
+}
+
+/**
+ * Checks if this SymbolType's super type is the passed
+ *
+ * @param superType Super type to check
+ * @return True = super type is one of the stated, otherwise false
+ */
+bool SymbolType::is(SymbolSuperType type) {
+    return superType == type;
+}
+
 
 bool operator== (const SymbolType& lhs, const SymbolType& rhs) {
     return lhs.superType == rhs.superType && lhs.subType == rhs.subType;
@@ -64,4 +88,12 @@ bool operator== (const SymbolType& lhs, const SymbolType& rhs) {
 
 bool operator!= (const SymbolType& lhs, const SymbolType& rhs) {
     return !(lhs == rhs);
+}
+
+bool SymbolType::matches(SymbolType type) {
+    return superType == type.getSuperType();
+}
+
+bool SymbolType::matches(SymbolType symbolType, SymbolSuperType superSymbolType) {
+    return superType == superSymbolType && symbolType.getSuperType() == superSymbolType;
 }

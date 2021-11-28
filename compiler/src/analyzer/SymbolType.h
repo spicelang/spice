@@ -4,6 +4,7 @@
 
 #include <utility>
 #include <string>
+#include <vector>
 
 enum SymbolSuperType {
     TYPE_DOUBLE,     TYPE_INT,     TYPE_STRING,     TYPE_BOOL,
@@ -27,6 +28,10 @@ public:
     bool isPointer();
     SymbolType getPointerType();
     SymbolType getScalarType();
+    bool isOneOf(const std::vector<SymbolSuperType>&);
+    bool is(SymbolSuperType);
+    bool matches(SymbolType);
+    bool matches(SymbolType, SymbolSuperType);
     friend bool operator== (const SymbolType& lhs, const SymbolType& rhs);
     friend bool operator!= (const SymbolType& lhs, const SymbolType& rhs);
 private:
