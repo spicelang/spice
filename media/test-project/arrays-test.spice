@@ -1,0 +1,6 @@
+f<int> main() {
+    int[] intArray = int[5];
+    //int[] intArray = int[5]{ 1, 7, 4 };
+    intArray[2] = 11;
+    printf("Array item 0: %d, array item 2: %d", intArray[0], intArray[2]);
+}

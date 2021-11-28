@@ -69,6 +69,8 @@ public:
 
     antlrcpp::Any visitNewStmt(SpiceParser::NewStmtContext* ctx) override;
 
+    antlrcpp::Any visitArrayInit(SpiceParser::ArrayInitContext* ctx) override;
+
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
 
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;

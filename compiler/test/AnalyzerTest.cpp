@@ -184,11 +184,11 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "Semantic error at 12:32: Wrong data type for operator: Can only apply the assign operator on same data types"
         },
         // Successful tests
-        { // 41
+        { // 42
             "success-fibonacci",
             ""
         },
-        { // 42
+        { // 43
             "success-function-overloading",
             ""
         }

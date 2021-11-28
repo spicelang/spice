@@ -20,14 +20,14 @@ stmt: (declStmt | assignment | functionCall | importStmt | returnStmt | breakStm
 declStmt: CONST? dataType (LBRACKET RBRACKET)? IDENTIFIER;
 functionCall: IDENTIFIER (DOT IDENTIFIER)* LPAREN paramLstCall? RPAREN;
 newStmt: NEW IDENTIFIER LBRACE fieldLstAssignment? RBRACE;
-arrayInit: dataType LBRACKET ternary RBRACKET;
+arrayInit: dataType LBRACKET value RBRACKET;
 importStmt: IMPORT STRING AS IDENTIFIER;
 returnStmt: RETURN assignment;
 breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
 printfStmt: PRINTF LPAREN STRING (COMMA assignment)* RPAREN;
 
-assignment: ((declStmt | MUL? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET ternary RBRACKET)?)
+assignment: ((declStmt | MUL? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET value RBRACKET)?)
             (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))?
             (ternary | newStmt | arrayInit);
 ternary: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
@@ -42,7 +42,7 @@ multiplicativeExpr: prefixUnary ((MUL | DIV) prefixUnary)*;
 prefixUnary: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnary;
 postfixUnary: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
 atomicExpr: value | LPAREN assignment RPAREN;
-value: STRING | TRUE | FALSE | INTEGER | DOUBLE | (BITWISE_AND | MUL)? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET ternary RBRACKET)? | functionCall;
+value: STRING | TRUE | FALSE | INTEGER | DOUBLE | (BITWISE_AND | MUL)? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET value RBRACKET)? | functionCall;
 dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER) MUL?;
 
 TYPE_DOUBLE: 'double';

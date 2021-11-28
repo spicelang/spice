@@ -302,6 +302,19 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     return SymbolType(TYPE_STRUCT, structName);
 }
 
+antlrcpp::Any AnalyzerVisitor::visitArrayInit(SpiceParser::ArrayInitContext* ctx) {
+    // Visit data type
+    SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
+    SymbolType indexType = visit(ctx->value()).as<SymbolType>();
+
+    // Check if index type is an integer
+    if (!indexType.is(TYPE_INT))
+        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER, "The size must be an integer, provided " +
+                            indexType.getName());
+
+    return dataType.getArrayType();
+}
+
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
     std::string importPath = ctx->STRING()->toString();
@@ -483,8 +496,10 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
     SymbolType rhsTy;
     if (ctx->ternary()) { // Ternary
         rhsTy = visit(ctx->ternary()).as<SymbolType>();
-    } else { // NewStmt
+    } else if (ctx->newStmt()) { // NewStmt
         rhsTy = visit(ctx->newStmt()).as<SymbolType>();
+    } else {
+        rhsTy = visit(ctx->arrayInit()).as<SymbolType>();
     }
 
     // Check if there is an assign operator applied
@@ -936,6 +951,8 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         if (ctx->BITWISE_AND()) valueType = valueType.getPointerType();
         // Check for de-referencing operator
         if (ctx->MUL()) valueType = valueType.getScalarType();
+        // Check for array brackets
+        if (ctx->LBRACKET()) valueType = valueType.getArrayType();
         return valueType;
     }
     return visit(ctx->functionCall());
@@ -956,7 +973,7 @@ SymbolType AnalyzerVisitor::getSymbolTypeFromDataType(SpiceParser::DataTypeConte
     if (ctx->TYPE_INT()) return ctx->MUL() ? SymbolType(TYPE_INT_PTR) : SymbolType(TYPE_INT);
     if (ctx->TYPE_STRING()) return ctx->MUL() ? SymbolType(TYPE_STRING_PTR) : SymbolType(TYPE_STRING);
     if (ctx->TYPE_BOOL()) return ctx->MUL() ? SymbolType(TYPE_BOOL_PTR) : SymbolType(TYPE_BOOL);
-    if (ctx->IDENTIFIER()) {
+    if (ctx->IDENTIFIER()) { // Struct type
         std::string structName = ctx->IDENTIFIER()->toString();
         return ctx->MUL() ? SymbolType(TYPE_STRUCT_PTR, structName) :
             SymbolType(TYPE_STRUCT, structName);

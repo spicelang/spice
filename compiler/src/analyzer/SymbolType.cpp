@@ -36,12 +36,14 @@ bool SymbolType::isPointer() {
  * @return Pointer version: e.g. TYPE_STRUCT_PTR for TYPE_STRUCT
  */
 SymbolType SymbolType::getPointerType() {
-    if (superType == TYPE_DOUBLE) return SymbolType(TYPE_DOUBLE_PTR);
-    if (superType == TYPE_INT) return SymbolType(TYPE_INT_PTR);
-    if (superType == TYPE_STRING) return SymbolType(TYPE_STRING_PTR);
-    if (superType == TYPE_BOOL) return SymbolType(TYPE_BOOL_PTR);
-    if (superType == TYPE_STRUCT) return {TYPE_STRUCT_PTR, subType};
-    return SymbolType(TYPE_DYN);
+    switch (superType) {
+        case TYPE_DOUBLE: return SymbolType(TYPE_DOUBLE_PTR);
+        case TYPE_INT: return SymbolType(TYPE_INT_PTR);
+        case TYPE_STRING: return SymbolType(TYPE_STRING_PTR);
+        case TYPE_BOOL: return SymbolType(TYPE_BOOL_PTR);
+        case TYPE_STRUCT: return {TYPE_STRUCT_PTR, subType};
+        default: throw std::runtime_error("Compiler error: Could not get the pointer type of " + getName());
+    }
 }
 
 /**
@@ -50,12 +52,56 @@ SymbolType SymbolType::getPointerType() {
  * @return Normal version: e.g. TYPE_DOUBLE for TYPE_DOUBLE_PTR
  */
 SymbolType SymbolType::getScalarType() {
-    if (superType == TYPE_DOUBLE_PTR) return SymbolType(TYPE_DOUBLE);
-    if (superType == TYPE_INT_PTR) return SymbolType(TYPE_INT);
-    if (superType == TYPE_STRING_PTR) return SymbolType(TYPE_STRING);
-    if (superType == TYPE_BOOL_PTR) return SymbolType(TYPE_BOOL);
-    if (superType == TYPE_STRUCT_PTR) return {TYPE_STRUCT, subType};
-    return SymbolType(TYPE_DYN);
+    switch (superType) {
+        case TYPE_DOUBLE_PTR: return SymbolType(TYPE_DOUBLE);
+        case TYPE_INT_PTR: return SymbolType(TYPE_INT);
+        case TYPE_STRING_PTR: return SymbolType(TYPE_STRING);
+        case TYPE_BOOL_PTR: return SymbolType(TYPE_BOOL);
+        case TYPE_STRUCT_PTR: return {TYPE_STRUCT, subType};
+        default: throw std::runtime_error("Compiler error: Could not get the scalar type of " + getName());
+    }
+}
+
+/**
+ * Retrieve the array version of the current super type
+ *
+ * @return Array version: e.g.: TYPE_BOOL_PTR_ARRAY for TYPE_BOOL_PTR
+ */
+SymbolType SymbolType::getArrayType() {
+    switch (superType) {
+        case TYPE_DOUBLE: return SymbolType(TYPE_DOUBLE_ARRAY);
+        case TYPE_INT: return SymbolType(TYPE_INT_ARRAY);
+        case TYPE_STRING: return SymbolType(TYPE_STRING_ARRAY);
+        case TYPE_BOOL: return SymbolType(TYPE_BOOL_ARRAY);
+        case TYPE_STRUCT: return {TYPE_STRUCT_ARRAY, subType};
+        case TYPE_DOUBLE_PTR: return SymbolType(TYPE_DOUBLE_PTR_ARRAY);
+        case TYPE_INT_PTR: return SymbolType(TYPE_INT_PTR_ARRAY);
+        case TYPE_STRING_PTR: return SymbolType(TYPE_STRING_PTR_ARRAY);
+        case TYPE_BOOL_PTR: return SymbolType(TYPE_BOOL_PTR_ARRAY);
+        case TYPE_STRUCT_PTR: return {TYPE_STRUCT_PTR_ARRAY, subType};
+        default: throw std::runtime_error("Compiler error: Could not get the array type of " + getName());
+    }
+}
+
+/**
+ * Retrieve the item version of the current super type
+ *
+ * @return Item version: e.g.: TYPE_INT for TYPE_INT_ARRAY
+ */
+SymbolType SymbolType::getItemType() {
+    switch (superType) {
+        case TYPE_DOUBLE_ARRAY: return SymbolType(TYPE_DOUBLE);
+        case TYPE_INT_ARRAY: return SymbolType(TYPE_INT);
+        case TYPE_STRING_ARRAY: return SymbolType(TYPE_STRING);
+        case TYPE_BOOL_ARRAY: return SymbolType(TYPE_BOOL);
+        case TYPE_STRUCT_ARRAY: return {TYPE_STRUCT, subType};
+        case TYPE_DOUBLE_PTR_ARRAY: return SymbolType(TYPE_DOUBLE_PTR);
+        case TYPE_INT_PTR_ARRAY: return SymbolType(TYPE_INT_PTR);
+        case TYPE_STRING_PTR_ARRAY: return SymbolType(TYPE_STRING_PTR);
+        case TYPE_BOOL_PTR_ARRAY: return SymbolType(TYPE_BOOL_PTR);
+        case TYPE_STRUCT_PTR_ARRAY: return {TYPE_STRUCT_PTR, subType};
+        default: throw std::runtime_error("Compiler error: Could not get the item type of " + getName());
+    }
 }
 
 /**
@@ -104,15 +150,20 @@ std::string SymbolType::getName() {
         case TYPE_INT: return "int";
         case TYPE_STRING: return "string";
         case TYPE_BOOL: return "bool";
+        case TYPE_STRUCT: return "struct(" + subType + ")";
         case TYPE_DOUBLE_PTR: return "double*";
         case TYPE_INT_PTR: return "int*";
         case TYPE_STRING_PTR: return "string*";
         case TYPE_BOOL_PTR: return "bool*";
+        case TYPE_STRUCT_PTR: return "struct(" + subType + ")*";;
+        case TYPE_DOUBLE_ARRAY: return "double[]";
+        case TYPE_INT_ARRAY: return "int[]";
+        case TYPE_STRING_ARRAY: return "string[]";
+        case TYPE_BOOL_ARRAY: return "bool[]";
+        case TYPE_STRUCT_ARRAY: return "struct(" + subType + ")[]";
         case TYPE_DYN: return "dyn";
         case TYPE_FUNCTION: return "function";
         case TYPE_PROCEDURE: return "procedure";
-        case TYPE_STRUCT: return "struct(" + subType + ")";
-        case TYPE_STRUCT_PTR: return "struct(" + subType + ")*";;
         case TYPE_IMPORT: return "import";
     }
     return "";

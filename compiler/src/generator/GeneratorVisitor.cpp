@@ -646,6 +646,10 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     return (llvm::Value*) builder->CreateLoad(structType, structAddress, structName);
 }
 
+antlrcpp::Any GeneratorVisitor::visitArrayInit(SpiceParser::ArrayInitContext* ctx) {
+    return SpiceBaseVisitor::visitArrayInit(ctx);
+}
+
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Ignore sub-tree
     return nullptr;

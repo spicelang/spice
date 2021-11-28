@@ -1,7 +1,7 @@
 SymbolTable(
-(Name: calledFunction(int,bool), Type: 9, OrderIndex: 0, State: 1, Const: 1, IsGlobal: 1)
-(Name: calledFunction(string), Type: 9, OrderIndex: 1, State: 1, Const: 1, IsGlobal: 1)
-(Name: main(), Type: 9, OrderIndex: 2, State: 1, Const: 1, IsGlobal: 1)
+(Name: calledFunction(int,bool), Type: 21, OrderIndex: 0, State: 1, Const: 1, IsGlobal: 1)
+(Name: calledFunction(string), Type: 21, OrderIndex: 1, State: 1, Const: 1, IsGlobal: 1)
+(Name: main(), Type: 21, OrderIndex: 2, State: 1, Const: 1, IsGlobal: 1)
 ) {
 calledFunction(int,bool): SymbolTable(
 (Name: mandatoryParam, Type: 1, OrderIndex: 0, State: 0, Const: 0, IsGlobal: 0)

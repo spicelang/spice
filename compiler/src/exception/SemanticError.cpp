@@ -89,6 +89,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Number of struct fields not matching declaration";
         case FIELD_TYPE_NOT_MATCHING:
             return "The type of a field value does not match the declaration";
+        case ARRAY_SIZE_NO_INTEGER:
+            return "Array size not of type int";
     }
     return "Unknown error";
 }
