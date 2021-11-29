@@ -69,8 +69,6 @@ public:
 
     antlrcpp::Any visitStmtLst(SpiceParser::StmtLstContext* ctx) override;
 
-    antlrcpp::Any visitFieldLstAssignment(SpiceParser::FieldLstAssignmentContext* ctx) override;
-
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
 
     antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext* ctx) override;
@@ -81,7 +79,7 @@ public:
 
     antlrcpp::Any visitNewStmt(SpiceParser::NewStmtContext* ctx) override;
 
-    antlrcpp::Any visitArrayInit(SpiceParser::ArrayInitContext* ctx) override;
+    antlrcpp::Any visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) override;
 
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
 
@@ -93,9 +91,9 @@ public:
 
     antlrcpp::Any visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) override;
 
-    antlrcpp::Any visitAssignment(SpiceParser::AssignmentContext* ctx) override;
+    antlrcpp::Any visitAssignExpr(SpiceParser::AssignExprContext* ctx) override;
 
-    antlrcpp::Any visitTernary(SpiceParser::TernaryContext* ctx) override;
+    antlrcpp::Any visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) override;
 
     antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) override;
 
@@ -113,9 +111,9 @@ public:
 
     antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) override;
 
-    antlrcpp::Any visitPrefixUnary(SpiceParser::PrefixUnaryContext* ctx) override;
+    antlrcpp::Any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) override;
 
-    antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext* ctx) override;
+    antlrcpp::Any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) override;
 
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
 

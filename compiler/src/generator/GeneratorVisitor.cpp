@@ -208,7 +208,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
             paramTypes.push_back(paramType);
             symbolTypes.push_back(currentSymbolType);
         }
-        for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
+        for (auto& param : ctx->paramLstDef()->assignExpr()) { // Parameters with default value
             currentVar = param->declStmt()->IDENTIFIER()->toString();
             paramNames.push_back(currentVar);
             llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
@@ -293,7 +293,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
             paramTypes.push_back(paramType);
             symbolTypes.push_back(currentSymbolType);
         }
-        for (auto& param : ctx->paramLstDef()->assignment()) { // Parameters with default value
+        for (auto& param : ctx->paramLstDef()->assignExpr()) { // Parameters with default value
             currentVar = param->declStmt()->IDENTIFIER()->toString();
             paramNames.push_back(currentVar);
             llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
@@ -386,14 +386,14 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     currentScope->setBreakBlock(bLoopEnd);
 
     // Execute pre-loop stmts
-    visit(ctx->assignment()[0]);
+    visit(ctx->assignExpr()[0]);
     // Jump into condition block
     createBr(bCond);
 
     // Fill condition block
     parentFct->getBasicBlockList().push_back(bCond);
     moveInsertPointToBlock(bCond);
-    llvm::Value* conditionValue = visit(ctx->assignment()[1]).as<llvm::Value*>();
+    llvm::Value* conditionValue = visit(ctx->assignExpr()[1]).as<llvm::Value*>();
     // Jump to loop body or to loop end
     createCondBr(conditionValue, bLoop, bLoopEnd);
 
@@ -403,7 +403,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Generate IR for nested statements
     visit(ctx->stmtLst());
     // Run post-loop actions
-    visit(ctx->assignment()[2]);
+    visit(ctx->assignExpr()[2]);
     // Jump into condition block
     createBr(bCond);
 
@@ -438,7 +438,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     // Fill condition block
     parentFct->getBasicBlockList().push_back(bCond);
     moveInsertPointToBlock(bCond);
-    llvm::Value* conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
+    llvm::Value* conditionValue = visit(ctx->assignExpr()).as<llvm::Value*>();
     createCondBr(conditionValue, bLoop, bLoopEnd);
 
     // Fill loop block
@@ -467,13 +467,8 @@ antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext* ctx) {
     return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitFieldLstAssignment(SpiceParser::FieldLstAssignmentContext* ctx) {
-
-    return nullptr;
-}
-
 antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
-    llvm::Value* conditionValue = visit(ctx->assignment()).as<llvm::Value*>();
+    llvm::Value* conditionValue = visit(ctx->assignExpr()).as<llvm::Value*>();
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
@@ -611,8 +606,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     // Fill parameter list
     std::vector<llvm::Value*> argValues;
     if (ctx->paramLstCall()) {
-        for (int i = 0; i < ctx->paramLstCall()->assignment().size(); i++) {
-            llvm::Value* argValue = visit(ctx->paramLstCall()->assignment()[i]).as<llvm::Value*>();
+        for (int i = 0; i < ctx->paramLstCall()->assignExpr().size(); i++) {
+            llvm::Value* argValue = visit(ctx->paramLstCall()->assignExpr()[i]).as<llvm::Value*>();
             llvm::Type* argType = fctType->getParamType(i);
             llvm::Value* bitCastArgValue = builder->CreateBitCast(argValue, argType);
             argValues.push_back(bitCastArgValue);
@@ -634,9 +629,9 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 
     // Fill the struct with the stated values
     SymbolTable* structSymbolTable = currentScope->lookupTable({ structScope });
-    for (unsigned int i = 0; i < ctx->fieldLstAssignment()->ternary().size(); i++) {
+    for (unsigned int i = 0; i < ctx->fieldLstAssignment()->ternaryExpr().size(); i++) {
         // Visit assignment
-        llvm::Value* assignment = visit(ctx->fieldLstAssignment()->ternary()[i]).as<llvm::Value*>();
+        llvm::Value* assignment = visit(ctx->fieldLstAssignment()->ternaryExpr()[i]).as<llvm::Value*>();
         // Get pointer to struct element
         llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
         // Store value to address
@@ -646,14 +641,14 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     return (llvm::Value*) builder->CreateLoad(structType, structAddress, structName);
 }
 
-antlrcpp::Any GeneratorVisitor::visitArrayInit(SpiceParser::ArrayInitContext* ctx) {
+antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Get data type
     llvm::Type* dataType = visit(ctx->dataType()).as<llvm::Type*>();
     // Get value
     llvm::Value* index = visit(ctx->value()).as<llvm::Value*>();
 
 
-    return SpiceBaseVisitor::visitArrayInit(ctx);
+    return SpiceBaseVisitor::visitArrayInitStmt(ctx);
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -662,7 +657,7 @@ antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* 
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
-    llvm::Value* returnValue = visit(ctx->assignment()).as<llvm::Value*>();
+    llvm::Value* returnValue = visit(ctx->assignExpr()).as<llvm::Value*>();
     // Build return value
     if (!blockAlreadyTerminated) {
         builder->CreateRet(returnValue);
@@ -715,7 +710,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
     std::string stringTemplate = ctx->STRING()->toString();
     stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
-    for (auto& arg : ctx->assignment()) {
+    for (auto& arg : ctx->assignExpr()) {
         llvm::Value* argVal = visit(arg).as<llvm::Value*>();
         if (argVal->getType()->isIntegerTy(1))
             argVal = builder->CreateZExt(argVal, llvm::Type::getInt32Ty(*context));
@@ -725,10 +720,10 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
     return builder->CreateCall(printf, printfArgs);
 }
 
-antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
+antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
     // Get value of right side
     llvm::Value* rhs;
-    if (ctx->ternary()) rhs = visit(ctx->ternary()).as<llvm::Value*>();
+    if (ctx->ternaryExpr()) rhs = visit(ctx->ternaryExpr()).as<llvm::Value*>();
     if (ctx->newStmt()) rhs = visit(ctx->newStmt()).as<llvm::Value*>();
 
     if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
@@ -817,7 +812,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignment(SpiceParser::AssignmentContext* 
     return rhs;
 }
 
-antlrcpp::Any GeneratorVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
+antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {
     if (ctx->logicalOrExpr().size() > 1) {
         llvm::Value* conditionValue = visit(ctx->logicalOrExpr()[0]).as<llvm::Value*>();
         llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
@@ -986,13 +981,13 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
 
 antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) {
     // Check if there is a multiplicative operation attached
-    if (ctx->prefixUnary().size() > 1) {
-        llvm::Value* lhs = visit(ctx->prefixUnary()[0]).as<llvm::Value*>();
+    if (ctx->prefixUnaryExpr().size() > 1) {
+        llvm::Value* lhs = visit(ctx->prefixUnaryExpr()[0]).as<llvm::Value*>();
         llvm::Type* lhsType = lhs->getType();
         unsigned int operatorIndex = 1;
-        for (int i = 1; i < ctx->prefixUnary().size(); i++) {
+        for (int i = 1; i < ctx->prefixUnaryExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
-            auto rhs = visit(ctx->prefixUnary()[i]).as<llvm::Value*>();
+            auto rhs = visit(ctx->prefixUnaryExpr()[i]).as<llvm::Value*>();
             llvm::Type* rhsType = rhs->getType();
 
             if (op == ctx->getToken(SpiceParser::MUL, 0))
@@ -1004,16 +999,16 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
         }
         return lhs;
     }
-    return visit(ctx->prefixUnary()[0]);
+    return visit(ctx->prefixUnaryExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext* ctx) {
-    auto value = visit(ctx->postfixUnary());
+antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) {
+    auto value = visit(ctx->postfixUnaryExpr());
 
     // Prefix unary is: PLUS_PLUS postfixUnary
     if (ctx->PLUS_PLUS()) {
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "pre_pp");
-        llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->postfixUnaryExpr()->atomicExpr()->value()->IDENTIFIER());
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -1021,7 +1016,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     // Prefix unary is: MINUS_MINUS postfixUnary
     if (ctx->MINUS_MINUS()) {
         llvm::Value* rhs = builder->CreateSub(value.as<llvm::Value*>(), builder->getInt32(1), "pre_mm");
-        llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->postfixUnary()->atomicExpr()->value()->IDENTIFIER());
+        llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->postfixUnaryExpr()->atomicExpr()->value()->IDENTIFIER());
         builder->CreateStore(rhs, lhs);
         return lhs;
     }
@@ -1032,7 +1027,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext
     return value;
 }
 
-antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContext* ctx) {
+antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
     auto value = visit(ctx->atomicExpr());
 
     // Postfix unary is: PLUS_PLUS atomicExpr
@@ -1056,7 +1051,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryConte
 
 antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
     // Atomic expr is: LPAREN value RPAREN
-    if (ctx->LPAREN()) return visit(ctx->assignment()).as<llvm::Value*>();
+    if (ctx->LPAREN()) return visit(ctx->assignExpr()).as<llvm::Value*>();
 
     // Atomic expr is: value
     return visit(ctx->value());
@@ -1327,17 +1322,26 @@ llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
     switch (symbolType.getSuperType()) {
         case TYPE_DOUBLE: return llvm::Type::getDoubleTy(*context);
         case TYPE_INT: return llvm::Type::getInt32Ty(*context);
-        case TYPE_STRING: return llvm::Type::getInt8Ty(*context)->getPointerTo();
+        case TYPE_STRING: return llvm::Type::getInt8PtrTy(*context);
         case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
+        case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
         case TYPE_DOUBLE_PTR: return llvm::Type::getDoubleTy(*context)->getPointerTo();
         case TYPE_INT_PTR: return llvm::Type::getInt32Ty(*context)->getPointerTo();
-        case TYPE_STRING_PTR: return llvm::Type::getInt8Ty(*context)->getPointerTo()->getPointerTo();
+        case TYPE_STRING_PTR: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
         case TYPE_BOOL_PTR: return llvm::Type::getInt1Ty(*context)->getPointerTo();
-        case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
         case TYPE_STRUCT_PTR: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
+        case TYPE_DOUBLE_ARRAY: return llvm::ArrayType::getDoubleTy(*context);
+        case TYPE_INT_ARRAY: return llvm::ArrayType::getInt32Ty(*context);
+        case TYPE_STRING_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
+        case TYPE_BOOL_ARRAY: return llvm::ArrayType::getInt1Ty(*context);
+        //case TYPE_STRUCT_ARRAY: return llvm::ArrayType::get;
+        case TYPE_DOUBLE_PTR_ARRAY: return llvm::ArrayType::getDoublePtrTy(*context);
+        case TYPE_INT_PTR_ARRAY: return llvm::ArrayType::getInt32PtrTy(*context);
+        //case TYPE_STRING_PTR_ARRAY: return llvm::ArrayType::get;
+        case TYPE_BOOL_PTR_ARRAY: return llvm::ArrayType::getInt1PtrTy(*context);
+        //case TYPE_STRUCT_PTR_ARRAY: return llvm::ArrayType::get;
         default: return nullptr;
     }
-    return nullptr;
 }
 
 llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<antlr4::tree::TerminalNode*> idenList) {
@@ -1348,6 +1352,7 @@ llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::
     // Get address for (nested) structs
     llvm::Value* currentAddress = symbolTableEntry->getAddress();
 
+    // Additional load for pointers
     if (symbolTableEntry->getType().isPointer())
         currentAddress = builder->CreateLoad(getTypeFromSymbolType(symbolTableEntry->getType()), currentAddress);
 

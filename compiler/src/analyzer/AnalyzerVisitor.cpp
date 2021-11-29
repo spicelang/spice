@@ -138,14 +138,14 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit assignment in new scope
-    visit(ctx->assignment()[0]);
+    visit(ctx->assignExpr()[0]);
     // Visit condition in new scope
-    SymbolType conditionType = visit(ctx->assignment()[1]).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignExpr()[1]).as<SymbolType>();
     if (!conditionType.is(TYPE_BOOL))
-        throw SemanticError(*ctx->assignment()[1]->start, CONDITION_MUST_BE_BOOL,
+        throw SemanticError(*ctx->assignExpr()[1]->start, CONDITION_MUST_BE_BOOL,
                             "For loop condition must be of type bool");
     // Visit incrementer in new scope
-    visit(ctx->assignment()[2]);
+    visit(ctx->assignExpr()[2]);
     // Visit statement list in new scope
     nestedLoopCounter++;
     visit(ctx->stmtLst());
@@ -160,9 +160,9 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
-    SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
     if (!conditionType.is(TYPE_BOOL))
-        throw SemanticError(*ctx->assignment()->start, CONDITION_MUST_BE_BOOL,
+        throw SemanticError(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL,
                             "While loop condition must be of type bool");
     // Visit statement list in new scope
     nestedLoopCounter++;
@@ -178,9 +178,9 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
-    SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
     if (!conditionType.is(TYPE_BOOL))
-        throw SemanticError(*ctx->assignment()->start, CONDITION_MUST_BE_BOOL,
+        throw SemanticError(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL,
                             "If condition must be of type bool");
     // Visit statement list in new scope
     visit(ctx->stmtLst());
@@ -216,7 +216,7 @@ antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext*
                                 "Type of parameter '" + paramName + "' is invalid");
         paramTypes.push_back(paramType);
     }
-    for (auto& param : ctx->assignment()) { // Parameters with default value
+    for (auto& param : ctx->assignExpr()) { // Parameters with default value
         SymbolType paramType = visit(param).as<SymbolType>();
         paramTypes.push_back(paramType);
     }
@@ -242,7 +242,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     // Visit params
     std::vector<SymbolType> paramTypes;
     if (ctx->paramLstCall()) {
-        for (auto& param : ctx->paramLstCall()->assignment())
+        for (auto& param : ctx->paramLstCall()->assignExpr())
             paramTypes.push_back(visit(param).as<SymbolType>());
     }
     // Check if function signature exists in symbol table
@@ -281,13 +281,13 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     // Get the symbol table where the struct is defined
     SymbolTable* structTable = currentScope->lookupTable(structScope);
     // Check if the number of fields matches
-    if (structTable->getSymbolsCount() != ctx->fieldLstAssignment()->ternary().size())
+    if (structTable->getSymbolsCount() != ctx->fieldLstAssignment()->ternaryExpr().size())
         throw SemanticError(*ctx->start, NUMBER_OF_FIELDS_NOT_MATCHING, "You've passed too less/many field values");
 
     // Check if the field types are matching
-    for (int i = 0; i < ctx->fieldLstAssignment()->ternary().size(); i++) {
+    for (int i = 0; i < ctx->fieldLstAssignment()->ternaryExpr().size(); i++) {
         // Get actual type
-        auto ternary = ctx->fieldLstAssignment()->ternary()[i];
+        auto ternary = ctx->fieldLstAssignment()->ternaryExpr()[i];
         SymbolType actualType = visit(ternary).as<SymbolType>();
         // Get expected type
         SymbolTableEntry* expectedField = structTable->lookupByIndexInCurrentScope(i);
@@ -302,7 +302,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     return SymbolType(TYPE_STRUCT, structName);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitArrayInit(SpiceParser::ArrayInitContext* ctx) {
+antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Visit data type
     SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
     SymbolType indexType = visit(ctx->value()).as<SymbolType>();
@@ -379,7 +379,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
-    SymbolType returnType = visit(ctx->assignment()).as<SymbolType>();
+    SymbolType returnType = visit(ctx->assignExpr()).as<SymbolType>();
     // Check if return variable is in the symbol table
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (!returnVariable)
@@ -392,7 +392,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
     } else {
         // Check if return type matches with function definition
         if (returnType != returnVariable->getType())
-            throw SemanticError(*ctx->assignment()->start, OPERATOR_WRONG_DATA_TYPE,
+            throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Passed wrong data type to return statement. Expected " + returnType.getName() +
                                 " but got " + returnVariable->getType().getName());
     }
@@ -441,7 +441,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
     std::size_t index = templateString.find_first_of('%');
     int placeholderCount = 0;
     while (index != std::string::npos) {
-        auto assignment = ctx->assignment()[placeholderCount];
+        auto assignment = ctx->assignExpr()[placeholderCount];
         SymbolType assignmentType = visit(assignment).as<SymbolType>();
         switch (templateString[index + 1]) {
             case 'c':
@@ -491,15 +491,15 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
     return SpiceBaseVisitor::visitPrintfStmt(ctx);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
+antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
     // Take a look on the right side
     SymbolType rhsTy;
-    if (ctx->ternary()) { // Ternary
-        rhsTy = visit(ctx->ternary()).as<SymbolType>();
+    if (ctx->ternaryExpr()) { // Ternary
+        rhsTy = visit(ctx->ternaryExpr()).as<SymbolType>();
     } else if (ctx->newStmt()) { // NewStmt
         rhsTy = visit(ctx->newStmt()).as<SymbolType>();
     } else {
-        rhsTy = visit(ctx->arrayInit()).as<SymbolType>();
+        rhsTy = visit(ctx->arrayInitStmt()).as<SymbolType>();
     }
 
     // Check if there is an assign operator applied
@@ -567,7 +567,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
     return rhsTy;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
+antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {
     // Check if there is a ternary operator applied
     if (ctx->children.size() > 1) {
         auto condition = ctx->logicalOrExpr()[0];
@@ -807,13 +807,13 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
 
 antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) {
     // Check if at least one multiplicative operator is applied
-    if (ctx->prefixUnary().size() > 1) {
-        SymbolType currentType = visit(ctx->prefixUnary()[0]).as<SymbolType>();
+    if (ctx->prefixUnaryExpr().size() > 1) {
+        SymbolType currentType = visit(ctx->prefixUnaryExpr()[0]).as<SymbolType>();
         // Check if data types are compatible
         unsigned int operatorIndex = 1;
-        for (int i = 1; i < ctx->prefixUnary().size(); i++) {
+        for (int i = 1; i < ctx->prefixUnaryExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
-            auto next = ctx->prefixUnary()[i];
+            auto next = ctx->prefixUnaryExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
 
             if (op == ctx->getToken(SpiceParser::MUL, 0)) { // Operator was mul
@@ -894,16 +894,16 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
         }
         return currentType;
     }
-    return visit(ctx->prefixUnary()[0]);
+    return visit(ctx->prefixUnaryExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext* ctx) {
-    antlrcpp::Any prefixUnary = visit(ctx->postfixUnary());
+antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) {
+    antlrcpp::Any prefixUnary = visit(ctx->postfixUnaryExpr());
 
     // Ensure integer when '++' or '--' is applied
     if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
         if (!prefixUnary.as<SymbolType>().is(TYPE_INT))
-            throw SemanticError(*ctx->postfixUnary()->start, OPERATOR_WRONG_DATA_TYPE,
+            throw SemanticError(*ctx->postfixUnaryExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Prefix '++' or '--' can only be applied to an identifier of type integer");
     }
 
@@ -919,7 +919,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext*
     return prefixUnary;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContext* ctx) {
+antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
     antlrcpp::Any atomicExpr = visit(ctx->atomicExpr());
 
     // Ensure integer when '++' or '--' is applied
@@ -933,7 +933,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
-    if (ctx->assignment()) return visit(ctx->assignment());
+    if (ctx->assignExpr()) return visit(ctx->assignExpr());
     return visit(ctx->value());
 }
 

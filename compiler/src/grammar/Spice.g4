@@ -5,32 +5,32 @@ mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE 
 functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 structDef: TYPE IDENTIFIER STRUCT LBRACE fieldLst RBRACE;
-forLoop: FOR assignment SEMICOLON assignment SEMICOLON assignment LBRACE stmtLst RBRACE;
+forLoop: FOR assignExpr SEMICOLON assignExpr SEMICOLON assignExpr LBRACE stmtLst RBRACE;
 //foreachLoop: FOREACH IDENTIFIER COLON assignment LBRACE stmtLst RBRACE;
-whileLoop: WHILE assignment LBRACE stmtLst RBRACE;
-ifStmt: IF assignment LBRACE stmtLst RBRACE elseStmt?;
+whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;
+ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
 elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 
 stmtLst: (stmt | forLoop | /*foreachLoop |*/ whileLoop | ifStmt)*;
 fieldLst: declStmt*;
-fieldLstAssignment: ternary (COMMA ternary)*;
-paramLstDef: (declStmt | assignment) (COMMA (declStmt | assignment))*;
-paramLstCall: assignment (COMMA assignment)*;
-stmt: (declStmt | assignment | functionCall | importStmt | returnStmt | breakStmt | continueStmt | printfStmt) SEMICOLON;
-declStmt: CONST? dataType (LBRACKET RBRACKET)? IDENTIFIER;
+fieldLstAssignment: ternaryExpr (COMMA ternaryExpr)*;
+paramLstDef: (declStmt | assignExpr) (COMMA (declStmt | assignExpr))*;
+paramLstCall: assignExpr (COMMA assignExpr)*;
+stmt: (declStmt | assignExpr | functionCall | importStmt | returnStmt | breakStmt | continueStmt | printfStmt) SEMICOLON;
+declStmt: CONST? dataType IDENTIFIER;
 functionCall: IDENTIFIER (DOT IDENTIFIER)* LPAREN paramLstCall? RPAREN;
 newStmt: NEW IDENTIFIER LBRACE fieldLstAssignment? RBRACE;
-arrayInit: dataType LBRACKET value RBRACKET;
+arrayInitStmt: dataType LBRACKET value RBRACKET;
 importStmt: IMPORT STRING AS IDENTIFIER;
-returnStmt: RETURN assignment;
+returnStmt: RETURN assignExpr;
 breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
-printfStmt: PRINTF LPAREN STRING (COMMA assignment)* RPAREN;
+printfStmt: PRINTF LPAREN STRING (COMMA assignExpr)* RPAREN;
 
-assignment: ((declStmt | MUL? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET value RBRACKET)?)
+assignExpr: ((declStmt | MUL? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET value RBRACKET)?)
             (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))?
-            (ternary | newStmt | arrayInit);
-ternary: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
+            (ternaryExpr | newStmt | arrayInitStmt);
+ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
 bitwiseOrExpr: bitwiseAndExpr (BITWISE_OR bitwiseAndExpr)*;
@@ -38,12 +38,13 @@ bitwiseAndExpr: equalityExpr (BITWISE_AND equalityExpr)*;
 equalityExpr: relationalExpr ((EQUAL | NOT_EQUAL) relationalExpr)?;
 relationalExpr: additiveExpr ((LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) additiveExpr)?;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
-multiplicativeExpr: prefixUnary ((MUL | DIV) prefixUnary)*;
-prefixUnary: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnary;
-postfixUnary: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
-atomicExpr: value | LPAREN assignment RPAREN;
+multiplicativeExpr: prefixUnaryExpr ((MUL | DIV) prefixUnaryExpr)*;
+prefixUnaryExpr: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnaryExpr;
+postfixUnaryExpr: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
+atomicExpr: value | LPAREN assignExpr RPAREN;
+
 value: STRING | TRUE | FALSE | INTEGER | DOUBLE | (BITWISE_AND | MUL)? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET value RBRACKET)? | functionCall;
-dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER) MUL?;
+dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER) MUL? (LBRACKET RBRACKET)?;
 
 TYPE_DOUBLE: 'double';
 TYPE_INT: 'int';
