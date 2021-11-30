@@ -165,7 +165,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 37
             "error-custom-type-unknown",
-            "Semantic error at 8:26: Wrong data type for operator: Can only apply the assign operator on same data types"
+            "Semantic error at 8:5: Unknown datatype: Unknown datatype 'NonExisting'"
         },
         { // 38
             "error-struct-defined-before-used",

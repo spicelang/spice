@@ -997,6 +997,7 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
 
     // Check for de-referencing operator
     if (ctx->MUL()) type = type.getPointerType();
+
     // Check for array brackets
     if (ctx->LBRACKET()) type = type.getArrayType();
 
