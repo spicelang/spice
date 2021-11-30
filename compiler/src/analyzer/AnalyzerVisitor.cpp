@@ -57,7 +57,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
         paramTypes = visit(ctx->paramLstDef()).as<std::vector<SymbolType>>();
     parameterMode = false;
     // Declare variable for the return value in new scope
-    SymbolType returnType = getSymbolTypeFromDataType(ctx->dataType());
+    SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);
     // Return to old scope
     currentScope = currentScope->getParent();
@@ -230,7 +230,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
         throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
                             "The variable '" + variableName + "' was declared more than once");
     // Insert variable name to symbol table
-    SymbolType type = getSymbolTypeFromDataType(ctx->dataType());
+    SymbolType type = visit(ctx->dataType()).as<SymbolType>();
     currentScope->insert(variableName, type, DECLARED, ctx->CONST(), parameterMode);
     return type;
 }
@@ -515,9 +515,6 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
             token = ctx->declStmt()->IDENTIFIER()->getSymbol();
             // Get symbol table entry
             symbolTableEntry = currentScope->lookup(variableName);
-            if (symbolTableEntry == nullptr)
-                throw SemanticError(*token, REFERENCED_UNDEFINED_VARIABLE,
-                                    "Variable " + variableName + " was referenced before declared.");
         } else { // Variable was declared before and is referenced here
             variableName = ctx->IDENTIFIER()[0]->toString();
             token = ctx->IDENTIFIER()[0]->getSymbol();
@@ -530,6 +527,17 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
 
         // If it is a pointer to the value, resolve the type
         if (ctx->MUL()) lhsTy = lhsTy.getScalarType();
+
+        // If it is an array, resolve the type
+        if (ctx->LBRACKET()) {
+            // Check if the index is an integer
+            SymbolType indexType = visit(ctx->value()).as<SymbolType>();
+            if (!indexType.is(TYPE_INT))
+                throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
+                                    "The index must be an integer, provided " + indexType.getName());
+            // Resolve type
+            lhsTy = lhsTy.getItemType();
+        }
 
         // If left type is dyn, set left type to right type
         if (lhsTy.is(TYPE_DYN)) {
@@ -947,36 +955,47 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         // Get symbol table entry
         SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
         SymbolType valueType = entry->getType();
-        // Check for referencing operator
+        // Consider referencing operator
         if (ctx->BITWISE_AND()) valueType = valueType.getPointerType();
-        // Check for de-referencing operator
+        // Consider de-referencing operator
         if (ctx->MUL()) valueType = valueType.getScalarType();
-        // Check for array brackets
-        if (ctx->LBRACKET()) valueType = valueType.getArrayType();
+        // Consider array brackets
+        if (ctx->LBRACKET()) {
+            // Check if value is integer
+            SymbolType indexType = visit(ctx->value()).as<SymbolType>();
+            if (!indexType.is(TYPE_INT))
+                throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
+                                    "The index must be an integer, provided " + indexType.getName());
+            // Forward the item type
+            valueType = valueType.getItemType();
+        }
         return valueType;
     }
     return visit(ctx->functionCall());
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
-    if (ctx->IDENTIFIER()) {
-        std::string structName = ctx->IDENTIFIER()->toString();
-        SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-        if (structSymbol == nullptr)
-            throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-    }
-    return SymbolType(TYPE_BOOL);
-}
+    SymbolType type = SymbolType(TYPE_DYN);
 
-SymbolType AnalyzerVisitor::getSymbolTypeFromDataType(SpiceParser::DataTypeContext* ctx) {
-    if (ctx->TYPE_DOUBLE()) return ctx->MUL() ? SymbolType(TYPE_DOUBLE_PTR) : SymbolType(TYPE_DOUBLE);
-    if (ctx->TYPE_INT()) return ctx->MUL() ? SymbolType(TYPE_INT_PTR) : SymbolType(TYPE_INT);
-    if (ctx->TYPE_STRING()) return ctx->MUL() ? SymbolType(TYPE_STRING_PTR) : SymbolType(TYPE_STRING);
-    if (ctx->TYPE_BOOL()) return ctx->MUL() ? SymbolType(TYPE_BOOL_PTR) : SymbolType(TYPE_BOOL);
+    if (ctx->TYPE_DOUBLE()) type = SymbolType(TYPE_DOUBLE);
+    if (ctx->TYPE_INT()) type = SymbolType(TYPE_INT);
+    if (ctx->TYPE_STRING()) type = SymbolType(TYPE_STRING);
+    if (ctx->TYPE_BOOL()) type = SymbolType(TYPE_BOOL);
     if (ctx->IDENTIFIER()) { // Struct type
         std::string structName = ctx->IDENTIFIER()->toString();
-        return ctx->MUL() ? SymbolType(TYPE_STRUCT_PTR, structName) :
-            SymbolType(TYPE_STRUCT, structName);
+
+        // Check if struct was declared
+        SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+        if (!structSymbol)
+            throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+
+        type = SymbolType(TYPE_STRUCT, structName);
     }
-    return SymbolType(TYPE_DYN);
+
+    // Check for de-referencing operator
+    if (ctx->MUL()) type = type.getPointerType();
+    // Check for array brackets
+    if (ctx->LBRACKET()) type = type.getArrayType();
+
+    return type;
 }

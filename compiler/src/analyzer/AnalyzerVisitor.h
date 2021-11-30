@@ -125,7 +125,4 @@ private:
     bool parameterMode = false;
     bool hasMainFunction = false;
     int nestedLoopCounter = 0;
-
-    // Private functions
-    static SymbolType getSymbolTypeFromDataType(SpiceParser::DataTypeContext*);
 };
