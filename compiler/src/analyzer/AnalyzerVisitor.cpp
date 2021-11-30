@@ -241,8 +241,8 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     std::string functionName = functionNamespace.back();
     // Visit params
     std::vector<SymbolType> paramTypes;
-    if (ctx->paramLstCall()) {
-        for (auto& param : ctx->paramLstCall()->assignExpr())
+    if (ctx->paramLst()) {
+        for (auto& param : ctx->paramLst()->assignExpr())
             paramTypes.push_back(visit(param).as<SymbolType>());
     }
     // Check if function signature exists in symbol table
@@ -281,13 +281,13 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     // Get the symbol table where the struct is defined
     SymbolTable* structTable = currentScope->lookupTable(structScope);
     // Check if the number of fields matches
-    if (structTable->getSymbolsCount() != ctx->fieldLstAssignment()->ternaryExpr().size())
+    if (structTable->getSymbolsCount() != ctx->paramLst()->assignExpr().size())
         throw SemanticError(*ctx->start, NUMBER_OF_FIELDS_NOT_MATCHING, "You've passed too less/many field values");
 
     // Check if the field types are matching
-    for (int i = 0; i < ctx->fieldLstAssignment()->ternaryExpr().size(); i++) {
+    for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
         // Get actual type
-        auto ternary = ctx->fieldLstAssignment()->ternaryExpr()[i];
+        auto ternary = ctx->paramLst()->assignExpr()[i];
         SymbolType actualType = visit(ternary).as<SymbolType>();
         // Get expected type
         SymbolTableEntry* expectedField = structTable->lookupByIndexInCurrentScope(i);
@@ -305,12 +305,12 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Visit data type
     SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
-    SymbolType indexType = visit(ctx->value()).as<SymbolType>();
+    SymbolType indexType = visit(ctx->assignExpr()).as<SymbolType>();
 
     // Check if index type is an integer
     if (!indexType.is(TYPE_INT))
-        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER, "The size must be an integer, provided " +
-                            indexType.getName());
+        throw SemanticError(*ctx->assignExpr()->start, ARRAY_SIZE_NO_INTEGER,
+                            "The size must be an integer, provided " + indexType.getName());
 
     return dataType.getArrayType();
 }
@@ -531,9 +531,9 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
         // If it is an array, resolve the type
         if (ctx->LBRACKET()) {
             // Check if the index is an integer
-            SymbolType indexType = visit(ctx->value()).as<SymbolType>();
+            SymbolType indexType = visit(ctx->assignExpr()).as<SymbolType>();
             if (!indexType.is(TYPE_INT))
-                throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
+                throw SemanticError(*ctx->assignExpr()->start, ARRAY_SIZE_NO_INTEGER,
                                     "The index must be an integer, provided " + indexType.getName());
             // Resolve type
             lhsTy = lhsTy.getItemType();
@@ -941,8 +941,32 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
-    if (ctx->assignExpr()) return visit(ctx->assignExpr());
-    return visit(ctx->value());
+    if (ctx->value()) return visit(ctx->value());
+    if (ctx->idenValue()) return visit(ctx->idenValue());
+    if (ctx->functionCall()) return visit(ctx->functionCall());
+    return visit(ctx->assignExpr());
+}
+
+antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx) {
+    std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
+    // Get symbol table entry
+    SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
+    SymbolType valueType = entry->getType();
+    // Consider referencing operator
+    if (ctx->BITWISE_AND()) valueType = valueType.getPointerType();
+    // Consider de-referencing operator
+    if (ctx->MUL()) valueType = valueType.getScalarType();
+    // Consider array brackets
+    if (ctx->LBRACKET()) {
+        // Check if value is integer
+        SymbolType indexType = visit(ctx->assignExpr()).as<SymbolType>();
+        if (!indexType.is(TYPE_INT))
+            throw SemanticError(*ctx->assignExpr()->start, ARRAY_SIZE_NO_INTEGER,
+                                "The index must be an integer, provided " + indexType.getName());
+        // Forward the item type
+        valueType = valueType.getItemType();
+    }
+    return valueType;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
@@ -950,28 +974,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->INTEGER()) return SymbolType(TYPE_INT);
     if (ctx->STRING()) return SymbolType(TYPE_STRING);
     if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TYPE_BOOL);
-    if (!ctx->IDENTIFIER().empty()) {
-        std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
-        // Get symbol table entry
-        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
-        SymbolType valueType = entry->getType();
-        // Consider referencing operator
-        if (ctx->BITWISE_AND()) valueType = valueType.getPointerType();
-        // Consider de-referencing operator
-        if (ctx->MUL()) valueType = valueType.getScalarType();
-        // Consider array brackets
-        if (ctx->LBRACKET()) {
-            // Check if value is integer
-            SymbolType indexType = visit(ctx->value()).as<SymbolType>();
-            if (!indexType.is(TYPE_INT))
-                throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
-                                    "The index must be an integer, provided " + indexType.getName());
-            // Forward the item type
-            valueType = valueType.getItemType();
-        }
-        return valueType;
-    }
-    return visit(ctx->functionCall());
+    return nullptr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {

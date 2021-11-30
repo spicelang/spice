@@ -47,6 +47,8 @@ std::string IRError::getMessagePrefix(IRErrorType type) {
             return "Could not open output file";
         case WRONG_TYPE:
             return "Wrong type of output file";
+        case BRANCH_NOT_FOUND:
+            return "Branch not found";
         case UNEXPECTED_DYN_TYPE:
             return "Unexpected type of dyn. Symbol table incomplete";
         case PRINTF_NULL_TYPE:

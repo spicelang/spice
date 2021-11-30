@@ -117,6 +117,8 @@ public:
 
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
 
+    antlrcpp::Any visitIdenValue(SpiceParser::IdenValueContext* ctx) override;
+
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
 
     antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
@@ -135,6 +137,7 @@ private:
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope = new SymbolTable(nullptr);
     std::string currentVar;
+    llvm::Value* currentArraySize = nullptr;
     SymbolType currentSymbolType;
     bool blockAlreadyTerminated = false;
 

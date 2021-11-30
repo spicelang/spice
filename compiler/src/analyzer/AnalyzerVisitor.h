@@ -107,6 +107,8 @@ public:
 
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
 
+    antlrcpp::Any visitIdenValue(SpiceParser::IdenValueContext* ctx) override;
+
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
 
     antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
