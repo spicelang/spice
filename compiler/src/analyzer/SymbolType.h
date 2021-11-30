@@ -29,6 +29,7 @@ public:
     std::string getSubType();
     std::string getName();
     bool isPointer();
+    bool isArray();
     SymbolType getPointerType();
     SymbolType getScalarType();
     SymbolType getArrayType();

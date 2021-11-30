@@ -26,8 +26,18 @@ std::string SymbolType::getSubType() {
  * @return True if it a pointer type, otherwise false
  */
 bool SymbolType::isPointer() {
-    return superType == TYPE_DOUBLE_PTR || superType == TYPE_INT_PTR || superType == TYPE_STRING_PTR ||
-        superType == TYPE_BOOL_PTR || superType == TYPE_STRUCT_PTR;
+    return isOneOf({ TYPE_DOUBLE_PTR, TYPE_INT_PTR, TYPE_STRING_PTR, TYPE_BOOL_PTR, TYPE_STRUCT_PTR });
+}
+
+/**
+ * Checks if the super type is an array type
+ *
+ * @return True if it an array type, otherwise false
+ */
+bool SymbolType::isArray() {
+    return isOneOf({ TYPE_DOUBLE_ARRAY, TYPE_INT_ARRAY, TYPE_STRING_ARRAY, TYPE_BOOL_ARRAY, TYPE_STRUCT_ARRAY,
+                     TYPE_DOUBLE_PTR_ARRAY, TYPE_INT_PTR_ARRAY, TYPE_STRING_PTR_ARRAY, TYPE_BOOL_PTR_ARRAY,
+                     TYPE_STRUCT_PTR_ARRAY});
 }
 
 /**

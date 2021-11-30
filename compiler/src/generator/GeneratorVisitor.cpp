@@ -1345,14 +1345,49 @@ void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
 }
 
 llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
+    llvm::Type* type;
     switch (symbolType.getSuperType()) {
-        case TYPE_DOUBLE: return llvm::Type::getDoubleTy(*context);
-        case TYPE_INT: return llvm::Type::getInt32Ty(*context);
-        case TYPE_STRING: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
-        case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
+        case TYPE_DOUBLE:
+        case TYPE_DOUBLE_PTR:
+        case TYPE_DOUBLE_ARRAY:
+        case TYPE_DOUBLE_PTR_ARRAY:
+            return llvm::Type::getDoubleTy(*context);
+        case TYPE_INT:
+        case TYPE_INT_PTR:
+        case TYPE_INT_ARRAY:
+        case TYPE_INT_PTR_ARRAY:
+            return llvm::Type::getInt32Ty(*context);
+        case TYPE_STRING:
+        case TYPE_STRING_PTR:
+        case TYPE_STRING_ARRAY:
+        case TYPE_STRING_PTR_ARRAY:
+            return llvm::Type::getInt8PtrTy(*context);
+        case TYPE_BOOL:
+        case TYPE_BOOL_PTR:
+        case TYPE_BOOL_ARRAY:
+        case TYPE_BOOL_PTR_ARRAY:
+            return llvm::Type::getInt1Ty(*context);
+        case TYPE_STRUCT:
+        case TYPE_STRUCT_PTR:
+        case TYPE_STRUCT_ARRAY:
+        case TYPE_STRUCT_PTR_ARRAY:
+            return currentScope->lookup(symbolType.getSubType())->getLLVMType();
         default: throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName());
     }
+
+    // Consider possible pointer
+    if (symbolType.isPointer()) {
+        currentSymbolType = currentSymbolType.getPointerType();
+        type = type->getPointerElementType();
+    }
+
+    // Consider possible array brackets
+    if (symbolType.isArray()) {
+        currentSymbolType = currentSymbolType.getArrayType();
+        type = type->getArrayElementType();
+    }
+
+    return type;
 }
 
 llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<antlr4::tree::TerminalNode*> idenList) {
