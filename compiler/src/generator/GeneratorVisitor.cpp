@@ -1098,6 +1098,14 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
         throw IRError(*ctx->IDENTIFIER()[0]->getSymbol(), VARIABLE_NOT_FOUND,
                       "Variable '" + variableName + "' not found in code generation step");
 
+    // Consider subscript operator
+    if (ctx->LBRACKET()) {
+        // Calculate item address
+        llvm::Value* index = visit(ctx->assignExpr()).as<llvm::Value*>();
+        SymbolType itemType = variableSymbol->getType().getItemType();
+        var = builder->CreateInBoundsGEP(getTypeFromSymbolType(itemType), var, index);
+    }
+
     // If the reference operator is attached, return immediately. Load and return otherwise
     if (ctx->BITWISE_AND()) return var;
 
@@ -1340,64 +1348,30 @@ void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
 }
 
 llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
-    llvm::Type* type;
+    currentSymbolType = symbolType;
     switch (symbolType.getSuperType()) {
-        case TYPE_DOUBLE:
-        case TYPE_DOUBLE_PTR:
-        case TYPE_DOUBLE_ARRAY:
-        case TYPE_DOUBLE_PTR_ARRAY: {
-            currentSymbolType = SymbolType(TYPE_DOUBLE);
-            type = llvm::Type::getDoubleTy(*context);
-            break;
-        }
-        case TYPE_INT:
-        case TYPE_INT_PTR:
-        case TYPE_INT_ARRAY:
-        case TYPE_INT_PTR_ARRAY: {
-            currentSymbolType = SymbolType(TYPE_INT);
-            type = llvm::Type::getInt32Ty(*context);
-            break;
-        }
-        case TYPE_STRING:
-        case TYPE_STRING_PTR:
-        case TYPE_STRING_ARRAY:
-        case TYPE_STRING_PTR_ARRAY: {
-            currentSymbolType = SymbolType(TYPE_STRING);
-            type = llvm::Type::getInt8PtrTy(*context);
-            break;
-        }
-        case TYPE_BOOL:
-        case TYPE_BOOL_PTR:
-        case TYPE_BOOL_ARRAY:
-        case TYPE_BOOL_PTR_ARRAY: {
-            currentSymbolType = SymbolType(TYPE_BOOL);
-            type = llvm::Type::getInt1Ty(*context);
-            break;
-        }
-        case TYPE_STRUCT:
-        case TYPE_STRUCT_PTR:
-        case TYPE_STRUCT_ARRAY:
-        case TYPE_STRUCT_PTR_ARRAY: {
-            currentSymbolType = SymbolType(TYPE_STRUCT);
-            type = currentScope->lookup(symbolType.getSubType())->getLLVMType();
-            break;
-        }
+        case TYPE_DOUBLE: return llvm::Type::getDoubleTy(*context);
+        case TYPE_DOUBLE_PTR: return llvm::Type::getDoublePtrTy(*context);
+        case TYPE_DOUBLE_ARRAY: return llvm::ArrayType::getDoubleTy(*context);
+        case TYPE_DOUBLE_PTR_ARRAY: return llvm::ArrayType::getDoublePtrTy(*context);
+        case TYPE_INT: return llvm::Type::getInt32Ty(*context);
+        case TYPE_INT_PTR: return llvm::Type::getInt32PtrTy(*context);
+        case TYPE_INT_ARRAY: return llvm::ArrayType::getInt32Ty(*context);
+        case TYPE_INT_PTR_ARRAY: return llvm::ArrayType::getInt32PtrTy(*context);
+        case TYPE_STRING: return llvm::Type::getInt8PtrTy(*context);
+        case TYPE_STRING_PTR: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
+        case TYPE_STRING_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
+        case TYPE_STRING_PTR_ARRAY: throw std::runtime_error("String ptr array support coming soon");
+        case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
+        case TYPE_BOOL_PTR: return llvm::Type::getInt1PtrTy(*context);
+        case TYPE_BOOL_ARRAY: return llvm::ArrayType::getInt1Ty(*context);
+        case TYPE_BOOL_PTR_ARRAY: return llvm::ArrayType::getInt1PtrTy(*context);
+        case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
+        case TYPE_STRUCT_PTR: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
+        case TYPE_STRUCT_ARRAY: throw std::runtime_error("Struct array support coming soon");
+        case TYPE_STRUCT_PTR_ARRAY: throw std::runtime_error("Struct ptr array support coming soon");
         default: throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName());
     }
-
-    // Consider possible pointer
-    if (symbolType.isPointer()) {
-        currentSymbolType = currentSymbolType.getPointerType();
-        type = type->getPointerTo();
-    }
-
-    // Consider possible array brackets
-    if (symbolType.isArray()) {
-        currentSymbolType = currentSymbolType.getArrayType();
-        type = type->getArrayElementType();
-    }
-
-    return type;
 }
 
 llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<antlr4::tree::TerminalNode*> idenList) {
