@@ -1,7 +1,7 @@
 f<int> main() {
     int value0 = 2;
-    int[] intArray = int[5]{ value0, 7, 4 };
-    intArray[2] = 11;
-    intArray[0] = 3;
+    int[5] intArray = { value0, 7, 4 };
+    //intArray[2] = 11;
+    //intArray[0] = 3;
     printf("Array item 0: %d, array item 2: %d", intArray[0], intArray[2]);
 }

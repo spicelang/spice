@@ -304,13 +304,22 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 
 antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Visit data type
+    std::string variableName = ctx->IDENTIFIER()->toString();
     SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
-    SymbolType indexType = visit(ctx->assignExpr()).as<SymbolType>();
+    SymbolType indexType = visit(ctx->value()).as<SymbolType>();
 
     // Check if index type is an integer
     if (!indexType.is(TYPE_INT))
-        throw SemanticError(*ctx->assignExpr()->start, ARRAY_SIZE_NO_INTEGER,
+        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
                             "The size must be an integer, provided " + indexType.getName());
+
+    // Check if index is >1
+    int size = std::stoi(ctx->value()->INTEGER()->toString());
+    if (size <= 1)
+        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
+
+    // Create new symbol in the current scope
+    currentScope->insert(variableName, dataType.getArrayType(), INITIALIZED, ctx->CONST(), parameterMode);
 
     return dataType.getArrayType();
 }
@@ -494,13 +503,8 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
     // Take a look on the right side
     SymbolType rhsTy;
-    if (ctx->ternaryExpr()) { // Ternary
-        rhsTy = visit(ctx->ternaryExpr()).as<SymbolType>();
-    } else if (ctx->newStmt()) { // NewStmt
-        rhsTy = visit(ctx->newStmt()).as<SymbolType>();
-    } else {
-        rhsTy = visit(ctx->arrayInitStmt()).as<SymbolType>();
-    }
+    if (ctx->ternaryExpr()) rhsTy = visit(ctx->ternaryExpr()).as<SymbolType>();
+    if (ctx->newStmt()) rhsTy = visit(ctx->newStmt()).as<SymbolType>();
 
     // Check if there is an assign operator applied
     if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {

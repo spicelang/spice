@@ -15,11 +15,11 @@ stmtLst: (stmt | forLoop | /*foreachLoop |*/ whileLoop | ifStmt)*;
 fieldLst: declStmt*;
 paramLstDef: (declStmt | assignExpr) (COMMA (declStmt | assignExpr))*;
 paramLst: assignExpr (COMMA assignExpr)*;
-stmt: (declStmt | assignExpr | functionCall | importStmt | returnStmt | breakStmt | continueStmt | printfStmt) SEMICOLON;
+stmt: (declStmt | assignExpr | arrayInitStmt | functionCall | importStmt | returnStmt | breakStmt | continueStmt | printfStmt) SEMICOLON;
 declStmt: CONST? dataType IDENTIFIER;
 functionCall: IDENTIFIER (DOT IDENTIFIER)* LPAREN paramLst? RPAREN;
 newStmt: NEW IDENTIFIER LBRACE paramLst? RBRACE;
-arrayInitStmt: dataType LBRACKET assignExpr RBRACKET (LBRACE paramLst? RBRACE)?;
+arrayInitStmt: CONST? dataType LBRACKET value RBRACKET IDENTIFIER ASSIGN_OP (LBRACE paramLst? RBRACE)?;
 importStmt: IMPORT STRING AS IDENTIFIER;
 returnStmt: RETURN assignExpr;
 breakStmt: BREAK INTEGER?;
@@ -28,7 +28,7 @@ printfStmt: PRINTF LPAREN STRING (COMMA assignExpr)* RPAREN;
 
 assignExpr: ((declStmt | MUL? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET assignExpr RBRACKET)?)
             (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))?
-            (ternaryExpr | newStmt | arrayInitStmt);
+            (ternaryExpr | newStmt);
 ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;

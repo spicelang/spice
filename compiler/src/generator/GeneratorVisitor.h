@@ -137,7 +137,6 @@ private:
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope = new SymbolTable(nullptr);
     std::string currentVar;
-    llvm::Value* currentArraySize = nullptr;
     SymbolType currentSymbolType;
     bool blockAlreadyTerminated = false;
 

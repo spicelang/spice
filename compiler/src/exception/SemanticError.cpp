@@ -91,6 +91,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "The type of a field value does not match the declaration";
         case ARRAY_SIZE_NO_INTEGER:
             return "Array size not of type int";
+        case ARRAY_SIZE_INVALID:
+            return "Array size invalid";
     }
     return "Unknown error";
 }
