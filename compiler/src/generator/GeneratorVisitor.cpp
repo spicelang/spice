@@ -1219,8 +1219,12 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             }
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
-            if (entry->getType().is(TYPE_STRUCT_PTR))
+            if (entry->getType().is(TYPE_STRUCT_PTR)) {
+                basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+                basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
+                indices.clear();
                 indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+            }
             // Change to new scope
             std::string structName = entry->getType().getSubType();
             scope = scope->lookupTable("struct:" + structName);
@@ -1228,6 +1232,8 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             if (!scope)
                 throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
                               "Compiler error: Referenced undefined struct '" + structName + "'");
+            // Conclude auto-de-referencing
+            if (entry->getType().is(TYPE_STRUCT_PTR)) baseType = scope->lookup(structName)->getLLVMType();
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Get the index value
             llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
@@ -1240,20 +1246,11 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
         tokenCounter++;
     }
 
-    /*if (applyDereference) {
-        indices.clear();
-        indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
-        indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 2));
-        indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
-        indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1));
-    }*/
-
     // Build GEP instruction
     llvm::Value* returnValue = builder->CreateInBoundsGEP(baseType, basePtr, indices);
 
     // If the de-referencing operator is present, add a zero index at the end of the gep instruction
-    if (applyDereference)
-        returnValue = builder->CreateLoad(returnValue->getType()->getPointerElementType(), returnValue);
+    if (applyDereference) returnValue = builder->CreateLoad(returnValue->getType()->getPointerElementType(), returnValue);
 
     // If the referencing operator is present, store the calculated address into memory and return the address of that location
     if (applyReference) {

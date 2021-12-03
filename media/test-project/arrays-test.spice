@@ -16,6 +16,4 @@ f<int> main() {
     dyn instance = new TestStruct { &input, 46.34, &nestedInstance };
     TestStruct instance1 = instance;
     instance1.field2 = 1.123;
-    printf("Field1: %d, field2:", *instance.nested.nested2);
-    //printf("Field1: %p", instance.field1);
 }
