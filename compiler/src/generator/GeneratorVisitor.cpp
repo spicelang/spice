@@ -635,14 +635,15 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
-    std::string structName = ctx->IDENTIFIER()->toString();
+    llvm::Type* structType = visit(ctx->dataType()).as<llvm::Type*>();
+    std::string variableName = ctx->IDENTIFIER()[0]->toString();
+    std::string structName = ctx->IDENTIFIER()[1]->toString();
     std::string structScope = ScopeIdUtil::getScopeId(ctx);
 
-    // Get struct type from symbol table
-    llvm::Type* structType = currentScope->lookup(structName)->getLLVMType();
-
-    // Allocate space for struct
-    llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr);
+    // Allocate space for the struct in memory
+    llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr, currentVar);
+    currentScope->lookup(variableName)->updateAddress(structAddress);
+    currentScope->lookup(variableName)->updateLLVMType(structType);
 
     // Fill the struct with the stated values
     SymbolTable* structSymbolTable = currentScope->lookupTable({ structScope });
@@ -656,7 +657,7 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
         builder->CreateStore(assignment, fieldAddress);
     }
 
-    return (llvm::Value*) builder->CreateLoad(structType, structAddress, structName);
+    return structAddress;
 }
 
 antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
@@ -765,9 +766,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
 
 antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
     // Get value of right side
-    llvm::Value* rhsPtr;
-    if (ctx->ternaryExpr()) rhsPtr = visit(ctx->ternaryExpr()).as<llvm::Value*>();
-    if (ctx->newStmt()) rhsPtr = visit(ctx->newStmt()).as<llvm::Value*>();
+    llvm::Value* rhsPtr = visit(ctx->ternaryExpr()).as<llvm::Value*>();
 
     if (ctx->declStmt() || ctx->idenValue()) {
         // Load right side value

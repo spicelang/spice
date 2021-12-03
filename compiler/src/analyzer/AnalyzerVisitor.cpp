@@ -268,21 +268,31 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
-    std::string structName = ctx->IDENTIFIER()->toString();
+    SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
+    std::string variableName = ctx->IDENTIFIER()[0]->toString();
+    std::string structName = ctx->IDENTIFIER()[1]->toString();
     std::string structScope = ScopeIdUtil::getScopeId(ctx);
+
+    // Check if symbol already exists in the symbol table
+    if (currentScope->lookup(variableName))
+        throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
+                            "The variable '" + variableName + "' was declared more than once");
+
     // Check if the struct is defined
     SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-    if (!structSymbol || !structSymbol->getType().is(TYPE_STRUCT) ||
-        structSymbol->getType().getSubType() != structName) {
-        throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+    if (!structSymbol || !structSymbol->getType().is(TYPE_STRUCT) || structSymbol->getType().getSubType() != structName)
+        throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                             "Struct '" + structName + "' was used before defined");
-    }
+
+    // Infer type
+    if (dataType.is(TYPE_DYN)) dataType = structSymbol->getType();
 
     // Get the symbol table where the struct is defined
     SymbolTable* structTable = currentScope->lookupTable(structScope);
     // Check if the number of fields matches
     if (structTable->getSymbolsCount() != ctx->paramLst()->assignExpr().size())
-        throw SemanticError(*ctx->start, NUMBER_OF_FIELDS_NOT_MATCHING, "You've passed too less/many field values");
+        throw SemanticError(*ctx->start, NUMBER_OF_FIELDS_NOT_MATCHING,
+                            "You've passed too less/many field values");
 
     // Check if the field types are matching
     for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
@@ -299,6 +309,9 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
                                 expectedField->getName() + "', but got " + actualType.getName());
     }
 
+    // Insert into symbol table
+    currentScope->insert(variableName, dataType, INITIALIZED, ctx->CONST(), false);
+
     return SymbolType(TYPE_STRUCT, structName);
 }
 
@@ -307,6 +320,30 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
     std::string variableName = ctx->IDENTIFIER()->toString();
     SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
     SymbolType indexType = visit(ctx->value()).as<SymbolType>();
+
+    // Check if all values have the same type
+    SymbolType expectedItemType = SymbolType(TYPE_DYN);
+    if (ctx->paramLst()) {
+        for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+            SymbolType itemType = visit(ctx->paramLst()->assignExpr()[i]).as<SymbolType>();
+            if (expectedItemType.is(TYPE_DYN)) {
+                expectedItemType = itemType;
+            } else if (itemType != expectedItemType) {
+                throw SemanticError(*ctx->paramLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
+                                    "All provided values have to be of the same data type. You provided " +
+                                    expectedItemType.getName() + " and " + itemType.getName());
+            }
+        }
+    }
+
+    // Infer type
+    if (dataType.is(TYPE_DYN)) {
+        if (expectedItemType.is(TYPE_DYN))
+            throw SemanticError(*ctx->dataType()->start, UNKNOWN_DATATYPE,
+                                "Was not able to infer the data type of this array");
+
+        dataType = expectedItemType.getArrayType();
+    }
 
     // Check if index type is an integer
     if (!indexType.is(TYPE_INT))
@@ -502,9 +539,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
     // Take a look on the right side
-    SymbolType rhsTy;
-    if (ctx->ternaryExpr()) rhsTy = visit(ctx->ternaryExpr()).as<SymbolType>();
-    if (ctx->newStmt()) rhsTy = visit(ctx->newStmt()).as<SymbolType>();
+    SymbolType rhsTy = visit(ctx->ternaryExpr()).as<SymbolType>();
 
     // Check if there is an assign operator applied
     if (ctx->declStmt() || ctx->idenValue()) {
