@@ -34,6 +34,7 @@ enum SemanticErrorType {
     FIELD_TYPE_NOT_MATCHING,
     ARRAY_SIZE_NO_INTEGER,
     ARRAY_SIZE_INVALID,
+    ARRAY_INDEX_NO_INTEGER,
 };
 
 /**

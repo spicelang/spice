@@ -535,10 +535,12 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
         // Create local variable
         llvm::Value* memAddress = builder->CreateAlloca(varType, nullptr, currentVar);
         currentScope->lookup(currentVar)->updateAddress(memAddress);
+        currentScope->lookup(currentVar)->updateLLVMType(varType);
     } else { // Global scope
         // Create global variable
         llvm::Value* memAddress = module->getOrInsertGlobal(currentVar, varType);
         currentScope->lookup(currentVar)->updateAddress(memAddress);
+        currentScope->lookup(currentVar)->updateLLVMType(varType);
         // Set some attributes to it
         llvm::GlobalVariable* global = module->getNamedGlobal(currentVar);
         //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
@@ -670,6 +672,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     // Update address in symbol table
     std::string varName = ctx->IDENTIFIER()->toString();
     currentScope->lookup(varName)->updateAddress(arrayAddress);
+    currentScope->lookup(varName)->updateLLVMType(arrayType);
 
     return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
 }
@@ -749,29 +752,31 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
     if (ctx->ternaryExpr()) rhs = visit(ctx->ternaryExpr()).as<llvm::Value*>();
     if (ctx->newStmt()) rhs = visit(ctx->newStmt()).as<llvm::Value*>();
 
-    if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
+    // Load right side value
+    rhs = builder->CreateLoad(rhs->getType()->getPointerElementType(), rhs);
+
+    if (ctx->declStmt() || ctx->idenValue()) {
         // Get value of left side
         std::string varName;
         SymbolTableEntry* variableEntry;
-        std::vector<antlr4::tree::TerminalNode*> idenList;
+        llvm::Value* lhsPtr;
         if (ctx->declStmt()) { // Variable was declared in this line
             varName = visit(ctx->declStmt()).as<std::string>();
             // Get symbol table entry
             variableEntry = currentScope->lookup(varName);
-            idenList.push_back(ctx->declStmt()->IDENTIFIER());
+            lhsPtr = variableEntry->getAddress();
         } else { // Variable was declared before and is referenced here
-            varName = ctx->IDENTIFIER()[0]->toString();
+            varName = ctx->idenValue()->IDENTIFIER()[0]->toString();
             // Get symbol table entry
             variableEntry = currentScope->lookup(varName);
-            idenList = ctx->IDENTIFIER();
+            lhsPtr = visit(ctx->idenValue()).as<llvm::Value*>();
         }
 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
-                if (ctx->MUL()) lhs = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                builder->CreateStore(rhs, lhs);
+                //llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
                 if (ctx->declStmt()) {
@@ -782,49 +787,41 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
             }
         } else if (ctx->PLUS_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
-                llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = createAddInst(loadLhs, loadLhs->getType(), rhs, rhs->getType());
+                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                rhs = createAddInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                rhs = createAddInst(loadLhs, loadLhs->getType(), rhs, rhs->getType());
+                rhs = createAddInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             }
         } else if (ctx->MINUS_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
-                llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
                 rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             }
         } else if (ctx->MUL_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
-                llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
                 rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             }
         } else if (ctx->DIV_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = getAddressByIdenList(currentScope, idenList);
-                llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
                 rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                llvm::Value* loadLhs = (llvm::Value*) builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
                 rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhs);
             }
@@ -1029,7 +1026,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
     auto value = visit(ctx->postfixUnaryExpr());
 
     // Prefix unary is: PLUS_PLUS postfixUnary
-    if (ctx->PLUS_PLUS()) {
+    /*if (ctx->PLUS_PLUS()) {
         if (!ctx->postfixUnaryExpr()->atomicExpr()->idenValue())
             throw IRError(*ctx->postfixUnaryExpr()->atomicExpr()->start, BRANCH_NOT_FOUND, "idenValue() was null");
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "pre_pp");
@@ -1048,7 +1045,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
                                                 ctx->postfixUnaryExpr()->atomicExpr()->idenValue()->IDENTIFIER());
         builder->CreateStore(rhs, lhs);
         return lhs;
-    }
+    }*/
 
     // Prefix unary is: NOT postfixUnary
     if (ctx->NOT()) return builder->CreateNot(value.as<llvm::Value*>(), "not");
@@ -1060,7 +1057,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
     auto value = visit(ctx->atomicExpr());
 
     // Postfix unary is: PLUS_PLUS atomicExpr
-    if (ctx->PLUS_PLUS()) {
+    /*if (ctx->PLUS_PLUS()) {
         if (!ctx->atomicExpr()->idenValue()) throw IRError(*ctx->atomicExpr()->start, BRANCH_NOT_FOUND, "idenValue() was null");
         llvm::Value* rhs = builder->CreateAdd(value.as<llvm::Value*>(), builder->getInt32(1), "post_pp");
         llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->atomicExpr()->idenValue()->IDENTIFIER());
@@ -1075,7 +1072,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
         llvm::Value* lhs = getAddressByIdenList(currentScope, ctx->atomicExpr()->idenValue()->IDENTIFIER());
         builder->CreateStore(rhs, lhs);
         return rhs;
-    }
+    }*/
 
     return value;
 }
@@ -1087,58 +1084,97 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
     return visit(ctx->assignExpr());
 }
 
+// Returns pointer
 antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx) {
-    std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
-    SymbolTableEntry* variableSymbol = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
-    currentSymbolType = variableSymbol->getType();
+    llvm::Type* baseType;
+    llvm::Value* basePtr;
+    std::vector<llvm::Value*> indices;
+    SymbolTableEntry* entry;
+    int tokenCounter = 0;
+    int assignCounter = 0;
+    bool applyReference = false;
+    bool applyDereference = false;
+    SymbolTable* scope = currentScope;
 
-    llvm::Value* var;
-    if (variableSymbol->isLocal()) { // Local variable
-        var = getAddressByIdenList(currentScope, ctx->IDENTIFIER());
-    } else { // Global variable
-        var = module->getNamedGlobal(variableName);
+    if (ctx->BITWISE_AND()) { // Consider referencing operator
+        applyReference = true;
+        tokenCounter++;
     }
 
-    // Throw an error when the variable is null
-    if (!var)
-        throw IRError(*ctx->IDENTIFIER()[0]->getSymbol(), VARIABLE_NOT_FOUND,
-                      "Variable '" + variableName + "' not found in code generation step");
-
-    // Consider subscript operator
-    if (ctx->LBRACKET()) {
-        // Calculate item address
-        std::vector<llvm::Value*> indices;
-        indices.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_INT)), 0));
-        indices.push_back(visit(ctx->assignExpr()).as<llvm::Value*>());
-        var = builder->CreateInBoundsGEP(getTypeFromSymbolType(variableSymbol->getType()), var, indices);
+    if (ctx->MUL()) { // Consider de-referencing operator
+        applyDereference = true;
+        tokenCounter++;
     }
 
-    // If the reference operator is attached, return immediately. Load and return otherwise
-    if (ctx->BITWISE_AND()) return var;
+    // Loop through children
+    while (tokenCounter < ctx->children.size()) {
+        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+        if (token == ctx->getToken(SpiceParser::IDENTIFIER, 0)) { // Consider identifier
+            std::string variableName = token->toString();
+            entry = scope->lookup(variableName);
+            if (scope == currentScope) { // This is the current scope
+                baseType = entry->getLLVMType();
+                basePtr = entry->getAddress();
+                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+            } else { // This is a struct
+                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), entry->getOrderIndex()));
+            }
+            // Apply referencing or de-referencing operator
+            if (applyDereference) indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+            // Increase counter
+            tokenCounter++;
+        } else if (token == ctx->getToken(SpiceParser::DOT, 0)) { // Consider dot operator
+            // De-reference automatically if it is a struct pointer
+            if (entry->getType().is(TYPE_STRUCT_PTR))
+                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+            // Change to new scope
+            std::string structName = entry->getType().getSubType();
+            scope = scope->lookupTable("struct:" + structName);
+            // Check if the table exists
+            if (!scope)
+                throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
+                              "Compiler error: Referenced undefined struct '" + structName + "'");
+            // Increase counter
+            tokenCounter++;
+        } else if (token == ctx->getToken(SpiceParser::LBRACKET, 0)) { // Consider subscript operator
+            // Get the index value
+            llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
+            indices.push_back(indexValue);
+            // Increase counters
+            assignCounter++;
+            tokenCounter += 3; // To consume the assignExpr and the RBRACKET
+        }
+    }
 
-    // Load value
-    var = builder->CreateLoad(var->getType()->getPointerElementType(), var);
+    // Build GEP instruction
+    llvm::Value* gepInst = builder->CreateInBoundsGEP(baseType, basePtr, indices);
 
-    // If the de-reference operator is attached load twice, otherwise load once
-    if (ctx->MUL()) var = builder->CreateLoad(var->getType()->getPointerElementType(), var);
+    // If the referencing operator is present, store the calculated address into memory and return the address of that location
+    if (applyReference) {
+        llvm::Value* ptrLocation = builder->CreateAlloca(gepInst->getType());
+        builder->CreateStore(gepInst, ptrLocation);
+        return ptrLocation;
+    }
 
-    return var;
+    // Otherwise, return the calculated memory address
+    return gepInst;
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
+    llvm::Value* llvmValue;
+
     // Value is a double constant
     if (ctx->DOUBLE()) {
         currentSymbolType = SymbolType(TYPE_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
-        return (llvm::Value*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
+        llvmValue = llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TYPE_INT);
         int v = std::stoi(ctx->INTEGER()->toString());
-        return (llvm::Value*)
-            llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), v);
+        llvmValue = llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), v);
     }
 
     // Value is a string constant
@@ -1146,22 +1182,25 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         currentSymbolType = SymbolType(TYPE_STRING);
         std::string value = ctx->STRING()->toString();
         value = value.substr(1, value.size() - 2);
-        return (llvm::Value*) builder->CreateGlobalStringPtr(value, "", 0, module.get());
+        llvmValue = builder->CreateGlobalStringPtr(value, "", 0, module.get());
     }
 
     // Value is a boolean constant with value false
     if (ctx->FALSE()) {
         currentSymbolType = SymbolType(TYPE_BOOL);
-        return (llvm::Value*) llvm::ConstantInt::getFalse(*context);
+        llvmValue = llvm::ConstantInt::getFalse(*context);
     }
 
     // Value is a boolean constant with value true
     if (ctx->TRUE()) {
         currentSymbolType = SymbolType(TYPE_BOOL);
-        return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+        llvmValue = llvm::ConstantInt::getTrue(*context);
     }
 
-    return nullptr;
+    // Store the value to a tmp variable
+    llvm::Value* llvmValuePtr = builder->CreateAlloca(llvmValue->getType());
+    builder->CreateStore(llvmValue, llvmValuePtr);
+    return llvmValuePtr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
@@ -1382,7 +1421,7 @@ llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
     }
 }
 
-llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<antlr4::tree::TerminalNode*> idenList) {
+/*llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<antlr4::tree::TerminalNode*> idenList) {
     // If it is a one-dimensional identifier return the address immediately
     SymbolTableEntry* symbolTableEntry = subTable->lookup(idenList[0]->toString());
     if (idenList.size() <= 1) return symbolTableEntry->getAddress();
@@ -1412,9 +1451,9 @@ llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::
                                                  currentAddress);
     }
     return currentAddress;
-}
+}*/
 
-/*llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<antlr4::tree::TerminalNode*> idenList) {
+llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::vector<antlr4::tree::TerminalNode*> idenList) {
     std::vector<llvm::Value*> indices;
     llvm::Type* type;
     llvm::Value* ptr;
@@ -1423,4 +1462,4 @@ llvm::Value* GeneratorVisitor::getAddressByIdenList(SymbolTable* subTable, std::
     // Calculate address with GEP instruction
     llvm::Value* address = builder->CreateInBoundsGEP(type, ptr, indices);
     return address;
-}*/
+}

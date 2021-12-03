@@ -26,9 +26,7 @@ breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
 printfStmt: PRINTF LPAREN STRING (COMMA assignExpr)* RPAREN;
 
-assignExpr: ((declStmt | MUL? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET assignExpr RBRACKET)?)
-            (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))?
-            (ternaryExpr | newStmt);
+assignExpr: ((declStmt | idenValue) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL))? (ternaryExpr | newStmt);
 ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
@@ -42,7 +40,7 @@ prefixUnaryExpr: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnaryExpr;
 postfixUnaryExpr: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
 atomicExpr: value | idenValue | functionCall | LPAREN assignExpr RPAREN;
 
-idenValue: (BITWISE_AND | MUL)? IDENTIFIER (DOT IDENTIFIER)* (LBRACKET assignExpr RBRACKET)?;
+idenValue: (BITWISE_AND | MUL)? IDENTIFIER (LBRACKET assignExpr RBRACKET)? (DOT IDENTIFIER (LBRACKET assignExpr RBRACKET)?)*;
 value: STRING | TRUE | FALSE | INTEGER | DOUBLE;
 dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER) MUL? (LBRACKET RBRACKET)?;
 

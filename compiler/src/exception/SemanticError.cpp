@@ -93,6 +93,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Array size not of type int";
         case ARRAY_SIZE_INVALID:
             return "Array size invalid";
+        case ARRAY_INDEX_NO_INTEGER:
+            return "Array index not of type int";
     }
     return "Unknown error";
 }

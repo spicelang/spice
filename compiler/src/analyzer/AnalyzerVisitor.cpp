@@ -507,44 +507,32 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
     if (ctx->newStmt()) rhsTy = visit(ctx->newStmt()).as<SymbolType>();
 
     // Check if there is an assign operator applied
-    if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
+    if (ctx->declStmt() || ctx->idenValue()) {
         // Take a look on the left side
-        std::string variableName;
         SymbolType lhsTy;
         antlr4::Token* token;
         SymbolTableEntry* symbolTableEntry;
+        bool allowTypeInference = true;
+
         if (ctx->declStmt()) { // Variable was declared in this line
-            visit(ctx->declStmt());
-            variableName = ctx->declStmt()->IDENTIFIER()->toString();
+            lhsTy = visit(ctx->declStmt()).as<SymbolType>();
+            std::string variableName = ctx->declStmt()->IDENTIFIER()->toString();
             token = ctx->declStmt()->IDENTIFIER()->getSymbol();
             // Get symbol table entry
             symbolTableEntry = currentScope->lookup(variableName);
         } else { // Variable was declared before and is referenced here
-            variableName = ctx->IDENTIFIER()[0]->toString();
-            token = ctx->IDENTIFIER()[0]->getSymbol();
-            variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
+            lhsTy = visit(ctx->idenValue()).as<SymbolType>();
+            token = ctx->idenValue()->start;
             // Get symbol table entry
-            symbolTableEntry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
-        }
-
-        lhsTy = symbolTableEntry->getType();
-
-        // If it is a pointer to the value, resolve the type
-        if (ctx->MUL()) lhsTy = lhsTy.getScalarType();
-
-        // If it is an array, resolve the type
-        if (ctx->LBRACKET()) {
-            // Check if the index is an integer
-            SymbolType indexType = visit(ctx->assignExpr()).as<SymbolType>();
-            if (!indexType.is(TYPE_INT))
-                throw SemanticError(*ctx->assignExpr()->start, ARRAY_SIZE_NO_INTEGER,
-                                    "The index must be an integer, provided " + indexType.getName());
-            // Resolve type
-            lhsTy = lhsTy.getItemType();
+            if (ctx->idenValue()->IDENTIFIER().size() == 1) {
+                symbolTableEntry = currentScope->lookup(ctx->idenValue()->IDENTIFIER()[0]->toString());
+            } else {
+                allowTypeInference = false; // Types in structs are not inferable
+            }
         }
 
         // If left type is dyn, set left type to right type
-        if (lhsTy.is(TYPE_DYN)) {
+        if (lhsTy.is(TYPE_DYN) && allowTypeInference) {
             lhsTy = rhsTy;
             symbolTableEntry->updateType(rhsTy);
         }
@@ -952,25 +940,73 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx) {
-    std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
-    // Get symbol table entry
-    SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
-    SymbolType valueType = entry->getType();
-    // Consider referencing operator
-    if (ctx->BITWISE_AND()) valueType = valueType.getPointerType();
-    // Consider de-referencing operator
-    if (ctx->MUL()) valueType = valueType.getScalarType();
-    // Consider array brackets
-    if (ctx->LBRACKET()) {
-        // Check if value is integer
-        SymbolType indexType = visit(ctx->assignExpr()).as<SymbolType>();
-        if (!indexType.is(TYPE_INT))
-            throw SemanticError(*ctx->assignExpr()->start, ARRAY_SIZE_NO_INTEGER,
-                                "The index must be an integer, provided " + indexType.getName());
-        // Forward the item type
-        valueType = valueType.getItemType();
+    SymbolType symbolType;
+    SymbolTableEntry* entry;
+    int tokenCounter = 0;
+    int assignCounter = 0;
+    bool applyReference = false;
+    bool applyDereference = false;
+    SymbolTable* scope = currentScope;
+
+    if (ctx->BITWISE_AND()) { // Consider referencing operator
+        applyReference = true;
+        tokenCounter++;
     }
-    return valueType;
+
+    if (ctx->MUL()) { // Consider de-referencing operator
+        applyDereference = true;
+        tokenCounter++;
+    }
+
+    // Loop through children
+    while (tokenCounter < ctx->children.size()) {
+        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+        if (token == ctx->getToken(SpiceParser::IDENTIFIER, 0)) { // Consider identifier
+            std::string variableName = token->toString();
+            entry = scope->lookup(variableName);
+            symbolType = entry->getType();
+            // Apply de-referencing operator if necessary
+            if (applyDereference) symbolType = symbolType.getScalarType();
+            // Increase counter
+            tokenCounter++;
+        } else if (token == ctx->getToken(SpiceParser::DOT, 0)) { // Consider dot operator
+            // Check this operation is valid on this type
+            if (!symbolType.isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR }))
+                throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
+                                    "Cannot apply subscript operator on " + symbolType.getName());
+            // De-reference automatically if it is a struct pointer
+            if (symbolType.is(TYPE_STRUCT_PTR)) symbolType = symbolType.getScalarType();
+            // Change to new scope
+            std::string structName = entry->getType().getSubType();
+            scope = scope->lookupTable("struct:" + structName);
+            // Check if the table exists
+            if (!scope)
+                throw SemanticError(*token->getSymbol(), REFERENCED_UNDEFINED_STRUCT_FIELD,
+                                    "Referenced undefined struct '" + structName + "'");
+            // Increase counter
+            tokenCounter++;
+        } else if (token == ctx->getToken(SpiceParser::LBRACKET, 0)) { // Consider subscript operator
+            // Check this operation is valid on this type
+            if (!symbolType.isArray())
+                throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
+                                    "Cannot apply subscript operator on " + symbolType.getName());
+            // Check if the index is an integer
+            SymbolType indexType = visit(ctx->assignExpr()[assignCounter]).as<SymbolType>();
+            if (!indexType.is(TYPE_INT))
+                throw SemanticError(*ctx->assignExpr()[assignCounter]->start, ARRAY_INDEX_NO_INTEGER,
+                                    "Array index must be of type int, you provided " + indexType.getName());
+            // Promote the item type
+            symbolType = symbolType.getItemType();
+            // Increase counters
+            assignCounter++;
+            tokenCounter += 3; // To consume the assignExpr and the RBRACKET
+        }
+    }
+
+    // Apply referencing operator
+    if (applyReference) symbolType = symbolType.getPointerType();
+
+    return symbolType;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
