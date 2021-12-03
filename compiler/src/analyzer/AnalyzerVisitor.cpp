@@ -966,7 +966,10 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
             entry = scope->lookup(variableName);
             symbolType = entry->getType();
             // Apply de-referencing operator if necessary
-            if (applyDereference) symbolType = symbolType.getScalarType();
+            if (applyDereference) {
+                symbolType = symbolType.getScalarType();
+                applyDereference = false;
+            }
             // Increase counter
             tokenCounter++;
         } else if (token == ctx->getToken(SpiceParser::DOT, 0)) { // Consider dot operator

@@ -39,7 +39,7 @@ entry:
   %result = alloca i32, align 4
   store i32 0, i32* %result, align 4
   %input = alloca i32, align 4
-  store i32 1000, i32* %input, align 4
+  store i32 10, i32* %input, align 4
   %0 = load i32, i32* %input, align 4
   %1 = call i32 @"faculty(int)"(i32 %0)
   %faculty = alloca i32, align 4

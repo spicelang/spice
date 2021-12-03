@@ -1,21 +1,19 @@
-/*f<int> main() {
-    int value0 = 2;
-    int[5] intArray = { value0, 7, 4 };
-    intArray[2] = 11;
-    intArray[0] = 3;
-    printf("Array item 0: %d, array item 2: %d", intArray[0], intArray[2]);
-}*/
+type Nested struct {
+    string nested1
+    bool* nested2
+}
+
+type TestStruct struct {
+    int* field1
+    double field2
+    Nested* nested
+}
 
 f<int> main() {
-    string food = "Pizza";
-    string* ptr = &food;
-
-    printf("Pointer address: %p, value: %s", ptr, *ptr);
-
-    /*ptr = "Burger";
-
-    dyn restoredFood = *ptr;
-    printf("Restored value: %s", restoredFood);
-
-    printf("Restored value address: %p", &restoredFood);*/
+    int input = 12;
+    bool boolean = true;
+    Nested nestedInstance = new Nested { "Hello World!", &boolean };
+    /*dyn instance = new TestStruct { &input, 46.34, &nestedInstance };
+    TestStruct instance1 = instance;
+    printf("Field1: %d, field2: %f", *instance.nested.nested2, instance1.field2);*/
 }

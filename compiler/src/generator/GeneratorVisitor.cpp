@@ -648,7 +648,8 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     SymbolTable* structSymbolTable = currentScope->lookupTable({ structScope });
     for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
         // Visit assignment
-        llvm::Value* assignment = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+        llvm::Value* assignmentPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+        llvm::Value* assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
         // Get pointer to struct element
         llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
         // Store value to address
@@ -670,7 +671,8 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     // Fill items with the stated values
     if (ctx->paramLst()) {
         for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-            llvm::Value* itemValue = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+            llvm::Value* itemValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+            llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
             // Calculate item address
             llvm::Value* index = llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_INT)), i);
             std::vector<llvm::Value*> indices;
@@ -687,7 +689,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     currentScope->lookup(varName)->updateAddress(arrayAddress);
     currentScope->lookup(varName)->updateLLVMType(arrayType);
 
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return llvm::ConstantInt::getTrue(*context);
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -767,10 +769,10 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
     if (ctx->ternaryExpr()) rhsPtr = visit(ctx->ternaryExpr()).as<llvm::Value*>();
     if (ctx->newStmt()) rhsPtr = visit(ctx->newStmt()).as<llvm::Value*>();
 
-    // Load right side value
-    llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-
     if (ctx->declStmt() || ctx->idenValue()) {
+        // Load right side value
+        llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+
         // Get value of left side
         std::string varName;
         SymbolTableEntry* variableEntry;
@@ -1188,17 +1190,21 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     while (tokenCounter < ctx->children.size()) {
         auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
         if (token == ctx->getToken(SpiceParser::IDENTIFIER, 0)) { // Consider identifier
+            // Apply de-referencing operator
+            if (applyDereference) {
+                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+                applyDereference = false;
+            }
+            // Apply field
             std::string variableName = token->toString();
             entry = scope->lookup(variableName);
             if (scope == currentScope) { // This is the current scope
                 baseType = entry->getLLVMType();
                 basePtr = entry->getAddress();
-                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+                //indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
             } else { // This is a struct
                 indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), entry->getOrderIndex()));
             }
-            // Apply de-referencing operator
-            if (applyDereference) indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
             // Increase counter
             tokenCounter++;
         } else if (token == ctx->getToken(SpiceParser::DOT, 0)) { // Consider dot operator
@@ -1229,8 +1235,8 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
 
     // If the referencing operator is present, store the calculated address into memory and return the address of that location
     if (applyReference) {
-        llvm::Value* ptrLocation = builder->CreateAlloca(gepInst->getType());
-        builder->CreateStore(gepInst, ptrLocation);
+        llvm::Value* ptrLocation = builder->CreateAlloca(basePtr->getType());
+        builder->CreateStore(basePtr, ptrLocation);
         return ptrLocation;
     }
 
