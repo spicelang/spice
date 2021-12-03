@@ -14,6 +14,8 @@ f<int> main() {
     bool boolean = true;
     Nested nestedInstance = new Nested { "Hello World!", &boolean };
     dyn instance = new TestStruct { &input, 46.34, &nestedInstance };
-    //TestStruct instance1 = instance;
-    //printf("Field1: %d, field2: %f", instance.nested.nested2, instance1.field2);
+    TestStruct instance1 = instance;
+    instance1.field2 = 1.123;
+    printf("Field1: %d, field2:", *instance.nested.nested2);
+    //printf("Field1: %p", instance.field1);
 }

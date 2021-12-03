@@ -635,10 +635,18 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
-    llvm::Type* structType = visit(ctx->dataType()).as<llvm::Type*>();
     std::string variableName = ctx->IDENTIFIER()[0]->toString();
     std::string structName = ctx->IDENTIFIER()[1]->toString();
     std::string structScope = ScopeIdUtil::getScopeId(ctx);
+
+    // Get data type
+    llvm::Type* structType;
+    if (ctx->dataType()->TYPE_DYN()) {
+        SymbolType dataType = SymbolType(TYPE_STRUCT, structName);
+        structType = getTypeFromSymbolType(dataType);
+    } else {
+        structType = visit(ctx->dataType()).as<llvm::Type*>();
+    }
 
     // Allocate space for the struct in memory
     llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr, currentVar);
@@ -662,9 +670,20 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Get size and data type
+    std::string varName = ctx->IDENTIFIER()->toString();
     unsigned int currentArraySize = std::stoi(ctx->value()->INTEGER()->toString());
-    llvm::Type* baseType = visit(ctx->dataType()).as<llvm::Type*>();
-    llvm::Type* arrayType = llvm::ArrayType::get(baseType, currentArraySize);
+
+    // Get data type
+    llvm::Type* baseType;
+    llvm::Type* arrayType;
+    if (ctx->dataType()->TYPE_DYN()) {
+        SymbolType dataType = currentScope->lookup(varName)->getType();
+        arrayType = getTypeFromSymbolType(dataType);
+        baseType = arrayType->getArrayElementType();
+    } else {
+        baseType = visit(ctx->dataType()).as<llvm::Type*>();
+        arrayType = llvm::ArrayType::get(baseType, currentArraySize);
+    }
 
     // Allocate array
     llvm::Value* arrayAddress = builder->CreateAlloca(arrayType);
@@ -686,7 +705,6 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     }
 
     // Update address in symbol table
-    std::string varName = ctx->IDENTIFIER()->toString();
     currentScope->lookup(varName)->updateAddress(arrayAddress);
     currentScope->lookup(varName)->updateLLVMType(arrayType);
 
@@ -1062,7 +1080,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             llvm::Type* rhsType = rhs->getType();
 
-            if (op == ctx->getToken(SpiceParser::PLUS, 0))
+            if (op->getSymbol()->getType() == SpiceParser::PLUS)
                 lhs = createAddInst(lhs, lhsType, rhs, rhsType);
             else
                 lhs = createSubInst(lhs, lhsType, rhs, rhsType);
@@ -1090,7 +1108,7 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             llvm::Type* rhsType = rhs->getType();
 
-            if (op == ctx->getToken(SpiceParser::MUL, 0))
+            if (op->getSymbol()->getType() == SpiceParser::MUL)
                 lhs = createMulInst(lhs, lhsType, rhs, rhsType);
             else
                 lhs = createDivInst(lhs, lhsType, rhs, rhsType);
@@ -1188,25 +1206,18 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     // Loop through children
     while (tokenCounter < ctx->children.size()) {
         auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
-        if (token == ctx->getToken(SpiceParser::IDENTIFIER, 0)) { // Consider identifier
-            // Apply de-referencing operator
-            if (applyDereference) {
-                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
-                applyDereference = false;
-            }
+        if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
             // Apply field
             std::string variableName = token->toString();
             entry = scope->lookup(variableName);
             if (scope == currentScope) { // This is the current scope
                 baseType = entry->getLLVMType();
                 basePtr = entry->getAddress();
-                //indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
             } else { // This is a struct
                 indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), entry->getOrderIndex()));
             }
-            // Increase counter
-            tokenCounter++;
-        } else if (token == ctx->getToken(SpiceParser::DOT, 0)) { // Consider dot operator
+        } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
             if (entry->getType().is(TYPE_STRUCT_PTR))
                 indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
@@ -1217,20 +1228,32 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             if (!scope)
                 throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
                               "Compiler error: Referenced undefined struct '" + structName + "'");
-            // Increase counter
-            tokenCounter++;
-        } else if (token == ctx->getToken(SpiceParser::LBRACKET, 0)) { // Consider subscript operator
+        } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Get the index value
             llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
             indices.push_back(indexValue);
             // Increase counters
             assignCounter++;
-            tokenCounter += 3; // To consume the assignExpr and the RBRACKET
+            tokenCounter += 2; // To consume the assignExpr and the RBRACKET
         }
+        // Increase counter
+        tokenCounter++;
     }
 
+    /*if (applyDereference) {
+        indices.clear();
+        indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+        indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 2));
+        indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+        indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1));
+    }*/
+
     // Build GEP instruction
-    llvm::Value* gepInst = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+    llvm::Value* returnValue = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+
+    // If the de-referencing operator is present, add a zero index at the end of the gep instruction
+    if (applyDereference)
+        returnValue = builder->CreateLoad(returnValue->getType()->getPointerElementType(), returnValue);
 
     // If the referencing operator is present, store the calculated address into memory and return the address of that location
     if (applyReference) {
@@ -1240,7 +1263,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     }
 
     // Otherwise, return the calculated memory address
-    return gepInst;
+    return returnValue;
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {

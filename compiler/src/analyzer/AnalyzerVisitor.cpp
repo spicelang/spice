@@ -548,6 +548,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
         antlr4::Token* token;
         SymbolTableEntry* symbolTableEntry;
         bool allowTypeInference = true;
+        bool allowStateUpdate = true;
 
         if (ctx->declStmt()) { // Variable was declared in this line
             lhsTy = visit(ctx->declStmt()).as<SymbolType>();
@@ -563,6 +564,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
                 symbolTableEntry = currentScope->lookup(ctx->idenValue()->IDENTIFIER()[0]->toString());
             } else {
                 allowTypeInference = false; // Types in structs are not inferable
+                allowStateUpdate = false;
             }
         }
 
@@ -595,7 +597,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
                                     "Can only apply '/=' operator on two doubles or two ints");
         }
         // Update variable in symbol table
-        symbolTableEntry->updateState(INITIALIZED);
+        if (allowStateUpdate) symbolTableEntry->updateState(INITIALIZED);
     }
 
     // Return the rhs type
@@ -760,7 +762,7 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
             auto next = ctx->multiplicativeExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
 
-            if (op == ctx->getToken(SpiceParser::PLUS, 0)) { // Operator was plus
+            if (op->getSymbol()->getType() == SpiceParser::PLUS) { // Operator was plus
                 // Check all combinations
                 if (currentType.is(TYPE_DOUBLE)) {
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 + 6.1
@@ -851,7 +853,7 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
             auto next = ctx->prefixUnaryExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
 
-            if (op == ctx->getToken(SpiceParser::MUL, 0)) { // Operator was mul
+            if (op->getSymbol()->getType() == SpiceParser::MUL) { // Operator was mul
                 if (currentType.is(TYPE_DOUBLE)) {
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 * 6.1
                         currentType = SymbolType(TYPE_DOUBLE);
@@ -996,18 +998,11 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
     // Loop through children
     while (tokenCounter < ctx->children.size()) {
         auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
-        if (token == ctx->getToken(SpiceParser::IDENTIFIER, 0)) { // Consider identifier
+        if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
             std::string variableName = token->toString();
             entry = scope->lookup(variableName);
             symbolType = entry->getType();
-            // Apply de-referencing operator if necessary
-            if (applyDereference) {
-                symbolType = symbolType.getScalarType();
-                applyDereference = false;
-            }
-            // Increase counter
-            tokenCounter++;
-        } else if (token == ctx->getToken(SpiceParser::DOT, 0)) { // Consider dot operator
+        } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // Check this operation is valid on this type
             if (!symbolType.isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR }))
                 throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
@@ -1021,9 +1016,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
             if (!scope)
                 throw SemanticError(*token->getSymbol(), REFERENCED_UNDEFINED_STRUCT_FIELD,
                                     "Referenced undefined struct '" + structName + "'");
-            // Increase counter
-            tokenCounter++;
-        } else if (token == ctx->getToken(SpiceParser::LBRACKET, 0)) { // Consider subscript operator
+        } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Check this operation is valid on this type
             if (!symbolType.isArray())
                 throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
@@ -1037,12 +1030,17 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
             symbolType = symbolType.getItemType();
             // Increase counters
             assignCounter++;
-            tokenCounter += 3; // To consume the assignExpr and the RBRACKET
+            tokenCounter += 2; // To consume the assignExpr and the RBRACKET
         }
+        // Increase counter
+        tokenCounter++;
     }
 
-    // Apply referencing operator
+    // Apply referencing operator if necessary
     if (applyReference) symbolType = symbolType.getPointerType();
+
+    // Apply de-referencing operator if necessary
+    if (applyDereference) symbolType = symbolType.getScalarType();
 
     return symbolType;
 }
