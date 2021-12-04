@@ -1,11 +1,11 @@
-f<int> test(int param1, string param2) {
-    return 0;
+f<bool> equal(int a, int b) {
+    return a == b;
 }
 
 f<int> main() {
-    dyn condition = 1 != 2;
-    bool[12] myBoolArray = { condition ? true : false, false, true };
-
-    int i = 2;
-    bool itemValue = myBoolArray[i -= 2];
+    if equal(1, 2) {
+        printf("true");
+        return 0;
+    }
+    printf("false");
 }

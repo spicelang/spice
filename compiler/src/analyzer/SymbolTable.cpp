@@ -133,7 +133,7 @@ void SymbolTable::update(const std::string& name, SymbolType newType) {
  * @return Newly created child table
  */
 SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
-    children.insert({blockName, SymbolTable(this)});
+    children.insert({blockName, SymbolTable(this, inMainSourceFile)});
     return &children.at(blockName);
 }
 
@@ -300,14 +300,17 @@ void SymbolTable::printCompilerWarnings() {
     for (auto& [key, entry] : symbols) {
         if (!entry.isUsed()) {
             if (entry.getType().is(TYPE_FUNCTION)) {
-                CompilerWarning(entry.getDefinitionToken(), UNUSED_FUNCTION,
-                                      "The function '" + entry.getName() + "' is unused").print();
+                if (inMainSourceFile)
+                    CompilerWarning(entry.getDefinitionToken(), UNUSED_FUNCTION,
+                                    "The function '" + entry.getName() + "' is unused").print();
             } else if (entry.getType().is(TYPE_PROCEDURE)) {
-                CompilerWarning(entry.getDefinitionToken(), UNUSED_PROCEDURE,
-                                      "The procedure '" + entry.getName() + "' is unused").print();
+                if (inMainSourceFile)
+                    CompilerWarning(entry.getDefinitionToken(), UNUSED_PROCEDURE,
+                                          "The procedure '" + entry.getName() + "' is unused").print();
             } else if (entry.getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
-                CompilerWarning(entry.getDefinitionToken(), UNUSED_STRUCT,
-                                      "The struct '" + entry.getName() + "' is unused").print();
+                if (inMainSourceFile)
+                    CompilerWarning(entry.getDefinitionToken(), UNUSED_STRUCT,
+                                          "The struct '" + entry.getName() + "' is unused").print();
             } else if (entry.getType().isOneOf({ TYPE_IMPORT })) {
                 CompilerWarning(entry.getDefinitionToken(), UNUSED_IMPORT,
                                 "The import '" + entry.getName() + "' is unused").print();

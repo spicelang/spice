@@ -279,12 +279,13 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
 antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
     // Build function namespace
     std::vector<std::string> functionNamespace;
+    SymbolTable* scope = currentScope;
     for (auto& segment : ctx->IDENTIFIER()) {
         functionNamespace.push_back(segment->toString());
         // Set namespace fragment to used
-        SymbolTable* namespaceTable = currentScope->lookupTableWithSymbol(functionNamespace);
-        if (namespaceTable && namespaceTable->lookup(segment->toString()))
-            namespaceTable->lookup(segment->toString())->setUsed();
+        scope = scope->lookupTableWithSymbol(functionNamespace);
+        if (scope && scope->lookup(segment->toString()))
+            scope->lookup(segment->toString())->setUsed();
     }
     std::string functionName = functionNamespace.back();
     // Visit params
@@ -333,6 +334,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     if (!structSymbol || !structSymbol->getType().is(TYPE_STRUCT) || structSymbol->getType().getSubType() != structName)
         throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                             "Struct '" + structName + "' was used before defined");
+    structSymbol->setUsed();
 
     // Infer type
     if (dataType.is(TYPE_DYN)) dataType = structSymbol->getType();
@@ -1122,7 +1124,7 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
         SymbolTableEntry* structSymbol = currentScope->lookup(structName);
         if (!structSymbol)
             throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-
+        structSymbol->setUsed();
         type = SymbolType(TYPE_STRUCT, structName);
     }
 

@@ -18,7 +18,7 @@ CompilerWarning::CompilerWarning(const antlr4::Token& token, CompilerWarningType
  * Print the compiler warning to the standard error output
  */
 void CompilerWarning::print() {
-    std::cerr << warningMessage << std::endl;
+    std::cout << warningMessage << std::endl;
 }
 
 /**

@@ -21,7 +21,7 @@
 class SymbolTable {
 public:
     // Constructors
-    explicit SymbolTable(SymbolTable* parent) : parent(parent) {};
+    explicit SymbolTable(SymbolTable* parent, bool inMainSourceFile) : parent(parent), inMainSourceFile(inMainSourceFile) {};
 
     // Public methods
     void insert(const std::string&, SymbolType, SymbolState, const antlr4::Token&, bool, bool);
@@ -85,4 +85,5 @@ private:
     std::queue<FunctionSignature> functionSignatures;
     llvm::BasicBlock* continueBlock = nullptr;
     llvm::BasicBlock* breakBlock = nullptr;
+    bool inMainSourceFile;
 };
