@@ -333,6 +333,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     if (!structSymbol || !structSymbol->getType().is(TYPE_STRUCT) || structSymbol->getType().getSubType() != structName)
         throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                             "Struct '" + structName + "' was used before defined");
+    structSymbol->setUsed();
 
     // Infer type
     if (dataType.is(TYPE_DYN)) dataType = structSymbol->getType();
@@ -1122,7 +1123,7 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
         SymbolTableEntry* structSymbol = currentScope->lookup(structName);
         if (!structSymbol)
             throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-
+        structSymbol->setUsed();
         type = SymbolType(TYPE_STRUCT, structName);
     }
 

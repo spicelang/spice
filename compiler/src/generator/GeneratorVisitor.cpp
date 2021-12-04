@@ -499,6 +499,10 @@ antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext* ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
+    // Change scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+
     llvm::Value* condValuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
     llvm::Value* condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
@@ -510,10 +514,6 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
 
     // Check if condition is fulfilled
     createCondBr(condValue, bThen, ctx->elseStmt() ? bElse : bEnd);
-
-    // Change scope
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
 
     // Fill then block
     parentFct->getBasicBlockList().push_back(bThen);
