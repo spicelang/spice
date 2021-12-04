@@ -8,6 +8,4 @@ f<int> main() {
 
     int i = 2;
     bool itemValue = myBoolArray[i -= 2];
-    printf("Value: %u", itemValue);
-    test(1, "");
 }

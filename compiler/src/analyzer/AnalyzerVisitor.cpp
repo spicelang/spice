@@ -31,10 +31,11 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
     // Insert function name into the root symbol table
     currentScope->insert(mainSignature, SymbolType(TYPE_FUNCTION), INITIALIZED, *ctx->start, true, false);
     // Create a new scope
-    currentScope = currentScope->createChildBlock("main()");
+    currentScope = currentScope->createChildBlock(mainSignature);
     // Declare variable for the return value
     SymbolType returnType = SymbolType(TYPE_INT);
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, INITIALIZED, *ctx->start, false, false);
+    currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
     // Visit parameters
     parameterMode = true;
     if (ctx->paramLstDef()) visit(ctx->paramLstDef());
@@ -45,6 +46,7 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
     currentScope = currentScope->getParent();
     // Confirm main function
     hasMainFunction = true;
+    currentScope->lookup(mainSignature)->setUsed();
     return returnType;
 }
 
@@ -297,14 +299,14 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
                             "Function/Procedure '" + signature.toString() + "' could not be found");
     // Add function call to the signature queue of the current scope
     currentScope->pushSignature(signature);
+    // Set the function usage
+    entryTable->lookup(signature.toString())->setUsed();
     // Search for symbol table of called function/procedure to read parameters
     if (entry->getType().is(TYPE_FUNCTION)) {
         entryTable = entryTable->getChild(signature.toString());
         // Get return type of called function
         return entryTable->lookup(RETURN_VARIABLE_NAME)->getType();
     }
-    // Set the function usage
-    entryTable->lookup(signature.toString())->setUsed();
     return SymbolType(TYPE_BOOL);
 }
 
@@ -485,6 +487,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
     }
     // Set the return variable to initialized
     returnVariable->updateState(INITIALIZED);
+    returnVariable->setUsed();
     return returnType;
 }
 
@@ -1046,6 +1049,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                 throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
                                     "Variable '" + variableName + "' was referenced before declared");
             symbolType = entry->getType();
+            entry->setUsed();
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // Check this operation is valid on this type
             if (!symbolType.isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR }))
