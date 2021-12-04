@@ -1,12 +1,7 @@
-int test1 = 10;
-string test2 = "test string";
-double test3 = 5.83;
-bool test4 = false;
-
 f<int> main() {
-    test1 = 11;
-    test2 = "test";
-    test3 = 5.84;
-    test4 = true;
-    printf("Variable values: %d, %s, %f, %u", test1, test2, test3, test4);
+    int value0 = 2;
+    int[5] intArray = { value0, 7, 4 };
+    intArray[2] = 11;
+    intArray[0] = 3;
+    printf("Array item 0: %d, array item 2: %d", intArray[0], intArray[2]);
 }

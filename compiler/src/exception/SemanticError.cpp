@@ -57,6 +57,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Multiple declarations of a procedure with the same name";
         case STRUCT_DECLARED_TWICE:
             return "Multiple declarations of a struct with the same name";
+        case GLOBAL_OF_TYPE_DYN:
+            return "Global of type dyn";
         case FUNCTION_WITHOUT_RETURN_STMT:
             return "Missing return statement";
         case RETURN_STMT_WITHOUT_FUNCTION:

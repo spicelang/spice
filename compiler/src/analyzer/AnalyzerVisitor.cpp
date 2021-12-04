@@ -133,6 +133,42 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
     return SymbolType(TYPE_BOOL);
 }
 
+antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) {
+    std::string variableName = ctx->IDENTIFIER()->toString();
+
+    // Check if symbol already exists in the symbol table
+    if (currentScope->lookup(variableName))
+        throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
+                            "The variable '" + variableName + "' was declared more than once");
+
+    // Insert variable name to symbol table
+    SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
+
+    SymbolState state = DECLARED;
+    if (ctx->value()) { // Variable is initialized here
+        SymbolType valueType = visit(ctx->value()).as<SymbolType>();
+        // Infer type
+        if (dataType.is(TYPE_DYN)) {
+            dataType = valueType;
+        } else if (dataType != valueType) {
+            throw SemanticError(*ctx->value()->start, OPERATOR_WRONG_DATA_TYPE,
+                                "Cannot apply the assign operator on different data types. You provided " +
+                                dataType.getName() + " and " + valueType.getName());
+        }
+        state = INITIALIZED;
+    }
+
+    // Check if the type is missing
+    if (dataType.is(TYPE_DYN))
+        throw SemanticError(*ctx->dataType()->start, GLOBAL_OF_TYPE_DYN,
+                            "Global variables must have an explicit data type");
+
+    // Insert into symbol table
+    currentScope->insert(variableName, dataType, state, ctx->CONST(), parameterMode);
+
+    return SymbolType(TYPE_BOOL);
+}
+
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);

@@ -1,10 +1,11 @@
 grammar Spice;
 
-entry: (stmt | mainFunctionDef | functionDef | procedureDef | structDef)*;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | globalVarDef)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 structDef: TYPE IDENTIFIER STRUCT LBRACE fieldLst RBRACE;
+globalVarDef: CONST? dataType IDENTIFIER (ASSIGN_OP value)? SEMICOLON;
 forLoop: FOR assignExpr SEMICOLON assignExpr SEMICOLON assignExpr LBRACE stmtLst RBRACE;
 //foreachLoop: FOREACH IDENTIFIER COLON assignment LBRACE stmtLst RBRACE;
 whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;

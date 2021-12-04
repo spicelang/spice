@@ -377,6 +377,29 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
     return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
 }
 
+antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) {
+    std::string varName = ctx->IDENTIFIER()->toString();
+    llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
+
+    // Create global variable
+    llvm::Value* memAddress = module->getOrInsertGlobal(varName, varType);
+    currentScope->lookup(varName)->updateAddress(memAddress);
+    currentScope->lookup(varName)->updateLLVMType(varType);
+    // Set some attributes to it
+    llvm::GlobalVariable* global = module->getNamedGlobal(varName);
+    //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
+    global->setConstant(ctx->CONST());
+    global->setDSOLocal(true);
+
+    if (ctx->value()) { // Variable is initialized here
+        llvm::Value* value = visit(ctx->value()).as<llvm::Value*>();
+        global->setInitializer((llvm::Constant*) value);
+    }
+
+    // Return true as result for the global variable definition
+    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+}
+
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
@@ -539,23 +562,10 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
     currentVar = ctx->IDENTIFIER()->toString();
     llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
 
-    // Is this the global scope?
-    if (currentScope->getParent()) { // Local scope
-        // Create local variable
-        llvm::Value* memAddress = builder->CreateAlloca(varType, nullptr, currentVar);
-        currentScope->lookup(currentVar)->updateAddress(memAddress);
-        currentScope->lookup(currentVar)->updateLLVMType(varType);
-    } else { // Global scope
-        // Create global variable
-        llvm::Value* memAddress = module->getOrInsertGlobal(currentVar, varType);
-        currentScope->lookup(currentVar)->updateAddress(memAddress);
-        currentScope->lookup(currentVar)->updateLLVMType(varType);
-        // Set some attributes to it
-        llvm::GlobalVariable* global = module->getNamedGlobal(currentVar);
-        //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
-        global->setConstant(ctx->CONST());
-        global->setDSOLocal(true);
-    }
+    // Create local variable
+    llvm::Value* memAddress = builder->CreateAlloca(varType, nullptr, currentVar);
+    currentScope->lookup(currentVar)->updateAddress(memAddress);
+    currentScope->lookup(currentVar)->updateLLVMType(varType);
 
     // Return the variable name
     return currentVar;
@@ -1302,6 +1312,9 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         currentSymbolType = SymbolType(TYPE_BOOL);
         llvmValue = llvm::ConstantInt::getTrue(*context);
     }
+
+    // If global variable value -> return value immediately
+    if (!currentScope->getParent()) return llvmValue;
 
     // Store the value to a tmp variable
     llvm::Value* llvmValuePtr = builder->CreateAlloca(llvmValue->getType());
