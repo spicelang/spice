@@ -30,6 +30,15 @@ SymbolType SymbolTableEntry::getType() {
 }
 
 /**
+ * Retrieve the token where the symbol was defined
+ *
+ * @return Definition token
+ */
+const antlr4::Token& SymbolTableEntry::getDefinitionToken() {
+    return definitionToken;
+}
+
+/**
  * Retrieve the llvm type of the current symbol
  *
  * @return LLVM type of the current symbol
@@ -63,6 +72,15 @@ unsigned int SymbolTableEntry::getOrderIndex() const {
  */
 bool SymbolTableEntry::isLocal() const {
     return !isGlobal;
+}
+
+/**
+ * Returns if the symbol is used somewhere
+ *
+ * @return isUsed
+ */
+bool  SymbolTableEntry::isUsed() const {
+    return used;
 }
 
 /**
@@ -106,6 +124,13 @@ void SymbolTableEntry::updateLLVMType(llvm::Type* newType) {
  */
 void SymbolTableEntry::updateAddress(llvm::Value* address) {
     memAddress = address;
+}
+
+/**
+ * Sets the state of the symbol to used
+ */
+void SymbolTableEntry::setUsed() {
+    used = true;
 }
 
 /**

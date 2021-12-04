@@ -1,8 +1,11 @@
+f<int> test(int param1, string param2) {
+    return 0;
+}
+
 f<int> main() {
     dyn condition = 1 != 2;
     bool[12] myBoolArray = { condition ? true : false, false, true };
 
     int i = 2;
     bool itemValue = myBoolArray[i -= 2];
-    printf("Value: %u", itemValue);
 }
