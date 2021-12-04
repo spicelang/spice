@@ -277,8 +277,15 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
+    // Build function namespace
     std::vector<std::string> functionNamespace;
-    for (auto& segment : ctx->IDENTIFIER()) functionNamespace.push_back(segment->toString());
+    for (auto& segment : ctx->IDENTIFIER()) {
+        functionNamespace.push_back(segment->toString());
+        // Set namespace fragment to used
+        SymbolTable* namespaceTable = currentScope->lookupTableWithSymbol(functionNamespace);
+        if (namespaceTable && namespaceTable->lookup(segment->toString()))
+            namespaceTable->lookup(segment->toString())->setUsed();
+    }
     std::string functionName = functionNamespace.back();
     // Visit params
     std::vector<SymbolType> paramTypes;

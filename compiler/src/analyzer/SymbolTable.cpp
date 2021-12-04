@@ -297,31 +297,28 @@ void SymbolTable::setBreakBlock(llvm::BasicBlock* block) {
  */
 void SymbolTable::printCompilerWarnings() {
     // Visit own symbols
-    for (auto& it : symbols) {
-        SymbolTableEntry entry = it.second;
+    for (auto& [key, entry] : symbols) {
         if (!entry.isUsed()) {
             if (entry.getType().is(TYPE_FUNCTION)) {
-                CompilerWarning(it.second.getDefinitionToken(), UNUSED_FUNCTION,
+                CompilerWarning(entry.getDefinitionToken(), UNUSED_FUNCTION,
                                       "The function '" + entry.getName() + "' is unused").print();
             } else if (entry.getType().is(TYPE_PROCEDURE)) {
-                CompilerWarning(it.second.getDefinitionToken(), UNUSED_PROCEDURE,
+                CompilerWarning(entry.getDefinitionToken(), UNUSED_PROCEDURE,
                                       "The procedure '" + entry.getName() + "' is unused").print();
             } else if (entry.getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
-                CompilerWarning(it.second.getDefinitionToken(), UNUSED_STRUCT,
+                CompilerWarning(entry.getDefinitionToken(), UNUSED_STRUCT,
                                       "The struct '" + entry.getName() + "' is unused").print();
             } else if (entry.getType().isOneOf({ TYPE_IMPORT })) {
-                CompilerWarning(it.second.getDefinitionToken(), UNUSED_IMPORT,
+                CompilerWarning(entry.getDefinitionToken(), UNUSED_IMPORT,
                                 "The import '" + entry.getName() + "' is unused").print();
             } else {
-                CompilerWarning(it.second.getDefinitionToken(), UNUSED_VARIABLE,
+                CompilerWarning(entry.getDefinitionToken(), UNUSED_VARIABLE,
                                       "The variable '" + entry.getName() + "' is unused").print();
             }
         }
     }
     // Visit children
-    for (auto& it : children) {
-        it.second.printCompilerWarnings();
-    }
+    for (auto& [key, child] : children) child.printCompilerWarnings();
 }
 
 /**
