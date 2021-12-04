@@ -5,8 +5,9 @@ source_filename = "source.spice"
 
 @0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 1
 @1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 1
-@2 = private unnamed_addr constant [24 x i8] c"Age before birthday: %d\00", align 1
-@3 = private unnamed_addr constant [23 x i8] c"Age after birthday: %d\00", align 1
+@2 = private unnamed_addr constant [15 x i8] c"Person: %s, %s\00", align 1
+@3 = private unnamed_addr constant [24 x i8] c"Age before birthday: %d\00", align 1
+@4 = private unnamed_addr constant [23 x i8] c"Age after birthday: %d\00", align 1
 
 declare i32 @printf(i8*, ...)
 
@@ -49,17 +50,22 @@ entry:
   %7 = load i32, i32* %6, align 4
   %8 = getelementptr inbounds %Person, %Person* %person, i32 0, i32 2
   store i32 %7, i32* %8, align 4
-  %9 = getelementptr inbounds %Person, %Person* %person, i32 0, i32 2
-  %10 = load i32, i32* %9, align 4
-  %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @2, i32 0, i32 0), i32 %10)
-  %12 = getelementptr inbounds %Person, %Person* %person, i32 0
-  %13 = alloca %Person*, align 8
-  store %Person* %person, %Person** %13, align 8
-  %14 = load %Person*, %Person** %13, align 8
-  call void @"birthday()"(%Person* %14)
-  %15 = getelementptr inbounds %Person, %Person* %person, i32 0, i32 2
-  %16 = load i32, i32* %15, align 4
-  %17 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @3, i32 0, i32 0), i32 %16)
-  %18 = load i32, i32* %result, align 4
-  ret i32 %18
+  %9 = getelementptr inbounds %Person, %Person* %person, i32 0, i32 1
+  %10 = load i8*, i8** %9, align 8
+  %11 = getelementptr inbounds %Person, %Person* %person, i32 0, i32 0
+  %12 = load i8*, i8** %11, align 8
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @2, i32 0, i32 0), i8* %10, i8* %12)
+  %14 = getelementptr inbounds %Person, %Person* %person, i32 0, i32 2
+  %15 = load i32, i32* %14, align 4
+  %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @3, i32 0, i32 0), i32 %15)
+  %17 = getelementptr inbounds %Person, %Person* %person, i32 0
+  %18 = alloca %Person*, align 8
+  store %Person* %person, %Person** %18, align 8
+  %19 = load %Person*, %Person** %18, align 8
+  call void @"birthday()"(%Person* %19)
+  %20 = getelementptr inbounds %Person, %Person* %person, i32 0, i32 2
+  %21 = load i32, i32* %20, align 4
+  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @4, i32 0, i32 0), i32 %21)
+  %23 = load i32, i32* %result, align 4
+  ret i32 %23
 }

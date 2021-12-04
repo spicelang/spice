@@ -125,7 +125,7 @@ private:
     bool debugOutput;
     int optLevel;
     bool mustHaveMainFunction = true;
-    SymbolTable* currentScope = new SymbolTable(nullptr);
+    SymbolTable* currentScope = new SymbolTable(nullptr, mustHaveMainFunction);
     bool parameterMode = false;
     bool hasMainFunction = false;
     int nestedLoopCounter = 0;

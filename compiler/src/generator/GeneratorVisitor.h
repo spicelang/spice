@@ -137,7 +137,7 @@ private:
     std::unique_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<llvm::Module> module;
     std::vector<llvm::Function*> functions;
-    SymbolTable* currentScope = new SymbolTable(nullptr);
+    SymbolTable* currentScope;
     std::string currentVar;
     SymbolType currentSymbolType;
     bool blockAlreadyTerminated = false;
