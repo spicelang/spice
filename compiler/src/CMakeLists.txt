@@ -22,6 +22,8 @@ set(SOURCES
         generator/GeneratorVisitor.h
         exception/SemanticError.cpp
         exception/SemanticError.h
+        exception/IRError.cpp
+        exception/IRError.h
         util/ScopeIdUtil.cpp
         util/ScopeIdUtil.h
         util/FunctionSignature.cpp
@@ -30,8 +32,8 @@ set(SOURCES
         util/FileUtil.h
         util/IdentifierUtil.cpp
         util/IdentifierUtil.h
-        exception/IRError.cpp
-        exception/IRError.h)
+        util/CompilerWarning.cpp
+        util/CompilerWarning.h)
 
 add_executable(${BINARY}_run ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
