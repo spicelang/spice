@@ -1,6 +1,6 @@
 SymbolTable(
-(Name: fibo(int), Type: 9, OrderIndex: 0, State: 1, Const: 1, IsGlobal: 1)
-(Name: main(), Type: 9, OrderIndex: 1, State: 1, Const: 1, IsGlobal: 1)
+(Name: fibo(int), Type: 21, OrderIndex: 0, State: 1, Const: 1, IsGlobal: 1)
+(Name: main(), Type: 21, OrderIndex: 1, State: 1, Const: 1, IsGlobal: 1)
 ) {
 fibo(int): SymbolTable(
 (Name: n, Type: 1, OrderIndex: 0, State: 0, Const: 0, IsGlobal: 0)

@@ -6,7 +6,7 @@ f<int> faculty(int input) {
 }
 
 f<int> main() {
-    dyn input = 1000;
+    dyn input = 10;
     int faculty = faculty(input);
     printf("Faculty of %d is: %d", input, faculty);
 }

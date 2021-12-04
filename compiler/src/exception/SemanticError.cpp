@@ -57,6 +57,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Multiple declarations of a procedure with the same name";
         case STRUCT_DECLARED_TWICE:
             return "Multiple declarations of a struct with the same name";
+        case GLOBAL_OF_TYPE_DYN:
+            return "Global of type dyn";
         case FUNCTION_WITHOUT_RETURN_STMT:
             return "Missing return statement";
         case RETURN_STMT_WITHOUT_FUNCTION:
@@ -89,6 +91,14 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Number of struct fields not matching declaration";
         case FIELD_TYPE_NOT_MATCHING:
             return "The type of a field value does not match the declaration";
+        case ARRAY_SIZE_NO_INTEGER:
+            return "Array size not of type int";
+        case ARRAY_SIZE_INVALID:
+            return "Array size invalid";
+        case ARRAY_INDEX_NO_INTEGER:
+            return "Array index not of type int";
+        case ARRAY_ITEM_TYPE_NOT_MATCHING:
+            return "Array item type not matching";
     }
     return "Unknown error";
 }

@@ -1,0 +1,15 @@
+f<bool> or1() {
+    printf("Or1 called");
+    return true;
+}
+
+f<bool> or2() {
+    printf("Or2 called");
+    return true;
+}
+
+f<int> main() {
+    if or1() || or2() {
+        printf("Condition was true");
+    }
+}

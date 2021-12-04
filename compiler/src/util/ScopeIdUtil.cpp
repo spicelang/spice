@@ -48,7 +48,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::StructDefContext* ctx) {
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::NewStmtContext* ctx) {
-    return "struct:" + ctx->IDENTIFIER()->toString();
+    return "struct:" + ctx->IDENTIFIER()[1]->toString();
 }
 
 /**

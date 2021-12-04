@@ -57,7 +57,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
         paramTypes = visit(ctx->paramLstDef()).as<std::vector<SymbolType>>();
     parameterMode = false;
     // Declare variable for the return value in new scope
-    SymbolType returnType = getSymbolTypeFromDataType(ctx->dataType());
+    SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);
     // Return to old scope
     currentScope = currentScope->getParent();
@@ -133,19 +133,55 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
     return SymbolType(TYPE_BOOL);
 }
 
+antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) {
+    std::string variableName = ctx->IDENTIFIER()->toString();
+
+    // Check if symbol already exists in the symbol table
+    if (currentScope->lookup(variableName))
+        throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
+                            "The variable '" + variableName + "' was declared more than once");
+
+    // Insert variable name to symbol table
+    SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
+
+    SymbolState state = DECLARED;
+    if (ctx->value()) { // Variable is initialized here
+        SymbolType valueType = visit(ctx->value()).as<SymbolType>();
+        // Infer type
+        if (dataType.is(TYPE_DYN)) {
+            dataType = valueType;
+        } else if (dataType != valueType) {
+            throw SemanticError(*ctx->value()->start, OPERATOR_WRONG_DATA_TYPE,
+                                "Cannot apply the assign operator on different data types. You provided " +
+                                dataType.getName() + " and " + valueType.getName());
+        }
+        state = INITIALIZED;
+    }
+
+    // Check if the type is missing
+    if (dataType.is(TYPE_DYN))
+        throw SemanticError(*ctx->dataType()->start, GLOBAL_OF_TYPE_DYN,
+                            "Global variables must have an explicit data type");
+
+    // Insert into symbol table
+    currentScope->insert(variableName, dataType, state, ctx->CONST(), parameterMode);
+
+    return SymbolType(TYPE_BOOL);
+}
+
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit assignment in new scope
-    visit(ctx->assignment()[0]);
+    visit(ctx->assignExpr()[0]);
     // Visit condition in new scope
-    SymbolType conditionType = visit(ctx->assignment()[1]).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignExpr()[1]).as<SymbolType>();
     if (!conditionType.is(TYPE_BOOL))
-        throw SemanticError(*ctx->assignment()[1]->start, CONDITION_MUST_BE_BOOL,
+        throw SemanticError(*ctx->assignExpr()[1]->start, CONDITION_MUST_BE_BOOL,
                             "For loop condition must be of type bool");
     // Visit incrementer in new scope
-    visit(ctx->assignment()[2]);
+    visit(ctx->assignExpr()[2]);
     // Visit statement list in new scope
     nestedLoopCounter++;
     visit(ctx->stmtLst());
@@ -160,9 +196,9 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
-    SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
     if (!conditionType.is(TYPE_BOOL))
-        throw SemanticError(*ctx->assignment()->start, CONDITION_MUST_BE_BOOL,
+        throw SemanticError(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL,
                             "While loop condition must be of type bool");
     // Visit statement list in new scope
     nestedLoopCounter++;
@@ -178,9 +214,9 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
-    SymbolType conditionType = visit(ctx->assignment()).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
     if (!conditionType.is(TYPE_BOOL))
-        throw SemanticError(*ctx->assignment()->start, CONDITION_MUST_BE_BOOL,
+        throw SemanticError(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL,
                             "If condition must be of type bool");
     // Visit statement list in new scope
     visit(ctx->stmtLst());
@@ -216,7 +252,7 @@ antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext*
                                 "Type of parameter '" + paramName + "' is invalid");
         paramTypes.push_back(paramType);
     }
-    for (auto& param : ctx->assignment()) { // Parameters with default value
+    for (auto& param : ctx->assignExpr()) { // Parameters with default value
         SymbolType paramType = visit(param).as<SymbolType>();
         paramTypes.push_back(paramType);
     }
@@ -230,7 +266,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
         throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
                             "The variable '" + variableName + "' was declared more than once");
     // Insert variable name to symbol table
-    SymbolType type = getSymbolTypeFromDataType(ctx->dataType());
+    SymbolType type = visit(ctx->dataType()).as<SymbolType>();
     currentScope->insert(variableName, type, DECLARED, ctx->CONST(), parameterMode);
     return type;
 }
@@ -241,8 +277,8 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     std::string functionName = functionNamespace.back();
     // Visit params
     std::vector<SymbolType> paramTypes;
-    if (ctx->paramLstCall()) {
-        for (auto& param : ctx->paramLstCall()->assignment())
+    if (ctx->paramLst()) {
+        for (auto& param : ctx->paramLst()->assignExpr())
             paramTypes.push_back(visit(param).as<SymbolType>());
     }
     // Check if function signature exists in symbol table
@@ -268,26 +304,36 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
-    std::string structName = ctx->IDENTIFIER()->toString();
+    SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
+    std::string variableName = ctx->IDENTIFIER()[0]->toString();
+    std::string structName = ctx->IDENTIFIER()[1]->toString();
     std::string structScope = ScopeIdUtil::getScopeId(ctx);
+
+    // Check if symbol already exists in the symbol table
+    if (currentScope->lookup(variableName))
+        throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
+                            "The variable '" + variableName + "' was declared more than once");
+
     // Check if the struct is defined
     SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-    if (!structSymbol || !structSymbol->getType().is(TYPE_STRUCT) ||
-        structSymbol->getType().getSubType() != structName) {
-        throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+    if (!structSymbol || !structSymbol->getType().is(TYPE_STRUCT) || structSymbol->getType().getSubType() != structName)
+        throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                             "Struct '" + structName + "' was used before defined");
-    }
+
+    // Infer type
+    if (dataType.is(TYPE_DYN)) dataType = structSymbol->getType();
 
     // Get the symbol table where the struct is defined
     SymbolTable* structTable = currentScope->lookupTable(structScope);
     // Check if the number of fields matches
-    if (structTable->getSymbolsCount() != ctx->fieldLstAssignment()->ternary().size())
-        throw SemanticError(*ctx->start, NUMBER_OF_FIELDS_NOT_MATCHING, "You've passed too less/many field values");
+    if (structTable->getSymbolsCount() != ctx->paramLst()->assignExpr().size())
+        throw SemanticError(*ctx->paramLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
+                            "You've passed too less/many field values");
 
     // Check if the field types are matching
-    for (int i = 0; i < ctx->fieldLstAssignment()->ternary().size(); i++) {
+    for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
         // Get actual type
-        auto ternary = ctx->fieldLstAssignment()->ternary()[i];
+        auto ternary = ctx->paramLst()->assignExpr()[i];
         SymbolType actualType = visit(ternary).as<SymbolType>();
         // Get expected type
         SymbolTableEntry* expectedField = structTable->lookupByIndexInCurrentScope(i);
@@ -295,10 +341,60 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
         // Check if type matches declaration
         if (actualType != expectedType)
             throw SemanticError(*ternary->start, FIELD_TYPE_NOT_MATCHING,
-                                "The type of the field '" + expectedField->getName() + "' does not match the declaration");
+                                "Expected type " + expectedType.getName() + " for the field '" +
+                                expectedField->getName() + "', but got " + actualType.getName());
     }
 
+    // Insert into symbol table
+    currentScope->insert(variableName, dataType, INITIALIZED, ctx->CONST(), false);
+
     return SymbolType(TYPE_STRUCT, structName);
+}
+
+antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
+    // Visit data type
+    std::string variableName = ctx->IDENTIFIER()->toString();
+    SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
+    SymbolType indexType = visit(ctx->value()).as<SymbolType>();
+
+    // Check if all values have the same type
+    SymbolType expectedItemType = SymbolType(TYPE_DYN);
+    if (ctx->paramLst()) {
+        for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+            SymbolType itemType = visit(ctx->paramLst()->assignExpr()[i]).as<SymbolType>();
+            if (expectedItemType.is(TYPE_DYN)) {
+                expectedItemType = itemType;
+            } else if (itemType != expectedItemType) {
+                throw SemanticError(*ctx->paramLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
+                                    "All provided values have to be of the same data type. You provided " +
+                                    expectedItemType.getName() + " and " + itemType.getName());
+            }
+        }
+    }
+
+    // Infer type
+    if (dataType.is(TYPE_DYN)) {
+        if (expectedItemType.is(TYPE_DYN))
+            throw SemanticError(*ctx->dataType()->start, UNKNOWN_DATATYPE,
+                                "Was not able to infer the data type of this array");
+
+        dataType = expectedItemType.getArrayType();
+    }
+
+    // Check if index type is an integer
+    if (!indexType.is(TYPE_INT))
+        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
+                            "The size must be an integer, provided " + indexType.getName());
+
+    // Check if index is >1
+    int size = std::stoi(ctx->value()->INTEGER()->toString());
+    if (size <= 1)
+        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
+
+    // Create new symbol in the current scope
+    currentScope->insert(variableName, dataType.getArrayType(), INITIALIZED, ctx->CONST(), parameterMode);
+
+    return dataType.getArrayType();
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -316,9 +412,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
             stdPath = "/usr/lib/spice/std/";
         } else if (FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
             stdPath = std::string(std::getenv("SPICE_STD_DIR"));
-            if (stdPath.rfind('/') != stdPath.size() - 1) {
-                stdPath += "/";
-            }
+            if (stdPath.rfind('/') != stdPath.size() - 1) stdPath += "/";
         } else {
             throw SemanticError(STD_NOT_FOUND,
                                 "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
@@ -367,7 +461,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
-    SymbolType returnType = visit(ctx->assignment()).as<SymbolType>();
+    SymbolType returnType = visit(ctx->assignExpr()).as<SymbolType>();
     // Check if return variable is in the symbol table
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (!returnVariable)
@@ -380,8 +474,9 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
     } else {
         // Check if return type matches with function definition
         if (returnType != returnVariable->getType())
-            throw SemanticError(*ctx->assignment()->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Passed wrong data type to return statement");
+            throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
+                                "Passed wrong data type to return statement. Expected " + returnType.getName() +
+                                " but got " + returnVariable->getType().getName());
     }
     // Set the return variable to initialized
     returnVariable->updateState(INITIALIZED);
@@ -395,7 +490,7 @@ antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx
         breakCount = std::stoi(ctx->INTEGER()->toString());
         if (breakCount < 1)
             throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_BREAK_NUMBER,
-                                "Break count must be >= 1: " + ctx->INTEGER()->toString());
+                                "Break count must be >= 1, you provided " + ctx->INTEGER()->toString());
     }
     // Check if we can break this often
     if (breakCount > nestedLoopCounter)
@@ -411,7 +506,7 @@ antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContex
         continueCount = std::stoi(ctx->INTEGER()->toString());
         if (continueCount < 1)
             throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_CONTINUE_NUMBER,
-                                "Continue count must be >= 1: " + ctx->INTEGER()->toString());
+                                "Continue count must be >= 1, you provided " + ctx->INTEGER()->toString());
     }
     // Check if we can continue this often
     if (continueCount > nestedLoopCounter)
@@ -428,7 +523,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
     std::size_t index = templateString.find_first_of('%');
     int placeholderCount = 0;
     while (index != std::string::npos) {
-        auto assignment = ctx->assignment()[placeholderCount];
+        auto assignment = ctx->assignExpr()[placeholderCount];
         SymbolType assignmentType = visit(assignment).as<SymbolType>();
         switch (templateString[index + 1]) {
             case 'c':
@@ -439,7 +534,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
             case 'X': {
                 if (!assignmentType.isOneOf({ TYPE_INT, TYPE_BOOL }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects an int or a bool here");
+                                        "Template string expects int or bool, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
@@ -453,21 +548,21 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
             case 'G': {
                 if (!assignmentType.is(TYPE_DOUBLE))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects a double here");
+                                        "Template string expects double, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
             case 's': {
                 if (!assignmentType.is(TYPE_STRING))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects a string here");
+                                        "Template string expects string, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
             case 'p': {
                 if (!assignmentType.isOneOf({ TYPE_DOUBLE_PTR, TYPE_INT_PTR, TYPE_STRING_PTR, TYPE_BOOL_PTR, TYPE_STRUCT_PTR }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects a pointer here");
+                                        "Template string expects pointer, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
@@ -478,47 +573,39 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
     return SpiceBaseVisitor::visitPrintfStmt(ctx);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* ctx) {
+antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
     // Take a look on the right side
-    SymbolType rhsTy;
-    if (ctx->ternary()) { // Ternary
-        rhsTy = visit(ctx->ternary()).as<SymbolType>();
-    } else { // NewStmt
-        rhsTy = visit(ctx->newStmt()).as<SymbolType>();
-    }
+    SymbolType rhsTy = visit(ctx->ternaryExpr()).as<SymbolType>();
 
     // Check if there is an assign operator applied
-    if (ctx->declStmt() || !ctx->IDENTIFIER().empty()) {
+    if (ctx->declStmt() || ctx->idenValue()) {
         // Take a look on the left side
-        std::string variableName;
         SymbolType lhsTy;
         antlr4::Token* token;
         SymbolTableEntry* symbolTableEntry;
+        bool allowTypeInference = true;
+        bool allowStateUpdate = true;
+
         if (ctx->declStmt()) { // Variable was declared in this line
-            visit(ctx->declStmt());
-            variableName = ctx->declStmt()->IDENTIFIER()->toString();
+            lhsTy = visit(ctx->declStmt()).as<SymbolType>();
+            std::string variableName = ctx->declStmt()->IDENTIFIER()->toString();
             token = ctx->declStmt()->IDENTIFIER()->getSymbol();
             // Get symbol table entry
             symbolTableEntry = currentScope->lookup(variableName);
-
-            if (symbolTableEntry == nullptr)
-                throw SemanticError(*token, REFERENCED_UNDEFINED_VARIABLE,
-                                    "Variable " + variableName + " was referenced before declared.");
         } else { // Variable was declared before and is referenced here
-            variableName = ctx->IDENTIFIER()[0]->toString();
-            token = ctx->IDENTIFIER()[0]->getSymbol();
-            variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
+            lhsTy = visit(ctx->idenValue()).as<SymbolType>();
+            token = ctx->idenValue()->start;
             // Get symbol table entry
-            symbolTableEntry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
+            if (ctx->idenValue()->IDENTIFIER().size() == 1) {
+                symbolTableEntry = currentScope->lookup(ctx->idenValue()->IDENTIFIER()[0]->toString());
+            } else {
+                allowTypeInference = false; // Types in structs are not inferable
+                allowStateUpdate = false;
+            }
         }
 
-        lhsTy = symbolTableEntry->getType();
-
-        // If it is a pointer to the value, resolve the type
-        if (ctx->MUL()) lhsTy = lhsTy.getScalarType();
-
         // If left type is dyn, set left type to right type
-        if (lhsTy.is(TYPE_DYN)) {
+        if (lhsTy.is(TYPE_DYN) && allowTypeInference) {
             lhsTy = rhsTy;
             symbolTableEntry->updateType(rhsTy);
         }
@@ -527,33 +614,33 @@ antlrcpp::Any AnalyzerVisitor::visitAssignment(SpiceParser::AssignmentContext* c
         if (ctx->ASSIGN_OP()) {
             if (lhsTy != rhsTy)
                 throw SemanticError(*ctx->ASSIGN_OP()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply the assign operator to different data types");
+                                    "Can only apply the assign operator on same data types");
         } else if (ctx->PLUS_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_STRING))
                 throw SemanticError(*ctx->PLUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply += operator on this combination of types");
+                                    "Can only apply '+=' operator on two doubles, two ints or two strings");
         } else if (ctx->MINUS_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
                 throw SemanticError(*ctx->MINUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply -= operator on this combination of types");
+                                    "Can only apply '-=' operator on two doubles or two ints");
         } else if (ctx->MUL_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
                 throw SemanticError(*ctx->MUL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply *= operator on this combination of types");
+                                    "Can only apply '*=' operator on two doubles or two ints");
         } else if (ctx->DIV_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
                 throw SemanticError(*ctx->DIV_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply /= operator on this combination of types");
+                                    "Can only apply '/=' operator on two doubles or two ints");
         }
         // Update variable in symbol table
-        symbolTableEntry->updateState(INITIALIZED);
+        if (allowStateUpdate) symbolTableEntry->updateState(INITIALIZED);
     }
 
     // Return the rhs type
     return rhsTy;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
+antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {
     // Check if there is a ternary operator applied
     if (ctx->children.size() > 1) {
         auto condition = ctx->logicalOrExpr()[0];
@@ -567,7 +654,7 @@ antlrcpp::Any AnalyzerVisitor::visitTernary(SpiceParser::TernaryContext* ctx) {
         // Check if trueType and falseType are matching
         if (trueType != falseType)
             throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                "True operand and false operand in ternary must be from same data type");
+                                "True and false operands in ternary must be of same data type");
         return trueType;
     }
     return visit(ctx->logicalOrExpr()[0]);
@@ -585,7 +672,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
                 continue;
             }
             // Every other combination is invalid
-            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,"Can only apply logical or to booleans");
+            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,"Can only apply '||' operator to booleans");
         }
         return lhsTy;
     }
@@ -604,7 +691,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
                 continue;
             }
             // Every other combination is invalid
-            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE, "Can only apply logical and to booleans");
+            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE, "Can only apply '&&' operator to booleans");
         }
         return lhsTy;
     }
@@ -629,7 +716,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
             }
             // Every other combination is invalid
             throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Can only apply bitwise or to booleans and integers");
+                                "Can only apply '|' operator to booleans and integers");
         }
         return lhsTy;
     }
@@ -654,7 +741,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
             }
             // Every other combination is invalid
             throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Can only apply bitwise and to booleans and integers");
+                                "Can only apply '&' operator to booleans and integers");
         }
         return lhsTy;
     }
@@ -674,7 +761,8 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
         if (lhsTy.matches(rhsTy, TYPE_BOOL)) return SymbolType(TYPE_BOOL); // Can compare bool with bool
         // Every other combination is invalid
         throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                            "Can only compare some type combinations with an equality operator");
+                            "Can't compare " + lhsTy.getName() + " and " + rhsTy.getName() +
+                            " with '==' or '!=' operators");
     }
     return visit(ctx->relationalExpr()[0]);
 }
@@ -710,7 +798,7 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
             auto next = ctx->multiplicativeExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
 
-            if (op == ctx->getToken(SpiceParser::PLUS, 0)) { // Operator was plus
+            if (op->getSymbol()->getType() == SpiceParser::PLUS) { // Operator was plus
                 // Check all combinations
                 if (currentType.is(TYPE_DOUBLE)) {
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 + 6.1
@@ -746,19 +834,8 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                                             "Incompatible operands string and bool for '+' operator");
                     }
                 } else if (currentType.is(TYPE_BOOL)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true + 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and double for '+' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: true + 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and int for '+' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true + "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '+' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true + false
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and bool for '+' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and " + nextType.getName() + " for '+' operator");
                 }
             } else { // Operator was minus
                 // Check all combinations
@@ -787,33 +864,11 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                                             "Incompatible operands int and bool for '-' operator");
                     }
                 } else if (currentType.is(TYPE_STRING)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" - 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and double for '-' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" - 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and int for '-' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" - "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '-' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" - true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and bool for '-' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and " + nextType.getName() + " for '-' operator");
                 } else if (currentType.is(TYPE_BOOL)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true - 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and double for '-' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: true - 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and int for '-' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true - "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '-' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true - false
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and bool for '-' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and " + nextType.getName() + " for '-' operator");
                 }
             }
             operatorIndex += 2;
@@ -825,16 +880,16 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
 
 antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) {
     // Check if at least one multiplicative operator is applied
-    if (ctx->prefixUnary().size() > 1) {
-        SymbolType currentType = visit(ctx->prefixUnary()[0]).as<SymbolType>();
+    if (ctx->prefixUnaryExpr().size() > 1) {
+        SymbolType currentType = visit(ctx->prefixUnaryExpr()[0]).as<SymbolType>();
         // Check if data types are compatible
         unsigned int operatorIndex = 1;
-        for (int i = 1; i < ctx->prefixUnary().size(); i++) {
+        for (int i = 1; i < ctx->prefixUnaryExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
-            auto next = ctx->prefixUnary()[i];
+            auto next = ctx->prefixUnaryExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
 
-            if (op == ctx->getToken(SpiceParser::MUL, 0)) { // Operator was mul
+            if (op->getSymbol()->getType() == SpiceParser::MUL) { // Operator was mul
                 if (currentType.is(TYPE_DOUBLE)) {
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 * 6.1
                         currentType = SymbolType(TYPE_DOUBLE);
@@ -872,19 +927,8 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                                             "Incompatible operands string and bool for '*' operator");
                     }
                 } else if (currentType.is(TYPE_BOOL)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true * 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and double for '*' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: true * 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and int for '*' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true * "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '*' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true * false
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and bool for '*' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and " + nextType.getName() + " for '*' operator");
                 }
             } else { // Operator was a div
                 if (currentType.is(TYPE_DOUBLE)) {
@@ -912,49 +956,27 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                                             "Incompatible operands int and bool for '/' operator");
                     }
                 } else if (currentType.is(TYPE_STRING)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" / 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and double for '/' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" / 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and int for '/' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" / "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '/' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" / true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and bool for '/' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands string and " + nextType.getName() + " for '/' operator");
                 } else if (currentType.is(TYPE_BOOL)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: true / 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and double for '/' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: true / 5
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and int for '/' operator");
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: true / "Test"
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '/' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: true / false
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands bool and bool for '/' operator");
-                    }
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Incompatible operands bool and " + nextType.getName() + " for '/' operator");
                 }
             }
             operatorIndex += 2;
         }
         return currentType;
     }
-    return visit(ctx->prefixUnary()[0]);
+    return visit(ctx->prefixUnaryExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext* ctx) {
-    antlrcpp::Any prefixUnary = visit(ctx->postfixUnary());
+antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) {
+    antlrcpp::Any prefixUnary = visit(ctx->postfixUnaryExpr());
 
     // Ensure integer when '++' or '--' is applied
     if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
         if (!prefixUnary.as<SymbolType>().is(TYPE_INT))
-            throw SemanticError(*ctx->postfixUnary()->start, OPERATOR_WRONG_DATA_TYPE,
+            throw SemanticError(*ctx->postfixUnaryExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Prefix '++' or '--' can only be applied to an identifier of type integer");
     }
 
@@ -970,7 +992,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnary(SpiceParser::PrefixUnaryContext*
     return prefixUnary;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContext* ctx) {
+antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
     antlrcpp::Any atomicExpr = visit(ctx->atomicExpr());
 
     // Ensure integer when '++' or '--' is applied
@@ -984,8 +1006,82 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnary(SpiceParser::PostfixUnaryContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
-    if (ctx->assignment()) return visit(ctx->assignment());
-    return visit(ctx->value());
+    if (ctx->value()) return visit(ctx->value());
+    if (ctx->idenValue()) return visit(ctx->idenValue());
+    if (ctx->functionCall()) return visit(ctx->functionCall());
+    return visit(ctx->assignExpr());
+}
+
+antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx) {
+    SymbolType symbolType;
+    SymbolTableEntry* entry;
+    int tokenCounter = 0;
+    int assignCounter = 0;
+    bool applyReference = false;
+    bool applyDereference = false;
+    SymbolTable* scope = currentScope;
+
+    if (ctx->BITWISE_AND()) { // Consider referencing operator
+        applyReference = true;
+        tokenCounter++;
+    }
+
+    if (ctx->MUL()) { // Consider de-referencing operator
+        applyDereference = true;
+        tokenCounter++;
+    }
+
+    // Loop through children
+    while (tokenCounter < ctx->children.size()) {
+        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+        if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
+            std::string variableName = token->toString();
+            entry = scope->lookup(variableName);
+            if (!entry)
+                throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
+                                    "Variable '" + variableName + "' was referenced before declared");
+            symbolType = entry->getType();
+        } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
+            // Check this operation is valid on this type
+            if (!symbolType.isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR }))
+                throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
+                                    "Cannot apply subscript operator on " + symbolType.getName());
+            // De-reference automatically if it is a struct pointer
+            if (symbolType.is(TYPE_STRUCT_PTR)) symbolType = symbolType.getScalarType();
+            // Change to new scope
+            std::string structName = entry->getType().getSubType();
+            scope = scope->lookupTable("struct:" + structName);
+            // Check if the table exists
+            if (!scope)
+                throw SemanticError(*token->getSymbol(), REFERENCED_UNDEFINED_STRUCT_FIELD,
+                                    "Referenced undefined struct '" + structName + "'");
+        } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
+            // Check this operation is valid on this type
+            if (!symbolType.isArray())
+                throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
+                                    "Cannot apply subscript operator on " + symbolType.getName());
+            // Check if the index is an integer
+            SymbolType indexType = visit(ctx->assignExpr()[assignCounter]).as<SymbolType>();
+            if (!indexType.is(TYPE_INT))
+                throw SemanticError(*ctx->assignExpr()[assignCounter]->start, ARRAY_INDEX_NO_INTEGER,
+                                    "Array index must be of type int, you provided " + indexType.getName());
+            // Promote the item type
+            symbolType = symbolType.getItemType();
+            // Increase counters
+            assignCounter++;
+            tokenCounter += 2; // To consume the assignExpr and the RBRACKET
+        }
+        // Increase counter
+        tokenCounter++;
+    }
+
+    // Apply referencing operator if necessary
+    if (applyReference) symbolType = symbolType.getPointerType();
+
+    // Apply de-referencing operator if necessary
+    if (applyDereference) symbolType = symbolType.getScalarType();
+
+    return symbolType;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
@@ -993,39 +1089,32 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->INTEGER()) return SymbolType(TYPE_INT);
     if (ctx->STRING()) return SymbolType(TYPE_STRING);
     if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TYPE_BOOL);
-    if (!ctx->IDENTIFIER().empty()) {
-        std::string variableName = IdentifierUtil::getVarNameFromIdentList(ctx->IDENTIFIER());
-        // Get symbol table entry
-        SymbolTableEntry* entry = IdentifierUtil::getSymbolTableEntryByIdenList(currentScope, ctx->IDENTIFIER());
-        SymbolType valueType = entry->getType();
-        // Check for referencing operator
-        if (ctx->BITWISE_AND()) valueType = valueType.getPointerType();
-        // Check for de-referencing operator
-        if (ctx->MUL()) valueType = valueType.getScalarType();
-        return valueType;
-    }
-    return visit(ctx->functionCall());
+    return nullptr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
-    if (ctx->IDENTIFIER()) {
-        std::string structName = ctx->IDENTIFIER()->toString();
-        SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-        if (structSymbol == nullptr)
-            throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-    }
-    return SymbolType(TYPE_BOOL);
-}
+    SymbolType type = SymbolType(TYPE_DYN);
 
-SymbolType AnalyzerVisitor::getSymbolTypeFromDataType(SpiceParser::DataTypeContext* ctx) {
-    if (ctx->TYPE_DOUBLE()) return ctx->MUL() ? SymbolType(TYPE_DOUBLE_PTR) : SymbolType(TYPE_DOUBLE);
-    if (ctx->TYPE_INT()) return ctx->MUL() ? SymbolType(TYPE_INT_PTR) : SymbolType(TYPE_INT);
-    if (ctx->TYPE_STRING()) return ctx->MUL() ? SymbolType(TYPE_STRING_PTR) : SymbolType(TYPE_STRING);
-    if (ctx->TYPE_BOOL()) return ctx->MUL() ? SymbolType(TYPE_BOOL_PTR) : SymbolType(TYPE_BOOL);
-    if (ctx->IDENTIFIER()) {
+    if (ctx->TYPE_DOUBLE()) type = SymbolType(TYPE_DOUBLE);
+    if (ctx->TYPE_INT()) type = SymbolType(TYPE_INT);
+    if (ctx->TYPE_STRING()) type = SymbolType(TYPE_STRING);
+    if (ctx->TYPE_BOOL()) type = SymbolType(TYPE_BOOL);
+    if (ctx->IDENTIFIER()) { // Struct type
         std::string structName = ctx->IDENTIFIER()->toString();
-        return ctx->MUL() ? SymbolType(TYPE_STRUCT_PTR, structName) :
-            SymbolType(TYPE_STRUCT, structName);
+
+        // Check if struct was declared
+        SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+        if (!structSymbol)
+            throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+
+        type = SymbolType(TYPE_STRUCT, structName);
     }
-    return SymbolType(TYPE_DYN);
+
+    // Check for de-referencing operator
+    if (ctx->MUL()) type = type.getPointerType();
+
+    // Check for array brackets
+    if (ctx->LBRACKET()) type = type.getArrayType();
+
+    return type;
 }

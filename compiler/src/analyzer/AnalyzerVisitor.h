@@ -53,6 +53,8 @@ public:
 
     antlrcpp::Any visitStructDef(SpiceParser::StructDefContext* ctx) override;
 
+    antlrcpp::Any visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) override;
+
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
 
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
@@ -69,6 +71,8 @@ public:
 
     antlrcpp::Any visitNewStmt(SpiceParser::NewStmtContext* ctx) override;
 
+    antlrcpp::Any visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) override;
+
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
 
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
@@ -79,9 +83,9 @@ public:
 
     antlrcpp::Any visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) override;
 
-    antlrcpp::Any visitAssignment(SpiceParser::AssignmentContext* ctx) override;
+    antlrcpp::Any visitAssignExpr(SpiceParser::AssignExprContext* ctx) override;
 
-    antlrcpp::Any visitTernary(SpiceParser::TernaryContext* ctx) override;
+    antlrcpp::Any visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) override;
 
     antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) override;
 
@@ -99,11 +103,13 @@ public:
 
     antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) override;
 
-    antlrcpp::Any visitPrefixUnary(SpiceParser::PrefixUnaryContext* ctx) override;
+    antlrcpp::Any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) override;
 
-    antlrcpp::Any visitPostfixUnary(SpiceParser::PostfixUnaryContext* ctx) override;
+    antlrcpp::Any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) override;
 
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
+
+    antlrcpp::Any visitIdenValue(SpiceParser::IdenValueContext* ctx) override;
 
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
 
@@ -123,7 +129,4 @@ private:
     bool parameterMode = false;
     bool hasMainFunction = false;
     int nestedLoopCounter = 0;
-
-    // Private functions
-    static SymbolType getSymbolTypeFromDataType(SpiceParser::DataTypeContext*);
 };
