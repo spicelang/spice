@@ -1,6 +1,6 @@
 grammar Spice;
 
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | globalVarDef)*;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | globalVarDef | importStmt)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
@@ -16,12 +16,12 @@ stmtLst: (stmt | forLoop | /*foreachLoop |*/ whileLoop | ifStmt)*;
 fieldLst: declStmt*;
 paramLstDef: (declStmt | assignExpr) (COMMA (declStmt | assignExpr))*;
 paramLst: assignExpr (COMMA assignExpr)*;
-stmt: (declStmt | assignExpr | newStmt | arrayInitStmt | functionCall | importStmt | returnStmt | breakStmt | continueStmt | printfStmt) SEMICOLON;
+stmt: (declStmt | assignExpr | newStmt | arrayInitStmt | functionCall | returnStmt | breakStmt | continueStmt | printfStmt) SEMICOLON;
 declStmt: CONST? dataType IDENTIFIER;
 functionCall: IDENTIFIER (DOT IDENTIFIER)* LPAREN paramLst? RPAREN;
 newStmt: CONST? dataType IDENTIFIER ASSIGN_OP NEW IDENTIFIER LBRACE paramLst? RBRACE;
 arrayInitStmt: CONST? dataType LBRACKET value RBRACKET IDENTIFIER (ASSIGN_OP LBRACE paramLst? RBRACE)?;
-importStmt: IMPORT STRING AS IDENTIFIER;
+importStmt: IMPORT STRING AS IDENTIFIER SEMICOLON;
 returnStmt: RETURN assignExpr;
 breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;

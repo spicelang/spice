@@ -1250,6 +1250,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Get the index value
             llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
+            indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
             indices.push_back(indexValue);
             // Increase counters
             assignCounter++;
