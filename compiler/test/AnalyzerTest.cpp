@@ -22,8 +22,8 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         { // 1
             "error-if-condition-bool",
             "Semantic error at 2:8: Condition must be bool: If condition must be of type bool"
-        }, // 2
-        {
+        },
+        { // 2
             "error-else-if-condition-bool",
             "Semantic error at 4:15: Condition must be bool: If condition must be of type bool"
         },
@@ -45,7 +45,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         { // 7
             "error-variable-declared-before-referenced",
-            "Semantic error at 2:26: Referenced undefined variable: Variable test was referenced before declared"
+            "Semantic error at 2:26: Referenced undefined variable: Variable 'test' was referenced before declared"
         },
         { // 8
             "error-variable-declared-only-once",
@@ -72,123 +72,119 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "Semantic error at 6:5: Referenced undefined function: Function/Procedure 'testFunction(string)' could not be found"
         },
         { // 14
-            "error-return-only-inside-function",
-            "Semantic error at 1:1: Return statement outside function: Cannot assign return statement to a function"
-        },
-        { // 15
             "error-return-type-matches-def",
             "Semantic error at 2:12: Wrong data type for operator: Passed wrong data type to return statement. Expected int but got string"
         },
-        { // 16
+        { // 15
             "error-logical-operators-are-booleans",
             "Semantic error at 2:9: Wrong data type for operator: Can only apply '||' operator to booleans"
         },
-        { // 17
+        { // 16
             "error-bitwise-operators-are-booleans-or-integers",
             "Semantic error at 2:22: Wrong data type for operator: Can only apply '|' operator to booleans and integers"
         },
-        { // 18
+        { // 17
             "error-equality-operators-some-combinations",
             "Semantic error at 2:9: Wrong data type for operator: Can't compare string and double with '==' or '!=' operators"
         },
-        { // 19
+        { // 18
             "error-relational-operators-are-doubles-or-integers",
             "Semantic error at 3:12: Wrong data type for operator: Can only compare doubles or ints with one another with a relational operator"
         },
-        { // 20
+        { // 19
             "error-additive-operators-some-combinations",
             "Semantic error at 2:29: Wrong data type for operator: Incompatible operands bool and string for '+' operator"
         },
-        { // 21
+        { // 20
             "error-multiplicative-operators-some-combinations",
             "Semantic error at 2:29: Wrong data type for operator: Incompatible operands bool and string for '*' operator"
         },
-        { // 22
+        { // 21
             "error-prefix-unary-only-integer-identifiers",
             "Semantic error at 2:7: Wrong data type for operator: Prefix '++' or '--' can only be applied to an identifier of type integer"
         },
-        { // 23
+        { // 22
             "error-postfix-unary-only-integer-identifiers",
             "Semantic error at 2:5: Wrong data type for operator: Postfix '++' or '--' can only be applied to an identifier of type integer"
         },
-        { // 24
+        { // 23
             "error-must-contain-main-function",
             "Semantic error at 1:1: Spice programs must contain a main function: No main function found"
         },
-        { // 25
+        { // 24
             "error-function-arg-decl-type-dyn",
             "Semantic error at 1:51: Parameter type dyn not valid in function/procedure definition without default value: Type of parameter 'arg2' is invalid"
         },
-        { // 26
+        { // 25
             "error-dyn-return-types-not-matching",
             "Semantic error at 3:12: Wrong data type for operator: Passed wrong data type to return statement. Expected double but got string"
         },
-        { // 27
+        { // 26
             "error-printf-type-incompatibility",
             "Semantic error at 6:36: Types of printf call not matching: Template string expects int or bool, but got string"
         },
-        { // 28
+        { // 27
             "error-break-count-valid",
             "Semantic error at 7:23: Invalid number of break calls: Break count must be >= 1, you provided -10"
         },
-        { // 29
+        { // 28
             "error-break-count-not-too-high",
             "Semantic error at 7:23: Invalid number of break calls: We can only break 2 time(s) here"
         },
-        { // 30
+        { // 39
             "error-continue-count-valid",
             "Semantic error at 7:26: Invalid number of continue calls: Continue count must be >= 1, you provided -10"
         },
-        { // 31
+        { // 30
             "error-continue-count-not-too-high",
             "Semantic error at 7:26: Invalid number of continue calls: We can only continue 2 time(s) here"
         },
-        { // 32
+        { // 31
             "error-circular-import",
             "Semantic error - Circular import detected: './test-files/analyzer/error-circular-import/source1.spice'"
         },
-        { // 33
+        { // 32
             "error-duplicate-struct-def",
             "Semantic error at 7:1: Multiple declarations of a struct with the same name: Duplicate struct 'Person'"
         },
-        { // 34
+        { // 33
             "error-duplicate-function-def",
             "Semantic error at 5:1: Multiple declarations of a function with the same name: Function 'exampleFunc()' is declared twice"
         },
-        { // 35
+        { // 34
             "error-duplicate-main-function-def",
             "Semantic error at 5:1: Multiple declarations of a function with the same name: Main function is declared twice"
         },
-        { // 36
+        { // 35
             "error-duplicate-procedure-def",
             "Semantic error at 5:1: Multiple declarations of a procedure with the same name: Procedure 'exampleProcedure()' is declared twice"
         },
-        { // 37
+        { // 36
             "error-custom-type-unknown",
             "Semantic error at 8:5: Unknown datatype: Unknown datatype 'NonExisting'"
         },
-        { // 38
+        { // 37
             "error-struct-defined-before-used",
-            "Semantic error at 2:21: Referenced undefined struct: Struct 'Test' was used before defined"
+            "Semantic error at 2:5: Unknown datatype: Unknown datatype 'Test'"
         },
-        { // 39
+        { // 38
             "error-struct-fields-match-declaration",
             "Semantic error at 8:41: The type of a field value does not match the declaration: Expected type double* for the field 'dbl', but got double"
         },
-        { // 40
+        { // 49
             "error-struct-passed-too-many-less-values",
-            "Semantic error at 9:24: Number of struct fields not matching declaration: You've passed too less/many field values"
+            "Semantic error at 9:41: Number of struct fields not matching declaration: You've passed too less/many field values"
         },
-        { // 41
+        { // 40
             "error-struct-types-not-matching",
-            "Semantic error at 12:32: Wrong data type for operator: Can only apply the assign operator on same data types"
+            "Semantic error at 13:26: Referenced undefined variable: Variable 'dbl' was referenced before declared"
         },
         // Successful tests
-        { // 42
+        { // 41
             "success-fibonacci",
             ""
         },
-        { // 43
+        { // 42
             "success-function-overloading",
             ""
         }

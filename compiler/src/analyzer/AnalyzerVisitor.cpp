@@ -327,7 +327,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     SymbolTable* structTable = currentScope->lookupTable(structScope);
     // Check if the number of fields matches
     if (structTable->getSymbolsCount() != ctx->paramLst()->assignExpr().size())
-        throw SemanticError(*ctx->start, NUMBER_OF_FIELDS_NOT_MATCHING,
+        throw SemanticError(*ctx->paramLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
                             "You've passed too less/many field values");
 
     // Check if the field types are matching
@@ -1037,6 +1037,9 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
         if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
             std::string variableName = token->toString();
             entry = scope->lookup(variableName);
+            if (!entry)
+                throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
+                                    "Variable '" + variableName + "' was referenced before declared");
             symbolType = entry->getType();
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // Check this operation is valid on this type
