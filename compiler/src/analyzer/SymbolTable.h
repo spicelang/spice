@@ -8,6 +8,7 @@
 #include <vector>
 #include <queue>
 #include <util/FunctionSignature.h>
+#include <util/CompilerWarning.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <SpiceParser.h>
@@ -23,7 +24,7 @@ public:
     explicit SymbolTable(SymbolTable* parent) : parent(parent) {};
 
     // Public methods
-    void insert(const std::string&, SymbolType, SymbolState, bool, bool);
+    void insert(const std::string&, SymbolType, SymbolState, const antlr4::Token&, bool, bool);
 
     SymbolTableEntry* lookup(const std::string&);
 
@@ -68,6 +69,8 @@ public:
     llvm::BasicBlock* getBreakBlock() const;
 
     void setBreakBlock(llvm::BasicBlock*);
+
+    void printCompilerWarnings();
 
     std::string toString();
 

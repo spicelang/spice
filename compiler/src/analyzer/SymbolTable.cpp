@@ -11,11 +11,12 @@
  * @param isConstant Enabled if the symbol is a constant
  * @param isParameter Enabled if the symbol is a function/procedure parameter
  */
-void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, bool isConstant, bool isParameter) {
+void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, const antlr4::Token& token,
+                         bool isConstant, bool isParameter) {
     bool isGlobal = getParent() == nullptr;
     unsigned int orderIndex = symbols.size();
     // Insert into symbols map
-    symbols.insert({name, SymbolTableEntry(name, type, state, orderIndex, isConstant, isGlobal)});
+    symbols.insert({ name, SymbolTableEntry(name, type, state, token, orderIndex, isConstant, isGlobal) });
     // If the symbol is a parameter, add it to the parameters list
     if (isParameter) paramNames.push_back(name);
 }
@@ -289,6 +290,38 @@ llvm::BasicBlock* SymbolTable::getBreakBlock() const {
  */
 void SymbolTable::setBreakBlock(llvm::BasicBlock* block) {
     breakBlock = block;
+}
+
+/**
+ * Prints compiler values with regard to the symbol table
+ */
+void SymbolTable::printCompilerWarnings() {
+    // Visit own symbols
+    for (auto& it : symbols) {
+        SymbolTableEntry entry = it.second;
+        if (!entry.isUsed()) {
+            if (entry.getType().is(TYPE_FUNCTION)) {
+                CompilerWarning(it.second.getDefinitionToken(), UNUSED_FUNCTION,
+                                      "The function '" + entry.getName() + "' is unused").print();
+            } else if (entry.getType().is(TYPE_PROCEDURE)) {
+                CompilerWarning(it.second.getDefinitionToken(), UNUSED_PROCEDURE,
+                                      "The procedure '" + entry.getName() + "' is unused").print();
+            } else if (entry.getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
+                CompilerWarning(it.second.getDefinitionToken(), UNUSED_STRUCT,
+                                      "The struct '" + entry.getName() + "' is unused").print();
+            } else if (entry.getType().isOneOf({ TYPE_IMPORT })) {
+                CompilerWarning(it.second.getDefinitionToken(), UNUSED_IMPORT,
+                                "The import '" + entry.getName() + "' is unused").print();
+            } else {
+                CompilerWarning(it.second.getDefinitionToken(), UNUSED_VARIABLE,
+                                      "The variable '" + entry.getName() + "' is unused").print();
+            }
+        }
+    }
+    // Visit children
+    for (auto& it : children) {
+        it.second.printCompilerWarnings();
+    }
 }
 
 /**

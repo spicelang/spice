@@ -21,17 +21,19 @@ enum SymbolState {
 class SymbolTableEntry {
 public:
     // Constructors
-    SymbolTableEntry(std::string name, SymbolType type, SymbolState state, unsigned int orderIndex,
-                     bool isConstant, bool isGlobal) :
-            name(std::move(name)), type(std::move(type)), state(state),
-            orderIndex(orderIndex), isConstant(isConstant), isGlobal(isGlobal) {};
+    SymbolTableEntry(std::string name, SymbolType type, SymbolState state, const antlr4::Token& token, unsigned int orderIndex,
+                     const bool isConstant, const bool isGlobal) :
+            name(std::move(name)), type(std::move(type)), state(state), definitionToken(token), orderIndex(orderIndex),
+            isConstant(isConstant), isGlobal(isGlobal), used(false) {};
 
     // Public methods
     std::string getName();
 
+    SymbolType getType();
+
     SymbolState getState();
 
-    SymbolType getType();
+    const antlr4::Token& getDefinitionToken();
 
     llvm::Type* getLLVMType();
 
@@ -41,6 +43,8 @@ public:
 
     bool isLocal() const;
 
+    bool isUsed() const;
+
     void updateState(SymbolState);
 
     void updateType(SymbolType);
@@ -48,6 +52,8 @@ public:
     void updateLLVMType(llvm::Type*);
 
     void updateAddress(llvm::Value*);
+
+    void setUsed();
 
     std::string toString();
 
@@ -57,8 +63,10 @@ private:
     SymbolType type;
     llvm::Type* llvmType;
     SymbolState state;
+    const antlr4::Token& definitionToken;
     llvm::Value* memAddress;
     unsigned int orderIndex;
-    bool isConstant;
-    bool isGlobal;
+    const bool isConstant;
+    const bool isGlobal;
+    bool used;
 };

@@ -9,6 +9,8 @@
 enum CompilerWarningType {
     UNUSED_FUNCTION,
     UNUSED_PROCEDURE,
+    UNUSED_STRUCT,
+    UNUSED_IMPORT,
     UNUSED_VARIABLE
 };
 

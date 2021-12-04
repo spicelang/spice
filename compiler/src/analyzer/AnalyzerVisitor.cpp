@@ -13,6 +13,9 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
         throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
 
     // Post traversing actions
+    SymbolTable* rootScope = currentScope;
+    while (rootScope->getParent()) rootScope = rootScope->getParent();
+    rootScope->printCompilerWarnings();
 
     // Return the symbol table to the main program for further compile phases
     return currentScope;
@@ -26,12 +29,12 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
                             "Main function is declared twice");
     }
     // Insert function name into the root symbol table
-    currentScope->insert(mainSignature, SymbolType(TYPE_FUNCTION), INITIALIZED, true, false);
+    currentScope->insert(mainSignature, SymbolType(TYPE_FUNCTION), INITIALIZED, *ctx->start, true, false);
     // Create a new scope
     currentScope = currentScope->createChildBlock("main()");
     // Declare variable for the return value
     SymbolType returnType = SymbolType(TYPE_INT);
-    currentScope->insert(RETURN_VARIABLE_NAME, returnType, INITIALIZED, false, false);
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, INITIALIZED, *ctx->start, false, false);
     // Visit parameters
     parameterMode = true;
     if (ctx->paramLstDef()) visit(ctx->paramLstDef());
@@ -58,7 +61,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     parameterMode = false;
     // Declare variable for the return value in new scope
     SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
-    currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, false, false);
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, *ctx->start, false, false);
     // Return to old scope
     currentScope = currentScope->getParent();
     // Insert function into the symbol table
@@ -68,7 +71,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
         throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE,
                             "Function '" + signature.toString() + "' is declared twice");
     }
-    currentScope->insert(signature.toString(), SymbolType(TYPE_FUNCTION), INITIALIZED, true, false);
+    currentScope->insert(signature.toString(), SymbolType(TYPE_FUNCTION), INITIALIZED, *ctx->start, true, false);
     currentScope->pushSignature(signature);
     // Rename function scope block to support function overloading
     currentScope->renameChildBlock(scopeId, signature.toString());
@@ -104,7 +107,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
         throw SemanticError(*ctx->start, PROCEDURE_DECLARED_TWICE,
                             "Procedure '" + signature.toString() + "' is declared twice");
     }
-    currentScope->insert(signature.toString(), SymbolType(TYPE_PROCEDURE), INITIALIZED, true, false);
+    currentScope->insert(signature.toString(), SymbolType(TYPE_PROCEDURE), INITIALIZED, *ctx->start, true, false);
     currentScope->pushSignature(signature);
     // Rename function scope block to support function overloading
     currentScope->renameChildBlock(scopeId, signature.toString());
@@ -123,7 +126,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
     if (currentScope->lookup(structName))
         throw SemanticError(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate struct '" + structName + "'");
     // Create a new table entry for the struct
-    currentScope->insert(structName, SymbolType(TYPE_STRUCT, structName), DECLARED, true, false);
+    currentScope->insert(structName, SymbolType(TYPE_STRUCT, structName), DECLARED, *ctx->start, true, false);
     // Visit field list in a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -164,7 +167,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
                             "Global variables must have an explicit data type");
 
     // Insert into symbol table
-    currentScope->insert(variableName, dataType, state, ctx->CONST(), parameterMode);
+    currentScope->insert(variableName, dataType, state, *ctx->start, ctx->CONST(), parameterMode);
 
     return SymbolType(TYPE_BOOL);
 }
@@ -267,7 +270,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
                             "The variable '" + variableName + "' was declared more than once");
     // Insert variable name to symbol table
     SymbolType type = visit(ctx->dataType()).as<SymbolType>();
-    currentScope->insert(variableName, type, DECLARED, ctx->CONST(), parameterMode);
+    currentScope->insert(variableName, type, DECLARED, *ctx->start, ctx->CONST(), parameterMode);
     return type;
 }
 
@@ -300,6 +303,8 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
         // Get return type of called function
         return entryTable->lookup(RETURN_VARIABLE_NAME)->getType();
     }
+    // Set the function usage
+    entryTable->lookup(signature.toString())->setUsed();
     return SymbolType(TYPE_BOOL);
 }
 
@@ -346,7 +351,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     }
 
     // Insert into symbol table
-    currentScope->insert(variableName, dataType, INITIALIZED, ctx->CONST(), false);
+    currentScope->insert(variableName, dataType, INITIALIZED, *ctx->start, ctx->CONST(), false);
 
     return SymbolType(TYPE_STRUCT, structName);
 }
@@ -392,7 +397,7 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
         throw SemanticError(*ctx->value()->start, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
 
     // Create new symbol in the current scope
-    currentScope->insert(variableName, dataType.getArrayType(), INITIALIZED, ctx->CONST(), parameterMode);
+    currentScope->insert(variableName, dataType.getArrayType(), INITIALIZED, *ctx->start, ctx->CONST(), parameterMode);
 
     return dataType.getArrayType();
 }
@@ -452,7 +457,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();
-    currentScope->insert(importIden, SymbolType(TYPE_IMPORT), INITIALIZED, true, false);
+    currentScope->insert(importIden, SymbolType(TYPE_IMPORT), INITIALIZED, *ctx->start, true, false);
 
     // Mount symbol table of the imported source file into the current scope
     currentScope->mountChildBlock(importIden, nestedTable);

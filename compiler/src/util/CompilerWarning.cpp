@@ -33,6 +33,10 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
             return "Unused function";
         case UNUSED_PROCEDURE:
             return "Unused procedure";
+        case UNUSED_STRUCT:
+            return "Unused struct";
+        case UNUSED_IMPORT:
+            return "Unused import";
         case UNUSED_VARIABLE:
             return "Unused variable";
     }
