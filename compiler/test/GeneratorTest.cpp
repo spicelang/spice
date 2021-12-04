@@ -51,15 +51,15 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             "success-struct",
             ""
         },
-        { // 7
+        { // 9
             "success-global-variables",
             ""
         },
-        { // 8
+        { // 10
                 "success-arrays",
                 ""
         },
-        /*{ // 9 (currently not working in GH actions, therefore disabled)
+        /*{ // 11 (currently not working in GH actions, therefore disabled)
             "success-modules-std",
             ""
             },*/

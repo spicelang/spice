@@ -1,19 +1,12 @@
-type Nested struct {
-    string nested1
-    bool* nested2
-}
-
-type TestStruct struct {
-    int* field1
-    double field2
-    Nested* nested
-}
+int test1 = 10;
+string test2 = "test string";
+double test3 = 5.83;
+bool test4 = false;
 
 f<int> main() {
-    int input = 12;
-    bool boolean = true;
-    Nested nestedInstance = new Nested { "Hello World!", &boolean };
-    dyn instance = new TestStruct { &input, 46.34, &nestedInstance };
-    TestStruct instance1 = instance;
-    instance1.field2 = 1.123;
+    test1 = 11;
+    test2 = "test";
+    test3 = 5.84;
+    test4 = true;
+    printf("Variable values: %d, %s, %f, %u", test1, test2, test3, test4);
 }

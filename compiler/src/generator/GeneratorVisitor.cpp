@@ -465,7 +465,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     currentScope = currentScope->getParent();
 
     // Return true as result for the loop
-    return llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
 }
 
 antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext* ctx) {
@@ -629,9 +629,12 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     }
 
     llvm::Value* callResult = builder->CreateCall(fct, argValues);
-    llvm::Value* callResultPtr = builder->CreateAlloca(callResult->getType());
-    builder->CreateStore(callResult, callResultPtr);
-    return callResultPtr;
+    if (callResult->getType()->isSized()) {
+        llvm::Value* callResultPtr = builder->CreateAlloca(callResult->getType());
+        builder->CreateStore(callResult, callResultPtr);
+        return callResultPtr;
+    }
+    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
@@ -708,7 +711,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     currentScope->lookup(varName)->updateAddress(arrayAddress);
     currentScope->lookup(varName)->updateLLVMType(arrayType);
 
-    return llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
