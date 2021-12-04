@@ -2,7 +2,7 @@
 title: Arrays
 ---
 
-You can use arrays in Spice for any [primitive](../data-types) and custom [primitive](../structs) data type.
+You can use arrays in Spice for any [primitive](../data-types) and custom [struct](../structs) data type.
 
 To initialize an `array` e.g. of type string, you can write:
 ```spice
@@ -10,7 +10,15 @@ string[5] myStringArray = { "First item", "Second Item", "Third item" };
 ```
 
 The `5` in the brackets is the size of the array. The initial values can be provided in curly braces after the assign operator and must be of the same data type. <br>
-As you can see, there are less values (3) than the array size is (5). The rest of the values are set to the default data type value. The default data type values are: `0` for `int`, `0.0` for `double`, `""` for `string`, `false` for `bool` and for a struct all fields are initialized with the default values.
+As you can see, there are less values (3) than the array size is (5). The rest of the values are set to the default data type value. The default data type values are:
+
+| Type     | Default value                 |
+| -------- | ----------------------------- |
+| `int`    | `0`                           |
+| `double` | `0.0`                         |
+| `string` | `""`                          |
+| `bool`   | `false`                       |
+| `struct` | Default values for all fields |
 
 To access an array item, you can use the index. The indexes are >= 0 per definition:
 ```spice
