@@ -78,6 +78,7 @@ nav:
     - language/procedures.md
     - language/functions.md
     - language/modules.md
+    - language/arrays.md
     - language/pointers.md
     - language/structs.md
   - contributing.md
@@ -90,7 +91,8 @@ markdown_extensions:
   - pymdownx.details
   - toc:
       permalink: true
-  - pymdownx.tabbed
+  - pymdownx.tabbed:
+      alternate_style: true 
   - pymdownx.superfences
   - attr_list
   - pymdownx.emoji:
