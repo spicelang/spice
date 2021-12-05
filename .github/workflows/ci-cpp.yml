@@ -36,25 +36,25 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
           cmake --build .
 
-      - name: Prepare environment
-        run: |
-          shopt -s extglob
-          rm -rf !("compiler")
-          cp -fR ./compiler/* .
-          rm -rf ./compiler
+      #- name: Prepare environment
+      #  run: |
+      #    shopt -s extglob
+      #    rm -rf !("compiler")
+      #    cp -fR ./compiler/* .
+      #    rm -rf ./compiler
 
       - name: Download Libs
         run: |
-          mkdir ./lib
-          cd ./lib
+          mkdir ./compiler/lib
+          cd ./compiler/lib
           git clone --depth 1 https://github.com/antlr/antlr4.git
 
       - name: Build Test target
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
         run: |
-          mkdir bin
-          cd bin
+          mkdir ./compiler/bin
+          cd ./compiler/bin
           cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON -Wattributes ..
           cmake --build . --target Spice_test
 
@@ -73,5 +73,5 @@ jobs:
         env:
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
-          cd ./bin/test
+          cd ./compiler/bin/test
           ./Spice_test
