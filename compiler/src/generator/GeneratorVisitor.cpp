@@ -730,8 +730,15 @@ antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* 
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
-    llvm::Value* returnValuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
+    // Check if a value is attached to the return statement
+    llvm::Value* returnValuePtr;
+    if (ctx->assignExpr()) {
+        returnValuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
+    } else {
+        returnValuePtr = currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress();
+    }
     llvm::Value* returnValue = builder->CreateLoad(returnValuePtr->getType()->getPointerElementType(), returnValuePtr);
+
     // Build return value
     if (!blockAlreadyTerminated) {
         builder->CreateRet(returnValue);

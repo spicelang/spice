@@ -1,0 +1,5 @@
+import "source2" as s2;
+
+f<int> main() {
+    result = s2.nonExistingFunc();
+}

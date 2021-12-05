@@ -22,7 +22,7 @@ functionCall: IDENTIFIER (DOT IDENTIFIER)* LPAREN paramLst? RPAREN;
 newStmt: CONST? dataType IDENTIFIER ASSIGN_OP NEW IDENTIFIER LBRACE paramLst? RBRACE;
 arrayInitStmt: CONST? dataType LBRACKET value RBRACKET IDENTIFIER (ASSIGN_OP LBRACE paramLst? RBRACE)?;
 importStmt: IMPORT STRING AS IDENTIFIER SEMICOLON;
-returnStmt: RETURN assignExpr;
+returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
 printfStmt: PRINTF LPAREN STRING (COMMA assignExpr)* RPAREN;
