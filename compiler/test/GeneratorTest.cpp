@@ -15,54 +15,58 @@ struct GeneratorParams {
 
 const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
         // Succeeding tests
-        { // 0
+        {
             "success-fibonacci",
             ""
         },
-        { // 1
+        {
             "success-faculty",
             ""
         },
-        { // 2
+        {
+            "success-operators",
+            ""
+        },
+        {
             "success-if-stmt",
             ""
         },
-        { // 3
+        {
             "success-for-loop",
             ""
         },
-        { // 4
+        {
             "success-while-loop",
             ""
         },
-        { // 5
+        {
             "success-modules",
             ""
         },
-        { // 6
+        {
             "success-pointer",
             ""
         },
-        { // 7
+        {
             "success-pointer-functions",
             ""
         },
-        { // 8
+        {
             "success-struct",
             ""
         },
-        { // 9
+        {
             "success-global-variables",
             ""
         },
-        { // 10
-                "success-arrays",
-                ""
+        {
+            "success-arrays",
+            ""
         },
-        /*{ // 11 (currently not working in GH actions, therefore disabled)
+        {
             "success-modules-std",
             ""
-            },*/
+        }
 };
 
 class GeneratorTests : public ::testing::TestWithParam<GeneratorParams> {};

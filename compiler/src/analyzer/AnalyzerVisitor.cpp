@@ -660,6 +660,14 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
             if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
                 throw SemanticError(*ctx->DIV_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '/=' operator on two doubles or two ints");
+        } else if (ctx->SHL_EQUAL()) {
+            if (!lhsTy.matches(rhsTy, TYPE_INT))
+                throw SemanticError(*ctx->SHL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
+                                    "Can only apply '<<=' operator on two ints");
+        } else if (ctx->SHR_EQUAL()) {
+            if (!lhsTy.matches(rhsTy, TYPE_INT))
+                throw SemanticError(*ctx->SHR_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
+                                    "Can only apply '>>=' operator on two ints");
         }
         // Update variable in symbol table
         if (allowStateUpdate) symbolTableEntry->updateState(INITIALIZED);
@@ -797,10 +805,10 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext* ctx) {
-    // Check if at least one relational operator is applied
+    // Check if a relational operator is applied
     if (ctx->children.size() > 1) {
-        SymbolType lhsTy = visit(ctx->additiveExpr()[0]).as<SymbolType>();
-        SymbolType rhsTy = visit(ctx->additiveExpr()[1]).as<SymbolType>();
+        SymbolType lhsTy = visit(ctx->shiftExpr()[0]).as<SymbolType>();
+        SymbolType rhsTy = visit(ctx->shiftExpr()[1]).as<SymbolType>();
         if (lhsTy.matches(rhsTy, TYPE_DOUBLE))
             return SymbolType(TYPE_BOOL); // Can compare double with double
         if (lhsTy.is(TYPE_DOUBLE) && rhsTy.is(TYPE_INT))
@@ -812,6 +820,22 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
         // Every other combination is invalid
         throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                             "Can only compare doubles or ints with one another with a relational operator");
+    }
+    return visit(ctx->shiftExpr()[0]);
+}
+
+antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ctx) {
+    // Check if at least one shift operator is applied
+    if (ctx->children.size() > 1) {
+        SymbolType lhsTy = visit(ctx->additiveExpr()[0]).as<SymbolType>();
+        if (!lhsTy.is(TYPE_INT))
+            throw SemanticError(*ctx->additiveExpr()[0]->start, OPERATOR_WRONG_DATA_TYPE,
+                                "Shift operators can only be applied on ints");
+
+        SymbolType rhsTy = visit(ctx->additiveExpr()[1]).as<SymbolType>();
+        if (!rhsTy.is(TYPE_INT))
+            throw SemanticError(*ctx->additiveExpr()[1]->start, OPERATOR_WRONG_DATA_TYPE,
+                                "Shift operators right hand side must e an int");
     }
     return visit(ctx->additiveExpr()[0]);
 }
