@@ -1,12 +1,5 @@
-f<int> testFunc(int input) {
-    if (input > 1) {
-        printf("true");
-        return;
-    }
-    printf("false");
-    return 0;
-}
-
 f<int> main() {
-    printf("Result: %d", testFunc(1));
+    int value = 1;
+    value <<= 30;
+    printf("Shifted value: %d", value);
 }

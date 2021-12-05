@@ -99,6 +99,8 @@ public:
 
     antlrcpp::Any visitRelationalExpr(SpiceParser::RelationalExprContext* ctx) override;
 
+    antlrcpp::Any visitShiftExpr(SpiceParser::ShiftExprContext* ctx) override;
+
     antlrcpp::Any visitAdditiveExpr(SpiceParser::AdditiveExprContext* ctx) override;
 
     antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) override;

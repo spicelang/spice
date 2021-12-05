@@ -878,6 +878,26 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
                 rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
                 builder->CreateStore(rhs, lhsPtr);
             }
+        } else if (ctx->SHL_EQUAL()) {
+            if (variableEntry->isLocal()) { // Local variable
+                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                rhs = builder->CreateShl(lhs, rhs, "shl");
+                builder->CreateStore(rhs, lhsPtr);
+            } else { // Global variable
+                llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
+                rhs = builder->CreateShl(lhs, rhs, "shl");
+                builder->CreateStore(rhs, lhsPtr);
+            }
+        } else if (ctx->SHR_EQUAL()) {
+            if (variableEntry->isLocal()) { // Local variable
+                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                rhs = builder->CreateLShr(lhs, rhs, "shr");
+                builder->CreateStore(rhs, lhsPtr);
+            } else { // Global variable
+                llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
+                rhs = builder->CreateLShr(lhs, rhs, "shr");
+                builder->CreateStore(rhs, lhsPtr);
+            }
         }
     }
 
@@ -1094,13 +1114,13 @@ antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext* ctx) {
-    if (ctx->additiveExpr().size() > 1) {
-        llvm::Value* lhsPtr = visit(ctx->additiveExpr()[0]).as<llvm::Value*>();
-        llvm::Value* rhsPtr = visit(ctx->additiveExpr()[1]).as<llvm::Value*>();
+    if (ctx->shiftExpr().size() > 1) {
+        llvm::Value* lhsPtr = visit(ctx->shiftExpr()[0]).as<llvm::Value*>();
+        llvm::Value* rhsPtr = visit(ctx->shiftExpr()[1]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
-        // Relational expr is: additiveExpr LESS additiveExpr
+        // Relational expr is: shiftExpr LESS shiftExpr
         if (ctx->LESS()) {
             llvm::Value* cmpInst;
             if (lhs->getType()->isDoubleTy()) {
@@ -1113,7 +1133,7 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
             return resultPtr;
         }
 
-        // Relational expr is: additiveExpr GREATER additiveExpr
+        // Relational expr is: shiftExpr GREATER shiftExpr
         if (ctx->GREATER()) {
             llvm::Value* cmpInst;
             if (lhs->getType()->isDoubleTy()) {
@@ -1126,7 +1146,7 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
             return resultPtr;
         }
 
-        // Relational expr is: additiveExpr LESS_EQUAL additiveExpr
+        // Relational expr is: shiftExpr LESS_EQUAL shiftExpr
         if (ctx->LESS_EQUAL()) {
             llvm::Value* cmpInst;
             if (lhs->getType()->isDoubleTy()) {
@@ -1139,7 +1159,7 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
             return resultPtr;
         }
 
-        // Relational expr is: additiveExpr GREATER_EQUAL additiveExpr
+        // Relational expr is: shiftExpr GREATER_EQUAL shiftExpr
         if (ctx->GREATER_EQUAL()) {
             llvm::Value* cmpInst;
             if (lhs->getType()->isDoubleTy()) {
@@ -1152,11 +1172,38 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
             return resultPtr;
         }
     }
+    return visit(ctx->shiftExpr()[0]);
+}
+
+antlrcpp::Any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ctx) {
+    // Check if there is a shift operation attached
+    if (ctx->additiveExpr().size() > 1) {
+        llvm::Value* lhsPtr = visit(ctx->additiveExpr()[0]).as<llvm::Value*>();
+        llvm::Value* rhsPtr = visit(ctx->additiveExpr()[1]).as<llvm::Value*>();
+        llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+        llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+
+        // Shift expr is: additiveExpr SHL additiveExpr
+        if (ctx->SHL()) {
+            llvm::Value* shlInst = builder->CreateShl(lhs, rhs, "shl");
+            llvm::Value* resultPtr = builder->CreateAlloca(shlInst->getType());
+            builder->CreateStore(shlInst, resultPtr);
+            return resultPtr;
+        }
+
+        // Relational expr is: additiveExpr SHR additiveExpr
+        if (ctx->SHR()) {
+            llvm::Value* shrInst = builder->CreateLShr(lhs, rhs, "shr");
+            llvm::Value* resultPtr = builder->CreateAlloca(shrInst->getType());
+            builder->CreateStore(shrInst, resultPtr);
+            return resultPtr;
+        }
+    }
     return visit(ctx->additiveExpr()[0]);
 }
 
 antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext* ctx) {
-    // Check if there is an additive operation attached
+    // Check if at least one additive operator is applied
     if (ctx->multiplicativeExpr().size() > 1) {
         llvm::Value* lhsPtr = visit(ctx->multiplicativeExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1184,7 +1231,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) {
-    // Check if there is a multiplicative operation attached
+    // Check if at least one multiplicative operator is applied
     if (ctx->prefixUnaryExpr().size() > 1) {
         llvm::Value* lhsPtr = visit(ctx->prefixUnaryExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
