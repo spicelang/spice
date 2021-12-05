@@ -1,6 +1,7 @@
 // Converts an int to a double
 f<double> toDouble(int input) {
-    return input ? 1.0 : 0.0;
+    // ToDo: Implement
+    return 0.0;
 }
 
 // Converts an int to a string
