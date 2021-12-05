@@ -404,9 +404,9 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "for_cond");
+    llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "for.cond");
     llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "for");
-    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "for_end");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "for.end");
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -452,8 +452,8 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    llvm::BasicBlock* bInc = llvm::BasicBlock::Create(*context, "foreach_start");
-    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "foreach_end");
+    llvm::BasicBlock* bInc = llvm::BasicBlock::Create(*context, "foreach.start");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "foreach.end");
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -478,9 +478,9 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "while_cond");
+    llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "while.cond");
     llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "while");
-    llvm::BasicBlock* bLoopEnd = llvm::BasicBlock::Create(*context, "while_end");
+    llvm::BasicBlock* bLoopEnd = llvm::BasicBlock::Create(*context, "while.end");
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -534,9 +534,9 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "then");
-    llvm::BasicBlock* bElse = llvm::BasicBlock::Create(*context, "else");
-    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "end");
+    llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "if.then");
+    llvm::BasicBlock* bElse = llvm::BasicBlock::Create(*context, "if.else");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "if.end");
 
     // Check if condition is fulfilled
     createCondBr(condValue, bThen, ctx->elseStmt() ? bElse : bEnd);
@@ -938,9 +938,9 @@ antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext
         llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
         // Create blocks
-        llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "then");
-        llvm::BasicBlock* bElse = llvm::BasicBlock::Create(*context, "else");
-        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "end");
+        llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "tern.then");
+        llvm::BasicBlock* bElse = llvm::BasicBlock::Create(*context, "tern.else");
+        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "tern.end");
 
         // Conditional jump to respective block
         createCondBr(condition, bThen, bElse);
@@ -979,7 +979,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
     if (ctx->logicalAndExpr().size() > 1) {
         // Prepare for short-circuiting
         std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->logicalAndExpr().size()];
-        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "lor-end");
+        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "lor.end");
         llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
         parentFunction->getBasicBlockList().push_back(bEnd);
 
@@ -1011,7 +1011,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
 
         // Get the result with the phi node
         moveInsertPointToBlock(bEnd);
-        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->logicalAndExpr().size(), "lor-phi");
+        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->logicalAndExpr().size(), "lor_phi");
         for (const auto& tuple : incomingBlocks)
             phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
 
@@ -1027,7 +1027,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
     if (ctx->bitwiseOrExpr().size() > 1) {
         // Prepare for short-circuiting
         std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->bitwiseOrExpr().size()];
-        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "land-end");
+        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "land.end");
         llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
         parentFunction->getBasicBlockList().push_back(bEnd);
 
@@ -1059,7 +1059,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
 
         // Get the result with the phi node
         moveInsertPointToBlock(bEnd);
-        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->bitwiseOrExpr().size(), "land-phi");
+        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->bitwiseOrExpr().size(), "land_phi");
         for (const auto& tuple : incomingBlocks)
             phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
 

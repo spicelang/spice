@@ -28,13 +28,13 @@ entry:
   %4 = alloca i1, align 1
   store i1 %ne, i1* %4, align 1
   %5 = load i1, i1* %4, align 1
-  br i1 %5, label %then, label %else
+  br i1 %5, label %if.then, label %if.else
 
-then:                                             ; preds = %entry
+if.then:                                          ; preds = %entry
   %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0))
-  br label %end7
+  br label %if.end7
 
-else:                                             ; preds = %entry
+if.else:                                          ; preds = %entry
   %7 = alloca double, align 8
   store double 2.000000e+00, double* %7, align 8
   %8 = alloca double, align 8
@@ -45,13 +45,13 @@ else:                                             ; preds = %entry
   %11 = alloca i1, align 1
   store i1 %eq, i1* %11, align 1
   %12 = load i1, i1* %11, align 1
-  br i1 %12, label %then1, label %else2
+  br i1 %12, label %if.then1, label %if.else2
 
-then1:                                            ; preds = %else
+if.then1:                                         ; preds = %if.else
   %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @1, i32 0, i32 0))
-  br label %end6
+  br label %if.end6
 
-else2:                                            ; preds = %else
+if.else2:                                         ; preds = %if.else
   %14 = alloca double, align 8
   store double 2.000000e+00, double* %14, align 8
   %15 = alloca double, align 8
@@ -62,23 +62,23 @@ else2:                                            ; preds = %else
   %18 = alloca i1, align 1
   store i1 %eq3, i1* %18, align 1
   %19 = load i1, i1* %18, align 1
-  br i1 %19, label %then4, label %else5
+  br i1 %19, label %if.then4, label %if.else5
 
-then4:                                            ; preds = %else2
+if.then4:                                         ; preds = %if.else2
   %20 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @2, i32 0, i32 0))
-  br label %end
+  br label %if.end
 
-else5:                                            ; preds = %else2
+if.else5:                                         ; preds = %if.else2
   %21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @3, i32 0, i32 0))
-  br label %end
+  br label %if.end
 
-end:                                              ; preds = %else5, %then4
-  br label %end6
+if.end:                                           ; preds = %if.else5, %if.then4
+  br label %if.end6
 
-end6:                                             ; preds = %end, %then1
-  br label %end7
+if.end6:                                          ; preds = %if.end, %if.then1
+  br label %if.end7
 
-end7:                                             ; preds = %end6, %then
+if.end7:                                          ; preds = %if.end6, %if.then
   %22 = load i32, i32* %result, align 4
   ret i32 %22
 }

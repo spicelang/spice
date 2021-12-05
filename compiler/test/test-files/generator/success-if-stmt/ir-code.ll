@@ -30,16 +30,16 @@ entry:
   store i1 %5, i1* %condition, align 1
   %6 = getelementptr inbounds i1, i1* %condition, i32 0
   %7 = load i1, i1* %6, align 1
-  br i1 %7, label %then, label %end
+  br i1 %7, label %if.then, label %if.end
 
-then:                                             ; preds = %entry
+if.then:                                          ; preds = %entry
   %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @0, i32 0, i32 0))
   %9 = alloca i32, align 4
   store i32 0, i32* %9, align 4
   %10 = load i32, i32* %9, align 4
   ret i32 %10
 
-end:                                              ; preds = %entry
+if.end:                                           ; preds = %entry
   %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @1, i32 0, i32 0))
   %12 = load i32, i32* %result, align 4
   ret i32 %12
