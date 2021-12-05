@@ -406,13 +406,13 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Create blocks
     llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "for_cond");
     llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "for");
-    llvm::BasicBlock* bLoopEnd = llvm::BasicBlock::Create(*context, "for_end");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "for_end");
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
     currentScope->setContinueBlock(bCond);
-    currentScope->setBreakBlock(bLoopEnd);
+    currentScope->setBreakBlock(bEnd);
 
     // Execute pre-loop stmts
     visit(ctx->assignExpr()[0]);
@@ -425,7 +425,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     llvm::Value* condValuePtr = visit(ctx->assignExpr()[1]).as<llvm::Value*>();
     llvm::Value* condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
     // Jump to loop body or to loop end
-    createCondBr(condValue, bLoop, bLoopEnd);
+    createCondBr(condValue, bLoop, bEnd);
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
@@ -438,8 +438,34 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     createBr(bCond);
 
     // Fill loop end block
-    parentFct->getBasicBlockList().push_back(bLoopEnd);
-    moveInsertPointToBlock(bLoopEnd);
+    parentFct->getBasicBlockList().push_back(bEnd);
+    moveInsertPointToBlock(bEnd);
+
+    // Change scope back
+    currentScope = currentScope->getParent();
+
+    // Return true as result for the loop
+    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+}
+
+antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
+    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
+
+    // Create blocks
+    llvm::BasicBlock* bInc = llvm::BasicBlock::Create(*context, "foreach_start");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "foreach_end");
+
+    // Change scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+    currentScope->setContinueBlock(bInc);
+    currentScope->setBreakBlock(bEnd);
+
+    // ToDo: @marcauberer
+
+    // Fill loop end block
+    parentFct->getBasicBlockList().push_back(bEnd);
+    moveInsertPointToBlock(bEnd);
 
     // Change scope back
     currentScope = currentScope->getParent();

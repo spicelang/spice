@@ -196,6 +196,16 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     return SymbolType(TYPE_BOOL);
 }
 
+antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
+    // Create a new scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->createChildBlock(scopeId);
+
+
+
+    return SymbolType(TYPE_BOOL);
+}
+
 antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);

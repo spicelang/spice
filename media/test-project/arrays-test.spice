@@ -1,5 +1,12 @@
 f<int> main() {
-    int val = 1;
-    val += ((1++)--) * 2 << 2;
-    printf("Value: %d", val);
+    int[7] intArray = { 1, 5, 4, 0, 12, 12345, 9 };
+    foreach (int index = 2, int item : intArray) {
+        printf("Item for index %d, %d", index, item);
+    }
+    foreach int item : intArray {
+        printf("Item: %d", item);
+    }
+    for dyn i = 1; i < 5; i += 2 {
+        printf("Item for index %d, %d", i, intArray[i]);
+    }
 }
