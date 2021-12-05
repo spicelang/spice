@@ -1,5 +1,0 @@
-f<int> len(string value) {
-    int length;
-    for length = 0; value[length] != '\0'; length++ {}
-    return length;
-}

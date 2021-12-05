@@ -1,0 +1,21 @@
+// Converts a string to a double
+f<double> toDouble(string input) {
+    // ToDo: implement
+    return 0.0;
+}
+
+// Converts a string to an int
+f<int> toInt(string input) {
+    // ToDo: implement
+    return 0;
+}
+
+// Converts a string to a bool
+f<bool> toBool(string input) {
+    return input == "true";
+}
+
+// Returns the length of a string
+f<int> len(string value) {
+    for result = 0; value[result] != '\0'; result++ {}
+}

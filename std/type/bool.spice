@@ -1,0 +1,14 @@
+// Converts a bool to a double
+f<double> toDouble(bool input) {
+    return input ? 1.0 : 0.0;
+}
+
+// Converts a bool to an int
+f<int> toInt(bool input) {
+    return input ? 1 : 0;
+}
+
+// Converts a bool to a string
+f<string> toString(bool input) {
+    return input ? "true" : "false";
+}

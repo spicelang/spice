@@ -1,0 +1,16 @@
+// Converts a double to an int
+f<int> toInt(double input) {
+    // ToDo: Implement
+    return 0;
+}
+
+// Converts a double to a string
+f<string> toString(double input) {
+    // ToDo: Implement
+    return "";
+}
+
+// Converts a double to a boolean
+f<bool> toBool(double input) {
+    return input >= 0.5;
+}
