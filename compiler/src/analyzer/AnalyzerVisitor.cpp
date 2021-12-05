@@ -477,25 +477,37 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
-    SymbolType returnType = visit(ctx->assignExpr()).as<SymbolType>();
     // Check if return variable is in the symbol table
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
-    if (!returnVariable)
-        throw SemanticError(*ctx->start, RETURN_STMT_WITHOUT_FUNCTION,
-                            "Cannot assign return statement to a function");
-    // Check data type of return statement
-    if (returnVariable->getType().is(TYPE_DYN)) {
-        // Set explicit return type to the return variable
-        returnVariable->updateType(returnType);
+    if (!returnVariable) throw std::runtime_error("Internal compiler error: Cannot assign return statement to a function");
+
+    // Check if there is a value attached to the return statement
+    SymbolType returnType;
+    if (ctx->assignExpr()) {
+        // Visit the value
+        returnType = visit(ctx->assignExpr()).as<SymbolType>();
+
+        // Check data type of return statement
+        if (returnVariable->getType().is(TYPE_DYN)) {
+            // Set explicit return type to the return variable
+            returnVariable->updateType(returnType);
+        } else {
+            // Check if return type matches with function definition
+            if (returnType != returnVariable->getType())
+                throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
+                                    "Passed wrong data type to return statement. Expected " + returnType.getName() +
+                                    " but got " + returnVariable->getType().getName());
+        }
+
+        // Set the return variable to initialized
+        returnVariable->updateState(INITIALIZED);
     } else {
-        // Check if return type matches with function definition
-        if (returnType != returnVariable->getType())
-            throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Passed wrong data type to return statement. Expected " + returnType.getName() +
-                                " but got " + returnVariable->getType().getName());
+        // Check if result variable is initialized
+        if (returnVariable->getState() != INITIALIZED)
+            throw SemanticError(*ctx->start, RETURN_WITHOUT_VALUE_RESULT,
+                                "Return without value, but result variable is not initialized yet");
+        returnType = returnVariable->getType();
     }
-    // Set the return variable to initialized
-    returnVariable->updateState(INITIALIZED);
     returnVariable->setUsed();
     return returnType;
 }

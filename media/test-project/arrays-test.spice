@@ -1,22 +1,12 @@
-f<bool> cond1() {
-    printf("cond1");
-    return true;
-}
-
-f<bool> cond2() {
-    printf("cond2");
-    return true;
-}
-
-f<bool> cond3() {
-    printf("cond3");
-    return true;
-}
-
-f<int> main() {
-    if cond1() && cond2() && cond3() {
+f<int> testFunc(int input) {
+    result = 1;
+    if (input > 1) {
         printf("true");
         return 0;
     }
     printf("false");
+}
+
+f<int> main() {
+    printf("Result: %d", testFunc(1));
 }

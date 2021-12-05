@@ -61,8 +61,6 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Global of type dyn";
         case FUNCTION_WITHOUT_RETURN_STMT:
             return "Missing return statement";
-        case RETURN_STMT_WITHOUT_FUNCTION:
-            return "Return statement outside function";
         case OPERATOR_WRONG_DATA_TYPE:
             return "Wrong data type for operator";
         case REASSIGN_CONST_VARIABLE:
@@ -99,6 +97,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Array index not of type int";
         case ARRAY_ITEM_TYPE_NOT_MATCHING:
             return "Array item type not matching";
+        case RETURN_WITHOUT_VALUE_RESULT:
+            return "Return without initialization of result variable";
     }
     return "Unknown error";
 }
