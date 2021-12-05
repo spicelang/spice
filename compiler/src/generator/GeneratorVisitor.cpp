@@ -924,14 +924,47 @@ antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext
 
 antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) {
     if (ctx->logicalAndExpr().size() > 1) {
+        // Prepare for short-circuiting
+        std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->logicalAndExpr().size()];
+        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "lor-end");
+        llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
+        parentFunction->getBasicBlockList().push_back(bEnd);
+
+        // Visit the first condition
         llvm::Value* lhsPtr = visit(ctx->logicalAndExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+
+        // Prepare the blocks
+        incomingBlocks[0] = { lhs, builder->GetInsertBlock() };
         for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
-            llvm::Value* rhs = visit(ctx->logicalAndExpr()[i]).as<llvm::Value*>();
-            lhs = builder->CreateLogicalOr(lhs, rhs, "log_or");
+            llvm::BasicBlock* bb = llvm::BasicBlock::Create(*context, "lor." + std::to_string(i));
+            parentFunction->getBasicBlockList().push_back(bb);
+            incomingBlocks[i] = { nullptr, bb };
         }
-        llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
-        builder->CreateStore(lhs, resultPtr);
+        createCondBr(lhs, bEnd, std::get<1>(incomingBlocks[1]));
+
+        // Create a block for every other condition
+        for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
+            moveInsertPointToBlock(std::get<1>(incomingBlocks[i]));
+            llvm::Value* rhsPtr = visit(ctx->logicalAndExpr()[i]).as<llvm::Value*>();
+            llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+            std::get<0>(incomingBlocks[i]) = rhs;
+            if (i < ctx->logicalAndExpr().size() -1) {
+                createCondBr(rhs, bEnd, std::get<1>(incomingBlocks[i + 1]));
+            } else {
+                createBr(bEnd);
+            }
+        }
+
+        // Get the result with the phi node
+        moveInsertPointToBlock(bEnd);
+        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->logicalAndExpr().size(), "lor-phi");
+        for (const auto& tuple : incomingBlocks)
+            phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
+
+        // Store the result
+        llvm::Value* resultPtr = builder->CreateAlloca(phi->getType());
+        builder->CreateStore(phi, resultPtr);
         return resultPtr;
     }
     return visit(ctx->logicalAndExpr()[0]);
@@ -939,14 +972,47 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
 
 antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext* ctx) {
     if (ctx->bitwiseOrExpr().size() > 1) {
+        // Prepare for short-circuiting
+        std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->bitwiseOrExpr().size()];
+        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "land-end");
+        llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
+        parentFunction->getBasicBlockList().push_back(bEnd);
+
+        // Visit the first condition
         llvm::Value* lhsPtr = visit(ctx->bitwiseOrExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+
+        // Prepare the blocks
+        incomingBlocks[0] = { lhs, builder->GetInsertBlock() };
         for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
-            llvm::Value* rhs = visit(ctx->bitwiseOrExpr()[i]).as<llvm::Value*>();
-            lhs = builder->CreateLogicalAnd(lhs, rhs, "log_and");
+            llvm::BasicBlock* bb = llvm::BasicBlock::Create(*context, "land." + std::to_string(i));
+            parentFunction->getBasicBlockList().push_back(bb);
+            incomingBlocks[i] = { nullptr, bb };
         }
-        llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
-        builder->CreateStore(lhs, resultPtr);
+        createCondBr(lhs, std::get<1>(incomingBlocks[1]), bEnd);
+
+        // Create a block for every other condition
+        for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
+            moveInsertPointToBlock(std::get<1>(incomingBlocks[i]));
+            llvm::Value* rhsPtr = visit(ctx->bitwiseOrExpr()[i]).as<llvm::Value*>();
+            llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+            std::get<0>(incomingBlocks[i]) = rhs;
+            if (i < ctx->bitwiseOrExpr().size() -1) {
+                createCondBr(rhs, std::get<1>(incomingBlocks[i + 1]), bEnd);
+            } else {
+                createBr(bEnd);
+            }
+        }
+
+        // Get the result with the phi node
+        moveInsertPointToBlock(bEnd);
+        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->bitwiseOrExpr().size(), "land-phi");
+        for (const auto& tuple : incomingBlocks)
+            phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
+
+        // Store the result
+        llvm::Value* resultPtr = builder->CreateAlloca(phi->getType());
+        builder->CreateStore(phi, resultPtr);
         return resultPtr;
     }
     return visit(ctx->bitwiseOrExpr()[0]);
@@ -957,7 +1023,8 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCon
         llvm::Value* lhsPtr = visit(ctx->bitwiseAndExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
-            llvm::Value* rhs = visit(ctx->bitwiseAndExpr()[i]).as<llvm::Value*>();
+            llvm::Value* rhsPtr = visit(ctx->bitwiseAndExpr()[i]).as<llvm::Value*>();
+            llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             lhs = builder->CreateOr(lhs, rhs, "bw_or");
         }
         llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
@@ -972,7 +1039,8 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprC
         llvm::Value* lhsPtr = visit(ctx->equalityExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         for (int i = 1; i < ctx->equalityExpr().size(); i++) {
-            llvm::Value* rhs = visit(ctx->equalityExpr()[i]).as<llvm::Value*>();
+            llvm::Value* rhsPtr = visit(ctx->equalityExpr()[i]).as<llvm::Value*>();
+            llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             lhs = builder->CreateAnd(lhs, rhs, "bw_and");
         }
         llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());

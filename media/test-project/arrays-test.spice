@@ -1,9 +1,20 @@
-f<bool> equal(int a, int b) {
-    return a == b;
+f<bool> cond1() {
+    printf("cond1");
+    return true;
+}
+
+f<bool> cond2() {
+    printf("cond2");
+    return true;
+}
+
+f<bool> cond3() {
+    printf("cond3");
+    return true;
 }
 
 f<int> main() {
-    if equal(1, 2) {
+    if cond1() && cond2() && cond3() {
         printf("true");
         return 0;
     }
