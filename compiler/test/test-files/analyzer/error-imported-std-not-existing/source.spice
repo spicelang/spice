@@ -1,0 +1,5 @@
+import "std/non-existing/foo" as foo;
+
+f<int> main() {
+    return foo.bar();
+}

@@ -430,7 +430,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
             stdPath = std::string(std::getenv("SPICE_STD_DIR"));
             if (stdPath.rfind('/') != stdPath.size() - 1) stdPath += "/";
         } else {
-            throw SemanticError(STD_NOT_FOUND,
+            throw SemanticError(*ctx->STRING()->getSymbol(), STD_NOT_FOUND,
                                 "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
         }
         // Check if source file exists
@@ -441,8 +441,8 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
         } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice")) {
             filePath = stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice";
         } else {
-            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath +
-                                                            ".spice' was not found in std library");
+            throw SemanticError(*ctx->STRING()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
+                                "The source file '" + importPath + ".spice' was not found in standard library");
         }
     } else { // Include own source file
         // Check in module registry if the file can be imported
@@ -457,8 +457,8 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
         } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice")) {
             filePath = sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice";
         } else {
-            throw SemanticError(IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath +
-                                                            ".spice' does not exist");
+            throw SemanticError(*ctx->STRING()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
+                                "The source file '" + importPath + ".spice' does not exist");
         }
     }
 

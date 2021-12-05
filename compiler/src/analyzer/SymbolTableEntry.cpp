@@ -92,7 +92,8 @@ bool  SymbolTableEntry::isUsed() const {
  */
 void SymbolTableEntry::updateState(SymbolState newState) {
     if (state == INITIALIZED && isConstant)
-        throw SemanticError(REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
+        throw SemanticError(definitionToken, REASSIGN_CONST_VARIABLE,
+                            "Not re-assignable variable '" + name + "'");
     if (newState == INITIALIZED && type == SymbolType(TYPE_DYN))
         throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'");
     state = newState;
