@@ -1,0 +1,15 @@
+// Converts an int to a double
+f<double> toDouble(int input) {
+    return input ? 1.0 : 0.0;
+}
+
+// Converts an int to a string
+f<string> toString(int input) {
+    // ToDo: Implement
+    return "";
+}
+
+// Converts an int to a boolean
+f<bool> toBool(int input) {
+    return input >= 1;
+}
