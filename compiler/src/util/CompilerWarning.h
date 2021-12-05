@@ -11,7 +11,8 @@ enum CompilerWarningType {
     UNUSED_PROCEDURE,
     UNUSED_STRUCT,
     UNUSED_IMPORT,
-    UNUSED_VARIABLE
+    UNUSED_VARIABLE,
+    ARRAY_TOO_MANY_VALUES,
 };
 
 /**

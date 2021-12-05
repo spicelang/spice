@@ -197,11 +197,50 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
+    auto head = ctx->foreachHead();
+
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
 
+    // Check type of the array
+    SymbolType arrayType = visit(head->assignExpr().back()).as<SymbolType>();
+    if (!arrayType.isArray())
+        throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
+                            "Can only apply foreach loop on an array type. You provided " + arrayType.getName());
 
+    // Check type of the item
+    SymbolType itemType = visit(head->declStmt().back()).as<SymbolType>();
+    if (itemType.is(TYPE_DYN)) {
+        itemType = arrayType.getItemType();
+    } else {
+        if (itemType != arrayType.getItemType())
+            throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
+                                "Foreach loop item type does not match array type. Expected " + arrayType.getName() +
+                                ", provided " + itemType.getName());
+    }
+
+    // Check index assignment or declaration
+    SymbolType indexType;
+    if (head->declStmt().size() > 1) { // declStmt COMMA declStmt COLON assignExpr
+        indexType = visit(head->declStmt().front()).as<SymbolType>();
+        if (!indexType.is(TYPE_INT))
+            throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
+                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
+    } else if (head->assignExpr().size() > 1) { // assignExpr COMMA declStmt COLON assignExpr
+        indexType = visit(head->assignExpr().front()).as<SymbolType>();
+        if (!indexType.is(TYPE_INT))
+            throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
+                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
+    }
+
+    // Visit statement list in new scope
+    nestedLoopCounter++;
+    visit(ctx->stmtLst());
+    nestedLoopCounter--;
+
+    // Return to old scope
+    currentScope = currentScope->getParent();
 
     return SymbolType(TYPE_BOOL);
 }
@@ -381,7 +420,17 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
     // Visit data type
     std::string variableName = ctx->IDENTIFIER()->toString();
     SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
-    SymbolType indexType = visit(ctx->value()).as<SymbolType>();
+    SymbolType sizeType = visit(ctx->value()).as<SymbolType>();
+
+    // Check if size is >1
+    int size = std::stoi(ctx->value()->INTEGER()->toString());
+    if (size <= 1)
+        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
+
+    // Check if size type is an integer
+    if (!sizeType.is(TYPE_INT))
+        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
+                            "The size must be an integer, provided " + sizeType.getName());
 
     // Check if all values have the same type
     SymbolType expectedItemType = SymbolType(TYPE_DYN);
@@ -396,6 +445,12 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
                                     expectedItemType.getName() + " and " + itemType.getName());
             }
         }
+
+        // Compiler warning when the number of provided values exceeds the array size
+        if (ctx->paramLst()->assignExpr().size() > size)
+            CompilerWarning(*ctx->paramLst()->assignExpr()[size -1]->start, ARRAY_TOO_MANY_VALUES,
+                            "You provided more values than your array can hold. Excess variables are "
+                            "being ignored by the compiler.").print();
     }
 
     // Infer type
@@ -406,16 +461,6 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
 
         dataType = expectedItemType.getArrayType();
     }
-
-    // Check if index type is an integer
-    if (!indexType.is(TYPE_INT))
-        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
-                            "The size must be an integer, provided " + indexType.getName());
-
-    // Check if index is >1
-    int size = std::stoi(ctx->value()->INTEGER()->toString());
-    if (size <= 1)
-        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
 
     // Create new symbol in the current scope
     currentScope->insert(variableName, dataType.getArrayType(), INITIALIZED, *ctx->start, ctx->CONST(), parameterMode);

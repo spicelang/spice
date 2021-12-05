@@ -190,6 +190,18 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "error-return-without-value-result",
             "Semantic error at 4:9: Return without initialization of result variable: Return without value, but result variable is not initialized yet"
         },
+        {
+            "error-foreach-wrong-array-type",
+            "Semantic error at 3:13: Wrong data type for operator: Can only apply foreach loop on an array type. You provided bool"
+        },
+        {
+            "error-foreach-wrong-item-type",
+            "Semantic error at 3:13: Wrong data type for operator: Foreach loop item type does not match array type. Expected int[], provided double"
+        },
+        {
+            "error-foreach-wrong-index-type",
+            "Semantic error at 3:13: Array index not of type int: Index in foreach loop must be of type int. You provided double"
+        },
         // Successful tests
         {
             "success-fibonacci",
