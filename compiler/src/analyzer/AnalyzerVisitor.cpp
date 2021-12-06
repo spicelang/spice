@@ -63,6 +63,9 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     parameterMode = false;
     // Declare variable for the return value in new scope
     SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
+    if (returnType.isPointer())
+        throw SemanticError(*ctx->start, COMING_SOON_SA,
+                            "Spice currently not supports pointer return types due to not supporting heap allocations.");
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, *ctx->start, false, false);
     // Return to old scope
     currentScope = currentScope->getParent();

@@ -6,7 +6,7 @@ f<double> toDouble(int input) {
 
 // Converts an int to a string
 f<string> toString(int input) {
-    // ToDo: Implement
+    // ToDo: Implement (See https://github.com/golang/go/blob/master/src/strconv/itoa.go)
     return "";
 }
 

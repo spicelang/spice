@@ -59,6 +59,8 @@ std::string IRError::getMessagePrefix(IRErrorType type) {
             return "Invalid function";
         case INVALID_MODULE:
             return "Invalid module";
+        case COMING_SOON_IR:
+            return "Coming soon";
     }
     return "Unknown error";
 }

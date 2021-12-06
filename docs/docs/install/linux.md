@@ -39,7 +39,7 @@ title: Install on Linux
     ```
 
     !!! warning
-        The support for Raspbian is at the experimental stage. Please File a bug ticket on <a href="https://github.com/chillibits/spice/issues/new/choose" target="_blank">GitHub</a> if there occurs a bug for you while installing.
+        The support for Raspbian is at the experimental stage. Please file a bug ticket on <a href="https://github.com/chillibits/spice/issues/new/choose" target="_blank">GitHub</a> if there occurs a bug for you while installing.
 
 ### Install from package file
 You can also install Spice from a Linux package.

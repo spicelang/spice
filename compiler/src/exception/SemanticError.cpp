@@ -99,6 +99,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Array item type not matching";
         case RETURN_WITHOUT_VALUE_RESULT:
             return "Return without initialization of result variable";
+        case COMING_SOON_SA:
+            return "Coming soon";
     }
     return "Unknown error";
 }

@@ -163,5 +163,7 @@ private:
 
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
 
-    llvm::Type* getTypeFromSymbolType(SymbolType);
+    llvm::Type* getTypeForSymbolType(SymbolType);
+
+    llvm::Value* getDefaultValueForSymbolType(SymbolType);
 };

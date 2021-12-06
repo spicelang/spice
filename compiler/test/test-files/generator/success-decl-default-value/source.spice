@@ -1,0 +1,4 @@
+f<int> main() {
+    double variable;
+    printf("Double value: %f", variable);
+}
