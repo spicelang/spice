@@ -1,5 +1,5 @@
 ---
-title: Operator Precendence
+title: Operator Precedence
 ---
 
 The following table shows how Spice prioritizes the supported operators. The list is sorted top to bottom in descending precedence.
