@@ -219,14 +219,13 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
                                 "Index in foreach loop must be of type int. You provided " + indexType.getName());
     } else if (head->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
         indexType = visit(head->assignExpr().front()).as<SymbolType>();
-        currentScope->lookup(head->assignExpr().front()->declStmt()->IDENTIFIER()->toString())->updateState(INITIALIZED);
         if (!indexType.is(TYPE_INT))
             throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
                                 "Index in foreach loop must be of type int. You provided " + indexType.getName());
     } else { // declStmt COLON assignExpr
         // Declare the variable with the default index variable name
         currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, SymbolType(TYPE_INT), INITIALIZED,
-                             *ctx->start, true, parameterMode);
+                             *ctx->start, true, false);
     }
 
     // Check type of the item

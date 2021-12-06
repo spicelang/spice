@@ -3,8 +3,8 @@ f<int> main() {
     foreach (int index, int item : intArray) {
         printf("Item for index %d, %d", index, item);
     }
-    foreach (int idx = 2, int item : intArray) {
-        printf("Item for index %d, %d", index, item);
+    foreach (const int idx = 2, const int item : intArray) {
+        printf("Item for index %d, %d", idx, item);
         idx++;
     }
     foreach const int item : intArray {

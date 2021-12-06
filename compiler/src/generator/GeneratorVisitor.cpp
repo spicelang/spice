@@ -464,23 +464,27 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     currentScope->setBreakBlock(bEnd);
 
     // Initialize loop variables
-    std::string indexVariableName;
     llvm::Value* indexVariablePtr;
     if (ctx->foreachHead()->declStmt().size() >= 2) { // declStmt COMMA declStmt COLON assignExpr
-        indexVariableName = visit(ctx->foreachHead()->declStmt().front()).as<std::string>();
+        std::string indexVariableName = visit(ctx->foreachHead()->declStmt().front()).as<std::string>();
         indexVariablePtr = currentScope->lookup(indexVariableName)->getAddress();
+        // Initialize variable with 0
+        builder->CreateStore(builder->getInt32(0), indexVariablePtr);
     } else if (ctx->foreachHead()->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
         visit(ctx->foreachHead()->assignExpr().front()).as<llvm::Value*>();
-        indexVariableName = ctx->foreachHead()->assignExpr().front()->declStmt()->IDENTIFIER()->toString();
+        std::string indexVariableName = ctx->foreachHead()->assignExpr().front()->declStmt()->IDENTIFIER()->toString();
         indexVariablePtr = currentScope->lookup(indexVariableName)->getAddress();
     } else { // declStmt COLON assignExpr
-        indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
+        std::string indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
         // Create local variable for
         llvm::Type* indexVariableType = llvm::Type::getInt32Ty(*context);
         indexVariablePtr = builder->CreateAlloca(indexVariableType, nullptr, indexVariableName);
-        currentScope->lookup(indexVariableName)->updateAddress(indexVariablePtr);
-        currentScope->lookup(indexVariableName)->updateLLVMType(indexVariableType);
-        currentScope->lookup(indexVariableName)->setUsed();
+        SymbolTableEntry* entry = currentScope->lookup(indexVariableName);
+        entry->updateAddress(indexVariablePtr);
+        entry->updateLLVMType(indexVariableType);
+        entry->setUsed();
+        // Initialize variable with 0
+        builder->CreateStore(builder->getInt32(0), indexVariablePtr);
     }
     std::string itemVariableName = visit(ctx->foreachHead()->declStmt().back()).as<std::string>();
     llvm::Value* itemVariablePtr = currentScope->lookup(itemVariableName)->getAddress();
