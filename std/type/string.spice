@@ -6,7 +6,14 @@ f<double> toDouble(string input) {
 
 // Converts a string to an int
 f<int> toInt(string input) {
-    // ToDo: implement
+    if intput == "" {
+        return 0;
+    }
+
+    bool neg = false;
+    
+
+    // ToDo: implement the rest
     return 0;
 }
 
@@ -18,4 +25,10 @@ f<bool> toBool(string input) {
 // Returns the length of a string
 f<int> len(string value) {
     for result = 0; value[result] != '\0'; result++ {}
+}
+
+// Returns true if the input string contains the input substring
+f<bool> contains(string input, string substring) {
+    // ToDo: implement
+    return false;
 }

@@ -1596,7 +1596,7 @@ llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsTy
         } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
             // double + string
             // ToDo(@marcauberer): Insert call to toString(double) and concatStrings
-            throw IRError(COMING_SOON, "The compiler does not support the '+' operator for lhs=double and rhs=string yet");
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=double and rhs=string yet");
         }
     } else if (lhsType->isIntegerTy(32)) {
         if (rhsType->isDoubleTy()) {
@@ -1608,21 +1608,21 @@ llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsTy
         } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
             // int + string
             // ToDo(@marcauberer): Insert call to toString(int) and concatStrings
-            throw IRError(COMING_SOON, "The compiler does not support the '+' operator for lhs=int and rhs=string yet");
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=int and rhs=string yet");
         }
     } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
         if (rhsType->isDoubleTy()) {
             // string + double
             // ToDo(@marcauberer): Insert call to toString(double) and concatStrings
-            throw IRError(COMING_SOON, "The compiler does not support the '+' operator for lhs=string and rhs=double yet");
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=double yet");
         } else if (rhsType->isIntegerTy(32)) {
             // string + int
             // ToDo(@marcauberer): Insert call to toString(int) and concatStrings
-            throw IRError(COMING_SOON, "The compiler does not support the '+' operator for lhs=string and rhs=int yet");
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=int yet");
         } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
             // string + string
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
         }
     }
     return lhs;
@@ -1668,13 +1668,13 @@ llvm::Value* GeneratorVisitor::createMulInst(llvm::Value* lhs, llvm::Type* lhsTy
         } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
             // int * string
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON, "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
         }
     } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
         if (rhsType->isIntegerTy(32)) {
             // string * int
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON, "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
         }
     }
     return lhs;

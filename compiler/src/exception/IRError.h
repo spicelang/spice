@@ -16,7 +16,7 @@ enum IRErrorType {
     VARIABLE_NOT_FOUND,
     INVALID_FUNCTION,
     INVALID_MODULE,
-    COMING_SOON,
+    COMING_SOON_IR,
 };
 
 /**

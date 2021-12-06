@@ -7,6 +7,9 @@ The package `std/runtime` is a internal package which is linked automatically to
 ## I/O
 The package `std/io` offers functions for reading/writing files, etc.
 
+## Math
+The package `std/math` offers functions for mathematical operations, etc.
+
 ## Net
 The package `std/net` offers functions for network communication, etc.
 
