@@ -450,9 +450,11 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
+    bool hasIndexVariable = ctx->foreachHead()->declStmt().size() >= 2 || ctx->foreachHead()->assignExpr().size() >= 2;
 
     // Create blocks
-    llvm::BasicBlock* bInc = llvm::BasicBlock::Create(*context, "foreach.start");
+    llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "foreach.loop");
+    llvm::BasicBlock* bInc = llvm::BasicBlock::Create(*context, "foreach.inc");
     llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "foreach.end");
 
     // Change scope
@@ -461,7 +463,52 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     currentScope->setContinueBlock(bInc);
     currentScope->setBreakBlock(bEnd);
 
-    // ToDo: @marcauberer
+    // Initialize loop variables
+    std::string itemVariableName = ctx->foreachHead()->declStmt().back()->IDENTIFIER()->toString();
+    SymbolTableEntry* itemVariable = currentScope->lookup(itemVariableName);
+    std::string indexVariableName;
+    llvm::Value* indexVariablePtr;
+    if (ctx->foreachHead()->declStmt().size() >= 2) { // declStmt COMMA declStmt COLON assignExpr
+        indexVariableName = visit(ctx->foreachHead()->declStmt().front()).as<std::string>();
+        indexVariablePtr = currentScope->lookup(indexVariableName)->getAddress();
+    } else if (ctx->foreachHead()->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
+        visit(ctx->foreachHead()->assignExpr().front()).as<llvm::Value*>();
+        indexVariableName = ctx->foreachHead()->assignExpr().front()->declStmt()->IDENTIFIER()->toString();
+        indexVariablePtr = currentScope->lookup(indexVariableName)->getAddress();
+    } else { // declStmt COLON assignExpr
+        indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
+        // Create local variable for
+        llvm::Type* indexVariableType = llvm::Type::getInt32Ty(*context);
+        indexVariablePtr = builder->CreateAlloca(indexVariableType, nullptr, indexVariableName);
+        currentScope->lookup(indexVariableName)->updateAddress(indexVariablePtr);
+        currentScope->lookup(indexVariableName)->updateLLVMType(indexVariableType);
+        currentScope->lookup(indexVariableName)->setUsed();
+    }
+
+    // Do loop variable initialization
+    llvm::Value* arrayValuePtr = visit(ctx->foreachHead()->assignExpr().back()).as<llvm::Value*>();
+    llvm::Value* arrayValue = builder->CreateLoad(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr);
+    llvm::Value* arraySize = builder->getInt32(arrayValue->getType()->getArrayNumElements());
+    createBr(bLoop);
+
+    // Fill loop block
+    parentFct->getBasicBlockList().push_back(bLoop);
+    moveInsertPointToBlock(bLoop);
+    // Generate IR for nested statements
+    visit(ctx->stmtLst());
+    // Check if the index variable reached the size -1
+    llvm::Value* indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+    llvm::Value* cond = builder->CreateICmpSLT(indexValue, arraySize, "foreach_idx_cmp");
+    createCondBr(cond, bInc, bEnd);
+
+    // Fill inc block
+    parentFct->getBasicBlockList().push_back(bInc);
+    moveInsertPointToBlock(bInc);
+    // Increment index variable
+    indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+    indexValue = builder->CreateAdd(indexValue, builder->getInt32(1), "foreach_idx_inc");
+    builder->CreateStore(indexValue, indexVariablePtr);
+    createBr(bLoop);
 
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bEnd);

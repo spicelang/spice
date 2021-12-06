@@ -209,8 +209,29 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
         throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
                             "Can only apply foreach loop on an array type. You provided " + arrayType.getName());
 
+    // Check index assignment or declaration
+    SymbolType indexType;
+    if (head->declStmt().size() >= 2) { // declStmt COMMA declStmt COLON assignExpr
+        indexType = visit(head->declStmt().front()).as<SymbolType>();
+        currentScope->lookup(head->declStmt().front()->IDENTIFIER()->toString())->updateState(INITIALIZED);
+        if (!indexType.is(TYPE_INT))
+            throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
+                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
+    } else if (head->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
+        indexType = visit(head->assignExpr().front()).as<SymbolType>();
+        currentScope->lookup(head->assignExpr().front()->declStmt()->IDENTIFIER()->toString())->updateState(INITIALIZED);
+        if (!indexType.is(TYPE_INT))
+            throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
+                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
+    } else { // declStmt COLON assignExpr
+        // Declare the variable with the default index variable name
+        currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, SymbolType(TYPE_INT), INITIALIZED,
+                             *ctx->start, true, parameterMode);
+    }
+
     // Check type of the item
     SymbolType itemType = visit(head->declStmt().back()).as<SymbolType>();
+    currentScope->lookup(head->declStmt().back()->IDENTIFIER()->toString())->updateState(INITIALIZED);
     if (itemType.is(TYPE_DYN)) {
         itemType = arrayType.getItemType();
     } else {
@@ -218,20 +239,6 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
             throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Foreach loop item type does not match array type. Expected " + arrayType.getName() +
                                 ", provided " + itemType.getName());
-    }
-
-    // Check index assignment or declaration
-    SymbolType indexType;
-    if (head->declStmt().size() > 1) { // declStmt COMMA declStmt COLON assignExpr
-        indexType = visit(head->declStmt().front()).as<SymbolType>();
-        if (!indexType.is(TYPE_INT))
-            throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
-                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
-    } else if (head->assignExpr().size() > 1) { // assignExpr COMMA declStmt COLON assignExpr
-        indexType = visit(head->assignExpr().front()).as<SymbolType>();
-        if (!indexType.is(TYPE_INT))
-            throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
-                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
     }
 
     // Visit statement list in new scope
