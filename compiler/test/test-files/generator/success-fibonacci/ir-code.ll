@@ -25,15 +25,15 @@ entry:
   %5 = alloca i1, align 1
   store i1 %le, i1* %5, align 1
   %6 = load i1, i1* %5, align 1
-  br i1 %6, label %then, label %end
+  br i1 %6, label %if.then, label %if.end
 
-then:                                             ; preds = %entry
+if.then:                                          ; preds = %entry
   %7 = alloca i32, align 4
   store i32 1, i32* %7, align 4
   %8 = load i32, i32* %7, align 4
   ret i32 %8
 
-end:                                              ; preds = %entry
+if.end:                                           ; preds = %entry
   %9 = getelementptr inbounds i32, i32* %n, i32 0
   %10 = load i32, i32* %9, align 4
   %11 = alloca i32, align 4

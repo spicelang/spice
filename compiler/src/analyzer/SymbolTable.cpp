@@ -1,6 +1,7 @@
 // Copyright (c) 2021 ChilliBits. All rights reserved.
 
 #include "SymbolTable.h"
+#include "AnalyzerVisitor.h"
 
 /**
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
@@ -315,8 +316,9 @@ void SymbolTable::printCompilerWarnings() {
                 CompilerWarning(entry.getDefinitionToken(), UNUSED_IMPORT,
                                 "The import '" + entry.getName() + "' is unused").print();
             } else {
-                CompilerWarning(entry.getDefinitionToken(), UNUSED_VARIABLE,
-                                      "The variable '" + entry.getName() + "' is unused").print();
+                if (entry.getName() != UNUSED_VARIABLE_NAME)
+                    CompilerWarning(entry.getDefinitionToken(), UNUSED_VARIABLE,
+                                    "The variable '" + entry.getName() + "' is unused").print();
             }
         }
     }

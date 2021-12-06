@@ -62,6 +62,16 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::ForLoopContext* ctx) {
 }
 
 /**
+ * Get scope id for the ForeachLoop AST node
+ *
+ * @return Scope id
+ */
+std::string ScopeIdUtil::getScopeId(SpiceParser::ForeachLoopContext* ctx) {
+    auto symbol = ctx->FOREACH()->getSymbol();
+    return "foreach:" + std::to_string(symbol->getLine()) + ":" + std::to_string(symbol->getCharPositionInLine());
+}
+
+/**
  * Get scope id for the WhileLoop AST node
  *
  * @return Scope id

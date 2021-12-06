@@ -36,6 +36,10 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             ""
         },
         {
+            "success-foreach-loop",
+            ""
+        },
+        {
             "success-while-loop",
             ""
         },

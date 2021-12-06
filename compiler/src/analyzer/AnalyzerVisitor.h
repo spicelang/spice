@@ -19,7 +19,8 @@
 #include <utility>
 
 const static std::string RETURN_VARIABLE_NAME = "result";
-const static std::string TMP_VARIABLE_NAME = "tmp";
+const static std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
+const static std::string UNUSED_VARIABLE_NAME = "_";
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
@@ -56,6 +57,8 @@ public:
     antlrcpp::Any visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) override;
 
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
+
+    antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) override;
 
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
 

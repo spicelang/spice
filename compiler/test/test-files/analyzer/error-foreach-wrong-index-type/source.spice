@@ -1,0 +1,6 @@
+f<int> main() {
+    int[5] array = { 1, 2, 3, 4, 5 };
+    foreach double i, int item : array {
+        printf("Item at index %f: %d", i, item);
+    }
+}

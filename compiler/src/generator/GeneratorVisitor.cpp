@@ -139,7 +139,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     if (mustHaveMainFunction) { // Only create main function when it is required
         // Build function itself
         std::string functionName = "main";
-        llvm::Type* returnType = getTypeFromSymbolType(SymbolType(TYPE_INT));
+        llvm::Type* returnType = llvm::Type::getInt32Ty(*context);
         llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
         llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
                                                      functionName, module.get());
@@ -155,8 +155,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         llvm::Value* memAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
         currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(memAddress);
         currentScope->lookup(RETURN_VARIABLE_NAME)->updateLLVMType(returnType);
-        llvm::Value* zero = llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), 0);
-        builder->CreateStore(zero, currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
+        builder->CreateStore(builder->getInt32(0), currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
 
         // Generate IR for function body
         visit(ctx->stmtLst());
@@ -179,10 +178,10 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         currentScope = currentScope->getParent();
 
         // Return true as result for the function definition
-        return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+        return (llvm::Value*) builder->getTrue();
     }
     // Return false as result for the function definition
-    return (llvm::Value*) llvm::ConstantInt::getFalse(*context);
+    return (llvm::Value*) builder->getFalse();
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
@@ -275,7 +274,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
 
     // Return true as result for the function definition
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
@@ -356,7 +355,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
 
     // Return true as result for the function definition
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ctx) {
@@ -374,7 +373,7 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
     currentScope->lookup(structName)->updateLLVMType(structType);
 
     // Return true as result for the struct definition
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) {
@@ -397,22 +396,22 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     }
 
     // Return true as result for the global variable definition
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "for_cond");
+    llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "for.cond");
     llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "for");
-    llvm::BasicBlock* bLoopEnd = llvm::BasicBlock::Create(*context, "for_end");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "for.end");
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
     currentScope->setContinueBlock(bCond);
-    currentScope->setBreakBlock(bLoopEnd);
+    currentScope->setBreakBlock(bEnd);
 
     // Execute pre-loop stmts
     visit(ctx->assignExpr()[0]);
@@ -425,7 +424,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     llvm::Value* condValuePtr = visit(ctx->assignExpr()[1]).as<llvm::Value*>();
     llvm::Value* condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
     // Jump to loop body or to loop end
-    createCondBr(condValue, bLoop, bLoopEnd);
+    createCondBr(condValue, bLoop, bEnd);
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
@@ -438,23 +437,111 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     createBr(bCond);
 
     // Fill loop end block
-    parentFct->getBasicBlockList().push_back(bLoopEnd);
-    moveInsertPointToBlock(bLoopEnd);
+    parentFct->getBasicBlockList().push_back(bEnd);
+    moveInsertPointToBlock(bEnd);
 
     // Change scope back
     currentScope = currentScope->getParent();
 
     // Return true as result for the loop
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
+}
+
+antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
+    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
+    bool hasIndexVariable = ctx->foreachHead()->declStmt().size() >= 2 || ctx->foreachHead()->assignExpr().size() >= 2;
+
+    // Create blocks
+    llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "foreach.loop");
+    llvm::BasicBlock* bInc = llvm::BasicBlock::Create(*context, "foreach.inc");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "foreach.end");
+
+    // Change scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+    currentScope->setContinueBlock(bInc);
+    currentScope->setBreakBlock(bEnd);
+
+    // Initialize loop variables
+    llvm::Value* indexVariablePtr;
+    if (ctx->foreachHead()->declStmt().size() >= 2) { // declStmt COMMA declStmt COLON assignExpr
+        std::string indexVariableName = visit(ctx->foreachHead()->declStmt().front()).as<std::string>();
+        indexVariablePtr = currentScope->lookup(indexVariableName)->getAddress();
+        // Initialize variable with 0
+        builder->CreateStore(builder->getInt32(0), indexVariablePtr);
+    } else if (ctx->foreachHead()->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
+        visit(ctx->foreachHead()->assignExpr().front()).as<llvm::Value*>();
+        std::string indexVariableName = ctx->foreachHead()->assignExpr().front()->declStmt()->IDENTIFIER()->toString();
+        indexVariablePtr = currentScope->lookup(indexVariableName)->getAddress();
+    } else { // declStmt COLON assignExpr
+        std::string indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
+        // Create local variable for
+        llvm::Type* indexVariableType = llvm::Type::getInt32Ty(*context);
+        indexVariablePtr = builder->CreateAlloca(indexVariableType, nullptr, indexVariableName);
+        SymbolTableEntry* entry = currentScope->lookup(indexVariableName);
+        entry->updateAddress(indexVariablePtr);
+        entry->updateLLVMType(indexVariableType);
+        entry->setUsed();
+        // Initialize variable with 0
+        builder->CreateStore(builder->getInt32(0), indexVariablePtr);
+    }
+    std::string itemVariableName = visit(ctx->foreachHead()->declStmt().back()).as<std::string>();
+    llvm::Value* itemVariablePtr = currentScope->lookup(itemVariableName)->getAddress();
+
+    // Do loop variable initialization
+    llvm::Value* arrayValuePtr = visit(ctx->foreachHead()->assignExpr().back()).as<llvm::Value*>();
+    llvm::Value* arrayValue = builder->CreateLoad(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr);
+    llvm::Value* maxIndex = builder->getInt32(arrayValue->getType()->getArrayNumElements() -1);
+    // Load the first item into item variable
+    llvm::Value* indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+    llvm::Value* gepInst = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(),
+                                                      arrayValuePtr, { builder->getInt32(0), indexValue });
+    llvm::Value* newItemValue = builder->CreateLoad(gepInst->getType()->getPointerElementType(), gepInst);
+    builder->CreateStore(newItemValue, itemVariablePtr);
+    createBr(bLoop);
+
+    // Fill loop block
+    parentFct->getBasicBlockList().push_back(bLoop);
+    moveInsertPointToBlock(bLoop);
+    // Generate IR for nested statements
+    visit(ctx->stmtLst());
+    // Check if the index variable reached the size -2
+    indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+    llvm::Value* cond = builder->CreateICmpSLT(indexValue, maxIndex, "foreach_idx_cmp");
+    createCondBr(cond, bInc, bEnd);
+
+    // Fill inc block
+    parentFct->getBasicBlockList().push_back(bInc);
+    moveInsertPointToBlock(bInc);
+    // Increment index variable
+    indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+    indexValue = builder->CreateAdd(indexValue, builder->getInt32(1), "foreach_idx_inc");
+    builder->CreateStore(indexValue, indexVariablePtr);
+    // Load new item into item variable
+    gepInst = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(),
+                                         arrayValuePtr, { builder->getInt32(0), indexValue });
+    newItemValue = builder->CreateLoad(gepInst->getType()->getPointerElementType(), gepInst);
+    builder->CreateStore(newItemValue, itemVariablePtr);
+    createBr(bLoop);
+
+    // Fill loop end block
+    parentFct->getBasicBlockList().push_back(bEnd);
+    moveInsertPointToBlock(bEnd);
+
+    // Change scope back
+    currentScope = currentScope->getParent();
+
+    // Return true as result for the loop
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "while_cond");
+    llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "while.cond");
     llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "while");
-    llvm::BasicBlock* bLoopEnd = llvm::BasicBlock::Create(*context, "while_end");
+    llvm::BasicBlock* bLoopEnd = llvm::BasicBlock::Create(*context, "while.end");
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -488,7 +575,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     currentScope = currentScope->getParent();
 
     // Return true as result for the loop
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext* ctx) {
@@ -508,9 +595,9 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "then");
-    llvm::BasicBlock* bElse = llvm::BasicBlock::Create(*context, "else");
-    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "end");
+    llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "if.then");
+    llvm::BasicBlock* bElse = llvm::BasicBlock::Create(*context, "if.else");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "if.end");
 
     // Check if condition is fulfilled
     createCondBr(condValue, bThen, ctx->elseStmt() ? bElse : bEnd);
@@ -644,7 +731,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         builder->CreateStore(callResult, callResultPtr);
         return callResultPtr;
     }
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
@@ -707,10 +794,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
             llvm::Value* itemValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
             llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
             // Calculate item address
-            llvm::Value* index = llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_INT)), i);
-            std::vector<llvm::Value*> indices;
-            indices.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_INT)), 0));
-            indices.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_INT)), i));
+            std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(i) };
             llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
             // Store value to item address
             builder->CreateStore(itemValue, itemAddress);
@@ -721,7 +805,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     currentScope->lookup(varName)->updateAddress(arrayAddress);
     currentScope->lookup(varName)->updateLLVMType(arrayType);
 
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -912,9 +996,9 @@ antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext
         llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
         // Create blocks
-        llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "then");
-        llvm::BasicBlock* bElse = llvm::BasicBlock::Create(*context, "else");
-        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "end");
+        llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "tern.then");
+        llvm::BasicBlock* bElse = llvm::BasicBlock::Create(*context, "tern.else");
+        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "tern.end");
 
         // Conditional jump to respective block
         createCondBr(condition, bThen, bElse);
@@ -953,7 +1037,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
     if (ctx->logicalAndExpr().size() > 1) {
         // Prepare for short-circuiting
         std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->logicalAndExpr().size()];
-        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "lor-end");
+        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "lor.end");
         llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
         parentFunction->getBasicBlockList().push_back(bEnd);
 
@@ -985,7 +1069,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
 
         // Get the result with the phi node
         moveInsertPointToBlock(bEnd);
-        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->logicalAndExpr().size(), "lor-phi");
+        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->logicalAndExpr().size(), "lor_phi");
         for (const auto& tuple : incomingBlocks)
             phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
 
@@ -1001,7 +1085,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
     if (ctx->bitwiseOrExpr().size() > 1) {
         // Prepare for short-circuiting
         std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->bitwiseOrExpr().size()];
-        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "land-end");
+        llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "land.end");
         llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
         parentFunction->getBasicBlockList().push_back(bEnd);
 
@@ -1033,7 +1117,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
 
         // Get the result with the phi node
         moveInsertPointToBlock(bEnd);
-        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->bitwiseOrExpr().size(), "land-phi");
+        llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->bitwiseOrExpr().size(), "land_phi");
         for (const auto& tuple : incomingBlocks)
             phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
 
@@ -1348,9 +1432,9 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             if (scope == currentScope) { // This is the current scope
                 baseType = entry->getLLVMType();
                 basePtr = entry->getAddress();
-                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+                indices.push_back(builder->getInt32(0));
             } else { // This is a struct
-                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), entry->getOrderIndex()));
+                indices.push_back(builder->getInt32(entry->getOrderIndex()));
             }
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
@@ -1358,7 +1442,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
                 basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
                 indices.clear();
-                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+                indices.push_back(builder->getInt32(0));
             }
             // Change to new scope
             std::string structName = entry->getType().getSubType();
@@ -1413,7 +1497,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TYPE_INT);
         int v = std::stoi(ctx->INTEGER()->toString());
-        llvmValue = llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), v);
+        llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
     }
 
     // Value is a string constant
@@ -1427,13 +1511,13 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     // Value is a boolean constant with value false
     if (ctx->FALSE()) {
         currentSymbolType = SymbolType(TYPE_BOOL);
-        llvmValue = llvm::ConstantInt::getFalse(*context);
+        llvmValue = builder->getFalse();
     }
 
     // Value is a boolean constant with value true
     if (ctx->TRUE()) {
         currentSymbolType = SymbolType(TYPE_BOOL);
-        llvmValue = llvm::ConstantInt::getTrue(*context);
+        llvmValue = builder->getTrue();
     }
 
     // If global variable value -> return value immediately

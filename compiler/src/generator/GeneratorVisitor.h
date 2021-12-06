@@ -67,6 +67,8 @@ public:
 
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
 
+    antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) override;
+
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
 
     antlrcpp::Any visitStmtLst(SpiceParser::StmtLstContext* ctx) override;
