@@ -24,6 +24,10 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             ""
         },
         {
+            "success-decl-default-value",
+            ""
+        },
+        {
             "success-operators",
             ""
         },

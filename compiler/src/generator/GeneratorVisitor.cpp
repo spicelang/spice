@@ -651,8 +651,9 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 
     // Create local variable
     llvm::Value* memAddress = builder->CreateAlloca(varType, nullptr, currentVar);
-    currentScope->lookup(currentVar)->updateAddress(memAddress);
-    currentScope->lookup(currentVar)->updateLLVMType(varType);
+    SymbolTableEntry* entry = currentScope->lookup(currentVar);
+    entry->updateAddress(memAddress);
+    entry->updateLLVMType(varType);
 
     // Return the variable name
     return currentVar;
@@ -681,13 +682,13 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
 
             // Get return type
-            llvm::Type* returnType = getTypeFromSymbolType(symbolTypes[0]);
+            llvm::Type* returnType = getTypeForSymbolType(symbolTypes[0]);
             if (!returnType) throw std::runtime_error("Internal error");
 
             // Get parameter types
             std::vector<llvm::Type*> paramTypes;
             for (int i = 1; i < symbolTypes.size(); i++) {
-                llvm::Type* paramType = getTypeFromSymbolType(symbolTypes[i]);
+                llvm::Type* paramType = getTypeForSymbolType(symbolTypes[i]);
                 if (!paramType) throw std::runtime_error("Internal error");
                 paramTypes.push_back(paramType);
             }
@@ -700,7 +701,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             // Get parameter types
             std::vector<llvm::Type*> paramTypes;
             for (int i = 1; i < symbolTypes.size(); i++) {
-                llvm::Type* paramType = getTypeFromSymbolType(symbolTypes[i]);
+                llvm::Type* paramType = getTypeForSymbolType(symbolTypes[i]);
                 if (!paramType) throw std::runtime_error("Internal error");
                 paramTypes.push_back(paramType);
             }
@@ -743,7 +744,7 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     llvm::Type* structType;
     if (ctx->dataType()->TYPE_DYN()) {
         SymbolType dataType = SymbolType(TYPE_STRUCT, structName);
-        structType = getTypeFromSymbolType(dataType);
+        structType = getTypeForSymbolType(dataType);
     } else {
         structType = visit(ctx->dataType()).as<llvm::Type*>();
     }
@@ -778,7 +779,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     llvm::Type* arrayType;
     if (ctx->dataType()->TYPE_DYN()) {
         SymbolType dataType = currentScope->lookup(varName)->getType();
-        arrayType = getTypeFromSymbolType(dataType);
+        arrayType = getTypeForSymbolType(dataType);
         baseType = arrayType->getArrayElementType();
     } else {
         baseType = visit(ctx->dataType()).as<llvm::Type*>();
@@ -981,6 +982,11 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
                 rhs = builder->CreateLShr(lhs, rhs, "shr");
                 builder->CreateStore(rhs, lhsPtr);
+            }
+        } else {
+            if (ctx->declStmt()) {
+                // Store the default value to the variable
+                builder->CreateStore(getDefaultValueForSymbolType(variableEntry->getType()), rhsPtr);
             }
         }
     }
@@ -1552,7 +1558,7 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
     if (ctx->LBRACKET()) currentSymbolType = currentSymbolType.getArrayType();
 
     // Come up with the LLVM type
-    llvm::Type* type = getTypeFromSymbolType(currentSymbolType);
+    llvm::Type* type = getTypeForSymbolType(currentSymbolType);
     // Throw an error if something went wrong.
     // This should technically never occur because of the semantic analysis
     if (!type) throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE, "Dyn was other");
@@ -1720,7 +1726,7 @@ void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
     blockAlreadyTerminated = false;
 }
 
-llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
+llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
     currentSymbolType = symbolType;
     switch (symbolType.getSuperType()) {
         case TYPE_DOUBLE: return llvm::Type::getDoubleTy(*context);
@@ -1744,5 +1750,16 @@ llvm::Type* GeneratorVisitor::getTypeFromSymbolType(SymbolType symbolType) {
         case TYPE_STRUCT_ARRAY: throw std::runtime_error("Struct array support coming soon");
         case TYPE_STRUCT_PTR_ARRAY: throw std::runtime_error("Struct ptr array support coming soon");
         default: throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName());
+    }
+}
+
+llvm::Value* GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolType) {
+    switch (symbolType.getSuperType()) {
+        case TYPE_DOUBLE: return llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+        case TYPE_INT: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), 0);
+        case TYPE_STRING: return builder->CreateGlobalStringPtr("", "", 0, module.get());
+        case TYPE_BOOL: return builder->getFalse();
+        default:
+            throw std::runtime_error("Internal compiler error: Cannot determine default value of " + symbolType.getName());
     }
 }
