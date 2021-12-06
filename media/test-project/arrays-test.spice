@@ -1,14 +1,7 @@
 f<int> main() {
-    int[7] intArray = { 1, 5, 4, 0, 12, 12345, 9 };
-    foreach (int index, int item : intArray) {
-        printf("Item for index %d, %d", index, item);
-    }
-    foreach (const int idx = 2, const int item : intArray) {
-        printf("Item for index %d, %d", idx, item);
-        idx++;
-    }
-    foreach const int item : intArray {
-        printf("Item: %d", idx);
-        printf("Item: %d", item);
+    int[10] intArray = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    foreach int i = 3, int item : intArray {
+        printf("Array item no. %d: %d, ", i, item);
+        i += 2;
     }
 }
