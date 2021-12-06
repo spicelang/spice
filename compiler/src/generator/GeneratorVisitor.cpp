@@ -139,7 +139,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     if (mustHaveMainFunction) { // Only create main function when it is required
         // Build function itself
         std::string functionName = "main";
-        llvm::Type* returnType = getTypeFromSymbolType(SymbolType(TYPE_INT));
+        llvm::Type* returnType = llvm::Type::getInt32Ty(*context);
         llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
         llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
                                                      functionName, module.get());
@@ -155,8 +155,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         llvm::Value* memAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
         currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(memAddress);
         currentScope->lookup(RETURN_VARIABLE_NAME)->updateLLVMType(returnType);
-        llvm::Value* zero = llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), 0);
-        builder->CreateStore(zero, currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
+        builder->CreateStore(builder->getInt32(0), currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
 
         // Generate IR for function body
         visit(ctx->stmtLst());
@@ -179,10 +178,10 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         currentScope = currentScope->getParent();
 
         // Return true as result for the function definition
-        return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+        return (llvm::Value*) builder->getTrue();
     }
     // Return false as result for the function definition
-    return (llvm::Value*) llvm::ConstantInt::getFalse(*context);
+    return (llvm::Value*) builder->getFalse();
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
@@ -275,7 +274,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
 
     // Return true as result for the function definition
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
@@ -356,7 +355,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
 
     // Return true as result for the function definition
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ctx) {
@@ -374,7 +373,7 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
     currentScope->lookup(structName)->updateLLVMType(structType);
 
     // Return true as result for the struct definition
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) {
@@ -397,7 +396,7 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     }
 
     // Return true as result for the global variable definition
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -445,7 +444,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     currentScope = currentScope->getParent();
 
     // Return true as result for the loop
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
@@ -533,7 +532,7 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     currentScope = currentScope->getParent();
 
     // Return true as result for the loop
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
@@ -576,7 +575,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     currentScope = currentScope->getParent();
 
     // Return true as result for the loop
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext* ctx) {
@@ -732,7 +731,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         builder->CreateStore(callResult, callResultPtr);
         return callResultPtr;
     }
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
@@ -795,10 +794,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
             llvm::Value* itemValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
             llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
             // Calculate item address
-            llvm::Value* index = llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_INT)), i);
-            std::vector<llvm::Value*> indices;
-            indices.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_INT)), 0));
-            indices.push_back(llvm::ConstantInt::get(getTypeFromSymbolType(SymbolType(TYPE_INT)), i));
+            std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(i) };
             llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
             // Store value to item address
             builder->CreateStore(itemValue, itemAddress);
@@ -809,7 +805,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     currentScope->lookup(varName)->updateAddress(arrayAddress);
     currentScope->lookup(varName)->updateLLVMType(arrayType);
 
-    return (llvm::Value*) llvm::ConstantInt::getTrue(*context);
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -1436,9 +1432,9 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             if (scope == currentScope) { // This is the current scope
                 baseType = entry->getLLVMType();
                 basePtr = entry->getAddress();
-                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+                indices.push_back(builder->getInt32(0));
             } else { // This is a struct
-                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), entry->getOrderIndex()));
+                indices.push_back(builder->getInt32(entry->getOrderIndex()));
             }
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
@@ -1446,7 +1442,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
                 basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
                 indices.clear();
-                indices.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+                indices.push_back(builder->getInt32(0));
             }
             // Change to new scope
             std::string structName = entry->getType().getSubType();
@@ -1501,7 +1497,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TYPE_INT);
         int v = std::stoi(ctx->INTEGER()->toString());
-        llvmValue = llvm::ConstantInt::getSigned(getTypeFromSymbolType(SymbolType(TYPE_INT)), v);
+        llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
     }
 
     // Value is a string constant
@@ -1515,13 +1511,13 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     // Value is a boolean constant with value false
     if (ctx->FALSE()) {
         currentSymbolType = SymbolType(TYPE_BOOL);
-        llvmValue = llvm::ConstantInt::getFalse(*context);
+        llvmValue = builder->getFalse();
     }
 
     // Value is a boolean constant with value true
     if (ctx->TRUE()) {
         currentSymbolType = SymbolType(TYPE_BOOL);
-        llvmValue = llvm::ConstantInt::getTrue(*context);
+        llvmValue = builder->getTrue();
     }
 
     // If global variable value -> return value immediately
