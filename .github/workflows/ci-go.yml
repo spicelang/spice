@@ -13,6 +13,7 @@ on:
 
 jobs:
   build:
+    name: Go CI
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

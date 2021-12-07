@@ -13,6 +13,7 @@ on:
 
 jobs:
   build:
+    name: C++ CI
     runs-on: ubuntu-latest
         
     steps:
@@ -36,13 +37,6 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
           cmake --build .
 
-      #- name: Prepare environment
-      #  run: |
-      #    shopt -s extglob
-      #    rm -rf !("compiler")
-      #    cp -fR ./compiler/* .
-      #    rm -rf ./compiler
-
       - name: Download Libs
         run: |
           mkdir ./compiler/lib
@@ -57,17 +51,6 @@ jobs:
           cd ./compiler/bin
           cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON -Wattributes ..
           cmake --build . --target Spice_test
-
-      #- name: Build project
-      #  uses: nicledomaS/cmake_build_action@v1.4
-      #  env:
-      #    LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
-      #    SPICE_STD_DIR: /home/runner/work/spice/spice/std
-      #  with:
-      #    submodule_update: ON
-      #    run_tests: ON
-      #    cmake_args: -DWITH_TESTS=ON -Wattributes
-      #    unit_test_build: -Dtest=ON
 
       - name: Run Test target
         env:
