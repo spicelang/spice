@@ -1,19 +1,24 @@
-// Max length is always the next highter power of two. Thus, the growing factor is two
-type string struct {
-    int* value
-    len int
+type String struct {
+    int[] value
+    int len // Length of the string
+    int cap // Capacity of the string. Is always the next higher power of two than len
 }
 
-p createString(string* strRef) {
-    strRef.value = null;
-    strRef.len = 0;
+f<String> create(string input) {
+    result.value = input;
+    result.len = sizeof(input) * 8;
 }
 
-p deleteString(string* strRef) {
-
+p clear(String* strRef) {
+    *strRef.value = "";
+    *strRef.len = 0;
 }
 
-f<string> concatStrings(string a, string b) {
+f<int> len(String* strRef) {
+    
+}
+
+f<String> concat(String a, String b) {
     // Return b if a is empty
     int aLen = len(a);
     if aLen == 0 { return b; }

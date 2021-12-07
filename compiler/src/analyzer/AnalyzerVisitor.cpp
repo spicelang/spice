@@ -1163,7 +1163,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
             // Check this operation is valid on this type
             if (!symbolType.isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR }))
                 throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply subscript operator on " + symbolType.getName());
+                                    "Cannot apply member access operator on " + symbolType.getName());
             // De-reference automatically if it is a struct pointer
             if (symbolType.is(TYPE_STRUCT_PTR)) symbolType = symbolType.getScalarType();
             // Change to new scope
