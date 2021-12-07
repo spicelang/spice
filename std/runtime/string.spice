@@ -6,7 +6,7 @@ type String struct {
 
 f<String> create(string input) {
     result.value = input;
-    result.len = sizeof(input) * 8;
+    result.len = ;
 }
 
 p clear(String* strRef) {
@@ -14,20 +14,21 @@ p clear(String* strRef) {
     *strRef.len = 0;
 }
 
-f<int> len(String* strRef) {
-    
+f<int> len(String str) {
+    return sizeof(input) * 8;
 }
 
 f<String> concat(String a, String b) {
     // Return b if a is empty
     int aLen = len(a);
     if aLen == 0 { return b; }
+
     // Return a if b is empty
     int bLen = len(b);
     if bLen == 0 { return a; }
     
-    // Create a new string on the heap
-    // ToDo @marcauberer
+    // Create a new string
+    // ToDo(@marcauberer): Finish implementation
 
     return "";
 }

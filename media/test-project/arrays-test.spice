@@ -1,9 +1,11 @@
-import "std/runtime/string" as str;
+//import "std/runtime/string" as str;
 
 f<int> main() {
-    string a = "Hello ";
+    /*string a = "Hello ";
     string b = "World!";
     printf("String a: %s", a);
-    printf("String b: %s", b);
+    printf("String b: %s", b);*/
+    double test = 1.34;
+    printf("Sizeof int: %d", sizeof(test));
     //printf("String a+b: %s", a + b);
 }

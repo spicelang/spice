@@ -608,7 +608,13 @@ antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContex
     return SymbolType(TYPE_INT);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) {
+antlrcpp::Any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) {
+    if (ctx->printfCall()) return visit(ctx->printfCall());
+    if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
+    throw std::runtime_error("Internal compiler error: Could not find builtin function");
+}
+
+antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* ctx) {
     std::string templateString = ctx->STRING()->toString();
     templateString = templateString.substr(1, templateString.size() - 2);
 
@@ -663,7 +669,16 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* c
         index = templateString.find_first_of('%', index + 1);
     }
 
-    return SpiceBaseVisitor::visitPrintfStmt(ctx);
+    // Check if the number of placeholders matches the number of params
+    if (placeholderCount != ctx->assignExpr().size())
+        throw SemanticError(*ctx->start, PRINTF_TYPE_ERROR,
+                            "Number of placeholders does not match the number of passed arguments");
+
+    return SymbolType(TYPE_BOOL);
+}
+
+antlrcpp::Any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* ctx) {
+    return SymbolType(TYPE_INT);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
@@ -1126,6 +1141,7 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
     if (ctx->value()) return visit(ctx->value());
     if (ctx->idenValue()) return visit(ctx->idenValue());
     if (ctx->functionCall()) return visit(ctx->functionCall());
+    if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
 }
 
