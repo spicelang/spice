@@ -870,10 +870,17 @@ antlrcpp::Any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtConte
     return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) {
+antlrcpp::Any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) {
+    if (ctx->printfCall()) return visit(ctx->printfCall());
+    if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
+    throw std::runtime_error("Internal compiler error: Could not find builtin function");
+}
+
+antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* ctx) {
     llvm::Function* printf = module->getFunction("printf");
     std::vector<llvm::Value*> printfArgs;
     std::string stringTemplate = ctx->STRING()->toString();
+    stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\n"), "\n");
     stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
     for (auto& arg : ctx->assignExpr()) {
@@ -884,7 +891,21 @@ antlrcpp::Any GeneratorVisitor::visitPrintfStmt(SpiceParser::PrintfStmtContext* 
         if (argVal == nullptr) throw IRError(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
         printfArgs.push_back(argVal);
     }
-    return builder->CreateCall(printf, printfArgs);
+    return (llvm::Value*) builder->CreateCall(printf, printfArgs);
+}
+
+antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* ctx) {
+    // Visit the parameter
+    llvm::Value* valuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
+    llvm::Value* value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+
+    unsigned int size = value->getType()->isArrayTy() ?
+            size = value->getType()->getArrayNumElements() :
+            size = value->getType()->getScalarSizeInBits();
+    llvm::Value* result = builder->getInt32(size);
+    llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+    builder->CreateStore(result, resultPtr);
+    return resultPtr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
@@ -1403,6 +1424,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
     if (ctx->value()) return visit(ctx->value());
     if (ctx->idenValue()) return visit(ctx->idenValue());
     if (ctx->functionCall()) return visit(ctx->functionCall());
+    if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
 }
 

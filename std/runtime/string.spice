@@ -1,28 +1,75 @@
-// Max length is always the next highter power of two. Thus, the growing factor is two
-type string struct {
-    int* value
-    len int
+needs_ext malloc(int);
+needs_ext free(char*);
+needs_ext memcpy(char*, char* int);
+
+type String struct {
+    char[] value
+    int len
+    int maxLen
+    int growthFactor
 }
 
-p createString(string* strRef) {
-    strRef.value = null;
-    strRef.len = 0;
+p String.constructor() {
+    this.value = null;
+    this.len = 0;
+    this.maxLen = 0;
+    this.growthFactor = 2;
 }
 
-p deleteString(string* strRef) {
-
+p String.destructor() {
+    if this.value != null {
+        // Free the allocated heap space
+        free(this.value);
+    }
 }
 
-f<string> concatStrings(string a, string b) {
+p String.resize(int newLen) {
+    char* newAddr = malloc(newLen);
+    char* oldAddr = this.value;
+    int len = this.length;
+    memcpy(newAddr, oldAddr, len);
+    free(oldAddr);
+    this.value = newAddr;
+    this.maxLen = newLen;
+}
+
+p String.appendChar(char c) {
+    int len = this.length;
+    int maxLen = this.maxLen;
+
+    if len == maxLen { // Sting needs to be grown
+        int newMaxLen = maxLen * this.growthFactor;
+        this.resize(newMaxLen);
+    }
+
+    this.value[length] = c;
+    this.len++;
+}
+
+p String.clear() {
+    this.value = null;
+    this.len = 0;
+    this.maxLen = 0;
+}
+
+f<string> concat(string a, string b) {
     // Return b if a is empty
     int aLen = len(a);
     if aLen == 0 { return b; }
+
     // Return a if b is empty
     int bLen = len(b);
     if bLen == 0 { return a; }
     
-    // Create a new string on the heap
-    // ToDo @marcauberer
+    // Create a new string
+    int size = aLen + bLen;
+    result = "";
+    foreach int pos, char n : a {
+        result[pos] = n;
+    }
+    foreach int pos, char n : b {
+        result[aLen + pos] = n;
+    }
 
-    return "";
+    return result;
 }

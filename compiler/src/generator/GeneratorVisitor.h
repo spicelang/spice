@@ -26,6 +26,7 @@
 #include <llvm/Transforms/Utils.h>
 
 #include <utility>
+#include <regex>
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
@@ -93,7 +94,11 @@ public:
 
     antlrcpp::Any visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) override;
 
-    antlrcpp::Any visitPrintfStmt(SpiceParser::PrintfStmtContext* ctx) override;
+    antlrcpp::Any visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) override;
+
+    antlrcpp::Any visitPrintfCall(SpiceParser::PrintfCallContext* ctx) override;
+
+    antlrcpp::Any visitSizeOfCall(SpiceParser::SizeOfCallContext* ctx) override;
 
     antlrcpp::Any visitAssignExpr(SpiceParser::AssignExprContext* ctx) override;
 

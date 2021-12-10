@@ -124,6 +124,10 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "Semantic error at 6:36: Types of printf call not matching: Template string expects int or bool, but got string"
         },
         {
+            "error-printf-arg-number-matches",
+            "Semantic error at 2:5: Types of printf call not matching: Number of placeholders does not match the number of passed arguments"
+        },
+        {
             "error-break-count-valid",
             "Semantic error at 7:23: Invalid number of break calls: Break count must be >= 1, you provided -10"
         },
