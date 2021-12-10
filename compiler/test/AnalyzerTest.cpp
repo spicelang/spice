@@ -125,7 +125,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-printf-arg-number-matches",
-            ""
+            "Semantic error at 2:5: Types of printf call not matching: Number of placeholders does not match the number of passed arguments"
         },
         {
             "error-break-count-valid",

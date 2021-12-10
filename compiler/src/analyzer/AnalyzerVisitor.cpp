@@ -629,6 +629,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'd':
             case 'i':
             case 'o':
+            case 'u':
             case 'x':
             case 'X': {
                 if (!assignmentType.isOneOf({ TYPE_INT, TYPE_BOOL }))
