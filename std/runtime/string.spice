@@ -1,24 +1,58 @@
+needs_ext malloc(int);
+needs_ext free(char*);
+needs_ext memcpy(char*, char* int);
+
 type String struct {
-    int[] value
-    int len // Length of the string
-    int cap // Capacity of the string. Is always the next higher power of two than len
+    char[] value
+    int len
+    int maxLen
+    int growthFactor
 }
 
-f<String> create(string input) {
-    result.value = input;
-    result.len = ;
+p String.constructor() {
+    this.value = null;
+    this.len = 0;
+    this.maxLen = 0;
+    this.growthFactor = 2;
 }
 
-p clear(String* strRef) {
-    *strRef.value = "";
-    *strRef.len = 0;
+p String.destructor() {
+    if this.value != null {
+        // Free the allocated heap space
+        free(this.value);
+    }
 }
 
-f<int> len(String str) {
-    return sizeof(input) * 8;
+p String.resize(int newLen) {
+    char* newAddr = malloc(newLen);
+    char* oldAddr = this.value;
+    int len = this.length;
+    memcpy(newAddr, oldAddr, len);
+    free(oldAddr);
+    this.value = newAddr;
+    this.maxLen = newLen;
 }
 
-f<String> concat(String a, String b) {
+p String.appendChar(char c) {
+    int len = this.length;
+    int maxLen = this.maxLen;
+
+    if len == maxLen { // Sting needs to be grown
+        int newMaxLen = maxLen * this.growthFactor;
+        this.resize(newMaxLen);
+    }
+
+    this.value[length] = c;
+    this.len++;
+}
+
+p String.clear() {
+    this.value = null;
+    this.len = 0;
+    this.maxLen = 0;
+}
+
+f<string> concat(string a, string b) {
     // Return b if a is empty
     int aLen = len(a);
     if aLen == 0 { return b; }
@@ -28,7 +62,14 @@ f<String> concat(String a, String b) {
     if bLen == 0 { return a; }
     
     // Create a new string
-    // ToDo(@marcauberer): Finish implementation
+    int size = aLen + bLen;
+    result = "";
+    foreach int pos, char n : a {
+        result[pos] = n;
+    }
+    foreach int pos, char n : b {
+        result[aLen + pos] = n;
+    }
 
-    return "";
+    return result;
 }

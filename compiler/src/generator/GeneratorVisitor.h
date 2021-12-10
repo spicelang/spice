@@ -26,6 +26,7 @@
 #include <llvm/Transforms/Utils.h>
 
 #include <utility>
+#include <regex>
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:

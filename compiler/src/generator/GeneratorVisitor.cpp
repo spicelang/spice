@@ -880,6 +880,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
     llvm::Function* printf = module->getFunction("printf");
     std::vector<llvm::Value*> printfArgs;
     std::string stringTemplate = ctx->STRING()->toString();
+    stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\n"), "\n");
     stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
     for (auto& arg : ctx->assignExpr()) {
