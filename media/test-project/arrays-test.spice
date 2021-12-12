@@ -2,10 +2,8 @@
 //import "std/type/string" as tyStr;
 
 f<int> main() {
-    dyn a = 20;
-    dyn b = 3;
-    dyn c = a % b;
-    printf("Remainder: %d", c);
+    char a = 'a';
+    byte a = 12;
     //string a = "Hello ";
     //string b = "World!";
     //printf("String a: %s\n", a);

@@ -2,7 +2,7 @@
 title: Primitive data types
 ---
 
-Spice supports four different primitive data types out of the box: `double`, `int`, `string` and `bool`. In addition, there is a builtin type-inferred type, called `dyn`.
+Spice supports six different primitive data types out of the box: `double`, `int`, `byte`, `char`, `string` and `bool`. In addition, there is a builtin type-inferred type, called `dyn`.
 Let us take a look at each one individually!
 
 ## The `double` data type
@@ -25,6 +25,28 @@ int variable1 = 903;
 
 int variable2;
 variable2 = -2;
+```
+
+## The `byte` data type
+Bytes are unsigned, whole numbers of 8-bit, which have a range from a min of 0 to a max of 255.
+
+In Spice, variables of type `byte` can be defined like this:
+```spice
+byte variable1 = 11;
+
+byte variable2;
+variable2 = 12;
+```
+
+## The `char` data type
+Chars are unsigned, whole numbers of 8-bit, which have a range from a min of 0 to a max of 255. The value of a char represents the UTF-8 sign of the  8-bit integer value.
+
+In Spice, variables of type `char` can be defined like this:
+```spice
+char variable1 = 'A';
+
+car variable2;
+variable2 = '.';
 ```
 
 ## The `string` data type
