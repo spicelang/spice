@@ -1063,7 +1063,7 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and " + nextType.getName() + " for '*' operator");
                 }
-            } else { // Operator was a div
+            } else if (op->getSymbol()->getType() == SpiceParser::DIV) { // Operator was a div
                 if (currentType.is(TYPE_DOUBLE)) {
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 / 6.1
                         currentType = SymbolType(TYPE_DOUBLE);
@@ -1094,6 +1094,15 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                 } else if (currentType.is(TYPE_BOOL)) {
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                         "Incompatible operands bool and " + nextType.getName() + " for '/' operator");
+                }
+            } else { // Operator was rem
+                if (currentType.is(TYPE_DOUBLE) && nextType.is(TYPE_DOUBLE)) {
+                    currentType = SymbolType(TYPE_DOUBLE);
+                } else if (currentType.is(TYPE_INT) && nextType.is(TYPE_INT)) {
+                    currentType = SymbolType(TYPE_INT);
+                } else {
+                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE, "Incompatible operands " +
+                                        currentType.getName() + " and " + nextType.getName() + " for '%' operator");
                 }
             }
             operatorIndex += 2;

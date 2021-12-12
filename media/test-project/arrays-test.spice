@@ -2,10 +2,14 @@
 //import "std/type/string" as tyStr;
 
 f<int> main() {
-    string a = "Hello ";
-    string b = "World!";
-    printf("String a: %s\n", a);
-    printf("String b: %s\n", b);
+    dyn a = 20;
+    dyn b = 3;
+    dyn c = a % b;
+    printf("Remainder: %d", c);
+    //string a = "Hello ";
+    //string b = "World!";
+    //printf("String a: %s\n", a);
+    //printf("String b: %s\n", b);
     //printf("String a length: %d\n", tyStr.len(a));
     //printf("String a+b: %s", a + b);
 }
