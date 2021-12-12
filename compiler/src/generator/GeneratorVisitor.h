@@ -162,6 +162,8 @@ private:
 
     llvm::Value* createDivInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
 
+    llvm::Value* createRemInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+
     void moveInsertPointToBlock(llvm::BasicBlock*);
 
     void createBr(llvm::BasicBlock*);

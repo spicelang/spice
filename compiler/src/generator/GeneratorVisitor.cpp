@@ -1356,8 +1356,10 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
 
             if (op->getSymbol()->getType() == SpiceParser::MUL)
                 lhs = createMulInst(lhs, lhsType, rhs, rhsType);
-            else
+            else if (op->getSymbol()->getType() == SpiceParser::DIV)
                 lhs = createDivInst(lhs, lhsType, rhs, rhsType);
+            else
+                lhs = createRemInst(lhs, lhsType, rhs, rhsType);
 
             operatorIndex += 2;
         }
@@ -1724,6 +1726,21 @@ llvm::Value* GeneratorVisitor::createDivInst(llvm::Value* lhs, llvm::Type* lhsTy
         } else if (rhsType->isIntegerTy(32)) {
             // int : int
             lhs = builder->CreateSDiv(lhs, rhs, "div");
+        }
+    }
+    return lhs;
+}
+
+llvm::Value* GeneratorVisitor::createRemInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
+    if (lhsType->isDoubleTy()) {
+        if (rhsType->isDoubleTy()) {
+            // double % double
+            lhs = builder->CreateFRem(lhs, rhs, "rem");
+        }
+    } else if (lhsType->isIntegerTy(32)) {
+        if (rhsType->isIntegerTy(32)) {
+            // int % int
+            lhs = builder->CreateSRem(lhs, rhs, "rem");
         }
     }
     return lhs;
