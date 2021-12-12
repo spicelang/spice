@@ -4,6 +4,7 @@
 f<int> main() {
     char a = 'a';
     byte b = 12;
+    printf("Char: %c, byte: %d", a, b);
     //string a = "Hello ";
     //string b = "World!";
     //printf("String a: %s\n", a);

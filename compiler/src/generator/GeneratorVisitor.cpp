@@ -935,6 +935,10 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (variableEntry->isLocal()) { // Local variable
+                // Cast int to char
+                if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(8) && rhs->getType()->isIntegerTy(32)) {
+                    rhs = builder->CreateIntCast(rhs, llvm::Type::getInt8Ty(*context), false);
+                }
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
@@ -1530,6 +1534,13 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
     }
 
+    // Value is a char constant
+    if (ctx->CHAR()) {
+        currentSymbolType = SymbolType(TYPE_CHAR);
+        char value = ctx->CHAR()->toString()[1];
+        llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
+    }
+
     // Value is a string constant
     if (ctx->STRING()) {
         currentSymbolType = SymbolType(TYPE_STRING);
@@ -1564,6 +1575,10 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
         currentSymbolType = SymbolType(TYPE_DOUBLE);
     } else if (ctx->TYPE_INT()) { // Data type is int
         currentSymbolType = SymbolType(TYPE_INT);
+    } else if (ctx->TYPE_BYTE()) { // Data type is byte
+        currentSymbolType = SymbolType(TYPE_BYTE);
+    } else if (ctx->TYPE_CHAR()) { // Data type is char
+        currentSymbolType = SymbolType(TYPE_CHAR);
     } else if (ctx->TYPE_STRING()) { // Data type is string
         currentSymbolType = SymbolType(TYPE_STRING);
     } else if (ctx->TYPE_BOOL()) { // Data type is bool
@@ -1616,40 +1631,65 @@ void GeneratorVisitor::initializeExternalFunctions() {
 }
 
 llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) {
-        if (rhsType->isDoubleTy()) {
+    if (lhsType->isDoubleTy()) { // double
+        if (rhsType->isDoubleTy()) { // double
             // double + double
             return builder->CreateFAdd(lhs, rhs, "add");
-        } else if (rhsType->isIntegerTy(32)) {
+        } else if (rhsType->isIntegerTy(32)) { // int
             // double + int
             return builder->CreateFAdd(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "add");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+        } else if (rhsType->isIntegerTy(8)) { // byte
+            // double + byte
+            return builder->CreateFAdd(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "add");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string
             // double + string
             // ToDo(@marcauberer): Insert call to toString(double) and concatStrings
             throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=double and rhs=string yet");
         }
-    } else if (lhsType->isIntegerTy(32)) {
-        if (rhsType->isDoubleTy()) {
+    } else if (lhsType->isIntegerTy(32)) { // int
+        if (rhsType->isDoubleTy()) { // double
             // int + double
             return builder->CreateFAdd(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "add");
-        } else if (rhsType->isIntegerTy(32)) {
+        } else if (rhsType->isIntegerTy(32)) { // int
             // int + int
+            return builder->CreateAdd(lhs, rhs, "add");
+        } else if (rhsType->isIntegerTy(8)) { // byte
+            // int + byte
             return builder->CreateAdd(lhs, rhs, "add");
         } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
             // int + string
             // ToDo(@marcauberer): Insert call to toString(int) and concatStrings
             throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=int and rhs=string yet");
         }
-    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
-        if (rhsType->isDoubleTy()) {
+    } else if (lhsType->isIntegerTy(8)) { // byte
+        if (rhsType->isDoubleTy()) { // double
+            // byte + double
+            return builder->CreateFAdd(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "add");
+        } else if (rhsType->isIntegerTy(32)) { // int
+            // byte + int
+            return builder->CreateAdd(lhs, rhs, "add");
+        } else if (rhsType->isIntegerTy(8)) { // byte
+            // byte + byte
+            return builder->CreateAdd(lhs, rhs, "add");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string
+            // byte + string
+            // ToDo(@marcauberer): Insert call to toString(byte) and concatStrings
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=byte and rhs=string yet");
+        }
+    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) { // string
+        if (rhsType->isDoubleTy()) { // double
             // string + double
             // ToDo(@marcauberer): Insert call to toString(double) and concatStrings
             throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=double yet");
-        } else if (rhsType->isIntegerTy(32)) {
+        } else if (rhsType->isIntegerTy(32)) { // int
             // string + int
             // ToDo(@marcauberer): Insert call to toString(int) and concatStrings
             throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=int yet");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+        } else if (rhsType->isIntegerTy(8)) { // byte
+            // string + byte
+            // ToDo(@marcauberer): Insert call to toString(byte) and concatStrings
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=byte yet");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string
             // string + string
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
             throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
@@ -1659,49 +1699,72 @@ llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsTy
 }
 
 llvm::Value* GeneratorVisitor::createSubInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) {
-        if (rhsType->isDoubleTy()) {
+    if (lhsType->isDoubleTy()) { // double
+        if (rhsType->isDoubleTy()) { // double
             // double - double
             return builder->CreateFSub(lhs, rhs, "sub");
-        } else if (rhsType->isIntegerTy(32)) {
+        } else if (rhsType->isIntegerTy(32)) { // int
             // double - int
             return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
+        } else if (rhsType->isIntegerTy(8)) { // byte
+            // double - byte
+            return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
         }
-    } else if (lhsType->isIntegerTy(32)) {
-        if (rhsType->isDoubleTy()) {
+    } else if (lhsType->isIntegerTy(32)) { // int
+        if (rhsType->isDoubleTy()) { // double
             // int - double
             return builder->CreateFSub(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "sub");
-        } else if (rhsType->isIntegerTy(32)) {
+        } else if (rhsType->isIntegerTy(32)) { // int
             // int - int
             return builder->CreateSub(lhs, rhs, "sub");
+        } else if (rhsType->isIntegerTy(8)) { // byte
+            // int - byte
+            return builder->CreateSub(lhs, rhs, "sub");
+        }
+    } else if (lhsType->isIntegerTy(8)) { // byte
+        if (rhsType->isDoubleTy()) { // double
+            // byte - double
+            return builder->CreateFSub(lhs, rhs, "sub");
+        } else if (rhsType->isIntegerTy(32)) { // int
+            // byte - int
+            return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
+        } else if (rhsType->isIntegerTy(8)) { // byte
+            // byte - byte
+            return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
         }
     }
     return lhs;
 }
 
 llvm::Value* GeneratorVisitor::createMulInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) {
-        if (rhsType->isDoubleTy()) {
+    if (lhsType->isDoubleTy()) { // double
+        if (rhsType->isDoubleTy()) { // double
             // double * double
             lhs = builder->CreateFMul(lhs, rhs, "mul");
-        } else if (rhsType->isIntegerTy(32)) {
+        } else if (rhsType->isIntegerTy(32)) { // int
+            // double * int
+            lhs = builder->CreateFMul(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "mul");
+        } else if (rhsType->isIntegerTy(8)) { // byte
             // double * int
             lhs = builder->CreateFMul(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "mul");
         }
-    } else if (lhsType->isIntegerTy(32)) {
-        if (rhsType->isDoubleTy()) {
+    } else if (lhsType->isIntegerTy(32)) { // int
+        if (rhsType->isDoubleTy()) { // double
             // int * double
             lhs = builder->CreateFMul(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "mul");
-        } else if (rhsType->isIntegerTy(32)) {
+        } else if (rhsType->isIntegerTy(32)) { // int
             // int * int
             lhs = builder->CreateMul(lhs, rhs, "mul");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
+        } else if (rhsType->isIntegerTy(8)) { // byte
+            // int * byte
+            lhs = builder->CreateMul(lhs, rhs, "mul");
+        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string
             // int * string
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
             throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
         }
-    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) {
-        if (rhsType->isIntegerTy(32)) {
+    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) { // string
+        if (rhsType->isIntegerTy(32)) { // int
             // string * int
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
             throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
@@ -1711,19 +1774,19 @@ llvm::Value* GeneratorVisitor::createMulInst(llvm::Value* lhs, llvm::Type* lhsTy
 }
 
 llvm::Value* GeneratorVisitor::createDivInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) {
-        if (rhsType->isDoubleTy()) {
+    if (lhsType->isDoubleTy()) { // double
+        if (rhsType->isDoubleTy()) { // double
             // double : double
             lhs = builder->CreateFDiv(lhs, rhs, "div");
-        } else if (rhsType->isIntegerTy(32)) {
+        } else if (rhsType->isIntegerTy(32)) { // int
             // double : int
             lhs = builder->CreateFDiv(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "div");
         }
-    } else if (lhsType->isIntegerTy(32)) {
-        if (rhsType->isDoubleTy()) {
+    } else if (lhsType->isIntegerTy(32)) { // int
+        if (rhsType->isDoubleTy()) { // double
             // int : double
             lhs = builder->CreateFDiv(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "div");
-        } else if (rhsType->isIntegerTy(32)) {
+        } else if (rhsType->isIntegerTy(32)) { // int
             // int : int
             lhs = builder->CreateSDiv(lhs, rhs, "div");
         }
@@ -1732,13 +1795,13 @@ llvm::Value* GeneratorVisitor::createDivInst(llvm::Value* lhs, llvm::Type* lhsTy
 }
 
 llvm::Value* GeneratorVisitor::createRemInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) {
-        if (rhsType->isDoubleTy()) {
+    if (lhsType->isDoubleTy()) { // double
+        if (rhsType->isDoubleTy()) { // double
             // double % double
             lhs = builder->CreateFRem(lhs, rhs, "rem");
         }
-    } else if (lhsType->isIntegerTy(32)) {
-        if (rhsType->isIntegerTy(32)) {
+    } else if (lhsType->isIntegerTy(32)) { // int
+        if (rhsType->isIntegerTy(32)) { // int
             // int % int
             lhs = builder->CreateSRem(lhs, rhs, "rem");
         }
@@ -1776,6 +1839,14 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
         case TYPE_INT_PTR: return llvm::Type::getInt32PtrTy(*context);
         case TYPE_INT_ARRAY: return llvm::ArrayType::getInt32Ty(*context);
         case TYPE_INT_PTR_ARRAY: return llvm::ArrayType::getInt32PtrTy(*context);
+        case TYPE_BYTE: return llvm::Type::getInt8Ty(*context);
+        case TYPE_BYTE_PTR: return llvm::Type::getInt8PtrTy(*context);
+        case TYPE_BYTE_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
+        case TYPE_BYTE_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
+        case TYPE_CHAR: return llvm::Type::getInt8Ty(*context);
+        case TYPE_CHAR_PTR: return llvm::Type::getInt8PtrTy(*context);
+        case TYPE_CHAR_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
+        case TYPE_CHAR_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
         case TYPE_STRING: return llvm::Type::getInt8PtrTy(*context);
         case TYPE_STRING_PTR: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
         case TYPE_STRING_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
@@ -1794,10 +1865,17 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 
 llvm::Value* GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolType) {
     switch (symbolType.getSuperType()) {
-        case TYPE_DOUBLE: return llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-        case TYPE_INT: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), 0);
-        case TYPE_STRING: return builder->CreateGlobalStringPtr("", "", 0, module.get());
-        case TYPE_BOOL: return builder->getFalse();
+        case TYPE_DOUBLE:
+            return llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+        case TYPE_INT:
+            return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), 0);
+        case TYPE_BYTE:
+        case TYPE_CHAR:
+            return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), 0);
+        case TYPE_STRING:
+            return builder->CreateGlobalStringPtr("", "", 0, module.get());
+        case TYPE_BOOL:
+            return builder->getFalse();
         default:
             throw std::runtime_error("Internal compiler error: Cannot determine default value of " + symbolType.getName());
     }

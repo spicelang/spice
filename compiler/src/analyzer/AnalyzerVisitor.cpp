@@ -938,9 +938,11 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                         currentType = SymbolType(TYPE_DOUBLE);
                     } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 + 4
                         currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4.3 + 4
+                        currentType = SymbolType(TYPE_DOUBLE);
                     } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 + "Test"
                         currentType = SymbolType(TYPE_STRING);
-                    } else { // e.g.: 4.3 + true
+                    } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands double and " + nextType.getName()+ " for '+' operator");
                     }
@@ -949,9 +951,24 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                         currentType = SymbolType(TYPE_DOUBLE);
                     } else if (nextType.is(TYPE_INT)) { // e.g.: 4 + 5
                         currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 + 5
+                        currentType = SymbolType(TYPE_INT);
                     } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 + "Test"
                         currentType = SymbolType(TYPE_STRING);
-                    } else { // e.g.: 4 + true
+                    } else {
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands int and " + nextType.getName() + " for '+' operator");
+                    }
+                } else if (currentType.is(TYPE_BYTE)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 + 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 + 5
+                        currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 + 5
+                        currentType = SymbolType(TYPE_BYTE);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 + "Test"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands int and " + nextType.getName() + " for '+' operator");
                     }
@@ -959,6 +976,10 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" + 6.1
                         currentType = SymbolType(TYPE_STRING);
                     } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" + 5
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: "Test" + 5
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_CHAR)) { // e.g.: "Test" + 'a'
                         currentType = SymbolType(TYPE_STRING);
                     } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" + "Test"
                         currentType = SymbolType(TYPE_STRING);
@@ -987,6 +1008,19 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                         currentType = SymbolType(TYPE_DOUBLE);
                     } else if (nextType.is(TYPE_INT)) { // e.g.: 4 - 5
                         currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 - 5
+                        currentType = SymbolType(TYPE_INT);
+                    } else {
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands int and " + nextType.getName() + " for '-' operator");
+                    }
+                } else if (currentType.is(TYPE_BYTE)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 - 6.1
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 - 5
+                        currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 - 5
+                        currentType = SymbolType(TYPE_BYTE);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands int and " + nextType.getName() + " for '-' operator");
