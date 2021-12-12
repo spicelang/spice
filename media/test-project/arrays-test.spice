@@ -3,7 +3,7 @@
 
 f<int> main() {
     char a = 'a';
-    byte a = 12;
+    byte b = 12;
     //string a = "Hello ";
     //string b = "World!";
     //printf("String a: %s\n", a);

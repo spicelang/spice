@@ -1,5 +1,6 @@
 // Copyright (c) 2021 ChilliBits. All rights reserved.
 
+#include <algorithm>
 #include "SymbolType.h"
 
 /**
@@ -26,7 +27,8 @@ std::string SymbolType::getSubType() {
  * @return True if it a pointer type, otherwise false
  */
 bool SymbolType::isPointer() {
-    return isOneOf({ TYPE_DOUBLE_PTR, TYPE_INT_PTR, TYPE_STRING_PTR, TYPE_BOOL_PTR, TYPE_STRUCT_PTR });
+    return isOneOf({ TYPE_DOUBLE_PTR, TYPE_INT_PTR, TYPE_BYTE_PTR, TYPE_CHAR_PTR,
+                     TYPE_STRING_PTR, TYPE_BOOL_PTR, TYPE_STRUCT_PTR });
 }
 
 /**
@@ -35,9 +37,9 @@ bool SymbolType::isPointer() {
  * @return True if it an array type, otherwise false
  */
 bool SymbolType::isArray() {
-    return isOneOf({ TYPE_DOUBLE_ARRAY, TYPE_INT_ARRAY, TYPE_STRING_ARRAY, TYPE_BOOL_ARRAY, TYPE_STRUCT_ARRAY,
-                     TYPE_DOUBLE_PTR_ARRAY, TYPE_INT_PTR_ARRAY, TYPE_STRING_PTR_ARRAY, TYPE_BOOL_PTR_ARRAY,
-                     TYPE_STRUCT_PTR_ARRAY});
+    return isOneOf({ TYPE_DOUBLE_ARRAY, TYPE_INT_ARRAY, TYPE_BYTE_ARRAY, TYPE_CHAR_ARRAY, TYPE_STRING_ARRAY,
+                     TYPE_BOOL_ARRAY, TYPE_STRUCT_ARRAY, TYPE_DOUBLE_PTR_ARRAY, TYPE_INT_PTR_ARRAY, TYPE_BYTE_PTR_ARRAY,
+                     TYPE_CHAR_PTR_ARRAY, TYPE_STRING_PTR_ARRAY, TYPE_BOOL_PTR_ARRAY, TYPE_STRUCT_PTR_ARRAY });
 }
 
 /**
@@ -49,6 +51,8 @@ SymbolType SymbolType::getPointerType() {
     switch (superType) {
         case TYPE_DOUBLE: return SymbolType(TYPE_DOUBLE_PTR);
         case TYPE_INT: return SymbolType(TYPE_INT_PTR);
+        case TYPE_BYTE: return SymbolType(TYPE_BYTE_PTR);
+        case TYPE_CHAR: return SymbolType(TYPE_CHAR_PTR);
         case TYPE_STRING: return SymbolType(TYPE_STRING_PTR);
         case TYPE_BOOL: return SymbolType(TYPE_BOOL_PTR);
         case TYPE_STRUCT: return {TYPE_STRUCT_PTR, subType};
@@ -65,6 +69,8 @@ SymbolType SymbolType::getScalarType() {
     switch (superType) {
         case TYPE_DOUBLE_PTR: return SymbolType(TYPE_DOUBLE);
         case TYPE_INT_PTR: return SymbolType(TYPE_INT);
+        case TYPE_BYTE_PTR: return SymbolType(TYPE_BYTE);
+        case TYPE_CHAR_PTR: return SymbolType(TYPE_CHAR);
         case TYPE_STRING_PTR: return SymbolType(TYPE_STRING);
         case TYPE_BOOL_PTR: return SymbolType(TYPE_BOOL);
         case TYPE_STRUCT_PTR: return {TYPE_STRUCT, subType};
@@ -81,11 +87,15 @@ SymbolType SymbolType::getArrayType() {
     switch (superType) {
         case TYPE_DOUBLE: return SymbolType(TYPE_DOUBLE_ARRAY);
         case TYPE_INT: return SymbolType(TYPE_INT_ARRAY);
+        case TYPE_BYTE: return SymbolType(TYPE_BYTE_ARRAY);
+        case TYPE_CHAR: return SymbolType(TYPE_CHAR_ARRAY);
         case TYPE_STRING: return SymbolType(TYPE_STRING_ARRAY);
         case TYPE_BOOL: return SymbolType(TYPE_BOOL_ARRAY);
         case TYPE_STRUCT: return {TYPE_STRUCT_ARRAY, subType};
         case TYPE_DOUBLE_PTR: return SymbolType(TYPE_DOUBLE_PTR_ARRAY);
         case TYPE_INT_PTR: return SymbolType(TYPE_INT_PTR_ARRAY);
+        case TYPE_BYTE_PTR: return SymbolType(TYPE_BYTE_PTR_ARRAY);
+        case TYPE_CHAR_PTR: return SymbolType(TYPE_CHAR_PTR_ARRAY);
         case TYPE_STRING_PTR: return SymbolType(TYPE_STRING_PTR_ARRAY);
         case TYPE_BOOL_PTR: return SymbolType(TYPE_BOOL_PTR_ARRAY);
         case TYPE_STRUCT_PTR: return {TYPE_STRUCT_PTR_ARRAY, subType};
@@ -102,11 +112,15 @@ SymbolType SymbolType::getItemType() {
     switch (superType) {
         case TYPE_DOUBLE_ARRAY: return SymbolType(TYPE_DOUBLE);
         case TYPE_INT_ARRAY: return SymbolType(TYPE_INT);
+        case TYPE_BYTE_ARRAY: return SymbolType(TYPE_BYTE);
+        case TYPE_CHAR_ARRAY: return SymbolType(TYPE_CHAR);
         case TYPE_STRING_ARRAY: return SymbolType(TYPE_STRING);
         case TYPE_BOOL_ARRAY: return SymbolType(TYPE_BOOL);
         case TYPE_STRUCT_ARRAY: return {TYPE_STRUCT, subType};
         case TYPE_DOUBLE_PTR_ARRAY: return SymbolType(TYPE_DOUBLE_PTR);
         case TYPE_INT_PTR_ARRAY: return SymbolType(TYPE_INT_PTR);
+        case TYPE_BYTE_PTR_ARRAY: return SymbolType(TYPE_BYTE_PTR);
+        case TYPE_CHAR_PTR_ARRAY: return SymbolType(TYPE_CHAR_PTR);
         case TYPE_STRING_PTR_ARRAY: return SymbolType(TYPE_STRING_PTR);
         case TYPE_BOOL_PTR_ARRAY: return SymbolType(TYPE_BOOL_PTR);
         case TYPE_STRUCT_PTR_ARRAY: return {TYPE_STRUCT_PTR, subType};
@@ -121,10 +135,13 @@ SymbolType SymbolType::getItemType() {
  * @return True = super type is one of the stated, otherwise false
  */
 bool SymbolType::isOneOf(const std::vector<SymbolSuperType>& superTypes) {
-    for (auto& type : superTypes) {
+    /*for (auto& type : superTypes) {
         if (type == superType) return true;
     }
-    return false;
+    return false;*/
+    return std::any_of(superTypes.begin(), superTypes.end(), [this](int type) {
+        return type == superType;
+    });
 }
 
 /**
@@ -158,19 +175,32 @@ std::string SymbolType::getName() {
     switch (superType) {
         case TYPE_DOUBLE: return "double";
         case TYPE_INT: return "int";
+        case TYPE_BYTE: return "byte";
+        case TYPE_CHAR: return "char";
         case TYPE_STRING: return "string";
         case TYPE_BOOL: return "bool";
         case TYPE_STRUCT: return "struct(" + subType + ")";
         case TYPE_DOUBLE_PTR: return "double*";
         case TYPE_INT_PTR: return "int*";
+        case TYPE_BYTE_PTR: return "byte*";
+        case TYPE_CHAR_PTR: return "char*";
         case TYPE_STRING_PTR: return "string*";
         case TYPE_BOOL_PTR: return "bool*";
         case TYPE_STRUCT_PTR: return "struct(" + subType + ")*";;
         case TYPE_DOUBLE_ARRAY: return "double[]";
         case TYPE_INT_ARRAY: return "int[]";
+        case TYPE_BYTE_ARRAY: return "byte[]";
+        case TYPE_CHAR_ARRAY: return "char[]";
         case TYPE_STRING_ARRAY: return "string[]";
         case TYPE_BOOL_ARRAY: return "bool[]";
         case TYPE_STRUCT_ARRAY: return "struct(" + subType + ")[]";
+        case TYPE_DOUBLE_PTR_ARRAY: return "double*[]";
+        case TYPE_INT_PTR_ARRAY: return "int*[]";
+        case TYPE_BYTE_PTR_ARRAY: return "byte*[]";
+        case TYPE_CHAR_PTR_ARRAY: return "char*[]";
+        case TYPE_STRING_PTR_ARRAY: return "string*[]";
+        case TYPE_BOOL_PTR_ARRAY: return "bool*[]";
+        case TYPE_STRUCT_PTR_ARRAY: return "struct(" + subType + ")*[]";
         case TYPE_DYN: return "dyn";
         case TYPE_FUNCTION: return "function";
         case TYPE_PROCEDURE: return "procedure";

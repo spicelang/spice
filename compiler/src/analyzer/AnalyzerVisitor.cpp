@@ -721,31 +721,33 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
 
         // Take a look at the operator
         if (ctx->ASSIGN_OP()) {
-            if (lhsTy != rhsTy)
+            // Assigning an int to a char is valid. Apart from that, all assignments which operand types do not match are invalid
+            if (lhsTy != rhsTy && !(lhsTy.is(TYPE_BYTE) && rhsTy.is(TYPE_INT)))
                 throw SemanticError(*ctx->ASSIGN_OP()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply the assign operator on same data types");
         } else if (ctx->PLUS_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_STRING))
+            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) &&
+                !lhsTy.matches(rhsTy, TYPE_BYTE) && !lhsTy.matches(rhsTy, TYPE_STRING))
                 throw SemanticError(*ctx->PLUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '+=' operator on two doubles, two ints or two strings");
         } else if (ctx->MINUS_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
+            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
                 throw SemanticError(*ctx->MINUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '-=' operator on two doubles or two ints");
         } else if (ctx->MUL_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
+            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
                 throw SemanticError(*ctx->MUL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '*=' operator on two doubles or two ints");
         } else if (ctx->DIV_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT))
+            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
                 throw SemanticError(*ctx->DIV_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '/=' operator on two doubles or two ints");
         } else if (ctx->SHL_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_INT))
+            if (!lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
                 throw SemanticError(*ctx->SHL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '<<=' operator on two ints");
         } else if (ctx->SHR_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_INT))
+            if (!lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
                 throw SemanticError(*ctx->SHR_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '>>=' operator on two ints");
         }
@@ -786,10 +788,10 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
             // Allow logical or operator for booleans
             if (lhsTy.matches(rhsTy, TYPE_BOOL)) {
                 lhsTy = SymbolType(TYPE_BOOL);
-                continue;
+            } else { // Any other combination is invalid
+                throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
+                                    "Can only apply '||' operator to booleans");
             }
-            // Every other combination is invalid
-            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,"Can only apply '||' operator to booleans");
         }
         return lhsTy;
     }
@@ -805,10 +807,10 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
             // Allow logical and operator for booleans
             if (lhsTy.matches(rhsTy, TYPE_BOOL)) {
                 lhsTy = SymbolType(TYPE_BOOL);
-                continue;
+            } else { // Any other combination is invalid
+                throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
+                                    "Can only apply '&&' operator to booleans");
             }
-            // Every other combination is invalid
-            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE, "Can only apply '&&' operator to booleans");
         }
         return lhsTy;
     }
@@ -821,19 +823,17 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
         SymbolType lhsTy = visit(ctx->bitwiseAndExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->bitwiseAndExpr()[i]).as<SymbolType>();
-            // Allow bitwise or operator for booleans
-            if (lhsTy.matches(rhsTy, TYPE_BOOL)) {
-                lhsTy = SymbolType(TYPE_BOOL);
-                continue;
-            }
-            // Allow bitwise or operator for integers
-            if (lhsTy.matches(rhsTy, TYPE_INT)) {
+
+            if (lhsTy.matches(rhsTy, TYPE_INT)) { // Allow bitwise or operator for integers
                 lhsTy = SymbolType(TYPE_INT);
-                continue;
+            } else if (lhsTy.matches(rhsTy, TYPE_BYTE)) { // Allow bitwise or operator for bytes
+                lhsTy = SymbolType(TYPE_BYTE);
+            } else if (lhsTy.matches(rhsTy, TYPE_BOOL)) { // Allow bitwise or operator for booleans
+                lhsTy = SymbolType(TYPE_BOOL);
+            } else { // Any other combination is invalid
+                throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
+                                    "Can only apply '|' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
             }
-            // Every other combination is invalid
-            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Can only apply '|' operator to booleans and integers");
         }
         return lhsTy;
     }
@@ -846,19 +846,17 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
         SymbolType lhsTy = visit(ctx->equalityExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->equalityExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->equalityExpr()[i]).as<SymbolType>();
-            // Allow bitwise and operator for booleans
-            if (lhsTy.matches(rhsTy, TYPE_BOOL)) {
-                lhsTy = SymbolType(TYPE_BOOL);
-                continue;
-            }
-            // Allow bitwise and operator for integers
-            if (lhsTy.matches(rhsTy, TYPE_INT)) {
+
+            if (lhsTy.matches(rhsTy, TYPE_INT)) { // Allow bitwise and operator for integers
                 lhsTy = SymbolType(TYPE_INT);
-                continue;
+            } else if (lhsTy.matches(rhsTy, TYPE_BYTE)) { // Allow bitwise and operator for bytes
+                lhsTy = SymbolType(TYPE_BYTE);
+            } else if (lhsTy.matches(rhsTy, TYPE_BOOL)) { // Allow bitwise and operator for booleans
+                lhsTy = SymbolType(TYPE_BOOL);
+            } else { // Any other combination is invalid
+                throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
+                                    "Can only apply '&' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
             }
-            // Every other combination is invalid
-            throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Can only apply '&' operator to booleans and integers");
         }
         return lhsTy;
     }
@@ -874,6 +872,8 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
         if (lhsTy.is(TYPE_DOUBLE) && rhsTy.is(TYPE_INT)) return SymbolType(TYPE_BOOL); // Can compare double with int
         if (lhsTy.is(TYPE_INT) && rhsTy.is(TYPE_DOUBLE)) return SymbolType(TYPE_BOOL); // Can compare int with double
         if (lhsTy.matches(rhsTy, TYPE_INT)) return SymbolType(TYPE_BOOL); // Can compare int with int
+        if (lhsTy.matches(rhsTy, TYPE_BYTE)) return SymbolType(TYPE_BOOL); // Can compare byte with byte
+        if (lhsTy.matches(rhsTy, TYPE_CHAR)) return SymbolType(TYPE_BOOL); // Can compare char with char
         if (lhsTy.matches(rhsTy, TYPE_STRING)) return SymbolType(TYPE_BOOL); // Can compare string with string
         if (lhsTy.matches(rhsTy, TYPE_BOOL)) return SymbolType(TYPE_BOOL); // Can compare bool with bool
         // Every other combination is invalid
@@ -897,6 +897,10 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
             return SymbolType(TYPE_BOOL); // Can compare int with double
         if (lhsTy.matches(rhsTy, TYPE_INT))
             return SymbolType(TYPE_BOOL); // Can compare int with int
+        if (lhsTy.matches(rhsTy, TYPE_BYTE))
+            return SymbolType(TYPE_BOOL); // Can compare byte with byte
+        if (lhsTy.matches(rhsTy, TYPE_CHAR))
+            return SymbolType(TYPE_BOOL); // Can compare char with char
         // Every other combination is invalid
         throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                             "Can only compare doubles or ints with one another with a relational operator");
@@ -908,14 +912,10 @@ antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ctx
     // Check if at least one shift operator is applied
     if (ctx->children.size() > 1) {
         SymbolType lhsTy = visit(ctx->additiveExpr()[0]).as<SymbolType>();
-        if (!lhsTy.is(TYPE_INT))
+        SymbolType rhsTy = visit(ctx->additiveExpr()[1]).as<SymbolType>();
+        if (!lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
             throw SemanticError(*ctx->additiveExpr()[0]->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Shift operators can only be applied on ints");
-
-        SymbolType rhsTy = visit(ctx->additiveExpr()[1]).as<SymbolType>();
-        if (!rhsTy.is(TYPE_INT))
-            throw SemanticError(*ctx->additiveExpr()[1]->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Shift operators right hand side must e an int");
     }
     return visit(ctx->additiveExpr()[0]);
 }
@@ -940,9 +940,9 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                         currentType = SymbolType(TYPE_DOUBLE);
                     } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 + "Test"
                         currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 + true
+                    } else { // e.g.: 4.3 + true
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands double and bool for '+' operator");
+                                            "Incompatible operands double and " + nextType.getName()+ " for '+' operator");
                     }
                 } else if (currentType.is(TYPE_INT)) {
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 + 6.1
@@ -951,9 +951,9 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                         currentType = SymbolType(TYPE_INT);
                     } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 + "Test"
                         currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 + true
+                    } else { // e.g.: 4 + true
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands int and bool for '+' operator");
+                                            "Incompatible operands int and " + nextType.getName() + " for '+' operator");
                     }
                 } else if (currentType.is(TYPE_STRING)) {
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" + 6.1
@@ -962,13 +962,14 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                         currentType = SymbolType(TYPE_STRING);
                     } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" + "Test"
                         currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" + true
+                    } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and bool for '+' operator");
+                                            "Incompatible operands string and " + nextType.getName() + " for '+' operator");
                     }
-                } else if (currentType.is(TYPE_BOOL)) {
+                } else {
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and " + nextType.getName() + " for '+' operator");
+                                        "Incompatible operands " + currentType.getName() + " and " + nextType.getName() +
+                                        " for '+' operator");
                 }
             } else { // Operator was minus
                 // Check all combinations
@@ -977,31 +978,23 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                         currentType = SymbolType(TYPE_DOUBLE);
                     } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 - 4
                         currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 - "Test"
+                    } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands double and string for '-' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 - true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands double and bool for '-' operator");
+                                            "Incompatible operands double and " + nextType.getName() + " for '-' operator");
                     }
                 } else if (currentType.is(TYPE_INT)) {
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 - 6.1
                         currentType = SymbolType(TYPE_DOUBLE);
                     } else if (nextType.is(TYPE_INT)) { // e.g.: 4 - 5
                         currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 - "Test"
+                    } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands int and string for '-' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 - true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands int and bool for '-' operator");
+                                            "Incompatible operands int and " + nextType.getName() + " for '-' operator");
                     }
-                } else if (currentType.is(TYPE_STRING)) {
+                } else {
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands string and " + nextType.getName() + " for '-' operator");
-                } else if (currentType.is(TYPE_BOOL)) {
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and " + nextType.getName() + " for '-' operator");
+                                        "Incompatible operands " + currentType.getName() + " and " + nextType.getName() +
+                                        " for '-' operator");
                 }
             }
             operatorIndex += 2;
@@ -1024,44 +1017,68 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
 
             if (op->getSymbol()->getType() == SpiceParser::MUL) { // Operator was mul
                 if (currentType.is(TYPE_DOUBLE)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 * 6.1
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 * 6.1 = 26.23
                         currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 * 4
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 * 4 = 17.2
                         currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 * "Test"
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4.3 * 4 = 17.2
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands double and string for '*' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 * true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands double and bool for '*' operator");
+                                            "Incompatible operands double and " + nextType.getName() + " for '*' operator");
                     }
                 } else if (currentType.is(TYPE_INT)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 * 6.1
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 * 6.1 = 24.4
                         currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 * 5
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 * 5 = 20
                         currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 * "Test"
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 * 5 = 20
+                        currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_CHAR)) { // e.g.: 4 * 'a' = "aaaa"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 * "Test" = "TestTestTestTest"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else {
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands int and " + nextType.getName() + " for '*' operator");
+                    }
+                } else if (currentType.is(TYPE_BYTE)) {
+                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 * 6.1 = 24.4
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 * 5 = 20
+                        currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 * 5 = 20
+                        currentType = SymbolType(TYPE_INT);
+                    } else if (nextType.is(TYPE_CHAR)) { // e.g.: 4 * 'a' = "aaaa"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 * "Test" = "TestTestTestTest"
                         currentType = SymbolType(TYPE_STRING);
                     } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 * true
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands int and bool for '*' operator");
+                                            "Incompatible operands byte and bool for '*' operator");
+                    }
+                } else if (currentType.is(TYPE_CHAR)) {
+                    if (nextType.is(TYPE_INT)) { // e.g.: 'a' * 5 = "aaaaa"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 'a' * 5 = "aaaaa"
+                        currentType = SymbolType(TYPE_STRING);
+                    } else {
+                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
+                                            "Incompatible operands char and " + nextType.getName() + " for '*' operator");
                     }
                 } else if (currentType.is(TYPE_STRING)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" * 6.1
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and double for '*' operator");
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" * 5
+                    if (nextType.is(TYPE_INT)) { // e.g.: "Test" * 5 = "TestTestTestTestTest"
                         currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" * "Test"
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: "Test" * 5 = "TestTestTestTestTest"
+                        currentType = SymbolType(TYPE_INT);
+                    } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and string for '*' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: "Test" * true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands string and bool for '*' operator");
+                                            "Incompatible operands string and " + nextType.getName() + " for '*' operator");
                     }
-                } else if (currentType.is(TYPE_BOOL)) {
+                } else {
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and " + nextType.getName() + " for '*' operator");
+                                        "Incompatible operands " + currentType.getName() + " and " +
+                                        nextType.getName() + " for '*' operator");
                 }
             } else if (op->getSymbol()->getType() == SpiceParser::DIV) { // Operator was a div
                 if (currentType.is(TYPE_DOUBLE)) {
@@ -1069,37 +1086,35 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                         currentType = SymbolType(TYPE_DOUBLE);
                     } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 / 4
                         currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 / "Test"
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4.3 / 4
+                        currentType = SymbolType(TYPE_DOUBLE);
+                    } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands double and string for '/' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4.3 / true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands double and bool for '/' operator");
+                                            "Incompatible operands double and " + nextType.getName() + " for '/' operator");
                     }
                 } else if (currentType.is(TYPE_INT)) {
                     if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 / 6.1
                         currentType = SymbolType(TYPE_DOUBLE);
                     } else if (nextType.is(TYPE_INT)) { // e.g.: 4 / 5
                         currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 / "Test"
+                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 / 5
+                        currentType = SymbolType(TYPE_INT);
+                    } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands int and string for '/' operator");
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 / true
-                        throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                            "Incompatible operands int and bool for '/' operator");
+                                            "Incompatible operands int and " + nextType.getName() + " for '/' operator");
                     }
-                } else if (currentType.is(TYPE_STRING)) {
+                } else {
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands string and " + nextType.getName() + " for '/' operator");
-                } else if (currentType.is(TYPE_BOOL)) {
-                    throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
-                                        "Incompatible operands bool and " + nextType.getName() + " for '/' operator");
+                                        "Incompatible operands " + currentType.getName() + " and " +
+                                        nextType.getName() + " for '/' operator");
                 }
             } else { // Operator was rem
                 if (currentType.is(TYPE_DOUBLE) && nextType.is(TYPE_DOUBLE)) {
                     currentType = SymbolType(TYPE_DOUBLE);
                 } else if (currentType.is(TYPE_INT) && nextType.is(TYPE_INT)) {
                     currentType = SymbolType(TYPE_INT);
+                } else if (currentType.is(TYPE_BYTE) && nextType.is(TYPE_BYTE)) {
+                    currentType = SymbolType(TYPE_BYTE);
                 } else {
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE, "Incompatible operands " +
                                         currentType.getName() + " and " + nextType.getName() + " for '%' operator");
@@ -1231,6 +1246,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
 antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->DOUBLE()) return SymbolType(TYPE_DOUBLE);
     if (ctx->INTEGER()) return SymbolType(TYPE_INT);
+    if (ctx->CHAR()) return SymbolType(TYPE_CHAR);
     if (ctx->STRING()) return SymbolType(TYPE_STRING);
     if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TYPE_BOOL);
     return nullptr;
@@ -1241,6 +1257,8 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
 
     if (ctx->TYPE_DOUBLE()) type = SymbolType(TYPE_DOUBLE);
     if (ctx->TYPE_INT()) type = SymbolType(TYPE_INT);
+    if (ctx->TYPE_BYTE()) type = SymbolType(TYPE_BYTE);
+    if (ctx->TYPE_CHAR()) type = SymbolType(TYPE_CHAR);
     if (ctx->TYPE_STRING()) type = SymbolType(TYPE_STRING);
     if (ctx->TYPE_BOOL()) type = SymbolType(TYPE_BOOL);
     if (ctx->IDENTIFIER()) { // Struct type
