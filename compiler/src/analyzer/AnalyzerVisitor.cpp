@@ -625,16 +625,22 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
         auto assignment = ctx->assignExpr()[placeholderCount];
         SymbolType assignmentType = visit(assignment).as<SymbolType>();
         switch (templateString[index + 1]) {
-            case 'c':
+            case 'c': {
+                if (!assignmentType.is(TYPE_CHAR))
+                    throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
+                                        "Template string expects char, but got " + assignmentType.getName());
+                placeholderCount++;
+                break;
+            }
             case 'd':
             case 'i':
             case 'o':
             case 'u':
             case 'x':
             case 'X': {
-                if (!assignmentType.isOneOf({ TYPE_INT, TYPE_BOOL }))
+                if (!assignmentType.isOneOf({ TYPE_INT, TYPE_BYTE, TYPE_BOOL }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects int or bool, but got " + assignmentType.getName());
+                                        "Template string expects int, byte or bool, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
@@ -832,7 +838,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
                 lhsTy = SymbolType(TYPE_BOOL);
             } else { // Any other combination is invalid
                 throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '|' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
+                                    "Cannot apply '|' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
             }
         }
         return lhsTy;
@@ -855,7 +861,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
                 lhsTy = SymbolType(TYPE_BOOL);
             } else { // Any other combination is invalid
                 throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '&' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
+                                    "Cannot apply '&' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
             }
         }
         return lhsTy;
