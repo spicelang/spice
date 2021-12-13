@@ -935,10 +935,9 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (variableEntry->isLocal()) { // Local variable
-                // Cast int to char
-                if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(8) && rhs->getType()->isIntegerTy(32)) {
+                // Cast int to char or byte
+                if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(8) && rhs->getType()->isIntegerTy(32))
                     rhs = builder->CreateIntCast(rhs, llvm::Type::getInt8Ty(*context), false);
-                }
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);

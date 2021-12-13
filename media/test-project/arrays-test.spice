@@ -1,14 +1,11 @@
-//import "std/runtime/string" as str;
+import "std/runtime/string" as str;
 //import "std/type/string" as tyStr;
 
 f<int> main() {
-    char a = 'a';
-    byte b = 12;
-    printf("Char: %c, byte: %d", a, b);
-    //string a = "Hello ";
-    //string b = "World!";
-    //printf("String a: %s\n", a);
-    //printf("String b: %s\n", b);
+    string a = "Hello ";
+    string b = "World!";
+    printf("String a: %s\n", a);
+    printf("String b: %s\n", b);
     //printf("String a length: %d\n", tyStr.len(a));
     //printf("String a+b: %s", a + b);
 }
