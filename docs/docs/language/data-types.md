@@ -50,7 +50,7 @@ variable2 = '.';
 ```
 
 ## The `string` data type
-Strings are arrays of 8-bit integers (chars) and contain text-like information. The length of strings is unlimited.
+Strings are arrays of 8-bit integers (chars) and contain text-like information. The length of a string is unlimited.
 
 In Spice, variables of type `string` can be defined like this:
 ```spice
@@ -76,7 +76,7 @@ variable2 = false;
 	You can find more information about that in the respective sections.
 
 ## The `dyn` data type
-The `dyn` data type is a more unconventional data type. Dyn stands for dynamic and means that the `dyn` data type can hold any value of one of the four types `double`, `int`, `string` or `bool`. The concrete type of a `dyn` variable gets inferred at compile time so that the language stays type-safe. This also means, that as soon as you assign a value to a `dyn` variable, the type gets set fixed and is not mutable anymore.
+The `dyn` data type is a more unconventional data type. Dyn stands for dynamic and means that the `dyn` data type can hold any value of one of the six types `double`, `int`, `byte`, `char`, `string` or `bool`. The concrete type of a `dyn` variable gets inferred at compile time so that the language stays type-safe. This also means, that as soon as you assign a value to a `dyn` variable, the type gets set fixed and is not mutable anymore.
 
 Dyn variables can defined like this:
 

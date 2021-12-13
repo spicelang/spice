@@ -2,7 +2,7 @@
 title: For Loops
 ---
 
-For loops are designed to execute a block of code n times. That means you can specify a variable, set an initial value to it and mutate this variable after each loop run, until a certain condition is met.
+For loops are designed to execute a block of code n times. That means that you can specify a variable, set an initial value to it and mutate this variable after each loop run, until a certain condition is met. For loops can not only work with integer counters.
 
 Here is an example of a simple `for` loop:
 ```spice
