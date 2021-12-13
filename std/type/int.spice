@@ -4,6 +4,18 @@ f<double> toDouble(int input) {
     return 0.0;
 }
 
+// Converts an int to a byte
+f<type> toDouble(int input) {
+    // ToDo: Implement
+    return 0 + input;
+}
+
+// Converts an int to a char
+f<char> toDouble(int input) {
+    // ToDo: Implement
+    return 0 + input;
+}
+
 // Converts an int to a string
 f<string> toString(int input) {
     // ToDo: Implement (See https://github.com/golang/go/blob/master/src/strconv/itoa.go)

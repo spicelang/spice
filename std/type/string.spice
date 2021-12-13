@@ -17,6 +17,11 @@ f<int> toInt(string input) {
     return 0;
 }
 
+// Converts a string to a byte
+f<int> toByte(string input) {
+    return toInt(input);
+}
+
 // Converts a string to a bool
 f<bool> toBool(string input) {
     return input == "true";

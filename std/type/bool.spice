@@ -8,6 +8,11 @@ f<int> toInt(bool input) {
     return input ? 1 : 0;
 }
 
+// Converts a bool to a byte
+f<byte> toByte(bool input) {
+    return input ? 1 : 0;
+}
+
 // Converts a bool to a string
 f<string> toString(bool input) {
     return input ? "true" : "false";

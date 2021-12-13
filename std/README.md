@@ -2,7 +2,7 @@
 This sub-directory is contained within every installation of Spice. It contains common functionality, which can be made use of, by importing it via `import "std/..." as ...`.
 
 ## Runtime
-The package `std/runtime` is a internal package which is linked automatically to any Spice executable.
+The package `std/runtime` is an internal package which is linked automatically to any Spice executable.
 
 ## I/O
 The package `std/io` offers functions for reading/writing files, etc.
