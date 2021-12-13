@@ -52,11 +52,14 @@ atomicExpr: value | idenValue | functionCall | builtinCall | LPAREN assignExpr R
 
 // Values and types
 idenValue: (BITWISE_AND | MUL)? IDENTIFIER (LBRACKET assignExpr RBRACKET)? (DOT IDENTIFIER (LBRACKET assignExpr RBRACKET)?)*;
-value: STRING | TRUE | FALSE | INTEGER | DOUBLE;
-dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER) MUL? (LBRACKET RBRACKET)?;
+value: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE;
+dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER) MUL? (LBRACKET RBRACKET)?;
 
+// Terminal tokens
 TYPE_DOUBLE: 'double';
 TYPE_INT: 'int';
+TYPE_BYTE: 'byte';
+TYPE_CHAR: 'char';
 TYPE_STRING: 'string';
 TYPE_BOOL: 'bool';
 TYPE_DYN: 'dyn';
@@ -81,9 +84,10 @@ PRINTF: 'printf';
 SIZEOF: 'sizeof';
 TRUE: 'true';
 FALSE: 'false';
+CHAR: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
 STRING: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
-INTEGER: '-'* [1-9]+[0-9]* | '0';
-DOUBLE: '-'* [0-9]+.[0-9]+;
+INTEGER: '-'? [1-9]+[0-9]* | '0';
+DOUBLE: '-'? [0-9]+.[0-9]+;
 IDENTIFIER: [_a-zA-Z][_a-zA-Z0-9]*;
 LBRACE: '{';
 RBRACE: '}';

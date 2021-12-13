@@ -18,6 +18,7 @@ The following table shows how Spice prioritizes the supported operators. The lis
 | 3          | `!`      | Logical not operator                 |
 | 4          | `*`      | Multiplication                       |
 | 4          | `/`      | Division                             |
+| 4          | `%`      | Remainder                            |
 | 5          | `+`      | Addition                             |
 | 5          | `-`      | Subtraction                          |
 | 6          | `<<`     | Bitwise left shift operator          |

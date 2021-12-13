@@ -140,7 +140,9 @@ void SymbolTableEntry::setUsed() {
  * @return Symbol table entry in form of a string
  */
 std::string SymbolTableEntry::toString() {
-    return "Name: " + name + ", Type: " + std::to_string(type.getSuperType()) + ", OrderIndex: " +
-        std::to_string(orderIndex) + ", State: " + std::to_string(state) + ", Const: " + std::to_string(isConstant) +
-        ", IsGlobal: " + std::to_string(isGlobal);
+    std::string stateStr = state == INITIALIZED ? "initialized" : "declared";
+    std::string constStr = isConstant ? "yes" : "no";
+    std::string globalStr = isGlobal ? "yes" : "no";
+    return "Name: " + name + ", Type: " + type.getName() + ", OrderIndex: " + std::to_string(orderIndex) + ", State: " +
+        stateStr + ", Const: " + constStr + ", IsGlobal: " + globalStr;
 }

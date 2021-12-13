@@ -2,8 +2,8 @@
 title: Pointers
 ---
 
-Spice supports pointers with by providing the referencing operator `&` and the de-referencing operator `*`. <br>
-For any primitive and custom data type you can also use the respective pointer type. For the `int` type, the pointer type is `int*`.
+Spice supports pointers by providing the referencing operator `&` and the de-referencing operator `*`. <br>
+For any primitive or custom data type you can also use the respective pointer type. For the `int` type, the pointer type is `int*`.
 
 See an example here:
 ```spice

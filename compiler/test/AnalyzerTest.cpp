@@ -81,7 +81,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-bitwise-operators-are-booleans-or-integers",
-            "Semantic error at 2:22: Wrong data type for operator: Can only apply '|' operator to booleans and integers"
+            "Semantic error at 2:22: Wrong data type for operator: Cannot apply '|' operator to string and int"
         },
         {
             "error-equality-operators-some-combinations",
@@ -121,7 +121,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-printf-type-incompatibility",
-            "Semantic error at 6:36: Types of printf call not matching: Template string expects int or bool, but got string"
+            "Semantic error at 6:36: Types of printf call not matching: Template string expects char, but got string"
         },
         {
             "error-printf-arg-number-matches",

@@ -1,19 +1,19 @@
 SymbolTable(
-(Name: calledFunction(int,bool), Type: 21, OrderIndex: 0, State: 1, Const: 1, IsGlobal: 1)
-(Name: calledFunction(string), Type: 21, OrderIndex: 1, State: 1, Const: 1, IsGlobal: 1)
-(Name: main(), Type: 21, OrderIndex: 2, State: 1, Const: 1, IsGlobal: 1)
+(Name: calledFunction(int,bool), Type: function, OrderIndex: 0, State: initialized, Const: yes, IsGlobal: yes)
+(Name: calledFunction(string), Type: function, OrderIndex: 1, State: initialized, Const: yes, IsGlobal: yes)
+(Name: main(), Type: function, OrderIndex: 2, State: initialized, Const: yes, IsGlobal: yes)
 ) {
 calledFunction(int,bool): SymbolTable(
-(Name: mandatoryParam, Type: 1, OrderIndex: 0, State: 0, Const: 0, IsGlobal: 0)
-(Name: optionalParam, Type: 3, OrderIndex: 1, State: 1, Const: 0, IsGlobal: 0)
-(Name: result, Type: 0, OrderIndex: 2, State: 1, Const: 0, IsGlobal: 0)
+(Name: mandatoryParam, Type: int, OrderIndex: 0, State: declared, Const: no, IsGlobal: no)
+(Name: optionalParam, Type: bool, OrderIndex: 1, State: initialized, Const: no, IsGlobal: no)
+(Name: result, Type: double, OrderIndex: 2, State: initialized, Const: no, IsGlobal: no)
 )
 calledFunction(string): SymbolTable(
-(Name: result, Type: 0, OrderIndex: 1, State: 1, Const: 0, IsGlobal: 0)
-(Name: testString, Type: 2, OrderIndex: 0, State: 0, Const: 0, IsGlobal: 0)
+(Name: result, Type: double, OrderIndex: 1, State: initialized, Const: no, IsGlobal: no)
+(Name: testString, Type: string, OrderIndex: 0, State: declared, Const: no, IsGlobal: no)
 )
 main(): SymbolTable(
-(Name: res, Type: 0, OrderIndex: 1, State: 1, Const: 0, IsGlobal: 0)
-(Name: result, Type: 1, OrderIndex: 0, State: 1, Const: 0, IsGlobal: 0)
+(Name: res, Type: double, OrderIndex: 1, State: initialized, Const: no, IsGlobal: no)
+(Name: result, Type: int, OrderIndex: 0, State: initialized, Const: no, IsGlobal: no)
 )
 }
