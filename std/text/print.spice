@@ -1,5 +1,3 @@
-ext<int> printf(char*...);
-
 // Prints the given string to the console
 p print(string text) {
     printf("%s", text);

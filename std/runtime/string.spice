@@ -1,29 +1,31 @@
+import "std/type/string" as String;
+
 ext<byte> malloc(int);
 ext free(char*);
 ext<byte> memcpy(char*, char*, int);
 
-type String struct {
+type StringStruct struct {
     char[] value
     int len
     int maxLen
     int growthFactor
 }
 
-/*p String.constructor() {
+/*p StringStruct.constructor() {
     this.value = null;
     this.len = 0;
     this.maxLen = 0;
     this.growthFactor = 2;
 }
 
-p String.destructor() {
+p StringStruct.destructor() {
     if this.value != null {
         // Free the allocated heap space
         free(this.value);
     }
 }
 
-p String.resize(int newLen) {
+p StringStruct.resize(int newLen) {
     char* newAddr = malloc(newLen);
     char* oldAddr = this.value;
     int len = this.length;
@@ -33,7 +35,7 @@ p String.resize(int newLen) {
     this.maxLen = newLen;
 }
 
-p String.appendChar(char c) {
+p StringStruct.appendChar(char c) {
     int len = this.length;
     int maxLen = this.maxLen;
 
@@ -46,19 +48,19 @@ p String.appendChar(char c) {
     this.len++;
 }
 
-p String.clear() {
+p StringStruct.clear() {
     this.value = {};
     this.len = 0;
     this.maxLen = 0;
-}
+}*/
 
 f<string> concat(string a, string b) {
     // Return b if a is empty
-    int aLen = len(a);
+    int aLen = String.len(a);
     if aLen == 0 { return b; }
 
     // Return a if b is empty
-    int bLen = len(b);
+    int bLen = String.len(b);
     if bLen == 0 { return a; }
     
     // Create a new string
@@ -72,4 +74,4 @@ f<string> concat(string a, string b) {
     }
 
     return result;
-}*/
+}

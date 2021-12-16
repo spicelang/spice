@@ -1,5 +1,5 @@
 import "std/runtime/string" as str;
-//import "std/type/string" as tyStr;
+//import "std/type/string" as String;
 
 f<int> main() {
     string a = "Hello ";
