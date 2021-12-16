@@ -18,7 +18,10 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::MainFunctionDefContext*) {
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::FunctionDefContext* ctx) {
     auto symbol = ctx->F()->getSymbol();
-    return "f:" + ctx->IDENTIFIER()->toString() + ":" + std::to_string(symbol->getLine()) + ":" +
+    std::string functionName = ctx->IDENTIFIER().back()->toString();
+    if (ctx->IDENTIFIER().size() > 1)
+        functionName = ctx->IDENTIFIER().front()->toString() + "." + functionName;
+    return "f:" + functionName + ":" + std::to_string(symbol->getLine()) + ":" +
            std::to_string(symbol->getCharPositionInLine());
 }
 

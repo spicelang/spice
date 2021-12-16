@@ -29,8 +29,7 @@ f<bool> toBool(string input) {
 
 // Returns the length of a string
 f<int> len(string input) {
-    //for result = 0; input[result] != '\0'; result++ {}
-    return 0;
+    for result = 0; input[result] != '\0'; result++ {}
 }
 
 // Returns true if the input string contains the input substring

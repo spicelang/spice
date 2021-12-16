@@ -185,7 +185,9 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
-    std::string functionName = ctx->IDENTIFIER()->toString();
+    std::string functionName = ctx->IDENTIFIER().back()->toString();
+    if (ctx->IDENTIFIER().size() > 1)
+        functionName = ctx->IDENTIFIER().front()->toString() + "." + functionName;
 
     // Change scope
     FunctionSignature signature = currentScope->popSignature();

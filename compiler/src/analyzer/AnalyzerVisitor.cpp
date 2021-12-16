@@ -53,7 +53,9 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
-    std::string functionName = ctx->IDENTIFIER()->toString();
+    std::string functionName = ctx->IDENTIFIER().back()->toString();
+    if (ctx->IDENTIFIER().size() > 1)
+        functionName = ctx->IDENTIFIER().front()->toString() + "." + functionName;
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);

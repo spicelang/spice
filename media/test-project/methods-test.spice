@@ -1,0 +1,14 @@
+type Test struct {
+    int field1
+    byte field2
+}
+
+p Test.print() {
+    printf("Content: %d, %d", this.field1, this.field2);
+}
+
+f<int> main() {
+    byte b = 50;
+    Test test = new Test { 1, b };
+    test.print();
+}
