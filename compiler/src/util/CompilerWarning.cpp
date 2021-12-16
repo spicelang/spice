@@ -18,7 +18,8 @@ CompilerWarning::CompilerWarning(const antlr4::Token& token, CompilerWarningType
  * Print the compiler warning to the standard error output
  */
 void CompilerWarning::print() {
-    std::cout << warningMessage << std::endl;
+    if (!warningMessage.empty())
+        std::cout << warningMessage << std::endl;
 }
 
 /**
@@ -39,6 +40,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
             return "Unused import";
         case UNUSED_VARIABLE:
             return "Unused variable";
+        case ARRAY_TOO_MANY_VALUES:
+            return "Array initialization item count exceeds arrays capacity";
     }
     return "Unknown warning";
 }

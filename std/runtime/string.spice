@@ -1,6 +1,6 @@
-needs_ext malloc(int);
-needs_ext free(char*);
-needs_ext memcpy(char*, char* int);
+ext<byte> malloc(int);
+ext free(char*);
+ext<byte> memcpy(char*, char*, int);
 
 type String struct {
     char[] value
@@ -9,7 +9,7 @@ type String struct {
     int growthFactor
 }
 
-p String.constructor() {
+/*p String.constructor() {
     this.value = null;
     this.len = 0;
     this.maxLen = 0;
@@ -47,7 +47,7 @@ p String.appendChar(char c) {
 }
 
 p String.clear() {
-    this.value = null;
+    this.value = {};
     this.len = 0;
     this.maxLen = 0;
 }
@@ -72,4 +72,4 @@ f<string> concat(string a, string b) {
     }
 
     return result;
-}
+}*/

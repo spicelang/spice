@@ -13,9 +13,11 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
         throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
 
     // Post traversing actions
-    SymbolTable* rootScope = currentScope;
-    while (rootScope->getParent()) rootScope = rootScope->getParent();
-    rootScope->printCompilerWarnings();
+    if (!stdFile) { // Do not print compiler warnings for std files
+        SymbolTable* rootScope = currentScope;
+        while (rootScope->getParent()) rootScope = rootScope->getParent();
+        rootScope->printCompilerWarnings();
+    }
 
     // Return the symbol table to the main program for further compile phases
     return currentScope;
@@ -122,6 +124,30 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     visit(ctx->stmtLst());
     // Return to old scope
     currentScope = currentScope->getParent();
+    return SymbolType(TYPE_BOOL);
+}
+
+antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
+    std::string functionName = ctx->IDENTIFIER()->toString();
+
+    if (ctx->dataType()) {
+        // Check if return type is dyn
+        SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
+        if (returnType.is(TYPE_DYN))
+            throw SemanticError(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA,
+                                "Dyn data type is not allowed as return type for external functions");
+    }
+
+    if (ctx->typeLst()) {
+        // Check if a param is dyn
+        for (auto& param : ctx->typeLst()->dataType()) {
+            SymbolType paramType = visit(param).as<SymbolType>();
+            if (paramType.is(TYPE_DYN))
+                throw SemanticError(*param->start, UNEXPECTED_DYN_TYPE_SA,
+                                    "Dyn data type is not allowed as param type for external functions");
+        }
+    }
+
     return SymbolType(TYPE_BOOL);
 }
 
@@ -484,7 +510,9 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 
     // Check if source file exists
     std::string filePath;
+    bool isStdFile = false;
     if (importPath.rfind("std/", 0) == 0) { // Include source file from standard library
+        isStdFile = true;
         std::string sourceFileIden = importPath.substr(importPath.find("std/") + 4);
         // Find std library
         std::string stdPath;
@@ -528,13 +556,14 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 
     // Kick off the compilation of the imported source file
     SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetArch, targetVendor, targetOs, objectDir,
-                                                                   debugOutput, optLevel, false);
+                                                                   debugOutput, optLevel, false, isStdFile);
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();
     currentScope->insert(importIden, SymbolType(TYPE_IMPORT), INITIALIZED, *ctx->start, true, false);
 
     // Mount symbol table of the imported source file into the current scope
+    nestedTable->setImported();
     currentScope->mountChildBlock(importIden, nestedTable);
 
     return SymbolType(TYPE_STRING);

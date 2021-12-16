@@ -247,7 +247,8 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
                 ".",
                 false,
                 3,
-                true
+                true,
+                false
         );
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 

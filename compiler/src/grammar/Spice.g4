@@ -1,10 +1,11 @@
 grammar Spice;
 
 // Control structures
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | globalVarDef | importStmt)*;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | globalVarDef | importStmt | extDecl)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: F LESS dataType GREATER IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
+extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN SEMICOLON;
 structDef: TYPE IDENTIFIER STRUCT LBRACE fieldLst RBRACE;
 globalVarDef: CONST? dataType IDENTIFIER (ASSIGN_OP value)? SEMICOLON;
 forLoop: FOR assignExpr SEMICOLON assignExpr SEMICOLON assignExpr LBRACE stmtLst RBRACE;
@@ -17,6 +18,7 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 // Statements, declarations, definitions and lists
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt)*;
 fieldLst: declStmt*;
+typeLst: dataType (COMMA dataType)* ELLIPSIS?;
 paramLstDef: (declStmt | assignExpr) (COMMA (declStmt | assignExpr))*;
 paramLst: assignExpr (COMMA assignExpr)*;
 stmt: (declStmt | assignExpr | newStmt | arrayInitStmt | functionCall | builtinCall | returnStmt | breakStmt | continueStmt) SEMICOLON;
@@ -82,6 +84,8 @@ NEW: 'new';
 MAIN: 'main';
 PRINTF: 'printf';
 SIZEOF: 'sizeof';
+EXT: 'ext';
+ELLIPSIS: '...';
 TRUE: 'true';
 FALSE: 'false';
 CHAR: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';

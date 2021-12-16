@@ -18,5 +18,5 @@
 class CompilerInstance {
 public:
     static SymbolTable* CompileSourceFile(std::string&, const std::string&, const std::string&, const std::string&,
-                                          const std::string&, bool, int, bool);
+                                          const std::string&, bool, int, bool, bool);
 };

@@ -63,6 +63,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Missing return statement";
         case OPERATOR_WRONG_DATA_TYPE:
             return "Wrong data type for operator";
+        case UNEXPECTED_DYN_TYPE_SA:
+            return "Unexpected dyn type";
         case REASSIGN_CONST_VARIABLE:
             return "Cannot re-assign constant variable";
         case CONDITION_MUST_BE_BOOL:
@@ -99,6 +101,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Array item type not matching";
         case RETURN_WITHOUT_VALUE_RESULT:
             return "Return without initialization of result variable";
+        case VARARG_APPLIED_WRONGLY:
+            return "Vararg applied wrongly";
         case COMING_SOON_SA:
             return "Coming soon";
     }

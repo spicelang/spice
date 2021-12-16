@@ -19,7 +19,7 @@ f<int> toInt(string input) {
 
 // Converts a string to a byte
 f<int> toByte(string input) {
-    return toInt(input);
+    result = toInt(input);
 }
 
 // Converts a string to a bool

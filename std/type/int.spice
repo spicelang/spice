@@ -11,7 +11,13 @@ f<type> toDouble(int input) {
 }
 
 // Converts an int to a char
-f<char> toDouble(int input) {
+f<char> ToByte(int input) {
+    // ToDo: Implement
+    result = 0 + input;
+}
+
+// Converts an int to a char
+f<char> ToChar(int input) {
     // ToDo: Implement
     return 0 + input;
 }

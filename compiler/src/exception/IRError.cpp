@@ -49,7 +49,7 @@ std::string IRError::getMessagePrefix(IRErrorType type) {
             return "Wrong type of output file";
         case BRANCH_NOT_FOUND:
             return "Branch not found";
-        case UNEXPECTED_DYN_TYPE:
+        case UNEXPECTED_DYN_TYPE_IR:
             return "Unexpected type of dyn. Symbol table incomplete";
         case PRINTF_NULL_TYPE:
             return "Printf has null type";

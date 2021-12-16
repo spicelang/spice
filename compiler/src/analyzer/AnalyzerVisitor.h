@@ -26,7 +26,7 @@ class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
     explicit AnalyzerVisitor(std::string sourceFile, std::string targetArch, std::string targetVendor, std::string targetOs,
-                             std::string outputPath, bool debugOutput, int optLevel, bool mustHaveMainFunction) :
+                             std::string outputPath, bool debugOutput, int optLevel, bool mustHaveMainFunction, bool stdFile) :
             mainSourceFile(std::move(sourceFile)),
             targetArch(std::move(targetArch)),
             targetVendor(std::move(targetVendor)),
@@ -34,7 +34,8 @@ public:
             objectDir(std::move(outputPath)),
             debugOutput(debugOutput),
             optLevel(optLevel),
-            mustHaveMainFunction(mustHaveMainFunction) {
+            mustHaveMainFunction(mustHaveMainFunction),
+            stdFile(stdFile) {
         if (targetArch.empty()) {
             llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
             targetArch = targetTriple.getArchName();
@@ -51,6 +52,8 @@ public:
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext* ctx) override;
 
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) override;
+
+    antlrcpp::Any visitExtDecl(SpiceParser::ExtDeclContext* ctx) override;
 
     antlrcpp::Any visitStructDef(SpiceParser::StructDefContext* ctx) override;
 
@@ -134,8 +137,9 @@ private:
     bool debugOutput;
     int optLevel;
     bool mustHaveMainFunction = true;
+    bool hasMainFunction = false;
     SymbolTable* currentScope = new SymbolTable(nullptr, mustHaveMainFunction);
     bool parameterMode = false;
-    bool hasMainFunction = false;
     int nestedLoopCounter = 0;
+    bool stdFile = false;
 };

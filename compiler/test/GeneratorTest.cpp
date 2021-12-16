@@ -108,7 +108,8 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
                 ".",
                 false,
                 3,
-                true
+                true,
+                false
         );
         symbolTable = analyzer.visit(tree).as<SymbolTable*>();
     } catch (SemanticError &error) {

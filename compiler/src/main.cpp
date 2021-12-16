@@ -31,7 +31,7 @@ int main(int argc, char** argv) { // Call ./spicec filePath targetArch targetVen
      * function again. */
     try {
         CompilerInstance::CompileSourceFile(mainSourceFile, targetArch, targetVendor, targetOs, objectDir, debugOutput,
-                                            optLevel, true);
+                                            optLevel, true, false);
     } catch (SemanticError& e) {
         std::cout << e.what() << std::endl;
         std::exit(1); // Exit with result code other than 0

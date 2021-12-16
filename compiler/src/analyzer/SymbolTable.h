@@ -74,6 +74,8 @@ public:
 
     std::string toString();
 
+    void setImported();
+
 private:
     // Members
     SymbolTable* parent;
@@ -86,4 +88,5 @@ private:
     llvm::BasicBlock* continueBlock = nullptr;
     llvm::BasicBlock* breakBlock = nullptr;
     bool inMainSourceFile;
+    bool isImported = false;
 };

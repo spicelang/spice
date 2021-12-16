@@ -7,7 +7,7 @@ f<int> toInt(double input) {
 // Converts a double to a byte
 f<byte> toByte(double input) {
     // ToDo: Implement
-    return 0;
+    result = 0;
 }
 
 // Converts a double to a string

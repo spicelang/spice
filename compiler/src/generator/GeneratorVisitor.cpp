@@ -358,6 +358,33 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     return (llvm::Value*) builder->getTrue();
 }
 
+antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
+    // Get function name
+    std::string functionName = ctx->IDENTIFIER()->toString();
+
+    // Get LLVM return type
+    llvm::Type* returnType = ctx->dataType() ? visit(ctx->dataType()).as<llvm::Type*>() : llvm::Type::getVoidTy(*context);
+
+    // Get LLVM param types
+    std::vector<llvm::Type*> paramTypes;
+    if (ctx->typeLst()) {
+        for (auto& param : ctx->typeLst()->dataType()) {
+            llvm::Type* paramType = visit(param).as<llvm::Type*>();
+            paramTypes.push_back(paramType);
+        }
+    }
+
+    // Get vararg
+    bool isVararg = ctx->typeLst()->ELLIPSIS();
+
+    // Declare function
+    llvm::FunctionType* functionType = llvm::FunctionType::get(returnType, paramTypes, isVararg);
+    module->getOrInsertFunction(functionName, functionType);
+
+    // Return true as result for the function definition
+    return (llvm::Value*) builder->getTrue();
+}
+
 antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ctx) {
     std::string structName = ctx->IDENTIFIER()->toString();
 
@@ -1599,7 +1626,7 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
     llvm::Type* type = getTypeForSymbolType(currentSymbolType);
     // Throw an error if something went wrong.
     // This should technically never occur because of the semantic analysis
-    if (!type) throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE, "Dyn was other");
+    if (!type) throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE_IR, "Dyn was other");
     return type;
 }
 
@@ -1610,7 +1637,7 @@ void GeneratorVisitor::initializeExternalFunctions() {
             llvm::Type::getInt8Ty(*context)->getPointerTo(),
             true));
     // malloc function
-    module->getOrInsertFunction("malloc", llvm::FunctionType::get(
+    /*module->getOrInsertFunction("malloc", llvm::FunctionType::get(
             llvm::Type::getInt8Ty(*context)->getPointerTo(),
             llvm::Type::getInt32Ty(*context),
             false));
@@ -1626,7 +1653,7 @@ void GeneratorVisitor::initializeExternalFunctions() {
             llvm::Type::getInt32Ty(*context)
     };
     module->getOrInsertFunction("memcpy", llvm::FunctionType::get(
-            llvm::Type::getInt8Ty(*context)->getPointerTo(), paramTypes, false));
+            llvm::Type::getInt8Ty(*context)->getPointerTo(), paramTypes, false));*/
 }
 
 llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {

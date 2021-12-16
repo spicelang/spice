@@ -5,12 +5,6 @@ source_filename = "source.spice"
 
 declare i32 @printf(i8*, ...)
 
-declare i8* @malloc(i32)
-
-declare void @free(i8*)
-
-declare i8* @memcpy(i8*, i8*, i32)
-
 define i32 @"faculty(int)"(i32 %0) {
 entry:
   %input = alloca i32, align 4
