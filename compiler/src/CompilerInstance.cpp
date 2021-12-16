@@ -24,7 +24,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         const std::string& objectDir,
         bool debugOutput,
         int optLevel,
-        bool mustHaveMainFunction
+        bool mustHaveMainFunction,
+        bool stdFile
 ) {
     // Read from file
     std::ifstream stream(sourceFile);
@@ -47,7 +48,9 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             objectDir,
             debugOutput,
             optLevel,
-            mustHaveMainFunction);
+            mustHaveMainFunction,
+            stdFile
+    );
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
     if (debugOutput) {
         // Print symbol table
@@ -68,7 +71,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             objectDir + "/" + fileName + ".o",
             debugOutput,
             optLevel,
-            mustHaveMainFunction);
+            mustHaveMainFunction
+    );
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
     if (debugOutput) {

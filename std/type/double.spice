@@ -4,6 +4,12 @@ f<int> toInt(double input) {
     return 0;
 }
 
+// Converts a double to a byte
+f<byte> toByte(double input) {
+    // ToDo: Implement
+    result = 0;
+}
+
 // Converts a double to a string
 f<string> toString(double input) {
     // ToDo: Implement

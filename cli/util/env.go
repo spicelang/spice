@@ -1,8 +1,6 @@
 package util
 
-import (
-	"os"
-)
+import "os"
 
 // IsDockerized checks if Spice runs in a dockerized environment
 func IsDockerized() bool {

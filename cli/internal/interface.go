@@ -60,10 +60,10 @@ func Compile(sourceFile, targetArch, targetVendor, targetOs, objectDir string, d
 
 // Link bundles the object files which were created by the compiler to an output executable
 func Link(sourceFiles []string, outputFile string) {
-	// Search for g++
-	gccPath := "g++"
+	// Search for gcc
+	gccPath := "gcc"
 	if !CommandExists(gccPath) {
-		util.Error("g++ executable not found. Please make sure you have the package 'build-essential', "+
+		util.Error("gcc executable not found. Please make sure you have the package 'build-essential', "+
 			"containing the g++ executable installed", true)
 	}
 

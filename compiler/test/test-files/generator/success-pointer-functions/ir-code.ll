@@ -11,12 +11,6 @@ source_filename = "source.spice"
 
 declare i32 @printf(i8*, ...)
 
-declare i8* @malloc(i32)
-
-declare void @free(i8*)
-
-declare i8* @memcpy(i8*, i8*, i32)
-
 define void @"birthday()"(%Person* %0) {
 entry:
   %person = alloca %Person*, align 8

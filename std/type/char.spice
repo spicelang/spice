@@ -1,0 +1,24 @@
+// Converts a char to a double
+f<double> toDouble(char input) {
+    return 0.0;
+}
+
+// Converts a char to an int
+f<int> toInt(char input) {
+    return 0;
+}
+
+// Converts a char to a byte
+f<byte> toByte(char input) {
+    result = 0;
+}
+
+// Converts a char to a string
+f<string> toString(char input) {
+    return "0";
+}
+
+// Converts a char to a bool
+f<bool> toString(char input) {
+    return input == '1';
+}

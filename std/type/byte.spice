@@ -1,0 +1,24 @@
+// Converts a byte to a double
+f<double> toDouble(byte input) {
+    return 0.0;
+}
+
+// Converts a byte to an int
+f<int> toInt(byte input) {
+    return 0;
+}
+
+// Converts a byte to a char
+f<char> toChar(byte input) {
+    return '0';
+}
+
+// Converts a byte to a string
+f<string> toString(byte input) {
+    return "0";
+}
+
+// Converts a byte to a bool
+f<bool> toBool(byte input) {
+    return input == 1;
+}

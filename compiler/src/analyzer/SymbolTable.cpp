@@ -297,21 +297,20 @@ void SymbolTable::setBreakBlock(llvm::BasicBlock* block) {
  * Prints compiler values with regard to the symbol table
  */
 void SymbolTable::printCompilerWarnings() {
+    // Omit this table if it is an imported sub-table
+    if (isImported) return;
     // Visit own symbols
     for (auto& [key, entry] : symbols) {
         if (!entry.isUsed()) {
             if (entry.getType().is(TYPE_FUNCTION)) {
-                if (inMainSourceFile)
-                    CompilerWarning(entry.getDefinitionToken(), UNUSED_FUNCTION,
-                                    "The function '" + entry.getName() + "' is unused").print();
+                CompilerWarning(entry.getDefinitionToken(), UNUSED_FUNCTION,
+                                "The function '" + entry.getName() + "' is unused").print();
             } else if (entry.getType().is(TYPE_PROCEDURE)) {
-                if (inMainSourceFile)
-                    CompilerWarning(entry.getDefinitionToken(), UNUSED_PROCEDURE,
-                                          "The procedure '" + entry.getName() + "' is unused").print();
+                CompilerWarning(entry.getDefinitionToken(), UNUSED_PROCEDURE,
+                                "The procedure '" + entry.getName() + "' is unused").print();
             } else if (entry.getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
-                if (inMainSourceFile)
-                    CompilerWarning(entry.getDefinitionToken(), UNUSED_STRUCT,
-                                          "The struct '" + entry.getName() + "' is unused").print();
+                CompilerWarning(entry.getDefinitionToken(), UNUSED_STRUCT,
+                                "The struct '" + entry.getName() + "' is unused").print();
             } else if (entry.getType().isOneOf({ TYPE_IMPORT })) {
                 CompilerWarning(entry.getDefinitionToken(), UNUSED_IMPORT,
                                 "The import '" + entry.getName() + "' is unused").print();
@@ -342,4 +341,8 @@ std::string SymbolTable::toString() {
     if (childrenString.empty())
         return "SymbolTable(\n" + symbolsString + ")";
     return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
+}
+
+void SymbolTable::setImported() {
+    isImported = true;
 }

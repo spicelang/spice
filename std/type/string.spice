@@ -6,7 +6,7 @@ f<double> toDouble(string input) {
 
 // Converts a string to an int
 f<int> toInt(string input) {
-    if intput == "" {
+    if input == "" {
         return 0;
     }
 
@@ -17,14 +17,20 @@ f<int> toInt(string input) {
     return 0;
 }
 
+// Converts a string to a byte
+f<int> toByte(string input) {
+    result = toInt(input);
+}
+
 // Converts a string to a bool
 f<bool> toBool(string input) {
     return input == "true";
 }
 
 // Returns the length of a string
-f<int> len(string value) {
-    for result = 0; value[result] != '\0'; result++ {}
+f<int> len(string input) {
+    //for result = 0; input[result] != '\0'; result++ {}
+    return 0;
 }
 
 // Returns true if the input string contains the input substring

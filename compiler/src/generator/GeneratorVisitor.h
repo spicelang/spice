@@ -62,6 +62,8 @@ public:
 
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) override;
 
+    antlrcpp::Any visitExtDecl(SpiceParser::ExtDeclContext* ctx) override;
+
     antlrcpp::Any visitStructDef(SpiceParser::StructDefContext* ctx) override;
 
     antlrcpp::Any visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) override;
