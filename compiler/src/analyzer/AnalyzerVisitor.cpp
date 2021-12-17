@@ -53,9 +53,12 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
-    std::string functionName = ctx->IDENTIFIER().back()->toString();
-    if (ctx->IDENTIFIER().size() > 1)
-        functionName = ctx->IDENTIFIER().front()->toString() + "." + functionName;
+    bool isMethod = false;
+    std::string functionName = ctx->IDENTIFIER()[0]->toString();
+    if (ctx->IDENTIFIER().size() > 1) {
+        isMethod = true;
+        functionName += ctx->IDENTIFIER()[1]->toString();
+    }
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -65,6 +68,13 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     if (ctx->paramLstDef())
         paramTypes = visit(ctx->paramLstDef()).as<std::vector<SymbolType>>();
     parameterMode = false;
+    // Declare 'this' variable in new scope
+    if (isMethod) {
+        std::string structName = ctx->IDENTIFIER().front()->toString();
+        SymbolTableEntry* structEntry = currentScope->lookup(structName);
+        SymbolType thisType = structEntry->getType();
+        currentScope->insert(THIS_VARIABLE_NAME, thisType, INITIALIZED, *ctx->start, true, false);
+    }
     // Declare variable for the return value in new scope
     SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
     if (returnType.isPointer())
@@ -97,7 +107,12 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
 }
 
 antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
-    std::string procedureName = ctx->IDENTIFIER()->toString();
+    bool isMethod = false;
+    std::string procedureName = ctx->IDENTIFIER()[0]->toString();
+    if (ctx->IDENTIFIER().size() > 1) {
+        isMethod = true;
+        procedureName += ctx->IDENTIFIER()[1]->toString();
+    }
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -107,6 +122,13 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     if (ctx->paramLstDef())
         paramTypes = visit(ctx->paramLstDef()).as<std::vector<SymbolType>>();
     parameterMode = false;
+    // Declare 'this' variable in new scope
+    if (isMethod) {
+        std::string structName = ctx->IDENTIFIER().front()->toString();
+        SymbolTableEntry* structEntry = currentScope->lookup(structName);
+        SymbolType thisType = structEntry->getType();
+        currentScope->insert(THIS_VARIABLE_NAME, thisType, INITIALIZED, *ctx->start, true, false);
+    }
     // Return to old scope
     currentScope = currentScope->getParent();
     // Insert procedure into the symbol table
@@ -368,10 +390,22 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     SymbolTable* scope = currentScope;
     for (auto& segment : ctx->IDENTIFIER()) {
         functionNamespace.push_back(segment->toString());
-        // Set namespace fragment to used
-        scope = scope->lookupTableWithSymbol(functionNamespace);
-        if (scope && scope->lookup(segment->toString()))
-            scope->lookup(segment->toString())->setUsed();
+        // Find namespace fragment
+        SymbolTableEntry* currentSymbol = scope->lookup(segment->toString());
+        if (currentSymbol->getType().is(TYPE_IMPORT)) { // Module call
+            scope = scope->lookupTableWithSymbol(functionNamespace);
+            if (scope->lookup(segment->toString())) {
+                scope->lookup(segment->toString())->setUsed();
+            } else {
+                throw std::runtime_error("Internal compiler error: Getting nested function failed");
+            }
+        } else if (currentSymbol->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) { // Method call
+            currentSymbol->setUsed();
+            scope = scope->lookupTable("struct:" + currentSymbol->getType().getSubType());
+        } else { // Error
+            throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
+                                "Function/Procedure'" + segment->toString() + "' could not be found");
+        }
     }
     std::string functionName = functionNamespace.back();
     // Visit params

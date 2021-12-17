@@ -280,7 +280,9 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
-    std::string procedureName = ctx->IDENTIFIER()->toString();
+    std::string procedureName = ctx->IDENTIFIER().back()->toString();
+    if (ctx->IDENTIFIER().size() > 1)
+        procedureName = ctx->IDENTIFIER().front()->toString() + "." + procedureName;
 
     // Change scope
     FunctionSignature signature = currentScope->popSignature();
