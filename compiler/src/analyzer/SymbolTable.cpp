@@ -183,12 +183,17 @@ SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
 }
 
 /**
- * Returns the number of symbols in the table
+ * Returns the number of symbols in the table, which are no functions, procedures or import
  *
- * @return Number of symbols
+ * @return Number of fields
  */
-unsigned int SymbolTable::getSymbolsCount() {
-    return symbols.size();
+unsigned int SymbolTable::getFieldCount() {
+    unsigned int count = 0;
+    for (auto& [key, symbol] : symbols) {
+        if (!symbol.getType().isOneOf({ TYPE_FUNCTION, TYPE_PROCEDURE, TYPE_IMPORT }))
+            count++;
+    }
+    return count;
 }
 
 /**

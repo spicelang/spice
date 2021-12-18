@@ -4,6 +4,7 @@
 
 antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Pre-traversing actions
+    initializeExternalFunctions();
 
     // Traverse AST
     visitChildren(ctx);
@@ -53,11 +54,16 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
+    // Save the old scope to restore later
+    SymbolTable* oldScope = currentScope;
+
+    // Check if this is a global function or a method
     bool isMethod = false;
-    std::string functionName = ctx->IDENTIFIER()[0]->toString();
-    if (ctx->IDENTIFIER().size() > 1) {
+    std::string functionName = ctx->IDENTIFIER().back()->toString();
+    if (ctx->IDENTIFIER().size() > 1) { // Method
         isMethod = true;
-        functionName += ctx->IDENTIFIER()[1]->toString();
+        // Change to the struct scope
+        currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
     }
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -102,16 +108,21 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
         throw SemanticError(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
     // Return to old scope
-    currentScope = currentScope->getParent();
+    currentScope = oldScope;
     return returnType;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
+    // Save the old scope to restore later
+    SymbolTable* oldScope = currentScope;
+
+    // Check if this is a global function or a method
     bool isMethod = false;
-    std::string procedureName = ctx->IDENTIFIER()[0]->toString();
+    std::string procedureName = ctx->IDENTIFIER().back()->toString();
     if (ctx->IDENTIFIER().size() > 1) {
         isMethod = true;
-        procedureName += ctx->IDENTIFIER()[1]->toString();
+        // Change to the struct scope
+        currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
     }
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -147,21 +158,14 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     // Visit statement list in new scope
     visit(ctx->stmtLst());
     // Return to old scope
-    currentScope = currentScope->getParent();
+    currentScope = oldScope;
     return SymbolType(TYPE_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
     std::string functionName = ctx->IDENTIFIER()->toString();
 
-    if (ctx->dataType()) {
-        // Check if return type is dyn
-        SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
-        if (returnType.is(TYPE_DYN))
-            throw SemanticError(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA,
-                                "Dyn data type is not allowed as return type for external functions");
-    }
-
+    std::vector<SymbolType> paramTypes;
     if (ctx->typeLst()) {
         // Check if a param is dyn
         for (auto& param : ctx->typeLst()->dataType()) {
@@ -169,7 +173,24 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
             if (paramType.is(TYPE_DYN))
                 throw SemanticError(*param->start, UNEXPECTED_DYN_TYPE_SA,
                                     "Dyn data type is not allowed as param type for external functions");
+            paramTypes.push_back(paramType);
         }
+    }
+
+    if (ctx->dataType()) { // Function
+        // Check if return type is dyn
+        SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
+        if (returnType.is(TYPE_DYN))
+            throw SemanticError(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA,
+                                "Dyn data type is not allowed as return type for external functions");
+
+        FunctionSignature signature = FunctionSignature(functionName, paramTypes);
+        currentScope->insert(signature.toString(), SymbolType(TYPE_FUNCTION), INITIALIZED, *ctx->start, true, false);
+        currentScope->pushSignature(signature);
+    } else { // Procedure
+        FunctionSignature signature = FunctionSignature(functionName, paramTypes);
+        currentScope->insert(signature.toString(), SymbolType(TYPE_PROCEDURE), INITIALIZED, *ctx->start, true, false);
+        currentScope->pushSignature(signature);
     }
 
     return SymbolType(TYPE_BOOL);
@@ -385,17 +406,82 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
-    // Build function namespace
+    std::string functionName = ctx->IDENTIFIER()->toString();
+    SymbolType returnType = SymbolType(TYPE_BOOL); // Bool with value 'true' for procedures
+
+    // Visit params
+    std::vector<SymbolType> paramTypes;
+    if (ctx->paramLst()) {
+        for (auto& param : ctx->paramLst()->assignExpr())
+            paramTypes.push_back(visit(param).as<SymbolType>());
+    }
+    FunctionSignature signature = FunctionSignature(functionName, paramTypes);
+
+    // Determine the type of the call
+    SymbolTable* functionEntryTable = currentScope;
+    SymbolTableEntry* functionEntry;
+    if (ctx->idenValue()) { // Module call or method call
+        // Lookup variable / import name
+        std::string firstSegment = ctx->idenValue()->IDENTIFIER()[0]->toString();
+        SymbolTableEntry* firstSegmentEntry = currentScope->lookup(firstSegment);
+        if (!firstSegmentEntry)
+            throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
+                                "Referenced undefined variable '" + firstSegment + "'");
+        SymbolType firstSegmentType = firstSegmentEntry->getType();
+
+        if (firstSegmentType.is(TYPE_IMPORT)) { // Module call
+            // ToDo
+            //functionEntryTable = currentScope->lookupTableWithSymbol(functionNamespace);
+        } else { // Method call
+            // Visit the idenValue
+            SymbolType structType = visit(ctx->idenValue()).as<SymbolType>();
+            if (!structType.isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR }))
+                throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
+                                    "Cannot call function/procedure on " + firstSegmentType.getName() + " data type");
+
+            // Get the struct scope
+            functionEntryTable = currentScope->lookupTable("struct:" + structType.getSubType());
+            functionEntry = functionEntryTable->lookup(signature.toString());
+        }
+    } else { // Local call
+        functionEntryTable = currentScope->lookupTableWithSymbol({ signature.toString() });
+        functionEntry = functionEntryTable->lookup(signature.toString());
+    }
+
+    // Add function call to the signature queue of the current scope
+    currentScope->pushSignature(signature);
+    // Set the function usage
+    functionEntry->setUsed();
+    // Search for symbol table of called function/procedure to read parameters
+    if (functionEntry->getType().is(TYPE_FUNCTION)) {
+        functionEntryTable = functionEntryTable->getChild(signature.toString());
+        // Get return type of called function
+        return functionEntryTable->lookup(RETURN_VARIABLE_NAME)->getType();
+    }
+    return returnType;
+
+    /*// Build function namespace
     std::vector<std::string> functionNamespace;
     SymbolTable* scope = currentScope;
-    for (auto& segment : ctx->IDENTIFIER()) {
-        functionNamespace.push_back(segment->toString());
+    for (unsigned int i = 0; i < ctx->IDENTIFIER().size() -1; i++) {
+        std::string segmentName = ctx->IDENTIFIER()[i]->toString();
+        functionNamespace.push_back(segmentName);
+        // Skip builtin functions
+        if (segmentName == "printf" && segmentName == "sizeof") // ToDo: Find better solution
+            continue;
         // Find namespace fragment
-        SymbolTableEntry* currentSymbol = scope->lookup(segment->toString());
-        if (currentSymbol->getType().is(TYPE_IMPORT)) { // Module call
+        SymbolTableEntry* currentSymbol = scope->lookup(segmentName);
+        if (!currentSymbol)  { // Local function or builtin call
+            if (ctx->IDENTIFIER().size() == 1)
+                throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
+                                    "Function/Procedure '" + segmentName + "' could not be found");
+            if (segmentName != "printf" && segmentName != "sizeof") {
+                scope = scope->lookupTableWithSymbol(functionNamespace);
+            }
+        } else if (currentSymbol->getType().is(TYPE_IMPORT)) { // Module call
             scope = scope->lookupTableWithSymbol(functionNamespace);
-            if (scope->lookup(segment->toString())) {
-                scope->lookup(segment->toString())->setUsed();
+            if (scope->lookup(segmentName)) {
+                scope->lookup(segmentName)->setUsed();
             } else {
                 throw std::runtime_error("Internal compiler error: Getting nested function failed");
             }
@@ -404,9 +490,10 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
             scope = scope->lookupTable("struct:" + currentSymbol->getType().getSubType());
         } else { // Error
             throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
-                                "Function/Procedure'" + segment->toString() + "' could not be found");
+                                "Function/Procedure'" + segmentName + "' could not be found");
         }
     }
+    functionNamespace.push_back(ctx->IDENTIFIER().back()->toString());
     std::string functionName = functionNamespace.back();
     // Visit params
     std::vector<SymbolType> paramTypes;
@@ -435,7 +522,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
         // Get return type of called function
         return entryTable->lookup(RETURN_VARIABLE_NAME)->getType();
     }
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TYPE_BOOL);*/
 }
 
 antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
@@ -462,7 +549,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     // Get the symbol table where the struct is defined
     SymbolTable* structTable = currentScope->lookupTable(structScope);
     // Check if the number of fields matches
-    if (structTable->getSymbolsCount() != ctx->paramLst()->assignExpr().size())
+    if (structTable->getFieldCount() != ctx->paramLst()->assignExpr().size())
         throw SemanticError(*ctx->paramLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
                             "You've passed too less/many field values");
 
@@ -1384,4 +1471,9 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
     if (ctx->LBRACKET()) type = type.getArrayType();
 
     return type;
+}
+
+void AnalyzerVisitor::initializeExternalFunctions() {
+    // Add symbol table entry for each builtin function
+
 }

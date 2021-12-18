@@ -1,0 +1,13 @@
+type Test struct {
+    double field1
+    bool field2
+}
+
+f<byte> Test.getByte() {
+    result = 12;
+}
+
+f<int> main() {
+    dyn test = new Test { 4.51, false };
+    result = test.getInt();
+}

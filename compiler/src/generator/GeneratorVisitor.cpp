@@ -691,7 +691,7 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
-    std::vector<std::string> functionNamespace;
+    /*std::vector<std::string> functionNamespace;
     for (auto& segment : ctx->IDENTIFIER()) functionNamespace.push_back(segment->toString());
     std::string functionName = functionNamespace.back();
 
@@ -762,7 +762,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         llvm::Value* callResultPtr = builder->CreateAlloca(callResult->getType());
         builder->CreateStore(callResult, callResultPtr);
         return callResultPtr;
-    }
+    }*/
     return (llvm::Value*) builder->getTrue();
 }
 
