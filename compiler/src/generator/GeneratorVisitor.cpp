@@ -185,9 +185,17 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
+    // Save the old scope to restore later
+    SymbolTable* oldScope = currentScope;
+
+    // Check if this is a global function or a method
+    bool isMethod = false;
     std::string functionName = ctx->IDENTIFIER().back()->toString();
-    if (ctx->IDENTIFIER().size() > 1)
-        functionName = ctx->IDENTIFIER().front()->toString() + "." + functionName;
+    if (ctx->IDENTIFIER().size() > 1) { // Method
+        isMethod = true;
+        // Change to the struct scope
+        currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
+    }
 
     // Change scope
     FunctionSignature signature = currentScope->popSignature();
@@ -199,9 +207,18 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     std::vector<SymbolType> symbolTypes;
     symbolTypes.push_back(currentSymbolType);
 
-    // Create function itself
+    // Create parameter list
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
+    // This variable (struct ptr of the parent struct)
+    if (isMethod) {
+        paramNames.push_back(THIS_VARIABLE_NAME);
+        SymbolTableEntry* thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
+        llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
+        paramTypes.push_back(paramType);
+        symbolTypes.push_back(thisEntry->getType());
+    }
+    // Parameters
     if (ctx->paramLstDef()) {
         for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
             currentVar = param->IDENTIFIER()->toString();
@@ -218,6 +235,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
             symbolTypes.push_back(currentSymbolType);
         }
     }
+
+    // Create function itself
     llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
     llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
                                                  signature.toString(), module.get());
@@ -228,9 +247,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     moveInsertPointToBlock(bEntry);
 
     // Store function params
+    unsigned int declStmtCount = ctx->paramLstDef() ? ctx->paramLstDef()->declStmt().size() : 0;
     for (auto& param : fct->args()) {
         unsigned paramNo = param.getArgNo();
-        if (paramNo < ctx->paramLstDef()->declStmt().size()) {
+        if (paramNo < declStmtCount) {
             std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
             llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
@@ -272,26 +292,46 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Change scope back
     currentScope = currentScope->getParent();
 
-    // Insert function declaration to symbol table
+    // Insert function declaration into symbol table
     currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
+
+    // Restore old scope
+    currentScope = oldScope;
 
     // Return true as result for the function definition
     return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
+    // Save the old scope to restore later
+    SymbolTable* oldScope = currentScope;
+
+    // Check if this is a global function or a method
+    bool isMethod = false;
     std::string procedureName = ctx->IDENTIFIER().back()->toString();
-    if (ctx->IDENTIFIER().size() > 1)
-        procedureName = ctx->IDENTIFIER().front()->toString() + "." + procedureName;
+    if (ctx->IDENTIFIER().size() > 1) { // Method
+        isMethod = true;
+        // Change to the struct scope
+        currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
+    }
 
     // Change scope
     FunctionSignature signature = currentScope->popSignature();
     currentScope = currentScope->getChild(signature.toString());
 
-    // Create procedure itself
+    // Create parameter list
     std::vector<std::string> paramNames;
     std::vector<llvm::Type*> paramTypes;
     std::vector<SymbolType> symbolTypes;
+    // This variable (struct ptr of the parent struct)
+    if (isMethod) {
+        paramNames.push_back(THIS_VARIABLE_NAME);
+        SymbolTableEntry* thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
+        llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
+        paramTypes.push_back(paramType);
+        symbolTypes.push_back(thisEntry->getType());
+    }
+    // Parameters
     if (ctx->paramLstDef()) {
         for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
             currentVar = param->IDENTIFIER()->toString();
@@ -308,6 +348,8 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
             symbolTypes.push_back(currentSymbolType);
         }
     }
+
+    // Create procedure itself
     llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
                                                            paramTypes, false);
     llvm::Function* proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage,
@@ -355,8 +397,11 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Change scope back
     currentScope = currentScope->getParent();
 
-    // Insert function declaration to symbol table
+    // Insert function declaration into symbol table
     currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
+
+    // Restore old scope
+    currentScope = oldScope;
 
     // Return true as result for the function definition
     return (llvm::Value*) builder->getTrue();
@@ -691,6 +736,8 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
+
+
     /*std::vector<std::string> functionNamespace;
     for (auto& segment : ctx->IDENTIFIER()) functionNamespace.push_back(segment->toString());
     std::string functionName = functionNamespace.back();
@@ -763,7 +810,9 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         builder->CreateStore(callResult, callResultPtr);
         return callResultPtr;
     }*/
-    return (llvm::Value*) builder->getTrue();
+    llvm::Value* value = builder->getTrue();
+    llvm::Value* valuePtr = builder->CreateAlloca(value->getType());
+    return (llvm::Value*) builder->CreateStore(value, valuePtr);
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
@@ -1469,8 +1518,9 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     llvm::Value* basePtr;
     std::vector<llvm::Value*> indices;
     SymbolTableEntry* entry;
-    int tokenCounter = 0;
-    int assignCounter = 0;
+    unsigned int tokenCounter = 0;
+    unsigned int assignCounter = 0;
+    unsigned int functionCallCounter = 0;
     bool applyReference = false;
     bool applyDereference = false;
     SymbolTable* scope = currentScope;
@@ -1488,7 +1538,27 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     // Loop through children
     while (tokenCounter < ctx->children.size()) {
         auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
-        if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
+        if (!token) { // Got rule context / non terminal symbol
+            auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
+            unsigned int ruleIndex = rule->getRuleIndex();
+            if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
+                // Get value for this parameter for method call
+                basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+                basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
+                indices.clear();
+                indices.push_back(builder->getInt32(0));
+                // Change scope to function parent scope
+                SymbolTable* oldScope = currentScope;
+                currentScope = scope;
+                // Visit function call
+                basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
+                baseType = basePtr->getType()->getScalarType();
+                indices.push_back(builder->getInt32(0));
+                // Restore the old scope
+                currentScope = oldScope;
+                functionCallCounter++;
+            }
+        } else if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
             // Apply field
             std::string variableName = token->toString();
             entry = scope->lookup(variableName);
@@ -1501,21 +1571,27 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             }
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
-            if (entry->getType().is(TYPE_STRUCT_PTR)) {
-                basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
-                basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
-                indices.clear();
-                indices.push_back(builder->getInt32(0));
+            if (entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
+                if (entry->getType().is(TYPE_STRUCT_PTR)) {
+                    basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+                    basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
+                    indices.clear();
+                    indices.push_back(builder->getInt32(0));
+                }
+                // Change to new scope
+                std::string structName = entry->getType().getSubType();
+                scope = scope->lookupTable("struct:" + structName);
+                // Check if the table exists
+                if (!scope)
+                    throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
+                                  "Compiler error: Referenced undefined struct '" + structName + "'");
+                // Conclude auto-de-referencing
+                if (entry->getType().is(TYPE_STRUCT_PTR)) baseType = scope->lookup(structName)->getLLVMType();
+            } else if (entry->getType().is(TYPE_IMPORT)) {
+                // Change to new scope
+                std::string importName = entry->getName();
+                scope = scope->lookupTable(importName);
             }
-            // Change to new scope
-            std::string structName = entry->getType().getSubType();
-            scope = scope->lookupTable("struct:" + structName);
-            // Check if the table exists
-            if (!scope)
-                throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
-                              "Compiler error: Referenced undefined struct '" + structName + "'");
-            // Conclude auto-de-referencing
-            if (entry->getType().is(TYPE_STRUCT_PTR)) baseType = scope->lookup(structName)->getLLVMType();
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Get the index value
             llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();

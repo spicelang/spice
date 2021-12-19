@@ -78,7 +78,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     if (isMethod) {
         std::string structName = ctx->IDENTIFIER().front()->toString();
         SymbolTableEntry* structEntry = currentScope->lookup(structName);
-        SymbolType thisType = structEntry->getType();
+        SymbolType thisType = structEntry->getType().getPointerType();
         currentScope->insert(THIS_VARIABLE_NAME, thisType, INITIALIZED, *ctx->start, true, false);
     }
     // Declare variable for the return value in new scope
@@ -107,7 +107,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     // Check if return variable is now initialized
     if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
         throw SemanticError(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
-    // Return to old scope
+    // Restore old scope
     currentScope = oldScope;
     return returnType;
 }
@@ -137,7 +137,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     if (isMethod) {
         std::string structName = ctx->IDENTIFIER().front()->toString();
         SymbolTableEntry* structEntry = currentScope->lookup(structName);
-        SymbolType thisType = structEntry->getType();
+        SymbolType thisType = structEntry->getType().getPointerType();
         currentScope->insert(THIS_VARIABLE_NAME, thisType, INITIALIZED, *ctx->start, true, false);
     }
     // Return to old scope
@@ -1396,7 +1396,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
     SymbolTableEntry* entry;
     unsigned int tokenCounter = 0;
     unsigned int assignCounter = 0;
-    unsigned int functionCounter = 0;
+    unsigned int functionCallCounter = 0;
     bool applyReference = false;
     bool applyDereference = false;
     SymbolTable* scope = currentScope;
@@ -1422,10 +1422,10 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                 SymbolTable* oldScope = currentScope;
                 currentScope = scope;
                 // Visit function call
-                symbolType = visit(ctx->functionCall()[functionCounter]).as<SymbolType>();
+                symbolType = visit(ctx->functionCall()[functionCallCounter]).as<SymbolType>();
                 // Restore the old scope
                 currentScope = oldScope;
-                functionCounter++;
+                functionCallCounter++;
             }
         } else if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
             std::string variableName = token->toString();
