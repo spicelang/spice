@@ -736,15 +736,16 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
+    bool isMethod = currentThisValue != nullptr;
+    std::string functionName = ctx->IDENTIFIER()->toString();
 
-
-    /*std::vector<std::string> functionNamespace;
-    for (auto& segment : ctx->IDENTIFIER()) functionNamespace.push_back(segment->toString());
-    std::string functionName = functionNamespace.back();
+    if (isMethod) {
+        std::string structName = currentSymbolType.getSubType();
+        functionName = structName + "-" + functionName;
+    }
 
     // Get function by signature
     FunctionSignature signature = currentScope->popSignature();
-    functionNamespace.back() = signature.toString();
     // Check if function exists in module
     bool functionFound = false;
     for (auto& function : module->getFunctionList()) {
@@ -754,20 +755,20 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         }
     }
     if (!functionFound) { // Not found => Declare function, which will be linked to later
-        SymbolTable* table = currentScope->lookupTableWithSymbol(functionNamespace);
+        SymbolTable* table = currentScope->lookupTableWithSymbol({ signature.toString() });
         // Check if it is a function or a procedure
         if (!table->getFunctionDeclaration(signature.toString()).empty()) {
             std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
 
             // Get return type
             llvm::Type* returnType = getTypeForSymbolType(symbolTypes[0]);
-            if (!returnType) throw std::runtime_error("Internal error");
+            if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
 
             // Get parameter types
             std::vector<llvm::Type*> paramTypes;
-            for (int i = 1; i < symbolTypes.size(); i++) {
-                llvm::Type* paramType = getTypeForSymbolType(symbolTypes[i]);
-                if (!paramType) throw std::runtime_error("Internal error");
+            for (auto& symbolType : symbolTypes) {
+                llvm::Type* paramType = getTypeForSymbolType(symbolType);
+                if (!paramType) throw std::runtime_error("Internal compiler error: Could not get parameter type of function call");
                 paramTypes.push_back(paramType);
             }
 
@@ -778,9 +779,9 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
             // Get parameter types
             std::vector<llvm::Type*> paramTypes;
-            for (int i = 1; i < symbolTypes.size(); i++) {
-                llvm::Type* paramType = getTypeForSymbolType(symbolTypes[i]);
-                if (!paramType) throw std::runtime_error("Internal error");
+            for (auto& symbolType : symbolTypes) {
+                llvm::Type* paramType = getTypeForSymbolType(symbolType);
+                if (!paramType) throw std::runtime_error("Internal compiler error");
                 paramTypes.push_back(paramType);
             }
 
@@ -805,15 +806,15 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     }
 
     llvm::Value* callResult = builder->CreateCall(fct, argValues);
+    llvm::Value* callResultPtr;
     if (callResult->getType()->isSized()) {
-        llvm::Value* callResultPtr = builder->CreateAlloca(callResult->getType());
-        builder->CreateStore(callResult, callResultPtr);
-        return callResultPtr;
-    }*/
-    llvm::Value* value = builder->getInt32(0); // ToDo: Change to boolean true
-    llvm::Value* valuePtr = builder->CreateAlloca(value->getType());
-    builder->CreateStore(value, valuePtr);
-    return valuePtr;
+        callResultPtr = builder->CreateAlloca(callResult->getType());
+    } else {
+        callResult = builder->getTrue();
+        callResultPtr = builder->CreateAlloca(callResult->getType());
+    }
+    builder->CreateStore(callResult, callResultPtr);
+    return callResultPtr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
@@ -1547,8 +1548,10 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                     // Get value for 'this' parameter for method call
                     llvm::Value* thisPtr = builder->CreateAlloca(baseType);
                     currentThisValue = builder->CreateStore(basePtr, thisPtr);
+                    currentSymbolType = entry->getType().getPointerType();
                 } else if (entry->getType().is(TYPE_STRUCT_PTR)) {
                     currentThisValue = basePtr;
+                    currentSymbolType = entry->getType();
                 }
                 // Change scope to function parent scope
                 SymbolTable* oldScope = currentScope;
@@ -1556,6 +1559,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 // Visit function call
                 basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
                 baseType = basePtr->getType()->getPointerElementType();
+                currentThisValue = nullptr;
                 indices.clear();
                 indices.push_back(builder->getInt32(0));
                 // Restore the old scope

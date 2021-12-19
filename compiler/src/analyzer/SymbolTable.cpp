@@ -146,6 +146,7 @@ SymbolTable* SymbolTable::createChildBlock(const std::string& blockName) {
  * @param childBlock Child symbol table
  */
 void SymbolTable::mountChildBlock(const std::string& blockName, SymbolTable* childBlock) {
+    childBlock->parent = this;
     children.insert({blockName, *childBlock});
 }
 

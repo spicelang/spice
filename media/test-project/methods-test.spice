@@ -21,5 +21,8 @@ f<int> main() {
     //int field1 = test.getField1();
     //printf("Field1: %d", field1);
     print.println("Test");
+    print.println("Hello World");
+    print.lineBreak(2);
+    print.print("Text after line breaks!");
     //test.print();
 }
