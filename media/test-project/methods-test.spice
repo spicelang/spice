@@ -18,8 +18,8 @@ p Test.print(bool b) {
 f<int> main() {
     byte b = 50;
     Test test = new Test { 1, b };
-    int field1 = test.getField1();
-    printf("Field1: %d", field1);
+    //int field1 = test.getField1();
+    //printf("Field1: %d", field1);
     print.println("Test");
     //test.print();
 }

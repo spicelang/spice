@@ -21,9 +21,9 @@ fieldLst: declStmt*;
 typeLst: dataType (COMMA dataType)* ELLIPSIS?;
 paramLstDef: (declStmt | assignExpr) (COMMA (declStmt | assignExpr))*;
 paramLst: assignExpr (COMMA assignExpr)*;
-stmt: (declStmt | assignExpr | newStmt | arrayInitStmt | functionCall | builtinCall | returnStmt | breakStmt | continueStmt) SEMICOLON;
+stmt: (declStmt | assignExpr | newStmt | arrayInitStmt | idenValue | builtinCall | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: CONST? dataType IDENTIFIER;
-functionCall: (idenValue DOT)? IDENTIFIER LPAREN paramLst? RPAREN;
+functionCall: IDENTIFIER LPAREN paramLst? RPAREN;
 newStmt: CONST? dataType IDENTIFIER ASSIGN_OP NEW IDENTIFIER LBRACE paramLst? RBRACE;
 arrayInitStmt: CONST? dataType LBRACKET value RBRACKET IDENTIFIER (ASSIGN_OP LBRACE paramLst? RBRACE)?;
 importStmt: IMPORT STRING AS IDENTIFIER SEMICOLON;
@@ -50,10 +50,10 @@ additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: prefixUnaryExpr ((MUL | DIV | REM) prefixUnaryExpr)*;
 prefixUnaryExpr: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnaryExpr;
 postfixUnaryExpr: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
-atomicExpr: value | idenValue | functionCall | builtinCall | LPAREN assignExpr RPAREN;
+atomicExpr: value | idenValue | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
-idenValue: (BITWISE_AND | MUL)? IDENTIFIER (LBRACKET assignExpr RBRACKET)? (DOT IDENTIFIER (LBRACKET assignExpr RBRACKET)?)*;
+idenValue: (BITWISE_AND | MUL)? (functionCall | IDENTIFIER) (LBRACKET assignExpr RBRACKET)? (DOT (functionCall | IDENTIFIER) (LBRACKET assignExpr RBRACKET)?)*;
 value: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE;
 dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER) MUL? (LBRACKET RBRACKET)?;
 

@@ -82,6 +82,7 @@ nav:
     - language/arrays.md
     - language/pointers.md
     - language/structs.md
+    - language/methods.md
     - language/operator-precedence.md
   - contributing.md
 

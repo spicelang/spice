@@ -1459,7 +1459,6 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
     if (ctx->value()) return visit(ctx->value());
     if (ctx->idenValue()) return visit(ctx->idenValue());
-    if (ctx->functionCall()) return visit(ctx->functionCall());
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
 }
