@@ -152,6 +152,7 @@ private:
     std::string currentVar;
     SymbolType currentSymbolType;
     bool blockAlreadyTerminated = false;
+    llvm::Value* currentThisValue;
 
     // Private methods
     void initializeExternalFunctions();

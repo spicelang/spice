@@ -810,9 +810,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         builder->CreateStore(callResult, callResultPtr);
         return callResultPtr;
     }*/
-    llvm::Value* value = builder->getTrue();
+    llvm::Value* value = builder->getInt32(0); // ToDo: Change to boolean true
     llvm::Value* valuePtr = builder->CreateAlloca(value->getType());
-    return (llvm::Value*) builder->CreateStore(value, valuePtr);
+    builder->CreateStore(value, valuePtr);
+    return valuePtr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
@@ -1542,17 +1543,20 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
             unsigned int ruleIndex = rule->getRuleIndex();
             if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
-                // Get value for this parameter for method call
-                basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
-                basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
-                indices.clear();
-                indices.push_back(builder->getInt32(0));
+                if (entry->getType().is(TYPE_STRUCT)) {
+                    // Get value for 'this' parameter for method call
+                    llvm::Value* thisPtr = builder->CreateAlloca(baseType);
+                    currentThisValue = builder->CreateStore(basePtr, thisPtr);
+                } else if (entry->getType().is(TYPE_STRUCT_PTR)) {
+                    currentThisValue = basePtr;
+                }
                 // Change scope to function parent scope
                 SymbolTable* oldScope = currentScope;
                 currentScope = scope;
                 // Visit function call
                 basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
-                baseType = basePtr->getType()->getScalarType();
+                baseType = basePtr->getType()->getPointerElementType();
+                indices.clear();
                 indices.push_back(builder->getInt32(0));
                 // Restore the old scope
                 currentScope = oldScope;
