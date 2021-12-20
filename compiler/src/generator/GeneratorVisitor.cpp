@@ -741,7 +741,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
     if (isMethod) {
         std::string structName = currentSymbolType.getSubType();
-        functionName = structName + "-" + functionName;
+        functionName = structName + "." + functionName;
     }
 
     // Get function by signature
@@ -754,7 +754,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             break;
         }
     }
-    if (!functionFound) { // Not found => Declare function, which will be linked to later
+    if (!functionFound) { // Not found => Declare function, which will be linked in
         SymbolTable* table = currentScope->lookupTableWithSymbol({ signature.toString() });
         // Check if it is a function or a procedure
         if (!table->getFunctionDeclaration(signature.toString()).empty()) {
@@ -794,14 +794,22 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     llvm::FunctionType* fctType = fct->getFunctionType();
 
     // Fill parameter list
+    int paramIndex = 0;
     std::vector<llvm::Value*> argValues;
+    if (isMethod) {
+        llvm::Type* argType = fctType->getParamType(paramIndex);
+        llvm::Value* bitCastArgValue = builder->CreateBitCast(currentThisValue, argType);
+        argValues.push_back(bitCastArgValue);
+        paramIndex++;
+    }
     if (ctx->paramLst()) {
         for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
             llvm::Value* argValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
             llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
-            llvm::Type* argType = fctType->getParamType(i);
+            llvm::Type* argType = fctType->getParamType(paramIndex);
             llvm::Value* bitCastArgValue = builder->CreateBitCast(argValue, argType);
             argValues.push_back(bitCastArgValue);
+            paramIndex++;
         }
     }
 
@@ -1546,8 +1554,8 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
                 if (entry->getType().is(TYPE_STRUCT)) {
                     // Get value for 'this' parameter for method call
-                    llvm::Value* thisPtr = builder->CreateAlloca(baseType);
-                    currentThisValue = builder->CreateStore(basePtr, thisPtr);
+                    currentThisValue = builder->CreateAlloca(basePtr->getType());
+                    builder->CreateStore(basePtr, currentThisValue);
                     currentSymbolType = entry->getType().getPointerType();
                 } else if (entry->getType().is(TYPE_STRUCT_PTR)) {
                     currentThisValue = basePtr;

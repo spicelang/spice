@@ -18,11 +18,9 @@ p Test.print(bool b) {
 f<int> main() {
     byte b = 50;
     Test test = new Test { 1, b };
-    //int field1 = test.getField1();
-    //printf("Field1: %d", field1);
+    int field1 = test.getField1();
+    printf("Field1: %d\n", field1);
     print.println("Test");
-    print.println("Hello World");
-    print.lineBreak(2);
-    print.print("Text after line breaks!");
-    //test.print();
+    printf("%d\n", test.field1);
+    test.print(true);
 }
