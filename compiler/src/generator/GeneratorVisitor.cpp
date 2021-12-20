@@ -216,7 +216,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         SymbolTableEntry* thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
         llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(thisEntry->getType());
+        symbolTypes.push_back(thisEntry->getType().getPointerType());
     }
     // Parameters
     if (ctx->paramLstDef()) {
@@ -240,6 +240,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
     llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
                                                  signature.toString(), module.get());
+    fct->addFnAttr(llvm::Attribute::NoUnwind);
 
     // Create entry block
     llvm::BasicBlock* bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -250,21 +251,12 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     unsigned int declStmtCount = ctx->paramLstDef() ? ctx->paramLstDef()->declStmt().size() : 0;
     for (auto& param : fct->args()) {
         unsigned paramNo = param.getArgNo();
-        if (paramNo < declStmtCount) {
-            std::string paramName = paramNames[paramNo];
-            llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
-            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
-            currentScope->lookup(paramName)->updateAddress(memAddress);
-            currentScope->lookup(paramName)->updateLLVMType(paramType);
-            builder->CreateStore(&param, memAddress);
-        } else {
-            std::string paramName = paramNames[paramNo];
-            llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
-            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
-            currentScope->lookup(paramName)->updateAddress(memAddress);
-            currentScope->lookup(paramName)->updateLLVMType(paramType);
-            builder->CreateStore(&param, memAddress);
-        }
+        std::string paramName = paramNames[paramNo];
+        llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
+        llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+        currentScope->lookup(paramName)->updateAddress(memAddress);
+        currentScope->lookup(paramName)->updateLLVMType(paramType);
+        builder->CreateStore(&param, memAddress);
     }
 
     // Declare result variable
@@ -329,7 +321,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         SymbolTableEntry* thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
         llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(thisEntry->getType());
+        symbolTypes.push_back(thisEntry->getType().getPointerType());
     }
     // Parameters
     if (ctx->paramLstDef()) {
@@ -354,6 +346,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
                                                            paramTypes, false);
     llvm::Function* proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage,
                                                   signature.toString(), module.get());
+    proc->addFnAttr(llvm::Attribute::NoUnwind);
 
     // Create entry block
     llvm::BasicBlock* bEntry = llvm::BasicBlock::Create(*context, "entry");
@@ -363,21 +356,12 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Store procedure params
     for (auto& param : proc->args()) {
         unsigned paramNo = param.getArgNo();
-        if (paramNo < ctx->paramLstDef()->declStmt().size()) {
-            std::string paramName = paramNames[paramNo];
-            llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
-            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
-            currentScope->lookup(paramName)->updateAddress(memAddress);
-            currentScope->lookup(paramName)->updateLLVMType(paramType);
-            builder->CreateStore(&param, memAddress);
-        } else {
-            std::string paramName = paramNames[paramNo];
-            llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
-            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
-            currentScope->lookup(paramName)->updateAddress(memAddress);
-            currentScope->lookup(paramName)->updateLLVMType(paramType);
-            builder->CreateStore(&param, memAddress);
-        }
+        std::string paramName = paramNames[paramNo];
+        llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
+        llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+        currentScope->lookup(paramName)->updateAddress(memAddress);
+        currentScope->lookup(paramName)->updateLLVMType(paramType);
+        builder->CreateStore(&param, memAddress);
     }
 
     // Generate IR for procedure body
@@ -797,9 +781,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     int paramIndex = 0;
     std::vector<llvm::Value*> argValues;
     if (isMethod) {
-        llvm::Type* argType = fctType->getParamType(paramIndex);
-        llvm::Value* bitCastArgValue = builder->CreateBitCast(currentThisValue, argType);
-        argValues.push_back(bitCastArgValue);
+        //llvm::Type* argType = fctType->getParamType(paramIndex);
+        //llvm::Value* bitCastArgValue = builder->CreateBitCast(currentThisValue, argType);
+        //argValues.push_back(bitCastArgValue);
+        argValues.push_back(currentThisValue);
         paramIndex++;
     }
     if (ctx->paramLst()) {
@@ -1552,12 +1537,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
             unsigned int ruleIndex = rule->getRuleIndex();
             if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
-                if (entry->getType().is(TYPE_STRUCT)) {
-                    // Get value for 'this' parameter for method call
-                    currentThisValue = builder->CreateAlloca(basePtr->getType());
-                    builder->CreateStore(basePtr, currentThisValue);
-                    currentSymbolType = entry->getType().getPointerType();
-                } else if (entry->getType().is(TYPE_STRUCT_PTR)) {
+                if (entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
                     currentThisValue = basePtr;
                     currentSymbolType = entry->getType();
                 }
@@ -1588,6 +1568,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
             if (entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
+                // Start auto-de-referencing
                 if (entry->getType().is(TYPE_STRUCT_PTR)) {
                     basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
                     basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
@@ -1602,7 +1583,8 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                     throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
                                   "Compiler error: Referenced undefined struct '" + structName + "'");
                 // Conclude auto-de-referencing
-                if (entry->getType().is(TYPE_STRUCT_PTR)) baseType = scope->lookup(structName)->getLLVMType();
+                if (entry->getType().is(TYPE_STRUCT_PTR))
+                    baseType = scope->lookup(structName)->getLLVMType();
             } else if (entry->getType().is(TYPE_IMPORT)) {
                 // Change to new scope
                 std::string importName = entry->getName();

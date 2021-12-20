@@ -2,23 +2,23 @@ import "std/text/print" as print;
 
 type Test struct {
     int field1
-    byte field2
+    double field2
 }
 
-f<int> Test.getField1() {
-    return this.field1;
+f<Test> Test.get() {
+    printf("%d\n", this.field1);
+    return *this;
 }
 
 p Test.print(bool b) {
     if b {
-        printf("Content: %d, %d", this.field1, this.field2);
+        printf("Content: %d, %f", this.field1, this.field2);
     }
 }
 
 f<int> main() {
-    byte b = 50;
-    Test test = new Test { 1, b };
-    int field1 = test.getField1();
+    Test test = new Test { 5, 4.567 };
+    dyn field1 = test.get().field1;
     printf("Field1: %d\n", field1);
     print.println("Test");
     printf("%d\n", test.field1);
