@@ -208,7 +208,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-method-not-existing",
-            ""
+            "Semantic error at 12:19: Referenced undefined function: Function/Procedure 'getInt()' could not be found"
         },
         // Successful tests
         {

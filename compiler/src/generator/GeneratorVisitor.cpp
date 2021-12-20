@@ -750,8 +750,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
             // Get parameter types
             std::vector<llvm::Type*> paramTypes;
-            for (auto& symbolType : symbolTypes) {
-                llvm::Type* paramType = getTypeForSymbolType(symbolType);
+            for (int i = 1; i < symbolTypes.size(); i++) {
+                llvm::Type* paramType = getTypeForSymbolType(symbolTypes[i]);
                 if (!paramType) throw std::runtime_error("Internal compiler error: Could not get parameter type of function call");
                 paramTypes.push_back(paramType);
             }
