@@ -11,7 +11,7 @@ Here is an example for importing an own source file into the main source file. Y
 ```spice
 // Simple recursive fibonacci algorithm
 f<int> fib(int n) {
-    if n <= 1 { return 1; }
+    if n <= 2 { return 1; }
     return fib(n - 1) + fib(n - 2);
 }
 ```

@@ -206,6 +206,10 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "error-foreach-wrong-index-type",
             "Semantic error at 3:13: Array index not of type int: Index in foreach loop must be of type int. You provided double"
         },
+        {
+            "error-method-not-existing",
+            "Semantic error at 12:19: Referenced undefined function: Function/Procedure 'getInt()' could not be found"
+        },
         // Successful tests
         {
             "success-fibonacci",

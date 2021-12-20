@@ -11,7 +11,8 @@ source_filename = "source.spice"
 
 declare i32 @printf(i8*, ...)
 
-define void @"birthday()"(%Person* %0) {
+; Function Attrs: nounwind
+define void @"birthday(struct(Person)*)"(%Person* %0) #0 {
 entry:
   %person = alloca %Person*, align 8
   store %Person* %0, %Person** %person, align 8
@@ -56,10 +57,15 @@ entry:
   %18 = alloca %Person*, align 8
   store %Person* %person, %Person** %18, align 8
   %19 = load %Person*, %Person** %18, align 8
-  call void @"birthday()"(%Person* %19)
-  %20 = getelementptr inbounds %Person, %Person* %person, i32 0, i32 2
-  %21 = load i32, i32* %20, align 4
-  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @4, i32 0, i32 0), i32 %21)
-  %23 = load i32, i32* %result, align 4
-  ret i32 %23
+  call void @"birthday(struct(Person)*)"(%Person* %19)
+  %20 = alloca i1, align 1
+  store i1 true, i1* %20, align 1
+  %21 = getelementptr inbounds i1, i1* %20, i32 0
+  %22 = getelementptr inbounds %Person, %Person* %person, i32 0, i32 2
+  %23 = load i32, i32* %22, align 4
+  %24 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @4, i32 0, i32 0), i32 %23)
+  %25 = load i32, i32* %result, align 4
+  ret i32 %25
 }
+
+attributes #0 = { nounwind }

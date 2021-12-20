@@ -5,7 +5,7 @@ p print(string text) {
 
 // Prints the given string to the console with a trailing line break
 p println(string text) {
-    printf("%s%s", text, "\n");
+    printf("%s\n", text);
 }
 
 // Prints one or several line breaks to the console

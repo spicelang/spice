@@ -19,6 +19,7 @@
 #include <utility>
 
 const static std::string RETURN_VARIABLE_NAME = "result";
+const static std::string THIS_VARIABLE_NAME = "this";
 const static std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
 const static std::string UNUSED_VARIABLE_NAME = "_";
 
@@ -142,4 +143,7 @@ private:
     bool parameterMode = false;
     int nestedLoopCounter = 0;
     bool stdFile = false;
+
+    // Private methods
+    void initializeExternalFunctions();
 };

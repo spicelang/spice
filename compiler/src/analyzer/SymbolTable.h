@@ -48,7 +48,7 @@ public:
 
     SymbolTable* getChild(const std::string&);
 
-    unsigned int getSymbolsCount();
+    unsigned int getFieldCount();
 
     void insertFunctionDeclaration(const std::string&, const std::vector<SymbolType>&);
 

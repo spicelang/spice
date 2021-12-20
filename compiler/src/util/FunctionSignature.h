@@ -14,9 +14,9 @@ class FunctionSignature {
 public:
     // Constructors
     explicit FunctionSignature(std::string& functionName) : functionName(functionName) {}
-
-    FunctionSignature(std::string& functionName, std::vector<SymbolType> paramTypes) : functionName(functionName),
-                                                                                       paramTypes(std::move(paramTypes)) {}
+    FunctionSignature(std::string& functionName, std::vector<SymbolType> paramTypes) :
+            functionName(functionName),
+            paramTypes(std::move(paramTypes)) {}
 
     // Public methods
     std::string toString();

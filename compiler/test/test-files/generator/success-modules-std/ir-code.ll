@@ -15,10 +15,11 @@ entry:
   %2 = call i32 @"toInt(bool)"(i1 %1)
   %3 = alloca i32, align 4
   store i32 %2, i32* %3, align 4
-  %4 = load i32, i32* %3, align 4
-  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i32 0, i32 0), i32 %4)
-  %6 = load i32, i32* %result, align 4
-  ret i32 %6
+  %4 = getelementptr inbounds i32, i32* %3, i32 0
+  %5 = load i32, i32* %4, align 4
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i32 0, i32 0), i32 %5)
+  %7 = load i32, i32* %result, align 4
+  ret i32 %7
 }
 
 declare i32 @"toInt(bool)"(i1)

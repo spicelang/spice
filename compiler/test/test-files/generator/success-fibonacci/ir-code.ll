@@ -5,7 +5,8 @@ source_filename = "source.spice"
 
 declare i32 @printf(i8*, ...)
 
-define i32 @"fib(int)"(i32 %0) {
+; Function Attrs: nounwind
+define i32 @"fib(int)"(i32 %0) #0 {
 entry:
   %n = alloca i32, align 4
   store i32 %0, i32* %n, align 4
@@ -40,25 +41,27 @@ if.end:                                           ; preds = %entry
   %15 = call i32 @"fib(int)"(i32 %14)
   %16 = alloca i32, align 4
   store i32 %15, i32* %16, align 4
-  %17 = load i32, i32* %16, align 4
-  %18 = getelementptr inbounds i32, i32* %n, i32 0
-  %19 = load i32, i32* %18, align 4
-  %20 = alloca i32, align 4
-  store i32 2, i32* %20, align 4
-  %21 = load i32, i32* %20, align 4
-  %sub1 = sub i32 %19, %21
-  %22 = alloca i32, align 4
-  store i32 %sub1, i32* %22, align 4
-  %23 = load i32, i32* %22, align 4
-  %24 = call i32 @"fib(int)"(i32 %23)
-  %25 = alloca i32, align 4
-  store i32 %24, i32* %25, align 4
-  %26 = load i32, i32* %25, align 4
-  %add = add i32 %17, %26
-  %27 = alloca i32, align 4
-  store i32 %add, i32* %27, align 4
+  %17 = getelementptr inbounds i32, i32* %16, i32 0
+  %18 = load i32, i32* %17, align 4
+  %19 = getelementptr inbounds i32, i32* %n, i32 0
+  %20 = load i32, i32* %19, align 4
+  %21 = alloca i32, align 4
+  store i32 2, i32* %21, align 4
+  %22 = load i32, i32* %21, align 4
+  %sub1 = sub i32 %20, %22
+  %23 = alloca i32, align 4
+  store i32 %sub1, i32* %23, align 4
+  %24 = load i32, i32* %23, align 4
+  %25 = call i32 @"fib(int)"(i32 %24)
+  %26 = alloca i32, align 4
+  store i32 %25, i32* %26, align 4
+  %27 = getelementptr inbounds i32, i32* %26, i32 0
   %28 = load i32, i32* %27, align 4
-  ret i32 %28
+  %add = add i32 %18, %28
+  %29 = alloca i32, align 4
+  store i32 %add, i32* %29, align 4
+  %30 = load i32, i32* %29, align 4
+  ret i32 %30
 }
 
 define i32 @main() {
@@ -71,8 +74,11 @@ entry:
   %2 = call i32 @"fib(int)"(i32 %1)
   %3 = alloca i32, align 4
   store i32 %2, i32* %3, align 4
-  %4 = load i32, i32* %3, align 4
-  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i32 0, i32 0), i32 %4)
-  %6 = load i32, i32* %result, align 4
-  ret i32 %6
+  %4 = getelementptr inbounds i32, i32* %3, i32 0
+  %5 = load i32, i32* %4, align 4
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i32 0, i32 0), i32 %5)
+  %7 = load i32, i32* %result, align 4
+  ret i32 %7
 }
+
+attributes #0 = { nounwind }

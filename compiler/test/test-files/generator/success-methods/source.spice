@@ -1,0 +1,17 @@
+type Letter struct {
+    string content
+}
+
+f<string> Letter.getContent() {
+    return this.content;
+}
+
+p Letter.setContent(string text) {
+    this.content = text;
+}
+
+f<int> main() {
+    dyn letter = new Letter { "No content" };
+    letter.setContent("Hello World!");
+    printf("Content: %s", letter.getContent());
+}

@@ -74,6 +74,10 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
         {
             "success-modules-std",
             ""
+        },
+        {
+            "success-methods",
+            ""
         }
 };
 
