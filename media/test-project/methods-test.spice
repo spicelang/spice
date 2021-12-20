@@ -1,26 +1,30 @@
-import "std/text/print" as print;
+/*import "std/text/print" as print;
 
 type Test struct {
     int field1
     double field2
 }
 
-f<Test> Test.get() {
-    printf("%d\n", this.field1);
-    return *this;
+p Test.setField1(int value) {
+    this.field1 = value;
 }
 
-p Test.print(bool b) {
-    if b {
-        printf("Content: %d, %f", this.field1, this.field2);
-    }
+f<int> Test.getField1() {
+    return this.field1;
 }
 
 f<int> main() {
     Test test = new Test { 5, 4.567 };
-    dyn field1 = test.get().field1;
-    printf("Field1: %d\n", field1);
-    print.println("Test");
-    printf("%d\n", test.field1);
-    test.print(true);
+    test.setField1(6);
+    print.println("Output:");
+    printf("%d", test.getField1());
+}*/
+
+f<int> fib(int n) {
+    if n <= 2 { return 1; }
+    return fib(n - 1) + fib(n - 2);
+}
+
+f<int> main() {
+    printf("Result: %d", fib(46));
 }

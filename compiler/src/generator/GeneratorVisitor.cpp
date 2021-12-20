@@ -781,9 +781,6 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     int paramIndex = 0;
     std::vector<llvm::Value*> argValues;
     if (isMethod) {
-        //llvm::Type* argType = fctType->getParamType(paramIndex);
-        //llvm::Value* bitCastArgValue = builder->CreateBitCast(currentThisValue, argType);
-        //argValues.push_back(bitCastArgValue);
         argValues.push_back(currentThisValue);
         paramIndex++;
     }
@@ -1512,7 +1509,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     llvm::Type* baseType;
     llvm::Value* basePtr;
     std::vector<llvm::Value*> indices;
-    SymbolTableEntry* entry;
+    SymbolTableEntry* entry = nullptr;
     unsigned int tokenCounter = 0;
     unsigned int assignCounter = 0;
     unsigned int functionCallCounter = 0;
@@ -1537,7 +1534,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
             unsigned int ruleIndex = rule->getRuleIndex();
             if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
-                if (entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
+                if (entry && entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
                     currentThisValue = basePtr;
                     currentSymbolType = entry->getType();
                 }
