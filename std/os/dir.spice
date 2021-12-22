@@ -1,0 +1,9 @@
+ext<int> mkdir(char*, byte);
+
+p test() {
+    
+}
+
+/*f<int> mkDir(char* path, byte mode) {
+    return mkdir(path, mode);
+}*/

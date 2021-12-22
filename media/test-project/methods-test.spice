@@ -1,8 +1,19 @@
 import "std/text/print" as print;
+//import "std/runtime/string" as str;
 
 type Test struct {
     int field1
     double field2
+}
+
+p Test.constructor() {
+    this.field1 = 1;
+    this.field2 = 1.0;
+}
+
+p Test.destructor() {
+    this.field1 = 0;
+    this.field2 = 0.0;
 }
 
 p Test.setField1(int value) {

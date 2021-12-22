@@ -23,7 +23,7 @@ p StringStruct.destructor() {
         // Free the allocated heap space
         free(this.value);
     }
-}
+}*/
 
 p StringStruct.resize(int newLen) {
     char* newAddr = malloc(newLen);
@@ -49,10 +49,9 @@ p StringStruct.appendChar(char c) {
 }
 
 p StringStruct.clear() {
-    this.value = {};
+    this.value = null;
     this.len = 0;
-    this.maxLen = 0;
-}*/
+}
 
 f<string> concat(string a, string b) {
     // Return b if a is empty
