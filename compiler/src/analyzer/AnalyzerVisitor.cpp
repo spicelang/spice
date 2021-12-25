@@ -25,12 +25,10 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 }
 
 antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
-    std::string mainSignature = "main()";
+    std::string mainSignature = MAIN_FUNCTION_NAME + "()";
     // Check if the function is already defined
-    if (currentScope->lookup(mainSignature)) {
-        throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE,
-                            "Main function is declared twice");
-    }
+    if (currentScope->lookup(mainSignature))
+        throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
     // Insert function name into the root symbol table
     currentScope->insert(mainSignature, SymbolType(TYPE_FUNCTION), INITIALIZED, *ctx->start, true, false);
     // Create a new scope

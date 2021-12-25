@@ -137,19 +137,51 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
     if (mustHaveMainFunction) { // Only create main function when it is required
+        // Change scope
+        std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+        currentScope = currentScope->getChild(scopeId);
+
+        // Visit parameters
+        std::vector<SymbolType> symbolTypes;
+        std::vector<std::string> paramNames;
+        std::vector<llvm::Type*> paramTypes;
+        if (ctx->paramLstDef()) {
+            for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
+                currentVar = param->IDENTIFIER()->toString();
+                paramNames.push_back(currentVar);
+                llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
+                paramTypes.push_back(paramType);
+                symbolTypes.push_back(currentSymbolType);
+            }
+            for (auto& param : ctx->paramLstDef()->assignExpr()) { // Parameters with default value
+                currentVar = param->declStmt()->IDENTIFIER()->toString();
+                paramNames.push_back(currentVar);
+                llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
+                paramTypes.push_back(paramType);
+                symbolTypes.push_back(currentSymbolType);
+            }
+        }
+
         // Build function itself
-        std::string functionName = "main";
         llvm::Type* returnType = llvm::Type::getInt32Ty(*context);
-        llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
+        llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
         llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
-                                                     functionName, module.get());
+                                                     MAIN_FUNCTION_NAME, module.get());
         llvm::BasicBlock* bMain = llvm::BasicBlock::Create(*context, "entry");
         fct->getBasicBlockList().push_back(bMain);
         moveInsertPointToBlock(bMain);
 
-        // Change scope
-        std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-        currentScope = currentScope->getChild(scopeId);
+        // Store function params
+        unsigned int declStmtCount = ctx->paramLstDef() ? ctx->paramLstDef()->declStmt().size() : 0;
+        for (auto& param : fct->args()) {
+            unsigned paramNo = param.getArgNo();
+            std::string paramName = paramNames[paramNo];
+            llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
+            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+            currentScope->lookup(paramName)->updateAddress(memAddress);
+            currentScope->lookup(paramName)->updateLLVMType(paramType);
+            builder->CreateStore(&param, memAddress);
+        }
 
         // Declare result variable and set it to 0 for positive return code
         llvm::Value* memAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);

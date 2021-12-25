@@ -1,5 +1,5 @@
 ext<int> mkdir(char*, byte);
 
-f<int> createDir(char* path, byte mode) {
+f<int> createDir(char* path, byte mode = 777) {
     return mkdir(path, mode);
 }

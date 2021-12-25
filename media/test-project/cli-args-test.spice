@@ -1,0 +1,4 @@
+f<int> main(int argc, string[] argv) {
+    printf("Argc: %d", argc);
+    //printf("Argv[0]: %s", argv[0]);
+}
