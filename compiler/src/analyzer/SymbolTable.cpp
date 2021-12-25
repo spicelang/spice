@@ -180,6 +180,7 @@ SymbolTable* SymbolTable::getParent() {
  */
 SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
     if (children.empty()) return nullptr;
+    if (children.find(scopeId) == children.end()) return nullptr;
     return &children.at(scopeId);
 }
 

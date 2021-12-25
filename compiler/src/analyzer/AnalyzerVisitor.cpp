@@ -187,6 +187,9 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
         FunctionSignature signature = FunctionSignature(functionName, paramTypes);
         currentScope->insert(signature.toString(), SymbolType(TYPE_FUNCTION), INITIALIZED, *ctx->start, true, false);
         currentScope->pushSignature(signature);
+        // Add return symbol for function
+        SymbolTable* functionTable = currentScope->createChildBlock(signature.toString());
+        functionTable->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, *ctx->start, false, false);
     } else { // Procedure
         FunctionSignature signature = FunctionSignature(functionName, paramTypes);
         currentScope->insert(signature.toString(), SymbolType(TYPE_PROCEDURE), INITIALIZED, *ctx->start, true, false);
@@ -433,9 +436,9 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 
     // Search for symbol table of called function/procedure to read parameters
     if (functionEntry->getType().is(TYPE_FUNCTION)) {
-        functionEntryTable = functionEntryTable->getChild(signature.toString());
+        SymbolTable* functionTable = functionEntryTable->getChild(signature.toString());
         // Get return type of called function
-        return functionEntryTable->lookup(RETURN_VARIABLE_NAME)->getType();
+        return functionTable->lookup(RETURN_VARIABLE_NAME)->getType();
     }
     return returnType;
 }

@@ -394,9 +394,21 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
     // Get function name
     std::string functionName = ctx->IDENTIFIER()->toString();
+    std::vector<SymbolType> symbolTypes;
+
+    // Pop function signature from the signature stack
+    FunctionSignature signature = currentScope->popSignature();
 
     // Get LLVM return type
-    llvm::Type* returnType = ctx->dataType() ? visit(ctx->dataType()).as<llvm::Type*>() : llvm::Type::getVoidTy(*context);
+    llvm::Type* returnType;
+    if (ctx->dataType()) {
+        returnType = visit(ctx->dataType()).as<llvm::Type*>();
+        SymbolTable* functionTable = currentScope->getChild(signature.toString());
+        SymbolTableEntry* returnEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
+        symbolTypes.push_back(returnEntry->getType());
+    } else {
+        returnType = llvm::Type::getVoidTy(*context);
+    }
 
     // Get LLVM param types
     std::vector<llvm::Type*> paramTypes;
@@ -406,6 +418,8 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
             paramTypes.push_back(paramType);
         }
     }
+    std::vector<SymbolType> paramSymbolTypes = signature.getParamTypes();
+    symbolTypes.insert(std::end(symbolTypes), std::begin(paramSymbolTypes), std::end(paramSymbolTypes));
 
     // Get vararg
     bool isVararg = ctx->typeLst()->ELLIPSIS();
@@ -413,6 +427,12 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
     // Declare function
     llvm::FunctionType* functionType = llvm::FunctionType::get(returnType, paramTypes, isVararg);
     module->getOrInsertFunction(functionName, functionType);
+
+    if (ctx->dataType()) { // Function
+        currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
+    } else { // Procedure
+        currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
+    }
 
     // Return true as result for the function definition
     return (llvm::Value*) builder->getTrue();

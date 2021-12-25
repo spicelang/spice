@@ -1,5 +1,5 @@
 import "std/os/dir" as dir;
 
 f<int> main() {
-    //dir.mkDir("./test.txt");
+    dir.createDir("./test.txt");
 }

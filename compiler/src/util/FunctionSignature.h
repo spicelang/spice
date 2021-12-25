@@ -20,6 +20,7 @@ public:
 
     // Public methods
     std::string toString();
+    std::vector<SymbolType> getParamTypes();
 
 private:
     // Members
