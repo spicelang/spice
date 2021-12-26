@@ -265,15 +265,6 @@ FunctionSignature SymbolTable::popSignature() {
 }
 
 /**
- * Retrieve the LLVM BasicBlock, which is currently set as continue block for the current scope
- *
- * @return Continue block
- */
-llvm::BasicBlock* SymbolTable::getContinueBlock() const {
-    return continueBlock;
-}
-
-/**
  * Set continue block, which marks where to continue when a continue instruction is executed in the current scope
  *
  * @param block
@@ -283,12 +274,12 @@ void SymbolTable::setContinueBlock(llvm::BasicBlock* block) {
 }
 
 /**
- * Retrieve the LLVM BasicBlock, which is currently set as break block for the current scope
+ * Retrieve the LLVM BasicBlock, which is currently set as continue block for the current scope
  *
- * @return Break block
+ * @return Continue block
  */
-llvm::BasicBlock* SymbolTable::getBreakBlock() const {
-    return breakBlock;
+llvm::BasicBlock* SymbolTable::getContinueBlock() const {
+    return continueBlock;
 }
 
 /**
@@ -301,11 +292,20 @@ void SymbolTable::setBreakBlock(llvm::BasicBlock* block) {
 }
 
 /**
+ * Retrieve the LLVM BasicBlock, which is currently set as break block for the current scope
+ *
+ * @return Break block
+ */
+llvm::BasicBlock* SymbolTable::getBreakBlock() const {
+    return breakBlock;
+}
+
+/**
  * Prints compiler values with regard to the symbol table
  */
 void SymbolTable::printCompilerWarnings() {
     // Omit this table if it is an imported sub-table
-    if (isImported) return;
+    if (imported) return;
     // Visit own symbols
     for (auto& [key, entry] : symbols) {
         if (!entry.isUsed()) {
@@ -350,6 +350,18 @@ std::string SymbolTable::toString() {
     return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
 }
 
+/**
+ * Marks this symbol table as imported. This means, that it is a nested symbol table in the main symbol table
+ */
 void SymbolTable::setImported() {
-    isImported = true;
+    imported = true;
+}
+
+/**
+ * Checks if this symbol table is imported
+ *
+ * @return Imported / not imported
+ */
+bool SymbolTable::isImported() {
+    return imported;
 }

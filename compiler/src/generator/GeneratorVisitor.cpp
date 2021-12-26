@@ -1583,6 +1583,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     unsigned int functionCallCounter = 0;
     bool applyReference = false;
     bool applyDereference = false;
+    bool metStruct = false;
     SymbolTable* scope = currentScope;
 
     if (ctx->BITWISE_AND()) { // Consider referencing operator
@@ -1620,12 +1621,24 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             // Apply field
             std::string variableName = token->toString();
             entry = scope->lookup(variableName);
-            if (scope == currentScope) { // This is the current scope
-                baseType = entry->getLLVMType();
-                basePtr = entry->getAddress();
-                indices.push_back(builder->getInt32(0));
-            } else { // This is a struct
+            if (metStruct) { // Struct
                 indices.push_back(builder->getInt32(entry->getOrderIndex()));
+            } else { // Local, global or imported global variable
+                if (scope->isImported()) { // Imported global variable
+                    // Initialize external global variable
+                    baseType = getTypeForSymbolType(entry->getType());
+                    basePtr = module->getOrInsertGlobal(variableName, baseType);
+                    // Set some attributes to it
+                    llvm::GlobalVariable* global = module->getNamedGlobal(variableName);
+                    //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
+                    global->setDSOLocal(true);
+                    global->setExternallyInitialized(true);
+                } else { // Local or global variable
+                    baseType = entry->getLLVMType();
+                    basePtr = entry->getAddress();
+                    indices.push_back(builder->getInt32(0));
+                    metStruct = entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR });
+                }
             }
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
