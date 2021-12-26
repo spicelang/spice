@@ -839,10 +839,21 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     if (ctx->paramLst()) {
         for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
             llvm::Value* argValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-            llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
             llvm::Type* argType = fctType->getParamType(paramIndex);
-            llvm::Value* bitCastArgValue = builder->CreateBitCast(argValue, argType);
-            argValues.push_back(bitCastArgValue);
+            if (argValuePtr->getType()->getPointerElementType() != argType) {
+                if (argType->isPointerTy() && argValuePtr->getType()->getPointerElementType()->isArrayTy()) {
+                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
+                    llvm::Type* targetType = argValuePtr->getType()->getPointerElementType();
+                    llvm::Value* ptr = builder->CreateInBoundsGEP(targetType, argValuePtr, indices);
+                    argValues.push_back(ptr);
+                } else {
+                    llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
+                    argValues.push_back(builder->CreateBitCast(argValue, argType));
+                }
+            } else {
+                llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
+                argValues.push_back(argValue);
+            }
             paramIndex++;
         }
     }
@@ -1643,7 +1654,11 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             // Get the index value
             llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
             indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
-            indices.push_back(indexValue);
+            if (entry->getType().isPointer()) {
+                indices.back() = indexValue;
+            } else {
+                indices.push_back(indexValue);
+            }
             // Increase counters
             assignCounter++;
             tokenCounter += 2; // To consume the assignExpr and the RBRACKET
@@ -1758,28 +1773,26 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
 
 void GeneratorVisitor::initializeExternalFunctions() {
     // printf function
-    module->getOrInsertFunction("printf", llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(*context),
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
-            true));
+    llvm::FunctionType* fctTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
+                                                        llvm::Type::getInt8PtrTy(*context), true);
+    module->getOrInsertFunction("printf", fctTy);
     // malloc function
     /*module->getOrInsertFunction("malloc", llvm::FunctionType::get(
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            llvm::Type::getInt8PtrTy(*context),
             llvm::Type::getInt32Ty(*context),
             false));
     // free function
     module->getOrInsertFunction("free", llvm::FunctionType::get(
             llvm::Type::getVoidTy(*context),
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            llvm::Type::getInt8PtrTy(*context),
             false));
     // memcpy function
     std::vector<llvm::Type*> paramTypes = {
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            llvm::Type::getInt8PtrTy(*context),
+            llvm::Type::getInt8PtrTy(*context),
             llvm::Type::getInt32Ty(*context)
     };
-    module->getOrInsertFunction("memcpy", llvm::FunctionType::get(
-            llvm::Type::getInt8Ty(*context)->getPointerTo(), paramTypes, false));*/
+    module->getOrInsertFunction("memcpy", llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*context), paramTypes, false));*/
 }
 
 llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
@@ -1984,33 +1997,47 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
     currentSymbolType = symbolType;
     switch (symbolType.getSuperType()) {
         case TYPE_DOUBLE: return llvm::Type::getDoubleTy(*context);
-        case TYPE_DOUBLE_PTR: return llvm::Type::getDoublePtrTy(*context);
-        case TYPE_DOUBLE_ARRAY: return llvm::ArrayType::getDoubleTy(*context);
-        case TYPE_DOUBLE_PTR_ARRAY: return llvm::ArrayType::getDoublePtrTy(*context);
+        case TYPE_DOUBLE_PTR:
+        case TYPE_DOUBLE_ARRAY: return llvm::Type::getDoublePtrTy(*context);
+        case TYPE_DOUBLE_PTR_ARRAY: return llvm::Type::getDoublePtrTy(*context)->getPointerTo();
+        //case TYPE_DOUBLE_ARRAY: return llvm::ArrayType::getDoubleTy(*context);
+        //case TYPE_DOUBLE_PTR_ARRAY: return llvm::ArrayType::getDoublePtrTy(*context);
         case TYPE_INT: return llvm::Type::getInt32Ty(*context);
-        case TYPE_INT_PTR: return llvm::Type::getInt32PtrTy(*context);
-        case TYPE_INT_ARRAY: return llvm::ArrayType::getInt32Ty(*context);
-        case TYPE_INT_PTR_ARRAY: return llvm::ArrayType::getInt32PtrTy(*context);
+        case TYPE_INT_PTR:
+        case TYPE_INT_ARRAY: return llvm::Type::getInt32PtrTy(*context);
+        case TYPE_INT_PTR_ARRAY: return llvm::Type::getInt32PtrTy(*context)->getPointerTo();
+        //case TYPE_INT_ARRAY: return llvm::ArrayType::getInt32Ty(*context);
+        //case TYPE_INT_PTR_ARRAY: return llvm::ArrayType::getInt32PtrTy(*context);
         case TYPE_BYTE: return llvm::Type::getInt8Ty(*context);
-        case TYPE_BYTE_PTR: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_BYTE_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
-        case TYPE_BYTE_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
+        case TYPE_BYTE_PTR:
+        case TYPE_BYTE_ARRAY: return llvm::Type::getInt8PtrTy(*context);
+        case TYPE_BYTE_PTR_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
+        //case TYPE_BYTE_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
+        //case TYPE_BYTE_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
         case TYPE_CHAR: return llvm::Type::getInt8Ty(*context);
-        case TYPE_CHAR_PTR: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_CHAR_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
-        case TYPE_CHAR_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
+        case TYPE_CHAR_PTR:
+        case TYPE_CHAR_ARRAY: return llvm::Type::getInt8PtrTy(*context);
+        case TYPE_CHAR_PTR_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
+        //case TYPE_CHAR_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
+        //case TYPE_CHAR_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
         case TYPE_STRING: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_STRING_PTR: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
-        case TYPE_STRING_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
-        case TYPE_STRING_PTR_ARRAY: throw std::runtime_error("String ptr array support coming soon");
+        case TYPE_STRING_PTR:
+        case TYPE_STRING_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
+        case TYPE_STRING_PTR_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo()->getPointerTo();
+        //case TYPE_STRING_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
+        //case TYPE_STRING_PTR_ARRAY: throw std::runtime_error("String ptr array support coming soon");
         case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
-        case TYPE_BOOL_PTR: return llvm::Type::getInt1PtrTy(*context);
-        case TYPE_BOOL_ARRAY: return llvm::ArrayType::getInt1Ty(*context);
-        case TYPE_BOOL_PTR_ARRAY: return llvm::ArrayType::getInt1PtrTy(*context);
+        case TYPE_BOOL_PTR:
+        case TYPE_BOOL_ARRAY: return llvm::Type::getInt1PtrTy(*context);
+        case TYPE_BOOL_PTR_ARRAY: return llvm::Type::getInt1PtrTy(*context)->getPointerTo();
+        //case TYPE_BOOL_ARRAY: return llvm::ArrayType::getInt1Ty(*context);
+        //case TYPE_BOOL_PTR_ARRAY: return llvm::ArrayType::getInt1PtrTy(*context);
         case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
-        case TYPE_STRUCT_PTR: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
-        case TYPE_STRUCT_ARRAY: throw std::runtime_error("Struct array support coming soon");
-        case TYPE_STRUCT_PTR_ARRAY: throw std::runtime_error("Struct ptr array support coming soon");
+        case TYPE_STRUCT_PTR:
+        case TYPE_STRUCT_ARRAY: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
+        case TYPE_STRUCT_PTR_ARRAY: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo()->getPointerTo();
+        //case TYPE_STRUCT_ARRAY: throw std::runtime_error("Struct array support coming soon");
+        //case TYPE_STRUCT_PTR_ARRAY: throw std::runtime_error("Struct ptr array support coming soon");
         default: throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName());
     }
 }

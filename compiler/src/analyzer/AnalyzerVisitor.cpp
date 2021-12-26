@@ -402,6 +402,8 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
                             "The variable '" + variableName + "' was declared more than once");
     // Insert variable name to symbol table
     SymbolType type = visit(ctx->dataType()).as<SymbolType>();
+    if (parameterMode && type.isArray()) // Change array type to pointer type for function/procedure parameters
+        type = type.getItemType().getPointerType();
     currentScope->insert(variableName, type, DECLARED, *ctx->start, ctx->CONST(), parameterMode);
     return type;
 }
@@ -727,14 +729,15 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
                 break;
             }
             case 's': {
-                if (!assignmentType.is(TYPE_STRING))
+                if (!assignmentType.isOneOf({TYPE_STRING, TYPE_CHAR_PTR, TYPE_CHAR_ARRAY}))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects string, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
             case 'p': {
-                if (!assignmentType.isOneOf({ TYPE_DOUBLE_PTR, TYPE_INT_PTR, TYPE_STRING_PTR, TYPE_BOOL_PTR, TYPE_STRUCT_PTR }))
+                if (!assignmentType.isOneOf({ TYPE_DOUBLE_PTR, TYPE_INT_PTR, TYPE_BYTE_PTR, TYPE_CHAR_PTR, TYPE_STRING_PTR,
+                                              TYPE_BOOL_PTR, TYPE_STRUCT_PTR }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects pointer, but got " + assignmentType.getName());
                 placeholderCount++;
@@ -1347,7 +1350,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
             }
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Check this operation is valid on this type
-            if (!symbolType.isArray())
+            if (!symbolType.isArray() && !symbolType.isPointer())
                 throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Cannot apply subscript operator on " + symbolType.getName());
             // Check if the index is an integer
@@ -1355,8 +1358,8 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
             if (!indexType.is(TYPE_INT))
                 throw SemanticError(*ctx->assignExpr()[assignCounter]->start, ARRAY_INDEX_NO_INTEGER,
                                     "Array index must be of type int, you provided " + indexType.getName());
-            // Promote the item type
-            symbolType = symbolType.getItemType();
+            // Promote the array/pointer element type
+            symbolType = symbolType.isArray() ? symbolType.getItemType() : symbolType.getScalarType();
             // Increase counters
             assignCounter++;
             tokenCounter += 2; // To consume the assignExpr and the RBRACKET
