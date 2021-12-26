@@ -13,6 +13,7 @@ enum CompilerWarningType {
     UNUSED_IMPORT,
     UNUSED_VARIABLE,
     ARRAY_TOO_MANY_VALUES,
+    INDEX_EXCEEDS_ARRAY_SIZE
 };
 
 /**

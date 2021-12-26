@@ -137,19 +137,51 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
     if (mustHaveMainFunction) { // Only create main function when it is required
+        // Change scope
+        std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+        currentScope = currentScope->getChild(scopeId);
+
+        // Visit parameters
+        std::vector<SymbolType> symbolTypes;
+        std::vector<std::string> paramNames;
+        std::vector<llvm::Type*> paramTypes;
+        if (ctx->paramLstDef()) {
+            for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
+                currentVar = param->IDENTIFIER()->toString();
+                paramNames.push_back(currentVar);
+                llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
+                paramTypes.push_back(paramType);
+                symbolTypes.push_back(currentSymbolType);
+            }
+            for (auto& param : ctx->paramLstDef()->assignExpr()) { // Parameters with default value
+                currentVar = param->declStmt()->IDENTIFIER()->toString();
+                paramNames.push_back(currentVar);
+                llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
+                paramTypes.push_back(paramType);
+                symbolTypes.push_back(currentSymbolType);
+            }
+        }
+
         // Build function itself
-        std::string functionName = "main";
         llvm::Type* returnType = llvm::Type::getInt32Ty(*context);
-        llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, std::vector<llvm::Type*>(), false);
+        llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
         llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
-                                                     functionName, module.get());
+                                                     MAIN_FUNCTION_NAME, module.get());
         llvm::BasicBlock* bMain = llvm::BasicBlock::Create(*context, "entry");
         fct->getBasicBlockList().push_back(bMain);
         moveInsertPointToBlock(bMain);
 
-        // Change scope
-        std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-        currentScope = currentScope->getChild(scopeId);
+        // Store function params
+        unsigned int declStmtCount = ctx->paramLstDef() ? ctx->paramLstDef()->declStmt().size() : 0;
+        for (auto& param : fct->args()) {
+            unsigned paramNo = param.getArgNo();
+            std::string paramName = paramNames[paramNo];
+            llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
+            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+            currentScope->lookup(paramName)->updateAddress(memAddress);
+            currentScope->lookup(paramName)->updateLLVMType(paramType);
+            builder->CreateStore(&param, memAddress);
+        }
 
         // Declare result variable and set it to 0 for positive return code
         llvm::Value* memAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
@@ -394,9 +426,21 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
     // Get function name
     std::string functionName = ctx->IDENTIFIER()->toString();
+    std::vector<SymbolType> symbolTypes;
+
+    // Pop function signature from the signature stack
+    FunctionSignature signature = currentScope->popSignature();
 
     // Get LLVM return type
-    llvm::Type* returnType = ctx->dataType() ? visit(ctx->dataType()).as<llvm::Type*>() : llvm::Type::getVoidTy(*context);
+    llvm::Type* returnType;
+    if (ctx->dataType()) {
+        returnType = visit(ctx->dataType()).as<llvm::Type*>();
+        SymbolTable* functionTable = currentScope->getChild(signature.toString());
+        SymbolTableEntry* returnEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
+        symbolTypes.push_back(returnEntry->getType());
+    } else {
+        returnType = llvm::Type::getVoidTy(*context);
+    }
 
     // Get LLVM param types
     std::vector<llvm::Type*> paramTypes;
@@ -406,6 +450,8 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
             paramTypes.push_back(paramType);
         }
     }
+    std::vector<SymbolType> paramSymbolTypes = signature.getParamTypes();
+    symbolTypes.insert(std::end(symbolTypes), std::begin(paramSymbolTypes), std::end(paramSymbolTypes));
 
     // Get vararg
     bool isVararg = ctx->typeLst()->ELLIPSIS();
@@ -413,6 +459,12 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
     // Declare function
     llvm::FunctionType* functionType = llvm::FunctionType::get(returnType, paramTypes, isVararg);
     module->getOrInsertFunction(functionName, functionType);
+
+    if (ctx->dataType()) { // Function
+        currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
+    } else { // Procedure
+        currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
+    }
 
     // Return true as result for the function definition
     return (llvm::Value*) builder->getTrue();
@@ -729,17 +781,22 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     }
 
     // Get function by signature
-    FunctionSignature signature = currentScope->popSignature();
+    FunctionSignature signature = functionCallParentScope->popSignature();
     // Check if function exists in module
     bool functionFound = false;
+    std::string fctIdentifier = signature.toString();
     for (auto& function : module->getFunctionList()) {
         if (function.getName() == signature.toString()) {
             functionFound = true;
             break;
+        } else if (function.getName() == signature.getFunctionName()) {
+            functionFound = true;
+            fctIdentifier = signature.getFunctionName();
+            break;
         }
     }
     if (!functionFound) { // Not found => Declare function, which will be linked in
-        SymbolTable* table = currentScope->lookupTableWithSymbol({ signature.toString() });
+        SymbolTable* table = functionCallParentScope->lookupTableWithSymbol({ signature.toString() });
         // Check if it is a function or a procedure
         if (!table->getFunctionDeclaration(signature.toString()).empty()) {
             std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
@@ -757,7 +814,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             }
 
             llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-            module->getOrInsertFunction(signature.toString(), fctType);
+            module->getOrInsertFunction(fctIdentifier, fctType);
         } else if (!table->getProcedureDeclaration(signature.toString()).empty()) {
             std::vector<SymbolType> symbolTypes = table->getProcedureDeclaration(signature.toString());
 
@@ -771,10 +828,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
             llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
                                                                    paramTypes, false);
-            module->getOrInsertFunction(signature.toString(), procType);
+            module->getOrInsertFunction(fctIdentifier, procType);
         }
     }
-    llvm::Function* fct = module->getFunction(signature.toString());
+    llvm::Function* fct = module->getFunction(fctIdentifier);
     llvm::FunctionType* fctType = fct->getFunctionType();
 
     // Fill parameter list
@@ -787,10 +844,21 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     if (ctx->paramLst()) {
         for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
             llvm::Value* argValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-            llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
             llvm::Type* argType = fctType->getParamType(paramIndex);
-            llvm::Value* bitCastArgValue = builder->CreateBitCast(argValue, argType);
-            argValues.push_back(bitCastArgValue);
+            if (argValuePtr->getType()->getPointerElementType() != argType) {
+                if (argType->isPointerTy() && argValuePtr->getType()->getPointerElementType()->isArrayTy()) {
+                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
+                    llvm::Type* targetType = argValuePtr->getType()->getPointerElementType();
+                    llvm::Value* ptr = builder->CreateInBoundsGEP(targetType, argValuePtr, indices);
+                    argValues.push_back(ptr);
+                } else {
+                    llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
+                    argValues.push_back(builder->CreateBitCast(argValue, argType));
+                }
+            } else {
+                llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
+                argValues.push_back(argValue);
+            }
             paramIndex++;
         }
     }
@@ -1515,6 +1583,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     unsigned int functionCallCounter = 0;
     bool applyReference = false;
     bool applyDereference = false;
+    bool metStruct = false;
     SymbolTable* scope = currentScope;
 
     if (ctx->BITWISE_AND()) { // Consider referencing operator
@@ -1538,29 +1607,38 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                     currentThisValue = basePtr;
                     currentSymbolType = entry->getType();
                 }
-                // Change scope to function parent scope
-                SymbolTable* oldScope = currentScope;
-                currentScope = scope;
+                // Set function call parent scope
+                functionCallParentScope = scope;
                 // Visit function call
                 basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
                 baseType = basePtr->getType()->getPointerElementType();
                 currentThisValue = nullptr;
                 indices.clear();
                 indices.push_back(builder->getInt32(0));
-                // Restore the old scope
-                currentScope = oldScope;
                 functionCallCounter++;
             }
         } else if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
             // Apply field
             std::string variableName = token->toString();
             entry = scope->lookup(variableName);
-            if (scope == currentScope) { // This is the current scope
-                baseType = entry->getLLVMType();
-                basePtr = entry->getAddress();
-                indices.push_back(builder->getInt32(0));
-            } else { // This is a struct
+            if (metStruct) { // Struct
                 indices.push_back(builder->getInt32(entry->getOrderIndex()));
+            } else { // Local, global or imported global variable
+                if (scope->isImported()) { // Imported global variable
+                    // Initialize external global variable
+                    baseType = getTypeForSymbolType(entry->getType());
+                    basePtr = module->getOrInsertGlobal(variableName, baseType);
+                    // Set some attributes to it
+                    llvm::GlobalVariable* global = module->getNamedGlobal(variableName);
+                    //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
+                    global->setDSOLocal(true);
+                    global->setExternallyInitialized(true);
+                } else { // Local or global variable
+                    baseType = entry->getLLVMType();
+                    basePtr = entry->getAddress();
+                    indices.push_back(builder->getInt32(0));
+                    metStruct = entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR });
+                }
             }
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
@@ -1591,7 +1669,11 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             // Get the index value
             llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
             indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
-            indices.push_back(indexValue);
+            if (entry->getType().isPointer()) {
+                indices.back() = indexValue;
+            } else {
+                indices.push_back(indexValue);
+            }
             // Increase counters
             assignCounter++;
             tokenCounter += 2; // To consume the assignExpr and the RBRACKET
@@ -1706,28 +1788,26 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
 
 void GeneratorVisitor::initializeExternalFunctions() {
     // printf function
-    module->getOrInsertFunction("printf", llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(*context),
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
-            true));
+    llvm::FunctionType* fctTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
+                                                        llvm::Type::getInt8PtrTy(*context), true);
+    module->getOrInsertFunction("printf", fctTy);
     // malloc function
     /*module->getOrInsertFunction("malloc", llvm::FunctionType::get(
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            llvm::Type::getInt8PtrTy(*context),
             llvm::Type::getInt32Ty(*context),
             false));
     // free function
     module->getOrInsertFunction("free", llvm::FunctionType::get(
             llvm::Type::getVoidTy(*context),
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            llvm::Type::getInt8PtrTy(*context),
             false));
     // memcpy function
     std::vector<llvm::Type*> paramTypes = {
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
-            llvm::Type::getInt8Ty(*context)->getPointerTo(),
+            llvm::Type::getInt8PtrTy(*context),
+            llvm::Type::getInt8PtrTy(*context),
             llvm::Type::getInt32Ty(*context)
     };
-    module->getOrInsertFunction("memcpy", llvm::FunctionType::get(
-            llvm::Type::getInt8Ty(*context)->getPointerTo(), paramTypes, false));*/
+    module->getOrInsertFunction("memcpy", llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*context), paramTypes, false));*/
 }
 
 llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
@@ -1932,33 +2012,47 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
     currentSymbolType = symbolType;
     switch (symbolType.getSuperType()) {
         case TYPE_DOUBLE: return llvm::Type::getDoubleTy(*context);
-        case TYPE_DOUBLE_PTR: return llvm::Type::getDoublePtrTy(*context);
-        case TYPE_DOUBLE_ARRAY: return llvm::ArrayType::getDoubleTy(*context);
-        case TYPE_DOUBLE_PTR_ARRAY: return llvm::ArrayType::getDoublePtrTy(*context);
+        case TYPE_DOUBLE_PTR:
+        case TYPE_DOUBLE_ARRAY: return llvm::Type::getDoublePtrTy(*context);
+        case TYPE_DOUBLE_PTR_ARRAY: return llvm::Type::getDoublePtrTy(*context)->getPointerTo();
+        //case TYPE_DOUBLE_ARRAY: return llvm::ArrayType::getDoubleTy(*context);
+        //case TYPE_DOUBLE_PTR_ARRAY: return llvm::ArrayType::getDoublePtrTy(*context);
         case TYPE_INT: return llvm::Type::getInt32Ty(*context);
-        case TYPE_INT_PTR: return llvm::Type::getInt32PtrTy(*context);
-        case TYPE_INT_ARRAY: return llvm::ArrayType::getInt32Ty(*context);
-        case TYPE_INT_PTR_ARRAY: return llvm::ArrayType::getInt32PtrTy(*context);
+        case TYPE_INT_PTR:
+        case TYPE_INT_ARRAY: return llvm::Type::getInt32PtrTy(*context);
+        case TYPE_INT_PTR_ARRAY: return llvm::Type::getInt32PtrTy(*context)->getPointerTo();
+        //case TYPE_INT_ARRAY: return llvm::ArrayType::getInt32Ty(*context);
+        //case TYPE_INT_PTR_ARRAY: return llvm::ArrayType::getInt32PtrTy(*context);
         case TYPE_BYTE: return llvm::Type::getInt8Ty(*context);
-        case TYPE_BYTE_PTR: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_BYTE_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
-        case TYPE_BYTE_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
+        case TYPE_BYTE_PTR:
+        case TYPE_BYTE_ARRAY: return llvm::Type::getInt8PtrTy(*context);
+        case TYPE_BYTE_PTR_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
+        //case TYPE_BYTE_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
+        //case TYPE_BYTE_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
         case TYPE_CHAR: return llvm::Type::getInt8Ty(*context);
-        case TYPE_CHAR_PTR: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_CHAR_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
-        case TYPE_CHAR_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
+        case TYPE_CHAR_PTR:
+        case TYPE_CHAR_ARRAY: return llvm::Type::getInt8PtrTy(*context);
+        case TYPE_CHAR_PTR_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
+        //case TYPE_CHAR_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
+        //case TYPE_CHAR_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
         case TYPE_STRING: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_STRING_PTR: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
-        case TYPE_STRING_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
-        case TYPE_STRING_PTR_ARRAY: throw std::runtime_error("String ptr array support coming soon");
+        case TYPE_STRING_PTR:
+        case TYPE_STRING_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
+        case TYPE_STRING_PTR_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo()->getPointerTo();
+        //case TYPE_STRING_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
+        //case TYPE_STRING_PTR_ARRAY: throw std::runtime_error("String ptr array support coming soon");
         case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
-        case TYPE_BOOL_PTR: return llvm::Type::getInt1PtrTy(*context);
-        case TYPE_BOOL_ARRAY: return llvm::ArrayType::getInt1Ty(*context);
-        case TYPE_BOOL_PTR_ARRAY: return llvm::ArrayType::getInt1PtrTy(*context);
+        case TYPE_BOOL_PTR:
+        case TYPE_BOOL_ARRAY: return llvm::Type::getInt1PtrTy(*context);
+        case TYPE_BOOL_PTR_ARRAY: return llvm::Type::getInt1PtrTy(*context)->getPointerTo();
+        //case TYPE_BOOL_ARRAY: return llvm::ArrayType::getInt1Ty(*context);
+        //case TYPE_BOOL_PTR_ARRAY: return llvm::ArrayType::getInt1PtrTy(*context);
         case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
-        case TYPE_STRUCT_PTR: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
-        case TYPE_STRUCT_ARRAY: throw std::runtime_error("Struct array support coming soon");
-        case TYPE_STRUCT_PTR_ARRAY: throw std::runtime_error("Struct ptr array support coming soon");
+        case TYPE_STRUCT_PTR:
+        case TYPE_STRUCT_ARRAY: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
+        case TYPE_STRUCT_PTR_ARRAY: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo()->getPointerTo();
+        //case TYPE_STRUCT_ARRAY: throw std::runtime_error("Struct array support coming soon");
+        //case TYPE_STRUCT_PTR_ARRAY: throw std::runtime_error("Struct ptr array support coming soon");
         default: throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName());
     }
 }

@@ -27,54 +27,43 @@ public:
     void insert(const std::string&, SymbolType, SymbolState, const antlr4::Token&, bool, bool);
 
     SymbolTableEntry* lookup(const std::string&);
-
     SymbolTableEntry* lookupByIndexInCurrentScope(unsigned int);
-
     SymbolTable* lookupTable(const std::string&);
-
     SymbolTable* lookupTableWithSymbol(const std::vector<std::string>&);
 
     void update(const std::string&, SymbolState);
-
     void update(const std::string&, SymbolType);
 
     SymbolTable* createChildBlock(const std::string&);
-
     void mountChildBlock(const std::string&, SymbolTable*);
-
     void renameChildBlock(const std::string&, const std::string&);
 
     SymbolTable* getParent();
-
     SymbolTable* getChild(const std::string&);
 
     unsigned int getFieldCount();
 
     void insertFunctionDeclaration(const std::string&, const std::vector<SymbolType>&);
-
     std::vector<SymbolType> getFunctionDeclaration(const std::string&);
 
     void insertProcedureDeclaration(const std::string&, const std::vector<SymbolType>&);
-
     std::vector<SymbolType> getProcedureDeclaration(const std::string&);
 
     void pushSignature(const FunctionSignature&);
-
     FunctionSignature popSignature();
 
+    void setContinueBlock(llvm::BasicBlock*);
     llvm::BasicBlock* getContinueBlock() const;
 
-    void setContinueBlock(llvm::BasicBlock*);
-
-    llvm::BasicBlock* getBreakBlock() const;
-
     void setBreakBlock(llvm::BasicBlock*);
+    llvm::BasicBlock* getBreakBlock() const;
 
     void printCompilerWarnings();
 
     std::string toString();
 
     void setImported();
+    bool isImported();
 
 private:
     // Members
@@ -88,5 +77,5 @@ private:
     llvm::BasicBlock* continueBlock = nullptr;
     llvm::BasicBlock* breakBlock = nullptr;
     bool inMainSourceFile;
-    bool isImported = false;
+    bool imported = false;
 };

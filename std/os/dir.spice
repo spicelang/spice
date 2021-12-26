@@ -1,0 +1,61 @@
+// File permission modes
+const int MODE_ALL_RWX   = 511;   // Octal for: 0000777
+const int MODE_ALL_RW    = 438;   // Octal for: 0000666
+const int MODE_ALL_R     = 292;   // Octal for: 0000444
+
+const int MODE_OWNER_RWX = 448;   // Octal for: 0000700
+const int MODE_OWNER_R   = 256;   // Octal for: 0000400
+const int MODE_OWNER_W   = 128;   // Octal for: 0000200
+const int MODE_OWNER_X   = 64;    // Octal for: 0000100
+
+const int MODE_GROUP_RWX = 56;    // Octal for: 0000070
+const int MODE_GROUP_R   = 32;    // Octal for: 0000040
+const int MODE_GROUP_W   = 16;    // Octal for: 0000020
+const int MODE_GROUP_X   = 8;     // Octal for: 0000010
+
+const int MODE_OTHER_RWX = 7;     // Octal for: 0000007
+const int MODE_OTHER_R   = 4;     // Octal for: 0000004
+const int MODE_OTHER_W   = 2;     // Octal for: 0000002
+const int MODE_OTHER_X   = 1;     // Octal for: 0000001
+
+// Link external functions
+ext<int> mkdir(char*, int);
+ext<int> rmdir(char*);
+ext<int> rename(char*, char*);
+
+/**
+ * Creates an empty directory at the specified path, with the specified mode.
+ *
+ * There are predefined constants for the mode available:
+ * MODE_ALL_RWX, MODE_ALL_RW, MODE_ALL_R,
+ * MODE_OWNER_RWX, MODE_OWNER_R, MODE_OWNER_W, MODE_OWNER_X,
+ * MODE_GROUP_RWX, MODE_GROUP_R, MODE_GROUP_W, MODE_GROUP_X,
+ * MODE_OTHER_RWX, MODE_OTHER_R, MODE_OTHER_W, MODE_OTHER_X
+ *
+ * @return Result code of the create operation: 0 = successful, -1 = failed
+ */
+f<int> mkDir(string pathStr, int mode) {
+    char* path = pathStr;
+    return mkdir(path, mode);
+}
+
+/**
+ * Deletes an empty directory at the specified path.
+ *
+ * @return Result code of the delete operation: 0 = successful, -1 = failed
+ */
+f<int> rmDir(string pathStr) {
+    char* path = pathStr;
+    return rmdir(path);
+}
+
+/**
+ * Renames a directory.
+ *
+ * @return Result code of the rename operation: 0 = successful, -1 = failed
+ */
+f<int> renameDir(string oldPathStr, string newPathStr) {
+    char* oldPath = oldPathStr;
+    char* newPath = newPathStr;
+    return rename(oldPath, newPath);
+}

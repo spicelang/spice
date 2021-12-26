@@ -34,6 +34,7 @@ public:
     SymbolType getScalarType();
     SymbolType getArrayType();
     SymbolType getItemType();
+    bool isImplicitCastCompatibleWith(const SymbolType&);
     bool isOneOf(const std::vector<SymbolSuperType>&);
     bool is(SymbolSuperType);
     bool matches(SymbolType);

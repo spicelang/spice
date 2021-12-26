@@ -16,3 +16,21 @@ std::string FunctionSignature::toString() {
     }
     return functionName + "(" + params + ")";
 }
+
+/**
+ * Returns the name of the function
+ *
+ * @return Function name
+ */
+std::string FunctionSignature::getFunctionName() {
+    return functionName;
+}
+
+/**
+ * Retrieve all parameter symbol types as vector
+ *
+ * @return Param types as vector
+ */
+std::vector<SymbolType> FunctionSignature::getParamTypes() {
+    return paramTypes;
+}

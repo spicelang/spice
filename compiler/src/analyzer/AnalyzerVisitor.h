@@ -18,6 +18,7 @@
 
 #include <utility>
 
+const static std::string MAIN_FUNCTION_NAME = "main";
 const static std::string RETURN_VARIABLE_NAME = "result";
 const static std::string THIS_VARIABLE_NAME = "this";
 const static std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
@@ -140,10 +141,8 @@ private:
     bool mustHaveMainFunction = true;
     bool hasMainFunction = false;
     SymbolTable* currentScope = new SymbolTable(nullptr, mustHaveMainFunction);
+    SymbolTable* functionCallParentScope = currentScope;
     bool parameterMode = false;
     int nestedLoopCounter = 0;
     bool stdFile = false;
-
-    // Private methods
-    void initializeExternalFunctions();
 };
