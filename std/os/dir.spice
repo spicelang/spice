@@ -21,6 +21,7 @@ const int MODE_OTHER_X   = 1;     // Octal for: 0000001
 // Link external functions
 ext<int> mkdir(char*, int);
 ext<int> rmdir(char*);
+ext<int> rename(char*, char*);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
@@ -46,4 +47,15 @@ f<int> mkDir(string pathStr, int mode) {
 f<int> rmDir(string pathStr) {
     char* path = pathStr;
     return rmdir(path);
+}
+
+/**
+ * Renames a directory.
+ *
+ * @return Result code of the rename operation: 0 = successful, -1 = failed
+ */
+f<int> renameDir(string oldPathStr, string newPathStr) {
+    char* oldPath = oldPathStr;
+    char* newPath = newPathStr;
+    return rename(oldPath, newPath);
 }

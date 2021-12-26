@@ -4,6 +4,6 @@ f<int> main() {
     string path = "./test";
     int r1 = dir.mkDir(path, dir.MODE_ALL_RWX);
     printf("R1: %d\n", r1);
-    int r2 = dir.rmDir(path);
+    int r2 = dir.renameDir(path, "./test1");
     printf("R2: %d\n", r2);
 }
