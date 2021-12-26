@@ -141,6 +141,7 @@ private:
     bool mustHaveMainFunction = true;
     bool hasMainFunction = false;
     SymbolTable* currentScope = new SymbolTable(nullptr, mustHaveMainFunction);
+    SymbolTable* functionCallParentScope = currentScope;
     bool parameterMode = false;
     int nestedLoopCounter = 0;
     bool stdFile = false;

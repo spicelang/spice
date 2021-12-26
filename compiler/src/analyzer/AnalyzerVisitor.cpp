@@ -421,7 +421,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     FunctionSignature signature = FunctionSignature(functionName, paramTypes);
 
     // Check if function signature exists in symbol table
-    SymbolTable* functionEntryTable = currentScope->lookupTableWithSymbol({ signature.toString() });
+    SymbolTable* functionEntryTable = functionCallParentScope->lookupTableWithSymbol({ signature.toString() });
     if (!functionEntryTable)
         throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
                             "Function/Procedure '" + signature.toString() + "' could not be found");
@@ -432,7 +432,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     // Set the function usage
     functionEntry->setUsed();
     // Add function call to the signature queue of the current scope
-    currentScope->pushSignature(signature);
+    functionCallParentScope->pushSignature(signature);
 
     // Search for symbol table of called function/procedure to read parameters
     if (functionEntry->getType().is(TYPE_FUNCTION)) {
@@ -1307,13 +1307,10 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
             auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
             unsigned int ruleIndex = rule->getRuleIndex();
             if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
-                // Change scope to function parent scope
-                SymbolTable* oldScope = currentScope;
-                currentScope = scope;
+                // Set function call parent scope
+                functionCallParentScope = scope;
                 // Visit function call
                 symbolType = visit(ctx->functionCall()[functionCallCounter]).as<SymbolType>();
-                // Restore the old scope
-                currentScope = oldScope;
                 functionCallCounter++;
             }
         } else if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier

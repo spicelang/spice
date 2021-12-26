@@ -1,7 +1,11 @@
+import "std/text/print" as print;
+
 f<int> main(int argc, string[] argv) {
-    printf("Argc: %d", argc);
-    printf("Argv no. 1: %s", argv[1]);
+    printf("Argc: %d\n", argc);
+    print.print("Argv no. 0: ");
+    print.println(argv[0]);
     if (argc > 1) {
-        printf("Argv no. 0: %s", argv[0]);
+        print.print("Argv no. 1: ");
+        print.println(argv[1]);
     }
 }
