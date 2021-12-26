@@ -145,7 +145,4 @@ private:
     bool parameterMode = false;
     int nestedLoopCounter = 0;
     bool stdFile = false;
-
-    // Private methods
-    void initializeExternalFunctions();
 };

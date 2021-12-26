@@ -4,7 +4,6 @@
 
 antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Pre-traversing actions
-    initializeExternalFunctions();
 
     // Traverse AST
     visitChildren(ctx);
@@ -798,8 +797,8 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
 
         // Take a look at the operator
         if (ctx->ASSIGN_OP()) {
-            // Assigning an int to a char is valid. Apart from that, all assignments which operand types do not match are invalid
-            if (lhsTy != rhsTy && !(lhsTy.is(TYPE_BYTE) && rhsTy.is(TYPE_INT)))
+            // Allow all assignment operations which are implicit cast compatible
+            if (!rhsTy.isImplicitCastCompatibleWith(lhsTy))
                 throw SemanticError(*ctx->ASSIGN_OP()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply the assign operator on same data types");
         } else if (ctx->PLUS_EQUAL()) {
@@ -1410,9 +1409,4 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
     if (ctx->LBRACKET()) type = type.getArrayType();
 
     return type;
-}
-
-void AnalyzerVisitor::initializeExternalFunctions() {
-    // Add symbol table entry for each builtin function
-
 }

@@ -784,9 +784,14 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     FunctionSignature signature = functionCallParentScope->popSignature();
     // Check if function exists in module
     bool functionFound = false;
+    std::string fctIdentifier = signature.toString();
     for (auto& function : module->getFunctionList()) {
         if (function.getName() == signature.toString()) {
             functionFound = true;
+            break;
+        } else if (function.getName() == signature.getFunctionName()) {
+            functionFound = true;
+            fctIdentifier = signature.getFunctionName();
             break;
         }
     }
@@ -809,7 +814,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             }
 
             llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-            module->getOrInsertFunction(signature.toString(), fctType);
+            module->getOrInsertFunction(fctIdentifier, fctType);
         } else if (!table->getProcedureDeclaration(signature.toString()).empty()) {
             std::vector<SymbolType> symbolTypes = table->getProcedureDeclaration(signature.toString());
 
@@ -823,10 +828,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
             llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
                                                                    paramTypes, false);
-            module->getOrInsertFunction(signature.toString(), procType);
+            module->getOrInsertFunction(fctIdentifier, procType);
         }
     }
-    llvm::Function* fct = module->getFunction(signature.toString());
+    llvm::Function* fct = module->getFunction(fctIdentifier);
     llvm::FunctionType* fctType = fct->getFunctionType();
 
     // Fill parameter list

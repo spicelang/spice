@@ -129,6 +129,27 @@ SymbolType SymbolType::getItemType() {
 }
 
 /**
+ * Checks if the current type can be implicitly casted to the passed symbol type
+ *
+ * @param otherType Symbol type to cast to
+ * @return Cast compatible or not
+ */
+bool SymbolType::isImplicitCastCompatibleWith(const SymbolType& otherType) {
+    // Always return true when types are matching
+    if (superType == otherType.superType) return true;
+    // Define implicit casting rules
+    bool castCompatible =
+            (superType == TYPE_STRING && otherType.superType == TYPE_CHAR_PTR) ||           // Cast: string -> char*
+            (superType == TYPE_CHAR_PTR && otherType.superType == TYPE_STRING) ||           // Cast: char* -> string
+            (superType == TYPE_STRING && otherType.superType == TYPE_BYTE_PTR) ||           // Cast: string -> byte*
+            (superType == TYPE_BYTE_PTR && otherType.superType == TYPE_STRING) ||           // Cast: byte* -> string
+            (superType == TYPE_CHAR && otherType.superType == TYPE_BYTE) ||                 // Cast: char -> byte
+            (superType == TYPE_BYTE && otherType.superType == TYPE_CHAR) ||                 // Cast: byte -> char
+            (superType == TYPE_INT && otherType.superType == TYPE_BYTE);                    // Cast: int -> byte
+    return castCompatible;
+}
+
+/**
  * Checks if this SymbolType's super type is one of the passed
  *
  * @param superTypes Super types to check

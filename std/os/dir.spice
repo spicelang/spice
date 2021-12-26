@@ -1,5 +1,6 @@
-ext<int> mkdir(char*, byte);
+ext<int> mkdir(char*, int);
 
-f<int> createDir(char* path, byte mode = 777) {
+f<int> createDir(string pathStr, int mode) {
+    char* path = pathStr;
     return mkdir(path, mode);
 }
