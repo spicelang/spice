@@ -1,9 +1,6 @@
-import "std/os/dir" as dir;
+import "std/os/cmd" as cmd;
 
 f<int> main() {
-    string path = "./test";
-    int r1 = dir.mkDir(path, dir.MODE_ALL_RWX);
-    printf("R1: %d\n", r1);
-    int r2 = dir.renameDir(path, "./test1");
-    printf("R2: %d\n", r2);
+    int resultCode = cmd.execCmd("mkdir test");
+    printf("Result code: %d\n", resultCode);
 }

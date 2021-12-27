@@ -1,0 +1,22 @@
+// Link external functions
+ext<int> getpid();
+ext<int> system(char*);
+
+/**
+ * Retrieve the process id of the current process.
+ *
+ * @return Process id
+ */
+f<int> getPID() {
+    return getpid();
+}
+
+/**
+ * Executes a shell command by creating a new process.
+ *
+ * @return Return code of the shell comand
+ */
+f<int> execCmd(string cmdStr) {
+    char* cmd = cmdStr;
+    return system(cmd);
+}

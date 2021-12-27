@@ -454,7 +454,7 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
     symbolTypes.insert(std::end(symbolTypes), std::begin(paramSymbolTypes), std::end(paramSymbolTypes));
 
     // Get vararg
-    bool isVararg = ctx->typeLst()->ELLIPSIS();
+    bool isVararg = ctx->typeLst() && ctx->typeLst()->ELLIPSIS();
 
     // Declare function
     llvm::FunctionType* functionType = llvm::FunctionType::get(returnType, paramTypes, isVararg);

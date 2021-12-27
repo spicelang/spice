@@ -1,0 +1,109 @@
+// File open modes
+const string MODE_READ                  = "r";
+const string MODE_WRITE                 = "w";
+const string MODE_APPEND                = "a";
+const string MODE_READ_WRITE            = "r+";
+const string MODE_READ_WRITE_OVERWRITE  = "w+";
+const string MODE_READ_WRITE_APPEND     = "a+";
+
+const int MODE_CREATE   = 64; // Decimal for octal: 100
+const int MODE_RDWR     = 2;  // Decimal for octal: 2
+
+const int F_OK = 0; // File existence
+const int X_OK = 1; // Can execute
+const int W_OK = 2; // Can write
+const int R_OK = 4; // Can read
+
+type FilePtr struct {
+    byte* ptr
+}
+
+// Link external functions
+ext<int> open(char*, int...);
+ext<FilePtr*> fopen(char*, char*);
+ext<int> fclose(FilePtr);
+ext<int> fputc(int, FilePtr);
+ext<int> access(char*, int);
+
+/**
+ * Creates an empty file on disk similar to the 'touch' command on Linux.
+ *
+ * @return Result code of the create operation: 0 = successful, -1 = failed
+ */
+f<int> createFile(string pathStr) {
+    char* path = pathStr;
+    return open(path, MODE_CREATE|MODE_RDWR);
+}
+
+/**
+ * Opens a (new) file at the specified path with the specified mode.
+ * 
+ * There are predefined constants for the mode available:
+ * MODE_READ, MODE_WRITE, MODE_APPEND,
+ * MODE_READ_WRITE, MODE_READ_WRITE_OVERWRITE, MODE_READ_WRITE_APPEND
+ *
+ * @return File pointer
+ */
+f<FilePtr> openFile(string pathStr, string modeStr) {
+    char* path = pathStr;
+    char* mode = modeStr;
+    return fopen(path, mode);
+}
+
+/**
+ * Closes the file behind the provided file pointer.
+ *
+ * @return Result code of the close operation: 0 = successful, -1 = failed
+ */
+f<int> FilePtr.closeFile() {
+    return fclose(&this);
+}
+
+/**
+ * Writes a single character to the file.
+ * 
+ * @return Result code of the write operation: 0 = successful, -1 = failed
+ */
+f<int> FilePtr.writeChar(int value) {
+    return fputc(value, &this);
+}
+
+/**
+ * Checks if a file exists. The function also returns true if the specified path points to a directory.
+ * 
+ * @return Existing / not existing
+ */
+f<bool> fileExists(string pathStr) {
+    char* path = pathStr;
+    return access(path, F_OK) == 0;
+}
+
+/**
+ * Checks if the read permissions to a file are given.
+ * 
+ * @return Readable / not readable
+ */
+f<bool> fileReadable(string pathStr) {
+    char* path = pathStr;
+    return access(path, R_OK) == 0;
+}
+
+/**
+ * Checks if the write permissions to a file are given.
+ * 
+ * @return Writable / not writable
+ */
+f<bool> fileWritable(string pathStr) {
+    char* path = pathStr;
+    return access(path, W_OK) == 0;
+}
+
+/**
+ * Checks if the execute permissions to a file are given.
+ * 
+ * @return Executable / not executable
+ */
+f<bool> fileExecutable(string pathStr) {
+    char* path = pathStr;
+    return access(path, X_OK) == 0;
+}

@@ -1,0 +1,39 @@
+// Link external functions
+ext<int> fork();
+ext<int> getpid();
+ext<int> execv(char*, char*[]...);
+ext<int> waitpid(int, int*, int);
+
+/**
+ * Forks the program.
+ *
+ * @return Pid of the fork
+ */
+f<int> createFork() {
+    return fork();
+}
+
+/**
+ * Retrieve the process id of the current process
+ *
+ * @return Process id
+ */
+f<int> getPID() {
+    return getpid();
+}
+
+/**
+ * Executes a shell command by creating a new process.
+ *
+ * @return Return code of the shell comand
+ */
+f<int> execCmd(string cmdStr) {
+    char* cmd = cmdStr;
+    int pid = fork();
+    if pid == 0 { // Child process
+        return execv(cmd);
+    } else { // Father process
+        waitpid(pid, 0, 0);
+    }
+    return -1;
+}

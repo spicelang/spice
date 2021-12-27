@@ -73,7 +73,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-return-type-matches-def",
-            "Semantic error at 2:12: Wrong data type for operator: Passed wrong data type to return statement. Expected int but got string"
+            "Semantic error at 2:12: Wrong data type for operator: Passed wrong data type to return statement. Expected string but got int"
         },
         {
             "error-logical-operators-are-booleans",
@@ -117,7 +117,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-dyn-return-types-not-matching",
-            "Semantic error at 3:12: Wrong data type for operator: Passed wrong data type to return statement. Expected double but got string"
+            "Semantic error at 3:12: Wrong data type for operator: Passed wrong data type to return statement. Expected string but got double"
         },
         {
             "error-printf-type-incompatibility",
