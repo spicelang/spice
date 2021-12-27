@@ -9,6 +9,11 @@ const string MODE_READ_WRITE_APPEND     = "a+";
 const int MODE_CREATE   = 64; // Decimal for octal: 100
 const int MODE_RDWR     = 2;  // Decimal for octal: 2
 
+const int F_OK = 0; // File existence
+const int X_OK = 1; // Can execute
+const int W_OK = 2; // Can write
+const int R_OK = 4; // Can read
+
 type FilePtr struct {
     byte* ptr
 }
@@ -18,6 +23,7 @@ ext<int> open(char*, int...);
 ext<FilePtr*> fopen(char*, char*);
 ext<int> fclose(FilePtr);
 ext<int> fputc(int, FilePtr);
+ext<int> access(char*, int);
 
 f<int> createFile(string pathStr) {
     char* path = pathStr;
@@ -50,4 +56,24 @@ f<int> FilePtr.closeFile() {
 
 f<int> FilePtr.writeChar(int value) {
     return fputc(value, &this);
+}
+
+f<bool> fileExists(string pathStr) {
+    char* path = pathStr;
+    return access(path, F_OK) == 0;
+}
+
+f<bool> fileReadable(string pathStr) {
+    char* path = pathStr;
+    return access(path, R_OK) == 0;
+}
+
+f<bool> fileWritable(string pathStr) {
+    char* path = pathStr;
+    return access(path, W_OK) == 0;
+}
+
+f<bool> fileExecutable(string pathStr) {
+    char* path = pathStr;
+    return access(path, X_OK) == 0;
 }

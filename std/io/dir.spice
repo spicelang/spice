@@ -18,10 +18,33 @@ const int MODE_OTHER_R   = 4;     // Decimal for octal: 0000004
 const int MODE_OTHER_W   = 2;     // Decimal for octal: 0000002
 const int MODE_OTHER_X   = 1;     // Decimal for octal: 0000001
 
+const int F_OK = 0; // File existence
+const int X_OK = 1; // Can execute
+const int W_OK = 2; // Can write
+const int R_OK = 4; // Can read
+
+const int IF_DIR         = 16384; // Decimal for octal: 0040000
+
+/*type FileStat struct {
+    i32
+    i16
+    i16 st_mode
+    i16
+    i16
+    i16
+    i32
+    i32
+    i64
+    i64
+    i64
+}*/
+
 // Link external functions
 ext<int> mkdir(char*, int);
 ext<int> rmdir(char*);
 ext<int> rename(char*, char*);
+ext<int> access(char*, int);
+//ext<int> stat(char*, FileStat*);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
@@ -58,4 +81,22 @@ f<int> renameDir(string oldPathStr, string newPathStr) {
     char* oldPath = oldPathStr;
     char* newPath = newPathStr;
     return rename(oldPath, newPath);
+}
+
+/**
+ * Checks if a directory is existing.
+ *
+ * @return Existing or not
+ */
+f<bool> dirExists(string pathStr) {
+    char* path = pathStr;
+    // Check if there exists something, a file or a dir
+    if access(path, F_OK) == 0 {
+        // Check if it is a dir
+        /*dyn fs = new FileStat {};
+        stat(path, &fs);
+        return fs.st_mode & dir == IF_DIR;*/
+        return true;
+    }
+    return false;
 }
