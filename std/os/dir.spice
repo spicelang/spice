@@ -1,22 +1,22 @@
 // File permission modes
-const int MODE_ALL_RWX   = 511;   // Octal for: 0000777
-const int MODE_ALL_RW    = 438;   // Octal for: 0000666
-const int MODE_ALL_R     = 292;   // Octal for: 0000444
+const int MODE_ALL_RWX   = 511;   // Decimal for octal: 0000777
+const int MODE_ALL_RW    = 438;   // Decimal for octal: 0000666
+const int MODE_ALL_R     = 292;   // Decimal for octal: 0000444
 
-const int MODE_OWNER_RWX = 448;   // Octal for: 0000700
-const int MODE_OWNER_R   = 256;   // Octal for: 0000400
-const int MODE_OWNER_W   = 128;   // Octal for: 0000200
-const int MODE_OWNER_X   = 64;    // Octal for: 0000100
+const int MODE_OWNER_RWX = 448;   // Decimal for octal: 0000700
+const int MODE_OWNER_R   = 256;   // Decimal for octal: 0000400
+const int MODE_OWNER_W   = 128;   // Decimal for octal: 0000200
+const int MODE_OWNER_X   = 64;    // Decimal for octal: 0000100
 
-const int MODE_GROUP_RWX = 56;    // Octal for: 0000070
-const int MODE_GROUP_R   = 32;    // Octal for: 0000040
-const int MODE_GROUP_W   = 16;    // Octal for: 0000020
-const int MODE_GROUP_X   = 8;     // Octal for: 0000010
+const int MODE_GROUP_RWX = 56;    // Decimal for octal: 0000070
+const int MODE_GROUP_R   = 32;    // Decimal for octal: 0000040
+const int MODE_GROUP_W   = 16;    // Decimal for octal: 0000020
+const int MODE_GROUP_X   = 8;     // Decimal for octal: 0000010
 
-const int MODE_OTHER_RWX = 7;     // Octal for: 0000007
-const int MODE_OTHER_R   = 4;     // Octal for: 0000004
-const int MODE_OTHER_W   = 2;     // Octal for: 0000002
-const int MODE_OTHER_X   = 1;     // Octal for: 0000001
+const int MODE_OTHER_RWX = 7;     // Decimal for octal: 0000007
+const int MODE_OTHER_R   = 4;     // Decimal for octal: 0000004
+const int MODE_OTHER_W   = 2;     // Decimal for octal: 0000002
+const int MODE_OTHER_X   = 1;     // Decimal for octal: 0000001
 
 // Link external functions
 ext<int> mkdir(char*, int);

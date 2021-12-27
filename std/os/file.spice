@@ -1,0 +1,53 @@
+// File open modes
+const string MODE_READ                  = "r";
+const string MODE_WRITE                 = "w";
+const string MODE_APPEND                = "a";
+const string MODE_READ_WRITE            = "r+";
+const string MODE_READ_WRITE_OVERWRITE  = "w+";
+const string MODE_READ_WRITE_APPEND     = "a+";
+
+const int MODE_CREATE   = 64; // Decimal for octal: 100
+const int MODE_RDWR     = 2;  // Decimal for octal: 2
+
+type FilePtr struct {
+    byte* ptr
+}
+
+// Link external functions
+ext<int> open(char*, int...);
+ext<FilePtr> fopen(char*, char*);
+ext<int> fclose(FilePtr);
+ext<int> fputc(int, FilePtr);
+
+f<int> createFile(string pathStr) {
+    char* path = pathStr;
+    return open(path, MODE_CREATE|MODE_RDWR);
+}
+
+/**
+ * Opens a (new) file at the specified path with the specified mode.
+ * 
+ * There are predefined constants for the mode available:
+ * MODE_READ, MODE_WRITE, MODE_APPEND,
+ * MODE_READ_WRITE, MODE_READ_WRITE_OVERWRITE, MODE_READ_WRITE_APPEND
+ *
+ * @return File pointer
+ */
+f<FilePtr> openFile(string pathStr, string modeStr) {
+    char* path = pathStr;
+    char* mode = modeStr;
+    return fopen(path, mode);
+}
+
+/**
+ * Closes the file behind the provided file pointer.
+ *
+ * @return Result code of the close operation: 0 = successful, -1 = failed
+ */
+f<int> closeFile(FilePtr filePtr) {
+    return fclose(filePtr);
+}
+
+f<int> writeChar(FilePtr filePtr, int value) {
+    return fputc(value, filePtr);
+}

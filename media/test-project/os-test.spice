@@ -1,9 +1,11 @@
-import "std/os/dir" as dir;
+import "std/os/file" as file;
 
 f<int> main() {
-    string path = "./test";
-    int r1 = dir.mkDir(path, dir.MODE_ALL_RWX);
+    //file.createFile("demo.txt");
+    dyn fp = file.openFile("demo.txt", file.MODE_READ_WRITE);
+    //printf("FP: %p\n", fp.ptr);
+    int r1 = file.writeChar(fp, 65);
     printf("R1: %d\n", r1);
-    int r2 = dir.renameDir(path, "./test1");
+    int r2 = file.closeFile(fp);
     printf("R2: %d\n", r2);
 }
