@@ -25,6 +25,11 @@ ext<int> fclose(FilePtr);
 ext<int> fputc(int, FilePtr);
 ext<int> access(char*, int);
 
+/**
+ * Creates an empty file on disk similar to the 'touch' command on Linux.
+ *
+ * @return Result code of the create operation: 0 = successful, -1 = failed
+ */
 f<int> createFile(string pathStr) {
     char* path = pathStr;
     return open(path, MODE_CREATE|MODE_RDWR);
@@ -54,25 +59,50 @@ f<int> FilePtr.closeFile() {
     return fclose(&this);
 }
 
+/**
+ * Writes a single character to the file.
+ * 
+ * @return Result code of the write operation: 0 = successful, -1 = failed
+ */
 f<int> FilePtr.writeChar(int value) {
     return fputc(value, &this);
 }
 
+/**
+ * Checks if a file exists. The function also returns true if the specified path points to a directory.
+ * 
+ * @return Existing / not existing
+ */
 f<bool> fileExists(string pathStr) {
     char* path = pathStr;
     return access(path, F_OK) == 0;
 }
 
+/**
+ * Checks if the read permissions to a file are given.
+ * 
+ * @return Readable / not readable
+ */
 f<bool> fileReadable(string pathStr) {
     char* path = pathStr;
     return access(path, R_OK) == 0;
 }
 
+/**
+ * Checks if the write permissions to a file are given.
+ * 
+ * @return Writable / not writable
+ */
 f<bool> fileWritable(string pathStr) {
     char* path = pathStr;
     return access(path, W_OK) == 0;
 }
 
+/**
+ * Checks if the execute permissions to a file are given.
+ * 
+ * @return Executable / not executable
+ */
 f<bool> fileExecutable(string pathStr) {
     char* path = pathStr;
     return access(path, X_OK) == 0;
