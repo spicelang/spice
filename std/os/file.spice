@@ -15,7 +15,7 @@ type FilePtr struct {
 
 // Link external functions
 ext<int> open(char*, int...);
-ext<FilePtr> fopen(char*, char*);
+ext<FilePtr*> fopen(char*, char*);
 ext<int> fclose(FilePtr);
 ext<int> fputc(int, FilePtr);
 
@@ -44,10 +44,10 @@ f<FilePtr> openFile(string pathStr, string modeStr) {
  *
  * @return Result code of the close operation: 0 = successful, -1 = failed
  */
-f<int> closeFile(FilePtr filePtr) {
-    return fclose(filePtr);
+f<int> FilePtr.closeFile() {
+    return fclose(&this);
 }
 
-f<int> writeChar(FilePtr filePtr, int value) {
-    return fputc(value, filePtr);
+f<int> FilePtr.writeChar(int value) {
+    return fputc(value, &this);
 }

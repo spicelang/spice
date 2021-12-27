@@ -628,8 +628,8 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
             // Check if return type matches with function definition
             if (returnType != returnVariable->getType())
                 throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Passed wrong data type to return statement. Expected " + returnType.getName() +
-                                    " but got " + returnVariable->getType().getName());
+                                    "Passed wrong data type to return statement. Expected " +
+                                    returnVariable->getType().getName() + " but got " + returnType.getName());
         }
 
         // Set the return variable to initialized
