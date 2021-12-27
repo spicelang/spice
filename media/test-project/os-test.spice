@@ -1,13 +1,6 @@
-//import "std/io/file" as file;
-import "std/io/dir" as dir;
+import "std/os/cmd" as cmd;
 
 f<int> main() {
-    //printf("Dir exists: %d", dir.dirExists("./test"));
-    /*dyn fp = file.openFile("demo.txt", file.MODE_READ_WRITE);
-    int r1 = fp.writeChar(65);
-    printf("R1: %d\n", r1);
-    int r2 = fp.closeFile();
-    printf("R2: %d\n", r2);*/
-    dir.mkDir("./test", dir.MODE_ALL_RWX);
-    dir.rmDir("./test");
+    int resultCode = cmd.execCmd("mkdir test");
+    printf("Result code: %d\n", resultCode);
 }
