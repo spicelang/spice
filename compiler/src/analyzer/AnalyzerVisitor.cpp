@@ -1285,19 +1285,17 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
     unsigned int tokenCounter = 0;
     unsigned int assignCounter = 0;
     unsigned int functionCallCounter = 0;
-    bool applyReference = false;
-    bool applyDereference = false;
+    unsigned int referenceOperations = 0;
+    unsigned int dereferenceOperations = 0;
     SymbolTable* scope = currentScope;
 
-    if (ctx->BITWISE_AND()) { // Consider referencing operator
-        applyReference = true;
-        tokenCounter++;
-    }
+    // Consider referencing operators
+    referenceOperations += ctx->BITWISE_AND().size();
+    tokenCounter += referenceOperations;
 
-    if (ctx->MUL()) { // Consider de-referencing operator
-        applyDereference = true;
-        tokenCounter++;
-    }
+    // Consider de-referencing operator
+    dereferenceOperations += ctx->MUL().size();
+    tokenCounter += dereferenceOperations;
 
     // Loop through children
     while (tokenCounter < ctx->children.size()) {
@@ -1364,11 +1362,13 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
         tokenCounter++;
     }
 
-    // Apply referencing operator if necessary
-    if (applyReference) symbolType = symbolType.getPointerType();
+    // Apply referencing operators if necessary
+    for (unsigned int i = 0; i < referenceOperations; i++)
+        symbolType = symbolType.getPointerType();
 
-    // Apply de-referencing operator if necessary
-    if (applyDereference) symbolType = symbolType.getScalarType();
+    // Apply de-referencing operators if necessary
+    for (unsigned int i = 0; i < dereferenceOperations; i++)
+        symbolType = symbolType.getScalarType();
 
     return symbolType;
 }
@@ -1402,11 +1402,13 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
         type = SymbolType(TYPE_STRUCT, structName);
     }
 
-    // Check for de-referencing operator
-    if (ctx->MUL()) type = type.getPointerType();
+    // Check for de-referencing operators
+    for (unsigned int i = 0; i < ctx->MUL().size(); i++)
+        type = type.getPointerType();
 
-    // Check for array brackets
-    if (ctx->LBRACKET()) type = type.getArrayType();
+    // Check for array brackets pairs
+    for (unsigned int i = 0; i < ctx->LBRACKET().size(); i++)
+        type = type.getArrayType();
 
     return type;
 }

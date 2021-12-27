@@ -1075,7 +1075,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (variableEntry->isLocal()) { // Local variable
-                // Cast int to char or byte
+                // Implicitly cast int to char/byte
                 if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(8) && rhs->getType()->isIntegerTy(32))
                     rhs = builder->CreateIntCast(rhs, llvm::Type::getInt8Ty(*context), false);
                 builder->CreateStore(rhs, lhsPtr);
@@ -1581,20 +1581,18 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     unsigned int tokenCounter = 0;
     unsigned int assignCounter = 0;
     unsigned int functionCallCounter = 0;
-    bool applyReference = false;
-    bool applyDereference = false;
+    unsigned int referenceOperations = 0;
+    unsigned int dereferenceOperations = 0;
     bool metStruct = false;
     SymbolTable* scope = currentScope;
 
-    if (ctx->BITWISE_AND()) { // Consider referencing operator
-        applyReference = true;
-        tokenCounter++;
-    }
+    // Consider referencing operators
+    referenceOperations += ctx->BITWISE_AND().size();
+    tokenCounter += referenceOperations;
 
-    if (ctx->MUL()) { // Consider de-referencing operator
-        applyDereference = true;
-        tokenCounter++;
-    }
+    // Consider de-referencing operator
+    dereferenceOperations += ctx->MUL().size();
+    tokenCounter += dereferenceOperations;
 
     // Loop through children
     while (tokenCounter < ctx->children.size()) {
@@ -1683,20 +1681,21 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     }
 
     // Build GEP instruction
-    llvm::Value* returnValue = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+    llvm::Value* returnAddress = builder->CreateInBoundsGEP(baseType, basePtr, indices);
 
-    // If the de-referencing operator is present, add a zero index at the end of the gep instruction
-    if (applyDereference) returnValue = builder->CreateLoad(returnValue->getType()->getPointerElementType(), returnValue);
-
-    // If the referencing operator is present, store the calculated address into memory and return the address of that location
-    if (applyReference) {
-        llvm::Value* ptrLocation = builder->CreateAlloca(basePtr->getType());
-        builder->CreateStore(basePtr, ptrLocation);
-        return ptrLocation;
+    // If de-referencing operators are present, add a zero index at the end of the gep instruction for each
+    for (unsigned int i = 0; i < dereferenceOperations; i++) {
+        returnAddress = builder->CreateLoad(returnAddress->getType()->getPointerElementType(), returnAddress);
     }
 
-    // Otherwise, return the calculated memory address
-    return returnValue;
+    // If referencing operators are present, store the calculated address into memory for each
+    for (unsigned int i = 0; i < referenceOperations; i++) {
+        returnAddress = builder->CreateAlloca(basePtr->getType());
+        builder->CreateStore(basePtr, returnAddress);
+    }
+
+    // Return the calculated memory address
+    return returnAddress;
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
@@ -1772,11 +1771,13 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
         currentSymbolType = SymbolType(TYPE_STRUCT, ctx->IDENTIFIER()->toString());
     }
 
-    // Consider pointer
-    if (ctx->MUL()) currentSymbolType = currentSymbolType.getPointerType();
+    // Check for de-referencing operators
+    for (unsigned int i = 0; i < ctx->MUL().size(); i++)
+        currentSymbolType = currentSymbolType.getPointerType();
 
-    // Consider array brackets
-    if (ctx->LBRACKET()) currentSymbolType = currentSymbolType.getArrayType();
+    // Check for array brackets pairs
+    for (unsigned int i = 0; i < ctx->LBRACKET().size(); i++)
+        currentSymbolType = currentSymbolType.getArrayType();
 
     // Come up with the LLVM type
     llvm::Type* type = getTypeForSymbolType(currentSymbolType);

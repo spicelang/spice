@@ -1,6 +1,3 @@
-import "std/os/cmd" as cmd;
-
 f<int> main() {
-    int resultCode = cmd.execCmd("mkdir test");
-    printf("Result code: %d\n", resultCode);
+
 }
