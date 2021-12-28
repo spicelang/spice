@@ -1794,23 +1794,6 @@ void GeneratorVisitor::initializeExternalFunctions() {
     llvm::FunctionType* fctTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
                                                         llvm::Type::getInt8PtrTy(*context), true);
     module->getOrInsertFunction("printf", fctTy);
-    // malloc function
-    /*module->getOrInsertFunction("malloc", llvm::FunctionType::get(
-            llvm::Type::getInt8PtrTy(*context),
-            llvm::Type::getInt32Ty(*context),
-            false));
-    // free function
-    module->getOrInsertFunction("free", llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*context),
-            llvm::Type::getInt8PtrTy(*context),
-            false));
-    // memcpy function
-    std::vector<llvm::Type*> paramTypes = {
-            llvm::Type::getInt8PtrTy(*context),
-            llvm::Type::getInt8PtrTy(*context),
-            llvm::Type::getInt32Ty(*context)
-    };
-    module->getOrInsertFunction("memcpy", llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*context), paramTypes, false));*/
 }
 
 llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {

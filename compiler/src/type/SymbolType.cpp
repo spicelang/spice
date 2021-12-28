@@ -124,6 +124,8 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement& chainEle
         case TY_ARRAY: return "[]";
         case TY_DOUBLE: return "double";
         case TY_INT: return "int";
+        case TY_SHORT: return "short";
+        case TY_LONG: return "long";
         case TY_BYTE: return "byte";
         case TY_CHAR: return "char";
         case TY_STRING: return "string";

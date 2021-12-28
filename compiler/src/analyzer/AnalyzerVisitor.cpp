@@ -1382,6 +1382,8 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
 
     if (ctx->TYPE_DOUBLE()) type = SymbolType(TY_DOUBLE);
     if (ctx->TYPE_INT()) type = SymbolType(TY_INT);
+    if (ctx->TYPE_SHORT()) type = SymbolType(TY_SHORT);
+    if (ctx->TYPE_LONG()) type = SymbolType(TY_LONG);
     if (ctx->TYPE_BYTE()) type = SymbolType(TY_BYTE);
     if (ctx->TYPE_CHAR()) type = SymbolType(TY_CHAR);
     if (ctx->TYPE_STRING()) type = SymbolType(TY_STRING);
