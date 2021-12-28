@@ -3,11 +3,12 @@
 #pragma once
 
 #include <utility>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <stdexcept>
 
-enum SymbolSuperType {
+enum SymbolSuperTypeOld {
     TYPE_DOUBLE,           TYPE_INT,           TYPE_BYTE,           TYPE_CHAR,           TYPE_STRING,           TYPE_BOOL,           TYPE_STRUCT,
     TYPE_DOUBLE_PTR,       TYPE_INT_PTR,       TYPE_BYTE_PTR,       TYPE_CHAR_PTR,       TYPE_STRING_PTR,       TYPE_BOOL_PTR,       TYPE_STRUCT_PTR,
     TYPE_DOUBLE_ARRAY,     TYPE_INT_ARRAY,     TYPE_BYTE_ARRAY,     TYPE_CHAR_ARRAY,     TYPE_STRING_ARRAY,     TYPE_BOOL_ARRAY,     TYPE_STRUCT_ARRAY,
@@ -17,32 +18,32 @@ enum SymbolSuperType {
     TYPE_IMPORT
 };
 
-class SymbolType {
+class SymbolTypeOld {
 public:
     // Constructors
-    SymbolType(SymbolSuperType superType, std::string subType) : superType(superType), subType(std::move(subType)) {};
-    explicit SymbolType(SymbolSuperType superType) : superType(superType) {};
-    SymbolType() = default;
+    SymbolTypeOld(SymbolSuperTypeOld superType, std::string subType) : superType(superType), subType(std::move(subType)) {};
+    explicit SymbolTypeOld(SymbolSuperTypeOld superType) : superType(superType) {};
+    SymbolTypeOld() = default;
 
     // Public methods
-    SymbolSuperType getSuperType();
+    SymbolSuperTypeOld getSuperType();
     std::string getSubType();
     std::string getName();
     bool isPointer();
     bool isArray();
-    SymbolType getPointerType();
-    SymbolType getScalarType();
-    SymbolType getArrayType();
-    SymbolType getItemType();
-    bool isImplicitCastCompatibleWith(const SymbolType&);
-    bool isOneOf(const std::vector<SymbolSuperType>&);
-    bool is(SymbolSuperType);
-    bool matches(SymbolType);
-    bool matches(SymbolType, SymbolSuperType);
-    friend bool operator== (const SymbolType& lhs, const SymbolType& rhs);
-    friend bool operator!= (const SymbolType& lhs, const SymbolType& rhs);
+    SymbolTypeOld getPointerType();
+    SymbolTypeOld getScalarType();
+    SymbolTypeOld getArrayType();
+    SymbolTypeOld getItemType();
+    bool isImplicitCastCompatibleWith(const SymbolTypeOld&);
+    bool isOneOf(const std::vector<SymbolSuperTypeOld>&);
+    bool is(SymbolSuperTypeOld);
+    bool matches(SymbolTypeOld);
+    bool matches(SymbolTypeOld, SymbolSuperTypeOld);
+    friend bool operator== (const SymbolTypeOld& lhs, const SymbolTypeOld& rhs);
+    friend bool operator!= (const SymbolTypeOld& lhs, const SymbolTypeOld& rhs);
 private:
     // Members
-    SymbolSuperType superType;
+    SymbolSuperTypeOld superType;
     std::string subType;
 };

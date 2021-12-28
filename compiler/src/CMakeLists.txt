@@ -24,6 +24,8 @@ set(SOURCES
         exception/SemanticError.h
         exception/IRError.cpp
         exception/IRError.h
+        type/SymbolType.cpp
+        type/SymbolType.h
         util/ScopeIdUtil.cpp
         util/ScopeIdUtil.h
         util/FunctionSignature.cpp

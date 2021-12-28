@@ -8,6 +8,7 @@
 #include <CompilerInstance.h>
 #include "SymbolTable.h"
 #include "ModuleRegistry.h"
+#include <type/SymbolType.h>
 #include <util/ScopeIdUtil.h>
 #include <util/FileUtil.h>
 #include <util/IdentifierUtil.h>

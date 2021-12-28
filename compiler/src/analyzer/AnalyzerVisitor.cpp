@@ -29,11 +29,11 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
     if (currentScope->lookup(mainSignature))
         throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
     // Insert function name into the root symbol table
-    currentScope->insert(mainSignature, SymbolType(TYPE_FUNCTION), INITIALIZED, *ctx->start, true, false);
+    currentScope->insert(mainSignature, SymbolType(TY_FUNCTION), INITIALIZED, *ctx->start, true, false);
     // Create a new scope
     currentScope = currentScope->createChildBlock(mainSignature);
     // Declare variable for the return value
-    SymbolType returnType = SymbolType(TYPE_INT);
+    SymbolType returnType = SymbolType(TY_INT);
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, INITIALIZED, *ctx->start, false, false);
     currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
     // Visit parameters
@@ -75,7 +75,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     if (isMethod) {
         std::string structName = ctx->IDENTIFIER().front()->toString();
         SymbolTableEntry* structEntry = currentScope->lookup(structName);
-        SymbolType thisType = structEntry->getType().getPointerType();
+        SymbolType thisType = structEntry->getType().toPointer();
         currentScope->insert(THIS_VARIABLE_NAME, thisType, INITIALIZED, *ctx->start, true, false);
     }
     // Declare variable for the return value in new scope
@@ -93,7 +93,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
         throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE,
                             "Function '" + signature.toString() + "' is declared twice");
     }
-    currentScope->insert(signature.toString(), SymbolType(TYPE_FUNCTION), INITIALIZED, *ctx->start, true, false);
+    currentScope->insert(signature.toString(), SymbolType(TY_FUNCTION), INITIALIZED, *ctx->start, true, false);
     currentScope->pushSignature(signature);
     // Rename function scope block to support function overloading
     currentScope->renameChildBlock(scopeId, signature.toString());
@@ -134,8 +134,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     if (isMethod) {
         std::string structName = ctx->IDENTIFIER().front()->toString();
         SymbolTableEntry* structEntry = currentScope->lookup(structName);
-        SymbolType thisType = structEntry->getType().getPointerType();
-        currentScope->insert(THIS_VARIABLE_NAME, thisType, INITIALIZED, *ctx->start, true, false);
+        currentScope->insert(THIS_VARIABLE_NAME, structEntry->getType().toPointer(), INITIALIZED, *ctx->start, true, false);
     }
     // Return to old scope
     currentScope = currentScope->getParent();
@@ -146,7 +145,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
         throw SemanticError(*ctx->start, PROCEDURE_DECLARED_TWICE,
                             "Procedure '" + signature.toString() + "' is declared twice");
     }
-    currentScope->insert(signature.toString(), SymbolType(TYPE_PROCEDURE), INITIALIZED, *ctx->start, true, false);
+    currentScope->insert(signature.toString(), SymbolType(TY_PROCEDURE), INITIALIZED, *ctx->start, true, false);
     currentScope->pushSignature(signature);
     // Rename function scope block to support function overloading
     currentScope->renameChildBlock(scopeId, signature.toString());
@@ -156,7 +155,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     visit(ctx->stmtLst());
     // Return to old scope
     currentScope = oldScope;
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
@@ -167,7 +166,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
         // Check if a param is dyn
         for (auto& param : ctx->typeLst()->dataType()) {
             SymbolType paramType = visit(param).as<SymbolType>();
-            if (paramType.is(TYPE_DYN))
+            if (paramType.is(TY_DYN))
                 throw SemanticError(*param->start, UNEXPECTED_DYN_TYPE_SA,
                                     "Dyn data type is not allowed as param type for external functions");
             paramTypes.push_back(paramType);
@@ -177,23 +176,23 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
     if (ctx->dataType()) { // Function
         // Check if return type is dyn
         SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
-        if (returnType.is(TYPE_DYN))
+        if (returnType.is(TY_DYN))
             throw SemanticError(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA,
                                 "Dyn data type is not allowed as return type for external functions");
 
         FunctionSignature signature = FunctionSignature(functionName, paramTypes);
-        currentScope->insert(signature.toString(), SymbolType(TYPE_FUNCTION), INITIALIZED, *ctx->start, true, false);
+        currentScope->insert(signature.toString(), SymbolType(TY_FUNCTION), INITIALIZED, *ctx->start, true, false);
         currentScope->pushSignature(signature);
         // Add return symbol for function
         SymbolTable* functionTable = currentScope->createChildBlock(signature.toString());
         functionTable->insert(RETURN_VARIABLE_NAME, returnType, DECLARED, *ctx->start, false, false);
     } else { // Procedure
         FunctionSignature signature = FunctionSignature(functionName, paramTypes);
-        currentScope->insert(signature.toString(), SymbolType(TYPE_PROCEDURE), INITIALIZED, *ctx->start, true, false);
+        currentScope->insert(signature.toString(), SymbolType(TY_PROCEDURE), INITIALIZED, *ctx->start, true, false);
         currentScope->pushSignature(signature);
     }
 
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx) {
@@ -202,14 +201,14 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
     if (currentScope->lookup(structName))
         throw SemanticError(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate struct '" + structName + "'");
     // Create a new table entry for the struct
-    currentScope->insert(structName, SymbolType(TYPE_STRUCT, structName), DECLARED, *ctx->start, true, false);
+    currentScope->insert(structName, SymbolType(TY_STRUCT, structName), DECLARED, *ctx->start, true, false);
     // Visit field list in a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     visit(ctx->fieldLst());
     // Return to the old scope
     currentScope = currentScope->getParent();
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) {
@@ -227,7 +226,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
     if (ctx->value()) { // Variable is initialized here
         SymbolType valueType = visit(ctx->value()).as<SymbolType>();
         // Infer type
-        if (dataType.is(TYPE_DYN)) {
+        if (dataType.is(TY_DYN)) {
             dataType = valueType;
         } else if (dataType != valueType) {
             throw SemanticError(*ctx->value()->start, OPERATOR_WRONG_DATA_TYPE,
@@ -238,14 +237,14 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
     }
 
     // Check if the type is missing
-    if (dataType.is(TYPE_DYN))
+    if (dataType.is(TY_DYN))
         throw SemanticError(*ctx->dataType()->start, GLOBAL_OF_TYPE_DYN,
                             "Global variables must have an explicit data type");
 
     // Insert into symbol table
     currentScope->insert(variableName, dataType, state, *ctx->start, ctx->CONST(), parameterMode);
 
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -256,7 +255,7 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     visit(ctx->assignExpr()[0]);
     // Visit condition in new scope
     SymbolType conditionType = visit(ctx->assignExpr()[1]).as<SymbolType>();
-    if (!conditionType.is(TYPE_BOOL))
+    if (!conditionType.is(TY_BOOL))
         throw SemanticError(*ctx->assignExpr()[1]->start, CONDITION_MUST_BE_BOOL,
                             "For loop condition must be of type bool");
     // Visit incrementer in new scope
@@ -267,7 +266,7 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     nestedLoopCounter--;
     // Return to old scope
     currentScope = currentScope->getParent();
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
@@ -288,27 +287,27 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
     if (head->declStmt().size() >= 2) { // declStmt COMMA declStmt COLON assignExpr
         indexType = visit(head->declStmt().front()).as<SymbolType>();
         currentScope->lookup(head->declStmt().front()->IDENTIFIER()->toString())->updateState(INITIALIZED);
-        if (!indexType.is(TYPE_INT))
+        if (!indexType.is(TY_INT))
             throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
                                 "Index in foreach loop must be of type int. You provided " + indexType.getName());
     } else if (head->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
         indexType = visit(head->assignExpr().front()).as<SymbolType>();
-        if (!indexType.is(TYPE_INT))
+        if (!indexType.is(TY_INT))
             throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
                                 "Index in foreach loop must be of type int. You provided " + indexType.getName());
     } else { // declStmt COLON assignExpr
         // Declare the variable with the default index variable name
-        currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, SymbolType(TYPE_INT), INITIALIZED,
+        currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, SymbolType(TY_INT), INITIALIZED,
                              *ctx->start, true, false);
     }
 
     // Check type of the item
     SymbolType itemType = visit(head->declStmt().back()).as<SymbolType>();
     currentScope->lookup(head->declStmt().back()->IDENTIFIER()->toString())->updateState(INITIALIZED);
-    if (itemType.is(TYPE_DYN)) {
-        itemType = arrayType.getItemType();
+    if (itemType.is(TY_DYN)) {
+        itemType = arrayType.getContainedTy();
     } else {
-        if (itemType != arrayType.getItemType())
+        if (itemType != arrayType.getContainedTy())
             throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Foreach loop item type does not match array type. Expected " + arrayType.getName() +
                                 ", provided " + itemType.getName());
@@ -322,7 +321,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
     // Return to old scope
     currentScope = currentScope->getParent();
 
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx) {
@@ -331,7 +330,7 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
     SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
-    if (!conditionType.is(TYPE_BOOL))
+    if (!conditionType.is(TY_BOOL))
         throw SemanticError(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL,
                             "While loop condition must be of type bool");
     // Visit statement list in new scope
@@ -340,7 +339,7 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx
     nestedLoopCounter--;
     // Return to old scope
     currentScope = currentScope->getParent();
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
@@ -349,7 +348,7 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit condition
     SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
-    if (!conditionType.is(TYPE_BOOL))
+    if (!conditionType.is(TY_BOOL))
         throw SemanticError(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL,
                             "If condition must be of type bool");
     // Visit statement list in new scope
@@ -358,7 +357,7 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     currentScope = currentScope->getParent();
     // Visit else statement if it exists
     if (ctx->elseStmt()) visit(ctx->elseStmt());
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) {
@@ -373,7 +372,7 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) 
         // Return to old scope
         currentScope = currentScope->getParent();
     }
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) {
@@ -381,7 +380,7 @@ antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext*
     for (auto& param : ctx->declStmt()) { // Parameters without default value
         SymbolType paramType = visit(param).as<SymbolType>();
         std::string paramName = param->IDENTIFIER()->toString();
-        if (paramType.is(TYPE_DYN))
+        if (paramType.is(TY_DYN))
             throw SemanticError(*param->start, FCT_PARAM_IS_TYPE_DYN,
                                 "Type of parameter '" + paramName + "' is invalid");
         paramTypes.push_back(paramType);
@@ -402,14 +401,14 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
     // Insert variable name to symbol table
     SymbolType type = visit(ctx->dataType()).as<SymbolType>();
     if (parameterMode && type.isArray()) // Change array type to pointer type for function/procedure parameters
-        type = type.getItemType().getPointerType();
+        type = type.getContainedTy().toPointer();
     currentScope->insert(variableName, type, DECLARED, *ctx->start, ctx->CONST(), parameterMode);
     return type;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
     std::string functionName = ctx->IDENTIFIER()->toString();
-    SymbolType returnType = SymbolType(TYPE_BOOL); // Bool with value 'true' for procedures
+    SymbolType returnType = SymbolType(TY_BOOL); // Bool with value 'true' for procedures
 
     // Visit params
     std::vector<SymbolType> paramTypes;
@@ -434,7 +433,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     functionCallParentScope->pushSignature(signature);
 
     // Search for symbol table of called function/procedure to read parameters
-    if (functionEntry->getType().is(TYPE_FUNCTION)) {
+    if (functionEntry->getType().is(TY_FUNCTION)) {
         SymbolTable* functionTable = functionEntryTable->getChild(signature.toString());
         // Get return type of called function
         return functionTable->lookup(RETURN_VARIABLE_NAME)->getType();
@@ -455,13 +454,13 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 
     // Check if the struct is defined
     SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-    if (!structSymbol || !structSymbol->getType().is(TYPE_STRUCT) || structSymbol->getType().getSubType() != structName)
+    if (!structSymbol || !structSymbol->getType().is(TY_STRUCT) || structSymbol->getType().getSubType() != structName)
         throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                             "Struct '" + structName + "' was used before defined");
     structSymbol->setUsed();
 
     // Infer type
-    if (dataType.is(TYPE_DYN)) dataType = structSymbol->getType();
+    if (dataType.is(TY_DYN)) dataType = structSymbol->getType();
 
     // Get the symbol table where the struct is defined
     SymbolTable* structTable = currentScope->lookupTable(structScope);
@@ -488,7 +487,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     // Insert into symbol table
     currentScope->insert(variableName, dataType, INITIALIZED, *ctx->start, ctx->CONST(), false);
 
-    return SymbolType(TYPE_STRUCT, structName);
+    return SymbolType(TY_STRUCT, structName);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
@@ -503,16 +502,16 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
         throw SemanticError(*ctx->value()->start, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
 
     // Check if size type is an integer
-    if (!sizeType.is(TYPE_INT))
+    if (!sizeType.is(TY_INT))
         throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
                             "The size must be an integer, provided " + sizeType.getName());
 
     // Check if all values have the same type
-    SymbolType expectedItemType = SymbolType(TYPE_DYN);
+    SymbolType expectedItemType = SymbolType(TY_DYN);
     if (ctx->paramLst()) {
         for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
             SymbolType itemType = visit(ctx->paramLst()->assignExpr()[i]).as<SymbolType>();
-            if (expectedItemType.is(TYPE_DYN)) {
+            if (expectedItemType.is(TY_DYN)) {
                 expectedItemType = itemType;
             } else if (itemType != expectedItemType) {
                 throw SemanticError(*ctx->paramLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
@@ -529,18 +528,18 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
     }
 
     // Infer type
-    if (dataType.is(TYPE_DYN)) {
-        if (expectedItemType.is(TYPE_DYN))
+    if (dataType.is(TY_DYN)) {
+        if (expectedItemType.is(TY_DYN))
             throw SemanticError(*ctx->dataType()->start, UNKNOWN_DATATYPE,
                                 "Was not able to infer the data type of this array");
 
-        dataType = expectedItemType.getArrayType();
+        dataType = expectedItemType.toArray();
     }
 
     // Create new symbol in the current scope
-    currentScope->insert(variableName, dataType.getArrayType(), INITIALIZED, *ctx->start, ctx->CONST(), parameterMode);
+    currentScope->insert(variableName, dataType.toArray(), INITIALIZED, *ctx->start, ctx->CONST(), parameterMode);
 
-    return dataType.getArrayType();
+    return dataType.toArray();
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -600,13 +599,13 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();
-    currentScope->insert(importIden, SymbolType(TYPE_IMPORT), INITIALIZED, *ctx->start, true, false);
+    currentScope->insert(importIden, SymbolType(TY_IMPORT), INITIALIZED, *ctx->start, true, false);
 
     // Mount symbol table of the imported source file into the current scope
     nestedTable->setImported();
     currentScope->mountChildBlock(importIden, nestedTable);
 
-    return SymbolType(TYPE_STRING);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
@@ -621,7 +620,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
         returnType = visit(ctx->assignExpr()).as<SymbolType>();
 
         // Check data type of return statement
-        if (returnVariable->getType().is(TYPE_DYN)) {
+        if (returnVariable->getType().is(TY_DYN)) {
             // Set explicit return type to the return variable
             returnVariable->updateType(returnType);
         } else {
@@ -658,7 +657,7 @@ antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx
     if (breakCount > nestedLoopCounter)
         throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_BREAK_NUMBER,
                             "We can only break " + std::to_string(nestedLoopCounter) + " time(s) here");
-    return SymbolType(TYPE_INT);
+    return SymbolType(TY_INT);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) {
@@ -674,7 +673,7 @@ antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContex
     if (continueCount > nestedLoopCounter)
         throw SemanticError(*ctx->INTEGER()->getSymbol(), INVALID_CONTINUE_NUMBER,
                             "We can only continue " + std::to_string(nestedLoopCounter) + " time(s) here");
-    return SymbolType(TYPE_INT);
+    return SymbolType(TY_INT);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) {
@@ -695,7 +694,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
         SymbolType assignmentType = visit(assignment).as<SymbolType>();
         switch (templateString[index + 1]) {
             case 'c': {
-                if (!assignmentType.is(TYPE_CHAR))
+                if (!assignmentType.is(TY_CHAR))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects char, but got " + assignmentType.getName());
                 placeholderCount++;
@@ -707,7 +706,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'u':
             case 'x':
             case 'X': {
-                if (!assignmentType.isOneOf({ TYPE_INT, TYPE_BYTE, TYPE_BOOL }))
+                if (!assignmentType.isOneOf({ TY_INT, TY_BYTE, TY_BOOL }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects int, byte or bool, but got " + assignmentType.getName());
                 placeholderCount++;
@@ -721,22 +720,21 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'E':
             case 'g':
             case 'G': {
-                if (!assignmentType.is(TYPE_DOUBLE))
+                if (!assignmentType.is(TY_DOUBLE))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects double, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
             case 's': {
-                if (!assignmentType.isOneOf({TYPE_STRING, TYPE_CHAR_PTR, TYPE_CHAR_ARRAY}))
+                if (!assignmentType.is(TY_STRING) && !assignmentType.isPointerOf(TY_CHAR) && !assignmentType.isArrayOf(TY_CHAR))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects string, but got " + assignmentType.getName());
                 placeholderCount++;
                 break;
             }
             case 'p': {
-                if (!assignmentType.isOneOf({ TYPE_DOUBLE_PTR, TYPE_INT_PTR, TYPE_BYTE_PTR, TYPE_CHAR_PTR, TYPE_STRING_PTR,
-                                              TYPE_BOOL_PTR, TYPE_STRUCT_PTR }))
+                if (!assignmentType.isPointer())
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects pointer, but got " + assignmentType.getName());
                 placeholderCount++;
@@ -751,11 +749,12 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
         throw SemanticError(*ctx->start, PRINTF_TYPE_ERROR,
                             "Number of placeholders does not match the number of passed arguments");
 
-    return SymbolType(TYPE_BOOL);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* ctx) {
-    return SymbolType(TYPE_INT);
+    // Nothing to check here. Sizeof builtin can handle any type
+    return SymbolType(TY_INT);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
@@ -790,7 +789,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
         }
 
         // If left type is dyn, set left type to right type
-        if (lhsTy.is(TYPE_DYN) && allowTypeInference) {
+        if (lhsTy.is(TY_DYN) && allowTypeInference) {
             lhsTy = rhsTy;
             symbolTableEntry->updateType(rhsTy);
         }
@@ -802,28 +801,28 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
                 throw SemanticError(*ctx->ASSIGN_OP()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply the assign operator on same data types");
         } else if (ctx->PLUS_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) &&
-                !lhsTy.matches(rhsTy, TYPE_BYTE) && !lhsTy.matches(rhsTy, TYPE_STRING))
+            if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) &&
+                !lhsTy.matches(rhsTy, TY_BYTE) && !lhsTy.matches(rhsTy, TY_STRING))
                 throw SemanticError(*ctx->PLUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '+=' operator on two doubles, two ints or two strings");
         } else if (ctx->MINUS_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
+            if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
                 throw SemanticError(*ctx->MINUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '-=' operator on two doubles or two ints");
         } else if (ctx->MUL_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
+            if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
                 throw SemanticError(*ctx->MUL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '*=' operator on two doubles or two ints");
         } else if (ctx->DIV_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_DOUBLE) && !lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
+            if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
                 throw SemanticError(*ctx->DIV_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '/=' operator on two doubles or two ints");
         } else if (ctx->SHL_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
+            if (!lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
                 throw SemanticError(*ctx->SHL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '<<=' operator on two ints");
         } else if (ctx->SHR_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
+            if (!lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
                 throw SemanticError(*ctx->SHR_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '>>=' operator on two ints");
         }
@@ -843,7 +842,7 @@ antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext*
         SymbolType trueType = visit(ctx->logicalOrExpr()[1]).as<SymbolType>();
         SymbolType falseType = visit(ctx->logicalOrExpr()[2]).as<SymbolType>();
         // Check if the condition evaluates to boolean
-        if (!conditionType.is(TYPE_BOOL))
+        if (!conditionType.is(TY_BOOL))
             throw SemanticError(*condition->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Condition operand in ternary must be a bool");
         // Check if trueType and falseType are matching
@@ -862,8 +861,8 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
         for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->logicalAndExpr()[i]).as<SymbolType>();
             // Allow logical or operator for booleans
-            if (lhsTy.matches(rhsTy, TYPE_BOOL)) {
-                lhsTy = SymbolType(TYPE_BOOL);
+            if (lhsTy.matches(rhsTy, TY_BOOL)) {
+                lhsTy = SymbolType(TY_BOOL);
             } else { // Any other combination is invalid
                 throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '||' operator to booleans");
@@ -881,8 +880,8 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
         for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->bitwiseOrExpr()[i]).as<SymbolType>();
             // Allow logical and operator for booleans
-            if (lhsTy.matches(rhsTy, TYPE_BOOL)) {
-                lhsTy = SymbolType(TYPE_BOOL);
+            if (lhsTy.matches(rhsTy, TY_BOOL)) {
+                lhsTy = SymbolType(TY_BOOL);
             } else { // Any other combination is invalid
                 throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '&&' operator to booleans");
@@ -900,12 +899,12 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->bitwiseAndExpr()[i]).as<SymbolType>();
 
-            if (lhsTy.matches(rhsTy, TYPE_INT)) { // Allow bitwise or operator for integers
-                lhsTy = SymbolType(TYPE_INT);
-            } else if (lhsTy.matches(rhsTy, TYPE_BYTE)) { // Allow bitwise or operator for bytes
-                lhsTy = SymbolType(TYPE_BYTE);
-            } else if (lhsTy.matches(rhsTy, TYPE_BOOL)) { // Allow bitwise or operator for booleans
-                lhsTy = SymbolType(TYPE_BOOL);
+            if (lhsTy.matches(rhsTy, TY_INT)) { // Allow bitwise or operator for integers
+                lhsTy = SymbolType(TY_INT);
+            } else if (lhsTy.matches(rhsTy, TY_BYTE)) { // Allow bitwise or operator for bytes
+                lhsTy = SymbolType(TY_BYTE);
+            } else if (lhsTy.matches(rhsTy, TY_BOOL)) { // Allow bitwise or operator for booleans
+                lhsTy = SymbolType(TY_BOOL);
             } else { // Any other combination is invalid
                 throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                                     "Cannot apply '|' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
@@ -923,12 +922,12 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
         for (int i = 1; i < ctx->equalityExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->equalityExpr()[i]).as<SymbolType>();
 
-            if (lhsTy.matches(rhsTy, TYPE_INT)) { // Allow bitwise and operator for integers
-                lhsTy = SymbolType(TYPE_INT);
-            } else if (lhsTy.matches(rhsTy, TYPE_BYTE)) { // Allow bitwise and operator for bytes
-                lhsTy = SymbolType(TYPE_BYTE);
-            } else if (lhsTy.matches(rhsTy, TYPE_BOOL)) { // Allow bitwise and operator for booleans
-                lhsTy = SymbolType(TYPE_BOOL);
+            if (lhsTy.matches(rhsTy, TY_INT)) { // Allow bitwise and operator for integers
+                lhsTy = SymbolType(TY_INT);
+            } else if (lhsTy.matches(rhsTy, TY_BYTE)) { // Allow bitwise and operator for bytes
+                lhsTy = SymbolType(TY_BYTE);
+            } else if (lhsTy.matches(rhsTy, TY_BOOL)) { // Allow bitwise and operator for booleans
+                lhsTy = SymbolType(TY_BOOL);
             } else { // Any other combination is invalid
                 throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                                     "Cannot apply '&' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
@@ -944,14 +943,15 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
     if (ctx->children.size() > 1) {
         SymbolType lhsTy = visit(ctx->relationalExpr()[0]).as<SymbolType>();
         SymbolType rhsTy = visit(ctx->relationalExpr()[1]).as<SymbolType>();
-        if (lhsTy.matches(rhsTy, TYPE_DOUBLE)) return SymbolType(TYPE_BOOL); // Can compare double with double
-        if (lhsTy.is(TYPE_DOUBLE) && rhsTy.is(TYPE_INT)) return SymbolType(TYPE_BOOL); // Can compare double with int
-        if (lhsTy.is(TYPE_INT) && rhsTy.is(TYPE_DOUBLE)) return SymbolType(TYPE_BOOL); // Can compare int with double
-        if (lhsTy.matches(rhsTy, TYPE_INT)) return SymbolType(TYPE_BOOL); // Can compare int with int
-        if (lhsTy.matches(rhsTy, TYPE_BYTE)) return SymbolType(TYPE_BOOL); // Can compare byte with byte
-        if (lhsTy.matches(rhsTy, TYPE_CHAR)) return SymbolType(TYPE_BOOL); // Can compare char with char
-        if (lhsTy.matches(rhsTy, TYPE_STRING)) return SymbolType(TYPE_BOOL); // Can compare string with string
-        if (lhsTy.matches(rhsTy, TYPE_BOOL)) return SymbolType(TYPE_BOOL); // Can compare bool with bool
+        if (lhsTy.matches(rhsTy, TY_DOUBLE) ||          // Can compare double with double
+            lhsTy.is(TY_DOUBLE) && rhsTy.is(TY_INT) ||  // Can compare double with int
+            lhsTy.is(TY_INT) && rhsTy.is(TY_DOUBLE) ||  // Can compare int with double
+            lhsTy.matches(rhsTy, TY_INT) ||             // Can compare int with int
+            lhsTy.matches(rhsTy, TY_BYTE) ||            // Can compare byte with byte
+            lhsTy.matches(rhsTy, TY_CHAR) ||            // Can compare char with char
+            lhsTy.matches(rhsTy, TY_STRING) ||          // Can compare string with string
+            lhsTy.matches(rhsTy, TY_BOOL)               // Can compare bool with bool
+        ) return SymbolType(TY_BOOL);
         // Every other combination is invalid
         throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                             "Can't compare " + lhsTy.getName() + " and " + rhsTy.getName() +
@@ -965,18 +965,13 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
     if (ctx->children.size() > 1) {
         SymbolType lhsTy = visit(ctx->shiftExpr()[0]).as<SymbolType>();
         SymbolType rhsTy = visit(ctx->shiftExpr()[1]).as<SymbolType>();
-        if (lhsTy.matches(rhsTy, TYPE_DOUBLE))
-            return SymbolType(TYPE_BOOL); // Can compare double with double
-        if (lhsTy.is(TYPE_DOUBLE) && rhsTy.is(TYPE_INT))
-            return SymbolType(TYPE_BOOL); // Can compare double with int
-        if (lhsTy.is(TYPE_INT) && rhsTy.is(TYPE_DOUBLE))
-            return SymbolType(TYPE_BOOL); // Can compare int with double
-        if (lhsTy.matches(rhsTy, TYPE_INT))
-            return SymbolType(TYPE_BOOL); // Can compare int with int
-        if (lhsTy.matches(rhsTy, TYPE_BYTE))
-            return SymbolType(TYPE_BOOL); // Can compare byte with byte
-        if (lhsTy.matches(rhsTy, TYPE_CHAR))
-            return SymbolType(TYPE_BOOL); // Can compare char with char
+        if (lhsTy.matches(rhsTy, TY_DOUBLE) ||          // Can compare double with double
+            lhsTy.is(TY_DOUBLE) && rhsTy.is(TY_INT) ||  // Can compare double with int
+            lhsTy.is(TY_INT) && rhsTy.is(TY_DOUBLE) ||  // Can compare int with double
+            lhsTy.matches(rhsTy, TY_INT) ||             // Can compare int with int
+            lhsTy.matches(rhsTy, TY_BYTE) ||            // Can compare byte with byte
+            lhsTy.matches(rhsTy, TY_CHAR)               // Can compare char with char
+        ) return SymbolType(TY_BOOL);
         // Every other combination is invalid
         throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                             "Can only compare doubles or ints with one another with a relational operator");
@@ -989,7 +984,7 @@ antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ctx
     if (ctx->children.size() > 1) {
         SymbolType lhsTy = visit(ctx->additiveExpr()[0]).as<SymbolType>();
         SymbolType rhsTy = visit(ctx->additiveExpr()[1]).as<SymbolType>();
-        if (!lhsTy.matches(rhsTy, TYPE_INT) && !lhsTy.matches(rhsTy, TYPE_BYTE))
+        if (!lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
             throw SemanticError(*ctx->additiveExpr()[0]->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Shift operators can only be applied on ints");
     }
@@ -1009,56 +1004,56 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
 
             if (op->getSymbol()->getType() == SpiceParser::PLUS) { // Operator was plus
                 // Check all combinations
-                if (currentType.is(TYPE_DOUBLE)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 + 6.1
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 + 4
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4.3 + 4
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4.3 + "Test"
-                        currentType = SymbolType(TYPE_STRING);
+                if (currentType.is(TY_DOUBLE)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4.3 + 6.1
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4.3 + 4
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4.3 + 4
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_STRING)) { // e.g.: 4.3 + "Test"
+                        currentType = SymbolType(TY_STRING);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands double and " + nextType.getName()+ " for '+' operator");
                     }
-                } else if (currentType.is(TYPE_INT)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 + 6.1
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 + 5
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 + 5
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 + "Test"
-                        currentType = SymbolType(TYPE_STRING);
+                } else if (currentType.is(TY_INT)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4 + 6.1
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4 + 5
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4 + 5
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_STRING)) { // e.g.: 4 + "Test"
+                        currentType = SymbolType(TY_STRING);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands int and " + nextType.getName() + " for '+' operator");
                     }
-                } else if (currentType.is(TYPE_BYTE)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 + 6.1
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 + 5
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 + 5
-                        currentType = SymbolType(TYPE_BYTE);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 + "Test"
-                        currentType = SymbolType(TYPE_STRING);
+                } else if (currentType.is(TY_BYTE)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4 + 6.1
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4 + 5
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4 + 5
+                        currentType = SymbolType(TY_BYTE);
+                    } else if (nextType.is(TY_STRING)) { // e.g.: 4 + "Test"
+                        currentType = SymbolType(TY_STRING);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands int and " + nextType.getName() + " for '+' operator");
                     }
-                } else if (currentType.is(TYPE_STRING)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: "Test" + 6.1
-                        currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: "Test" + 5
-                        currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: "Test" + 5
-                        currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_CHAR)) { // e.g.: "Test" + 'a'
-                        currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: "Test" + "Test"
-                        currentType = SymbolType(TYPE_STRING);
+                } else if (currentType.is(TY_STRING)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: "Test" + 6.1
+                        currentType = SymbolType(TY_STRING);
+                    } else if (nextType.is(TY_INT)) { // e.g.: "Test" + 5
+                        currentType = SymbolType(TY_STRING);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: "Test" + 5
+                        currentType = SymbolType(TY_STRING);
+                    } else if (nextType.is(TY_CHAR)) { // e.g.: "Test" + 'a'
+                        currentType = SymbolType(TY_STRING);
+                    } else if (nextType.is(TY_STRING)) { // e.g.: "Test" + "Test"
+                        currentType = SymbolType(TY_STRING);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands string and " + nextType.getName() + " for '+' operator");
@@ -1070,33 +1065,33 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                 }
             } else { // Operator was minus
                 // Check all combinations
-                if (currentType.is(TYPE_DOUBLE)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 - 6.1
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 - 4
-                        currentType = SymbolType(TYPE_DOUBLE);
+                if (currentType.is(TY_DOUBLE)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4.3 - 6.1
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4.3 - 4
+                        currentType = SymbolType(TY_DOUBLE);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands double and " + nextType.getName() + " for '-' operator");
                     }
-                } else if (currentType.is(TYPE_INT)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 - 6.1
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 - 5
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 - 5
-                        currentType = SymbolType(TYPE_INT);
+                } else if (currentType.is(TY_INT)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4 - 6.1
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4 - 5
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4 - 5
+                        currentType = SymbolType(TY_INT);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands int and " + nextType.getName() + " for '-' operator");
                     }
-                } else if (currentType.is(TYPE_BYTE)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 - 6.1
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 - 5
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 - 5
-                        currentType = SymbolType(TYPE_BYTE);
+                } else if (currentType.is(TY_BYTE)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4 - 6.1
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4 - 5
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4 - 5
+                        currentType = SymbolType(TY_BYTE);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands int and " + nextType.getName() + " for '-' operator");
@@ -1126,61 +1121,61 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
             SymbolType nextType = visit(next).as<SymbolType>();
 
             if (op->getSymbol()->getType() == SpiceParser::MUL) { // Operator was mul
-                if (currentType.is(TYPE_DOUBLE)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 * 6.1 = 26.23
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 * 4 = 17.2
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4.3 * 4 = 17.2
-                        currentType = SymbolType(TYPE_DOUBLE);
+                if (currentType.is(TY_DOUBLE)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4.3 * 6.1 = 26.23
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4.3 * 4 = 17.2
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4.3 * 4 = 17.2
+                        currentType = SymbolType(TY_DOUBLE);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands double and " + nextType.getName() + " for '*' operator");
                     }
-                } else if (currentType.is(TYPE_INT)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 * 6.1 = 24.4
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 * 5 = 20
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 * 5 = 20
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_CHAR)) { // e.g.: 4 * 'a' = "aaaa"
-                        currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 * "Test" = "TestTestTestTest"
-                        currentType = SymbolType(TYPE_STRING);
+                } else if (currentType.is(TY_INT)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4 * 6.1 = 24.4
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4 * 5 = 20
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4 * 5 = 20
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_CHAR)) { // e.g.: 4 * 'a' = "aaaa"
+                        currentType = SymbolType(TY_STRING);
+                    } else if (nextType.is(TY_STRING)) { // e.g.: 4 * "Test" = "TestTestTestTest"
+                        currentType = SymbolType(TY_STRING);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands int and " + nextType.getName() + " for '*' operator");
                     }
-                } else if (currentType.is(TYPE_BYTE)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 * 6.1 = 24.4
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 * 5 = 20
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 * 5 = 20
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_CHAR)) { // e.g.: 4 * 'a' = "aaaa"
-                        currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_STRING)) { // e.g.: 4 * "Test" = "TestTestTestTest"
-                        currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_BOOL)) { // e.g.: 4 * true
+                } else if (currentType.is(TY_BYTE)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4 * 6.1 = 24.4
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4 * 5 = 20
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4 * 5 = 20
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_CHAR)) { // e.g.: 4 * 'a' = "aaaa"
+                        currentType = SymbolType(TY_STRING);
+                    } else if (nextType.is(TY_STRING)) { // e.g.: 4 * "Test" = "TestTestTestTest"
+                        currentType = SymbolType(TY_STRING);
+                    } else if (nextType.is(TY_BOOL)) { // e.g.: 4 * true
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands byte and bool for '*' operator");
                     }
-                } else if (currentType.is(TYPE_CHAR)) {
-                    if (nextType.is(TYPE_INT)) { // e.g.: 'a' * 5 = "aaaaa"
-                        currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 'a' * 5 = "aaaaa"
-                        currentType = SymbolType(TYPE_STRING);
+                } else if (currentType.is(TY_CHAR)) {
+                    if (nextType.is(TY_INT)) { // e.g.: 'a' * 5 = "aaaaa"
+                        currentType = SymbolType(TY_STRING);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 'a' * 5 = "aaaaa"
+                        currentType = SymbolType(TY_STRING);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands char and " + nextType.getName() + " for '*' operator");
                     }
-                } else if (currentType.is(TYPE_STRING)) {
-                    if (nextType.is(TYPE_INT)) { // e.g.: "Test" * 5 = "TestTestTestTestTest"
-                        currentType = SymbolType(TYPE_STRING);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: "Test" * 5 = "TestTestTestTestTest"
-                        currentType = SymbolType(TYPE_INT);
+                } else if (currentType.is(TY_STRING)) {
+                    if (nextType.is(TY_INT)) { // e.g.: "Test" * 5 = "TestTestTestTestTest"
+                        currentType = SymbolType(TY_STRING);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: "Test" * 5 = "TestTestTestTestTest"
+                        currentType = SymbolType(TY_INT);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands string and " + nextType.getName() + " for '*' operator");
@@ -1191,24 +1186,24 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                                         nextType.getName() + " for '*' operator");
                 }
             } else if (op->getSymbol()->getType() == SpiceParser::DIV) { // Operator was a div
-                if (currentType.is(TYPE_DOUBLE)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4.3 / 6.1
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4.3 / 4
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4.3 / 4
-                        currentType = SymbolType(TYPE_DOUBLE);
+                if (currentType.is(TY_DOUBLE)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4.3 / 6.1
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4.3 / 4
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4.3 / 4
+                        currentType = SymbolType(TY_DOUBLE);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands double and " + nextType.getName() + " for '/' operator");
                     }
-                } else if (currentType.is(TYPE_INT)) {
-                    if (nextType.is(TYPE_DOUBLE)) { // e.g.: 4 / 6.1
-                        currentType = SymbolType(TYPE_DOUBLE);
-                    } else if (nextType.is(TYPE_INT)) { // e.g.: 4 / 5
-                        currentType = SymbolType(TYPE_INT);
-                    } else if (nextType.is(TYPE_BYTE)) { // e.g.: 4 / 5
-                        currentType = SymbolType(TYPE_INT);
+                } else if (currentType.is(TY_INT)) {
+                    if (nextType.is(TY_DOUBLE)) { // e.g.: 4 / 6.1
+                        currentType = SymbolType(TY_DOUBLE);
+                    } else if (nextType.is(TY_INT)) { // e.g.: 4 / 5
+                        currentType = SymbolType(TY_INT);
+                    } else if (nextType.is(TY_BYTE)) { // e.g.: 4 / 5
+                        currentType = SymbolType(TY_INT);
                     } else {
                         throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE,
                                             "Incompatible operands int and " + nextType.getName() + " for '/' operator");
@@ -1219,12 +1214,12 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                                         nextType.getName() + " for '/' operator");
                 }
             } else { // Operator was rem
-                if (currentType.is(TYPE_DOUBLE) && nextType.is(TYPE_DOUBLE)) {
-                    currentType = SymbolType(TYPE_DOUBLE);
-                } else if (currentType.is(TYPE_INT) && nextType.is(TYPE_INT)) {
-                    currentType = SymbolType(TYPE_INT);
-                } else if (currentType.is(TYPE_BYTE) && nextType.is(TYPE_BYTE)) {
-                    currentType = SymbolType(TYPE_BYTE);
+                if (currentType.is(TY_DOUBLE) && nextType.is(TY_DOUBLE)) {
+                    currentType = SymbolType(TY_DOUBLE);
+                } else if (currentType.is(TY_INT) && nextType.is(TY_INT)) {
+                    currentType = SymbolType(TY_INT);
+                } else if (currentType.is(TY_BYTE) && nextType.is(TY_BYTE)) {
+                    currentType = SymbolType(TY_BYTE);
                 } else {
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE, "Incompatible operands " +
                                         currentType.getName() + " and " + nextType.getName() + " for '%' operator");
@@ -1242,7 +1237,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
 
     // Ensure integer when '++' or '--' is applied
     if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
-        if (!prefixUnary.as<SymbolType>().is(TYPE_INT))
+        if (!prefixUnary.as<SymbolType>().is(TY_INT))
             throw SemanticError(*ctx->postfixUnaryExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Prefix '++' or '--' can only be applied to an identifier of type integer");
     }
@@ -1253,7 +1248,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
            If not applied to int, return bool (evaluates later to variable == 0)
            If not applied to string, return bool (evaluates later to variable == "")
            If not applied to bool, return bool (evaluates later to variable == false)*/
-        return SymbolType(TYPE_BOOL);
+        return SymbolType(TY_BOOL);
     }
 
     return prefixUnary;
@@ -1264,7 +1259,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
     // Ensure integer when '++' or '--' is applied
     if (ctx->PLUS_PLUS() || ctx->MINUS_MINUS()) {
-        if (!atomicExpr.as<SymbolType>().is(TYPE_INT))
+        if (!atomicExpr.as<SymbolType>().is(TY_INT))
             throw SemanticError(*ctx->atomicExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Postfix '++' or '--' can only be applied to an identifier of type integer");
     }
@@ -1320,9 +1315,9 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
             entry->setUsed();
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // Check this operation is valid on this type
-            if (symbolType.isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
+            if (symbolType.is(TY_STRUCT) || symbolType.isPointerOf(TY_STRUCT)) {
                 // De-reference automatically if it is a struct pointer
-                if (symbolType.is(TYPE_STRUCT_PTR)) symbolType = symbolType.getScalarType();
+                if (symbolType.isPointerOf(TY_STRUCT)) symbolType = symbolType.getContainedTy();
                 // Change to new scope
                 std::string structName = entry->getType().getSubType();
                 scope = scope->lookupTable("struct:" + structName);
@@ -1330,7 +1325,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                 if (!scope)
                     throw SemanticError(*token->getSymbol(), REFERENCED_UNDEFINED_STRUCT_FIELD,
                                         "Referenced undefined struct '" + structName + "'");
-            } else if (symbolType.is(TYPE_IMPORT)) {
+            } else if (symbolType.is(TY_IMPORT)) {
                 // Change to new scope
                 std::string importName = entry->getName();
                 scope = scope->lookupTable(importName);
@@ -1349,11 +1344,11 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                                     "Cannot apply subscript operator on " + symbolType.getName());
             // Check if the index is an integer
             SymbolType indexType = visit(ctx->assignExpr()[assignCounter]).as<SymbolType>();
-            if (!indexType.is(TYPE_INT))
+            if (!indexType.is(TY_INT))
                 throw SemanticError(*ctx->assignExpr()[assignCounter]->start, ARRAY_INDEX_NO_INTEGER,
                                     "Array index must be of type int, you provided " + indexType.getName());
             // Promote the array/pointer element type
-            symbolType = symbolType.isArray() ? symbolType.getItemType() : symbolType.getScalarType();
+            symbolType = symbolType.getContainedTy();
             // Increase counters
             assignCounter++;
             tokenCounter += 2; // To consume the assignExpr and the RBRACKET
@@ -1364,33 +1359,33 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
 
     // Apply referencing operators if necessary
     for (unsigned int i = 0; i < referenceOperations; i++)
-        symbolType = symbolType.getPointerType();
+        symbolType = symbolType.toPointer();
 
     // Apply de-referencing operators if necessary
     for (unsigned int i = 0; i < dereferenceOperations; i++)
-        symbolType = symbolType.getScalarType();
+        symbolType = symbolType.getContainedTy();
 
     return symbolType;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
-    if (ctx->DOUBLE()) return SymbolType(TYPE_DOUBLE);
-    if (ctx->INTEGER()) return SymbolType(TYPE_INT);
-    if (ctx->CHAR()) return SymbolType(TYPE_CHAR);
-    if (ctx->STRING()) return SymbolType(TYPE_STRING);
-    if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TYPE_BOOL);
+    if (ctx->DOUBLE()) return SymbolType(TY_DOUBLE);
+    if (ctx->INTEGER()) return SymbolType(TY_INT);
+    if (ctx->CHAR()) return SymbolType(TY_CHAR);
+    if (ctx->STRING()) return SymbolType(TY_STRING);
+    if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TY_BOOL);
     return nullptr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
-    SymbolType type = SymbolType(TYPE_DYN);
+    SymbolType type = SymbolType(TY_DYN);
 
-    if (ctx->TYPE_DOUBLE()) type = SymbolType(TYPE_DOUBLE);
-    if (ctx->TYPE_INT()) type = SymbolType(TYPE_INT);
-    if (ctx->TYPE_BYTE()) type = SymbolType(TYPE_BYTE);
-    if (ctx->TYPE_CHAR()) type = SymbolType(TYPE_CHAR);
-    if (ctx->TYPE_STRING()) type = SymbolType(TYPE_STRING);
-    if (ctx->TYPE_BOOL()) type = SymbolType(TYPE_BOOL);
+    if (ctx->TYPE_DOUBLE()) type = SymbolType(TY_DOUBLE);
+    if (ctx->TYPE_INT()) type = SymbolType(TY_INT);
+    if (ctx->TYPE_BYTE()) type = SymbolType(TY_BYTE);
+    if (ctx->TYPE_CHAR()) type = SymbolType(TY_CHAR);
+    if (ctx->TYPE_STRING()) type = SymbolType(TY_STRING);
+    if (ctx->TYPE_BOOL()) type = SymbolType(TY_BOOL);
     if (ctx->IDENTIFIER()) { // Struct type
         std::string structName = ctx->IDENTIFIER()->toString();
 
@@ -1399,16 +1394,20 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
         if (!structSymbol)
             throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
         structSymbol->setUsed();
-        type = SymbolType(TYPE_STRUCT, structName);
+        type = SymbolType(TY_STRUCT, structName);
     }
 
-    // Check for de-referencing operators
-    for (unsigned int i = 0; i < ctx->MUL().size(); i++)
-        type = type.getPointerType();
-
-    // Check for array brackets pairs
-    for (unsigned int i = 0; i < ctx->LBRACKET().size(); i++)
-        type = type.getArrayType();
+    unsigned int tokenCounter = 1;
+    while (tokenCounter < ctx->children.size()) {
+        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+        if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
+            type = type.toPointer();
+        } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
+            type = type.toArray();
+            tokenCounter++; // Consume RBRACKET
+        }
+        tokenCounter++;
+    }
 
     return type;
 }

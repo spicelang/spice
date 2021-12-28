@@ -192,7 +192,7 @@ SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
 unsigned int SymbolTable::getFieldCount() {
     unsigned int count = 0;
     for (auto& [key, symbol] : symbols) {
-        if (!symbol.getType().isOneOf({ TYPE_FUNCTION, TYPE_PROCEDURE, TYPE_IMPORT }))
+        if (!symbol.getType().isOneOf({ TY_FUNCTION, TY_PROCEDURE, TY_IMPORT }))
             count++;
     }
     return count;
@@ -309,16 +309,16 @@ void SymbolTable::printCompilerWarnings() {
     // Visit own symbols
     for (auto& [key, entry] : symbols) {
         if (!entry.isUsed()) {
-            if (entry.getType().is(TYPE_FUNCTION)) {
+            if (entry.getType().is(TY_FUNCTION)) {
                 CompilerWarning(entry.getDefinitionToken(), UNUSED_FUNCTION,
                                 "The function '" + entry.getName() + "' is unused").print();
-            } else if (entry.getType().is(TYPE_PROCEDURE)) {
+            } else if (entry.getType().is(TY_PROCEDURE)) {
                 CompilerWarning(entry.getDefinitionToken(), UNUSED_PROCEDURE,
                                 "The procedure '" + entry.getName() + "' is unused").print();
-            } else if (entry.getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
+            } else if (entry.getType().is(TY_STRUCT) || entry.getType().isPointerOf(TY_STRUCT)) {
                 CompilerWarning(entry.getDefinitionToken(), UNUSED_STRUCT,
                                 "The struct '" + entry.getName() + "' is unused").print();
-            } else if (entry.getType().isOneOf({ TYPE_IMPORT })) {
+            } else if (entry.getType().isOneOf({ TY_IMPORT })) {
                 CompilerWarning(entry.getDefinitionToken(), UNUSED_IMPORT,
                                 "The import '" + entry.getName() + "' is unused").print();
             } else {

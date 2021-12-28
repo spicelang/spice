@@ -1,6 +1,5 @@
 // Copyright (c) 2021 ChilliBits. All rights reserved.
 
-#include <algorithm>
 #include "SymbolType.h"
 
 /**
@@ -8,7 +7,7 @@
  *
  * @return Super type: e.g. TYPE_STRING
  */
-SymbolSuperType SymbolType::getSuperType() {
+SymbolSuperTypeOld SymbolTypeOld::getSuperType() {
     return superType;
 }
 
@@ -17,7 +16,7 @@ SymbolSuperType SymbolType::getSuperType() {
  *
  * @return Sub type: e.g. TestStruct
  */
-std::string SymbolType::getSubType() {
+std::string SymbolTypeOld::getSubType() {
     return subType;
 }
 
@@ -26,7 +25,7 @@ std::string SymbolType::getSubType() {
  *
  * @return True if it a pointer type, otherwise false
  */
-bool SymbolType::isPointer() {
+bool SymbolTypeOld::isPointer() {
     return isOneOf({ TYPE_DOUBLE_PTR, TYPE_INT_PTR, TYPE_BYTE_PTR, TYPE_CHAR_PTR,
                      TYPE_STRING_PTR, TYPE_BOOL_PTR, TYPE_STRUCT_PTR });
 }
@@ -36,7 +35,7 @@ bool SymbolType::isPointer() {
  *
  * @return True if it an array type, otherwise false
  */
-bool SymbolType::isArray() {
+bool SymbolTypeOld::isArray() {
     return isOneOf({ TYPE_DOUBLE_ARRAY, TYPE_INT_ARRAY, TYPE_BYTE_ARRAY, TYPE_CHAR_ARRAY, TYPE_STRING_ARRAY,
                      TYPE_BOOL_ARRAY, TYPE_STRUCT_ARRAY, TYPE_DOUBLE_PTR_ARRAY, TYPE_INT_PTR_ARRAY, TYPE_BYTE_PTR_ARRAY,
                      TYPE_CHAR_PTR_ARRAY, TYPE_STRING_PTR_ARRAY, TYPE_BOOL_PTR_ARRAY, TYPE_STRUCT_PTR_ARRAY });
@@ -47,14 +46,14 @@ bool SymbolType::isArray() {
  *
  * @return Pointer version: e.g. TYPE_STRUCT_PTR for TYPE_STRUCT
  */
-SymbolType SymbolType::getPointerType() {
+SymbolTypeOld SymbolTypeOld::getPointerType() {
     switch (superType) {
-        case TYPE_DOUBLE: return SymbolType(TYPE_DOUBLE_PTR);
-        case TYPE_INT: return SymbolType(TYPE_INT_PTR);
-        case TYPE_BYTE: return SymbolType(TYPE_BYTE_PTR);
-        case TYPE_CHAR: return SymbolType(TYPE_CHAR_PTR);
-        case TYPE_STRING: return SymbolType(TYPE_STRING_PTR);
-        case TYPE_BOOL: return SymbolType(TYPE_BOOL_PTR);
+        case TYPE_DOUBLE: return SymbolTypeOld(TYPE_DOUBLE_PTR);
+        case TYPE_INT: return SymbolTypeOld(TYPE_INT_PTR);
+        case TYPE_BYTE: return SymbolTypeOld(TYPE_BYTE_PTR);
+        case TYPE_CHAR: return SymbolTypeOld(TYPE_CHAR_PTR);
+        case TYPE_STRING: return SymbolTypeOld(TYPE_STRING_PTR);
+        case TYPE_BOOL: return SymbolTypeOld(TYPE_BOOL_PTR);
         case TYPE_STRUCT: return {TYPE_STRUCT_PTR, subType};
         default: throw std::runtime_error("Compiler error: Could not get the pointer type of " + getName());
     }
@@ -65,14 +64,14 @@ SymbolType SymbolType::getPointerType() {
  *
  * @return Normal version: e.g. TYPE_DOUBLE for TYPE_DOUBLE_PTR
  */
-SymbolType SymbolType::getScalarType() {
+SymbolTypeOld SymbolTypeOld::getScalarType() {
     switch (superType) {
-        case TYPE_DOUBLE_PTR: return SymbolType(TYPE_DOUBLE);
-        case TYPE_INT_PTR: return SymbolType(TYPE_INT);
-        case TYPE_BYTE_PTR: return SymbolType(TYPE_BYTE);
-        case TYPE_CHAR_PTR: return SymbolType(TYPE_CHAR);
-        case TYPE_STRING_PTR: return SymbolType(TYPE_STRING);
-        case TYPE_BOOL_PTR: return SymbolType(TYPE_BOOL);
+        case TYPE_DOUBLE_PTR: return SymbolTypeOld(TYPE_DOUBLE);
+        case TYPE_INT_PTR: return SymbolTypeOld(TYPE_INT);
+        case TYPE_BYTE_PTR: return SymbolTypeOld(TYPE_BYTE);
+        case TYPE_CHAR_PTR: return SymbolTypeOld(TYPE_CHAR);
+        case TYPE_STRING_PTR: return SymbolTypeOld(TYPE_STRING);
+        case TYPE_BOOL_PTR: return SymbolTypeOld(TYPE_BOOL);
         case TYPE_STRUCT_PTR: return {TYPE_STRUCT, subType};
         default: throw std::runtime_error("Compiler error: Could not get the scalar type of " + getName());
     }
@@ -83,21 +82,21 @@ SymbolType SymbolType::getScalarType() {
  *
  * @return Array version: e.g.: TYPE_BOOL_PTR_ARRAY for TYPE_BOOL_PTR
  */
-SymbolType SymbolType::getArrayType() {
+SymbolTypeOld SymbolTypeOld::getArrayType() {
     switch (superType) {
-        case TYPE_DOUBLE: return SymbolType(TYPE_DOUBLE_ARRAY);
-        case TYPE_INT: return SymbolType(TYPE_INT_ARRAY);
-        case TYPE_BYTE: return SymbolType(TYPE_BYTE_ARRAY);
-        case TYPE_CHAR: return SymbolType(TYPE_CHAR_ARRAY);
-        case TYPE_STRING: return SymbolType(TYPE_STRING_ARRAY);
-        case TYPE_BOOL: return SymbolType(TYPE_BOOL_ARRAY);
+        case TYPE_DOUBLE: return SymbolTypeOld(TYPE_DOUBLE_ARRAY);
+        case TYPE_INT: return SymbolTypeOld(TYPE_INT_ARRAY);
+        case TYPE_BYTE: return SymbolTypeOld(TYPE_BYTE_ARRAY);
+        case TYPE_CHAR: return SymbolTypeOld(TYPE_CHAR_ARRAY);
+        case TYPE_STRING: return SymbolTypeOld(TYPE_STRING_ARRAY);
+        case TYPE_BOOL: return SymbolTypeOld(TYPE_BOOL_ARRAY);
         case TYPE_STRUCT: return {TYPE_STRUCT_ARRAY, subType};
-        case TYPE_DOUBLE_PTR: return SymbolType(TYPE_DOUBLE_PTR_ARRAY);
-        case TYPE_INT_PTR: return SymbolType(TYPE_INT_PTR_ARRAY);
-        case TYPE_BYTE_PTR: return SymbolType(TYPE_BYTE_PTR_ARRAY);
-        case TYPE_CHAR_PTR: return SymbolType(TYPE_CHAR_PTR_ARRAY);
-        case TYPE_STRING_PTR: return SymbolType(TYPE_STRING_PTR_ARRAY);
-        case TYPE_BOOL_PTR: return SymbolType(TYPE_BOOL_PTR_ARRAY);
+        case TYPE_DOUBLE_PTR: return SymbolTypeOld(TYPE_DOUBLE_PTR_ARRAY);
+        case TYPE_INT_PTR: return SymbolTypeOld(TYPE_INT_PTR_ARRAY);
+        case TYPE_BYTE_PTR: return SymbolTypeOld(TYPE_BYTE_PTR_ARRAY);
+        case TYPE_CHAR_PTR: return SymbolTypeOld(TYPE_CHAR_PTR_ARRAY);
+        case TYPE_STRING_PTR: return SymbolTypeOld(TYPE_STRING_PTR_ARRAY);
+        case TYPE_BOOL_PTR: return SymbolTypeOld(TYPE_BOOL_PTR_ARRAY);
         case TYPE_STRUCT_PTR: return {TYPE_STRUCT_PTR_ARRAY, subType};
         default: throw std::runtime_error("Compiler error: Could not get the array type of " + getName());
     }
@@ -108,21 +107,21 @@ SymbolType SymbolType::getArrayType() {
  *
  * @return Item version: e.g.: TYPE_INT for TYPE_INT_ARRAY
  */
-SymbolType SymbolType::getItemType() {
+SymbolTypeOld SymbolTypeOld::getItemType() {
     switch (superType) {
-        case TYPE_DOUBLE_ARRAY: return SymbolType(TYPE_DOUBLE);
-        case TYPE_INT_ARRAY: return SymbolType(TYPE_INT);
-        case TYPE_BYTE_ARRAY: return SymbolType(TYPE_BYTE);
-        case TYPE_CHAR_ARRAY: return SymbolType(TYPE_CHAR);
-        case TYPE_STRING_ARRAY: return SymbolType(TYPE_STRING);
-        case TYPE_BOOL_ARRAY: return SymbolType(TYPE_BOOL);
+        case TYPE_DOUBLE_ARRAY: return SymbolTypeOld(TYPE_DOUBLE);
+        case TYPE_INT_ARRAY: return SymbolTypeOld(TYPE_INT);
+        case TYPE_BYTE_ARRAY: return SymbolTypeOld(TYPE_BYTE);
+        case TYPE_CHAR_ARRAY: return SymbolTypeOld(TYPE_CHAR);
+        case TYPE_STRING_ARRAY: return SymbolTypeOld(TYPE_STRING);
+        case TYPE_BOOL_ARRAY: return SymbolTypeOld(TYPE_BOOL);
         case TYPE_STRUCT_ARRAY: return {TYPE_STRUCT, subType};
-        case TYPE_DOUBLE_PTR_ARRAY: return SymbolType(TYPE_DOUBLE_PTR);
-        case TYPE_INT_PTR_ARRAY: return SymbolType(TYPE_INT_PTR);
-        case TYPE_BYTE_PTR_ARRAY: return SymbolType(TYPE_BYTE_PTR);
-        case TYPE_CHAR_PTR_ARRAY: return SymbolType(TYPE_CHAR_PTR);
-        case TYPE_STRING_PTR_ARRAY: return SymbolType(TYPE_STRING_PTR);
-        case TYPE_BOOL_PTR_ARRAY: return SymbolType(TYPE_BOOL_PTR);
+        case TYPE_DOUBLE_PTR_ARRAY: return SymbolTypeOld(TYPE_DOUBLE_PTR);
+        case TYPE_INT_PTR_ARRAY: return SymbolTypeOld(TYPE_INT_PTR);
+        case TYPE_BYTE_PTR_ARRAY: return SymbolTypeOld(TYPE_BYTE_PTR);
+        case TYPE_CHAR_PTR_ARRAY: return SymbolTypeOld(TYPE_CHAR_PTR);
+        case TYPE_STRING_PTR_ARRAY: return SymbolTypeOld(TYPE_STRING_PTR);
+        case TYPE_BOOL_PTR_ARRAY: return SymbolTypeOld(TYPE_BOOL_PTR);
         case TYPE_STRUCT_PTR_ARRAY: return {TYPE_STRUCT_PTR, subType};
         default: throw std::runtime_error("Compiler error: Could not get the item type of " + getName());
     }
@@ -134,7 +133,7 @@ SymbolType SymbolType::getItemType() {
  * @param otherType Symbol type to cast to
  * @return Cast compatible or not
  */
-bool SymbolType::isImplicitCastCompatibleWith(const SymbolType& otherType) {
+bool SymbolTypeOld::isImplicitCastCompatibleWith(const SymbolTypeOld& otherType) {
     // Always return true when types are matching
     if (superType == otherType.superType) return true;
     // Define implicit casting rules
@@ -155,7 +154,7 @@ bool SymbolType::isImplicitCastCompatibleWith(const SymbolType& otherType) {
  * @param superTypes Super types to check
  * @return True = super type is one of the stated, otherwise false
  */
-bool SymbolType::isOneOf(const std::vector<SymbolSuperType>& superTypes) {
+bool SymbolTypeOld::isOneOf(const std::vector<SymbolSuperTypeOld>& superTypes) {
     /*for (auto& type : superTypes) {
         if (type == superType) return true;
     }
@@ -171,28 +170,28 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType>& superTypes) {
  * @param superType Super type to check
  * @return True = super type is one of the stated, otherwise false
  */
-bool SymbolType::is(SymbolSuperType type) {
+bool SymbolTypeOld::is(SymbolSuperTypeOld type) {
     return superType == type;
 }
 
 
-bool operator== (const SymbolType& lhs, const SymbolType& rhs) {
+bool operator== (const SymbolTypeOld& lhs, const SymbolTypeOld& rhs) {
     return lhs.superType == rhs.superType && lhs.subType == rhs.subType;
 }
 
-bool operator!= (const SymbolType& lhs, const SymbolType& rhs) {
+bool operator!= (const SymbolTypeOld& lhs, const SymbolTypeOld& rhs) {
     return !(lhs == rhs);
 }
 
-bool SymbolType::matches(SymbolType type) {
+bool SymbolTypeOld::matches(SymbolTypeOld type) {
     return superType == type.getSuperType();
 }
 
-bool SymbolType::matches(SymbolType symbolType, SymbolSuperType superSymbolType) {
+bool SymbolTypeOld::matches(SymbolTypeOld symbolType, SymbolSuperTypeOld superSymbolType) {
     return superType == superSymbolType && symbolType.getSuperType() == superSymbolType;
 }
 
-std::string SymbolType::getName() {
+std::string SymbolTypeOld::getName() {
     switch (superType) {
         case TYPE_DOUBLE: return "double";
         case TYPE_INT: return "int";
