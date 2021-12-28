@@ -1,3 +1,5 @@
 f<int> main() {
-    
+    short s = 10;
+    long l = 10;
+    printf("Short: %d, Long: %d\n", s, l);
 }

@@ -86,9 +86,11 @@ bool SymbolType::isImplicitCastCompatibleWith(SymbolType otherType) {
         (isPointerOf(TY_CHAR) && otherSuperType == TY_STRING) ||        // Cast: char* -> string
         (superType == TY_STRING && otherType.isPointerOf(TY_BYTE)) ||   // Cast: string -> byte*
         (isPointerOf(TY_BYTE) && otherSuperType == TY_STRING) ||        // Cast: byte* -> string
-        (superType == TY_CHAR && otherSuperType == TY_BYTE) ||          // Cast: char -> byte
-        (superType == TY_BYTE && otherSuperType == TY_CHAR) ||          // Cast: byte -> char
-        (superType == TY_INT && otherSuperType == TY_BYTE);             // Cast: int -> byte
+        (superType == TY_CHAR && otherSuperType == TY_BYTE) ||                        // Cast: char -> byte
+        (superType == TY_BYTE && otherSuperType == TY_CHAR) ||                        // Cast: byte -> char
+        (superType == TY_INT && otherSuperType == TY_BYTE) ||                         // Cast: int -> byte
+        (superType == TY_INT && otherSuperType == TY_SHORT) ||                        // Cast: int -> short
+        (superType == TY_INT && otherSuperType == TY_LONG);                           // Cast: int -> long
 }
 
 SymbolSuperType SymbolType::getSuperType() {
