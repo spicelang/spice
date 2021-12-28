@@ -706,7 +706,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'u':
             case 'x':
             case 'X': {
-                if (!assignmentType.isOneOf({ TY_INT, TY_BYTE, TY_BOOL }))
+                if (!assignmentType.isOneOf({ TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_BOOL }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects int, byte or bool, but got " + assignmentType.getName());
                 placeholderCount++;
@@ -901,6 +901,10 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
 
             if (lhsTy.matches(rhsTy, TY_INT)) { // Allow bitwise or operator for integers
                 lhsTy = SymbolType(TY_INT);
+            } else if (lhsTy.matches(rhsTy, TY_SHORT)) { // Allow bitwise or operator for shorts
+                lhsTy = SymbolType(TY_SHORT);
+            } else if (lhsTy.matches(rhsTy, TY_LONG)) { // Allow bitwise or operator for longs
+                lhsTy = SymbolType(TY_LONG);
             } else if (lhsTy.matches(rhsTy, TY_BYTE)) { // Allow bitwise or operator for bytes
                 lhsTy = SymbolType(TY_BYTE);
             } else if (lhsTy.matches(rhsTy, TY_BOOL)) { // Allow bitwise or operator for booleans
@@ -924,6 +928,10 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
 
             if (lhsTy.matches(rhsTy, TY_INT)) { // Allow bitwise and operator for integers
                 lhsTy = SymbolType(TY_INT);
+            } else if (lhsTy.matches(rhsTy, TY_SHORT)) { // Allow bitwise and operator for shorts
+                lhsTy = SymbolType(TY_SHORT);
+            } else if (lhsTy.matches(rhsTy, TY_LONG)) { // Allow bitwise and operator for longs
+                lhsTy = SymbolType(TY_LONG);
             } else if (lhsTy.matches(rhsTy, TY_BYTE)) { // Allow bitwise and operator for bytes
                 lhsTy = SymbolType(TY_BYTE);
             } else if (lhsTy.matches(rhsTy, TY_BOOL)) { // Allow bitwise and operator for booleans
@@ -947,6 +955,8 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
             lhsTy.is(TY_DOUBLE) && rhsTy.is(TY_INT) ||  // Can compare double with int
             lhsTy.is(TY_INT) && rhsTy.is(TY_DOUBLE) ||  // Can compare int with double
             lhsTy.matches(rhsTy, TY_INT) ||             // Can compare int with int
+            lhsTy.matches(rhsTy, TY_SHORT) ||           // Can compare short with short
+            lhsTy.matches(rhsTy, TY_LONG) ||            // Can compare long with long
             lhsTy.matches(rhsTy, TY_BYTE) ||            // Can compare byte with byte
             lhsTy.matches(rhsTy, TY_CHAR) ||            // Can compare char with char
             lhsTy.matches(rhsTy, TY_STRING) ||          // Can compare string with string
@@ -969,6 +979,8 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
             lhsTy.is(TY_DOUBLE) && rhsTy.is(TY_INT) ||  // Can compare double with int
             lhsTy.is(TY_INT) && rhsTy.is(TY_DOUBLE) ||  // Can compare int with double
             lhsTy.matches(rhsTy, TY_INT) ||             // Can compare int with int
+            lhsTy.matches(rhsTy, TY_SHORT) ||           // Can compare short with short
+            lhsTy.matches(rhsTy, TY_LONG) ||            // Can compare long with long
             lhsTy.matches(rhsTy, TY_BYTE) ||            // Can compare byte with byte
             lhsTy.matches(rhsTy, TY_CHAR)               // Can compare char with char
         ) return SymbolType(TY_BOOL);
@@ -1382,6 +1394,8 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
 
     if (ctx->TYPE_DOUBLE()) type = SymbolType(TY_DOUBLE);
     if (ctx->TYPE_INT()) type = SymbolType(TY_INT);
+    if (ctx->TYPE_SHORT()) type = SymbolType(TY_SHORT);
+    if (ctx->TYPE_LONG()) type = SymbolType(TY_LONG);
     if (ctx->TYPE_BYTE()) type = SymbolType(TY_BYTE);
     if (ctx->TYPE_CHAR()) type = SymbolType(TY_CHAR);
     if (ctx->TYPE_STRING()) type = SymbolType(TY_STRING);

@@ -1078,6 +1078,12 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
                 // Implicitly cast int to char/byte
                 if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(8) && rhs->getType()->isIntegerTy(32))
                     rhs = builder->CreateIntCast(rhs, llvm::Type::getInt8Ty(*context), false);
+                // Implicitly cast int to short
+                if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(16) && rhs->getType()->isIntegerTy(32))
+                    rhs = builder->CreateIntCast(rhs, llvm::Type::getInt16Ty(*context), false);
+                // Implicitly cast int to long
+                if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(64) && rhs->getType()->isIntegerTy(32))
+                    rhs = builder->CreateIntCast(rhs, llvm::Type::getInt64Ty(*context), false);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
@@ -1758,6 +1764,10 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
         currentSymbolType = SymbolType(TY_DOUBLE);
     } else if (ctx->TYPE_INT()) { // Data type is int
         currentSymbolType = SymbolType(TY_INT);
+    } else if (ctx->TYPE_SHORT()) { // Data type is short
+        currentSymbolType = SymbolType(TY_SHORT);
+    } else if (ctx->TYPE_LONG()) { // Data type is long
+        currentSymbolType = SymbolType(TY_LONG);
     } else if (ctx->TYPE_BYTE()) { // Data type is byte
         currentSymbolType = SymbolType(TY_BYTE);
     } else if (ctx->TYPE_CHAR()) { // Data type is char
@@ -1794,23 +1804,6 @@ void GeneratorVisitor::initializeExternalFunctions() {
     llvm::FunctionType* fctTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
                                                         llvm::Type::getInt8PtrTy(*context), true);
     module->getOrInsertFunction("printf", fctTy);
-    // malloc function
-    /*module->getOrInsertFunction("malloc", llvm::FunctionType::get(
-            llvm::Type::getInt8PtrTy(*context),
-            llvm::Type::getInt32Ty(*context),
-            false));
-    // free function
-    module->getOrInsertFunction("free", llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*context),
-            llvm::Type::getInt8PtrTy(*context),
-            false));
-    // memcpy function
-    std::vector<llvm::Type*> paramTypes = {
-            llvm::Type::getInt8PtrTy(*context),
-            llvm::Type::getInt8PtrTy(*context),
-            llvm::Type::getInt32Ty(*context)
-    };
-    module->getOrInsertFunction("memcpy", llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*context), paramTypes, false));*/
 }
 
 llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
@@ -2031,6 +2024,14 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
             llvmBaseType = llvm::Type::getInt32Ty(*context);
             break;
         }
+        case TY_SHORT: {
+            llvmBaseType = llvm::Type::getInt16Ty(*context);
+            break;
+        }
+        case TY_LONG: {
+            llvmBaseType = llvm::Type::getInt64Ty(*context);
+            break;
+        }
         case TY_BYTE:
         case TY_CHAR: {
             llvmBaseType = llvm::Type::getInt8Ty(*context);
@@ -2070,6 +2071,10 @@ llvm::Value* GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolTyp
             return llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
         case TY_INT:
             return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), 0);
+        case TY_SHORT:
+            return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), 0);
+        case TY_LONG:
+            return llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), 0);
         case TY_BYTE:
         case TY_CHAR:
             return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), 0);

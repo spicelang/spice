@@ -14,6 +14,8 @@
 enum SymbolSuperType {
     TY_DOUBLE,
     TY_INT,
+    TY_SHORT,
+    TY_LONG,
     TY_BYTE,
     TY_CHAR,
     TY_STRING,
