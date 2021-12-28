@@ -27,6 +27,28 @@ int variable2;
 variable2 = -2;
 ```
 
+## The `short` data type
+Integers are signed, whole numbers of 16-bit, which have a range from a min of -32.768 to a max of 32.767.
+
+In Spice, variables of type `short` can be defined like this:
+```spice
+short variable1 = 15;
+
+short variable2;
+variable2 = 0;
+```
+
+## The `long` data type
+Integers are signed, whole numbers of 64-bit, which have a range from a min of -9,223,372,036,854,775,808 to a max of 9,223,372,036,854,775,807.
+
+In Spice, variables of type `long` can be defined like this:
+```spice
+long variable1 = 12492309573;
+
+long variable2;
+variable2 = -34945968;
+```
+
 ## The `byte` data type
 Bytes are unsigned, whole numbers of 8-bit, which have a range from a min of 0 to a max of 255.
 
@@ -45,7 +67,7 @@ In Spice, variables of type `char` can be defined like this:
 ```spice
 char variable1 = 'A';
 
-car variable2;
+char variable2;
 variable2 = '.';
 ```
 
