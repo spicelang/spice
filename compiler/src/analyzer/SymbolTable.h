@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <queue>
+#include <type/SymbolType.h>
 #include <util/FunctionSignature.h>
 #include <util/CompilerWarning.h>
 #include <llvm/IR/BasicBlock.h>

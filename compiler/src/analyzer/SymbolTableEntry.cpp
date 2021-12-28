@@ -94,7 +94,7 @@ void SymbolTableEntry::updateState(SymbolState newState) {
     if (state == INITIALIZED && isConstant)
         throw SemanticError(definitionToken, REASSIGN_CONST_VARIABLE,
                             "Not re-assignable variable '" + name + "'");
-    if (newState == INITIALIZED && type == SymbolType(TYPE_DYN))
+    if (newState == INITIALIZED && type == SymbolType(TY_DYN))
         throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'");
     state = newState;
 }
@@ -105,8 +105,8 @@ void SymbolTableEntry::updateState(SymbolState newState) {
  * @param newType New type of the current symbol
  */
 void SymbolTableEntry::updateType(SymbolType newType) {
-    if (type != SymbolType(TYPE_DYN)) throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
-    type = newType;
+    if (type != SymbolType(TY_DYN)) throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
+    type = std::move(newType);
 }
 
 /**

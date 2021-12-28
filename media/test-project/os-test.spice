@@ -1,6 +1,17 @@
-import "std/os/cmd" as cmd;
+type Person struct {
+    string firstName
+    string lastName
+    int age
+}
+
+p birthday(Person* person) {
+    person.age++;
+}
 
 f<int> main() {
-    int resultCode = cmd.execCmd("mkdir test");
-    printf("Result code: %d\n", resultCode);
+    dyn mike = new Person { "Mike", "Miller", 32 };
+    printf("Person: %s, %s", mike.lastName, mike.firstName);
+    printf("Age before birthday: %d", mike.age);
+    birthday(&mike);
+    printf("Age after birthday: %d", mike.age);
 }

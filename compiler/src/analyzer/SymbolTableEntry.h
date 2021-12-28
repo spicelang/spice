@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <utility>
 
-#include "SymbolType.h"
+#include <type/SymbolType.h>
 #include <exception/SemanticError.h>
 #include <llvm/IR/Value.h>
 
@@ -28,33 +28,19 @@ public:
 
     // Public methods
     std::string getName();
-
     SymbolType getType();
-
     SymbolState getState();
-
     const antlr4::Token& getDefinitionToken();
-
     llvm::Type* getLLVMType();
-
     llvm::Value* getAddress();
-
     unsigned int getOrderIndex() const;
-
     bool isLocal() const;
-
     bool isUsed() const;
-
     void updateState(SymbolState);
-
     void updateType(SymbolType);
-
     void updateLLVMType(llvm::Type*);
-
     void updateAddress(llvm::Value*);
-
     void setUsed();
-
     std::string toString();
 
 private:

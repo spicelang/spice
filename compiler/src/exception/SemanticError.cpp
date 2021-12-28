@@ -103,6 +103,10 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Return without initialization of result variable";
         case VARARG_APPLIED_WRONGLY:
             return "Vararg applied wrongly";
+        case DYN_POINTERS_NOT_ALLOWED:
+            return "Dyn pointers not allowed";
+        case DYN_ARRAYS_NOT_ALLOWED:
+            return "Dyn arrays not allowed";
         case COMING_SOON_SA:
             return "Coming soon";
     }

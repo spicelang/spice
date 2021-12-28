@@ -248,7 +248,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         SymbolTableEntry* thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
         llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(thisEntry->getType().getPointerType());
+        symbolTypes.push_back(thisEntry->getType().toPointer());
     }
     // Parameters
     if (ctx->paramLstDef()) {
@@ -353,7 +353,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         SymbolTableEntry* thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
         llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(thisEntry->getType().getPointerType());
+        symbolTypes.push_back(thisEntry->getType().toPointer());
     }
     // Parameters
     if (ctx->paramLstDef()) {
@@ -883,7 +883,7 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     // Get data type
     llvm::Type* structType;
     if (ctx->dataType()->TYPE_DYN()) {
-        SymbolType dataType = SymbolType(TYPE_STRUCT, structName);
+        SymbolType dataType = SymbolType(TY_STRUCT, structName);
         structType = getTypeForSymbolType(dataType);
     } else {
         structType = visit(ctx->dataType()).as<llvm::Type*>();
@@ -950,8 +950,8 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
-    // Ignore sub-tree
-    return nullptr;
+    // Ignore subtree and return true
+    return (llvm::Value*) builder->getTrue();
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
@@ -1075,7 +1075,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (variableEntry->isLocal()) { // Local variable
-                // Cast int to char or byte
+                // Implicitly cast int to char/byte
                 if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(8) && rhs->getType()->isIntegerTy(32))
                     rhs = builder->CreateIntCast(rhs, llvm::Type::getInt8Ty(*context), false);
                 builder->CreateStore(rhs, lhsPtr);
@@ -1581,20 +1581,18 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     unsigned int tokenCounter = 0;
     unsigned int assignCounter = 0;
     unsigned int functionCallCounter = 0;
-    bool applyReference = false;
-    bool applyDereference = false;
+    unsigned int referenceOperations = 0;
+    unsigned int dereferenceOperations = 0;
     bool metStruct = false;
     SymbolTable* scope = currentScope;
 
-    if (ctx->BITWISE_AND()) { // Consider referencing operator
-        applyReference = true;
-        tokenCounter++;
-    }
+    // Consider referencing operators
+    referenceOperations += ctx->BITWISE_AND().size();
+    tokenCounter += referenceOperations;
 
-    if (ctx->MUL()) { // Consider de-referencing operator
-        applyDereference = true;
-        tokenCounter++;
-    }
+    // Consider de-referencing operator
+    dereferenceOperations += ctx->MUL().size();
+    tokenCounter += dereferenceOperations;
 
     // Loop through children
     while (tokenCounter < ctx->children.size()) {
@@ -1603,7 +1601,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
             unsigned int ruleIndex = rule->getRuleIndex();
             if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
-                if (entry && entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
+                if (entry && (entry->getType().is(TY_STRUCT) || entry->getType().isPointerOf(TY_STRUCT))) {
                     currentThisValue = basePtr;
                     currentSymbolType = entry->getType();
                 }
@@ -1637,30 +1635,32 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                     baseType = entry->getLLVMType();
                     basePtr = entry->getAddress();
                     indices.push_back(builder->getInt32(0));
-                    metStruct = entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR });
+                    metStruct = entry->getType().is(TY_STRUCT) || entry->getType().isPointerOf(TY_STRUCT);
                 }
             }
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
-            if (entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
+            if (entry->getType().is(TY_STRUCT) || entry->getType().isPointerOf(TY_STRUCT)) {
+                SymbolType symbolType = entry->getType();
                 // Start auto-de-referencing
-                if (entry->getType().is(TYPE_STRUCT_PTR)) {
+                if (entry->getType().isPointerOf(TY_STRUCT)) {
                     basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
                     basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
                     indices.clear();
                     indices.push_back(builder->getInt32(0));
+                    symbolType = symbolType.getContainedTy();
                 }
                 // Change to new scope
-                std::string structName = entry->getType().getSubType();
+                std::string structName = symbolType.getSubType();
                 scope = scope->lookupTable("struct:" + structName);
                 // Check if the table exists
                 if (!scope)
                     throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
                                   "Compiler error: Referenced undefined struct '" + structName + "'");
                 // Conclude auto-de-referencing
-                if (entry->getType().is(TYPE_STRUCT_PTR))
+                if (entry->getType().isPointerOf(TY_STRUCT))
                     baseType = scope->lookup(structName)->getLLVMType();
-            } else if (entry->getType().is(TYPE_IMPORT)) {
+            } else if (entry->getType().is(TY_IMPORT)) {
                 // Change to new scope
                 std::string importName = entry->getName();
                 scope = scope->lookupTable(importName);
@@ -1683,20 +1683,21 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     }
 
     // Build GEP instruction
-    llvm::Value* returnValue = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+    llvm::Value* returnAddress = builder->CreateInBoundsGEP(baseType, basePtr, indices);
 
-    // If the de-referencing operator is present, add a zero index at the end of the gep instruction
-    if (applyDereference) returnValue = builder->CreateLoad(returnValue->getType()->getPointerElementType(), returnValue);
-
-    // If the referencing operator is present, store the calculated address into memory and return the address of that location
-    if (applyReference) {
-        llvm::Value* ptrLocation = builder->CreateAlloca(basePtr->getType());
-        builder->CreateStore(basePtr, ptrLocation);
-        return ptrLocation;
+    // If de-referencing operators are present, add a zero index at the end of the gep instruction for each
+    for (unsigned int i = 0; i < dereferenceOperations; i++) {
+        returnAddress = builder->CreateLoad(returnAddress->getType()->getPointerElementType(), returnAddress);
     }
 
-    // Otherwise, return the calculated memory address
-    return returnValue;
+    // If referencing operators are present, store the calculated address into memory for each
+    for (unsigned int i = 0; i < referenceOperations; i++) {
+        returnAddress = builder->CreateAlloca(basePtr->getType());
+        builder->CreateStore(basePtr, returnAddress);
+    }
+
+    // Return the calculated memory address
+    return returnAddress;
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
@@ -1704,28 +1705,28 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
     // Value is a double constant
     if (ctx->DOUBLE()) {
-        currentSymbolType = SymbolType(TYPE_DOUBLE);
+        currentSymbolType = SymbolType(TY_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
         llvmValue = llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
-        currentSymbolType = SymbolType(TYPE_INT);
+        currentSymbolType = SymbolType(TY_INT);
         int v = std::stoi(ctx->INTEGER()->toString());
         llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
     }
 
     // Value is a char constant
     if (ctx->CHAR()) {
-        currentSymbolType = SymbolType(TYPE_CHAR);
+        currentSymbolType = SymbolType(TY_CHAR);
         char value = ctx->CHAR()->toString()[1];
         llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
     }
 
     // Value is a string constant
     if (ctx->STRING()) {
-        currentSymbolType = SymbolType(TYPE_STRING);
+        currentSymbolType = SymbolType(TY_STRING);
         std::string value = ctx->STRING()->toString();
         value = value.substr(1, value.size() - 2);
         llvmValue = builder->CreateGlobalStringPtr(value, "", 0, module.get());
@@ -1733,13 +1734,13 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
     // Value is a boolean constant with value false
     if (ctx->FALSE()) {
-        currentSymbolType = SymbolType(TYPE_BOOL);
+        currentSymbolType = SymbolType(TY_BOOL);
         llvmValue = builder->getFalse();
     }
 
     // Value is a boolean constant with value true
     if (ctx->TRUE()) {
-        currentSymbolType = SymbolType(TYPE_BOOL);
+        currentSymbolType = SymbolType(TY_BOOL);
         llvmValue = builder->getTrue();
     }
 
@@ -1754,29 +1755,31 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
     if (ctx->TYPE_DOUBLE()) { // Data type is double
-        currentSymbolType = SymbolType(TYPE_DOUBLE);
+        currentSymbolType = SymbolType(TY_DOUBLE);
     } else if (ctx->TYPE_INT()) { // Data type is int
-        currentSymbolType = SymbolType(TYPE_INT);
+        currentSymbolType = SymbolType(TY_INT);
     } else if (ctx->TYPE_BYTE()) { // Data type is byte
-        currentSymbolType = SymbolType(TYPE_BYTE);
+        currentSymbolType = SymbolType(TY_BYTE);
     } else if (ctx->TYPE_CHAR()) { // Data type is char
-        currentSymbolType = SymbolType(TYPE_CHAR);
+        currentSymbolType = SymbolType(TY_CHAR);
     } else if (ctx->TYPE_STRING()) { // Data type is string
-        currentSymbolType = SymbolType(TYPE_STRING);
+        currentSymbolType = SymbolType(TY_STRING);
     } else if (ctx->TYPE_BOOL()) { // Data type is bool
-        currentSymbolType = SymbolType(TYPE_BOOL);
+        currentSymbolType = SymbolType(TY_BOOL);
     } else if (ctx->TYPE_DYN()) { // Data type is dyn
         SymbolTableEntry* symbolTableEntry = currentScope->lookup(currentVar);
         currentSymbolType = symbolTableEntry->getType();
     } else if (ctx->IDENTIFIER()) { // Custom data type
-        currentSymbolType = SymbolType(TYPE_STRUCT, ctx->IDENTIFIER()->toString());
+        currentSymbolType = SymbolType(TY_STRUCT, ctx->IDENTIFIER()->toString());
     }
 
-    // Consider pointer
-    if (ctx->MUL()) currentSymbolType = currentSymbolType.getPointerType();
+    // Check for de-referencing operators
+    for (unsigned int i = 0; i < ctx->MUL().size(); i++)
+        currentSymbolType = currentSymbolType.toPointer();
 
-    // Consider array brackets
-    if (ctx->LBRACKET()) currentSymbolType = currentSymbolType.getArrayType();
+    // Check for array brackets pairs
+    for (unsigned int i = 0; i < ctx->LBRACKET().size(); i++)
+        currentSymbolType = currentSymbolType.toArray();
 
     // Come up with the LLVM type
     llvm::Type* type = getTypeForSymbolType(currentSymbolType);
@@ -2010,65 +2013,69 @@ void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
 
 llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
     currentSymbolType = symbolType;
+
+    // Get base symbol type
+    std::stack<SymbolSuperType> pointerArrayList;
+    while (symbolType.isPointer() || symbolType.isArray()) {
+        pointerArrayList.push(symbolType.isPointer() ? TY_PTR : TY_ARRAY);
+        symbolType = symbolType.getContainedTy();
+    }
+
+    llvm::Type* llvmBaseType;
     switch (symbolType.getSuperType()) {
-        case TYPE_DOUBLE: return llvm::Type::getDoubleTy(*context);
-        case TYPE_DOUBLE_PTR:
-        case TYPE_DOUBLE_ARRAY: return llvm::Type::getDoublePtrTy(*context);
-        case TYPE_DOUBLE_PTR_ARRAY: return llvm::Type::getDoublePtrTy(*context)->getPointerTo();
-        //case TYPE_DOUBLE_ARRAY: return llvm::ArrayType::getDoubleTy(*context);
-        //case TYPE_DOUBLE_PTR_ARRAY: return llvm::ArrayType::getDoublePtrTy(*context);
-        case TYPE_INT: return llvm::Type::getInt32Ty(*context);
-        case TYPE_INT_PTR:
-        case TYPE_INT_ARRAY: return llvm::Type::getInt32PtrTy(*context);
-        case TYPE_INT_PTR_ARRAY: return llvm::Type::getInt32PtrTy(*context)->getPointerTo();
-        //case TYPE_INT_ARRAY: return llvm::ArrayType::getInt32Ty(*context);
-        //case TYPE_INT_PTR_ARRAY: return llvm::ArrayType::getInt32PtrTy(*context);
-        case TYPE_BYTE: return llvm::Type::getInt8Ty(*context);
-        case TYPE_BYTE_PTR:
-        case TYPE_BYTE_ARRAY: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_BYTE_PTR_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
-        //case TYPE_BYTE_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
-        //case TYPE_BYTE_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
-        case TYPE_CHAR: return llvm::Type::getInt8Ty(*context);
-        case TYPE_CHAR_PTR:
-        case TYPE_CHAR_ARRAY: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_CHAR_PTR_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
-        //case TYPE_CHAR_ARRAY: return llvm::ArrayType::getInt8Ty(*context);
-        //case TYPE_CHAR_PTR_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
-        case TYPE_STRING: return llvm::Type::getInt8PtrTy(*context);
-        case TYPE_STRING_PTR:
-        case TYPE_STRING_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo();
-        case TYPE_STRING_PTR_ARRAY: return llvm::Type::getInt8PtrTy(*context)->getPointerTo()->getPointerTo();
-        //case TYPE_STRING_ARRAY: return llvm::ArrayType::getInt8PtrTy(*context);
-        //case TYPE_STRING_PTR_ARRAY: throw std::runtime_error("String ptr array support coming soon");
-        case TYPE_BOOL: return llvm::Type::getInt1Ty(*context);
-        case TYPE_BOOL_PTR:
-        case TYPE_BOOL_ARRAY: return llvm::Type::getInt1PtrTy(*context);
-        case TYPE_BOOL_PTR_ARRAY: return llvm::Type::getInt1PtrTy(*context)->getPointerTo();
-        //case TYPE_BOOL_ARRAY: return llvm::ArrayType::getInt1Ty(*context);
-        //case TYPE_BOOL_PTR_ARRAY: return llvm::ArrayType::getInt1PtrTy(*context);
-        case TYPE_STRUCT: return currentScope->lookup(symbolType.getSubType())->getLLVMType();
-        case TYPE_STRUCT_PTR:
-        case TYPE_STRUCT_ARRAY: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo();
-        case TYPE_STRUCT_PTR_ARRAY: return currentScope->lookup(symbolType.getSubType())->getLLVMType()->getPointerTo()->getPointerTo();
-        //case TYPE_STRUCT_ARRAY: throw std::runtime_error("Struct array support coming soon");
-        //case TYPE_STRUCT_PTR_ARRAY: throw std::runtime_error("Struct ptr array support coming soon");
+        case TY_DOUBLE: {
+            llvmBaseType = llvm::Type::getDoubleTy(*context);
+            break;
+        }
+        case TY_INT: {
+            llvmBaseType = llvm::Type::getInt32Ty(*context);
+            break;
+        }
+        case TY_BYTE:
+        case TY_CHAR: {
+            llvmBaseType = llvm::Type::getInt8Ty(*context);
+            break;
+        }
+        case TY_STRING: {
+            llvmBaseType = llvm::Type::getInt8PtrTy(*context);
+            break;
+        }
+        case TY_BOOL: {
+            llvmBaseType = llvm::Type::getInt1Ty(*context);
+            break;
+        }
+        case TY_STRUCT: {
+            llvmBaseType = currentScope->lookup(symbolType.getSubType())->getLLVMType();
+            break;
+        }
         default: throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName());
     }
+
+    // Consider pointer/array hierarchy
+    while (!pointerArrayList.empty()) {
+        if (pointerArrayList.top() == TY_PTR) { // Pointer
+            llvmBaseType = llvmBaseType->getPointerTo();
+        } else { // Array
+            llvmBaseType = llvm::ArrayType::get(llvmBaseType, 0);
+        }
+        pointerArrayList.pop();
+    }
+
+    return llvmBaseType;
 }
 
 llvm::Value* GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolType) {
     switch (symbolType.getSuperType()) {
-        case TYPE_DOUBLE:
+        case TY_DOUBLE:
             return llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-        case TYPE_INT:
+        case TY_INT:
             return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), 0);
-        case TYPE_BYTE:
-        case TYPE_CHAR:
+        case TY_BYTE:
+        case TY_CHAR:
             return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), 0);
-        case TYPE_STRING:
+        case TY_STRING:
             return builder->CreateGlobalStringPtr("", "", 0, module.get());
-        case TYPE_BOOL:
+        case TY_BOOL:
             return builder->getFalse();
         default:
             throw std::runtime_error("Internal compiler error: Cannot determine default value of " + symbolType.getName());

@@ -32,7 +32,7 @@ SymbolTableEntry* IdentifierUtil::getSymbolTableEntryByIdenList(const antlr4::To
         throw SemanticError(token, REFERENCED_UNDEFINED_VARIABLE,
                             "Variable " + idenList[0] + " was referenced before declared");
     // If it is no struct and the idenList has one item, return immediately
-    if (!entry->getType().isOneOf({ TYPE_STRUCT, TYPE_STRUCT_PTR })) {
+    if (!entry->getType().is( TY_STRUCT) && !entry->getType().isPointerOf(TY_STRUCT)) {
         if (idenList.size() == 1) return entry;
         throw SemanticError(token, REFERENCED_UNDEFINED_STRUCT_FIELD,
                             "Cannot access nested fields in '" + entry->getName() + "'");
