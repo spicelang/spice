@@ -1319,7 +1319,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                 // De-reference automatically if it is a struct pointer
                 if (symbolType.isPointerOf(TY_STRUCT)) symbolType = symbolType.getContainedTy();
                 // Change to new scope
-                std::string structName = entry->getType().getSubType();
+                std::string structName = symbolType.getSubType();
                 scope = scope->lookupTable("struct:" + structName);
                 // Check if the table exists
                 if (!scope)

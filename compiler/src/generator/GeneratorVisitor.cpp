@@ -1641,15 +1641,17 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
             // De-reference automatically if it is a struct pointer
             if (entry->getType().is(TY_STRUCT) || entry->getType().isPointerOf(TY_STRUCT)) {
+                SymbolType symbolType = entry->getType();
                 // Start auto-de-referencing
                 if (entry->getType().isPointerOf(TY_STRUCT)) {
                     basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
                     basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
                     indices.clear();
                     indices.push_back(builder->getInt32(0));
+                    symbolType = symbolType.getContainedTy();
                 }
                 // Change to new scope
-                std::string structName = entry->getType().getSubType();
+                std::string structName = symbolType.getSubType();
                 scope = scope->lookupTable("struct:" + structName);
                 // Check if the table exists
                 if (!scope)
