@@ -45,14 +45,14 @@ if.end:                                           ; preds = %entry
   store i32 %18, i32* %19, align 4
   %20 = getelementptr inbounds i32, i32* %19, i32 0
   %21 = load i32, i32* %20, align 4
-  %mul = mul i32 %10, %21
-  %22 = alloca i32, align 4
-  store i32 %mul, i32* %22, align 4
-  %23 = load i32, i32* %22, align 4
-  %24 = getelementptr inbounds i32, i32* %result, i32 0
-  store i32 %23, i32* %24, align 4
-  %25 = load i32, i32* %result, align 4
-  ret i32 %25
+  %22 = mul i32 %10, %21
+  %23 = alloca i32, align 4
+  store i32 %22, i32* %23, align 4
+  %24 = load i32, i32* %23, align 4
+  %25 = getelementptr inbounds i32, i32* %result, i32 0
+  store i32 %24, i32* %25, align 4
+  %26 = load i32, i32* %result, align 4
+  ret i32 %26
 }
 
 define i32 @main() {

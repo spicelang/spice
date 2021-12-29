@@ -3,14 +3,24 @@
 #include "OpRuleManager.h"
 
 SymbolType OpRuleManager::getPlusResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
-    return validateOperation(token, plusOpRules, "+", lhs, rhs);
+    return validateOperation(token, PLUS_OP_RULES, "+", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getMinusResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
-    return validateOperation(token, minusOpRules, "-", lhs, rhs);
+    return validateOperation(token, MINUS_OP_RULES, "-", lhs, rhs);
 }
 
+SymbolType OpRuleManager::getMulResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateOperation(token, MUL_OP_RULES, "*", lhs, rhs);
+}
 
+SymbolType OpRuleManager::getDivResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateOperation(token, DIV_OP_RULES, "/", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getRemResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateOperation(token, REM_OP_RULES, "%", lhs, rhs);
+}
 
 
 

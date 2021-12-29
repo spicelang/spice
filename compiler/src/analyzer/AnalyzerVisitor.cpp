@@ -1038,7 +1038,15 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
             auto next = ctx->prefixUnaryExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
 
-            if (op->getSymbol()->getType() == SpiceParser::MUL) { // Operator was mul
+            if (op->getSymbol()->getType() == SpiceParser::MUL) { // Operator is mul
+                OpRuleManager::getMulResultType(*next->start, currentType, nextType);
+            } else if (op->getSymbol()->getType() == SpiceParser::DIV) { // Operator is div
+                OpRuleManager::getDivResultType(*next->start, currentType, nextType);
+            } else { // Operator is rem
+                OpRuleManager::getRemResultType(*next->start, currentType, nextType);
+            }
+
+            /*if (op->getSymbol()->getType() == SpiceParser::MUL) { // Operator was mul
                 if (currentType.is(TY_DOUBLE)) {
                     if (nextType.is(TY_DOUBLE)) { // e.g.: 4.3 * 6.1 = 26.23
                         currentType = SymbolType(TY_DOUBLE);
@@ -1142,7 +1150,7 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
                     throw SemanticError(*next->start, OPERATOR_WRONG_DATA_TYPE, "Incompatible operands " +
                                         currentType.getName() + " and " + nextType.getName() + " for '%' operator");
                 }
-            }
+            }*/
             operatorIndex += 2;
         }
         return currentType;

@@ -1468,18 +1468,16 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
     if (ctx->multiplicativeExpr().size() > 1) {
         llvm::Value* lhsPtr = visit(ctx->multiplicativeExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Type* lhsTy = lhs->getType();
         unsigned int operatorIndex = 1;
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
             llvm::Value* rhsPtr = visit(ctx->multiplicativeExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-            llvm::Type* rhsTy = rhs->getType();
 
             if (op->getSymbol()->getType() == SpiceParser::PLUS)
-                lhs = conversionsManager->getPlusInst(lhs, lhsTy, rhs, rhsTy);
+                lhs = conversionsManager->getPlusInst(lhs, rhs);
             else
-                lhs = conversionsManager->getMinusInst(lhs, lhsTy, rhs, rhsTy);
+                lhs = conversionsManager->getMinusInst(lhs, rhs);
 
             operatorIndex += 2;
         }
@@ -1496,20 +1494,18 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
     if (ctx->prefixUnaryExpr().size() > 1) {
         llvm::Value* lhsPtr = visit(ctx->prefixUnaryExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Type* lhsType = lhs->getType();
         unsigned int operatorIndex = 1;
         for (int i = 1; i < ctx->prefixUnaryExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
             llvm::Value* rhsPtr = visit(ctx->prefixUnaryExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-            llvm::Type* rhsType = rhs->getType();
 
             if (op->getSymbol()->getType() == SpiceParser::MUL)
-                lhs = createMulInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getMulInst(lhs, rhs);
             else if (op->getSymbol()->getType() == SpiceParser::DIV)
-                lhs = createDivInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getDivInst(lhs, rhs);
             else
-                lhs = createRemInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getRemInst(lhs, rhs);
 
             operatorIndex += 2;
         }
@@ -1966,21 +1962,6 @@ llvm::Value* GeneratorVisitor::createDivInst(llvm::Value* lhs, llvm::Type* lhsTy
         } else if (rhsType->isIntegerTy(32)) { // int
             // int : int
             lhs = builder->CreateSDiv(lhs, rhs, "div");
-        }
-    }
-    return lhs;
-}
-
-llvm::Value* GeneratorVisitor::createRemInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) { // double
-        if (rhsType->isDoubleTy()) { // double
-            // double % double
-            lhs = builder->CreateFRem(lhs, rhs, "rem");
-        }
-    } else if (lhsType->isIntegerTy(32)) { // int
-        if (rhsType->isIntegerTy(32)) { // int
-            // int % int
-            lhs = builder->CreateSRem(lhs, rhs, "rem");
         }
     }
     return lhs;

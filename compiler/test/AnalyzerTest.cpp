@@ -97,7 +97,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-multiplicative-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands bool and string for '*' operator"
+            "Semantic error at 2:29: Wrong data type for operator: Cannot apply '*' operator on types bool and string"
         },
         {
             "error-prefix-unary-only-integer-identifiers",

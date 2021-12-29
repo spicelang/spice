@@ -25,8 +25,11 @@ public:
     explicit OpRuleConversionsManager(llvm::IRBuilder<>* builder) : builder(builder) {}
 
     // Public methods
-    llvm::Value* getPlusInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
-    llvm::Value* getMinusInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+    llvm::Value* getPlusInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getMinusInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getMulInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getDivInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getRemInst(llvm::Value*, llvm::Value*);
 private:
     // Members
     llvm::IRBuilder<>* builder;
