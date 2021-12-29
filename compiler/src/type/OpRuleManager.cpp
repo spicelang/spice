@@ -2,6 +2,14 @@
 
 #include "OpRuleManager.h"
 
+SymbolType OpRuleManager::getShiftLeftResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, SHIFT_LEFT_OP_RULES, "<<", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getShiftRightResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, SHIFT_RIGHT_OP_RULES, ">>", lhs, rhs);
+}
+
 SymbolType OpRuleManager::getPlusResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
     return validateBinaryOperation(token, PLUS_OP_RULES, "+", lhs, rhs);
 }

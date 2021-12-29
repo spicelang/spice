@@ -12,6 +12,40 @@ typedef std::tuple<SymbolType, SymbolType> UnaryOpRule;
 // Binary operator rule tuple: lhs type, rhs type, result type
 typedef std::tuple<SymbolType, SymbolType, SymbolType> BinaryOpRule;
 
+// Shift left op rules
+const std::vector<BinaryOpRule> SHIFT_LEFT_OP_RULES = {
+        BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int << int = int
+        BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int << short = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_INT),            // int << long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short << int = short
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short << short = short
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),        // short << long = short
+        BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long << int = long
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long << short = long
+        BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long << long = long
+        BinaryOpRule(TY_BYTE, TY_INT, TY_BYTE),           // byte << int = byte
+        BinaryOpRule(TY_BYTE, TY_SHORT, TY_BYTE),         // byte << short = byte
+        BinaryOpRule(TY_BYTE, TY_LONG, TY_BYTE),          // byte << long = byte
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte << byte = byte
+};
+
+// Shift right op rules
+const std::vector<BinaryOpRule> SHIFT_RIGHT_OP_RULES = {
+        BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int >> int = int
+        BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int >> short = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_INT),            // int >> long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short >> int = short
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short >> short = short
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),        // short >> long = short
+        BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long >> int = long
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long >> short = long
+        BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long >> long = long
+        BinaryOpRule(TY_BYTE, TY_INT, TY_BYTE),           // byte >> int = byte
+        BinaryOpRule(TY_BYTE, TY_SHORT, TY_BYTE),         // byte >> short = byte
+        BinaryOpRule(TY_BYTE, TY_LONG, TY_BYTE),          // byte >> long = byte
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte >> byte = byte
+};
+
 // Plus op rules
 const std::vector<BinaryOpRule> PLUS_OP_RULES = {
         BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE),    // double + double = double
@@ -159,6 +193,8 @@ const std::vector<UnaryOpRule> NOT_OP_RULES = {
 class OpRuleManager {
 public:
     // Public methods
+    static SymbolType getShiftLeftResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getShiftRightResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getPlusResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getMinusResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getMulResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);

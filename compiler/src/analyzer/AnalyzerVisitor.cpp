@@ -996,9 +996,11 @@ antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ctx
     if (ctx->children.size() > 1) {
         SymbolType lhsTy = visit(ctx->additiveExpr()[0]).as<SymbolType>();
         SymbolType rhsTy = visit(ctx->additiveExpr()[1]).as<SymbolType>();
-        if (!lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
-            throw SemanticError(*ctx->additiveExpr()[0]->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Shift operators can only be applied on ints");
+
+        if (ctx->SHL()) // Operator was shl
+            return OpRuleManager::getShiftLeftResultType(*ctx->start, lhsTy, rhsTy);
+        else // Operator was shr
+            return OpRuleManager::getShiftRightResultType(*ctx->start, lhsTy, rhsTy);
     }
     return visit(ctx->additiveExpr()[0]);
 }

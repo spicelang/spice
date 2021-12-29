@@ -1444,19 +1444,15 @@ antlrcpp::Any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ct
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
-        // Shift expr is: additiveExpr SHL additiveExpr
-        if (ctx->SHL()) {
-            llvm::Value* shlInst = builder->CreateShl(lhs, rhs, "shl");
-            llvm::Value* resultPtr = builder->CreateAlloca(shlInst->getType());
-            builder->CreateStore(shlInst, resultPtr);
+        if (ctx->SHL()) { // Shift expr is: additiveExpr SHL additiveExpr
+            llvm::Value* result = conversionsManager->getShiftLeftInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Relational expr is: additiveExpr SHR additiveExpr
-        if (ctx->SHR()) {
-            llvm::Value* shrInst = builder->CreateLShr(lhs, rhs, "shr");
-            llvm::Value* resultPtr = builder->CreateAlloca(shrInst->getType());
-            builder->CreateStore(shrInst, resultPtr);
+        } else if (ctx->SHR()) { // Relational expr is: additiveExpr SHR additiveExpr
+            llvm::Value* result = conversionsManager->getShiftRightInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
         }
     }

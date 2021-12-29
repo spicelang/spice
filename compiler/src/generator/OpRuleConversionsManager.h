@@ -25,6 +25,8 @@ public:
     explicit OpRuleConversionsManager(llvm::IRBuilder<>* builder) : builder(builder) {}
 
     // Public methods
+    llvm::Value* getShiftLeftInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getShiftRightInst(llvm::Value*, llvm::Value*);
     llvm::Value* getPlusInst(llvm::Value*, llvm::Value*);
     llvm::Value* getMinusInst(llvm::Value*, llvm::Value*);
     llvm::Value* getMulInst(llvm::Value*, llvm::Value*);
