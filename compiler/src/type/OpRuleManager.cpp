@@ -2,6 +2,22 @@
 
 #include "OpRuleManager.h"
 
+SymbolType OpRuleManager::getLessResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, LESS_OP_RULES, "<", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getGreaterResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, GREATER_OP_RULES, ">", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getLessEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, LESS_EQUAL_OP_RULES, "<=", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getGreaterEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, GREATER_EQUAL_OP_RULES, ">=", lhs, rhs);
+}
+
 SymbolType OpRuleManager::getShiftLeftResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
     return validateBinaryOperation(token, SHIFT_LEFT_OP_RULES, "<<", lhs, rhs);
 }

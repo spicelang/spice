@@ -12,6 +12,94 @@ typedef std::tuple<SymbolType, SymbolType> UnaryOpRule;
 // Binary operator rule tuple: lhs type, rhs type, result type
 typedef std::tuple<SymbolType, SymbolType, SymbolType> BinaryOpRule;
 
+// Less op rules
+const std::vector<BinaryOpRule> LESS_OP_RULES = {
+        BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL),      // double < double = bool
+        BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL),         // double < int = bool
+        BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL),       // double < short = bool
+        BinaryOpRule(TY_DOUBLE, TY_LONG, TY_BOOL),        // double < long = bool
+        BinaryOpRule(TY_INT, TY_DOUBLE, TY_BOOL),         // int < double = bool
+        BinaryOpRule(TY_INT, TY_INT, TY_BOOL),            // int < int = bool
+        BinaryOpRule(TY_INT, TY_SHORT, TY_BOOL),          // int < short = bool
+        BinaryOpRule(TY_INT, TY_LONG, TY_BOOL),           // int < long = bool
+        BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_BOOL),       // short < double = bool
+        BinaryOpRule(TY_SHORT, TY_INT, TY_BOOL),          // short < int = bool
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_BOOL),        // short < short = bool
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_BOOL),         // short < long = bool
+        BinaryOpRule(TY_LONG, TY_DOUBLE, TY_BOOL),        // long < double = bool
+        BinaryOpRule(TY_LONG, TY_INT, TY_BOOL),           // long < int = bool
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_BOOL),         // long < short = bool
+        BinaryOpRule(TY_LONG, TY_LONG, TY_BOOL),          // long < long = bool
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BOOL),          // byte < byte = bool
+        BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL),          // char < char = bool
+};
+
+// Greater op rules
+const std::vector<BinaryOpRule> GREATER_OP_RULES = {
+        BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL),      // double > double = bool
+        BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL),         // double > int = bool
+        BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL),       // double > short = bool
+        BinaryOpRule(TY_DOUBLE, TY_LONG, TY_BOOL),        // double > long = bool
+        BinaryOpRule(TY_INT, TY_DOUBLE, TY_BOOL),         // int > double = bool
+        BinaryOpRule(TY_INT, TY_INT, TY_BOOL),            // int > int = bool
+        BinaryOpRule(TY_INT, TY_SHORT, TY_BOOL),          // int > short = bool
+        BinaryOpRule(TY_INT, TY_LONG, TY_BOOL),           // int > long = bool
+        BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_BOOL),       // short > double = bool
+        BinaryOpRule(TY_SHORT, TY_INT, TY_BOOL),          // short > int = bool
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_BOOL),        // short > short = bool
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_BOOL),         // short > long = bool
+        BinaryOpRule(TY_LONG, TY_DOUBLE, TY_BOOL),        // long > double = bool
+        BinaryOpRule(TY_LONG, TY_INT, TY_BOOL),           // long > int = bool
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_BOOL),         // long > short = bool
+        BinaryOpRule(TY_LONG, TY_LONG, TY_BOOL),          // long > long = bool
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BOOL),          // byte > byte = bool
+        BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL),          // char > char = bool
+};
+
+// Less equal op rules
+const std::vector<BinaryOpRule> LESS_EQUAL_OP_RULES = {
+        BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL),      // double <= double = bool
+        BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL),         // double <= int = bool
+        BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL),       // double <= short = bool
+        BinaryOpRule(TY_DOUBLE, TY_LONG, TY_BOOL),        // double <= long = bool
+        BinaryOpRule(TY_INT, TY_DOUBLE, TY_BOOL),         // int <= double = bool
+        BinaryOpRule(TY_INT, TY_INT, TY_BOOL),            // int <= int = bool
+        BinaryOpRule(TY_INT, TY_SHORT, TY_BOOL),          // int <= short = bool
+        BinaryOpRule(TY_INT, TY_LONG, TY_BOOL),           // int <= long = bool
+        BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_BOOL),       // short <= double = bool
+        BinaryOpRule(TY_SHORT, TY_INT, TY_BOOL),          // short <= int = bool
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_BOOL),        // short <= short = bool
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_BOOL),         // short <= long = bool
+        BinaryOpRule(TY_LONG, TY_DOUBLE, TY_BOOL),        // long <= double = bool
+        BinaryOpRule(TY_LONG, TY_INT, TY_BOOL),           // long <= int = bool
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_BOOL),         // long <= short = bool
+        BinaryOpRule(TY_LONG, TY_LONG, TY_BOOL),          // long <= long = bool
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BOOL),          // byte <= byte = bool
+        BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL),          // char <= char = bool
+};
+
+// Greater equal op rules
+const std::vector<BinaryOpRule> GREATER_EQUAL_OP_RULES = {
+        BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL),      // double >= double = bool
+        BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL),         // double >= int = bool
+        BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL),       // double >= short = bool
+        BinaryOpRule(TY_DOUBLE, TY_LONG, TY_BOOL),        // double >= long = bool
+        BinaryOpRule(TY_INT, TY_DOUBLE, TY_BOOL),         // int >= double = bool
+        BinaryOpRule(TY_INT, TY_INT, TY_BOOL),            // int >= int = bool
+        BinaryOpRule(TY_INT, TY_SHORT, TY_BOOL),          // int >= short = bool
+        BinaryOpRule(TY_INT, TY_LONG, TY_BOOL),           // int >= long = bool
+        BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_BOOL),       // short >= double = bool
+        BinaryOpRule(TY_SHORT, TY_INT, TY_BOOL),          // short >= int = bool
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_BOOL),        // short >= short = bool
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_BOOL),         // short >= long = bool
+        BinaryOpRule(TY_LONG, TY_DOUBLE, TY_BOOL),        // long >= double = bool
+        BinaryOpRule(TY_LONG, TY_INT, TY_BOOL),           // long >= int = bool
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_BOOL),         // long >= short = bool
+        BinaryOpRule(TY_LONG, TY_LONG, TY_BOOL),          // long >= long = bool
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BOOL),          // byte >= byte = bool
+        BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL),          // char >= char = bool
+};
+
 // Shift left op rules
 const std::vector<BinaryOpRule> SHIFT_LEFT_OP_RULES = {
         BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int << int = int
@@ -193,6 +281,10 @@ const std::vector<UnaryOpRule> NOT_OP_RULES = {
 class OpRuleManager {
 public:
     // Public methods
+    static SymbolType getLessResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getGreaterResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getLessEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getGreaterEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getShiftLeftResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getShiftRightResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getPlusResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);

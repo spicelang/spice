@@ -89,7 +89,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-relational-operators-are-doubles-or-integers",
-            "Semantic error at 3:12: Wrong data type for operator: Can only compare doubles or ints with one another with a relational operator"
+            "Semantic error at 3:12: Wrong data type for operator: Cannot apply '>' operator on types double and string"
         },
         {
             "error-additive-operators-some-combinations",

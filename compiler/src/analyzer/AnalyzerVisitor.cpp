@@ -975,18 +975,15 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
     if (ctx->children.size() > 1) {
         SymbolType lhsTy = visit(ctx->shiftExpr()[0]).as<SymbolType>();
         SymbolType rhsTy = visit(ctx->shiftExpr()[1]).as<SymbolType>();
-        if (lhsTy.matches(rhsTy, TY_DOUBLE) ||          // Can compare double with double
-            lhsTy.is(TY_DOUBLE) && rhsTy.is(TY_INT) ||  // Can compare double with int
-            lhsTy.is(TY_INT) && rhsTy.is(TY_DOUBLE) ||  // Can compare int with double
-            lhsTy.matches(rhsTy, TY_INT) ||             // Can compare int with int
-            lhsTy.matches(rhsTy, TY_SHORT) ||           // Can compare short with short
-            lhsTy.matches(rhsTy, TY_LONG) ||            // Can compare long with long
-            lhsTy.matches(rhsTy, TY_BYTE) ||            // Can compare byte with byte
-            lhsTy.matches(rhsTy, TY_CHAR)               // Can compare char with char
-        ) return SymbolType(TY_BOOL);
-        // Every other combination is invalid
-        throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                            "Can only compare doubles or ints with one another with a relational operator");
+
+        if (ctx->LESS()) // Operator was less
+            return OpRuleManager::getLessResultType(*ctx->start, lhsTy, rhsTy);
+        else if (ctx->GREATER()) // Operator was greater
+            return OpRuleManager::getGreaterResultType(*ctx->start, lhsTy, rhsTy);
+        else if (ctx->LESS_EQUAL()) // Operator was less equal
+            return OpRuleManager::getLessEqualResultType(*ctx->start, lhsTy, rhsTy);
+        else // Operator was greater equal
+            return OpRuleManager::getGreaterEqualResultType(*ctx->start, lhsTy, rhsTy);
     }
     return visit(ctx->shiftExpr()[0]);
 }

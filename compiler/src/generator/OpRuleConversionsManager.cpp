@@ -2,6 +2,238 @@
 
 #include "OpRuleConversionsManager.h"
 
+llvm::Value* OpRuleConversionsManager::getLessInst(llvm::Value* lhs, llvm::Value* rhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    llvm::Type* rhsTy = rhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+    switch(COMB(lhsPTy, rhsPTy)) {
+        case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
+            return builder->CreateFCmpOLT(lhs, rhs);
+        case COMB(P_TY_DOUBLE, P_TY_INT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_LONG): {
+            llvm::Value* rhsFP = builder->CreateSIToFP(rhs, lhsTy);
+            return builder->CreateFCmpOLT(lhs, rhsFP);
+        }
+        case COMB(P_TY_INT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOLT(lhsFP, rhs);
+        }
+        case COMB(P_TY_INT, P_TY_INT):
+            return builder->CreateICmpSLT(lhs, rhs);
+        case COMB(P_TY_INT, P_TY_SHORT): {
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpSLT(lhs, rhsInt);
+        }
+        case COMB(P_TY_INT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSLT(lhsLong, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOLT(lhsFP, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_INT): {
+            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSLT(lhsInt, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_SHORT):
+            return builder->CreateICmpSLT(lhs, rhs);
+        case COMB(P_TY_SHORT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSLT(lhsLong, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOLT(lhsFP, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_INT): // fallthrough
+        case COMB(P_TY_LONG, P_TY_SHORT): {
+            llvm::Value* rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpSLT(lhs, rhsLong);
+        }
+        case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
+            return builder->CreateICmpSLT(lhs, rhs);
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: <");
+}
+
+llvm::Value* OpRuleConversionsManager::getGreaterInst(llvm::Value* lhs, llvm::Value* rhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    llvm::Type* rhsTy = rhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+    switch(COMB(lhsPTy, rhsPTy)) {
+        case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
+            return builder->CreateFCmpOGT(lhs, rhs);
+        case COMB(P_TY_DOUBLE, P_TY_INT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_LONG): {
+            llvm::Value* rhsFP = builder->CreateSIToFP(rhs, lhsTy);
+            return builder->CreateFCmpOGT(lhs, rhsFP);
+        }
+        case COMB(P_TY_INT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOGT(lhsFP, rhs);
+        }
+        case COMB(P_TY_INT, P_TY_INT):
+            return builder->CreateICmpSGT(lhs, rhs);
+        case COMB(P_TY_INT, P_TY_SHORT): {
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpSGT(lhs, rhsInt);
+        }
+        case COMB(P_TY_INT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSGT(lhsLong, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOGT(lhsFP, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_INT): {
+            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSGT(lhsInt, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_SHORT):
+            return builder->CreateICmpSGT(lhs, rhs);
+        case COMB(P_TY_SHORT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSGT(lhsLong, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOGT(lhsFP, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_INT): // fallthrough
+        case COMB(P_TY_LONG, P_TY_SHORT): {
+            llvm::Value* rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpSGT(lhs, rhsLong);
+        }
+        case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
+            return builder->CreateICmpSGT(lhs, rhs);
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: >");
+}
+
+llvm::Value* OpRuleConversionsManager::getLessEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    llvm::Type* rhsTy = rhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+    switch(COMB(lhsPTy, rhsPTy)) {
+        case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
+            return builder->CreateFCmpOLE(lhs, rhs);
+        case COMB(P_TY_DOUBLE, P_TY_INT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_LONG): {
+            llvm::Value* rhsFP = builder->CreateSIToFP(rhs, lhsTy);
+            return builder->CreateFCmpOLE(lhs, rhsFP);
+        }
+        case COMB(P_TY_INT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOLE(lhsFP, rhs);
+        }
+        case COMB(P_TY_INT, P_TY_INT):
+            return builder->CreateICmpSLE(lhs, rhs);
+        case COMB(P_TY_INT, P_TY_SHORT): {
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpSLE(lhs, rhsInt);
+        }
+        case COMB(P_TY_INT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSLE(lhsLong, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOLE(lhsFP, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_INT): {
+            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSLE(lhsInt, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_SHORT):
+            return builder->CreateICmpSLE(lhs, rhs);
+        case COMB(P_TY_SHORT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSLE(lhsLong, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOLE(lhsFP, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_INT): // fallthrough
+        case COMB(P_TY_LONG, P_TY_SHORT): {
+            llvm::Value* rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpSLE(lhs, rhsLong);
+        }
+        case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
+            return builder->CreateICmpSLE(lhs, rhs);
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: <=");
+}
+
+llvm::Value* OpRuleConversionsManager::getGreaterEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    llvm::Type* rhsTy = rhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+    switch(COMB(lhsPTy, rhsPTy)) {
+        case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
+            return builder->CreateFCmpOGE(lhs, rhs);
+        case COMB(P_TY_DOUBLE, P_TY_INT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_LONG): {
+            llvm::Value* rhsFP = builder->CreateSIToFP(rhs, lhsTy);
+            return builder->CreateFCmpOGE(lhs, rhsFP);
+        }
+        case COMB(P_TY_INT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOGE(lhsFP, rhs);
+        }
+        case COMB(P_TY_INT, P_TY_INT):
+            return builder->CreateICmpSGE(lhs, rhs);
+        case COMB(P_TY_INT, P_TY_SHORT): {
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpSGE(lhs, rhsInt);
+        }
+        case COMB(P_TY_INT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSGE(lhsLong, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOGE(lhsFP, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_INT): {
+            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSGE(lhsInt, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_SHORT):
+            return builder->CreateICmpSGE(lhs, rhs);
+        case COMB(P_TY_SHORT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpSGE(lhsLong, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOGE(lhsFP, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_INT): // fallthrough
+        case COMB(P_TY_LONG, P_TY_SHORT): {
+            llvm::Value* rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpSGE(lhs, rhsLong);
+        }
+        case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
+            return builder->CreateICmpSGE(lhs, rhs);
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: >=");
+}
+
 llvm::Value* OpRuleConversionsManager::getShiftLeftInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();

@@ -1381,55 +1381,25 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
-        // Relational expr is: shiftExpr LESS shiftExpr
-        if (ctx->LESS()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOLT(lhs, rhs, "lt");
-            } else {
-                cmpInst = builder->CreateICmpSLT(lhs, rhs, "lt");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        if (ctx->LESS()) { // Relational expr is: shiftExpr LESS shiftExpr
+            llvm::Value* result = conversionsManager->getLessInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Relational expr is: shiftExpr GREATER shiftExpr
-        if (ctx->GREATER()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOGT(lhs, rhs, "gt");
-            } else {
-                cmpInst = builder->CreateICmpSGT(lhs, rhs, "gt");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        } else if (ctx->GREATER()) { // Relational expr is: shiftExpr GREATER shiftExpr
+            llvm::Value* result = conversionsManager->getGreaterInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Relational expr is: shiftExpr LESS_EQUAL shiftExpr
-        if (ctx->LESS_EQUAL()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOLE(lhs, rhs, "le");
-            } else {
-                cmpInst = builder->CreateICmpSLE(lhs, rhs, "le");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        } else if (ctx->LESS_EQUAL()) { // Relational expr is: shiftExpr LESS_EQUAL shiftExpr
+            llvm::Value* result = conversionsManager->getLessEqualInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Relational expr is: shiftExpr GREATER_EQUAL shiftExpr
-        if (ctx->GREATER_EQUAL()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOGE(lhs, rhs, "ge");
-            } else {
-                cmpInst = builder->CreateICmpSGE(lhs, rhs, "ge");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        } else if (ctx->GREATER_EQUAL()) { // Relational expr is: shiftExpr GREATER_EQUAL shiftExpr
+            llvm::Value* result = conversionsManager->getGreaterEqualInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
         }
     }
@@ -1449,7 +1419,7 @@ antlrcpp::Any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ct
             llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
-        } else if (ctx->SHR()) { // Relational expr is: additiveExpr SHR additiveExpr
+        } else if (ctx->SHR()) { // Shift expr is: additiveExpr SHR additiveExpr
             llvm::Value* result = conversionsManager->getShiftRightInst(lhs, rhs);
             llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
             builder->CreateStore(result, resultPtr);

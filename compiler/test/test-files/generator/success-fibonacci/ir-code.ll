@@ -16,52 +16,52 @@ entry:
   store i32 2, i32* %2, align 4
   %3 = load i32, i32* %1, align 4
   %4 = load i32, i32* %2, align 4
-  %le = icmp sle i32 %3, %4
-  %5 = alloca i1, align 1
-  store i1 %le, i1* %5, align 1
-  %6 = load i1, i1* %5, align 1
-  br i1 %6, label %if.then, label %if.end
+  %5 = icmp sle i32 %3, %4
+  %6 = alloca i1, align 1
+  store i1 %5, i1* %6, align 1
+  %7 = load i1, i1* %6, align 1
+  br i1 %7, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %7 = alloca i32, align 4
-  store i32 1, i32* %7, align 4
-  %8 = load i32, i32* %7, align 4
-  ret i32 %8
+  %8 = alloca i32, align 4
+  store i32 1, i32* %8, align 4
+  %9 = load i32, i32* %8, align 4
+  ret i32 %9
 
 if.end:                                           ; preds = %entry
-  %9 = getelementptr inbounds i32, i32* %n, i32 0
-  %10 = load i32, i32* %9, align 4
-  %11 = alloca i32, align 4
-  store i32 1, i32* %11, align 4
-  %12 = load i32, i32* %11, align 4
-  %13 = sub i32 %10, %12
-  %14 = alloca i32, align 4
-  store i32 %13, i32* %14, align 4
-  %15 = load i32, i32* %14, align 4
-  %16 = call i32 @"fib(int)"(i32 %15)
-  %17 = alloca i32, align 4
-  store i32 %16, i32* %17, align 4
-  %18 = getelementptr inbounds i32, i32* %17, i32 0
-  %19 = load i32, i32* %18, align 4
-  %20 = getelementptr inbounds i32, i32* %n, i32 0
-  %21 = load i32, i32* %20, align 4
-  %22 = alloca i32, align 4
-  store i32 2, i32* %22, align 4
-  %23 = load i32, i32* %22, align 4
-  %24 = sub i32 %21, %23
-  %25 = alloca i32, align 4
-  store i32 %24, i32* %25, align 4
-  %26 = load i32, i32* %25, align 4
-  %27 = call i32 @"fib(int)"(i32 %26)
-  %28 = alloca i32, align 4
-  store i32 %27, i32* %28, align 4
-  %29 = getelementptr inbounds i32, i32* %28, i32 0
-  %30 = load i32, i32* %29, align 4
-  %31 = add i32 %19, %30
-  %32 = alloca i32, align 4
-  store i32 %31, i32* %32, align 4
-  %33 = load i32, i32* %32, align 4
-  ret i32 %33
+  %10 = getelementptr inbounds i32, i32* %n, i32 0
+  %11 = load i32, i32* %10, align 4
+  %12 = alloca i32, align 4
+  store i32 1, i32* %12, align 4
+  %13 = load i32, i32* %12, align 4
+  %14 = sub i32 %11, %13
+  %15 = alloca i32, align 4
+  store i32 %14, i32* %15, align 4
+  %16 = load i32, i32* %15, align 4
+  %17 = call i32 @"fib(int)"(i32 %16)
+  %18 = alloca i32, align 4
+  store i32 %17, i32* %18, align 4
+  %19 = getelementptr inbounds i32, i32* %18, i32 0
+  %20 = load i32, i32* %19, align 4
+  %21 = getelementptr inbounds i32, i32* %n, i32 0
+  %22 = load i32, i32* %21, align 4
+  %23 = alloca i32, align 4
+  store i32 2, i32* %23, align 4
+  %24 = load i32, i32* %23, align 4
+  %25 = sub i32 %22, %24
+  %26 = alloca i32, align 4
+  store i32 %25, i32* %26, align 4
+  %27 = load i32, i32* %26, align 4
+  %28 = call i32 @"fib(int)"(i32 %27)
+  %29 = alloca i32, align 4
+  store i32 %28, i32* %29, align 4
+  %30 = getelementptr inbounds i32, i32* %29, i32 0
+  %31 = load i32, i32* %30, align 4
+  %32 = add i32 %20, %31
+  %33 = alloca i32, align 4
+  store i32 %32, i32* %33, align 4
+  %34 = load i32, i32* %33, align 4
+  ret i32 %34
 }
 
 define i32 @main() {
