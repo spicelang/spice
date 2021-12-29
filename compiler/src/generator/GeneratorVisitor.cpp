@@ -7,6 +7,7 @@ void GeneratorVisitor::init() {
     context = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
     module = std::make_unique<llvm::Module>(FileUtil::getFileName(mainSourceFile), *context);
+    conversionsManager = std::make_unique<OpRuleConversionsManager>(builder.get());
 
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();
@@ -1467,18 +1468,18 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
     if (ctx->multiplicativeExpr().size() > 1) {
         llvm::Value* lhsPtr = visit(ctx->multiplicativeExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Type* lhsType = lhs->getType();
+        llvm::Type* lhsTy = lhs->getType();
         unsigned int operatorIndex = 1;
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
             llvm::Value* rhsPtr = visit(ctx->multiplicativeExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-            llvm::Type* rhsType = rhs->getType();
+            llvm::Type* rhsTy = rhs->getType();
 
             if (op->getSymbol()->getType() == SpiceParser::PLUS)
-                lhs = createAddInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getPlusInst(lhs, lhsTy, rhs, rhsTy);
             else
-                lhs = createSubInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getMinusInst(lhs, lhsTy, rhs, rhsTy);
 
             operatorIndex += 2;
         }

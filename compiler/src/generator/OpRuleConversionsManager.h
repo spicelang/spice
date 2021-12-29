@@ -1,0 +1,43 @@
+// Copyright (c) 2021 ChilliBits. All rights reserved.
+
+#pragma once
+
+#include <llvm/IR/Value.h>
+#include <llvm/IR/IRBuilder.h>
+
+#include "exception/IRError.h"
+#include "type/SymbolType.h"
+
+enum PrimitiveType {
+    P_TY_DOUBLE,
+    P_TY_INT,
+    P_TY_SHORT,
+    P_TY_LONG,
+    P_TY_BYTE_OR_CHAR,
+    P_TY_STRING,
+    P_TY_BOOL
+};
+
+#define COMB(en1, en2) ((en1) | ((en2) << 16))
+
+class OpRuleConversionsManager {
+public:
+    explicit OpRuleConversionsManager(llvm::IRBuilder<>* builder) : builder(builder) {}
+
+    // Public methods
+    llvm::Value* getPlusInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+    llvm::Value* getMinusInst(llvm::Value*, llvm::Type*, llvm::Value*, llvm::Type*);
+private:
+    // Members
+    llvm::IRBuilder<>* builder;
+
+    // Private methods
+    static PrimitiveType getPrimitiveTypeFromLLVMType(llvm::Type*);
+    static bool isDouble(llvm::Type*);
+    static bool isInt(llvm::Type*);
+    static bool isShort(llvm::Type*);
+    static bool isLong(llvm::Type*);
+    static bool isByteOrChar(llvm::Type*);
+    static bool isString(llvm::Type*);
+    static bool isBool(llvm::Type*);
+};

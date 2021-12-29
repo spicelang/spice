@@ -36,23 +36,23 @@ if.end:                                           ; preds = %entry
   %13 = alloca i32, align 4
   store i32 1, i32* %13, align 4
   %14 = load i32, i32* %13, align 4
-  %sub = sub i32 %12, %14
-  %15 = alloca i32, align 4
-  store i32 %sub, i32* %15, align 4
-  %16 = load i32, i32* %15, align 4
-  %17 = call i32 @"faculty(int)"(i32 %16)
-  %18 = alloca i32, align 4
-  store i32 %17, i32* %18, align 4
-  %19 = getelementptr inbounds i32, i32* %18, i32 0
-  %20 = load i32, i32* %19, align 4
-  %mul = mul i32 %10, %20
-  %21 = alloca i32, align 4
-  store i32 %mul, i32* %21, align 4
-  %22 = load i32, i32* %21, align 4
-  %23 = getelementptr inbounds i32, i32* %result, i32 0
-  store i32 %22, i32* %23, align 4
-  %24 = load i32, i32* %result, align 4
-  ret i32 %24
+  %15 = sub i32 %12, %14
+  %16 = alloca i32, align 4
+  store i32 %15, i32* %16, align 4
+  %17 = load i32, i32* %16, align 4
+  %18 = call i32 @"faculty(int)"(i32 %17)
+  %19 = alloca i32, align 4
+  store i32 %18, i32* %19, align 4
+  %20 = getelementptr inbounds i32, i32* %19, i32 0
+  %21 = load i32, i32* %20, align 4
+  %mul = mul i32 %10, %21
+  %22 = alloca i32, align 4
+  store i32 %mul, i32* %22, align 4
+  %23 = load i32, i32* %22, align 4
+  %24 = getelementptr inbounds i32, i32* %result, i32 0
+  store i32 %23, i32* %24, align 4
+  %25 = load i32, i32* %result, align 4
+  ret i32 %25
 }
 
 define i32 @main() {

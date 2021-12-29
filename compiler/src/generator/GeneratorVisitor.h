@@ -27,6 +27,7 @@
 
 #include <utility>
 #include <regex>
+#include "OpRuleConversionsManager.h"
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
@@ -138,6 +139,7 @@ public:
 
 private:
     // Members
+    std::unique_ptr<OpRuleConversionsManager> conversionsManager;
     std::string mainSourceFile;
     llvm::Triple targetTriple;
     std::string objectDir;

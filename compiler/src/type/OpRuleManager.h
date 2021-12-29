@@ -58,9 +58,10 @@ const std::vector<BinaryOpRule> minusOpRules = {
 class OpRuleManager {
 public:
     // Public methods
-    static SymbolType getPlusResultType(const SymbolType&, const SymbolType&);
-    static SymbolType getMinusResultType(const SymbolType&, const SymbolType&);
+    static SymbolType getPlusResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getMinusResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
 private:
-    static SymbolType validateOperation(const std::vector<BinaryOpRule>&, const std::string&, const SymbolType&, const SymbolType&);
-    static SemanticError printErrorMessage(const std::string&, SymbolType, SymbolType);
+    static SymbolType validateOperation(const antlr4::Token&, const std::vector<BinaryOpRule>&, const std::string&,
+                                        const SymbolType&, const SymbolType&);
+    static SemanticError printErrorMessage(const antlr4::Token&, const std::string&, SymbolType, SymbolType);
 };

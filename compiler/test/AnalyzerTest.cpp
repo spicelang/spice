@@ -93,7 +93,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-additive-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands bool and string for '+' operator"
+            "Semantic error at 2:29: Wrong data type for operator: Cannot apply '+' operator on types bool and string"
         },
         {
             "error-multiplicative-operators-some-combinations",
@@ -190,7 +190,8 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         {
             "error-struct-types-not-matching",
             "Semantic error at 13:26: Referenced undefined variable: Variable 'dbl' was referenced before declared"
-        }, {
+        },
+        {
             "error-return-without-value-result",
             "Semantic error at 4:9: Return without initialization of result variable: Return without value, but result variable is not initialized yet"
         },

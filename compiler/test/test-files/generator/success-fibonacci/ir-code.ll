@@ -34,34 +34,34 @@ if.end:                                           ; preds = %entry
   %11 = alloca i32, align 4
   store i32 1, i32* %11, align 4
   %12 = load i32, i32* %11, align 4
-  %sub = sub i32 %10, %12
-  %13 = alloca i32, align 4
-  store i32 %sub, i32* %13, align 4
-  %14 = load i32, i32* %13, align 4
-  %15 = call i32 @"fib(int)"(i32 %14)
-  %16 = alloca i32, align 4
-  store i32 %15, i32* %16, align 4
-  %17 = getelementptr inbounds i32, i32* %16, i32 0
-  %18 = load i32, i32* %17, align 4
-  %19 = getelementptr inbounds i32, i32* %n, i32 0
-  %20 = load i32, i32* %19, align 4
-  %21 = alloca i32, align 4
-  store i32 2, i32* %21, align 4
-  %22 = load i32, i32* %21, align 4
-  %sub1 = sub i32 %20, %22
-  %23 = alloca i32, align 4
-  store i32 %sub1, i32* %23, align 4
-  %24 = load i32, i32* %23, align 4
-  %25 = call i32 @"fib(int)"(i32 %24)
-  %26 = alloca i32, align 4
-  store i32 %25, i32* %26, align 4
-  %27 = getelementptr inbounds i32, i32* %26, i32 0
-  %28 = load i32, i32* %27, align 4
-  %add = add i32 %18, %28
-  %29 = alloca i32, align 4
-  store i32 %add, i32* %29, align 4
+  %13 = sub i32 %10, %12
+  %14 = alloca i32, align 4
+  store i32 %13, i32* %14, align 4
+  %15 = load i32, i32* %14, align 4
+  %16 = call i32 @"fib(int)"(i32 %15)
+  %17 = alloca i32, align 4
+  store i32 %16, i32* %17, align 4
+  %18 = getelementptr inbounds i32, i32* %17, i32 0
+  %19 = load i32, i32* %18, align 4
+  %20 = getelementptr inbounds i32, i32* %n, i32 0
+  %21 = load i32, i32* %20, align 4
+  %22 = alloca i32, align 4
+  store i32 2, i32* %22, align 4
+  %23 = load i32, i32* %22, align 4
+  %24 = sub i32 %21, %23
+  %25 = alloca i32, align 4
+  store i32 %24, i32* %25, align 4
+  %26 = load i32, i32* %25, align 4
+  %27 = call i32 @"fib(int)"(i32 %26)
+  %28 = alloca i32, align 4
+  store i32 %27, i32* %28, align 4
+  %29 = getelementptr inbounds i32, i32* %28, i32 0
   %30 = load i32, i32* %29, align 4
-  ret i32 %30
+  %31 = add i32 %19, %30
+  %32 = alloca i32, align 4
+  store i32 %31, i32* %32, align 4
+  %33 = load i32, i32* %32, align 4
+  ret i32 %33
 }
 
 define i32 @main() {
