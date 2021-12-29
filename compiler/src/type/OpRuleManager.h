@@ -123,6 +123,39 @@ const std::vector<BinaryOpRule> REM_OP_RULES = {
         BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long % long = long
 };
 
+// Prefix Plus-Plus op rules
+const std::vector<UnaryOpRule> PREFIX_PLUS_PLUS_OP_RULES = {
+        UnaryOpRule(TY_INT, TY_INT),                      // int++ = int
+        UnaryOpRule(TY_SHORT, TY_SHORT),                  // short++ = short
+        UnaryOpRule(TY_LONG, TY_LONG),                    // long++ = long
+};
+
+// Prefix Minus-Minus op rules
+const std::vector<UnaryOpRule> PREFIX_MINUS_MINUS_OP_RULES = {
+        UnaryOpRule(TY_INT, TY_INT),                      // int++ = int
+        UnaryOpRule(TY_SHORT, TY_SHORT),                  // short++ = short
+        UnaryOpRule(TY_LONG, TY_LONG),                    // long++ = long
+};
+
+// Postfix Plus-Plus op rules
+const std::vector<UnaryOpRule> POSTFIX_PLUS_PLUS_OP_RULES = {
+        UnaryOpRule(TY_INT, TY_INT),                      // int++ = int
+        UnaryOpRule(TY_SHORT, TY_SHORT),                  // short++ = short
+        UnaryOpRule(TY_LONG, TY_LONG),                    // long++ = long
+};
+
+// Postfix Minus-Minus op rules
+const std::vector<UnaryOpRule> POSTFIX_MINUS_MINUS_OP_RULES = {
+        UnaryOpRule(TY_INT, TY_INT),                      // int++ = int
+        UnaryOpRule(TY_SHORT, TY_SHORT),                  // short++ = short
+        UnaryOpRule(TY_LONG, TY_LONG),                    // long++ = long
+};
+
+// Not op rules
+const std::vector<UnaryOpRule> NOT_OP_RULES = {
+        UnaryOpRule(TY_BOOL, TY_BOOL),                      // !bool = bool
+};
+
 class OpRuleManager {
 public:
     // Public methods
@@ -131,8 +164,17 @@ public:
     static SymbolType getMulResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getDivResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getRemResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getPrefixPlusPlusResultType(const antlr4::Token&, const SymbolType&);
+    static SymbolType getPrefixMinusMinusResultType(const antlr4::Token&, const SymbolType&);
+    static SymbolType getPostfixPlusPlusResultType(const antlr4::Token&, const SymbolType&);
+    static SymbolType getPostfixMinusMinusResultType(const antlr4::Token&, const SymbolType&);
+    static SymbolType getNotResultType(const antlr4::Token&, const SymbolType&);
 private:
-    static SymbolType validateOperation(const antlr4::Token&, const std::vector<BinaryOpRule>&, const std::string&,
-                                        const SymbolType&, const SymbolType&);
-    static SemanticError printErrorMessage(const antlr4::Token&, const std::string&, SymbolType, SymbolType);
+    static SymbolType validateBinaryOperation(const antlr4::Token& token, const std::vector<BinaryOpRule>& opRules,
+                                              const std::string& opName, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType validateUnaryOperation(const antlr4::Token& token, const std::vector<UnaryOpRule>& opRules,
+                                              const std::string& opName, const SymbolType& lhs);
+    static SemanticError printErrorMessageBinary(const antlr4::Token& token, const std::string& operatorName,
+                                                 SymbolType lhs, SymbolType rhs);
+    static SemanticError printErrorMessageUnary(const antlr4::Token& token, const std::string& operatorName, SymbolType lhs);
 };

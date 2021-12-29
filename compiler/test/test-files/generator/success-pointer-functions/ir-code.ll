@@ -20,8 +20,8 @@ entry:
   %2 = load %Person*, %Person** %1, align 8
   %3 = getelementptr inbounds %Person, %Person* %2, i32 0, i32 2
   %4 = load i32, i32* %3, align 4
-  %post_pp = add i32 %4, 1
-  store i32 %post_pp, i32* %3, align 4
+  %5 = add i32 %4, 1
+  store i32 %5, i32* %3, align 4
   ret void
 }
 

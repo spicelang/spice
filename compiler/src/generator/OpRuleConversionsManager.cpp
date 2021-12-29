@@ -131,8 +131,8 @@ llvm::Value* OpRuleConversionsManager::getMinusInst(llvm::Value* lhs, llvm::Valu
 llvm::Value* OpRuleConversionsManager::getMulInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
-    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhs->getType());
-    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhs->getType());
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
     switch(COMB(lhsPTy, rhsPTy)) {
         case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
             return builder->CreateFMul(lhs, rhs);
@@ -238,8 +238,8 @@ llvm::Value* OpRuleConversionsManager::getMulInst(llvm::Value* lhs, llvm::Value*
 llvm::Value* OpRuleConversionsManager::getDivInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
-    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhs->getType());
-    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhs->getType());
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
     switch(COMB(lhsPTy, rhsPTy)) {
         case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
             return builder->CreateFDiv(lhs, rhs);
@@ -296,8 +296,8 @@ llvm::Value* OpRuleConversionsManager::getDivInst(llvm::Value* lhs, llvm::Value*
 llvm::Value* OpRuleConversionsManager::getRemInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
-    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhs->getType());
-    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhs->getType());
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
     switch(COMB(lhsPTy, rhsPTy)) {
         case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
             return builder->CreateFRem(lhs, rhs);
@@ -331,6 +331,79 @@ llvm::Value* OpRuleConversionsManager::getRemInst(llvm::Value* lhs, llvm::Value*
     }
     throw std::runtime_error("Internal compiler error: Operator fallthrough: %");
 }
+
+llvm::Value* OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value* lhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    switch(lhsPTy) {
+        case P_TY_INT:
+            return builder->CreateAdd(lhs, builder->getInt32(1));
+        case P_TY_SHORT:
+            return builder->CreateAdd(lhs, builder->getInt16(1));
+        case P_TY_LONG:
+            return builder->CreateAdd(lhs, builder->getInt64(1));
+        default: break;
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++");
+}
+
+llvm::Value* OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value* lhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    switch(lhsPTy) {
+        case P_TY_INT:
+            return builder->CreateSub(lhs, builder->getInt32(1));
+        case P_TY_SHORT:
+            return builder->CreateSub(lhs, builder->getInt16(1));
+        case P_TY_LONG:
+            return builder->CreateSub(lhs, builder->getInt64(1));
+        default: break;
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: --");
+}
+
+llvm::Value* OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value* lhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    switch(lhsPTy) {
+        case P_TY_INT:
+            return builder->CreateAdd(lhs, builder->getInt32(1));
+        case P_TY_SHORT:
+            return builder->CreateAdd(lhs, builder->getInt16(1));
+        case P_TY_LONG:
+            return builder->CreateAdd(lhs, builder->getInt64(1));
+        default: break;
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++");
+}
+
+llvm::Value* OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value* lhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    switch(lhsPTy) {
+        case P_TY_INT:
+            return builder->CreateSub(lhs, builder->getInt32(1));
+        case P_TY_SHORT:
+            return builder->CreateSub(lhs, builder->getInt16(1));
+        case P_TY_LONG:
+            return builder->CreateSub(lhs, builder->getInt64(1));
+        default: break;
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: --");
+}
+
+llvm::Value* OpRuleConversionsManager::getNotInst(llvm::Value* lhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    switch(lhsPTy) {
+        case P_TY_BOOL:
+            return builder->CreateNot(lhs);
+        default: break;
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: --");
+}
+
+
 
 PrimitiveType OpRuleConversionsManager::getPrimitiveTypeFromLLVMType(llvm::Type* ty) {
     if (isDouble(ty)) return P_TY_DOUBLE;

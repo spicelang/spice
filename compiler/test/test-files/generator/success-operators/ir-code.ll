@@ -17,33 +17,33 @@ entry:
   %2 = alloca i32, align 4
   store i32 1, i32* %2, align 4
   %3 = load i32, i32* %2, align 4
-  %post_pp = add i32 %3, 1
-  store i32 %post_pp, i32* %2, align 4
-  %4 = load i32, i32* %2, align 4
-  %post_mm = sub i32 %4, 1
-  store i32 %post_mm, i32* %2, align 4
+  %4 = add i32 %3, 1
+  store i32 %4, i32* %2, align 4
   %5 = load i32, i32* %2, align 4
-  %6 = alloca i32, align 4
-  store i32 2, i32* %6, align 4
-  %7 = load i32, i32* %6, align 4
-  %8 = mul i32 %5, %7
-  %9 = alloca i32, align 4
-  store i32 %8, i32* %9, align 4
-  %10 = alloca i32, align 4
-  store i32 2, i32* %10, align 4
-  %11 = load i32, i32* %9, align 4
-  %12 = load i32, i32* %10, align 4
-  %shl = shl i32 %11, %12
-  %13 = alloca i32, align 4
-  store i32 %shl, i32* %13, align 4
-  %14 = load i32, i32* %13, align 4
-  %15 = getelementptr inbounds i32, i32* %val, i32 0
+  %6 = sub i32 %5, 1
+  store i32 %6, i32* %2, align 4
+  %7 = load i32, i32* %2, align 4
+  %8 = alloca i32, align 4
+  store i32 2, i32* %8, align 4
+  %9 = load i32, i32* %8, align 4
+  %10 = mul i32 %7, %9
+  %11 = alloca i32, align 4
+  store i32 %10, i32* %11, align 4
+  %12 = alloca i32, align 4
+  store i32 2, i32* %12, align 4
+  %13 = load i32, i32* %11, align 4
+  %14 = load i32, i32* %12, align 4
+  %shl = shl i32 %13, %14
+  %15 = alloca i32, align 4
+  store i32 %shl, i32* %15, align 4
   %16 = load i32, i32* %15, align 4
-  %add = add i32 %16, %14
-  store i32 %add, i32* %15, align 4
   %17 = getelementptr inbounds i32, i32* %val, i32 0
   %18 = load i32, i32* %17, align 4
-  %19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %18)
-  %20 = load i32, i32* %result, align 4
-  ret i32 %20
+  %add = add i32 %18, %16
+  store i32 %add, i32* %17, align 4
+  %19 = getelementptr inbounds i32, i32* %val, i32 0
+  %20 = load i32, i32* %19, align 4
+  %21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %20)
+  %22 = load i32, i32* %result, align 4
+  ret i32 %22
 }

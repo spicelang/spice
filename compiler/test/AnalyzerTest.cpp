@@ -101,11 +101,11 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-prefix-unary-only-integer-identifiers",
-            "Semantic error at 2:7: Wrong data type for operator: Prefix '++' or '--' can only be applied to an identifier of type integer"
+            "Semantic error at 2:7: Wrong data type for operator: Cannot apply '--' operator on type string"
         },
         {
             "error-postfix-unary-only-integer-identifiers",
-            "Semantic error at 2:5: Wrong data type for operator: Postfix '++' or '--' can only be applied to an identifier of type integer"
+            "Semantic error at 2:5: Wrong data type for operator: Cannot apply '++' operator on type string"
         },
         {
             "error-must-contain-main-function",

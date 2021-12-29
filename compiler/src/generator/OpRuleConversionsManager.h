@@ -30,6 +30,11 @@ public:
     llvm::Value* getMulInst(llvm::Value*, llvm::Value*);
     llvm::Value* getDivInst(llvm::Value*, llvm::Value*);
     llvm::Value* getRemInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getPrefixPlusPlusInst(llvm::Value*);
+    llvm::Value* getPrefixMinusMinusInst(llvm::Value*);
+    llvm::Value* getPostfixPlusPlusInst(llvm::Value*);
+    llvm::Value* getPostfixMinusMinusInst(llvm::Value*);
+    llvm::Value* getNotInst(llvm::Value*);
 private:
     // Members
     llvm::IRBuilder<>* builder;

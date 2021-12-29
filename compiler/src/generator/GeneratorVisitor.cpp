@@ -1524,23 +1524,24 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
     if (ctx->PLUS_PLUS()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* rhs = builder->CreateAdd(lhs, builder->getInt32(1), "pre_pp");
-        builder->CreateStore(rhs, lhsPtr);
+        llvm::Value* result = conversionsManager->getPrefixPlusPlusInst(lhs);
+        builder->CreateStore(result, lhsPtr);
     }
 
     // Prefix unary is: MINUS_MINUS postfixUnary
     if (ctx->MINUS_MINUS()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* rhs = builder->CreateSub(lhs, builder->getInt32(1), "pre_mm");
-        builder->CreateStore(rhs, lhsPtr);
+        llvm::Value* result = conversionsManager->getPrefixMinusMinusInst(lhs);
+        builder->CreateStore(result, lhsPtr);
     }
 
     // Prefix unary is: NOT postfixUnary
     if (ctx->NOT()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        builder->CreateStore(builder->CreateNot(lhs, "not"), lhsPtr);
+        llvm::Value* result = conversionsManager->getNotInst(lhs);
+        builder->CreateStore(result, lhsPtr);
     }
 
     return value;
@@ -1553,16 +1554,16 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
     if (ctx->PLUS_PLUS()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* rhs = builder->CreateAdd(lhs, builder->getInt32(1), "post_pp");
-        builder->CreateStore(rhs, lhsPtr);
+        llvm::Value* result = conversionsManager->getPostfixPlusPlusInst(lhs);
+        builder->CreateStore(result, lhsPtr);
     }
 
     // Postfix unary is: MINUS_MINUS atomicExpr
     if (ctx->MINUS_MINUS()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* rhs = builder->CreateSub(lhs, builder->getInt32(1), "post_mm");
-        builder->CreateStore(rhs, lhsPtr);
+        llvm::Value* result = conversionsManager->getPostfixMinusMinusInst(lhs);
+        builder->CreateStore(result, lhsPtr);
     }
 
     return value;
