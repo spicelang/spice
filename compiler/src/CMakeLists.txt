@@ -26,6 +26,10 @@ set(SOURCES
         exception/IRError.h
         type/SymbolType.cpp
         type/SymbolType.h
+        type/OpRuleManager.cpp
+        type/OpRuleManager.h
+        type/OpRuleConversionsManager.cpp
+        type/OpRuleConversionsManager.h
         util/ScopeIdUtil.cpp
         util/ScopeIdUtil.h
         util/FunctionSignature.cpp

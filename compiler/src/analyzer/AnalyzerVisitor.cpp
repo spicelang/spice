@@ -1015,6 +1015,12 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
             SymbolType nextType = visit(next).as<SymbolType>();
 
             if (op->getSymbol()->getType() == SpiceParser::PLUS) { // Operator was plus
+                OpRuleManager::getPlusResultType(currentType, nextType);
+            } else { // Operator was minus
+                OpRuleManager::getMinusResultType(currentType, nextType);
+            }
+
+            /*if (op->getSymbol()->getType() == SpiceParser::PLUS) { // Operator was plus
                 // Check all combinations
                 if (currentType.is(TY_DOUBLE)) {
                     if (nextType.is(TY_DOUBLE)) { // e.g.: 4.3 + 6.1
@@ -1113,7 +1119,7 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
                                         "Incompatible operands " + currentType.getName() + " and " + nextType.getName() +
                                         " for '-' operator");
                 }
-            }
+            }*/
             operatorIndex += 2;
         }
         return currentType;

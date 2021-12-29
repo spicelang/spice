@@ -9,6 +9,7 @@
 #include "SymbolTable.h"
 #include "ModuleRegistry.h"
 #include <type/SymbolType.h>
+#include <type/OpRuleManager.h>
 #include <util/ScopeIdUtil.h>
 #include <util/FileUtil.h>
 #include <util/IdentifierUtil.h>
