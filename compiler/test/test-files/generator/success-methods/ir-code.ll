@@ -42,20 +42,20 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   store i32 0, i32* %result, align 4
-  %text = alloca %Letter, align 8
+  %letter = alloca %Letter, align 8
   %0 = alloca i8*, align 8
   store i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i32 0, i32 0), i8** %0, align 8
   %1 = load i8*, i8** %0, align 8
-  %2 = getelementptr inbounds %Letter, %Letter* %text, i32 0, i32 0
+  %2 = getelementptr inbounds %Letter, %Letter* %letter, i32 0, i32 0
   store i8* %1, i8** %2, align 8
   %3 = alloca i8*, align 8
   store i8* getelementptr inbounds ([13 x i8], [13 x i8]* @1, i32 0, i32 0), i8** %3, align 8
   %4 = load i8*, i8** %3, align 8
-  call void @"setContent(string)"(%Letter* %text, i8* %4)
+  call void @"setContent(string)"(%Letter* %letter, i8* %4)
   %5 = alloca i1, align 1
   store i1 true, i1* %5, align 1
   %6 = getelementptr inbounds i1, i1* %5, i32 0
-  %7 = call i8* @"getContent()"(%Letter* %text)
+  %7 = call i8* @"getContent()"(%Letter* %letter)
   %8 = alloca i8*, align 8
   store i8* %7, i8** %8, align 8
   %9 = getelementptr inbounds i8*, i8** %8, i32 0

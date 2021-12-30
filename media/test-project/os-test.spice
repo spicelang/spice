@@ -1,6 +1,6 @@
+import "std/io/dir" as dir;
+
 f<int> main() {
-    short s = (short) 10;
-    s++;
-    long l = (long) 10;
-    printf("Short: %d, Long: %d\n", s, l);
+    bool exists = dir.dirExists("./test");
+    printf("Exists: %d\n", exists);
 }

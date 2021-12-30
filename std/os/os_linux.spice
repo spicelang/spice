@@ -1,7 +1,8 @@
-// Returns the name of the current operating system in lower case
-f<string> getOSName() {
-    return "linux";
-}
+// Contains the operating system name in lower case
+const string OS_NAME = "linux";
+
+// Contains the native path separator
+const char PATH_SEPARATOR = '/';
 
 // Returns if the current OS is Linux
 f<bool> isLinux() {
@@ -11,9 +12,4 @@ f<bool> isLinux() {
 // Returns if the current OS is Windows
 f<bool> isWindows() {
     return false;
-}
-
-// Returns the path separator of the current system
-f<string> getPathSeparator() {
-    return "/";
 }

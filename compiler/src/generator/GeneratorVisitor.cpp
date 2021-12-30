@@ -877,7 +877,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
-    std::string variableName = ctx->IDENTIFIER()[0]->toString();
+    std::string variableName = currentVar = ctx->IDENTIFIER()[0]->toString();
     std::string structName = ctx->IDENTIFIER()[1]->toString();
     std::string structScope = ScopeIdUtil::getScopeId(ctx);
 
@@ -896,15 +896,16 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     currentScope->lookup(variableName)->updateLLVMType(structType);
 
     // Fill the struct with the stated values
-    SymbolTable* structSymbolTable = currentScope->lookupTable({ structScope });
-    for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-        // Visit assignment
-        llvm::Value* assignmentPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-        llvm::Value* assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
-        // Get pointer to struct element
-        llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
-        // Store value to address
-        builder->CreateStore(assignment, fieldAddress);
+    if (ctx->paramLst()) {
+        for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+            // Visit assignment
+            llvm::Value* assignmentPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+            llvm::Value* assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
+            // Get pointer to struct element
+            llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
+            // Store value to address
+            builder->CreateStore(assignment, fieldAddress);
+        }
     }
 
     return structAddress;
@@ -912,7 +913,7 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Get size and data type
-    std::string varName = ctx->IDENTIFIER()->toString();
+    std::string varName = currentVar = ctx->IDENTIFIER()->toString();
     unsigned int currentArraySize = std::stoi(ctx->value()->INTEGER()->toString());
 
     // Get data type
@@ -928,7 +929,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     }
 
     // Allocate array
-    llvm::Value* arrayAddress = builder->CreateAlloca(arrayType);
+    llvm::Value* arrayAddress = builder->CreateAlloca(arrayType, builder->getInt32(currentArraySize), currentVar);
 
     // Fill items with the stated values
     if (ctx->paramLst()) {

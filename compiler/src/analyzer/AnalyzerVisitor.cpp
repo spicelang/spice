@@ -465,23 +465,25 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     // Get the symbol table where the struct is defined
     SymbolTable* structTable = currentScope->lookupTable(structScope);
     // Check if the number of fields matches
-    if (structTable->getFieldCount() != ctx->paramLst()->assignExpr().size())
-        throw SemanticError(*ctx->paramLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
-                            "You've passed too less/many field values");
+    if (ctx->paramLst()) { // Also allow the empty initialization
+        if (structTable->getFieldCount() != ctx->paramLst()->assignExpr().size())
+            throw SemanticError(*ctx->paramLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
+                                "You've passed too less/many field values");
 
-    // Check if the field types are matching
-    for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-        // Get actual type
-        auto ternary = ctx->paramLst()->assignExpr()[i];
-        SymbolType actualType = visit(ternary).as<SymbolType>();
-        // Get expected type
-        SymbolTableEntry* expectedField = structTable->lookupByIndexInCurrentScope(i);
-        SymbolType expectedType = expectedField->getType();
-        // Check if type matches declaration
-        if (actualType != expectedType)
-            throw SemanticError(*ternary->start, FIELD_TYPE_NOT_MATCHING,
-                                "Expected type " + expectedType.getName() + " for the field '" +
-                                expectedField->getName() + "', but got " + actualType.getName());
+        // Check if the field types are matching
+        for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+            // Get actual type
+            auto ternary = ctx->paramLst()->assignExpr()[i];
+            SymbolType actualType = visit(ternary).as<SymbolType>();
+            // Get expected type
+            SymbolTableEntry* expectedField = structTable->lookupByIndexInCurrentScope(i);
+            SymbolType expectedType = expectedField->getType();
+            // Check if type matches declaration
+            if (actualType != expectedType)
+                throw SemanticError(*ternary->start, FIELD_TYPE_NOT_MATCHING,
+                                    "Expected type " + expectedType.getName() + " for the field '" +
+                                    expectedField->getName() + "', but got " + actualType.getName());
+        }
     }
 
     // Insert into symbol table
