@@ -34,14 +34,14 @@ while:                                            ; preds = %while.cond
   %10 = load i32, i32* %9, align 4
   %11 = getelementptr inbounds i32, i32* %i, i32 0
   %12 = load i32, i32* %11, align 4
-  %add = add i32 %12, %10
-  store i32 %add, i32* %11, align 4
-  %13 = getelementptr inbounds i32, i32* %i, i32 0
-  %14 = load i32, i32* %13, align 4
-  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0), i32 %14)
+  %13 = add i32 %12, %10
+  store i32 %13, i32* %11, align 4
+  %14 = getelementptr inbounds i32, i32* %i, i32 0
+  %15 = load i32, i32* %14, align 4
+  %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0), i32 %15)
   br label %while.cond
 
 while.end:                                        ; preds = %while.cond
-  %16 = load i32, i32* %result, align 4
-  ret i32 %16
+  %17 = load i32, i32* %result, align 4
+  ret i32 %17
 }

@@ -37,11 +37,11 @@ for:                                              ; preds = %for.cond
   %13 = load i32, i32* %12, align 4
   %14 = getelementptr inbounds i32, i32* %i, i32 0
   %15 = load i32, i32* %14, align 4
-  %add = add i32 %15, %13
-  store i32 %add, i32* %14, align 4
+  %16 = add i32 %15, %13
+  store i32 %16, i32* %14, align 4
   br label %for.cond
 
 for.end:                                          ; preds = %for.cond
-  %16 = load i32, i32* %result, align 4
-  ret i32 %16
+  %17 = load i32, i32* %result, align 4
+  ret i32 %17
 }

@@ -1088,68 +1088,66 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         } else if (ctx->PLUS_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = createAddInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = createAddInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->MINUS_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->MUL_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getMulEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getMulEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->DIV_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getDivEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getDivEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->SHL_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = builder->CreateShl(lhs, rhs, "shl");
+                rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = builder->CreateShl(lhs, rhs, "shl");
+                rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->SHR_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = builder->CreateLShr(lhs, rhs, "shr");
+                rhs = conversionsManager->getSHREqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = builder->CreateLShr(lhs, rhs, "shr");
+                rhs = conversionsManager->getSHREqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
-        } else {
-            if (ctx->declStmt()) {
-                // Store the default value to the variable
-                builder->CreateStore(getDefaultValueForSymbolType(variableEntry->getType()), rhsPtr);
-            }
+        } else if (ctx->declStmt()) {
+            // Store the default value to the variable
+            builder->CreateStore(getDefaultValueForSymbolType(variableEntry->getType()), rhsPtr);
         }
     }
 

@@ -3,7 +3,7 @@
 #include "OpRuleManager.h"
 
 SymbolType OpRuleManager::getAssignResultType(const antlr4::Token& token, SymbolType lhs, const SymbolType& rhs) {
-    // Skip type compatability check if the lhs is of type dyn
+    // Skip type compatibility check if the lhs is of type dyn
     if (lhs.is(TY_DYN)) return rhs;
     // Allow pointers, arrays and structs of the same type straight away
     if (lhs.isOneOf({ TY_PTR, TY_ARRAY, TY_STRUCT }) && lhs == rhs) return rhs;
@@ -11,7 +11,29 @@ SymbolType OpRuleManager::getAssignResultType(const antlr4::Token& token, Symbol
     return validateBinaryOperation(token, ASSIGN_OP_RULES, "=", lhs, rhs);
 }
 
+SymbolType OpRuleManager::getPlusEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, PLUS_EQUAL_OP_RULES, "+=", lhs, rhs);
+}
 
+SymbolType OpRuleManager::getMinusEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, MINUS_EQUAL_OP_RULES, "-=", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getMulEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, MUL_EQUAL_OP_RULES, "*=", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getDivEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, DIV_EQUAL_OP_RULES, "/=", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getSHLEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, SHL_EQUAL_OP_RULES, "<<=", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getSHREqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, SHR_EQUAL_OP_RULES, ">>=", lhs, rhs);
+}
 
 SymbolType OpRuleManager::getLogicalAndResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
     return validateBinaryOperation(token, LOGICAL_AND_OP_RULES, "&&", lhs, rhs);

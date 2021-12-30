@@ -39,11 +39,11 @@ entry:
   %17 = load i32, i32* %16, align 4
   %18 = getelementptr inbounds i32, i32* %val, i32 0
   %19 = load i32, i32* %18, align 4
-  %add = add i32 %19, %17
-  store i32 %add, i32* %18, align 4
-  %20 = getelementptr inbounds i32, i32* %val, i32 0
-  %21 = load i32, i32* %20, align 4
-  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %21)
-  %23 = load i32, i32* %result, align 4
-  ret i32 %23
+  %20 = add i32 %19, %17
+  store i32 %20, i32* %18, align 4
+  %21 = getelementptr inbounds i32, i32* %val, i32 0
+  %22 = load i32, i32* %21, align 4
+  %23 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %22)
+  %24 = load i32, i32* %result, align 4
+  ret i32 %24
 }

@@ -801,30 +801,17 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
 
             return OpRuleManager::getAssignResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->PLUS_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) &&
-                !lhsTy.matches(rhsTy, TY_BYTE) && !lhsTy.matches(rhsTy, TY_STRING))
-                throw SemanticError(*ctx->PLUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '+=' operator on two doubles, two ints or two strings");
+            return OpRuleManager::getPlusEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->MINUS_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
-                throw SemanticError(*ctx->MINUS_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '-=' operator on two doubles or two ints");
+            return OpRuleManager::getMinusEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->MUL_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
-                throw SemanticError(*ctx->MUL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '*=' operator on two doubles or two ints");
+            return OpRuleManager::getMulEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->DIV_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
-                throw SemanticError(*ctx->DIV_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '/=' operator on two doubles or two ints");
+            return OpRuleManager::getDivEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->SHL_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
-                throw SemanticError(*ctx->SHL_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '<<=' operator on two ints");
+            return OpRuleManager::getSHLEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->SHR_EQUAL()) {
-            if (!lhsTy.matches(rhsTy, TY_INT) && !lhsTy.matches(rhsTy, TY_BYTE))
-                throw SemanticError(*ctx->SHR_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '>>=' operator on two ints");
+            return OpRuleManager::getSHREqualResultType(*ctx->start, lhsTy, rhsTy);
         }
     }
 

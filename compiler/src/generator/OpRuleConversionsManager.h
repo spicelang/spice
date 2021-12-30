@@ -25,7 +25,12 @@ public:
     explicit OpRuleConversionsManager(llvm::IRBuilder<>* builder) : builder(builder) {}
 
     // Public methods
-
+    llvm::Value* getPlusEqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getMinusEqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getMulEqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getDivEqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getSHLEqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getSHREqualInst(llvm::Value*, llvm::Value*);
     llvm::Value* getBitwiseAndInst(llvm::Value*, llvm::Value*);
     llvm::Value* getBitwiseOrInst(llvm::Value*, llvm::Value*);
     llvm::Value* getEqualInst(llvm::Value*, llvm::Value*);
