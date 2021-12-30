@@ -1,6 +1,6 @@
 f<int> main() {
-    short s = 10;
-    s = s + 1;
-    long l = 10;
+    short s = (short) 10;
+    s++;
+    long l = (long) 10;
     printf("Short: %d, Long: %d\n", s, l);
 }

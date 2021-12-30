@@ -2,8 +2,6 @@
 
 #include "OpRuleConversionsManager.h"
 
-
-
 llvm::Value* OpRuleConversionsManager::getBitwiseAndInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
@@ -912,10 +910,40 @@ llvm::Value* OpRuleConversionsManager::getNotInst(llvm::Value* lhs) {
             return builder->CreateNot(lhs);
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: --");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: !");
 }
 
-
+llvm::Value* OpRuleConversionsManager::getCastInst(llvm::Type* lhsTy, llvm::Value* rhs) {
+    llvm::Type* rhsTy = rhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+    switch(COMB(lhsPTy, rhsPTy)) {
+        case COMB(P_TY_DOUBLE, P_TY_DOUBLE): // fallthrough
+        case COMB(P_TY_INT, P_TY_INT):
+            return rhs;
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_INT, P_TY_LONG): // fallthrough
+        case COMB(P_TY_SHORT, P_TY_INT):
+            return builder->CreateIntCast(rhs, lhsTy, true);
+        case COMB(P_TY_SHORT, P_TY_SHORT):
+            return rhs;
+        case COMB(P_TY_SHORT, P_TY_LONG): // fallthrough
+        case COMB(P_TY_LONG, P_TY_INT): // fallthrough
+        case COMB(P_TY_LONG, P_TY_SHORT):
+            return builder->CreateIntCast(rhs, lhsTy, true);
+        case COMB(P_TY_LONG, P_TY_LONG):
+            return rhs;
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_INT): // fallthrough
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_LONG):
+            return builder->CreateIntCast(rhs, lhsTy, false);
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR): // fallthrough
+        case COMB(P_TY_STRING, P_TY_STRING): // fallthrough
+        case COMB(P_TY_BOOL, P_TY_BOOL):
+            return rhs;
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)");
+}
 
 PrimitiveType OpRuleConversionsManager::getPrimitiveTypeFromLLVMType(llvm::Type* ty) {
     if (isDouble(ty)) return P_TY_DOUBLE;
@@ -925,7 +953,7 @@ PrimitiveType OpRuleConversionsManager::getPrimitiveTypeFromLLVMType(llvm::Type*
     if (isByteOrChar(ty)) return P_TY_BYTE_OR_CHAR;
     if (isString(ty)) return P_TY_STRING;
     if (isBool(ty)) return P_TY_BOOL;
-    throw std::runtime_error("Internal compiler error: Cannot find symbol type of llvm type");
+    throw std::runtime_error("Internal compiler error: Cannot find primitive type of llvm type");
 }
 
 bool OpRuleConversionsManager::isDouble(llvm::Type* ty) {

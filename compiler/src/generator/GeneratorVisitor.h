@@ -129,6 +129,8 @@ public:
 
     antlrcpp::Any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) override;
 
+    antlrcpp::Any visitCastExpr(SpiceParser::CastExprContext* ctx) override;
+
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
 
     antlrcpp::Any visitIdenValue(SpiceParser::IdenValueContext* ctx) override;

@@ -49,7 +49,8 @@ shiftExpr: additiveExpr ((SHL | SHR) additiveExpr)?;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: prefixUnaryExpr ((MUL | DIV | REM) prefixUnaryExpr)*;
 prefixUnaryExpr: (NOT | PLUS_PLUS | MINUS_MINUS)? postfixUnaryExpr;
-postfixUnaryExpr: atomicExpr (PLUS_PLUS | MINUS_MINUS)?;
+postfixUnaryExpr: castExpr (PLUS_PLUS | MINUS_MINUS)?;
+castExpr: (LPAREN dataType RPAREN)? atomicExpr;
 atomicExpr: value | idenValue | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types

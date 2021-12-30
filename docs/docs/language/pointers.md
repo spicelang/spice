@@ -32,3 +32,6 @@ f<int> main() {
     printf("Age after birthday: %d", mike.age);
 }
 ```
+
+!!! tip "Multiple pointers"
+    Spice also supports the usage of double, triple, ... pointers like `char***` or types like `int*[]*`. Please use such types sparely and only where they are necessary, due to readability. To reference / dereference the type `int**`, you can `&&intVariable` / `**doubleIntPtr`.

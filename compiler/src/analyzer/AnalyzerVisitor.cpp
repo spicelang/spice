@@ -788,17 +788,17 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
             }
         }
 
-        // If left type is dyn, do type inference
-        if (lhsTy.is(TY_DYN) && allowTypeInference) {
-            lhsTy = rhsTy;
-            symbolTableEntry->updateType(rhsTy);
-        }
-
-        // Update variable in symbol table
-        if (allowStateUpdate) symbolTableEntry->updateState(INITIALIZED);
-
         // Take a look at the operator
         if (ctx->ASSIGN_OP()) {
+            // If left type is dyn, do type inference
+            if (lhsTy.is(TY_DYN) && allowTypeInference) {
+                lhsTy = rhsTy;
+                symbolTableEntry->updateType(rhsTy);
+            }
+
+            // Update variable in symbol table
+            if (allowStateUpdate) symbolTableEntry->updateState(INITIALIZED);
+
             return OpRuleManager::getAssignResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->PLUS_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) &&
@@ -1015,15 +1015,26 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
-    antlrcpp::Any lhs = visit(ctx->atomicExpr());
+    antlrcpp::Any lhs = visit(ctx->castExpr());
 
     if (ctx->PLUS_PLUS()) { // Ensure valid type when '++' is applied
-        return OpRuleManager::getPostfixPlusPlusResultType(*ctx->atomicExpr()->start, lhs.as<SymbolType>());
+        return OpRuleManager::getPostfixPlusPlusResultType(*ctx->castExpr()->start, lhs.as<SymbolType>());
     } else if (ctx->MINUS_MINUS()) { // Ensure valid type when '--' is applied
-        return OpRuleManager::getPostfixMinusMinusResultType(*ctx->atomicExpr()->start, lhs.as<SymbolType>());
+        return OpRuleManager::getPostfixMinusMinusResultType(*ctx->castExpr()->start, lhs.as<SymbolType>());
     }
 
     return lhs;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx) {
+    antlrcpp::Any rhs = visit(ctx->atomicExpr());
+
+    if (ctx->LPAREN()) { // Cast is applied
+        SymbolType dstType = visit(ctx->dataType()).as<SymbolType>();
+        return OpRuleManager::getCastResultType(*ctx->start, dstType, rhs.as<SymbolType>());
+    }
+
+    return rhs;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {

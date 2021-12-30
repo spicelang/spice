@@ -21,6 +21,7 @@ const std::vector<BinaryOpRule> ASSIGN_OP_RULES = {
         BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte = byte = byte
         BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR),          // char = char = char
         BinaryOpRule(TY_STRING, TY_STRING, TY_STRING),    // string = string = string
+        BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL),          // bool = bool = bool
 };
 
 
@@ -374,13 +375,35 @@ const std::vector<UnaryOpRule> POSTFIX_MINUS_MINUS_OP_RULES = {
 
 // Not op rules
 const std::vector<UnaryOpRule> NOT_OP_RULES = {
-        UnaryOpRule(TY_BOOL, TY_BOOL),                      // !bool = bool
+        UnaryOpRule(TY_BOOL, TY_BOOL),                    // !bool = bool
+};
+
+// Cast op rules
+const std::vector<BinaryOpRule> CAST_OP_RULES = {
+        BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE),           // (double) double = double
+        BinaryOpRule(TY_INT, TY_INT, TY_INT),                    // (int) int = int
+        BinaryOpRule(TY_INT, TY_SHORT, TY_INT),                  // (int) short = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_INT),                   // (int) long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),                // (short) int = short
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),              // (short) short = short
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),               // (short) long = short
+        BinaryOpRule(TY_LONG, TY_INT, TY_LONG),                  // (long) int = long
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),                // (long) short = long
+        BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),                 // (long) long = long
+        BinaryOpRule(TY_BYTE, TY_INT, TY_BYTE),                  // (byte) int = byte
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),                 // (byte) byte = byte
+        BinaryOpRule(TY_CHAR, TY_INT, TY_CHAR),                  // (char) int = char
+        BinaryOpRule(TY_CHAR, TY_SHORT, TY_CHAR),                // (char) short = char
+        BinaryOpRule(TY_CHAR, TY_LONG, TY_CHAR),                 // (char) long = char
+        BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR),                 // (char) char = char
+        BinaryOpRule(TY_STRING, TY_STRING, TY_STRING),           // (string) string = string
+        BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL),                 // (bool) bool = bool
 };
 
 class OpRuleManager {
 public:
     // Public methods
-    static SymbolType getAssignResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getAssignResultType(const antlr4::Token&, SymbolType, const SymbolType&);
 
     static SymbolType getLogicalAndResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getLogicalOrResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
@@ -404,6 +427,7 @@ public:
     static SymbolType getPostfixPlusPlusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getPostfixMinusMinusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getNotResultType(const antlr4::Token&, const SymbolType&);
+    static SymbolType getCastResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
 private:
     static SymbolType validateBinaryOperation(const antlr4::Token& token, const std::vector<BinaryOpRule>& opRules,
                                               const std::string& opName, const SymbolType& lhs, const SymbolType& rhs);

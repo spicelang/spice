@@ -67,32 +67,6 @@ bool SymbolType::matches(SymbolType symbolType, SymbolSuperType superSymbolType)
     return symbolType.getSuperType() == superType && superSymbolType == superType;
 }
 
-/**
- * Checks if the current type can be implicitly casted to the passed symbol type
- *
- * @param otherType Symbol type to cast to
- * @return Cast compatible or not
- */
-bool SymbolType::isImplicitCastCompatibleWith(SymbolType otherType) {
-    SymbolSuperType superType = getSuperType();
-    SymbolSuperType otherSuperType = otherType.getSuperType();
-
-    // Always return true when types are matching
-    if (superType == otherSuperType) return true;
-
-    // Define implicit casting rules
-    return
-        (superType == TY_STRING && otherType.isPointerOf(TY_CHAR)) ||   // Cast: string -> char*
-        (isPointerOf(TY_CHAR) && otherSuperType == TY_STRING) ||        // Cast: char* -> string
-        (superType == TY_STRING && otherType.isPointerOf(TY_BYTE)) ||   // Cast: string -> byte*
-        (isPointerOf(TY_BYTE) && otherSuperType == TY_STRING) ||        // Cast: byte* -> string
-        (superType == TY_CHAR && otherSuperType == TY_BYTE) ||                        // Cast: char -> byte
-        (superType == TY_BYTE && otherSuperType == TY_CHAR) ||                        // Cast: byte -> char
-        (superType == TY_INT && otherSuperType == TY_BYTE) ||                         // Cast: int -> byte
-        (superType == TY_INT && otherSuperType == TY_SHORT) ||                        // Cast: int -> short
-        (superType == TY_INT && otherSuperType == TY_LONG);                           // Cast: int -> long
-}
-
 SymbolSuperType SymbolType::getSuperType() {
     return std::get<0>(typeChain.top());
 }

@@ -46,6 +46,7 @@ public:
     llvm::Value* getPostfixPlusPlusInst(llvm::Value*);
     llvm::Value* getPostfixMinusMinusInst(llvm::Value*);
     llvm::Value* getNotInst(llvm::Value*);
+    llvm::Value* getCastInst(llvm::Type*, llvm::Value*);
 private:
     // Members
     llvm::IRBuilder<>* builder;

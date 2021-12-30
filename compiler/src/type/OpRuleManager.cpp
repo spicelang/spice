@@ -2,7 +2,12 @@
 
 #include "OpRuleManager.h"
 
-SymbolType OpRuleManager::getAssignResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+SymbolType OpRuleManager::getAssignResultType(const antlr4::Token& token, SymbolType lhs, const SymbolType& rhs) {
+    // Skip type compatability check if the lhs is of type dyn
+    if (lhs.is(TY_DYN)) return rhs;
+    // Allow pointers, arrays and structs of the same type straight away
+    if (lhs.isOneOf({ TY_PTR, TY_ARRAY, TY_STRUCT }) && lhs == rhs) return rhs;
+    // Check primitive type combinations
     return validateBinaryOperation(token, ASSIGN_OP_RULES, "=", lhs, rhs);
 }
 
@@ -94,6 +99,10 @@ SymbolType OpRuleManager::getPostfixMinusMinusResultType(const antlr4::Token& to
 
 SymbolType OpRuleManager::getNotResultType(const antlr4::Token& token, const SymbolType& lhs) {
     return validateUnaryOperation(token, NOT_OP_RULES, "!", lhs);
+}
+
+SymbolType OpRuleManager::getCastResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, CAST_OP_RULES, "(cast)", lhs, rhs);
 }
 
 SymbolType OpRuleManager::validateBinaryOperation(const antlr4::Token& token, const std::vector<BinaryOpRule>& opRules,

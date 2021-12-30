@@ -1491,7 +1491,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
 }
 
 antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
-    auto value = visit(ctx->atomicExpr());
+    auto value = visit(ctx->castExpr());
 
     // Postfix unary is: PLUS_PLUS atomicExpr
     if (ctx->PLUS_PLUS()) {
@@ -1507,6 +1507,22 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         llvm::Value* result = conversionsManager->getPostfixMinusMinusInst(lhs);
         builder->CreateStore(result, lhsPtr);
+    }
+
+    return value;
+}
+
+antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx) {
+    auto value = visit(ctx->atomicExpr());
+
+    if (ctx->LPAREN()) { // Cast operator is applied
+        llvm::Type* dstTy = visit(ctx->dataType()).as<llvm::Type*>();
+        llvm::Value* rhsPtr = value.as<llvm::Value*>();
+        llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+        llvm::Value* result = conversionsManager->getCastInst(dstTy, rhs);
+        llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+        builder->CreateStore(result, resultPtr);
+        return resultPtr;
     }
 
     return value;

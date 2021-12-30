@@ -52,7 +52,6 @@ public:
     bool isOneOf(const std::vector<SymbolSuperType>&);
     bool matches(SymbolType);
     bool matches(SymbolType, SymbolSuperType);
-    bool isImplicitCastCompatibleWith(SymbolType);
     SymbolSuperType getSuperType();
     std::string getSubType();
     std::string getName();

@@ -1,0 +1,14 @@
+// Converts a short to a double
+f<double> toDouble(short input) {
+    return 0.0 + input;
+}
+
+// Converts a short to an int
+f<int> toInt(short input) {
+    return (int) input;
+}
+
+// Converts a short to an long
+f<long> toLong(short input) {
+    return (long) input;
+}
