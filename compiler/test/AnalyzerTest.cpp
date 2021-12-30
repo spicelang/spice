@@ -81,7 +81,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-bitwise-operators-are-booleans-or-integers",
-            "Semantic error at 2:22: Wrong data type for operator: Cannot apply '|' operator to string and int"
+            "Semantic error at 2:22: Wrong data type for operator: Cannot apply '|' operator on types string and int"
         },
         {
             "error-equality-operators-some-combinations",

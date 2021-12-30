@@ -898,21 +898,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
         SymbolType lhsTy = visit(ctx->bitwiseAndExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->bitwiseAndExpr()[i]).as<SymbolType>();
-
-            if (lhsTy.matches(rhsTy, TY_INT)) { // Allow bitwise or operator for integers
-                lhsTy = SymbolType(TY_INT);
-            } else if (lhsTy.matches(rhsTy, TY_SHORT)) { // Allow bitwise or operator for shorts
-                lhsTy = SymbolType(TY_SHORT);
-            } else if (lhsTy.matches(rhsTy, TY_LONG)) { // Allow bitwise or operator for longs
-                lhsTy = SymbolType(TY_LONG);
-            } else if (lhsTy.matches(rhsTy, TY_BYTE)) { // Allow bitwise or operator for bytes
-                lhsTy = SymbolType(TY_BYTE);
-            } else if (lhsTy.matches(rhsTy, TY_BOOL)) { // Allow bitwise or operator for booleans
-                lhsTy = SymbolType(TY_BOOL);
-            } else { // Any other combination is invalid
-                throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply '|' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
-            }
+            lhsTy = OpRuleManager::getBitwiseOrResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }
@@ -925,21 +911,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
         SymbolType lhsTy = visit(ctx->equalityExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->equalityExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->equalityExpr()[i]).as<SymbolType>();
-
-            if (lhsTy.matches(rhsTy, TY_INT)) { // Allow bitwise and operator for integers
-                lhsTy = SymbolType(TY_INT);
-            } else if (lhsTy.matches(rhsTy, TY_SHORT)) { // Allow bitwise and operator for shorts
-                lhsTy = SymbolType(TY_SHORT);
-            } else if (lhsTy.matches(rhsTy, TY_LONG)) { // Allow bitwise and operator for longs
-                lhsTy = SymbolType(TY_LONG);
-            } else if (lhsTy.matches(rhsTy, TY_BYTE)) { // Allow bitwise and operator for bytes
-                lhsTy = SymbolType(TY_BYTE);
-            } else if (lhsTy.matches(rhsTy, TY_BOOL)) { // Allow bitwise and operator for booleans
-                lhsTy = SymbolType(TY_BOOL);
-            } else { // Any other combination is invalid
-                throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply '&' operator to " + lhsTy.getName() + " and " + rhsTy.getName());
-            }
+            lhsTy = OpRuleManager::getBitwiseAndResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }

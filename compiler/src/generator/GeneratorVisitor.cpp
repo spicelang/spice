@@ -1313,7 +1313,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCon
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
             llvm::Value* rhsPtr = visit(ctx->bitwiseAndExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-            lhs = builder->CreateOr(lhs, rhs, "bw_or");
+            lhs = conversionsManager->getBitwiseOrInst(lhs, rhs);
         }
         llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
         builder->CreateStore(lhs, resultPtr);
@@ -1329,7 +1329,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprC
         for (int i = 1; i < ctx->equalityExpr().size(); i++) {
             llvm::Value* rhsPtr = visit(ctx->equalityExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-            lhs = builder->CreateAnd(lhs, rhs, "bw_and");
+            lhs = conversionsManager->getBitwiseAndInst(lhs, rhs);
         }
         llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
         builder->CreateStore(lhs, resultPtr);

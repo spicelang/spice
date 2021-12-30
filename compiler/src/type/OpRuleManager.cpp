@@ -2,6 +2,14 @@
 
 #include "OpRuleManager.h"
 
+SymbolType OpRuleManager::getBitwiseAndResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, BITWISE_AND_OP_RULES, "&", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getBitwiseOrResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, BITWISE_OR_OP_RULES, "|", lhs, rhs);
+}
+
 SymbolType OpRuleManager::getEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
     return validateBinaryOperation(token, EQUAL_OP_RULES, "==", lhs, rhs);
 }
