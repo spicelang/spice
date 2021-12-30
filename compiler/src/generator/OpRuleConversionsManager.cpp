@@ -2,6 +2,182 @@
 
 #include "OpRuleConversionsManager.h"
 
+llvm::Value* OpRuleConversionsManager::getEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    llvm::Type* rhsTy = rhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+    switch(COMB(lhsPTy, rhsPTy)) {
+        case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
+            return builder->CreateFCmpOEQ(lhs, rhs);
+        case COMB(P_TY_DOUBLE, P_TY_INT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_LONG): {
+            llvm::Value* rhsFP = builder->CreateSIToFP(rhs, lhsTy);
+            return builder->CreateFCmpOEQ(lhs, rhsFP);
+        }
+        case COMB(P_TY_INT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOEQ(lhsFP, rhs);
+        }
+        case COMB(P_TY_INT, P_TY_INT):
+            return builder->CreateICmpEQ(lhs, rhs);
+        case COMB(P_TY_INT, P_TY_SHORT): {
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpEQ(lhs, rhsInt);
+        }
+        case COMB(P_TY_INT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpEQ(lhsLong, rhs);
+        }
+        case COMB(P_TY_INT, P_TY_BYTE_OR_CHAR): {
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpEQ(lhs, rhsInt);
+        }
+        case COMB(P_TY_SHORT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOEQ(lhsFP, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_INT): {
+            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpEQ(lhsInt, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_SHORT):
+            return builder->CreateICmpEQ(lhs, rhs);
+        case COMB(P_TY_SHORT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpEQ(lhsLong, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_BYTE_OR_CHAR): {
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpEQ(lhs, rhsShort);
+        }
+        case COMB(P_TY_LONG, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpOEQ(lhsFP, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_INT): // fallthrough
+        case COMB(P_TY_LONG, P_TY_SHORT): {
+            llvm::Value* rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpEQ(lhs, rhsLong);
+        }
+        case COMB(P_TY_LONG, P_TY_LONG):
+            return builder->CreateICmpEQ(lhs, rhs);
+        case COMB(P_TY_LONG, P_TY_BYTE_OR_CHAR): {
+            llvm::Value* rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpEQ(lhs, rhsLong);
+        }
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_INT): {
+            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpEQ(lhsInt, rhs);
+        }
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_SHORT): {
+            llvm::Value* lhsShort = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpEQ(lhsShort, rhs);
+        }
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpEQ(lhsLong, rhs);
+        }
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
+            return builder->CreateICmpEQ(lhs, rhs);
+        case COMB(P_TY_STRING, P_TY_STRING):
+            // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '==' operator for lhs=string and rhs=string yet");
+        case COMB(P_TY_BOOL, P_TY_BOOL):
+            return builder->CreateICmpEQ(lhs, rhs);
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ==");
+}
+
+llvm::Value* OpRuleConversionsManager::getNotEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    llvm::Type* rhsTy = rhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+    switch(COMB(lhsPTy, rhsPTy)) {
+        case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
+            return builder->CreateFCmpONE(lhs, rhs);
+        case COMB(P_TY_DOUBLE, P_TY_INT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_DOUBLE, P_TY_LONG): {
+            llvm::Value* rhsFP = builder->CreateSIToFP(rhs, lhsTy);
+            return builder->CreateFCmpONE(lhs, rhsFP);
+        }
+        case COMB(P_TY_INT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpONE(lhsFP, rhs);
+        }
+        case COMB(P_TY_INT, P_TY_INT):
+            return builder->CreateICmpNE(lhs, rhs);
+        case COMB(P_TY_INT, P_TY_SHORT): {
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpNE(lhs, rhsInt);
+        }
+        case COMB(P_TY_INT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpNE(lhsLong, rhs);
+        }
+        case COMB(P_TY_INT, P_TY_BYTE_OR_CHAR): {
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpNE(lhs, rhsInt);
+        }
+        case COMB(P_TY_SHORT, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpONE(lhsFP, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_INT): {
+            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpNE(lhsInt, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_SHORT):
+            return builder->CreateICmpNE(lhs, rhs);
+        case COMB(P_TY_SHORT, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpNE(lhsLong, rhs);
+        }
+        case COMB(P_TY_SHORT, P_TY_BYTE_OR_CHAR): {
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpNE(lhs, rhsShort);
+        }
+        case COMB(P_TY_LONG, P_TY_DOUBLE): {
+            llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
+            return builder->CreateFCmpONE(lhsFP, rhs);
+        }
+        case COMB(P_TY_LONG, P_TY_INT): // fallthrough
+        case COMB(P_TY_LONG, P_TY_SHORT): {
+            llvm::Value* rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpNE(lhs, rhsLong);
+        }
+        case COMB(P_TY_LONG, P_TY_LONG):
+            return builder->CreateICmpNE(lhs, rhs);
+        case COMB(P_TY_LONG, P_TY_BYTE_OR_CHAR): {
+            llvm::Value* rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateICmpNE(lhs, rhsLong);
+        }
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_INT): {
+            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpNE(lhsInt, rhs);
+        }
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_SHORT): {
+            llvm::Value* lhsShort = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpNE(lhsShort, rhs);
+        }
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_LONG): {
+            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
+            return builder->CreateICmpNE(lhsLong, rhs);
+        }
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
+            return builder->CreateICmpNE(lhs, rhs);
+        case COMB(P_TY_STRING, P_TY_STRING):
+            // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '!=' operator for lhs=string and rhs=string yet");
+        case COMB(P_TY_BOOL, P_TY_BOOL):
+            return builder->CreateICmpNE(lhs, rhs);
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: !=");
+}
+
 llvm::Value* OpRuleConversionsManager::getLessInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();

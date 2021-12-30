@@ -1345,29 +1345,15 @@ antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprConte
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
-        // Equality expr is: relationalExpr EQUAL relationalExpr
-        if (ctx->EQUAL()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOEQ(lhs, rhs, "eq");
-            } else {
-                cmpInst = builder->CreateICmpEQ(lhs, rhs, "eq");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        if (ctx->EQUAL()) { // Equality expr is: relationalExpr EQUAL relationalExpr
+            llvm::Value* result = conversionsManager->getEqualInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
-        if (ctx->NOT_EQUAL()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpONE(lhs, rhs, "ne");
-            } else {
-                cmpInst = builder->CreateICmpNE(lhs, rhs, "ne");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        } else if (ctx->NOT_EQUAL()) { // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
+            llvm::Value* result = conversionsManager->getNotEqualInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
         }
     }

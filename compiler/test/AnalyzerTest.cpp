@@ -85,7 +85,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-equality-operators-some-combinations",
-            "Semantic error at 2:9: Wrong data type for operator: Can't compare string and double with '==' or '!=' operators"
+            "Semantic error at 2:9: Wrong data type for operator: Cannot apply '==' operator on types string and double"
         },
         {
             "error-relational-operators-are-doubles-or-integers",

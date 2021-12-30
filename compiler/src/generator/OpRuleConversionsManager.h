@@ -25,6 +25,8 @@ public:
     explicit OpRuleConversionsManager(llvm::IRBuilder<>* builder) : builder(builder) {}
 
     // Public methods
+    llvm::Value* getEqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getNotEqualInst(llvm::Value*, llvm::Value*);
     llvm::Value* getLessInst(llvm::Value*, llvm::Value*);
     llvm::Value* getGreaterInst(llvm::Value*, llvm::Value*);
     llvm::Value* getLessEqualInst(llvm::Value*, llvm::Value*);

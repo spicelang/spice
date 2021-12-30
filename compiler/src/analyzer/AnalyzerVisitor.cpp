@@ -951,21 +951,11 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
     if (ctx->children.size() > 1) {
         SymbolType lhsTy = visit(ctx->relationalExpr()[0]).as<SymbolType>();
         SymbolType rhsTy = visit(ctx->relationalExpr()[1]).as<SymbolType>();
-        if (lhsTy.matches(rhsTy, TY_DOUBLE) ||          // Can compare double with double
-            lhsTy.is(TY_DOUBLE) && rhsTy.is(TY_INT) ||  // Can compare double with int
-            lhsTy.is(TY_INT) && rhsTy.is(TY_DOUBLE) ||  // Can compare int with double
-            lhsTy.matches(rhsTy, TY_INT) ||             // Can compare int with int
-            lhsTy.matches(rhsTy, TY_SHORT) ||           // Can compare short with short
-            lhsTy.matches(rhsTy, TY_LONG) ||            // Can compare long with long
-            lhsTy.matches(rhsTy, TY_BYTE) ||            // Can compare byte with byte
-            lhsTy.matches(rhsTy, TY_CHAR) ||            // Can compare char with char
-            lhsTy.matches(rhsTy, TY_STRING) ||          // Can compare string with string
-            lhsTy.matches(rhsTy, TY_BOOL)               // Can compare bool with bool
-        ) return SymbolType(TY_BOOL);
-        // Every other combination is invalid
-        throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                            "Can't compare " + lhsTy.getName() + " and " + rhsTy.getName() +
-                            " with '==' or '!=' operators");
+
+        if (ctx->EQUAL()) // Operator was equal
+            return OpRuleManager::getEqualResultType(*ctx->start, lhsTy, rhsTy);
+        else // Operator was not equal
+            return OpRuleManager::getNotEqualResultType(*ctx->start, lhsTy, rhsTy);
     }
     return visit(ctx->relationalExpr()[0]);
 }

@@ -2,6 +2,14 @@
 
 #include "OpRuleManager.h"
 
+SymbolType OpRuleManager::getEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, EQUAL_OP_RULES, "==", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getNotEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, NOT_EQUAL_OP_RULES, "!=", lhs, rhs);
+}
+
 SymbolType OpRuleManager::getLessResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
     return validateBinaryOperation(token, LESS_OP_RULES, "<", lhs, rhs);
 }
