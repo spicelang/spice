@@ -27,6 +27,7 @@
 
 #include <utility>
 #include <regex>
+#include "OpRuleConversionsManager.h"
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
@@ -128,6 +129,8 @@ public:
 
     antlrcpp::Any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) override;
 
+    antlrcpp::Any visitCastExpr(SpiceParser::CastExprContext* ctx) override;
+
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
 
     antlrcpp::Any visitIdenValue(SpiceParser::IdenValueContext* ctx) override;
@@ -138,6 +141,7 @@ public:
 
 private:
     // Members
+    std::unique_ptr<OpRuleConversionsManager> conversionsManager;
     std::string mainSourceFile;
     llvm::Triple targetTriple;
     std::string objectDir;

@@ -7,6 +7,7 @@ void GeneratorVisitor::init() {
     context = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
     module = std::make_unique<llvm::Module>(FileUtil::getFileName(mainSourceFile), *context);
+    conversionsManager = std::make_unique<OpRuleConversionsManager>(builder.get());
 
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();
@@ -1075,15 +1076,6 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         if (ctx->ASSIGN_OP()) {
             // Store right side on the left one
             if (variableEntry->isLocal()) { // Local variable
-                // Implicitly cast int to char/byte
-                if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(8) && rhs->getType()->isIntegerTy(32))
-                    rhs = builder->CreateIntCast(rhs, llvm::Type::getInt8Ty(*context), false);
-                // Implicitly cast int to short
-                if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(16) && rhs->getType()->isIntegerTy(32))
-                    rhs = builder->CreateIntCast(rhs, llvm::Type::getInt16Ty(*context), false);
-                // Implicitly cast int to long
-                if (lhsPtr->getType()->getPointerElementType()->isIntegerTy(64) && rhs->getType()->isIntegerTy(32))
-                    rhs = builder->CreateIntCast(rhs, llvm::Type::getInt64Ty(*context), false);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
@@ -1096,68 +1088,66 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         } else if (ctx->PLUS_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = createAddInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = createAddInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->MINUS_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = createSubInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->MUL_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getMulEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = createMulInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getMulEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->DIV_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getDivEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = createDivInst(lhs, lhs->getType(), rhs, rhs->getType());
+                rhs = conversionsManager->getDivEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->SHL_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = builder->CreateShl(lhs, rhs, "shl");
+                rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = builder->CreateShl(lhs, rhs, "shl");
+                rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
         } else if (ctx->SHR_EQUAL()) {
             if (variableEntry->isLocal()) { // Local variable
                 llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = builder->CreateLShr(lhs, rhs, "shr");
+                rhs = conversionsManager->getSHREqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             } else { // Global variable
                 llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = builder->CreateLShr(lhs, rhs, "shr");
+                rhs = conversionsManager->getSHREqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
-        } else {
-            if (ctx->declStmt()) {
-                // Store the default value to the variable
-                builder->CreateStore(getDefaultValueForSymbolType(variableEntry->getType()), rhsPtr);
-            }
+        } else if (ctx->declStmt()) {
+            // Store the default value to the variable
+            builder->CreateStore(getDefaultValueForSymbolType(variableEntry->getType()), rhsPtr);
         }
     }
 
@@ -1312,7 +1302,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCon
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
             llvm::Value* rhsPtr = visit(ctx->bitwiseAndExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-            lhs = builder->CreateOr(lhs, rhs, "bw_or");
+            lhs = conversionsManager->getBitwiseOrInst(lhs, rhs);
         }
         llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
         builder->CreateStore(lhs, resultPtr);
@@ -1328,7 +1318,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprC
         for (int i = 1; i < ctx->equalityExpr().size(); i++) {
             llvm::Value* rhsPtr = visit(ctx->equalityExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-            lhs = builder->CreateAnd(lhs, rhs, "bw_and");
+            lhs = conversionsManager->getBitwiseAndInst(lhs, rhs);
         }
         llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
         builder->CreateStore(lhs, resultPtr);
@@ -1344,29 +1334,15 @@ antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprConte
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
-        // Equality expr is: relationalExpr EQUAL relationalExpr
-        if (ctx->EQUAL()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOEQ(lhs, rhs, "eq");
-            } else {
-                cmpInst = builder->CreateICmpEQ(lhs, rhs, "eq");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        if (ctx->EQUAL()) { // Equality expr is: relationalExpr EQUAL relationalExpr
+            llvm::Value* result = conversionsManager->getEqualInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
-        if (ctx->NOT_EQUAL()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpONE(lhs, rhs, "ne");
-            } else {
-                cmpInst = builder->CreateICmpNE(lhs, rhs, "ne");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        } else if (ctx->NOT_EQUAL()) { // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
+            llvm::Value* result = conversionsManager->getNotEqualInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
         }
     }
@@ -1380,55 +1356,25 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
-        // Relational expr is: shiftExpr LESS shiftExpr
-        if (ctx->LESS()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOLT(lhs, rhs, "lt");
-            } else {
-                cmpInst = builder->CreateICmpSLT(lhs, rhs, "lt");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        if (ctx->LESS()) { // Relational expr is: shiftExpr LESS shiftExpr
+            llvm::Value* result = conversionsManager->getLessInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Relational expr is: shiftExpr GREATER shiftExpr
-        if (ctx->GREATER()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOGT(lhs, rhs, "gt");
-            } else {
-                cmpInst = builder->CreateICmpSGT(lhs, rhs, "gt");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        } else if (ctx->GREATER()) { // Relational expr is: shiftExpr GREATER shiftExpr
+            llvm::Value* result = conversionsManager->getGreaterInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Relational expr is: shiftExpr LESS_EQUAL shiftExpr
-        if (ctx->LESS_EQUAL()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOLE(lhs, rhs, "le");
-            } else {
-                cmpInst = builder->CreateICmpSLE(lhs, rhs, "le");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        } else if (ctx->LESS_EQUAL()) { // Relational expr is: shiftExpr LESS_EQUAL shiftExpr
+            llvm::Value* result = conversionsManager->getLessEqualInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Relational expr is: shiftExpr GREATER_EQUAL shiftExpr
-        if (ctx->GREATER_EQUAL()) {
-            llvm::Value* cmpInst;
-            if (lhs->getType()->isDoubleTy()) {
-                cmpInst = builder->CreateFCmpOGE(lhs, rhs, "ge");
-            } else {
-                cmpInst = builder->CreateICmpSGE(lhs, rhs, "ge");
-            }
-            llvm::Value* resultPtr = builder->CreateAlloca(cmpInst->getType());
-            builder->CreateStore(cmpInst, resultPtr);
+        } else if (ctx->GREATER_EQUAL()) { // Relational expr is: shiftExpr GREATER_EQUAL shiftExpr
+            llvm::Value* result = conversionsManager->getGreaterEqualInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
         }
     }
@@ -1443,19 +1389,15 @@ antlrcpp::Any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ct
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
-        // Shift expr is: additiveExpr SHL additiveExpr
-        if (ctx->SHL()) {
-            llvm::Value* shlInst = builder->CreateShl(lhs, rhs, "shl");
-            llvm::Value* resultPtr = builder->CreateAlloca(shlInst->getType());
-            builder->CreateStore(shlInst, resultPtr);
+        if (ctx->SHL()) { // Shift expr is: additiveExpr SHL additiveExpr
+            llvm::Value* result = conversionsManager->getShiftLeftInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
-        }
-
-        // Relational expr is: additiveExpr SHR additiveExpr
-        if (ctx->SHR()) {
-            llvm::Value* shrInst = builder->CreateLShr(lhs, rhs, "shr");
-            llvm::Value* resultPtr = builder->CreateAlloca(shrInst->getType());
-            builder->CreateStore(shrInst, resultPtr);
+        } else if (ctx->SHR()) { // Shift expr is: additiveExpr SHR additiveExpr
+            llvm::Value* result = conversionsManager->getShiftRightInst(lhs, rhs);
+            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            builder->CreateStore(result, resultPtr);
             return resultPtr;
         }
     }
@@ -1467,18 +1409,16 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
     if (ctx->multiplicativeExpr().size() > 1) {
         llvm::Value* lhsPtr = visit(ctx->multiplicativeExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Type* lhsType = lhs->getType();
         unsigned int operatorIndex = 1;
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
             llvm::Value* rhsPtr = visit(ctx->multiplicativeExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-            llvm::Type* rhsType = rhs->getType();
 
             if (op->getSymbol()->getType() == SpiceParser::PLUS)
-                lhs = createAddInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getPlusInst(lhs, rhs);
             else
-                lhs = createSubInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getMinusInst(lhs, rhs);
 
             operatorIndex += 2;
         }
@@ -1495,20 +1435,18 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
     if (ctx->prefixUnaryExpr().size() > 1) {
         llvm::Value* lhsPtr = visit(ctx->prefixUnaryExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Type* lhsType = lhs->getType();
         unsigned int operatorIndex = 1;
         for (int i = 1; i < ctx->prefixUnaryExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
             llvm::Value* rhsPtr = visit(ctx->prefixUnaryExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-            llvm::Type* rhsType = rhs->getType();
 
             if (op->getSymbol()->getType() == SpiceParser::MUL)
-                lhs = createMulInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getMulInst(lhs, rhs);
             else if (op->getSymbol()->getType() == SpiceParser::DIV)
-                lhs = createDivInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getDivInst(lhs, rhs);
             else
-                lhs = createRemInst(lhs, lhsType, rhs, rhsType);
+                lhs = conversionsManager->getRemInst(lhs, rhs);
 
             operatorIndex += 2;
         }
@@ -1527,45 +1465,62 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
     if (ctx->PLUS_PLUS()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* rhs = builder->CreateAdd(lhs, builder->getInt32(1), "pre_pp");
-        builder->CreateStore(rhs, lhsPtr);
+        llvm::Value* result = conversionsManager->getPrefixPlusPlusInst(lhs);
+        builder->CreateStore(result, lhsPtr);
     }
 
     // Prefix unary is: MINUS_MINUS postfixUnary
     if (ctx->MINUS_MINUS()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* rhs = builder->CreateSub(lhs, builder->getInt32(1), "pre_mm");
-        builder->CreateStore(rhs, lhsPtr);
+        llvm::Value* result = conversionsManager->getPrefixMinusMinusInst(lhs);
+        builder->CreateStore(result, lhsPtr);
     }
 
     // Prefix unary is: NOT postfixUnary
     if (ctx->NOT()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        builder->CreateStore(builder->CreateNot(lhs, "not"), lhsPtr);
+        llvm::Value* result = conversionsManager->getNotInst(lhs);
+        builder->CreateStore(result, lhsPtr);
     }
 
     return value;
 }
 
 antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
-    auto value = visit(ctx->atomicExpr());
+    auto value = visit(ctx->castExpr());
 
     // Postfix unary is: PLUS_PLUS atomicExpr
     if (ctx->PLUS_PLUS()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* rhs = builder->CreateAdd(lhs, builder->getInt32(1), "post_pp");
-        builder->CreateStore(rhs, lhsPtr);
+        llvm::Value* result = conversionsManager->getPostfixPlusPlusInst(lhs);
+        builder->CreateStore(result, lhsPtr);
     }
 
     // Postfix unary is: MINUS_MINUS atomicExpr
     if (ctx->MINUS_MINUS()) {
         llvm::Value* lhsPtr = value.as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* rhs = builder->CreateSub(lhs, builder->getInt32(1), "post_mm");
-        builder->CreateStore(rhs, lhsPtr);
+        llvm::Value* result = conversionsManager->getPostfixMinusMinusInst(lhs);
+        builder->CreateStore(result, lhsPtr);
+    }
+
+    return value;
+}
+
+antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx) {
+    auto value = visit(ctx->atomicExpr());
+
+    if (ctx->LPAREN()) { // Cast operator is applied
+        llvm::Type* dstTy = visit(ctx->dataType()).as<llvm::Type*>();
+        llvm::Value* rhsPtr = value.as<llvm::Value*>();
+        llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+        llvm::Value* result = conversionsManager->getCastInst(dstTy, rhs);
+        llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+        builder->CreateStore(result, resultPtr);
+        return resultPtr;
     }
 
     return value;
@@ -1965,21 +1920,6 @@ llvm::Value* GeneratorVisitor::createDivInst(llvm::Value* lhs, llvm::Type* lhsTy
         } else if (rhsType->isIntegerTy(32)) { // int
             // int : int
             lhs = builder->CreateSDiv(lhs, rhs, "div");
-        }
-    }
-    return lhs;
-}
-
-llvm::Value* GeneratorVisitor::createRemInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) { // double
-        if (rhsType->isDoubleTy()) { // double
-            // double % double
-            lhs = builder->CreateFRem(lhs, rhs, "rem");
-        }
-    } else if (lhsType->isIntegerTy(32)) { // int
-        if (rhsType->isIntegerTy(32)) { // int
-            // int % int
-            lhs = builder->CreateSRem(lhs, rhs, "rem");
         }
     }
     return lhs;

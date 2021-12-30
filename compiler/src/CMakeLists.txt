@@ -20,12 +20,16 @@ set(SOURCES
         analyzer/ModuleRegistry.h
         generator/GeneratorVisitor.cpp
         generator/GeneratorVisitor.h
+        generator/OpRuleConversionsManager.cpp
+        generator/OpRuleConversionsManager.h
         exception/SemanticError.cpp
         exception/SemanticError.h
         exception/IRError.cpp
         exception/IRError.h
         type/SymbolType.cpp
         type/SymbolType.h
+        type/OpRuleManager.cpp
+        type/OpRuleManager.h
         util/ScopeIdUtil.cpp
         util/ScopeIdUtil.h
         util/FunctionSignature.cpp

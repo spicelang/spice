@@ -5,12 +5,12 @@ f<double> toDouble(byte input) {
 
 // Converts a byte to an int
 f<int> toInt(byte input) {
-    return 0;
+    return (int) input;
 }
 
 // Converts a byte to a char
 f<char> toChar(byte input) {
-    return '0';
+    return (char) input;
 }
 
 // Converts a byte to a string

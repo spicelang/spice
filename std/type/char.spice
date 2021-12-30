@@ -10,7 +10,7 @@ f<int> toInt(char input) {
 
 // Converts a char to a byte
 f<byte> toByte(char input) {
-    result = 0;
+    result = (byte) 0;
 }
 
 // Converts a char to a string

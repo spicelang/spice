@@ -10,7 +10,7 @@ f<int> toInt(bool input) {
 
 // Converts a bool to a byte
 f<byte> toByte(bool input) {
-    result = input ? 1 : 0;
+    result = (byte) (input ? 1 : 0);
 }
 
 // Converts a bool to a string

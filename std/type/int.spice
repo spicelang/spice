@@ -4,22 +4,24 @@ f<double> toDouble(int input) {
     return 0.0;
 }
 
-// Converts an int to a byte
-f<type> toDouble(int input) {
-    // ToDo: Implement
-    return 0 + input;
+// Converts an int to a short
+f<short> ToShort(int input) {
+    return (short) input;
 }
 
-// Converts an int to a char
-f<char> ToByte(int input) {
-    // ToDo: Implement
-    result = 0 + input;
+// Converts an int to a long
+f<long> ToLong(int input) {
+    return (long) input;
+}
+
+// Converts an int to a byte
+f<byte> ToByte(int input) {
+    return (byte) input;
 }
 
 // Converts an int to a char
 f<char> ToChar(int input) {
-    // ToDo: Implement
-    return 0 + input;
+    return (char) input;
 }
 
 // Converts an int to a string

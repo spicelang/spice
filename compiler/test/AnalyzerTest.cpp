@@ -17,7 +17,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         // Failing tests
         {
             "error-assignment-same-type",
-            "Semantic error at 2:14: Wrong data type for operator: Can only apply the assign operator on same data types"
+            "Semantic error at 2:5: Wrong data type for operator: Cannot apply '=' operator on types int and string"
         },
         {
             "error-if-condition-bool",
@@ -77,35 +77,35 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-logical-operators-are-booleans",
-            "Semantic error at 2:9: Wrong data type for operator: Can only apply '||' operator to booleans"
+            "Semantic error at 2:9: Wrong data type for operator: Cannot apply '||' operator on types string and bool"
         },
         {
             "error-bitwise-operators-are-booleans-or-integers",
-            "Semantic error at 2:22: Wrong data type for operator: Cannot apply '|' operator to string and int"
+            "Semantic error at 2:22: Wrong data type for operator: Cannot apply '|' operator on types string and int"
         },
         {
             "error-equality-operators-some-combinations",
-            "Semantic error at 2:9: Wrong data type for operator: Can't compare string and double with '==' or '!=' operators"
+            "Semantic error at 2:9: Wrong data type for operator: Cannot apply '==' operator on types string and double"
         },
         {
             "error-relational-operators-are-doubles-or-integers",
-            "Semantic error at 3:12: Wrong data type for operator: Can only compare doubles or ints with one another with a relational operator"
+            "Semantic error at 3:12: Wrong data type for operator: Cannot apply '>' operator on types double and string"
         },
         {
             "error-additive-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands bool and string for '+' operator"
+            "Semantic error at 2:29: Wrong data type for operator: Cannot apply '+' operator on types bool and string"
         },
         {
             "error-multiplicative-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Incompatible operands bool and string for '*' operator"
+            "Semantic error at 2:29: Wrong data type for operator: Cannot apply '*' operator on types bool and string"
         },
         {
             "error-prefix-unary-only-integer-identifiers",
-            "Semantic error at 2:7: Wrong data type for operator: Prefix '++' or '--' can only be applied to an identifier of type integer"
+            "Semantic error at 2:7: Wrong data type for operator: Cannot apply '--' operator on type string"
         },
         {
             "error-postfix-unary-only-integer-identifiers",
-            "Semantic error at 2:5: Wrong data type for operator: Postfix '++' or '--' can only be applied to an identifier of type integer"
+            "Semantic error at 2:5: Wrong data type for operator: Cannot apply '++' operator on type string"
         },
         {
             "error-must-contain-main-function",
@@ -190,7 +190,8 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         {
             "error-struct-types-not-matching",
             "Semantic error at 13:26: Referenced undefined variable: Variable 'dbl' was referenced before declared"
-        }, {
+        },
+        {
             "error-return-without-value-result",
             "Semantic error at 4:9: Return without initialization of result variable: Return without value, but result variable is not initialized yet"
         },

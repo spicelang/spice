@@ -9,6 +9,7 @@
 #include "SymbolTable.h"
 #include "ModuleRegistry.h"
 #include <type/SymbolType.h>
+#include <type/OpRuleManager.h>
 #include <util/ScopeIdUtil.h>
 #include <util/FileUtil.h>
 #include <util/IdentifierUtil.h>
@@ -121,6 +122,8 @@ public:
     antlrcpp::Any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) override;
 
     antlrcpp::Any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) override;
+
+    antlrcpp::Any visitCastExpr(SpiceParser::CastExprContext* ctx) override;
 
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
 
