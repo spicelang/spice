@@ -17,7 +17,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         // Failing tests
         {
             "error-assignment-same-type",
-            "Semantic error at 2:14: Wrong data type for operator: Can only apply the assign operator on same data types"
+            "Semantic error at 2:5: Wrong data type for operator: Cannot apply '=' operator on types int and string"
         },
         {
             "error-if-condition-bool",
@@ -77,7 +77,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-logical-operators-are-booleans",
-            "Semantic error at 2:9: Wrong data type for operator: Can only apply '||' operator to booleans"
+            "Semantic error at 2:9: Wrong data type for operator: Cannot apply '||' operator on types string and bool"
         },
         {
             "error-bitwise-operators-are-booleans-or-integers",

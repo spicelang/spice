@@ -12,6 +12,19 @@ typedef std::tuple<SymbolType, SymbolType> UnaryOpRule;
 // Binary operator rule tuple: lhs type, rhs type, result type
 typedef std::tuple<SymbolType, SymbolType, SymbolType> BinaryOpRule;
 
+// Assign op rules
+const std::vector<BinaryOpRule> ASSIGN_OP_RULES = {
+        BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE),    // double = double = double
+        BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int = int = int
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short = short = short
+        BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long = long = long
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte = byte = byte
+        BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR),          // char = char = char
+        BinaryOpRule(TY_STRING, TY_STRING, TY_STRING),    // string = string = string
+};
+
+
+
 // Logical and op rules
 const std::vector<BinaryOpRule> LOGICAL_AND_OP_RULES = {
         BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL)           // bool && bool = bool
@@ -367,6 +380,8 @@ const std::vector<UnaryOpRule> NOT_OP_RULES = {
 class OpRuleManager {
 public:
     // Public methods
+    static SymbolType getAssignResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+
     static SymbolType getLogicalAndResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getLogicalOrResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getBitwiseAndResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);

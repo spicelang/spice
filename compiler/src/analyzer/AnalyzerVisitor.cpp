@@ -788,18 +788,18 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
             }
         }
 
-        // If left type is dyn, set left type to right type
+        // If left type is dyn, do type inference
         if (lhsTy.is(TY_DYN) && allowTypeInference) {
             lhsTy = rhsTy;
             symbolTableEntry->updateType(rhsTy);
         }
 
+        // Update variable in symbol table
+        if (allowStateUpdate) symbolTableEntry->updateState(INITIALIZED);
+
         // Take a look at the operator
         if (ctx->ASSIGN_OP()) {
-            // Allow all assignment operations which are implicit cast compatible
-            if (!rhsTy.isImplicitCastCompatibleWith(lhsTy))
-                throw SemanticError(*ctx->ASSIGN_OP()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply the assign operator on same data types");
+            return OpRuleManager::getAssignResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->PLUS_EQUAL()) {
             if (!lhsTy.matches(rhsTy, TY_DOUBLE) && !lhsTy.matches(rhsTy, TY_INT) &&
                 !lhsTy.matches(rhsTy, TY_BYTE) && !lhsTy.matches(rhsTy, TY_STRING))
@@ -826,8 +826,6 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
                 throw SemanticError(*ctx->SHR_EQUAL()->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply '>>=' operator on two ints");
         }
-        // Update variable in symbol table
-        if (allowStateUpdate) symbolTableEntry->updateState(INITIALIZED);
     }
 
     // Return the rhs type

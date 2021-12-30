@@ -25,6 +25,7 @@ public:
     explicit OpRuleConversionsManager(llvm::IRBuilder<>* builder) : builder(builder) {}
 
     // Public methods
+
     llvm::Value* getBitwiseAndInst(llvm::Value*, llvm::Value*);
     llvm::Value* getBitwiseOrInst(llvm::Value*, llvm::Value*);
     llvm::Value* getEqualInst(llvm::Value*, llvm::Value*);
