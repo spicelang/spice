@@ -8,6 +8,16 @@ f<int> toInt(byte input) {
     return (int) input;
 }
 
+// Converts a byte to a short
+f<short> toShort(byte input) {
+    return (short) input;
+}
+
+// Converts a byte to a long
+f<long> toLong(byte input) {
+    return (long) input;
+}
+
 // Converts a byte to a char
 f<char> toChar(byte input) {
     return (char) input;

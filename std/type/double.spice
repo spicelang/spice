@@ -4,6 +4,18 @@ f<int> toInt(double input) {
     return 0;
 }
 
+// Converts a double to a short
+f<short> toInt(double input) {
+    // ToDo: Implement
+    return (short) 0;
+}
+
+// Converts a double to a long
+f<long> toInt(double input) {
+    // ToDo: Implement
+    return (long) 0;
+}
+
 // Converts a double to a byte
 f<byte> toByte(double input) {
     // ToDo: Implement

@@ -8,6 +8,16 @@ f<int> toInt(bool input) {
     return input ? 1 : 0;
 }
 
+// Converts a bool to a short
+f<short> toShort(bool input) {
+    return (short) (input ? 1 : 0);
+}
+
+// Converts a bool to a long
+f<long> toLong(bool input) {
+    return (long) (input ? 1 : 0);
+}
+
 // Converts a bool to a byte
 f<byte> toByte(bool input) {
     result = (byte) (input ? 1 : 0);
