@@ -860,13 +860,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
         SymbolType lhsTy = visit(ctx->logicalAndExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->logicalAndExpr()[i]).as<SymbolType>();
-            // Allow logical or operator for booleans
-            if (lhsTy.matches(rhsTy, TY_BOOL)) {
-                lhsTy = SymbolType(TY_BOOL);
-            } else { // Any other combination is invalid
-                throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '||' operator to booleans");
-            }
+            lhsTy = OpRuleManager::getLogicalOrResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }
@@ -879,13 +873,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
         SymbolType lhsTy = visit(ctx->bitwiseOrExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->bitwiseOrExpr()[i]).as<SymbolType>();
-            // Allow logical and operator for booleans
-            if (lhsTy.matches(rhsTy, TY_BOOL)) {
-                lhsTy = SymbolType(TY_BOOL);
-            } else { // Any other combination is invalid
-                throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply '&&' operator to booleans");
-            }
+            lhsTy = OpRuleManager::getLogicalAndResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }

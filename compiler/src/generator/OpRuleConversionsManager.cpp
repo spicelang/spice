@@ -14,7 +14,7 @@ llvm::Value* OpRuleConversionsManager::getBitwiseAndInst(llvm::Value* lhs, llvm:
         case COMB(TY_BYTE, TY_BYTE):
             return builder->CreateAnd(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ==");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: &");
 }
 
 llvm::Value* OpRuleConversionsManager::getBitwiseOrInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -29,7 +29,7 @@ llvm::Value* OpRuleConversionsManager::getBitwiseOrInst(llvm::Value* lhs, llvm::
         case COMB(TY_BYTE, TY_BYTE):
             return builder->CreateOr(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ==");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: |");
 }
 
 llvm::Value* OpRuleConversionsManager::getEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
