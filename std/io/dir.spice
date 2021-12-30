@@ -25,6 +25,7 @@ const int X_OK = 1; // Can execute
 const int W_OK = 2; // Can write
 const int R_OK = 4; // Can read
 
+const int IF_MT          = 61440; // Decimal for octal: 0170000
 const int IF_DIR         = 16384; // Decimal for octal: 0040000
 
 type FileStat struct {
@@ -110,18 +111,12 @@ f<int> renameDir(string oldPath, string newPath) {
  * @return Existing or not
  */
 f<bool> dirExists(string path) {
-    printf("Testing ...");
     // Check if there exists something, a file or a dir
-    int accessResult = access((char*) path, F_OK);
-    printf("Access result: %d", accessResult);
-    if accessResult == 0 {
-        prinf("Found something")
+    if access((char*) path, F_OK) == 0 {
         // Check if it is a dir
         dyn fs = new FileStat {};
         stat((char*) path, &fs);
-        prinf("Test: %d\n", fs.st_mode)
-        return ((int) fs.st_mode & IF_DIR) == 1;
+        return ((int) fs.st_mode & IF_MT) == IF_DIR;
     }
-    prinf("Not found at all")
     return false;
 }
