@@ -1145,6 +1145,7 @@ llvm::Value* OpRuleConversionsManager::getCastInst(llvm::Type* lhsTy, llvm::Valu
             return rhs;
         case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
         case COMB(P_TY_INT, P_TY_LONG): // fallthrough
+        case COMB(P_TY_INT, P_TY_BYTE_OR_CHAR): // fallthrough
         case COMB(P_TY_SHORT, P_TY_INT):
             return builder->CreateIntCast(rhs, lhsTy, true);
         case COMB(P_TY_SHORT, P_TY_SHORT):

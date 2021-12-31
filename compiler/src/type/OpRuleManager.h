@@ -471,6 +471,7 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
         BinaryOpRule(TY_INT, TY_INT, TY_INT),                    // (int) int = int
         BinaryOpRule(TY_INT, TY_SHORT, TY_INT),                  // (int) short = int
         BinaryOpRule(TY_INT, TY_LONG, TY_INT),                   // (int) long = int
+        BinaryOpRule(TY_INT, TY_CHAR, TY_INT),                   // (int) char = int
         BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),                // (short) int = short
         BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),              // (short) short = short
         BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),               // (short) long = short

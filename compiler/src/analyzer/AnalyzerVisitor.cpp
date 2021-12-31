@@ -408,7 +408,6 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
     std::string functionName = ctx->IDENTIFIER()->toString();
-    SymbolType returnType = SymbolType(TY_BOOL); // Bool with value 'true' for procedures
 
     // Visit params
     std::vector<SymbolType> paramTypes;
@@ -436,9 +435,14 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     if (functionEntry->getType().is(TY_FUNCTION)) {
         SymbolTable* functionTable = functionEntryTable->getChild(signature.toString());
         // Get return type of called function
-        return functionTable->lookup(RETURN_VARIABLE_NAME)->getType();
+        SymbolType returnType = functionTable->lookup(RETURN_VARIABLE_NAME)->getType();
+        // Structs from outside the module require more initialization
+        if (returnType.is(TY_STRUCT) && functionCallParentScope->isImported())
+            return initExtStruct(*ctx->start, returnType.getSubType(),
+                                 scopePrefix + "." + returnType.getSubType());
+        return returnType;
     }
-    return returnType;
+    return SymbolType(TY_BOOL); // Bool with value 'true' for procedures;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
@@ -1042,6 +1046,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
     unsigned int referenceOperations = 0;
     unsigned int dereferenceOperations = 0;
     SymbolTable* scope = currentScope;
+    scopePrefix = "";
 
     // Consider referencing operators
     referenceOperations += ctx->BITWISE_AND().size();
@@ -1091,6 +1096,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                 // Change to new scope
                 std::string importName = entry->getName();
                 scope = scope->lookupTable(importName);
+                scopePrefix += scopePrefix.empty() ? importName : "." + importName;
                 // Check if the table exists
                 if (!scope)
                     throw SemanticError(*token->getSymbol(), REFERENCED_UNDEFINED_STRUCT_FIELD,
@@ -1150,15 +1156,30 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
     if (ctx->TYPE_CHAR()) type = SymbolType(TY_CHAR);
     if (ctx->TYPE_STRING()) type = SymbolType(TY_STRING);
     if (ctx->TYPE_BOOL()) type = SymbolType(TY_BOOL);
-    if (ctx->IDENTIFIER()) { // Struct type
-        std::string structName = ctx->IDENTIFIER()->toString();
+    if (!ctx->IDENTIFIER().empty()) { // Struct type
+        // Get type name in format: a.b.c
+        std::string structName = ctx->IDENTIFIER()[0]->toString();
+        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) structName += "." + ctx->IDENTIFIER()[i]->toString();
 
-        // Check if struct was declared
-        SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-        if (!structSymbol)
-            throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-        structSymbol->setUsed();
-        type = SymbolType(TY_STRUCT, structName);
+        if (functionCallParentScope) { // Within function call
+            if (functionCallParentScope->isImported()) { // Function call to imported function
+                type = initExtStruct(*ctx->start, ctx->IDENTIFIER()[0]->toString(), structName);
+            } else { // Function call to local function
+                // Check if struct was declared
+                SymbolTableEntry* structSymbol = functionCallParentScope->lookup(structName);
+                if (!structSymbol)
+                    throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+                structSymbol->setUsed();
+                type = SymbolType(TY_STRUCT, structName);
+            }
+        } else { // Not within function call
+            // Check if struct was declared
+            SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+            if (!structSymbol)
+                throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+            structSymbol->setUsed();
+            type = SymbolType(TY_STRUCT, structName);
+        }
     }
 
     unsigned int tokenCounter = 1;
@@ -1174,4 +1195,25 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
     }
 
     return type;
+}
+
+SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, const std::string& oldStructName,
+                                          const std::string& newStructName) {
+    // Check if struct was declared
+    SymbolTableEntry* structSymbol = functionCallParentScope->lookup(oldStructName);
+    if (!structSymbol)
+        throw SemanticError(token, UNKNOWN_DATATYPE, "Unknown datatype '" + newStructName + "'");
+    structSymbol->setUsed();
+    SymbolTable* structTable = functionCallParentScope->lookupTable("struct:" + oldStructName);
+
+    // Get root scope
+    SymbolTable* rootScope = currentScope;
+    while (rootScope->getParent()) rootScope = rootScope->getParent();
+
+    // Copy struct symbol and struct table to the root scope of the current source file
+    SymbolType newStructType = SymbolType(TY_STRUCT, newStructName);
+    rootScope->insert(newStructName, newStructType, DECLARED, structSymbol->getDefinitionToken(), true, false);
+    rootScope->mountChildBlock("struct:" + newStructName, structTable);
+    rootScope->lookupTable("struct:" + newStructName)->setImported();
+    return newStructType;
 }

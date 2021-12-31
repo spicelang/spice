@@ -1737,8 +1737,12 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
     } else if (ctx->TYPE_DYN()) { // Data type is dyn
         SymbolTableEntry* symbolTableEntry = currentScope->lookup(currentVar);
         currentSymbolType = symbolTableEntry->getType();
-    } else if (ctx->IDENTIFIER()) { // Custom data type
-        currentSymbolType = SymbolType(TY_STRUCT, ctx->IDENTIFIER()->toString());
+    } else if (!ctx->IDENTIFIER().empty()) { // Custom data type
+        // Get type name in format: a.b.c
+        std::string typeName = ctx->IDENTIFIER()[0]->toString();
+        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) typeName += "." + ctx->IDENTIFIER()[i]->toString();
+
+        currentSymbolType = SymbolType(TY_STRUCT, typeName);
     }
 
     // Check for de-referencing operators

@@ -146,7 +146,11 @@ private:
     bool hasMainFunction = false;
     SymbolTable* currentScope = new SymbolTable(nullptr, mustHaveMainFunction);
     SymbolTable* functionCallParentScope = nullptr;
+    std::string scopePrefix;
     bool parameterMode = false;
     int nestedLoopCounter = 0;
     bool stdFile = false;
+
+    // Private methods
+    SymbolType initExtStruct(const antlr4::Token& token, const std::string& oldStructName, const std::string& newStructName);
 };

@@ -62,8 +62,8 @@ f<int> FilePtr.close() {
  * 
  * @return Result code of the write operation: 0 = successful, -1 = failed
  */
-f<int> FilePtr.writeChar(int value) {
-    return fputc(value, this);
+f<int> FilePtr.writeChar(char value) {
+    return fputc((int) value, this);
 }
 
 /**
