@@ -499,7 +499,6 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     currentScope->lookup(varName)->updateLLVMType(varType);
     // Set some attributes to it
     llvm::GlobalVariable* global = module->getNamedGlobal(varName);
-    //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
     global->setConstant(ctx->CONST());
     global->setDSOLocal(true);
 
@@ -1573,7 +1572,10 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 // Visit function call
                 basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
                 baseType = basePtr->getType()->getPointerElementType();
+                // Reset values
                 currentThisValue = nullptr;
+                functionCallParentScope = nullptr;
+
                 indices.clear();
                 indices.push_back(builder->getInt32(0));
                 functionCallCounter++;
@@ -1591,7 +1593,6 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                     basePtr = module->getOrInsertGlobal(variableName, baseType);
                     // Set some attributes to it
                     llvm::GlobalVariable* global = module->getNamedGlobal(variableName);
-                    //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
                     global->setDSOLocal(true);
                     global->setExternallyInitialized(true);
                 } else { // Local or global variable

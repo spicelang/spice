@@ -1062,6 +1062,9 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                 functionCallParentScope = scope;
                 // Visit function call
                 symbolType = visit(ctx->functionCall()[functionCallCounter]).as<SymbolType>();
+                // Reset values
+                functionCallParentScope = nullptr;
+
                 functionCallCounter++;
             }
         } else if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier

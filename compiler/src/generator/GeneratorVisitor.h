@@ -153,7 +153,7 @@ private:
     std::unique_ptr<llvm::Module> module;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope;
-    SymbolTable* functionCallParentScope = currentScope;
+    SymbolTable* functionCallParentScope = nullptr;
     std::string currentVar;
     SymbolType currentSymbolType;
     bool blockAlreadyTerminated = false;

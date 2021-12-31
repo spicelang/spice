@@ -1,6 +1,7 @@
-import "std/io/dir" as dir;
+import "std/io/file" as file;
 
 f<int> main() {
-    bool exists = dir.dirExists("./test");
-    printf("Exists: %d\n", exists);
+    FilePtr fp = file.openFile("./test.txt", file.MODE_WRITE);
+    fp.writeChar('A');
+    fp.close();
 }
