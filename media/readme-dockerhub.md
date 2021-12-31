@@ -37,4 +37,4 @@ $ docker run --rm -it -v ${pwd}:/spice/out chillibits/spice
 ## Contribute otherwise to the project
 If you want to contribute to this project, please ensure you comply with the [contribution guidelines](https://github.com/chillibits/spice/blob/main/CONTRIBUTING.md).
 
-© ChilliBits 2021
+© ChilliBits 2021-2022

@@ -27,4 +27,4 @@ The pacekage `std/type` offers functions for type related work like type convers
 
 *More std library components to come ...*
 
-© ChilliBits 2021
+© ChilliBits 2021-2022

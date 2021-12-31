@@ -15,4 +15,4 @@ This project follows our [Code of Conduct](https://github.com/chillibits/spice/b
 ## License
 The project is licensed under the [MIT software license](https://github.com/chillibits/spice/blob/main/LICENSE) and provided/distributed by ChilliBits.
 
-© ChilliBits 2021
+© ChilliBits 2021-2022
