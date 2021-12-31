@@ -798,11 +798,14 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     if (!functionFound) { // Not found => Declare function, which will be linked in
         SymbolTable* table = functionCallParentScope->lookupTableWithSymbol({ signature.toString() });
         // Check if it is a function or a procedure
-        if (!table->getFunctionDeclaration(signature.toString()).empty()) {
+        if (!table->getFunctionDeclaration(signature.toString()).empty()) { // Function
             std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
 
             // Get return type
-            llvm::Type* returnType = getTypeForSymbolType(symbolTypes[0]);
+            SymbolType returnSymbolType = symbolTypes[0];
+            if (returnSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported())
+                initExtStruct(currentSymbolType.getSubType(), scopePrefix + "." + currentSymbolType.getSubType());
+            llvm::Type* returnType = getTypeForSymbolType(returnSymbolType);
             if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
 
             // Get parameter types
@@ -815,7 +818,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
             llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
             module->getOrInsertFunction(fctIdentifier, fctType);
-        } else if (!table->getProcedureDeclaration(signature.toString()).empty()) {
+        } else if (!table->getProcedureDeclaration(signature.toString()).empty()) { // Procedure
             std::vector<SymbolType> symbolTypes = table->getProcedureDeclaration(signature.toString());
 
             // Get parameter types
@@ -1547,6 +1550,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     unsigned int dereferenceOperations = 0;
     bool metStruct = false;
     SymbolTable* scope = currentScope;
+    scopePrefix = "";
 
     // Consider referencing operators
     referenceOperations += ctx->BITWISE_AND().size();
@@ -1628,6 +1632,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 // Change to new scope
                 std::string importName = entry->getName();
                 scope = scope->lookupTable(importName);
+                scopePrefix += scopePrefix.empty() ? importName : "." + importName;
             }
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Get the index value
@@ -1868,4 +1873,19 @@ llvm::Value* GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolTyp
         default:
             throw std::runtime_error("Internal compiler error: Cannot determine default value of " + symbolType.getName());
     }
+}
+
+void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
+    SymbolTable* structTable = currentScope->lookupTable(newStructName);
+
+    // Get field types
+    std::vector<llvm::Type*> memberTypes;
+    for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
+        SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
+        memberTypes.push_back(getTypeForSymbolType(fieldType));
+    }
+
+    // Create global struct
+    llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
+    currentScope->lookup(newStructName)->updateLLVMType(structType);
 }

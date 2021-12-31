@@ -50,87 +50,46 @@ public:
 
     // Public methods
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;
-
     antlrcpp::Any visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) override;
-
     antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext* ctx) override;
-
     antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) override;
-
     antlrcpp::Any visitExtDecl(SpiceParser::ExtDeclContext* ctx) override;
-
     antlrcpp::Any visitStructDef(SpiceParser::StructDefContext* ctx) override;
-
     antlrcpp::Any visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) override;
-
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
-
     antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) override;
-
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
-
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
-
     antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext* ctx) override;
-
     antlrcpp::Any visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) override;
-
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
-
     antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
-
     antlrcpp::Any visitNewStmt(SpiceParser::NewStmtContext* ctx) override;
-
     antlrcpp::Any visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) override;
-
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
-
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
-
     antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext* ctx) override;
-
     antlrcpp::Any visitContinueStmt(SpiceParser::ContinueStmtContext* ctx) override;
-
     antlrcpp::Any visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) override;
-
     antlrcpp::Any visitPrintfCall(SpiceParser::PrintfCallContext* ctx) override;
-
     antlrcpp::Any visitSizeOfCall(SpiceParser::SizeOfCallContext* ctx) override;
-
     antlrcpp::Any visitAssignExpr(SpiceParser::AssignExprContext* ctx) override;
-
     antlrcpp::Any visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) override;
-
     antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) override;
-
     antlrcpp::Any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext* ctx) override;
-
     antlrcpp::Any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext* ctx) override;
-
     antlrcpp::Any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext* ctx) override;
-
     antlrcpp::Any visitEqualityExpr(SpiceParser::EqualityExprContext* ctx) override;
-
     antlrcpp::Any visitRelationalExpr(SpiceParser::RelationalExprContext* ctx) override;
-
     antlrcpp::Any visitShiftExpr(SpiceParser::ShiftExprContext* ctx) override;
-
     antlrcpp::Any visitAdditiveExpr(SpiceParser::AdditiveExprContext* ctx) override;
-
     antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) override;
-
     antlrcpp::Any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) override;
-
     antlrcpp::Any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) override;
-
     antlrcpp::Any visitCastExpr(SpiceParser::CastExprContext* ctx) override;
-
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
-
     antlrcpp::Any visitIdenValue(SpiceParser::IdenValueContext* ctx) override;
-
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
-
     antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
 
 private:

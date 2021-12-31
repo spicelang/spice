@@ -6,7 +6,7 @@ Sometimes it is useful to directly cast [a type](../data-types) to another one. 
 
 Casting an int to the short data type:
 ```spice
-short = (short) 12;
+short shortVar = (short) 12;
 ```
 
 Example for casting for a function fall:
