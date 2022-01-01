@@ -43,11 +43,11 @@ type FileStat struct {
 }
 
 // Link external functions
-ext<int> mkdir(char*, int);
-ext<int> rmdir(char*);
-ext<int> rename(char*, char*);
-ext<int> access(char*, int);
-ext<int> stat(char*, FileStat*);
+ext<int> mkdir(string, int);
+ext<int> rmdir(string);
+ext<int> rename(string, string);
+ext<int> access(string, int);
+ext<int> stat(string, FileStat*);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
@@ -62,7 +62,7 @@ ext<int> stat(char*, FileStat*);
  * @return Result code of the create operation: 0 = successful, -1 = failed
  */
 f<int> mkDir(string path, int mode) {
-    return mkdir((char*) path, mode);
+    return mkdir(path, mode);
 }
 
 /**
@@ -93,7 +93,7 @@ f<int> mkDirs(string path, int mode) {
  * @return Result code of the delete operation: 0 = successful, -1 = failed
  */
 f<int> rmDir(string path) {
-    return rmdir((char*) path);
+    return rmdir(path);
 }
 
 /**
@@ -102,7 +102,7 @@ f<int> rmDir(string path) {
  * @return Result code of the rename operation: 0 = successful, -1 = failed
  */
 f<int> renameDir(string oldPath, string newPath) {
-    return rename((char*) oldPath, (char*) newPath);
+    return rename(oldPath, newPath);
 }
 
 /**
@@ -112,10 +112,10 @@ f<int> renameDir(string oldPath, string newPath) {
  */
 f<bool> dirExists(string path) {
     // Check if there exists something, a file or a dir
-    if access((char*) path, F_OK) == 0 {
+    if access(path, F_OK) == 0 {
         // Check if it is a dir
         dyn fs = new FileStat {};
-        stat((char*) path, &fs);
+        stat(path, &fs);
         return ((int) fs.st_mode & IF_MT) == IF_DIR;
     }
     return false;

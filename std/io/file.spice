@@ -14,6 +14,8 @@ const int X_OK = 1; // Can execute
 const int W_OK = 2; // Can write
 const int R_OK = 4; // Can read
 
+const int EOF = -1;
+
 type FilePtr struct {
     byte* ptr
 }
@@ -23,11 +25,13 @@ type File struct {
 }
 
 // Link external functions
-ext<int> open(char*, int...);
-ext<FilePtr*> fopen(char*, char*);
+ext<int> open(string, int...);
+ext<FilePtr*> fopen(string, string);
 ext<int> fclose(FilePtr*);
+ext<int> fgetc(FilePtr*);
 ext<int> fputc(int, FilePtr*);
-ext<int> access(char*, int);
+ext<int> fputs(string, FilePtr*);
+ext<int> access(string, int);
 
 /**
  * Creates an empty file on disk similar to the 'touch' command on Linux.
@@ -35,7 +39,7 @@ ext<int> access(char*, int);
  * @return Result code of the create operation: 0 = successful, -1 = failed
  */
 f<int> createFile(string path) {
-    return open((char*) path, MODE_CREATE|MODE_RDWR);
+    return open(path, MODE_CREATE|MODE_RDWR);
 }
 
 /**
@@ -48,7 +52,7 @@ f<int> createFile(string path) {
  * @return File pointer
  */
 f<File> openFile(string path, string mode) {
-    FilePtr* fp = fopen((char*) path, (char*) mode);
+    FilePtr* fp = fopen(path, mode);
     // Insert check for pointer being 0 and throw an exception
     File openedFile = new File { fp };
     return openedFile;
@@ -63,6 +67,10 @@ f<int> File.close() {
     return fclose(this.filePtr);
 }
 
+f<int> File.readChar() {
+    return fgetc(this.filePtr);
+}
+
 /**
  * Writes a single character to the file.
  * 
@@ -73,12 +81,21 @@ f<int> File.writeChar(char value) {
 }
 
 /**
+ * Writes a string to the file.
+ *
+ * @return Result code of the write operation: 0 = successful, -1 = failed
+ */
+f<int> File.writeString(string value) {
+    return fputs(value, this.filePtr);
+}
+
+/**
  * Checks if a file exists. The function also returns true if the specified path points to a directory.
  * 
  * @return Existing / not existing
  */
 f<bool> fileExists(string path) {
-    return access((char*) path, F_OK) == 0;
+    return access(path, F_OK) == 0;
 }
 
 /**
@@ -87,7 +104,7 @@ f<bool> fileExists(string path) {
  * @return Readable / not readable
  */
 f<bool> fileReadable(string path) {
-    return access((char*) path, R_OK) == 0;
+    return access(path, R_OK) == 0;
 }
 
 /**
@@ -96,7 +113,7 @@ f<bool> fileReadable(string path) {
  * @return Writable / not writable
  */
 f<bool> fileWritable(string path) {
-    return access((char*) path, W_OK) == 0;
+    return access(path, W_OK) == 0;
 }
 
 /**
@@ -105,5 +122,5 @@ f<bool> fileWritable(string path) {
  * @return Executable / not executable
  */
 f<bool> fileExecutable(string path) {
-    return access((char*) path, X_OK) == 0;
+    return access(path, X_OK) == 0;
 }
