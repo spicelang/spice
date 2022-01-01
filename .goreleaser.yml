@@ -21,8 +21,8 @@ builds:
       - -s -w -X main.version={{ .Version }} -X main.commit={{ .Commit }} -X main.date={{ .CommitDate }} -X main.builtBy=github-actions
 dockers:
   - image_templates:
-      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      - ghcr.io/chillibits/spice:latest-amd64
+      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - ghcr.io/spicelang/spice:latest-amd64
       - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
       - chillibits/spice:latest-amd64
     dockerfile: Dockerfile
@@ -41,8 +41,8 @@ dockers:
       - --build-arg=COMPILER_PATH=linux-amd64
       - --platform=linux/amd64
   - image_templates:
-      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
-      - ghcr.io/chillibits/spice:latest-i386
+      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
+      - ghcr.io/spicelang/spice:latest-i386
       - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
       - chillibits/spice:latest-i386
     dockerfile: Dockerfile
@@ -61,8 +61,8 @@ dockers:
       - --build-arg=COMPILER_PATH=linux-386
       - --platform=linux/i386
   #- image_templates:
-  #    - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
-  #    - ghcr.io/chillibits/spice:latest-arm32v7
+  #    - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
+  #    - ghcr.io/spicelang/spice:latest-arm32v7
   #    - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
   #    - chillibits/spice:latest-arm32v7
   #  dockerfile: Dockerfile
@@ -82,8 +82,8 @@ dockers:
   #    - --build-arg=COMPILER_PATH=linux-armv7
   #    - --platform=linux/arm/v7
   #- image_templates:
-  #    - ghcr.io/chillibits/spice:{{ .Version }}-arm64v8
-  #    - ghcr.io/chillibits/spice:latest-arm64v8
+  #    - ghcr.io/spicelang/spice:{{ .Version }}-arm64v8
+  #    - ghcr.io/spicelang/spice:latest-arm64v8
   #    - chillibits/spice:{{ .Version }}-arm64v8
   #    - chillibits/spice:latest-arm64v8
   #  dockerfile: Dockerfile
@@ -117,19 +117,19 @@ docker_manifests:
       #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
     skip_push: auto
 
-  - name_template: ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+  - name_template: ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
     image_templates:
-      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
-      #- ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
-      #- ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
+      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
+      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
+      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
     skip_push: auto
-  - name_template: ghcr.io/chillibits/spice:latest
+  - name_template: ghcr.io/spicelang/spice:latest
     image_templates:
-      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      - ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
-      #- ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
-      #- ghcr.io/chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
+      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
+      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
+      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
     skip_push: auto
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'

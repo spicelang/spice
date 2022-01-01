@@ -10,7 +10,7 @@ You don't have to pull the image first. You also can skip this step.
     ```
 === "GitHub Container Registry"
     ```sh
-    docker pull ghcr.io/chillibits/spice
+    docker pull ghcr.io/spicelang/spice
     ```
 
 ### Use
@@ -20,7 +20,7 @@ You don't have to pull the image first. You also can skip this step.
     ```
 === "Linux - GHCR"
     ```sh
-    docker run --rm -it -v $(pwd):/spice/out ghcr.io/chillibits/spice
+    docker run --rm -it -v $(pwd):/spice/out ghcr.io/spicelang/spice
     ```
 === "Windows - Docker Hub"
     ```sh
@@ -28,7 +28,7 @@ You don't have to pull the image first. You also can skip this step.
     ```
 === "Windows - GHCR"
     ```sh
-    docker run --rm -it -v ${pwd}:/spice/out ghcr.io/chillibits/spice
+    docker run --rm -it -v ${pwd}:/spice/out ghcr.io/spicelang/spice
     ```
 
 ### Customize

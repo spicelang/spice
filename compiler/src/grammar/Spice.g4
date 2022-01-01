@@ -38,7 +38,7 @@ sizeOfCall: SIZEOF LPAREN assignExpr RPAREN;
 
 // Expression loop
 assignExpr: ((declStmt | idenValue) (ASSIGN_OP | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | SHL_EQUAL | SHR_EQUAL))? ternaryExpr;
-ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr ':' logicalOrExpr)?;
+ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr COLON logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
 bitwiseOrExpr: bitwiseAndExpr (BITWISE_OR bitwiseAndExpr)*;

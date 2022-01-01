@@ -3,14 +3,14 @@
   <h3 align="center">Spice Programming Language</h3>
   <p align="center">Compiler and standard library for the Spice programming language.</p>
   <p align="center">
-    <a target="_blank" href="https://github.com/chillibits/spice/releases/latest"><img src="https://img.shields.io/github/v/release/chillibits/spice?include_prereleases"></a>
+    <a target="_blank" href="https://github.com/spicelang/spice/releases/latest"><img src="https://img.shields.io/github/v/release/spicelang/spice?include_prereleases"></a>
     <a target="_blank" href="https://hub.docker.com/r/chillibits/spice"><img src="https://img.shields.io/docker/pulls/chillibits/spice"></a>
-    <a target="_blank" href="./.github/workflows/ci-go.yml"><img src="https://github.com/chillibits/spice/actions/workflows/ci-go.yml/badge.svg"></a>
-	<a target="_blank" href="./.github/workflows/ci-cpp.yml"><img src="https://github.com/chillibits/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
-	<a target="_blank" href="./.github/workflows/codeql-analysis.yml"><img src="https://github.com/chillibits/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
-    <a target="_blank" href="https://goreportcard.com/report/github.com/chillibits/spice"><img src="https://goreportcard.com/badge/github.com/chillibits/spice"></a>
+    <a target="_blank" href="./.github/workflows/ci-go.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-go.yml/badge.svg"></a>
+	<a target="_blank" href="./.github/workflows/ci-cpp.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
+	<a target="_blank" href="./.github/workflows/codeql-analysis.yml"><img src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
+    <a target="_blank" href="https://goreportcard.com/report/github.com/spicelang/spice"><img src="https://goreportcard.com/badge/github.com/spicelang/spice"></a>
     <a target="_blank" href="https://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
-    <a target="_blank" href="./LICENSE.md"><img src="https://img.shields.io/github/license/chillibits/spice"></a>
+    <a target="_blank" href="./LICENSE.md"><img src="https://img.shields.io/github/license/spicelang/spice"></a>
   </p>
 </p>
 
@@ -18,7 +18,7 @@
 
 This is the home repo of the Spice programming language. Spice is a compiled language which sets a focus on performance and practicality. It is considered as a systems language, which means it is neither suitable for coding user interfaces nor any interface with the user, except cli tools. Spice supports cross-compilation to all target platforms, listed below.
 
-If you loke Spice, please consider a GitHub star! ⭐
+If you like Spice, please consider a GitHub star! ⭐
 
 |:warning: | The compiler of the Spice language is still in alpha stages and under development. Please note that code may behave differently in the future or even break due to the volatility of the compiler. |
 |----------|:-------------------------------|
