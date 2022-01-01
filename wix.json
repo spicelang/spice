@@ -34,8 +34,8 @@
     },
     "choco": {
         "description": "Spice programming language",
-        "project-url": "https://github.com/chillibits/spice",
+        "project-url": "https://github.com/spicelang/spice",
         "tags": "programming-language language compiler cpp llvm antlr",
-        "license-url": "https://github.com/chillibits/spice/blob/main/LICENSE"
+        "license-url": "https://github.com/spicelang/spice/blob/main/LICENSE"
     }
 }

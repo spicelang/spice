@@ -1087,6 +1087,7 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                 if (symbolType.isPointerOf(TY_STRUCT)) symbolType = symbolType.getContainedTy();
                 // Change to new scope
                 std::string structName = symbolType.getSubType();
+                scopePrefix += scopePrefix.empty() ? structName : "." + structName;
                 scope = scope->lookupTable("struct:" + structName);
                 // Check if the table exists
                 if (!scope)
@@ -1205,6 +1206,20 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, const std:
         throw SemanticError(token, UNKNOWN_DATATYPE, "Unknown datatype '" + newStructName + "'");
     structSymbol->setUsed();
     SymbolTable* structTable = functionCallParentScope->lookupTable("struct:" + oldStructName);
+
+    // Initialize potential structs for field types
+    for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
+        SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
+        if (fieldType.is(TY_STRUCT)) {
+            std::string structName = fieldType.getSubType();
+            initExtStruct(token, structName, scopePrefix + "." + structName);
+        } else if (fieldType.isPointerOf(TY_STRUCT)) {
+            std::string structName = fieldType.getContainedTy().getSubType();
+            initExtStruct(token, structName, scopePrefix + "." + structName);
+        }
+    }
+
+    // Update symbol type in the sub-table
     structTable->updateSymbolTypes(structSymbol->getType(), SymbolType(TY_STRUCT, newStructName));
 
     // Get root scope
@@ -1214,6 +1229,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, const std:
     // Copy struct symbol and struct table to the root scope of the current source file
     SymbolType newStructType = SymbolType(TY_STRUCT, newStructName);
     rootScope->insert(newStructName, newStructType, DECLARED, structSymbol->getDefinitionToken(), true, false);
+    rootScope->lookup(newStructName)->setUsed();
     rootScope->mountChildBlock("struct:" + newStructName, structTable);
     rootScope->lookupTable("struct:" + newStructName)->setImported();
     return newStructType;

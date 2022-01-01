@@ -3,8 +3,8 @@ site_url: https://www.spicelang.com
 site_description: Spice Programming Language
 site_author: Marc Auberer
 copyright: Made with ❤️ by Spice contributors, powered by <a href="https://www.chillibits.com" target="_blank">ChilliBits</a>.
-repo_name: chillibits/spice
-repo_url: https://github.com/chillibits/spice
+repo_name: spicelang/spice
+repo_url: https://github.com/spicelang/spice
 edit_uri: edit/main/docs/docs/
 
 theme:
@@ -48,7 +48,7 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/chillibits/spice
+      link: https://github.com/spicelang/spice
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/chillibits
     - icon: fontawesome/brands/docker

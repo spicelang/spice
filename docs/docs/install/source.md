@@ -8,7 +8,7 @@ Furthermore you need a common C++ compiler and CMake to build the compiler execu
 
 #### Clone from GitHub
 ```sh
-git clone https://github.com/chillibits/spice.git
+git clone https://github.com/spicelang/spice.git
 cd spice
 ```
 

@@ -1,7 +1,6 @@
 import "std/io/file" as file;
 
 f<int> main() {
-    file.FilePtr fp = file.openFile("./test.txt", file.MODE_WRITE);
-    fp.writeChar('A');
-    fp.close();
+    // Write to file
+    file.writeFile("./test.txt", "Hello World\nThis is a test");
 }
