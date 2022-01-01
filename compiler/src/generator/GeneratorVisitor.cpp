@@ -1714,6 +1714,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->STRING()) {
         currentSymbolType = SymbolType(TY_STRING);
         std::string value = ctx->STRING()->toString();
+        value = std::regex_replace(value, std::regex("\\\\n"), "\n");
         value = value.substr(1, value.size() - 2);
         llvmValue = builder->CreateGlobalStringPtr(value, "", 0, module.get());
     }

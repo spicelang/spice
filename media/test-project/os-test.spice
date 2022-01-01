@@ -2,14 +2,5 @@ import "std/io/file" as file;
 
 f<int> main() {
     // Write to file
-    file.File writeFile = file.openFile("./test.txt", file.MODE_READ_WRITE_APPEND);
-    writeFile.writeString("Hello World");
-    writeFile.close();
-
-    // Read from file
-    file.File readFile = file.openFile("./test.txt", file.MODE_READ);
-    while (int c = readFile.readChar()) != file.EOF {
-        printf("%c", (char) c);
-    }
-    readFile.close();
+    file.writeFile("./test.txt", "Hello World\nThis is a test");
 }
