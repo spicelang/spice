@@ -803,15 +803,29 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
             // Get return type
             SymbolType returnSymbolType = symbolTypes[0];
-            if (returnSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported())
-                initExtStruct(currentSymbolType.getSubType(), scopePrefix + "." + currentSymbolType.getSubType());
-            llvm::Type* returnType = getTypeForSymbolType(returnSymbolType);
-            if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
+            llvm::Type* returnType;
+            if (returnSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported()) {
+                initExtStruct(returnSymbolType.getSubType(), scopePrefix + "." + returnSymbolType.getSubType());
+                SymbolType newSymbolType = SymbolType(TY_STRUCT, scopePrefix + "." + returnSymbolType.getSubType());
+                returnType = getTypeForSymbolType(newSymbolType);
+                if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
+            } else {
+                returnType = getTypeForSymbolType(returnSymbolType);
+                if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
+            }
 
             // Get parameter types
             std::vector<llvm::Type*> paramTypes;
             for (int i = 1; i < symbolTypes.size(); i++) {
-                llvm::Type* paramType = getTypeForSymbolType(symbolTypes[i]);
+                SymbolType paramSymbolType = symbolTypes[i];
+                if (paramSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported()) {
+                    paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
+                } else if (paramSymbolType.is(TY_PTR) && paramSymbolType.getContainedTy().is(TY_STRUCT) &&
+                    functionCallParentScope->isImported()) {
+                    paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
+                    paramSymbolType = paramSymbolType.toPointer();
+                }
+                llvm::Type* paramType = getTypeForSymbolType(paramSymbolType);
                 if (!paramType) throw std::runtime_error("Internal compiler error: Could not get parameter type of function call");
                 paramTypes.push_back(paramType);
             }
@@ -1620,6 +1634,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 }
                 // Change to new scope
                 std::string structName = symbolType.getSubType();
+                scopePrefix += scopePrefix.empty() ? structName : "." + structName;
                 scope = scope->lookupTable("struct:" + structName);
                 // Check if the table exists
                 if (!scope)
@@ -1876,7 +1891,7 @@ llvm::Value* GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolTyp
 }
 
 void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
-    SymbolTable* structTable = currentScope->lookupTable(newStructName);
+    SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
 
     // Get field types
     std::vector<llvm::Type*> memberTypes;

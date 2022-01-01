@@ -35,12 +35,14 @@ jobs:
           #  }
           - {
               arch: linux-x86,
-              dockcross: 20210805-77da067,
+              #dockcross: 20210805-77da067,
+              dockcross: 20211222-f096312,
               cmake_params:
             }
           - {
               arch: linux-x64,
-              dockcross: 20210805-77da067,
+              #dockcross: 20210805-77da067,
+              dockcross: 20211222-f096312,
               cmake_params:
             }
           #- {
@@ -86,26 +88,26 @@ jobs:
           cd ./compiler/lib
           git clone --depth 1 https://github.com/antlr/antlr4.git
       
-      - name: Configure & compile project
-        run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" sh -c "sudo mkdir -p /usr/share/man/man1 && sudo apt-get update -y && sudo apt-get install --ignore-missing --no-install-recommends --yes libc6-i386 openjdk-11-jre uuid-dev && cmake -Bbin -H./compiler -GNinja && ninja -Cbin"
-
-      - name: Process build output - Linux
-        if: ${{ startsWith(matrix.config.arch, 'linux') }}
-        working-directory: bin
-        run: |
-          mv ./src/Spice_run spicec
-          chmod +x spicec
-          
-      - name: Process build output - Windows
-        if: ${{ startsWith(matrix.config.arch, 'windows') }}
-        working-directory: bin
-        run: mv ./src/Spice_run.exe spicec.exe
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: spicec-${{ matrix.config.arch }}
-          path: ./bin/spicec**
+#      - name: Configure & compile project
+#        run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" sh -c "sudo mkdir -p /usr/share/man/man1 && sudo apt-get update -y && sudo apt-get install --ignore-missing --no-install-recommends --yes libc6-i386 openjdk-11-jre uuid-dev && cmake -Bbin -H./compiler -GNinja && ninja -Cbin"
+#
+#      - name: Process build output - Linux
+#        if: ${{ startsWith(matrix.config.arch, 'linux') }}
+#        working-directory: bin
+#        run: |
+#          mv ./src/Spice_run spicec
+#          chmod +x spicec
+#          
+#      - name: Process build output - Windows
+#        if: ${{ startsWith(matrix.config.arch, 'windows') }}
+#        working-directory: bin
+#        run: mv ./src/Spice_run.exe spicec.exe
+#
+#      - name: Upload artifact
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: spicec-${{ matrix.config.arch }}
+#          path: ./bin/spicec**
 
   build-cli:
     name: Build CLI binaries
@@ -166,7 +168,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
-          version: v1.2.4
+          version: v1.2.5
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

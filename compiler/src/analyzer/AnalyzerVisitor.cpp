@@ -628,7 +628,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
         // Check data type of return statement
         if (returnVariable->getType().is(TY_DYN)) {
             // Set explicit return type to the return variable
-            returnVariable->updateType(returnType);
+            returnVariable->updateType(returnType, false);
         } else {
             // Check if return type matches with function definition
             if (returnType != returnVariable->getType())
@@ -799,7 +799,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
             // If left type is dyn, do type inference
             if (lhsTy.is(TY_DYN) && allowTypeInference) {
                 lhsTy = rhsTy;
-                symbolTableEntry->updateType(rhsTy);
+                symbolTableEntry->updateType(rhsTy, false);
             }
 
             // Update variable in symbol table
@@ -1205,6 +1205,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, const std:
         throw SemanticError(token, UNKNOWN_DATATYPE, "Unknown datatype '" + newStructName + "'");
     structSymbol->setUsed();
     SymbolTable* structTable = functionCallParentScope->lookupTable("struct:" + oldStructName);
+    structTable->updateSymbolTypes(structSymbol->getType(), SymbolType(TY_STRUCT, newStructName));
 
     // Get root scope
     SymbolTable* rootScope = currentScope;

@@ -37,7 +37,7 @@ public:
     bool isLocal() const;
     bool isUsed() const;
     void updateState(SymbolState);
-    void updateType(SymbolType);
+    void updateType(SymbolType, bool);
     void updateLLVMType(llvm::Type*);
     void updateAddress(llvm::Value*);
     void setUsed();
