@@ -818,6 +818,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             std::vector<llvm::Type*> paramTypes;
             for (int i = 1; i < symbolTypes.size(); i++) {
                 SymbolType paramSymbolType = symbolTypes[i];
+                // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
                 if (paramSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported()) {
                     paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
                 } else if (paramSymbolType.is(TY_PTR) && paramSymbolType.getContainedTy().is(TY_STRUCT) &&
