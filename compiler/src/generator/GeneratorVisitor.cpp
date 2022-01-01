@@ -818,13 +818,14 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             std::vector<llvm::Type*> paramTypes;
             for (int i = 1; i < symbolTypes.size(); i++) {
                 SymbolType paramSymbolType = symbolTypes[i];
-                // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
-                if (paramSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported()) {
-                    paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
-                } else if (paramSymbolType.is(TY_PTR) && paramSymbolType.getContainedTy().is(TY_STRUCT) &&
-                    functionCallParentScope->isImported()) {
-                    paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
-                    paramSymbolType = paramSymbolType.toPointer();
+                if (functionCallParentScope->isImported()) {
+                    // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
+                    if (paramSymbolType.is(TY_STRUCT)) {
+                        paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
+                    } else if (paramSymbolType.isPointerOf(TY_STRUCT)) {
+                        paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
+                        paramSymbolType = paramSymbolType.toPointer();
+                    }
                 }
                 llvm::Type* paramType = getTypeForSymbolType(paramSymbolType);
                 if (!paramType) throw std::runtime_error("Internal compiler error: Could not get parameter type of function call");
@@ -1898,6 +1899,16 @@ void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std
     std::vector<llvm::Type*> memberTypes;
     for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
         SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
+        if (fieldType.is(TY_STRUCT)) {
+            std::string structName = fieldType.getSubType();
+            initExtStruct(structName, scopePrefix + "." + structName);
+            fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
+        } else if (fieldType.isPointerOf(TY_STRUCT)) {
+            std::string structName = fieldType.getContainedTy().getSubType();
+            initExtStruct(structName, scopePrefix + "." + structName);
+            fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
+            fieldType = fieldType.toPointer();
+        }
         memberTypes.push_back(getTypeForSymbolType(fieldType));
     }
 

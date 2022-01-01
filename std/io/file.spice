@@ -18,6 +18,10 @@ type FilePtr struct {
     byte* ptr
 }
 
+type File struct {
+    FilePtr* filePtr
+}
+
 // Link external functions
 ext<int> open(char*, int...);
 ext<FilePtr*> fopen(char*, char*);
@@ -43,9 +47,11 @@ f<int> createFile(string path) {
  *
  * @return File pointer
  */
-f<FilePtr> openFile(string path, string mode) {
+f<File> openFile(string path, string mode) {
     FilePtr* fp = fopen((char*) path, (char*) mode);
-    return *fp;
+    // Insert check for pointer being 0 and throw an exception
+    File openedFile = new File { fp };
+    return openedFile;
 }
 
 /**
@@ -53,8 +59,8 @@ f<FilePtr> openFile(string path, string mode) {
  *
  * @return Result code of the close operation: 0 = successful, -1 = failed
  */
-f<int> FilePtr.close() {
-    return fclose(this);
+f<int> File.close() {
+    return fclose(this.filePtr);
 }
 
 /**
@@ -62,8 +68,8 @@ f<int> FilePtr.close() {
  * 
  * @return Result code of the write operation: 0 = successful, -1 = failed
  */
-f<int> FilePtr.writeChar(char value) {
-    return fputc((int) value, this);
+f<int> File.writeChar(char value) {
+    return fputc((int) value, this.filePtr);
 }
 
 /**
