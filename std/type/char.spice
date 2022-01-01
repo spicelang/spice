@@ -5,12 +5,22 @@ f<double> toDouble(char input) {
 
 // Converts a char to an int
 f<int> toInt(char input) {
-    return 0;
+    return (int) input;
+}
+
+// Converts a char to a short
+f<short> toShort(char input) {
+    return (short) input;
+}
+
+// Converts a char to a long
+f<long> toLong(char input) {
+    return (long) input;
 }
 
 // Converts a char to a byte
 f<byte> toByte(char input) {
-    result = (byte) 0;
+    result = (byte) input;
 }
 
 // Converts a char to a string

@@ -21,8 +21,8 @@ type FilePtr struct {
 // Link external functions
 ext<int> open(char*, int...);
 ext<FilePtr*> fopen(char*, char*);
-ext<int> fclose(FilePtr);
-ext<int> fputc(int, FilePtr);
+ext<int> fclose(FilePtr*);
+ext<int> fputc(int, FilePtr*);
 ext<int> access(char*, int);
 
 /**
@@ -30,9 +30,8 @@ ext<int> access(char*, int);
  *
  * @return Result code of the create operation: 0 = successful, -1 = failed
  */
-f<int> createFile(string pathStr) {
-    char* path = pathStr;
-    return open(path, MODE_CREATE|MODE_RDWR);
+f<int> createFile(string path) {
+    return open((char*) path, MODE_CREATE|MODE_RDWR);
 }
 
 /**
@@ -44,10 +43,9 @@ f<int> createFile(string pathStr) {
  *
  * @return File pointer
  */
-f<FilePtr> openFile(string pathStr, string modeStr) {
-    char* path = pathStr;
-    char* mode = modeStr;
-    return fopen(path, mode);
+f<FilePtr> openFile(string path, string mode) {
+    FilePtr* fp = fopen((char*) path, (char*) mode);
+    return *fp;
 }
 
 /**
@@ -55,8 +53,8 @@ f<FilePtr> openFile(string pathStr, string modeStr) {
  *
  * @return Result code of the close operation: 0 = successful, -1 = failed
  */
-f<int> FilePtr.closeFile() {
-    return fclose(&this);
+f<int> FilePtr.close() {
+    return fclose(this);
 }
 
 /**
@@ -64,8 +62,8 @@ f<int> FilePtr.closeFile() {
  * 
  * @return Result code of the write operation: 0 = successful, -1 = failed
  */
-f<int> FilePtr.writeChar(int value) {
-    return fputc(value, &this);
+f<int> FilePtr.writeChar(char value) {
+    return fputc((int) value, this);
 }
 
 /**
@@ -73,9 +71,8 @@ f<int> FilePtr.writeChar(int value) {
  * 
  * @return Existing / not existing
  */
-f<bool> fileExists(string pathStr) {
-    char* path = pathStr;
-    return access(path, F_OK) == 0;
+f<bool> fileExists(string path) {
+    return access((char*) path, F_OK) == 0;
 }
 
 /**
@@ -83,9 +80,8 @@ f<bool> fileExists(string pathStr) {
  * 
  * @return Readable / not readable
  */
-f<bool> fileReadable(string pathStr) {
-    char* path = pathStr;
-    return access(path, R_OK) == 0;
+f<bool> fileReadable(string path) {
+    return access((char*) path, R_OK) == 0;
 }
 
 /**
@@ -93,9 +89,8 @@ f<bool> fileReadable(string pathStr) {
  * 
  * @return Writable / not writable
  */
-f<bool> fileWritable(string pathStr) {
-    char* path = pathStr;
-    return access(path, W_OK) == 0;
+f<bool> fileWritable(string path) {
+    return access((char*) path, W_OK) == 0;
 }
 
 /**
@@ -103,7 +98,6 @@ f<bool> fileWritable(string pathStr) {
  * 
  * @return Executable / not executable
  */
-f<bool> fileExecutable(string pathStr) {
-    char* path = pathStr;
-    return access(path, X_OK) == 0;
+f<bool> fileExecutable(string path) {
+    return access((char*) path, X_OK) == 0;
 }

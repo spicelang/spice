@@ -1,3 +1,5 @@
+//import "std/os/os" as os;
+
 // File permission modes
 const int MODE_ALL_RWX   = 511;   // Decimal for octal: 0000777
 const int MODE_ALL_RW    = 438;   // Decimal for octal: 0000666
@@ -23,31 +25,33 @@ const int X_OK = 1; // Can execute
 const int W_OK = 2; // Can write
 const int R_OK = 4; // Can read
 
+const int IF_MT          = 61440; // Decimal for octal: 0170000
 const int IF_DIR         = 16384; // Decimal for octal: 0040000
 
-/*type FileStat struct {
-    i32
-    i16
-    i16 st_mode
-    i16
-    i16
-    i16
-    i32
-    i32
-    i64
-    i64
-    i64
-}*/
+type FileStat struct {
+    int f1
+    short f2
+    short st_mode
+    short f4
+    short f5
+    short f6
+    int f7
+    int f8
+    long f9
+    long f10
+    long f11
+}
 
 // Link external functions
 ext<int> mkdir(char*, int);
 ext<int> rmdir(char*);
 ext<int> rename(char*, char*);
 ext<int> access(char*, int);
-//ext<int> stat(char*, FileStat*);
+ext<int> stat(char*, FileStat*);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
+ * Creates at max one directory. If the second last path element does not exist, the operation fails
  *
  * There are predefined constants for the mode available:
  * MODE_ALL_RWX, MODE_ALL_RW, MODE_ALL_R,
@@ -57,9 +61,30 @@ ext<int> access(char*, int);
  *
  * @return Result code of the create operation: 0 = successful, -1 = failed
  */
-f<int> mkDir(string pathStr, int mode) {
-    char* path = pathStr;
-    return mkdir(path, mode);
+f<int> mkDir(string path, int mode) {
+    return mkdir((char*) path, mode);
+}
+
+/**
+ * Creates an empty directory at the specified path, with the specified mode.
+ * Unlike mkDir, mkDirs can also create nested path structures.
+ *
+ * There are predefined constants for the mode available:
+ * MODE_ALL_RWX, MODE_ALL_RW, MODE_ALL_R,
+ * MODE_OWNER_RWX, MODE_OWNER_R, MODE_OWNER_W, MODE_OWNER_X,
+ * MODE_GROUP_RWX, MODE_GROUP_R, MODE_GROUP_W, MODE_GROUP_X,
+ * MODE_OTHER_RWX, MODE_OTHER_R, MODE_OTHER_W, MODE_OTHER_X
+ *
+ * @return Result code of the create operation: 0 = successful, -1 = failed
+ */
+f<int> mkDirs(string path, int mode) {
+    // ToDo: Implement
+
+    /*char[] pathChars = (char[]) path;
+    for int i = 0; i < path.length(); i++ {
+
+    }*/
+    return -1;
 }
 
 /**
@@ -67,9 +92,8 @@ f<int> mkDir(string pathStr, int mode) {
  *
  * @return Result code of the delete operation: 0 = successful, -1 = failed
  */
-f<int> rmDir(string pathStr) {
-    char* path = pathStr;
-    return rmdir(path);
+f<int> rmDir(string path) {
+    return rmdir((char*) path);
 }
 
 /**
@@ -77,10 +101,8 @@ f<int> rmDir(string pathStr) {
  *
  * @return Result code of the rename operation: 0 = successful, -1 = failed
  */
-f<int> renameDir(string oldPathStr, string newPathStr) {
-    char* oldPath = oldPathStr;
-    char* newPath = newPathStr;
-    return rename(oldPath, newPath);
+f<int> renameDir(string oldPath, string newPath) {
+    return rename((char*) oldPath, (char*) newPath);
 }
 
 /**
@@ -88,15 +110,13 @@ f<int> renameDir(string oldPathStr, string newPathStr) {
  *
  * @return Existing or not
  */
-f<bool> dirExists(string pathStr) {
-    char* path = pathStr;
+f<bool> dirExists(string path) {
     // Check if there exists something, a file or a dir
-    if access(path, F_OK) == 0 {
+    if access((char*) path, F_OK) == 0 {
         // Check if it is a dir
-        /*dyn fs = new FileStat {};
-        stat(path, &fs);
-        return fs.st_mode & dir == IF_DIR;*/
-        return true;
+        dyn fs = new FileStat {};
+        stat((char*) path, &fs);
+        return ((int) fs.st_mode & IF_MT) == IF_DIR;
     }
     return false;
 }

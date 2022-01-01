@@ -1,4 +1,4 @@
-// Copyright (c) 2021 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #pragma once
 
@@ -49,6 +49,8 @@ public:
 
     void insertProcedureDeclaration(const std::string&, const std::vector<SymbolType>&);
     std::vector<SymbolType> getProcedureDeclaration(const std::string&);
+
+    void updateSymbolTypes(const SymbolType&, const SymbolType&);
 
     void pushSignature(const FunctionSignature&);
     FunctionSignature popSignature();

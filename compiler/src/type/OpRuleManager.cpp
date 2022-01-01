@@ -1,4 +1,4 @@
-// Copyright (c) 2021 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "OpRuleManager.h"
 
@@ -123,7 +123,12 @@ SymbolType OpRuleManager::getNotResultType(const antlr4::Token& token, const Sym
     return validateUnaryOperation(token, NOT_OP_RULES, "!", lhs);
 }
 
-SymbolType OpRuleManager::getCastResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+SymbolType OpRuleManager::getCastResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs) { // double dbl = (double) 10;
+    // Allow casts string -> char*  and string -> char[]
+    if (lhs.isOneOf({ TY_PTR, TY_ARRAY }) && lhs.getContainedTy().is(TY_CHAR) && rhs.is(TY_STRING)) return lhs;
+    // Allow casts char* -> string and char[] -> string
+    if (lhs.is(TY_STRING) && rhs.isOneOf({ TY_PTR, TY_ARRAY }) && rhs.getContainedTy().is(TY_CHAR)) return lhs;
+    // Check primitive type combinations
     return validateBinaryOperation(token, CAST_OP_RULES, "(cast)", lhs, rhs);
 }
 

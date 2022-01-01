@@ -1,4 +1,4 @@
-// Copyright (c) 2021 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "SymbolTableEntry.h"
 
@@ -104,8 +104,9 @@ void SymbolTableEntry::updateState(SymbolState newState) {
  *
  * @param newType New type of the current symbol
  */
-void SymbolTableEntry::updateType(SymbolType newType) {
-    if (type != SymbolType(TY_DYN)) throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
+void SymbolTableEntry::updateType(SymbolType newType, bool force) {
+    if (!force && type != SymbolType(TY_DYN))
+        throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
     type = std::move(newType);
 }
 

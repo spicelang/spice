@@ -6,20 +6,36 @@ f<double> toDouble(string input) {
 
 // Converts a string to an int
 f<int> toInt(string input) {
+    return (int) toLong(input);
+}
+
+// Converts a string to a short
+f<short> toShort(string input) {
+    return (short) toLong(input);
+}
+
+// Converts a string to a long
+f<long> toLong(string input) {
     if input == "" {
-        return 0;
+        return (long) 0;
     }
 
     bool neg = false;
     
 
     // ToDo: implement the rest
-    return 0;
+    return (long) 0;
 }
 
 // Converts a string to a byte
-f<int> toByte(string input) {
-    result = toInt(input);
+f<byte> toByte(string input) {
+    return (byte) toLong(input);
+}
+
+// Converts a string to a char
+f<char> toChar(string input) {
+    // ToDo: Implement
+    return '0';
 }
 
 // Converts a string to a bool

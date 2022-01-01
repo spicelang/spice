@@ -33,7 +33,7 @@ In the upper example, the imported file lives in the same directory as the main 
 ## Importing functionality from the standard library
 Every import starting with `std/`, will be automatically assigned to the standard library.
 
-```
+```spice
 import "std/text/print" as out;
 
 f<int> main() {

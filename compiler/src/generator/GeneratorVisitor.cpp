@@ -1,4 +1,4 @@
-// Copyright (c) 2021 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "GeneratorVisitor.h"
 
@@ -499,7 +499,6 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     currentScope->lookup(varName)->updateLLVMType(varType);
     // Set some attributes to it
     llvm::GlobalVariable* global = module->getNamedGlobal(varName);
-    //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
     global->setConstant(ctx->CONST());
     global->setDSOLocal(true);
 
@@ -799,24 +798,42 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     if (!functionFound) { // Not found => Declare function, which will be linked in
         SymbolTable* table = functionCallParentScope->lookupTableWithSymbol({ signature.toString() });
         // Check if it is a function or a procedure
-        if (!table->getFunctionDeclaration(signature.toString()).empty()) {
+        if (!table->getFunctionDeclaration(signature.toString()).empty()) { // Function
             std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
 
             // Get return type
-            llvm::Type* returnType = getTypeForSymbolType(symbolTypes[0]);
-            if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
+            SymbolType returnSymbolType = symbolTypes[0];
+            llvm::Type* returnType;
+            if (returnSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported()) {
+                initExtStruct(returnSymbolType.getSubType(), scopePrefix + "." + returnSymbolType.getSubType());
+                SymbolType newSymbolType = SymbolType(TY_STRUCT, scopePrefix + "." + returnSymbolType.getSubType());
+                returnType = getTypeForSymbolType(newSymbolType);
+                if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
+            } else {
+                returnType = getTypeForSymbolType(returnSymbolType);
+                if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
+            }
 
             // Get parameter types
             std::vector<llvm::Type*> paramTypes;
             for (int i = 1; i < symbolTypes.size(); i++) {
-                llvm::Type* paramType = getTypeForSymbolType(symbolTypes[i]);
+                SymbolType paramSymbolType = symbolTypes[i];
+                // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
+                if (paramSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported()) {
+                    paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
+                } else if (paramSymbolType.is(TY_PTR) && paramSymbolType.getContainedTy().is(TY_STRUCT) &&
+                    functionCallParentScope->isImported()) {
+                    paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
+                    paramSymbolType = paramSymbolType.toPointer();
+                }
+                llvm::Type* paramType = getTypeForSymbolType(paramSymbolType);
                 if (!paramType) throw std::runtime_error("Internal compiler error: Could not get parameter type of function call");
                 paramTypes.push_back(paramType);
             }
 
             llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
             module->getOrInsertFunction(fctIdentifier, fctType);
-        } else if (!table->getProcedureDeclaration(signature.toString()).empty()) {
+        } else if (!table->getProcedureDeclaration(signature.toString()).empty()) { // Procedure
             std::vector<SymbolType> symbolTypes = table->getProcedureDeclaration(signature.toString());
 
             // Get parameter types
@@ -877,7 +894,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
-    std::string variableName = ctx->IDENTIFIER()[0]->toString();
+    std::string variableName = currentVar = ctx->IDENTIFIER()[0]->toString();
     std::string structName = ctx->IDENTIFIER()[1]->toString();
     std::string structScope = ScopeIdUtil::getScopeId(ctx);
 
@@ -896,15 +913,16 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     currentScope->lookup(variableName)->updateLLVMType(structType);
 
     // Fill the struct with the stated values
-    SymbolTable* structSymbolTable = currentScope->lookupTable({ structScope });
-    for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-        // Visit assignment
-        llvm::Value* assignmentPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-        llvm::Value* assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
-        // Get pointer to struct element
-        llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
-        // Store value to address
-        builder->CreateStore(assignment, fieldAddress);
+    if (ctx->paramLst()) {
+        for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+            // Visit assignment
+            llvm::Value* assignmentPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+            llvm::Value* assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
+            // Get pointer to struct element
+            llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
+            // Store value to address
+            builder->CreateStore(assignment, fieldAddress);
+        }
     }
 
     return structAddress;
@@ -912,7 +930,7 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Get size and data type
-    std::string varName = ctx->IDENTIFIER()->toString();
+    std::string varName = currentVar = ctx->IDENTIFIER()->toString();
     unsigned int currentArraySize = std::stoi(ctx->value()->INTEGER()->toString());
 
     // Get data type
@@ -928,7 +946,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     }
 
     // Allocate array
-    llvm::Value* arrayAddress = builder->CreateAlloca(arrayType);
+    llvm::Value* arrayAddress = builder->CreateAlloca(arrayType, builder->getInt32(currentArraySize), currentVar);
 
     // Fill items with the stated values
     if (ctx->paramLst()) {
@@ -1027,8 +1045,9 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
     for (auto& arg : ctx->assignExpr()) {
         llvm::Value* argValPtr = visit(arg).as<llvm::Value*>();
         llvm::Value* argVal = builder->CreateLoad(argValPtr->getType()->getPointerElementType(), argValPtr);
-        if (argVal->getType()->isIntegerTy(1))
-            argVal = builder->CreateZExt(argVal, llvm::Type::getInt32Ty(*context));
+        if (argVal->getType()->isIntegerTy(1) || argVal->getType()->isIntegerTy(8) ||
+            argVal->getType()->isIntegerTy(16) || argVal->getType()->isIntegerTy(64))
+            argVal = builder->CreateZExtOrTrunc(argVal, llvm::Type::getInt32Ty(*context));
         if (argVal == nullptr) throw IRError(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
         printfArgs.push_back(argVal);
     }
@@ -1546,6 +1565,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
     unsigned int dereferenceOperations = 0;
     bool metStruct = false;
     SymbolTable* scope = currentScope;
+    scopePrefix = "";
 
     // Consider referencing operators
     referenceOperations += ctx->BITWISE_AND().size();
@@ -1571,7 +1591,10 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 // Visit function call
                 basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
                 baseType = basePtr->getType()->getPointerElementType();
+                // Reset values
                 currentThisValue = nullptr;
+                functionCallParentScope = nullptr;
+
                 indices.clear();
                 indices.push_back(builder->getInt32(0));
                 functionCallCounter++;
@@ -1589,7 +1612,6 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                     basePtr = module->getOrInsertGlobal(variableName, baseType);
                     // Set some attributes to it
                     llvm::GlobalVariable* global = module->getNamedGlobal(variableName);
-                    //global->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
                     global->setDSOLocal(true);
                     global->setExternallyInitialized(true);
                 } else { // Local or global variable
@@ -1613,6 +1635,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 }
                 // Change to new scope
                 std::string structName = symbolType.getSubType();
+                scopePrefix += scopePrefix.empty() ? structName : "." + structName;
                 scope = scope->lookupTable("struct:" + structName);
                 // Check if the table exists
                 if (!scope)
@@ -1625,6 +1648,7 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 // Change to new scope
                 std::string importName = entry->getName();
                 scope = scope->lookupTable(importName);
+                scopePrefix += scopePrefix.empty() ? importName : "." + importName;
             }
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Get the index value
@@ -1734,8 +1758,12 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
     } else if (ctx->TYPE_DYN()) { // Data type is dyn
         SymbolTableEntry* symbolTableEntry = currentScope->lookup(currentVar);
         currentSymbolType = symbolTableEntry->getType();
-    } else if (ctx->IDENTIFIER()) { // Custom data type
-        currentSymbolType = SymbolType(TY_STRUCT, ctx->IDENTIFIER()->toString());
+    } else if (!ctx->IDENTIFIER().empty()) { // Custom data type
+        // Get type name in format: a.b.c
+        std::string typeName = ctx->IDENTIFIER()[0]->toString();
+        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) typeName += "." + ctx->IDENTIFIER()[i]->toString();
+
+        currentSymbolType = SymbolType(TY_STRUCT, typeName);
     }
 
     // Check for de-referencing operators
@@ -1759,170 +1787,6 @@ void GeneratorVisitor::initializeExternalFunctions() {
     llvm::FunctionType* fctTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
                                                         llvm::Type::getInt8PtrTy(*context), true);
     module->getOrInsertFunction("printf", fctTy);
-}
-
-llvm::Value* GeneratorVisitor::createAddInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) { // double
-        if (rhsType->isDoubleTy()) { // double
-            // double + double
-            return builder->CreateFAdd(lhs, rhs, "add");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // double + int
-            return builder->CreateFAdd(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "add");
-        } else if (rhsType->isIntegerTy(8)) { // byte
-            // double + byte
-            return builder->CreateFAdd(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "add");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string
-            // double + string
-            // ToDo(@marcauberer): Insert call to toString(double) and concatStrings
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=double and rhs=string yet");
-        }
-    } else if (lhsType->isIntegerTy(32)) { // int
-        if (rhsType->isDoubleTy()) { // double
-            // int + double
-            return builder->CreateFAdd(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "add");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // int + int
-            return builder->CreateAdd(lhs, rhs, "add");
-        } else if (rhsType->isIntegerTy(8)) { // byte
-            // int + byte
-            return builder->CreateAdd(lhs, rhs, "add");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) {
-            // int + string
-            // ToDo(@marcauberer): Insert call to toString(int) and concatStrings
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=int and rhs=string yet");
-        }
-    } else if (lhsType->isIntegerTy(8)) { // byte
-        if (rhsType->isDoubleTy()) { // double
-            // byte + double
-            return builder->CreateFAdd(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "add");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // byte + int
-            return builder->CreateAdd(lhs, rhs, "add");
-        } else if (rhsType->isIntegerTy(8)) { // byte
-            // byte + byte
-            return builder->CreateAdd(lhs, rhs, "add");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string
-            // byte + string
-            // ToDo(@marcauberer): Insert call to toString(byte) and concatStrings
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=byte and rhs=string yet");
-        }
-    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) { // string
-        if (rhsType->isDoubleTy()) { // double
-            // string + double
-            // ToDo(@marcauberer): Insert call to toString(double) and concatStrings
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=double yet");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // string + int
-            // ToDo(@marcauberer): Insert call to toString(int) and concatStrings
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=int yet");
-        } else if (rhsType->isIntegerTy(8)) { // byte
-            // string + byte
-            // ToDo(@marcauberer): Insert call to toString(byte) and concatStrings
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=byte yet");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string
-            // string + string
-            // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
-        }
-    }
-    return lhs;
-}
-
-llvm::Value* GeneratorVisitor::createSubInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) { // double
-        if (rhsType->isDoubleTy()) { // double
-            // double - double
-            return builder->CreateFSub(lhs, rhs, "sub");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // double - int
-            return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
-        } else if (rhsType->isIntegerTy(8)) { // byte
-            // double - byte
-            return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
-        }
-    } else if (lhsType->isIntegerTy(32)) { // int
-        if (rhsType->isDoubleTy()) { // double
-            // int - double
-            return builder->CreateFSub(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "sub");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // int - int
-            return builder->CreateSub(lhs, rhs, "sub");
-        } else if (rhsType->isIntegerTy(8)) { // byte
-            // int - byte
-            return builder->CreateSub(lhs, rhs, "sub");
-        }
-    } else if (lhsType->isIntegerTy(8)) { // byte
-        if (rhsType->isDoubleTy()) { // double
-            // byte - double
-            return builder->CreateFSub(lhs, rhs, "sub");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // byte - int
-            return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
-        } else if (rhsType->isIntegerTy(8)) { // byte
-            // byte - byte
-            return builder->CreateFSub(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "sub");
-        }
-    }
-    return lhs;
-}
-
-llvm::Value* GeneratorVisitor::createMulInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) { // double
-        if (rhsType->isDoubleTy()) { // double
-            // double * double
-            lhs = builder->CreateFMul(lhs, rhs, "mul");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // double * int
-            lhs = builder->CreateFMul(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "mul");
-        } else if (rhsType->isIntegerTy(8)) { // byte
-            // double * int
-            lhs = builder->CreateFMul(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "mul");
-        }
-    } else if (lhsType->isIntegerTy(32)) { // int
-        if (rhsType->isDoubleTy()) { // double
-            // int * double
-            lhs = builder->CreateFMul(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "mul");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // int * int
-            lhs = builder->CreateMul(lhs, rhs, "mul");
-        } else if (rhsType->isIntegerTy(8)) { // byte
-            // int * byte
-            lhs = builder->CreateMul(lhs, rhs, "mul");
-        } else if (rhsType->isPointerTy() && rhsType->getPointerElementType()->isIntegerTy(8)) { // string
-            // int * string
-            // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
-        }
-    } else if (lhsType->isPointerTy() && lhsType->getPointerElementType()->isIntegerTy(8)) { // string
-        if (rhsType->isIntegerTy(32)) { // int
-            // string * int
-            // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
-        }
-    }
-    return lhs;
-}
-
-llvm::Value* GeneratorVisitor::createDivInst(llvm::Value* lhs, llvm::Type* lhsType, llvm::Value* rhs, llvm::Type* rhsType) {
-    if (lhsType->isDoubleTy()) { // double
-        if (rhsType->isDoubleTy()) { // double
-            // double : double
-            lhs = builder->CreateFDiv(lhs, rhs, "div");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // double : int
-            lhs = builder->CreateFDiv(lhs, builder->CreateSIToFP(rhs, lhs->getType()), "div");
-        }
-    } else if (lhsType->isIntegerTy(32)) { // int
-        if (rhsType->isDoubleTy()) { // double
-            // int : double
-            lhs = builder->CreateFDiv(builder->CreateSIToFP(rhs, rhs->getType()), rhs, "div");
-        } else if (rhsType->isIntegerTy(32)) { // int
-            // int : int
-            lhs = builder->CreateSDiv(lhs, rhs, "div");
-        }
-    }
-    return lhs;
 }
 
 void GeneratorVisitor::createBr(llvm::BasicBlock* targetBlock) {
@@ -1972,7 +1836,7 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
             llvmBaseType = llvm::Type::getInt64Ty(*context);
             break;
         }
-        case TY_BYTE:
+        case TY_BYTE: // fallthrough
         case TY_CHAR: {
             llvmBaseType = llvm::Type::getInt8Ty(*context);
             break;
@@ -2015,7 +1879,7 @@ llvm::Value* GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolTyp
             return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), 0);
         case TY_LONG:
             return llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), 0);
-        case TY_BYTE:
+        case TY_BYTE: // fallthrough
         case TY_CHAR:
             return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), 0);
         case TY_STRING:
@@ -2025,4 +1889,19 @@ llvm::Value* GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolTyp
         default:
             throw std::runtime_error("Internal compiler error: Cannot determine default value of " + symbolType.getName());
     }
+}
+
+void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
+    SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
+
+    // Get field types
+    std::vector<llvm::Type*> memberTypes;
+    for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
+        SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
+        memberTypes.push_back(getTypeForSymbolType(fieldType));
+    }
+
+    // Create global struct
+    llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
+    currentScope->lookup(newStructName)->updateLLVMType(structType);
 }

@@ -1,6 +1,7 @@
+import "std/io/file" as file;
+
 f<int> main() {
-    short s = (short) 10;
-    s++;
-    long l = (long) 10;
-    printf("Short: %d, Long: %d\n", s, l);
+    file.FilePtr fp = file.openFile("./test.txt", file.MODE_WRITE);
+    fp.writeChar('A');
+    fp.close();
 }

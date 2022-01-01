@@ -1,0 +1,35 @@
+// Converts a long to a double
+f<double> toDouble(long input) {
+    return 0.0 + input;
+}
+
+// Converts a long to an int
+f<int> toInt(long input) {
+    return (int) input;
+}
+
+// Converts a long to a short
+f<short> toShort(long input) {
+    return (short) input;
+}
+
+// Converts a long to a byte
+f<byte> toByte(long input) {
+    return (byte) input;
+}
+
+// Converts a long to a char
+f<char> toChar(long input) {
+    return (char) input;
+}
+
+// Converts a long to a string
+f<string> toString(long input) {
+    // ToDo: Implement (See https://github.com/golang/go/blob/master/src/strconv/itoa.go)
+    return "";
+}
+
+// Converts a long to a boolean
+f<bool> toBool(long input) {
+    return input >= 1;
+}

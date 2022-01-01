@@ -1,4 +1,4 @@
-// Copyright (c) 2021 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "SymbolTable.h"
 #include "AnalyzerVisitor.h"
@@ -124,7 +124,7 @@ void SymbolTable::update(const std::string& name, SymbolType newType) {
         parent->update(name, newType);
     }
     // Otherwise, update the entry
-    symbols.at(name).updateType(newType);
+    symbols.at(name).updateType(newType, false);
 }
 
 /**
@@ -240,6 +240,41 @@ void SymbolTable::insertProcedureDeclaration(const std::string& signature, const
 std::vector<SymbolType> SymbolTable::getProcedureDeclaration(const std::string& signature) {
     if (procedureDeclarations.find(signature) == procedureDeclarations.end()) return {};
     return procedureDeclarations.at(signature);
+}
+
+/**
+ * Changes a specific type to another in the whole sub-table
+ *
+ * @param oldType Old symbol type
+ * @param newType Replacement type
+ */
+void SymbolTable::updateSymbolTypes(const SymbolType& oldType, const SymbolType& newType) {
+    // Update types in the symbol list
+    for (auto& [key, symbol] : symbols) {
+        SymbolType currentType = symbol.getType();
+        std::vector<SymbolSuperType> ptrArrayList;
+        while (currentType.isOneOf({ TY_PTR, TY_ARRAY })) {
+            if (currentType.isPointer())
+                ptrArrayList.push_back(TY_PTR);
+            else
+                ptrArrayList.push_back(TY_ARRAY);
+            currentType = currentType.getContainedTy();
+        }
+        if (currentType == oldType) {
+            std::reverse(ptrArrayList.begin(), ptrArrayList.end());
+            SymbolType currentNewType = newType;
+            for (auto& superType : ptrArrayList) {
+                if (superType == TY_PTR)
+                    currentNewType = currentNewType.toPointer();
+                else
+                    currentNewType = currentNewType.toArray();
+            }
+            symbol.updateType(currentNewType, true);
+        }
+    }
+    // Visit all child tables
+    for (auto& [key, child] : children)
+        child.updateSymbolTypes(oldType, newType);
 }
 
 /**

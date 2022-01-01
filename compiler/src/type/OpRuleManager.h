@@ -1,4 +1,4 @@
-// Copyright (c) 2021 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #pragma once
 
@@ -471,6 +471,7 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
         BinaryOpRule(TY_INT, TY_INT, TY_INT),                    // (int) int = int
         BinaryOpRule(TY_INT, TY_SHORT, TY_INT),                  // (int) short = int
         BinaryOpRule(TY_INT, TY_LONG, TY_INT),                   // (int) long = int
+        BinaryOpRule(TY_INT, TY_CHAR, TY_INT),                   // (int) char = int
         BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),                // (short) int = short
         BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),              // (short) short = short
         BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),               // (short) long = short
@@ -519,7 +520,7 @@ public:
     static SymbolType getPostfixPlusPlusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getPostfixMinusMinusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getNotResultType(const antlr4::Token&, const SymbolType&);
-    static SymbolType getCastResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getCastResultType(const antlr4::Token&, SymbolType, SymbolType);
 private:
     static SymbolType validateBinaryOperation(const antlr4::Token& token, const std::vector<BinaryOpRule>& opRules,
                                               const std::string& opName, const SymbolType& lhs, const SymbolType& rhs);

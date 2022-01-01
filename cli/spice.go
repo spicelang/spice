@@ -37,7 +37,7 @@ func main() {
 		},
 		UseShortOptionHandling: true,
 		EnableBashCompletion:   true,
-		Copyright:              "© 2021 Spice Contributors",
+		Copyright:              "© 2021-2022 Spice Contributors",
 		Usage:                  "Official CLI for the Spice programming language.",
 		Commands:               cmd.CliCommands,
 	}
