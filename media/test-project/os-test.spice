@@ -1,5 +1,9 @@
 import "std/io/dir" as dir;
+import "std/os/env" as env;
 
 f<int> main() {
     dir.listDir(".\\test\\*.*");
+    printf("\n");
+    env.setEnv("SpiceTest", "Test");
+    printf("Path: %s\n", env.getEnv("SpiceTest"));
 }

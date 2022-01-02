@@ -30,6 +30,8 @@ const int IF_DIR         = 16384; // Decimal for octal: 0040000
 
 const int INVALID_HANDLE = -1; // Decimal for 0xFFFFFFFF
 
+const int FILE_ATTRIBUTE_DIRECTORY = 16;
+
 type FileStat struct {
     int f1
     short f2
@@ -50,7 +52,7 @@ type FileTime struct {
 }
 
 type DirEntry struct {
-    int f1
+    int fileAttributes
     FileTime f2
     FileTime f3
     FileTime f4
@@ -144,6 +146,9 @@ f<bool> dirExists(string path) {
     return false;
 }
 
+/**
+ * Lists all files/subdirectories at a given path.
+ */
 p listDir(string path) {
     DirEntry dirEntry = new DirEntry {};
     byte* handle;
@@ -157,6 +162,34 @@ p listDir(string path) {
         // Read all files
         while readMore {
             printf("Filename: %s\n", dirEntry.fileName);
+            // Check if there is another file
+            readMore = FindNextFileA(handle, &dirEntry);
+        }
+    }
+    // Close
+    FindClose(handle);
+}
+
+/**
+ * Lists all files/subdirectories at a given path recursively.
+ */
+p listDirRecursive(string path) {
+    DirEntry dirEntry = new DirEntry {};
+    byte* handle;
+    bool readMore = true;
+
+    // Find first file
+    handle = FindFirstFileA(path, &dirEntry);
+    if handle == INVALID_HANDLE {
+        printf("Dir does not exist\n");
+    } else {
+        // Read all files
+        while readMore {
+            printf("Filename: %s\n", dirEntry.fileName);
+            if (dirEntry.fileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 {
+                // ToDo: Uncomment when string concatenation is supported
+                //listDirRecursive(path + "\\" + dirEntry.fileName);
+            }
             // Check if there is another file
             readMore = FindNextFileA(handle, &dirEntry);
         }

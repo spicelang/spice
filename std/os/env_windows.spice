@@ -1,0 +1,22 @@
+ext<char*> getenv(char*);
+ext<int> putenv(char*);
+
+/**
+ * Returns the content of an environment variable as string.
+ *
+ * @return Env variable content
+ */
+f<string> getEnv(string name) {
+    return (string) getenv((char*) name);
+}
+
+/**
+ * Sets the content of an environment variable to the given value.
+ *
+ * @return Result code: 0 = successful, -1 = failed
+ */
+f<int> setEnv(string name, string value) {
+    // ToDo: Uncomment when string concationations are supported
+    //return putenv((char*) name + "=" + value);
+    return 0;
+}
