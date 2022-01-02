@@ -1741,6 +1741,20 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         llvmValue = builder->getTrue();
     }
 
+    // Value is nil
+    if (ctx->NIL()) {
+        if (ctx->dataType()->TYPE_DOUBLE()) currentSymbolType = SymbolType(TY_DOUBLE);
+        if (ctx->dataType()->TYPE_INT()) currentSymbolType = SymbolType(TY_INT);
+        if (ctx->dataType()->TYPE_SHORT()) currentSymbolType = SymbolType(TY_SHORT);
+        if (ctx->dataType()->TYPE_LONG()) currentSymbolType = SymbolType(TY_LONG);
+        if (ctx->dataType()->TYPE_BYTE()) currentSymbolType = SymbolType(TY_BYTE);
+        if (ctx->dataType()->TYPE_CHAR()) currentSymbolType = SymbolType(TY_CHAR);
+        if (ctx->dataType()->TYPE_STRING()) currentSymbolType = SymbolType(TY_STRING);
+        if (ctx->dataType()->TYPE_BOOL()) currentSymbolType = SymbolType(TY_BOOL);
+        llvm::Type* nilType = visit(ctx->dataType()).as<llvm::Type*>();
+        llvmValue = llvm::Constant::getNullValue(nilType);
+    }
+
     // If global variable value -> return value immediately
     if (!currentScope->getParent()) return llvmValue;
 

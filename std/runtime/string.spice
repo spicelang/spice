@@ -12,14 +12,14 @@ type StringStruct struct {
 }
 
 p StringStruct.constructor() {
-    this.value = null;
+    this.value = nil<char*>;
     this.len = 0;
     this.maxLen = 0;
     this.growthFactor = 2;
 }
 
 p StringStruct.destructor() {
-    if this.value != null {
+    if this.value != nil<char*> {
         // Free the allocated heap space
         free(this.value);
     }
@@ -49,7 +49,7 @@ p StringStruct.appendChar(char c) {
 }
 
 p StringStruct.clear() {
-    this.value = null;
+    this.value = nil<char*>;
     this.len = 0;
 }
 

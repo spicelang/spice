@@ -55,7 +55,7 @@ atomicExpr: value | idenValue | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
 idenValue: (BITWISE_AND | MUL)* (functionCall | IDENTIFIER) (LBRACKET assignExpr RBRACKET)? (DOT (functionCall | IDENTIFIER) (LBRACKET assignExpr RBRACKET)?)*;
-value: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE;
+value: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE | NIL LESS dataType GREATER;
 dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER (DOT IDENTIFIER)*) (MUL | LBRACKET INTEGER? RBRACKET)*;
 
 // Terminal tokens
@@ -84,6 +84,7 @@ AS: 'as';
 STRUCT: 'struct';
 TYPE: 'type';
 NEW: 'new';
+NIL: 'nil';
 MAIN: 'main';
 PRINTF: 'printf';
 SIZEOF: 'sizeof';

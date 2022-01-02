@@ -1143,6 +1143,13 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->CHAR()) return SymbolType(TY_CHAR);
     if (ctx->STRING()) return SymbolType(TY_STRING);
     if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TY_BOOL);
+    if (ctx->NIL()) {
+        SymbolType nilType = visit(ctx->dataType()).as<SymbolType>();
+        if (nilType.is(TY_DYN))
+            throw SemanticError(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA,
+                                "Nil must have an explicit type");
+        return nilType;
+    }
     return nullptr;
 }
 
