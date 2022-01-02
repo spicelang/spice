@@ -5,7 +5,7 @@ entry: (mainFunctionDef | functionDef | procedureDef | structDef | globalVarDef 
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
-extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN SEMICOLON;
+extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
 structDef: TYPE IDENTIFIER STRUCT LBRACE fieldLst RBRACE;
 globalVarDef: CONST? dataType IDENTIFIER (ASSIGN_OP value)? SEMICOLON;
 forLoop: FOR assignExpr SEMICOLON assignExpr SEMICOLON assignExpr LBRACE stmtLst RBRACE;
@@ -56,7 +56,7 @@ atomicExpr: value | idenValue | builtinCall | LPAREN assignExpr RPAREN;
 // Values and types
 idenValue: (BITWISE_AND | MUL)* (functionCall | IDENTIFIER) (LBRACKET assignExpr RBRACKET)? (DOT (functionCall | IDENTIFIER) (LBRACKET assignExpr RBRACKET)?)*;
 value: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE;
-dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER (DOT IDENTIFIER)*) (MUL | (LBRACKET RBRACKET))*;
+dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER (DOT IDENTIFIER)*) (MUL | LBRACKET INTEGER? RBRACKET)*;
 
 // Terminal tokens
 TYPE_DOUBLE: 'double';
@@ -88,6 +88,7 @@ MAIN: 'main';
 PRINTF: 'printf';
 SIZEOF: 'sizeof';
 EXT: 'ext';
+DLL: 'dll';
 ELLIPSIS: '...';
 TRUE: 'true';
 FALSE: 'false';

@@ -1,6 +1,6 @@
-import "std/io/file" as file;
+import "std/io/dir" as dir;
 
 f<int> main() {
-    // Write to file
-    file.writeFile("./test.txt", "Hello World\nThis is a test");
+    // List dir
+    dir.listDir(".\\test\\*.*");
 }

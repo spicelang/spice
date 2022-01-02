@@ -502,8 +502,8 @@ public:
     static SymbolType getLogicalOrResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getBitwiseAndResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getBitwiseOrResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getNotEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getEqualResultType(const antlr4::Token&, SymbolType, SymbolType);
+    static SymbolType getNotEqualResultType(const antlr4::Token&, SymbolType, SymbolType);
     static SymbolType getLessResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getGreaterResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getLessEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);

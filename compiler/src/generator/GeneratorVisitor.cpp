@@ -460,6 +460,7 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
     // Declare function
     llvm::FunctionType* functionType = llvm::FunctionType::get(returnType, paramTypes, isVararg);
     module->getOrInsertFunction(functionName, functionType);
+    if (ctx->DLL()) module->getFunction(functionName)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
 
     if (ctx->dataType()) { // Function
         currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
@@ -1045,11 +1046,23 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
     for (auto& arg : ctx->assignExpr()) {
         llvm::Value* argValPtr = visit(arg).as<llvm::Value*>();
-        llvm::Value* argVal = builder->CreateLoad(argValPtr->getType()->getPointerElementType(), argValPtr);
+
+        llvm::Value* argVal;
+        if (argValPtr) { // Convert array type to pointer type
+            std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
+            llvm::Type* targetType = argValPtr->getType()->getPointerElementType();
+            argVal = builder->CreateInBoundsGEP(targetType, argValPtr, indices);
+        } else {
+            argVal = builder->CreateLoad(argValPtr->getType()->getPointerElementType(), argValPtr);
+        }
+
+        if (argVal == nullptr) throw IRError(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
+
+        // Cast all integer types to 32 bit
         if (argVal->getType()->isIntegerTy(1) || argVal->getType()->isIntegerTy(8) ||
             argVal->getType()->isIntegerTy(16) || argVal->getType()->isIntegerTy(64))
             argVal = builder->CreateZExtOrTrunc(argVal, llvm::Type::getInt32Ty(*context));
-        if (argVal == nullptr) throw IRError(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
+
         printfArgs.push_back(argVal);
     }
     return (llvm::Value*) builder->CreateCall(printf, printfArgs);
@@ -1165,9 +1178,6 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
                 rhs = conversionsManager->getSHREqualInst(lhs, rhs);
                 builder->CreateStore(rhs, lhsPtr);
             }
-        } else if (ctx->declStmt()) {
-            // Store the default value to the variable
-            builder->CreateStore(getDefaultValueForSymbolType(variableEntry->getType()), rhsPtr);
         }
     }
 
@@ -1768,13 +1778,23 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
         currentSymbolType = SymbolType(TY_STRUCT, typeName);
     }
 
-    // Check for de-referencing operators
-    for (unsigned int i = 0; i < ctx->MUL().size(); i++)
-        currentSymbolType = currentSymbolType.toPointer();
-
-    // Check for array brackets pairs
-    for (unsigned int i = 0; i < ctx->LBRACKET().size(); i++)
-        currentSymbolType = currentSymbolType.toArray();
+    unsigned int tokenCounter = 1;
+    while (tokenCounter < ctx->children.size()) {
+        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+        if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
+            currentSymbolType = currentSymbolType.toPointer();
+        } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
+            tokenCounter++; // Consume LBRACKET
+            token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+            unsigned int size = 0; // Default to 0 when no size is attached
+            if (token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
+                size = std::stoi(token->toString());
+                tokenCounter++; // Consume INTEGER
+            }
+            currentSymbolType = currentSymbolType.toArray(size);
+        }
+        tokenCounter++;
+    }
 
     // Come up with the LLVM type
     llvm::Type* type = getTypeForSymbolType(currentSymbolType);
@@ -1815,8 +1835,10 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 
     // Get base symbol type
     std::stack<SymbolSuperType> pointerArrayList;
+    std::stack<unsigned int> sizeList;
     while (symbolType.isPointer() || symbolType.isArray()) {
         pointerArrayList.push(symbolType.isPointer() ? TY_PTR : TY_ARRAY);
+        if (symbolType.isArray()) sizeList.push(symbolType.getArraySize());
         symbolType = symbolType.getContainedTy();
     }
 
@@ -1863,34 +1885,13 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
         if (pointerArrayList.top() == TY_PTR) { // Pointer
             llvmBaseType = llvmBaseType->getPointerTo();
         } else { // Array
-            llvmBaseType = llvm::ArrayType::get(llvmBaseType, 0);
+            llvmBaseType = llvm::ArrayType::get(llvmBaseType, sizeList.top());
+            sizeList.pop();
         }
         pointerArrayList.pop();
     }
 
     return llvmBaseType;
-}
-
-llvm::Value* GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolType) {
-    switch (symbolType.getSuperType()) {
-        case TY_DOUBLE:
-            return llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-        case TY_INT:
-            return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), 0);
-        case TY_SHORT:
-            return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), 0);
-        case TY_LONG:
-            return llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), 0);
-        case TY_BYTE: // fallthrough
-        case TY_CHAR:
-            return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), 0);
-        case TY_STRING:
-            return builder->CreateGlobalStringPtr("", "", 0, module.get());
-        case TY_BOOL:
-            return builder->getFalse();
-        default:
-            throw std::runtime_error("Internal compiler error: Cannot determine default value of " + symbolType.getName());
-    }
 }
 
 void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {

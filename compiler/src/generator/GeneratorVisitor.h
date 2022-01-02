@@ -120,6 +120,5 @@ private:
     void createBr(llvm::BasicBlock*);
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
     llvm::Type* getTypeForSymbolType(SymbolType);
-    llvm::Value* getDefaultValueForSymbolType(SymbolType);
     void initExtStruct(const std::string& oldStructName, const std::string& newStructName);
 };

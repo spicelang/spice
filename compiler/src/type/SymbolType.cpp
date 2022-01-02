@@ -12,13 +12,13 @@ SymbolType SymbolType::toPointer() {
     return SymbolType(newTypeChain);
 }
 
-SymbolType SymbolType::toArray() {
+SymbolType SymbolType::toArray(unsigned int size) {
     // Do not allow arrays of dyn
     if (std::get<0>(typeChain.top()) == TY_DYN)
         throw SemanticError(DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
     TypeChain newTypeChain = typeChain;
-    newTypeChain.push(std::make_tuple(TY_ARRAY, ""));
+    newTypeChain.push(std::make_tuple(TY_ARRAY, std::to_string(size)));
     return SymbolType(newTypeChain);
 }
 
@@ -84,6 +84,13 @@ std::string SymbolType::getName() {
         chain.pop();
     }
     return name;
+}
+
+unsigned int SymbolType::getArraySize() {
+    if (std::get<0>(typeChain.top()) != TY_ARRAY)
+        throw std::runtime_error("Internal compiler error: Cannot get size of non-array type");
+
+    return std::stoi(std::get<1>(typeChain.top()));
 }
 
 bool operator==(const SymbolType& lhs, const SymbolType& rhs) {

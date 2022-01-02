@@ -1,0 +1,166 @@
+//import "std/os/os" as os;
+
+// File permission modes
+const int MODE_ALL_RWX   = 511;   // Decimal for octal: 0000777
+const int MODE_ALL_RW    = 438;   // Decimal for octal: 0000666
+const int MODE_ALL_R     = 292;   // Decimal for octal: 0000444
+
+const int MODE_OWNER_RWX = 448;   // Decimal for octal: 0000700
+const int MODE_OWNER_R   = 256;   // Decimal for octal: 0000400
+const int MODE_OWNER_W   = 128;   // Decimal for octal: 0000200
+const int MODE_OWNER_X   = 64;    // Decimal for octal: 0000100
+
+const int MODE_GROUP_RWX = 56;    // Decimal for octal: 0000070
+const int MODE_GROUP_R   = 32;    // Decimal for octal: 0000040
+const int MODE_GROUP_W   = 16;    // Decimal for octal: 0000020
+const int MODE_GROUP_X   = 8;     // Decimal for octal: 0000010
+
+const int MODE_OTHER_RWX = 7;     // Decimal for octal: 0000007
+const int MODE_OTHER_R   = 4;     // Decimal for octal: 0000004
+const int MODE_OTHER_W   = 2;     // Decimal for octal: 0000002
+const int MODE_OTHER_X   = 1;     // Decimal for octal: 0000001
+
+const int F_OK = 0; // File existence
+const int X_OK = 1; // Can execute
+const int W_OK = 2; // Can write
+const int R_OK = 4; // Can read
+
+const int IF_MT          = 61440; // Decimal for octal: 0170000
+const int IF_DIR         = 16384; // Decimal for octal: 0040000
+
+const int INVALID_HANDLE = -1; // Decimal for 0xFFFFFFFF
+
+type FileStat struct {
+    int f1
+    short f2
+    short mode
+    short f4
+    short f5
+    short f6
+    int f7
+    int f8
+    long f9
+    long f10
+    long f11
+}
+
+type FileTime struct {
+    int f1
+    int f2
+}
+
+type DirEntry struct {
+    int f1
+    FileTime f2
+    FileTime f3
+    FileTime f4
+    int f5
+    int f6
+    int f7
+    int f8
+    char[260] fileName
+    char[14] f9
+}
+
+// Link external functions
+ext<int> mkdir(string, int);
+ext<int> rmdir(string);
+ext<int> rename(string, string);
+ext<int> access(string, int);
+ext<int> stat(string, FileStat*);
+ext<byte*> FindFirstFileA(string, DirEntry*) dll;
+ext<bool> FindNextFileA(byte*, DirEntry*) dll;
+ext<bool> FindClose(byte*) dll;
+
+/**
+ * Creates an empty directory at the specified path, with the specified mode.
+ * Creates at max one directory. If the second last path element does not exist, the operation fails
+ *
+ * There are predefined constants for the mode available:
+ * MODE_ALL_RWX, MODE_ALL_RW, MODE_ALL_R,
+ * MODE_OWNER_RWX, MODE_OWNER_R, MODE_OWNER_W, MODE_OWNER_X,
+ * MODE_GROUP_RWX, MODE_GROUP_R, MODE_GROUP_W, MODE_GROUP_X,
+ * MODE_OTHER_RWX, MODE_OTHER_R, MODE_OTHER_W, MODE_OTHER_X
+ *
+ * @return Result code of the create operation: 0 = successful, -1 = failed
+ */
+f<int> mkDir(string path, int mode) {
+    return mkdir(path, mode);
+}
+
+/**
+ * Creates an empty directory at the specified path, with the specified mode.
+ * Unlike mkDir, mkDirs can also create nested path structures.
+ *
+ * There are predefined constants for the mode available:
+ * MODE_ALL_RWX, MODE_ALL_RW, MODE_ALL_R,
+ * MODE_OWNER_RWX, MODE_OWNER_R, MODE_OWNER_W, MODE_OWNER_X,
+ * MODE_GROUP_RWX, MODE_GROUP_R, MODE_GROUP_W, MODE_GROUP_X,
+ * MODE_OTHER_RWX, MODE_OTHER_R, MODE_OTHER_W, MODE_OTHER_X
+ *
+ * @return Result code of the create operation: 0 = successful, -1 = failed
+ */
+f<int> mkDirs(string path, int mode) {
+    // ToDo: Implement
+
+    /*char[] pathChars = (char[]) path;
+    for int i = 0; i < path.length(); i++ {
+
+    }*/
+    return -1;
+}
+
+/**
+ * Deletes an empty directory at the specified path.
+ *
+ * @return Result code of the delete operation: 0 = successful, -1 = failed
+ */
+f<int> rmDir(string path) {
+    return rmdir(path);
+}
+
+/**
+ * Renames a directory.
+ *
+ * @return Result code of the rename operation: 0 = successful, -1 = failed
+ */
+f<int> renameDir(string oldPath, string newPath) {
+    return rename(oldPath, newPath);
+}
+
+/**
+ * Checks if a directory is existing.
+ *
+ * @return Existing or not
+ */
+f<bool> dirExists(string path) {
+    // Check if there exists something, a file or a dir
+    if access(path, F_OK) == 0 {
+        // Check if it is a dir
+        dyn fs = new FileStat {};
+        stat(path, &fs);
+        return ((int) fs.mode & IF_MT) == IF_DIR;
+    }
+    return false;
+}
+
+p listDir(string path) {
+    DirEntry dirEntry = new DirEntry {};
+    byte* handle;
+    bool readMore = true;
+
+    // Find first file
+    handle = FindFirstFileA(path, &dirEntry);
+    if handle == INVALID_HANDLE {
+        printf("Dir does not exist\n");
+    } else {
+        // Read all files
+        while readMore {
+            printf("Filename: %s\n", dirEntry.fileName);
+            // Check if there is another file
+            readMore = FindNextFileA(handle, &dirEntry);
+        }
+    }
+    // Close
+    FindClose(handle);
+}

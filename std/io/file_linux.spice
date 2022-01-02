@@ -16,6 +16,10 @@ const int R_OK = 4; // Can read
 
 const int EOF = -1;
 
+const int SEEK_SET = 0;
+const int SEEK_CUR = 1;
+const int SEEK_END = 2;
+
 type FilePtr struct {
     byte* ptr
 }
@@ -32,6 +36,8 @@ ext<int> fgetc(FilePtr*);
 ext<int> fputc(int, FilePtr*);
 ext<int> fputs(string, FilePtr*);
 ext<int> access(string, int);
+ext<int> fseek(FilePtr*, long, int);
+ext<long> ftell(FilePtr*);
 
 /**
  * Creates an empty file on disk similar to the 'touch' command on Linux.
@@ -95,6 +101,23 @@ f<int> File.writeString(string value) {
 }
 
 /**
+ * Returns the size of the file in bytes.
+ *
+ * @return File size in bytes
+ */
+f<long> File.getSize() {
+    // Remember current cursor position
+    long curPos = ftell(this.filePtr);
+    // Move the cursor to the end of the file
+    fseek(this.filePtr, (long) 0, SEEK_END);
+    // Get the cursor position
+    long size = ftell(this.filePtr);
+    // Move cursor back to the remembered position
+    fseek(this.filePtr, curPos, SEEK_SET);
+    return size;
+}
+
+/**
  * Reads a whole file from a given path.
  *
  * @return Content in form of a string
@@ -127,6 +150,21 @@ f<int> writeFile(string path, string content) {
     // Close the file
     file.close();
     return resultCode;
+}
+
+/**
+ * Returns the size of the file at the given paths in bytes.
+ *
+ * @return File size in bytes
+ */
+f<long> getFileSize(string path) {
+    // Open the file in read mode
+    File file = openFile(path, MODE_READ);
+    // Get the file size
+    long size = file.getSize();
+    // Close the file
+    file.close();
+    return size;
 }
 
 /**

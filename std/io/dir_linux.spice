@@ -31,7 +31,7 @@ const int IF_DIR         = 16384; // Decimal for octal: 0040000
 type FileStat struct {
     int f1
     short f2
-    short st_mode
+    short mode
     short f4
     short f5
     short f6
@@ -40,6 +40,14 @@ type FileStat struct {
     long f9
     long f10
     long f11
+}
+
+type DirEntry struct {
+    long dInodeNo // unsigned
+    long dOffset
+    short dRecordLen // unsigned
+    char dType // unsigned
+    char* dName
 }
 
 // Link external functions
@@ -116,7 +124,12 @@ f<bool> dirExists(string path) {
         // Check if it is a dir
         dyn fs = new FileStat {};
         stat(path, &fs);
-        return ((int) fs.st_mode & IF_MT) == IF_DIR;
+        return ((int) fs.mode & IF_MT) == IF_DIR;
     }
     return false;
+}
+
+f<DirEntry[]> listDir(string path) {
+
+    return ;
 }
