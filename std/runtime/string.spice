@@ -1,17 +1,17 @@
-import "std/type/string" as String;
+import "std/type/string" as str;
 
 ext<byte> malloc(int);
 ext free(char*);
 ext<byte> memcpy(char*, char*, int);
 
 type StringStruct struct {
-    char[] value
+    char* value
     int len
     int maxLen
     int growthFactor
 }
 
-/*p StringStruct.constructor() {
+p StringStruct.constructor() {
     this.value = null;
     this.len = 0;
     this.maxLen = 0;
@@ -23,7 +23,7 @@ p StringStruct.destructor() {
         // Free the allocated heap space
         free(this.value);
     }
-}*/
+}
 
 p StringStruct.resize(int newLen) {
     char* newAddr = malloc(newLen);
@@ -55,11 +55,11 @@ p StringStruct.clear() {
 
 f<string> concat(string a, string b) {
     // Return b if a is empty
-    int aLen = String.len(a);
+    int aLen = str.len(a);
     if aLen == 0 { return b; }
 
     // Return a if b is empty
-    int bLen = String.len(b);
+    int bLen = str.len(b);
     if bLen == 0 { return a; }
     
     // Create a new string

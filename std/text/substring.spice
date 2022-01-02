@@ -1,0 +1,9 @@
+/**
+ * Returns the substring of an input string from startPos to endPos
+ *
+ * @return Substring
+ */
+f<string> getSubstring(string input, int startPos, int endPos) {
+
+    return "";
+}
