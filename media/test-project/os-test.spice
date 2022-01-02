@@ -1,6 +1,5 @@
 import "std/io/dir" as dir;
 
 f<int> main() {
-    // List dir
     dir.listDir(".\\test\\*.*");
 }

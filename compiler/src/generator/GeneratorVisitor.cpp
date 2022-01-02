@@ -1048,7 +1048,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
         llvm::Value* argValPtr = visit(arg).as<llvm::Value*>();
 
         llvm::Value* argVal;
-        if (argValPtr) { // Convert array type to pointer type
+        if (argValPtr->getType()->getPointerElementType()->isArrayTy()) { // Convert array type to pointer type
             std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
             llvm::Type* targetType = argValPtr->getType()->getPointerElementType();
             argVal = builder->CreateInBoundsGEP(targetType, argValPtr, indices);
