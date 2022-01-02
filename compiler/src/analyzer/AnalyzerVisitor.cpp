@@ -1189,8 +1189,17 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
         if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
             type = type.toPointer();
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
-            type = type.toArray();
-            tokenCounter++; // Consume RBRACKET
+            tokenCounter++; // Consume LBRACKET
+            token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+            unsigned int size = 0; // Default to 0 when no size is attached
+            if (token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
+                int signedSize = std::stoi(token->toString());
+                if (signedSize <= 1)
+                    throw SemanticError(*token->getSymbol(), ARRAY_SIZE_INVALID,
+                                        "The size of an array must be > 1");
+                tokenCounter++; // Consume INTEGER
+            }
+            type = type.toArray(size);
         }
         tokenCounter++;
     }

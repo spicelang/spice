@@ -51,11 +51,19 @@ SymbolType OpRuleManager::getBitwiseOrResultType(const antlr4::Token& token, con
     return validateBinaryOperation(token, BITWISE_OR_OP_RULES, "|", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+SymbolType OpRuleManager::getEqualResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs) {
+    // Allow pointer = pointer straight away
+    if (lhs.isPointer() && rhs.isPointer()) return SymbolType(TY_BOOL);
+    // Allow pointer = byte straight away
+    if (lhs.isPointer() && rhs.is(TY_INT)) return SymbolType(TY_BOOL);
+    // Check primitive type combinations
     return validateBinaryOperation(token, EQUAL_OP_RULES, "==", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getNotEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+SymbolType OpRuleManager::getNotEqualResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs) {
+    // Allow pointers straight away
+    if (lhs.isPointer() && rhs.isPointer()) return SymbolType(TY_BOOL);
+    // Check primitive type combinations
     return validateBinaryOperation(token, NOT_EQUAL_OP_RULES, "!=", lhs, rhs);
 }
 

@@ -1,0 +1,29 @@
+/**
+ * Replaces the first occurrence of of a substring in an input string with the replacement string.
+ *
+ * @return Input string with having 'replaced' replaced with 'replacement'
+ */
+f<string> replaceFirst(string input, string replaced, string replacement) {
+
+    return "";
+}
+
+/**
+ * Replaces the last occurrence of of a substring in an input string with the replacement string.
+ *
+ * @return Input string with having 'replaced' replaced with 'replacement'
+ */
+f<string> replaceLast(string input, string replaced, string replacement) {
+
+    return "";
+}
+
+/**
+ * Replaces all occurrence of of a substring in an input string with the replacement string.
+ *
+ * @return Input string with having 'replaced' replaced with 'replacement'
+ */
+f<string> replaceAll(string input, string replaced, string replacement) {
+
+    return "";
+}

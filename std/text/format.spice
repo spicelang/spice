@@ -1,0 +1,9 @@
+/**
+ * Returns a formatted storage string (e.g. 1.4 MB for 1,500,000)
+ *
+ * @return Formatted size string
+ */
+f<string> formatStorageSize(long bytes) {
+    // ToDo when string concatenation works
+    return "";
+}

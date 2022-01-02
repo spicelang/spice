@@ -257,6 +257,19 @@ llvm::Value* OpRuleConversionsManager::getBitwiseOrInst(llvm::Value* lhs, llvm::
 llvm::Value* OpRuleConversionsManager::getEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
+
+    // Check if both values are of type pointer
+    if (lhsTy->isPointerTy() && rhsTy->isPointerTy())
+        return builder->CreateICmpEQ(lhs, rhs);
+
+    // Check if one value is of type pointer and one is of type byte
+    if (lhsTy->isPointerTy() && rhsTy->isIntegerTy(32)) {
+        llvm::Value* lhsInt = builder->CreatePtrToInt(lhs, rhsTy);
+        return builder->CreateICmpEQ(lhsInt, rhs);
+    }
+
+
+    // Check for primitive type combinations
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
     PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
     switch(COMB(lhsPTy, rhsPTy)) {

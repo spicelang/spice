@@ -1,0 +1,204 @@
+// File open modes
+const string MODE_READ                  = "r";
+const string MODE_WRITE                 = "w";
+const string MODE_APPEND                = "a";
+const string MODE_READ_WRITE            = "r+";
+const string MODE_READ_WRITE_OVERWRITE  = "w+";
+const string MODE_READ_WRITE_APPEND     = "a+";
+
+const int MODE_CREATE   = 64; // Decimal for octal: 100
+const int MODE_RDWR     = 2;  // Decimal for octal: 2
+
+const int F_OK = 0; // File existence
+const int X_OK = 1; // Can execute
+const int W_OK = 2; // Can write
+const int R_OK = 4; // Can read
+
+const int EOF = -1;
+
+const int SEEK_SET = 0;
+const int SEEK_CUR = 1;
+const int SEEK_END = 2;
+
+type FilePtr struct {
+    byte* ptr
+}
+
+type File struct {
+    FilePtr* filePtr
+}
+
+// Link external functions
+ext<int> open(string, int...);
+ext<FilePtr*> fopen(string, string);
+ext<int> fclose(FilePtr*);
+ext<int> fgetc(FilePtr*);
+ext<int> fputc(int, FilePtr*);
+ext<int> fputs(string, FilePtr*);
+ext<int> access(string, int);
+ext<int> fseek(FilePtr*, long, int);
+ext<long> ftell(FilePtr*);
+
+/**
+ * Creates an empty file on disk similar to the 'touch' command on Linux.
+ *
+ * @return Result code of the create operation: 0 = successful, -1 = failed
+ */
+f<int> createFile(string path) {
+    return open(path, MODE_CREATE|MODE_RDWR);
+}
+
+/**
+ * Opens a (new) file at the specified path with the specified mode.
+ * 
+ * There are predefined constants for the mode available:
+ * MODE_READ, MODE_WRITE, MODE_APPEND,
+ * MODE_READ_WRITE, MODE_READ_WRITE_OVERWRITE, MODE_READ_WRITE_APPEND
+ *
+ * @return File pointer
+ */
+f<File> openFile(string path, string mode) {
+    FilePtr* fp = fopen(path, mode);
+    // Insert check for pointer being 0 and throw an exception
+    File openedFile = new File { fp };
+    return openedFile;
+}
+
+/**
+ * Closes the file behind the provided file pointer.
+ *
+ * @return Result code of the close operation: 0 = successful, -1 = failed
+ */
+f<int> File.close() {
+    return fclose(this.filePtr);
+}
+
+/**
+ * Reads a singe char from the file.
+ *
+ * @return Char in form of an int, because of EOF = -1.
+ */
+f<int> File.readChar() {
+    return fgetc(this.filePtr);
+}
+
+/**
+ * Writes a single character to the file.
+ * 
+ * @return Result code of the write operation: 0 = successful, -1 = failed
+ */
+f<int> File.writeChar(char value) {
+    return fputc((int) value, this.filePtr);
+}
+
+/**
+ * Writes a string to the file.
+ *
+ * @return Result code of the write operation: 0 = successful, -1 = failed
+ */
+f<int> File.writeString(string value) {
+    return fputs(value, this.filePtr);
+}
+
+/**
+ * Returns the size of the file in bytes.
+ *
+ * @return File size in bytes
+ */
+f<long> File.getSize() {
+    // Remember current cursor position
+    long curPos = ftell(this.filePtr);
+    // Move the cursor to the end of the file
+    fseek(this.filePtr, (long) 0, SEEK_END);
+    // Get the cursor position
+    long size = ftell(this.filePtr);
+    // Move cursor back to the remembered position
+    fseek(this.filePtr, curPos, SEEK_SET);
+    return size;
+}
+
+/**
+ * Reads a whole file from a given path.
+ *
+ * @return Content in form of a string
+ */
+f<string> readFile(string path) {
+    // Open the file in read mode
+    File file = openFile(path, MODE_READ);
+    // Read from the file char by char
+    int buffer;
+    string output = "";
+    // ToDo: Uncomment when string += char is defined
+    /*while (buffer = file.readChar()) != EOF {
+        output += (char) buffer;
+    }*/
+    // Close the file
+    file.close();
+    return output;
+}
+
+/**
+ * Writes a string to a file at a given path.
+ *
+ * @return Result code of the write operation: 0 = successful, -1 = failed
+ */
+f<int> writeFile(string path, string content) {
+    // Open the file in write mode
+    File file = openFile(path, MODE_WRITE);
+    // Write the string to the file
+    int resultCode = file.writeString(content);
+    // Close the file
+    file.close();
+    return resultCode;
+}
+
+/**
+ * Returns the size of the file at the given paths in bytes.
+ *
+ * @return File size in bytes
+ */
+f<long> getFileSize(string path) {
+    // Open the file in read mode
+    File file = openFile(path, MODE_READ);
+    // Get the file size
+    long size = file.getSize();
+    // Close the file
+    file.close();
+    return size;
+}
+
+/**
+ * Checks if a file exists. The function also returns true if the specified path points to a directory.
+ * 
+ * @return Existing / not existing
+ */
+f<bool> fileExists(string path) {
+    return access(path, F_OK) == 0;
+}
+
+/**
+ * Checks if the read permissions to a file are given.
+ * 
+ * @return Readable / not readable
+ */
+f<bool> fileReadable(string path) {
+    return access(path, R_OK) == 0;
+}
+
+/**
+ * Checks if the write permissions to a file are given.
+ * 
+ * @return Writable / not writable
+ */
+f<bool> fileWritable(string path) {
+    return access(path, W_OK) == 0;
+}
+
+/**
+ * Checks if the execute permissions to a file are given.
+ * 
+ * @return Executable / not executable
+ */
+f<bool> fileExecutable(string path) {
+    return access(path, X_OK) == 0;
+}

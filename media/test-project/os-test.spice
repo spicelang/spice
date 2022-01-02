@@ -1,6 +1,9 @@
-import "std/io/file" as file;
+import "std/io/dir" as dir;
+import "std/os/env" as env;
 
 f<int> main() {
-    // Write to file
-    file.writeFile("./test.txt", "Hello World\nThis is a test");
+    dir.listDir(".\\test\\*.*");
+    printf("\n");
+    env.setEnv("SpiceTest", "Test");
+    printf("Path: %s\n", env.getEnv("SpiceTest"));
 }

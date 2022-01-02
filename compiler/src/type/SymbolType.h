@@ -42,7 +42,7 @@ public:
 
     // Public methods
     SymbolType toPointer();
-    SymbolType toArray();
+    SymbolType toArray(unsigned int = 0);
     SymbolType getContainedTy();
     bool isPointer();
     bool isPointerOf(SymbolSuperType);
@@ -55,6 +55,7 @@ public:
     SymbolSuperType getSuperType();
     std::string getSubType();
     std::string getName();
+    unsigned int getArraySize();
     friend bool operator== (const SymbolType& lhs, const SymbolType& rhs);
     friend bool operator!= (const SymbolType& lhs, const SymbolType& rhs);
 private:
