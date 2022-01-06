@@ -107,7 +107,7 @@ private:
     std::unique_ptr<llvm::Module> module;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope;
-    SymbolTable* functionCallParentScope = nullptr;
+    SymbolTable* accessScope = nullptr;
     std::string scopePrefix;
     std::string currentVar;
     SymbolType currentSymbolType;
@@ -120,5 +120,5 @@ private:
     void createBr(llvm::BasicBlock*);
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
     llvm::Type* getTypeForSymbolType(SymbolType);
-    void initExtStruct(const std::string& oldStructName, const std::string& newStructName);
+    void initExtStruct(const std::string&, const std::string&);
 };

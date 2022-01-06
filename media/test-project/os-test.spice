@@ -1,9 +1,34 @@
-import "std/io/dir" as dir;
-import "std/os/env" as env;
+//import "std/runtime/string_rt" as str;
+
+p testProc(int*[] test) {
+    printf("Int: %d\n", *test[1]);
+    printf("Int: %d\n", *test[2]);
+    printf("Int: %d\n", *test[3]);
+}
 
 f<int> main() {
-    dir.listDir(".\\test\\*.*");
-    printf("\n");
-    env.setEnv("SpiceTest", "Test");
-    printf("Path: %s\n", env.getEnv("SpiceTest"));
+    /*str.StringStruct a = new str.StringStruct {};
+    a.constructor();
+    printf("String: %s\n", a.value);
+    a.appendChar('A');
+    printf("String: %s\n", a.value);
+    a.destructor();*/
+
+    int i1 = 1;
+    int i2 = 2;
+    int i3 = 3;
+    int i4 = 4;
+    int*[5] intArray = { &i1, &i2, &i3, &i4 };
+    testProc(intArray);
+    //intArray[5] = 10;
+
+    string test = "test";
+    //char c1 = test[2];
+    //printf("Char: %c\n", c1);
+
+    /*string a = "Hello";
+    string b = "World";
+
+    string c = a + " " + b + "!";
+    printf("Concatenated string: %s\n", c);*/
 }

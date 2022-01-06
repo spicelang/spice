@@ -777,16 +777,15 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     std::string functionName = ctx->IDENTIFIER()->toString();
 
     if (isMethod) {
-        std::string structName = currentSymbolType.getSubType();
-        functionName = structName + "." + functionName;
+        functionName = scopePrefix + "." + functionName;
     }
 
     // Get function by signature
-    FunctionSignature signature = functionCallParentScope->popSignature();
+    FunctionSignature signature = accessScope->popSignature();
     // Check if function exists in module
     bool functionFound = false;
     std::string fctIdentifier = signature.toString();
-    for (auto& function : module->getFunctionList()) {
+    for (auto& function : module->getFunctionList()) { // Search for function definition
         if (function.getName() == signature.toString()) {
             functionFound = true;
             break;
@@ -797,7 +796,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         }
     }
     if (!functionFound) { // Not found => Declare function, which will be linked in
-        SymbolTable* table = functionCallParentScope->lookupTableWithSymbol({ signature.toString() });
+        SymbolTable* table = accessScope->lookupTableWithSignature(signature.toString());
         // Check if it is a function or a procedure
         if (!table->getFunctionDeclaration(signature.toString()).empty()) { // Function
             std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
@@ -805,7 +804,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             // Get return type
             SymbolType returnSymbolType = symbolTypes[0];
             llvm::Type* returnType;
-            if (returnSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported()) {
+            if (returnSymbolType.is(TY_STRUCT) && accessScope->isImported()) {
                 initExtStruct(returnSymbolType.getSubType(), scopePrefix + "." + returnSymbolType.getSubType());
                 SymbolType newSymbolType = SymbolType(TY_STRUCT, scopePrefix + "." + returnSymbolType.getSubType());
                 returnType = getTypeForSymbolType(newSymbolType);
@@ -819,7 +818,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             std::vector<llvm::Type*> paramTypes;
             for (int i = 1; i < symbolTypes.size(); i++) {
                 SymbolType paramSymbolType = symbolTypes[i];
-                if (functionCallParentScope->isImported()) {
+                if (accessScope->isImported()) {
                     // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
                     if (paramSymbolType.is(TY_STRUCT)) {
                         paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
@@ -841,6 +840,15 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             // Get parameter types
             std::vector<llvm::Type*> paramTypes;
             for (auto& symbolType : symbolTypes) {
+                if (accessScope->isImported()) {
+                    // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
+                    if (symbolType.is(TY_STRUCT)) {
+                        symbolType = SymbolType(TY_STRUCT, scopePrefix);
+                    } else if (symbolType.isPointerOf(TY_STRUCT)) {
+                        symbolType = SymbolType(TY_STRUCT, scopePrefix);
+                        symbolType = symbolType.toPointer();
+                    }
+                }
                 llvm::Type* paramType = getTypeForSymbolType(symbolType);
                 if (!paramType) throw std::runtime_error("Internal compiler error");
                 paramTypes.push_back(paramType);
@@ -868,8 +876,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             if (argValuePtr->getType()->getPointerElementType() != argType) {
                 if (argType->isPointerTy() && argValuePtr->getType()->getPointerElementType()->isArrayTy()) {
                     std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
-                    llvm::Type* targetType = argValuePtr->getType()->getPointerElementType();
-                    llvm::Value* ptr = builder->CreateInBoundsGEP(targetType, argValuePtr, indices);
+                    llvm::Type* argValueType = argValuePtr->getType()->getPointerElementType();
+                    llvm::Value* ptr = builder->CreateInBoundsGEP(argValueType, argValuePtr, indices);
                     argValues.push_back(ptr);
                 } else {
                     llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
@@ -897,17 +905,19 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     std::string variableName = currentVar = ctx->IDENTIFIER()[0]->toString();
-    std::string structName = ctx->IDENTIFIER()[1]->toString();
-    std::string structScope = ScopeIdUtil::getScopeId(ctx);
 
-    // Get data type
-    llvm::Type* structType;
-    if (ctx->dataType()->TYPE_DYN()) {
-        SymbolType dataType = SymbolType(TY_STRUCT, structName);
-        structType = getTypeForSymbolType(dataType);
-    } else {
-        structType = visit(ctx->dataType()).as<llvm::Type*>();
+    // Get struct name in format a.b.c
+    std::string structName = ctx->IDENTIFIER()[1]->toString();
+    SymbolTable* structScope = currentScope->lookupTable(structName);
+    for (unsigned int i = 2; i < ctx->IDENTIFIER().size(); i++) {
+        structName += "." + ctx->IDENTIFIER()[i]->toString();
+        if (i < ctx->IDENTIFIER().size() -1) structScope = structScope->lookupTable(ctx->IDENTIFIER()[i]->toString());
     }
+
+    // Check if the struct is defined
+    initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
+    SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+    llvm::Type* structType = structSymbol->getLLVMType();
 
     // Allocate space for the struct in memory
     llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr, currentVar);
@@ -933,22 +943,21 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Get size and data type
     std::string varName = currentVar = ctx->IDENTIFIER()->toString();
-    unsigned int currentArraySize = std::stoi(ctx->value()->INTEGER()->toString());
 
     // Get data type
-    llvm::Type* baseType;
+    llvm::Type* itemType;
     llvm::Type* arrayType;
     if (ctx->dataType()->TYPE_DYN()) {
         SymbolType dataType = currentScope->lookup(varName)->getType();
         arrayType = getTypeForSymbolType(dataType);
-        baseType = arrayType->getArrayElementType();
+        itemType = arrayType->getArrayElementType();
     } else {
-        baseType = visit(ctx->dataType()).as<llvm::Type*>();
-        arrayType = llvm::ArrayType::get(baseType, currentArraySize);
+        arrayType = visit(ctx->dataType()).as<llvm::Type*>();
+        itemType = arrayType->getArrayElementType();
     }
 
     // Allocate array
-    llvm::Value* arrayAddress = builder->CreateAlloca(arrayType, builder->getInt32(currentArraySize), currentVar);
+    llvm::Value* arrayAddress = builder->CreateAlloca(arrayType, builder->getInt32(arrayType->getArrayNumElements()), currentVar);
 
     // Fill items with the stated values
     if (ctx->paramLst()) {
@@ -1072,10 +1081,9 @@ antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* 
     // Visit the parameter
     llvm::Value* valuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
     llvm::Value* value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    llvm::Type* valueTy = value->getType();
 
-    unsigned int size = value->getType()->isArrayTy() ?
-            size = value->getType()->getArrayNumElements() :
-            size = value->getType()->getScalarSizeInBits();
+    unsigned int size = valueTy->isArrayTy() ? valueTy->getArrayNumElements() : valueTy->getScalarSizeInBits();
     llvm::Value* result = builder->getInt32(size);
     llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
     builder->CreateStore(result, resultPtr);
@@ -1598,13 +1606,13 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                     currentSymbolType = entry->getType();
                 }
                 // Set function call parent scope
-                functionCallParentScope = scope;
+                accessScope = scope;
                 // Visit function call
                 basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
                 baseType = basePtr->getType()->getPointerElementType();
                 // Reset values
                 currentThisValue = nullptr;
-                functionCallParentScope = nullptr;
+                accessScope = nullptr;
 
                 indices.clear();
                 indices.push_back(builder->getInt32(0));
@@ -1665,10 +1673,12 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             // Get the index value
             llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
             indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
-            if (entry->getType().isPointer()) {
-                indices.back() = indexValue;
-            } else {
+            if (entry->getType().isArray()) {
                 indices.push_back(indexValue);
+            } else {
+                basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
+                baseType = baseType->getPointerElementType();
+                indices.back() = indexValue;
             }
             // Increase counters
             assignCounter++;
@@ -1898,7 +1908,10 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
     while (!pointerArrayList.empty()) {
         if (pointerArrayList.top() == TY_PTR) { // Pointer
             llvmBaseType = llvmBaseType->getPointerTo();
-        } else { // Array
+        } else if (sizeList.top() == 0) { // If size is 0, use the pointer type
+            llvmBaseType = llvmBaseType->getPointerTo();
+            sizeList.pop();
+        } else { // Otherwise, use the array type with a fixed size
             llvmBaseType = llvm::ArrayType::get(llvmBaseType, sizeList.top());
             sizeList.pop();
         }
@@ -1909,26 +1922,29 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 }
 
 void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
-    SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
+    if (currentScope->lookup(newStructName)->getState() == DECLARED) { // Only initialize if it was not initialized yet
+        SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
 
-    // Get field types
-    std::vector<llvm::Type*> memberTypes;
-    for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
-        SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
-        if (fieldType.is(TY_STRUCT)) {
-            std::string structName = fieldType.getSubType();
-            initExtStruct(structName, scopePrefix + "." + structName);
-            fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
-        } else if (fieldType.isPointerOf(TY_STRUCT)) {
-            std::string structName = fieldType.getContainedTy().getSubType();
-            initExtStruct(structName, scopePrefix + "." + structName);
-            fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
-            fieldType = fieldType.toPointer();
+        // Get field types
+        std::vector<llvm::Type*> memberTypes;
+        for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
+            SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
+            if (fieldType.is(TY_STRUCT)) {
+                std::string structName = fieldType.getSubType();
+                initExtStruct(structName, scopePrefix + "." + structName);
+                fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
+            } else if (fieldType.isPointerOf(TY_STRUCT)) {
+                std::string structName = fieldType.getContainedTy().getSubType();
+                initExtStruct(structName, scopePrefix + "." + structName);
+                fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
+                fieldType = fieldType.toPointer();
+            }
+            memberTypes.push_back(getTypeForSymbolType(fieldType));
         }
-        memberTypes.push_back(getTypeForSymbolType(fieldType));
-    }
 
-    // Create global struct
-    llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
-    currentScope->lookup(newStructName)->updateLLVMType(structType);
+        // Create global struct
+        llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
+        currentScope->lookup(newStructName)->updateLLVMType(structType);
+        currentScope->lookup(newStructName)->updateState(INITIALIZED);
+    }
 }

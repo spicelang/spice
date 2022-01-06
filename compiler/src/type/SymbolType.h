@@ -55,6 +55,7 @@ public:
     SymbolSuperType getSuperType();
     std::string getSubType();
     std::string getName();
+    void setArraySize(unsigned int);
     unsigned int getArraySize();
     friend bool operator== (const SymbolType& lhs, const SymbolType& rhs);
     friend bool operator!= (const SymbolType& lhs, const SymbolType& rhs);

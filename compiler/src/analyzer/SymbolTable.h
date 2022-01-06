@@ -30,7 +30,7 @@ public:
     SymbolTableEntry* lookup(const std::string&);
     SymbolTableEntry* lookupByIndexInCurrentScope(unsigned int);
     SymbolTable* lookupTable(const std::string&);
-    SymbolTable* lookupTableWithSymbol(const std::vector<std::string>&);
+    SymbolTable* lookupTableWithSignature(const std::string&);
 
     void update(const std::string&, SymbolState);
     void update(const std::string&, SymbolType);

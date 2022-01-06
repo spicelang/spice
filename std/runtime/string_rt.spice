@@ -1,8 +1,8 @@
 import "std/type/string" as str;
 
-ext<byte> malloc(int);
+ext<char*> malloc(int);
 ext free(char*);
-ext<byte> memcpy(char*, char*, int);
+ext<char*> memcpy(char*, char*, int);
 
 type StringStruct struct {
     char* value
@@ -15,36 +15,37 @@ p StringStruct.constructor() {
     this.value = nil<char*>;
     this.len = 0;
     this.maxLen = 0;
-    this.growthFactor = 2;
+    this.growthFactor = 16;
 }
 
 p StringStruct.destructor() {
-    if this.value != nil<char*> {
+    if this.maxLen > 0 {
         // Free the allocated heap space
         free(this.value);
+        printf("Destructor called with free!");
     }
 }
 
 p StringStruct.resize(int newLen) {
+    printf("Called resize with new len %d\n", newLen);
     char* newAddr = malloc(newLen);
     char* oldAddr = this.value;
-    int len = this.length;
-    memcpy(newAddr, oldAddr, len);
+    int length = this.len;
+    memcpy(newAddr, oldAddr, length);
     free(oldAddr);
     this.value = newAddr;
     this.maxLen = newLen;
 }
 
 p StringStruct.appendChar(char c) {
-    int len = this.length;
-    int maxLen = this.maxLen;
+    int length = this.len;
+    int maxLength = this.maxLen;
 
-    if len == maxLen { // Sting needs to be grown
-        int newMaxLen = maxLen * this.growthFactor;
-        this.resize(newMaxLen);
+    if length == maxLength { // Sting needs to be grown
+        this.resize(maxLength + this.growthFactor);
     }
 
-    this.value[length] = c;
+    //this.value[length] = c;
     this.len++;
 }
 
@@ -65,12 +66,11 @@ f<string> concat(string a, string b) {
     // Create a new string
     int size = aLen + bLen;
     result = "";
-    foreach int pos, char n : a {
-        result[pos] = n;
+    /*foreach char n : a {
+        result += n;
     }
-    foreach int pos, char n : b {
-        result[aLen + pos] = n;
-    }
-
-    return result;
+    foreach char n : b {
+        result += n;
+    }*/
+    return "";
 }

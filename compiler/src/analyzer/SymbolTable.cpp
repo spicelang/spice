@@ -73,24 +73,15 @@ SymbolTable* SymbolTable::lookupTable(const std::string& scopeId) {
  * Search for a symbol table by its name, where a symbol is defined. Used for function calls to function/procedures
  * which were linked in from other modules
  *
- * @param nameSpace Name of the scope of the desired symbol table
+ * @param signature Signature of the function/procedure
  * @return Desired symbol table
  */
-SymbolTable* SymbolTable::lookupTableWithSymbol(const std::vector<std::string>& nameSpace) {
-    // Check if scope contains this namespace
-    SymbolTable* currentTable = this;
-    for (int i = 0; i < nameSpace.size(); i++) {
-        if (i == nameSpace.size() - 1) {
-            if (currentTable->symbols.find(nameSpace[i]) == currentTable->symbols.end()) break;
-            return currentTable;
-        } else {
-            if (currentTable->children.find(nameSpace[i]) == currentTable->children.end()) break;
-            currentTable = &children.at(nameSpace[i]);
-        }
-    }
-    // Current scope does not contain the namespace => go up one table
+SymbolTable* SymbolTable::lookupTableWithSignature(const std::string& signature) {
+    // Check if scope contains this signature
+    if (symbols.find(signature) != symbols.end()) return this;
+    // Current scope does not contain the signature => go up one table
     if (parent == nullptr) return nullptr;
-    return parent->lookupTableWithSymbol(nameSpace);
+    return parent->lookupTableWithSignature(signature);
 }
 
 /**
