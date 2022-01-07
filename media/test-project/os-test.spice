@@ -1,21 +1,12 @@
 //import "std/runtime/string_rt" as str;
 
-p testProc(int*[]* _) {
-    int i1 = 1;
-    int i2 = 2;
-    int i3 = 3;
-    int i4 = 4;
-    int*[4] intArray = { &i1, &i2, &i3, &i4 };
-    int*[4]* nums = &intArray;
-    int*[4] nums1 = *nums;
-    printf("1ptr: %p\n", nums1[0]);
-    printf("2ptr: %p\n", nums1[1]);
-    printf("3ptr: %p\n", nums1[2]);
-    printf("4ptr: %p\n", nums1[3]);
-    printf("1: %d\n", *nums1[0]);
-    printf("2: %d\n", *nums1[1]);
-    printf("3: %d\n", *nums1[2]);
-    printf("4: %d\n", *nums1[3]);
+p testProc(int[]* nums) {
+    int[] nums1 = *nums;
+    nums1[2] = 10;
+    printf("1: %d\n", nums1[0]);
+    printf("2: %d\n", nums1[1]);
+    printf("3: %d\n", nums1[2]);
+    printf("4: %d\n", nums1[3]);
 }
 
 f<int> main() {
@@ -26,11 +17,7 @@ f<int> main() {
     printf("String: %s\n", a.value);
     a.destructor();*/
 
-    int i1 = 1;
-    int i2 = 2;
-    int i3 = 3;
-    int i4 = 4;
-    int*[4] intArray = { &i1, &i2, &i3, &i4 };
+    int[4] intArray = { 1, 2, 3, 4 };
     testProc(&intArray);
 
     //string test = "test";

@@ -113,6 +113,8 @@ private:
     SymbolType currentSymbolType;
     bool blockAlreadyTerminated = false;
     llvm::Value* currentThisValue = nullptr;
+    bool allParamsHardcoded = true;
+    llvm::Constant* currentConstValue = nullptr;
 
     // Private methods
     void initializeExternalFunctions();

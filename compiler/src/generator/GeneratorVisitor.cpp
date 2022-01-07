@@ -961,14 +961,35 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
 
     // Fill items with the stated values
     if (ctx->paramLst()) {
+        allParamsHardcoded = true;
+        // Visit all params to check if they are hardcoded or not
+        std::vector<llvm::Value*> itemValuePointers;
+        std::vector<llvm::Constant*> itemConstants;
         for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-            llvm::Value* itemValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-            llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
-            // Calculate item address
-            std::vector<llvm::Value*> indices = { builder->getInt64(0), builder->getInt64(i) };
-            llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
-            // Store value to item address
-            builder->CreateStore(itemValue, itemAddress);
+            itemValuePointers.push_back(visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>());
+            itemConstants.push_back(currentConstValue);
+        }
+        // Decide if the array can be defined globally
+        if (allParamsHardcoded) { // All params hardcoded => array can be defined globally
+            // Create hardcoded array
+            llvm::Constant* constArray = llvm::ConstantArray::get((llvm::ArrayType*) arrayType, itemConstants);
+            // Create global variable
+            arrayAddress = module->getOrInsertGlobal(varName, arrayType);
+            // Set some attributes to it
+            llvm::GlobalVariable* global = module->getNamedGlobal(varName);
+            global->setConstant(ctx->CONST());
+            global->setDSOLocal(true);
+            global->setInitializer(constArray);
+        } else { // Some params are not hardcoded => fallback to individual indexing
+            for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+                llvm::Value* itemValuePtr = itemValuePointers[i];
+                llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
+                // Calculate item address
+                std::vector<llvm::Value*> indices = { builder->getInt64(0), builder->getInt64(i) };
+                llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
+                // Store value to item address
+                builder->CreateStore(itemValue, itemAddress);
+            }
         }
     }
 
@@ -1566,6 +1587,7 @@ antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx)
 
 antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
     if (ctx->value()) return visit(ctx->value());
+    allParamsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
     if (ctx->idenValue()) return visit(ctx->idenValue());
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
@@ -1714,27 +1736,25 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
-    llvm::Value* llvmValue;
-
     // Value is a double constant
     if (ctx->DOUBLE()) {
         currentSymbolType = SymbolType(TY_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
-        llvmValue = llvm::ConstantFP::get(*context, llvm::APFloat(value));
+        currentConstValue = llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TY_INT);
         int v = std::stoi(ctx->INTEGER()->toString());
-        llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
+        currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
     }
 
     // Value is a char constant
     if (ctx->CHAR()) {
         currentSymbolType = SymbolType(TY_CHAR);
         char value = ctx->CHAR()->toString()[1];
-        llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
+        currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
     }
 
     // Value is a string constant
@@ -1743,19 +1763,19 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         std::string value = ctx->STRING()->toString();
         value = std::regex_replace(value, std::regex("\\\\n"), "\n");
         value = value.substr(1, value.size() - 2);
-        llvmValue = builder->CreateGlobalStringPtr(value, "", 0, module.get());
+        currentConstValue = builder->CreateGlobalStringPtr(value, "", 0, module.get());
     }
 
     // Value is a boolean constant with value false
     if (ctx->FALSE()) {
         currentSymbolType = SymbolType(TY_BOOL);
-        llvmValue = builder->getFalse();
+        currentConstValue = builder->getFalse();
     }
 
     // Value is a boolean constant with value true
     if (ctx->TRUE()) {
         currentSymbolType = SymbolType(TY_BOOL);
-        llvmValue = builder->getTrue();
+        currentConstValue = builder->getTrue();
     }
 
     // Value is nil
@@ -1769,15 +1789,15 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         if (ctx->dataType()->TYPE_STRING()) currentSymbolType = SymbolType(TY_STRING);
         if (ctx->dataType()->TYPE_BOOL()) currentSymbolType = SymbolType(TY_BOOL);
         llvm::Type* nilType = visit(ctx->dataType()).as<llvm::Type*>();
-        llvmValue = llvm::Constant::getNullValue(nilType);
+        currentConstValue = llvm::Constant::getNullValue(nilType);
     }
 
-    // If global variable value -> return value immediately
-    if (!currentScope->getParent()) return llvmValue;
+    // If global variable value, return value immediately, because it is already a pointer
+    if (!currentScope->getParent()) return currentConstValue;
 
     // Store the value to a tmp variable
-    llvm::Value* llvmValuePtr = builder->CreateAlloca(llvmValue->getType());
-    builder->CreateStore(llvmValue, llvmValuePtr);
+    llvm::Value* llvmValuePtr = builder->CreateAlloca(currentConstValue->getType());
+    builder->CreateStore(currentConstValue, llvmValuePtr);
     return llvmValuePtr;
 }
 
