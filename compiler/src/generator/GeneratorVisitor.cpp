@@ -871,20 +871,43 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     }
     if (ctx->paramLst()) {
         for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-            llvm::Value* argValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-            llvm::Type* argType = fctType->getParamType(paramIndex);
-            if (argValuePtr->getType()->getPointerElementType() != argType) {
-                if (argType->isPointerTy() && argValuePtr->getType()->getPointerElementType()->isArrayTy()) {
-                    std::vector<llvm::Value*> indices = { builder->getInt64(0), builder->getInt64(0) };
-                    llvm::Type* argValueType = argValuePtr->getType()->getPointerElementType();
-                    llvm::Value* ptr = builder->CreateInBoundsGEP(argValueType, argValuePtr, indices);
-                    argValues.push_back(ptr);
-                } else {
-                    llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
-                    argValues.push_back(builder->CreateBitCast(argValue, argType));
+            llvm::Value* actualArgPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+            llvm::Type* expectedArgType = fctType->getParamType(paramIndex);
+            if (actualArgPtr->getType()->getPointerElementType() != expectedArgType) {
+                // Unpack the pointers until a pointer of another type is met
+                unsigned int loadCounter = 0;
+                while (actualArgPtr->getType()->getPointerElementType()->isPointerTy()) {
+                    actualArgPtr = builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr);
+                    loadCounter++;
                 }
+                // Bit-cast or GEP
+                if (expectedArgType->isPointerTy() && actualArgPtr->getType()->getPointerElementType()->isArrayTy()) {
+                    std::vector<llvm::Value*> indices = { builder->getInt64(0), builder->getInt64(0) };
+                    llvm::Type* actualArgType = actualArgPtr->getType()->getPointerElementType();
+                    actualArgPtr = builder->CreateInBoundsGEP(actualArgType, actualArgPtr, indices);
+                } else {
+                    llvm::Type* actualArgType = actualArgPtr->getType()->getPointerElementType();
+                    llvm::Value* actualArg = builder->CreateLoad(actualArgType, actualArgPtr);
+                    actualArgPtr = builder->CreateBitCast(actualArg, expectedArgType);
+                }
+                // Pack the pointers together again
+                for (;loadCounter > 0; loadCounter--) {
+                    llvm::Value* newActualArgPtr = builder->CreateAlloca(actualArgPtr->getType());
+                    builder->CreateStore(actualArgPtr, newActualArgPtr);
+                    actualArgPtr = newActualArgPtr;
+                }
+                argValues.push_back(actualArgPtr);
+                /*if (expectedArgType->isPointerTy() && actualArgPtr->getType()->getPointerElementType()->isArrayTy()) {
+                    std::vector<llvm::Value*> indices = { builder->getInt64(0), builder->getInt64(0) };
+                    llvm::Type* actualArgType = actualArgPtr->getType()->getPointerElementType();
+                    argValues.push_back(builder->CreateInBoundsGEP(actualArgType, actualArgPtr, indices));
+                } else {
+                    llvm::Type* actualArgType = actualArgPtr->getType()->getPointerElementType();
+                    llvm::Value* actualArg = builder->CreateLoad(actualArgType, actualArgPtr);
+                    argValues.push_back(builder->CreateBitCast(actualArg, expectedArgType));
+                }*/
             } else {
-                llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
+                llvm::Value* argValue = builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr);
                 argValues.push_back(argValue);
             }
             paramIndex++;

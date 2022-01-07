@@ -18,6 +18,7 @@ f<int> main() {
     a.destructor();*/
 
     int[4] intArray = { 1, 2, 3, 4 };
+    printf("1: %d\n", intArray[1]);
     testProc(&intArray);
 
     //string test = "test";
