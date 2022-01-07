@@ -144,6 +144,6 @@ std::string SymbolTableEntry::toString() {
     std::string stateStr = state == INITIALIZED ? "initialized" : "declared";
     std::string constStr = isConstant ? "yes" : "no";
     std::string globalStr = isGlobal ? "yes" : "no";
-    return "Name: " + name + ", Type: " + type.getName() + ", OrderIndex: " + std::to_string(orderIndex) + ", State: " +
+    return "Name: " + name + ", Type: " + type.getName(true) + ", OrderIndex: " + std::to_string(orderIndex) + ", State: " +
         stateStr + ", Const: " + constStr + ", IsGlobal: " + globalStr;
 }

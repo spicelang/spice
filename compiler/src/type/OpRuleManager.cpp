@@ -161,10 +161,10 @@ SymbolType OpRuleManager::validateUnaryOperation(const antlr4::Token& token, con
 SemanticError OpRuleManager::printErrorMessageBinary(const antlr4::Token& token, const std::string& operatorName,
                                                      SymbolType lhs, SymbolType rhs) {
     return SemanticError(token, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + operatorName +
-                        "' operator on types " + lhs.getName() + " and " + rhs.getName());
+                        "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true));
 }
 
 SemanticError OpRuleManager::printErrorMessageUnary(const antlr4::Token& token, const std::string& operatorName, SymbolType lhs) {
     return SemanticError(token, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + operatorName +
-                        "' operator on type " + lhs.getName());
+                        "' operator on type " + lhs.getName(true));
 }

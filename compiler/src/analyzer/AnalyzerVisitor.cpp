@@ -231,7 +231,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
         } else if (dataType != valueType) {
             throw SemanticError(*ctx->value()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Cannot apply the assign operator on different data types. You provided " +
-                                dataType.getName() + " and " + valueType.getName());
+                                dataType.getName(false) + " and " + valueType.getName(false));
         }
         state = INITIALIZED;
     }
@@ -280,7 +280,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
     SymbolType arrayType = visit(head->assignExpr().back()).as<SymbolType>();
     if (!arrayType.isArray() && !arrayType.is(TY_STRING))
         throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
-                            "Can only apply foreach loop on an array type. You provided " + arrayType.getName());
+                            "Can only apply foreach loop on an array type. You provided " + arrayType.getName(false));
 
     // Check index assignment or declaration
     SymbolType indexType;
@@ -289,12 +289,12 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
         currentScope->lookup(head->declStmt().front()->IDENTIFIER()->toString())->updateState(INITIALIZED);
         if (!indexType.is(TY_INT))
             throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
-                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
+                                "Index in foreach loop must be of type int. You provided " + indexType.getName(false));
     } else if (head->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
         indexType = visit(head->assignExpr().front()).as<SymbolType>();
         if (!indexType.is(TY_INT))
             throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
-                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
+                                "Index in foreach loop must be of type int. You provided " + indexType.getName(false));
     } else { // declStmt COLON assignExpr
         // Declare the variable with the default index variable name
         currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, SymbolType(TY_INT), INITIALIZED,
@@ -309,8 +309,8 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
     } else {
         if (itemType != arrayType.getContainedTy())
             throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Foreach loop item type does not match array type. Expected " + arrayType.getName() +
-                                ", provided " + itemType.getName());
+                                "Foreach loop item type does not match array type. Expected " + arrayType.getName(false) +
+                                ", provided " + itemType.getName(false));
     }
 
     // Visit statement list in new scope
@@ -500,8 +500,8 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
             // Check if type matches declaration
             if (actualType != expectedType)
                 throw SemanticError(*ternary->start, FIELD_TYPE_NOT_MATCHING,
-                                    "Expected type " + expectedType.getName() + " for the field '" +
-                                    expectedField->getName() + "', but got " + actualType.getName());
+                                    "Expected type " + expectedType.getName(false) + " for the field '" +
+                                    expectedField->getName() + "', but got " + actualType.getName(false));
         }
     }
 
@@ -527,7 +527,7 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
             } else if (itemType != expectedItemType) {
                 throw SemanticError(*ctx->paramLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
                                     "All provided values have to be of the same data type. You provided " +
-                                    expectedItemType.getName() + " and " + itemType.getName());
+                                    expectedItemType.getName(false) + " and " + itemType.getName(false));
             }
             actualSize++;
         }
@@ -639,7 +639,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
             if (returnType != returnVariable->getType())
                 throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                     "Passed wrong data type to return statement. Expected " +
-                                    returnVariable->getType().getName() + " but got " + returnType.getName());
+                                    returnVariable->getType().getName(false) + " but got " + returnType.getName(false));
         }
 
         // Set the return variable to initialized
@@ -707,7 +707,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'c': {
                 if (!assignmentType.is(TY_CHAR))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects char, but got " + assignmentType.getName());
+                                        "Template string expects char, but got " + assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
@@ -719,7 +719,8 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'X': {
                 if (!assignmentType.isOneOf({ TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_BOOL }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects int, byte or bool, but got " + assignmentType.getName());
+                                        "Template string expects int, byte or bool, but got " +
+                                        assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
@@ -733,21 +734,21 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'G': {
                 if (!assignmentType.is(TY_DOUBLE))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects double, but got " + assignmentType.getName());
+                                        "Template string expects double, but got " + assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
             case 's': {
                 if (!assignmentType.is(TY_STRING) && !assignmentType.isPointerOf(TY_CHAR) && !assignmentType.isArrayOf(TY_CHAR))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects string, but got " + assignmentType.getName());
+                                        "Template string expects string, but got " + assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
             case 'p': {
-                if (!assignmentType.isPointer())
+                if (!assignmentType.isPointer() && !(assignmentType.isArray() && assignmentType.getArraySize() == 0))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects pointer, but got " + assignmentType.getName());
+                                        "Template string expects pointer, but got " + assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
@@ -1109,18 +1110,18 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                                         "Referenced undefined import '" + importName + "'");
             } else {
                 throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply member access operator on " + symbolType.getName());
+                                    "Cannot apply member access operator on " + symbolType.getName(false));
             }
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Check this operation is valid on this type
             if (!symbolType.isArray() && !symbolType.isPointer() && !symbolType.is(TY_STRING))
                 throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply subscript operator on " + symbolType.getName());
+                                    "Cannot apply subscript operator on " + symbolType.getName(false));
             // Check if the index is an integer
             SymbolType indexType = visit(ctx->assignExpr()[assignCounter]).as<SymbolType>();
             if (!indexType.is(TY_INT))
                 throw SemanticError(*ctx->assignExpr()[assignCounter]->start, ARRAY_INDEX_NO_INTEGER,
-                                    "Array index must be of type int, you provided " + indexType.getName());
+                                    "Array index must be of type int, you provided " + indexType.getName(false));
             // Promote the array/pointer element type
             symbolType = symbolType.is(TY_STRING) ? SymbolType(TY_CHAR) : symbolType.getContainedTy();
             // Increase counters

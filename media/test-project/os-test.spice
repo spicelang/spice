@@ -1,9 +1,21 @@
 //import "std/runtime/string_rt" as str;
 
-p testProc(int*[] test) {
-    printf("Int: %d\n", *test[1]);
-    printf("Int: %d\n", *test[2]);
-    printf("Int: %d\n", *test[3]);
+p testProc(int*[]* _) {
+    int i1 = 1;
+    int i2 = 2;
+    int i3 = 3;
+    int i4 = 4;
+    int*[4] intArray = { &i1, &i2, &i3, &i4 };
+    int*[4]* nums = &intArray;
+    int*[4] nums1 = *nums;
+    printf("1ptr: %p\n", nums1[0]);
+    printf("2ptr: %p\n", nums1[1]);
+    printf("3ptr: %p\n", nums1[2]);
+    printf("4ptr: %p\n", nums1[3]);
+    printf("1: %d\n", *nums1[0]);
+    printf("2: %d\n", *nums1[1]);
+    printf("3: %d\n", *nums1[2]);
+    printf("4: %d\n", *nums1[3]);
 }
 
 f<int> main() {
@@ -18,11 +30,10 @@ f<int> main() {
     int i2 = 2;
     int i3 = 3;
     int i4 = 4;
-    int*[5] intArray = { &i1, &i2, &i3, &i4 };
-    testProc(intArray);
-    //intArray[5] = 10;
+    int*[4] intArray = { &i1, &i2, &i3, &i4 };
+    testProc(&intArray);
 
-    string test = "test";
+    //string test = "test";
     //char c1 = test[2];
     //printf("Char: %c\n", c1);
 

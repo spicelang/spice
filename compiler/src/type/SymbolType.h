@@ -54,7 +54,7 @@ public:
     bool matches(SymbolType, SymbolSuperType);
     SymbolSuperType getSuperType();
     std::string getSubType();
-    std::string getName();
+    std::string getName(bool);
     void setArraySize(unsigned int);
     unsigned int getArraySize();
     friend bool operator== (const SymbolType& lhs, const SymbolType& rhs);
@@ -64,5 +64,5 @@ private:
     TypeChain typeChain;
 
     // Private methods
-    static std::string getNameFromChainElement(const TypeChainElement&);
+    static std::string getNameFromChainElement(const TypeChainElement&, bool);
 };
