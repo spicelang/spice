@@ -608,7 +608,7 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     // Load the first item into item variable
     llvm::Value* indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
     llvm::Value* gepInst = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(),
-                                                      arrayValuePtr, { builder->getInt64(0), indexValue });
+                                                      arrayValuePtr, { builder->getInt32(0), indexValue });
     llvm::Value* newItemValue = builder->CreateLoad(gepInst->getType()->getPointerElementType(), gepInst);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
@@ -871,44 +871,37 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     }
     if (ctx->paramLst()) {
         for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-            llvm::Value* actualArgPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+            // Get expected arg type
             llvm::Type* expectedArgType = fctType->getParamType(paramIndex);
-            if (actualArgPtr->getType()->getPointerElementType() != expectedArgType) {
+            // Get the actual arg value
+            llvm::Value* actualArgPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+            if (!compareLLVMTypes(actualArgPtr->getType()->getPointerElementType(), expectedArgType)) {
+                llvm::Value* actualArg = actualArgPtr;
                 // Unpack the pointers until a pointer of another type is met
                 unsigned int loadCounter = 0;
-                while (actualArgPtr->getType()->getPointerElementType()->isPointerTy()) {
-                    actualArgPtr = builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr);
+                while (actualArg->getType()->getPointerElementType()->isPointerTy()) {
+                    actualArg = builder->CreateLoad(actualArg->getType()->getPointerElementType(), actualArg);
                     loadCounter++;
                 }
-                // Bit-cast or GEP
-                if (expectedArgType->isPointerTy() && actualArgPtr->getType()->getPointerElementType()->isArrayTy()) {
-                    std::vector<llvm::Value*> indices = { builder->getInt64(0), builder->getInt64(0) };
-                    llvm::Type* actualArgType = actualArgPtr->getType()->getPointerElementType();
-                    actualArgPtr = builder->CreateInBoundsGEP(actualArgType, actualArgPtr, indices);
+                // GEP or bit-cast
+                if (expectedArgType->isPointerTy() && actualArg->getType()->getPointerElementType()->isArrayTy()) {
+                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
+                    llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
+                    actualArg = builder->CreateInBoundsGEP(actualArgType, actualArg, indices);
                 } else {
-                    llvm::Type* actualArgType = actualArgPtr->getType()->getPointerElementType();
-                    llvm::Value* actualArg = builder->CreateLoad(actualArgType, actualArgPtr);
-                    actualArgPtr = builder->CreateBitCast(actualArg, expectedArgType);
+                    llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
+                    actualArg = builder->CreateLoad(actualArgType, actualArg);
+                    actualArg = builder->CreateBitCast(actualArg, expectedArgType);
                 }
                 // Pack the pointers together again
                 for (;loadCounter > 0; loadCounter--) {
-                    llvm::Value* newActualArgPtr = builder->CreateAlloca(actualArgPtr->getType());
-                    builder->CreateStore(actualArgPtr, newActualArgPtr);
-                    actualArgPtr = newActualArgPtr;
+                    llvm::Value* newActualArg = builder->CreateAlloca(actualArg->getType());
+                    builder->CreateStore(actualArg, newActualArg);
+                    actualArg = newActualArg;
                 }
-                argValues.push_back(actualArgPtr);
-                /*if (expectedArgType->isPointerTy() && actualArgPtr->getType()->getPointerElementType()->isArrayTy()) {
-                    std::vector<llvm::Value*> indices = { builder->getInt64(0), builder->getInt64(0) };
-                    llvm::Type* actualArgType = actualArgPtr->getType()->getPointerElementType();
-                    argValues.push_back(builder->CreateInBoundsGEP(actualArgType, actualArgPtr, indices));
-                } else {
-                    llvm::Type* actualArgType = actualArgPtr->getType()->getPointerElementType();
-                    llvm::Value* actualArg = builder->CreateLoad(actualArgType, actualArgPtr);
-                    argValues.push_back(builder->CreateBitCast(actualArg, expectedArgType));
-                }*/
+                argValues.push_back(actualArg);
             } else {
-                llvm::Value* argValue = builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr);
-                argValues.push_back(argValue);
+                argValues.push_back(builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr));
             }
             paramIndex++;
         }
@@ -938,7 +931,7 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     }
 
     // Check if the struct is defined
-    initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
+    //initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
     SymbolTableEntry* structSymbol = currentScope->lookup(structName);
     llvm::Type* structType = structSymbol->getLLVMType();
 
@@ -1008,7 +1001,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
                 llvm::Value* itemValuePtr = itemValuePointers[i];
                 llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
                 // Calculate item address
-                std::vector<llvm::Value*> indices = { builder->getInt64(0), builder->getInt64(i) };
+                std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(i) };
                 llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
                 // Store value to item address
                 builder->CreateStore(itemValue, itemAddress);
@@ -1102,7 +1095,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
 
         llvm::Value* argVal;
         if (argValPtr->getType()->getPointerElementType()->isArrayTy()) { // Convert array type to pointer type
-            std::vector<llvm::Value*> indices = { builder->getInt64(0), builder->getInt64(0) };
+            std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
             llvm::Type* targetType = argValPtr->getType()->getPointerElementType();
             argVal = builder->CreateInBoundsGEP(targetType, argValPtr, indices);
         } else {
@@ -1618,7 +1611,6 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
 
 // Returns pointer
 antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx) {
-    llvm::Type* baseType;
     llvm::Value* basePtr;
     std::vector<llvm::Value*> indices;
     SymbolTableEntry* entry = nullptr;
@@ -1654,13 +1646,12 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 accessScope = scope;
                 // Visit function call
                 basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
-                baseType = basePtr->getType()->getPointerElementType();
                 // Reset values
                 currentThisValue = nullptr;
                 accessScope = nullptr;
 
                 indices.clear();
-                indices.push_back(builder->getInt64(0));
+                indices.push_back(builder->getInt32(0));
                 functionCallCounter++;
             }
         } else if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
@@ -1668,20 +1659,18 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             std::string variableName = token->toString();
             entry = scope->lookup(variableName);
             if (metStruct) { // Struct
-                indices.push_back(builder->getInt64(entry->getOrderIndex()));
+                indices.push_back(builder->getInt32(entry->getOrderIndex()));
             } else { // Local, global or imported global variable
                 if (scope->isImported()) { // Imported global variable
                     // Initialize external global variable
-                    baseType = getTypeForSymbolType(entry->getType());
-                    basePtr = module->getOrInsertGlobal(variableName, baseType);
+                    basePtr = module->getOrInsertGlobal(variableName, getTypeForSymbolType(entry->getType()));
                     // Set some attributes to it
                     llvm::GlobalVariable* global = module->getNamedGlobal(variableName);
                     global->setDSOLocal(true);
                     global->setExternallyInitialized(true);
                 } else { // Local or global variable
-                    baseType = entry->getLLVMType();
                     basePtr = entry->getAddress();
-                    indices.push_back(builder->getInt64(0));
+                    indices.push_back(builder->getInt32(0));
                     metStruct = entry->getType().is(TY_STRUCT) || entry->getType().isPointerOf(TY_STRUCT);
                 }
             }
@@ -1691,10 +1680,12 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 SymbolType symbolType = entry->getType();
                 // Start auto-de-referencing
                 if (entry->getType().isPointerOf(TY_STRUCT)) {
-                    basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+                    // Only work with GEP if it is really necessary. If we only have one 0 as index, we can fall back to a load inst
+                    if (indices.size() > 1 || (!indices.empty() && indices[0] != builder->getInt32(0)))
+                        basePtr = builder->CreateInBoundsGEP(basePtr->getType()->getPointerElementType(), basePtr, indices);
                     basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
                     indices.clear();
-                    indices.push_back(builder->getInt64(0));
+                    indices.push_back(builder->getInt32(0));
                     symbolType = symbolType.getContainedTy();
                 }
                 // Change to new scope
@@ -1705,9 +1696,6 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 if (!scope)
                     throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
                                   "Compiler error: Referenced undefined struct '" + structName + "'");
-                // Conclude auto-de-referencing
-                if (entry->getType().isPointerOf(TY_STRUCT))
-                    baseType = scope->lookup(structName)->getLLVMType();
             } else if (entry->getType().is(TY_IMPORT)) {
                 // Change to new scope
                 std::string importName = entry->getName();
@@ -1719,14 +1707,11 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
             indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
             // Add indices depending on the type
-            if (baseType->isPointerTy() /*entry->getType().isPointer() || entry->getType().is(TY_STRING)*/) {
+            if (basePtr->getType()->getPointerElementType()->isPointerTy()) {
                 basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
-                baseType = baseType->getPointerElementType();
                 indices.clear();
-                indices.push_back(indexValue);
-            } else {
-                indices.push_back(indexValue); // Should be fine
             }
+            indices.push_back(indexValue);
             // Increase counters
             assignCounter++;
             tokenCounter += 2; // To consume the assignExpr and the RBRACKET
@@ -1737,9 +1722,9 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
 
     // Only work with GEP if it is really necessary. If we only have one 0 as index, we can fall back to a load inst
     llvm::Value* resultPtr = basePtr;
-    if (indices.size() > 1 || (!indices.empty() && indices[0] != builder->getInt64(0))) {
+    if (indices.size() > 1 || (!indices.empty() && indices[0] != builder->getInt32(0))) {
         // Build GEP instruction
-        resultPtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+        resultPtr = builder->CreateInBoundsGEP(basePtr->getType()->getPointerElementType(), basePtr, indices);
     }
 
     // If de-referencing operators are present, add a zero index at the end of the gep instruction for each
@@ -1998,4 +1983,13 @@ void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std
         currentScope->lookup(newStructName)->updateLLVMType(structType);
         currentScope->lookup(newStructName)->updateState(INITIALIZED);
     }
+}
+
+bool GeneratorVisitor::compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs) {
+    if (lhs->getTypeID() != rhs->getTypeID()) return false;
+    if (lhs->getTypeID() == llvm::Type::PointerTyID)
+        return compareLLVMTypes(lhs->getPointerElementType(), rhs->getPointerElementType());
+    if (lhs->getTypeID() == llvm::Type::ArrayTyID)
+        return compareLLVMTypes(lhs->getArrayElementType(), rhs->getArrayElementType());
+    return true;
 }

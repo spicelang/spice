@@ -56,6 +56,10 @@ const GeneratorParams GENERATOR_TEST_PARAMETERS[] = {
             ""
         },
         {
+            "success-nested-pointers",
+            ""
+        },
+        {
             "success-pointer-functions",
             ""
         },

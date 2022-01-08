@@ -1,12 +1,22 @@
 //import "std/runtime/string_rt" as str;
 
-p testProc(int[]* nums) {
+/*p testProc(int[]* nums) {
     int[] nums1 = *nums;
     nums1[2] = 10;
     printf("1: %d\n", nums1[0]);
     printf("2: %d\n", nums1[1]);
     printf("3: %d\n", nums1[2]);
     printf("4: %d\n", nums1[3]);
+}*/
+
+type Person struct {
+    string firstName
+    string lastName
+    int age
+}
+
+p birthday(Person* person) {
+    person.age++;
 }
 
 f<int> main() {
@@ -17,9 +27,15 @@ f<int> main() {
     printf("String: %s\n", a.value);
     a.destructor();*/
 
-    int[4] intArray = { 1, 2, 3, 4 };
+    dyn mike = new Person { "Mike", "Miller", 32 };
+    printf("Person: %s, %s", mike.lastName, mike.firstName);
+    printf("Age before birthday: %d", mike.age);
+    birthday(&mike);
+    printf("Age after birthday: %d", mike.age);
+
+    /*int[4] intArray = { 1, 2, 3, 4 };
     printf("1: %d\n", intArray[1]);
-    testProc(&intArray);
+    testProc(&intArray);*/
 
     //string test = "test";
     //char c1 = test[2];

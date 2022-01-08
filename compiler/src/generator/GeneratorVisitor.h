@@ -123,4 +123,5 @@ private:
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
     llvm::Type* getTypeForSymbolType(SymbolType);
     void initExtStruct(const std::string&, const std::string&);
+    bool compareLLVMTypes(llvm::Type*, llvm::Type*);
 };
