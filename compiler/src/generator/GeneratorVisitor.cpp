@@ -922,16 +922,31 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     std::string variableName = currentVar = ctx->IDENTIFIER()[0]->toString();
 
-    // Get struct name in format a.b.c
-    std::string structName = ctx->IDENTIFIER()[1]->toString();
-    SymbolTable* structScope = currentScope->lookupTable(structName);
-    for (unsigned int i = 2; i < ctx->IDENTIFIER().size(); i++) {
-        structName += "." + ctx->IDENTIFIER()[i]->toString();
-        if (i < ctx->IDENTIFIER().size() -1) structScope = structScope->lookupTable(ctx->IDENTIFIER()[i]->toString());
+    // Get struct name in format a.b.c and struct scope
+    std::string structName;
+    SymbolTable* structScope = currentScope;
+    for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) {
+        std::string iden = ctx->IDENTIFIER()[i]->toString();
+        structName += structName.empty() ? iden : "." + iden;
+        if (i < ctx->IDENTIFIER().size() -1) {
+            SymbolTableEntry* entry = structScope->lookup(iden);
+            if (!entry)
+                throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                    "Struct '" + structName + "' was used before defined");
+            if (entry->getType().is(TY_IMPORT)) {
+                structScope = structScope->lookupTable(iden);
+            } else if (entry->getType().is(TY_STRUCT)) {
+                structScope = structScope->lookupTable("struct:" + iden);
+            } else {
+                throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                    "The variable '" + iden + "' is of type " + entry->getType().getName(false) +
+                                    ". Expected struct or import");
+            }
+        }
     }
 
     // Check if the struct is defined
-    //initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
+    if (structScope->isImported()) initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
     SymbolTableEntry* structSymbol = currentScope->lookup(structName);
     llvm::Type* structType = structSymbol->getLLVMType();
 
@@ -1975,6 +1990,7 @@ void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std
                 fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
                 fieldType = fieldType.toPointer();
             }
+            // ToDo: Support double, triple, etc. pointers
             memberTypes.push_back(getTypeForSymbolType(fieldType));
         }
 

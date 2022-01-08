@@ -1,38 +1,26 @@
-//import "std/runtime/string_rt" as str;
+/*type StringStruct struct {
+    int len
+    char* value
+    int maxLen
+    int growthFactor
+}
 
-/*p testProc(int[]* nums) {
-    int[] nums1 = *nums;
-    nums1[2] = 10;
-    printf("1: %d\n", nums1[0]);
-    printf("2: %d\n", nums1[1]);
-    printf("3: %d\n", nums1[2]);
-    printf("4: %d\n", nums1[3]);
-}*/
+p StringStruct.appendChar(char c) {
+    this.value[1] = c;
+}
 
 f<int> main() {
-    /*str.StringStruct a = new str.StringStruct {};
+    StringStruct a = new StringStruct {};
+    a.appendChar('A');
+}*/
+
+import "std/runtime/string_rt" as str;
+
+f<int> main() {
+    str.StringStruct a = new str.StringStruct {};
     a.constructor();
     printf("String: %s\n", a.value);
     a.appendChar('A');
     printf("String: %s\n", a.value);
-    a.destructor();*/
-
-    int[10] intArray = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
-    printf("intArray[3]: %d\n", intArray[3]);
-    printf("intArray[7]: %d\n", intArray[7]);
-    printf("intArray[9]: %d\n", intArray[9]);
-
-    /*int[4] intArray = { 1, 2, 3, 4 };
-    printf("1: %d\n", intArray[1]);
-    testProc(&intArray);*/
-
-    //string test = "test";
-    //char c1 = test[2];
-    //printf("Char: %c\n", c1);
-
-    /*string a = "Hello";
-    string b = "World";
-
-    string c = a + " " + b + "!";
-    printf("Concatenated string: %s\n", c);*/
+    a.destructor();
 }
