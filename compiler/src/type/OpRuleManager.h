@@ -494,7 +494,7 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
 class OpRuleManager {
 public:
     // Public methods
-    static SymbolType getAssignResultType(const antlr4::Token&, SymbolType, const SymbolType&);
+    static SymbolType getAssignResultType(const antlr4::Token&, SymbolType, SymbolType);
     static SymbolType getPlusEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getMinusEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getMulEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);

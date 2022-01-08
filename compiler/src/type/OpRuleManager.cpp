@@ -2,11 +2,13 @@
 
 #include "OpRuleManager.h"
 
-SymbolType OpRuleManager::getAssignResultType(const antlr4::Token& token, SymbolType lhs, const SymbolType& rhs) {
+SymbolType OpRuleManager::getAssignResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs) {
     // Skip type compatibility check if the lhs is of type dyn
     if (lhs.is(TY_DYN)) return rhs;
     // Allow pointers, arrays and structs of the same type straight away
     if (lhs.isOneOf({ TY_PTR, TY_ARRAY, TY_STRUCT }) && lhs == rhs) return rhs;
+    // Allow char* = string
+    if (lhs.isPointerOf(TY_CHAR) && rhs.is(TY_STRING)) return lhs;
     // Check primitive type combinations
     return validateBinaryOperation(token, ASSIGN_OP_RULES, "=", lhs, rhs);
 }

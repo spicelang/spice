@@ -1,3 +1,19 @@
+/*type StringStruct struct {
+    int len
+    char* value
+    int maxLen
+    int growthFactor
+}
+
+p StringStruct.appendChar(char c) {
+    this.value[1] = c;
+}
+
+f<int> main() {
+    StringStruct a = new StringStruct {};
+    a.appendChar('A');
+}*/
+
 import "std/runtime/string_rt" as str;
 
 f<int> main() {
@@ -7,10 +23,4 @@ f<int> main() {
     a.appendChar('A');
     printf("String: %s\n", a.value);
     a.destructor();
-
-    /*string a = "Hello";
-    string b = "World";
-
-    string c = a + " " + b + "!";
-    printf("Concatenated string: %s\n", c);*/
 }

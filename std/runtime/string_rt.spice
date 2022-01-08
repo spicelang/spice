@@ -28,7 +28,7 @@ p StringStruct.destructor() {
 
 p StringStruct.resize(int newLen) {
     printf("Called resize with new len %d\n", newLen);
-    char* newAddr = malloc(newLen);
+    char* newAddr = malloc(newLen +1); // Lenth + the \0 character
     char* oldAddr = this.value;
     int length = this.len;
     memcpy(newAddr, oldAddr, length);
@@ -45,7 +45,7 @@ p StringStruct.appendChar(char c) {
         this.resize(maxLength + this.growthFactor);
     }
 
-    this.value[length] = c;
+    //this.value[length] = c;
     this.len++;
 }
 

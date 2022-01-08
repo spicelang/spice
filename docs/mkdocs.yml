@@ -62,7 +62,6 @@ nav:
     - install/linux.md
     - install/docker.md
     - install/source.md
-  - quick-start.md
   - CLI Usage:
     - cli/build.md
     - cli/run.md
