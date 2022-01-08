@@ -45,7 +45,7 @@ p StringStruct.appendChar(char c) {
         this.resize(maxLength + this.growthFactor);
     }
 
-    //this.value[length] = c;
+    this.value[length] = c;
     this.len++;
 }
 

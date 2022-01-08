@@ -177,7 +177,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-struct-defined-before-used",
-            "Semantic error at 2:21: Referenced undefined struct: Struct 'Test' was used before defined"
+            "Semantic error at 2:21: Unknown datatype: Unknown datatype 'Test'"
         },
         {
             "error-struct-fields-match-declaration",

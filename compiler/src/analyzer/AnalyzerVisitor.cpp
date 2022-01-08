@@ -451,28 +451,35 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     std::string variableName = ctx->IDENTIFIER()[0]->toString();
 
-    // Get struct name in format a.b.c
-    std::string structName = ctx->IDENTIFIER()[1]->toString();
-    SymbolTable* structScope = currentScope->lookupTable("struct:" + structName);
-    if (!structScope)
-        throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                            "Struct '" + structName + "' was used before defined");
-
-    for (unsigned int i = 2; i < ctx->IDENTIFIER().size(); i++) {
-        structName += "." + ctx->IDENTIFIER()[i]->toString();
-        if (i < ctx->IDENTIFIER().size() -1)
-            structScope = structScope->lookupTable("struct:" + ctx->IDENTIFIER()[i]->toString());
-        if (!structScope)
-            throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                                "Struct '" + structName + "' was used before defined");
-    }
-
     // Check if symbol already exists in the symbol table
     if (currentScope->lookup(variableName))
         throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
                             "The variable '" + variableName + "' was declared more than once");
 
-    // Check if the struct is defined
+    // Get struct name in format a.b.c and struct scope
+    std::string structName;
+    SymbolTable* structScope = currentScope;
+    for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) {
+        std::string iden = ctx->IDENTIFIER()[i]->toString();
+        structName += structName.empty() ? iden : "." + iden;
+        if (i < ctx->IDENTIFIER().size() -1) {
+            SymbolTableEntry* entry = structScope->lookup(iden);
+            if (!entry)
+                throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                    "Struct '" + structName + "' was used before defined");
+            if (entry->getType().is(TY_IMPORT)) {
+                structScope = structScope->lookupTable(iden);
+            } else if (entry->getType().is(TY_STRUCT)) {
+                structScope = structScope->lookupTable("struct:" + iden);
+            } else {
+                throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                    "The variable '" + iden + "' is of type " + entry->getType().getName(false) +
+                                    ". Expected struct or import");
+            }
+        }
+    }
+
+    // Check if a symbol is existing with that name
     SymbolTableEntry* structSymbol = currentScope->lookup(structName);
     if (!structSymbol) {
         initExtStruct(*ctx->IDENTIFIER()[1]->getSymbol(), structScope,
@@ -480,6 +487,7 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
         structSymbol = currentScope->lookup(structName);
     }
 
+    // Check if it is a struct
     if (!structSymbol->getType().is(TY_STRUCT) || structSymbol->getType().getSubType() != structName)
         throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                             "Struct '" + structName + "' was used before defined");
