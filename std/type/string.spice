@@ -6,12 +6,28 @@ f<double> toDouble(string input) {
 
 // Converts a string to an int
 f<int> toInt(string input) {
-    return (int) toLong(input);
+    if input == "" {
+        return 0;
+    }
+
+    bool neg = false;
+    
+
+    // ToDo: implement the rest
+    return 0;
 }
 
 // Converts a string to a short
 f<short> toShort(string input) {
-    return (short) toLong(input);
+    if input == "" {
+        return (short) 0;
+    }
+
+    bool neg = false;
+    
+
+    // ToDo: implement the rest
+    return (short) 0;
 }
 
 // Converts a string to a long
@@ -29,7 +45,15 @@ f<long> toLong(string input) {
 
 // Converts a string to a byte
 f<byte> toByte(string input) {
-    return (byte) toLong(input);
+    if input == "" {
+        return (byte) 0;
+    }
+
+    bool neg = false;
+    
+
+    // ToDo: implement the rest
+    return (byte) 0;
 }
 
 // Converts a string to a char
@@ -45,7 +69,8 @@ f<bool> toBool(string input) {
 
 // Returns the length of a string
 f<int> len(string input) {
-    for result = 0; input[result] != '\0'; result++ {}
+    //for result = 0; input[result] != '\0'; result++ {}
+    return 0;
 }
 
 // Returns true if the input string contains the input substring

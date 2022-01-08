@@ -24,6 +24,7 @@ SymbolType SymbolType::toArray(unsigned int size) {
 
 SymbolType SymbolType::getContainedTy() {
     if (typeChain.empty()) throw std::runtime_error("Internal compiler error: Cannot get contained type of empty type");
+    if (std::get<0>(typeChain.top()) == TY_STRING) return SymbolType(TY_CHAR);
     TypeChain newTypeChain = typeChain;
     newTypeChain.pop();
     return SymbolType(newTypeChain);
@@ -75,15 +76,22 @@ std::string SymbolType::getSubType() {
     return std::get<1>(typeChain.top());
 }
 
-std::string SymbolType::getName() {
+std::string SymbolType::getName(bool withSize) {
     std::string name;
     TypeChain chain = typeChain;
     for (int i = 0; i < typeChain.size(); i++) {
         TypeChainElement chainElement = chain.top();
-        name.insert(0, getNameFromChainElement(chainElement));
+        name.insert(0, getNameFromChainElement(chainElement, withSize));
         chain.pop();
     }
     return name;
+}
+
+void SymbolType::setArraySize(unsigned int size) {
+    if (std::get<0>(typeChain.top()) != TY_ARRAY)
+        throw std::runtime_error("Internal compiler error: Cannot set size of non-array type");
+
+    std::get<1>(typeChain.top()) = std::to_string(size);
 }
 
 unsigned int SymbolType::getArraySize() {
@@ -101,10 +109,10 @@ bool operator!=(const SymbolType& lhs, const SymbolType& rhs) {
     return lhs.typeChain != rhs.typeChain;
 }
 
-std::string SymbolType::getNameFromChainElement(const TypeChainElement& chainElement) {
+std::string SymbolType::getNameFromChainElement(const TypeChainElement& chainElement, bool withSize) {
     switch (std::get<0>(chainElement)) {
         case TY_PTR: return "*";
-        case TY_ARRAY: return "[]";
+        case TY_ARRAY: return !withSize || std::get<1>(chainElement) == "0" ? "[]" : "[" + std::get<1>(chainElement) + "]";
         case TY_DOUBLE: return "double";
         case TY_INT: return "int";
         case TY_SHORT: return "short";

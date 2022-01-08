@@ -38,6 +38,9 @@ llvm::Value* OpRuleConversionsManager::getPlusEqualInst(llvm::Value* lhs, llvm::
         case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateAdd(lhs, rhs);
+        case COMB(P_TY_STRING, P_TY_BYTE_OR_CHAR):
+            // ToDo(@marcauberer): Insert call to appendChar in the runtime lib
+            throw IRError(COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
         case COMB(P_TY_STRING, P_TY_STRING): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
             throw IRError(COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");

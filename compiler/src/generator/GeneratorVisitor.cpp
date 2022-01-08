@@ -504,8 +504,8 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     global->setDSOLocal(true);
 
     if (ctx->value()) { // Variable is initialized here
-        llvm::Value* value = visit(ctx->value()).as<llvm::Value*>();
-        global->setInitializer((llvm::Constant*) value);
+        visit(ctx->value());
+        global->setInitializer(currentConstValue);
     }
 
     // Return true as result for the global variable definition
@@ -777,16 +777,15 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     std::string functionName = ctx->IDENTIFIER()->toString();
 
     if (isMethod) {
-        std::string structName = currentSymbolType.getSubType();
-        functionName = structName + "." + functionName;
+        functionName = scopePrefix + "." + functionName;
     }
 
     // Get function by signature
-    FunctionSignature signature = functionCallParentScope->popSignature();
+    FunctionSignature signature = accessScope->popSignature();
     // Check if function exists in module
     bool functionFound = false;
     std::string fctIdentifier = signature.toString();
-    for (auto& function : module->getFunctionList()) {
+    for (auto& function : module->getFunctionList()) { // Search for function definition
         if (function.getName() == signature.toString()) {
             functionFound = true;
             break;
@@ -797,7 +796,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
         }
     }
     if (!functionFound) { // Not found => Declare function, which will be linked in
-        SymbolTable* table = functionCallParentScope->lookupTableWithSymbol({ signature.toString() });
+        SymbolTable* table = accessScope->lookupTableWithSignature(signature.toString());
         // Check if it is a function or a procedure
         if (!table->getFunctionDeclaration(signature.toString()).empty()) { // Function
             std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
@@ -805,7 +804,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             // Get return type
             SymbolType returnSymbolType = symbolTypes[0];
             llvm::Type* returnType;
-            if (returnSymbolType.is(TY_STRUCT) && functionCallParentScope->isImported()) {
+            if (returnSymbolType.is(TY_STRUCT) && accessScope->isImported()) {
                 initExtStruct(returnSymbolType.getSubType(), scopePrefix + "." + returnSymbolType.getSubType());
                 SymbolType newSymbolType = SymbolType(TY_STRUCT, scopePrefix + "." + returnSymbolType.getSubType());
                 returnType = getTypeForSymbolType(newSymbolType);
@@ -819,7 +818,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             std::vector<llvm::Type*> paramTypes;
             for (int i = 1; i < symbolTypes.size(); i++) {
                 SymbolType paramSymbolType = symbolTypes[i];
-                if (functionCallParentScope->isImported()) {
+                if (accessScope->isImported()) {
                     // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
                     if (paramSymbolType.is(TY_STRUCT)) {
                         paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
@@ -841,6 +840,15 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
             // Get parameter types
             std::vector<llvm::Type*> paramTypes;
             for (auto& symbolType : symbolTypes) {
+                if (accessScope->isImported()) {
+                    // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
+                    if (symbolType.is(TY_STRUCT)) {
+                        symbolType = SymbolType(TY_STRUCT, scopePrefix);
+                    } else if (symbolType.isPointerOf(TY_STRUCT)) {
+                        symbolType = SymbolType(TY_STRUCT, scopePrefix);
+                        symbolType = symbolType.toPointer();
+                    }
+                }
                 llvm::Type* paramType = getTypeForSymbolType(symbolType);
                 if (!paramType) throw std::runtime_error("Internal compiler error");
                 paramTypes.push_back(paramType);
@@ -863,21 +871,37 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
     }
     if (ctx->paramLst()) {
         for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-            llvm::Value* argValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-            llvm::Type* argType = fctType->getParamType(paramIndex);
-            if (argValuePtr->getType()->getPointerElementType() != argType) {
-                if (argType->isPointerTy() && argValuePtr->getType()->getPointerElementType()->isArrayTy()) {
-                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
-                    llvm::Type* targetType = argValuePtr->getType()->getPointerElementType();
-                    llvm::Value* ptr = builder->CreateInBoundsGEP(targetType, argValuePtr, indices);
-                    argValues.push_back(ptr);
-                } else {
-                    llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
-                    argValues.push_back(builder->CreateBitCast(argValue, argType));
+            // Get expected arg type
+            llvm::Type* expectedArgType = fctType->getParamType(paramIndex);
+            // Get the actual arg value
+            llvm::Value* actualArgPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+            if (!compareLLVMTypes(actualArgPtr->getType()->getPointerElementType(), expectedArgType)) {
+                llvm::Value* actualArg = actualArgPtr;
+                // Unpack the pointers until a pointer of another type is met
+                unsigned int loadCounter = 0;
+                while (actualArg->getType()->getPointerElementType()->isPointerTy()) {
+                    actualArg = builder->CreateLoad(actualArg->getType()->getPointerElementType(), actualArg);
+                    loadCounter++;
                 }
+                // GEP or bit-cast
+                if (expectedArgType->isPointerTy() && actualArg->getType()->getPointerElementType()->isArrayTy()) {
+                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
+                    llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
+                    actualArg = builder->CreateInBoundsGEP(actualArgType, actualArg, indices);
+                } else {
+                    llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
+                    actualArg = builder->CreateLoad(actualArgType, actualArg);
+                    actualArg = builder->CreateBitCast(actualArg, expectedArgType);
+                }
+                // Pack the pointers together again
+                for (;loadCounter > 0; loadCounter--) {
+                    llvm::Value* newActualArg = builder->CreateAlloca(actualArg->getType());
+                    builder->CreateStore(actualArg, newActualArg);
+                    actualArg = newActualArg;
+                }
+                argValues.push_back(actualArg);
             } else {
-                llvm::Value* argValue = builder->CreateLoad(argValuePtr->getType()->getPointerElementType(), argValuePtr);
-                argValues.push_back(argValue);
+                argValues.push_back(builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr));
             }
             paramIndex++;
         }
@@ -897,17 +921,19 @@ antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallConte
 
 antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
     std::string variableName = currentVar = ctx->IDENTIFIER()[0]->toString();
-    std::string structName = ctx->IDENTIFIER()[1]->toString();
-    std::string structScope = ScopeIdUtil::getScopeId(ctx);
 
-    // Get data type
-    llvm::Type* structType;
-    if (ctx->dataType()->TYPE_DYN()) {
-        SymbolType dataType = SymbolType(TY_STRUCT, structName);
-        structType = getTypeForSymbolType(dataType);
-    } else {
-        structType = visit(ctx->dataType()).as<llvm::Type*>();
+    // Get struct name in format a.b.c
+    std::string structName = ctx->IDENTIFIER()[1]->toString();
+    SymbolTable* structScope = currentScope->lookupTable(structName);
+    for (unsigned int i = 2; i < ctx->IDENTIFIER().size(); i++) {
+        structName += "." + ctx->IDENTIFIER()[i]->toString();
+        if (i < ctx->IDENTIFIER().size() -1) structScope = structScope->lookupTable(ctx->IDENTIFIER()[i]->toString());
     }
+
+    // Check if the struct is defined
+    //initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
+    SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+    llvm::Type* structType = structSymbol->getLLVMType();
 
     // Allocate space for the struct in memory
     llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr, currentVar);
@@ -933,33 +959,53 @@ antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Get size and data type
     std::string varName = currentVar = ctx->IDENTIFIER()->toString();
-    unsigned int currentArraySize = std::stoi(ctx->value()->INTEGER()->toString());
 
     // Get data type
-    llvm::Type* baseType;
+    llvm::Type* itemType;
     llvm::Type* arrayType;
     if (ctx->dataType()->TYPE_DYN()) {
         SymbolType dataType = currentScope->lookup(varName)->getType();
         arrayType = getTypeForSymbolType(dataType);
-        baseType = arrayType->getArrayElementType();
+        itemType = arrayType->getArrayElementType();
     } else {
-        baseType = visit(ctx->dataType()).as<llvm::Type*>();
-        arrayType = llvm::ArrayType::get(baseType, currentArraySize);
+        arrayType = visit(ctx->dataType()).as<llvm::Type*>();
+        itemType = arrayType->getArrayElementType();
     }
 
     // Allocate array
-    llvm::Value* arrayAddress = builder->CreateAlloca(arrayType, builder->getInt32(currentArraySize), currentVar);
+    llvm::Value* arrayAddress = builder->CreateAlloca(arrayType, nullptr, currentVar);
 
     // Fill items with the stated values
     if (ctx->paramLst()) {
-        for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-            llvm::Value* itemValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-            llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
-            // Calculate item address
-            std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(i) };
-            llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
-            // Store value to item address
-            builder->CreateStore(itemValue, itemAddress);
+        allParamsHardcoded = true;
+        // Visit all params to check if they are hardcoded or not
+        std::vector<llvm::Value*> itemValuePointers;
+        std::vector<llvm::Constant*> itemConstants;
+        for (unsigned int i = 0; i < std::min(ctx->paramLst()->assignExpr().size(), arrayType->getArrayNumElements()); i++) {
+            itemValuePointers.push_back(visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>());
+            itemConstants.push_back(currentConstValue);
+        }
+        // Decide if the array can be defined globally
+        if (allParamsHardcoded) { // All params hardcoded => array can be defined globally
+            // Create hardcoded array
+            llvm::Constant* constArray = llvm::ConstantArray::get((llvm::ArrayType*) arrayType, itemConstants);
+            // Create global variable
+            arrayAddress = module->getOrInsertGlobal(varName, arrayType);
+            // Set some attributes to it
+            llvm::GlobalVariable* global = module->getNamedGlobal(varName);
+            global->setConstant(ctx->CONST());
+            global->setDSOLocal(true);
+            global->setInitializer(constArray);
+        } else { // Some params are not hardcoded => fallback to individual indexing
+            for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+                llvm::Value* itemValuePtr = itemValuePointers[i];
+                llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
+                // Calculate item address
+                std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(i) };
+                llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
+                // Store value to item address
+                builder->CreateStore(itemValue, itemAddress);
+            }
         }
     }
 
@@ -1072,10 +1118,9 @@ antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* 
     // Visit the parameter
     llvm::Value* valuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
     llvm::Value* value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    llvm::Type* valueTy = value->getType();
 
-    unsigned int size = value->getType()->isArrayTy() ?
-            size = value->getType()->getArrayNumElements() :
-            size = value->getType()->getScalarSizeInBits();
+    unsigned int size = valueTy->isArrayTy() ? valueTy->getArrayNumElements() : valueTy->getScalarSizeInBits();
     llvm::Value* result = builder->getInt32(size);
     llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
     builder->CreateStore(result, resultPtr);
@@ -1558,6 +1603,7 @@ antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx)
 
 antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
     if (ctx->value()) return visit(ctx->value());
+    allParamsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
     if (ctx->idenValue()) return visit(ctx->idenValue());
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
@@ -1565,7 +1611,6 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
 
 // Returns pointer
 antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx) {
-    llvm::Type* baseType;
     llvm::Value* basePtr;
     std::vector<llvm::Value*> indices;
     SymbolTableEntry* entry = nullptr;
@@ -1598,13 +1643,12 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                     currentSymbolType = entry->getType();
                 }
                 // Set function call parent scope
-                functionCallParentScope = scope;
+                accessScope = scope;
                 // Visit function call
                 basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
-                baseType = basePtr->getType()->getPointerElementType();
                 // Reset values
                 currentThisValue = nullptr;
-                functionCallParentScope = nullptr;
+                accessScope = nullptr;
 
                 indices.clear();
                 indices.push_back(builder->getInt32(0));
@@ -1619,14 +1663,12 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             } else { // Local, global or imported global variable
                 if (scope->isImported()) { // Imported global variable
                     // Initialize external global variable
-                    baseType = getTypeForSymbolType(entry->getType());
-                    basePtr = module->getOrInsertGlobal(variableName, baseType);
+                    basePtr = module->getOrInsertGlobal(variableName, getTypeForSymbolType(entry->getType()));
                     // Set some attributes to it
                     llvm::GlobalVariable* global = module->getNamedGlobal(variableName);
                     global->setDSOLocal(true);
                     global->setExternallyInitialized(true);
                 } else { // Local or global variable
-                    baseType = entry->getLLVMType();
                     basePtr = entry->getAddress();
                     indices.push_back(builder->getInt32(0));
                     metStruct = entry->getType().is(TY_STRUCT) || entry->getType().isPointerOf(TY_STRUCT);
@@ -1638,7 +1680,9 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 SymbolType symbolType = entry->getType();
                 // Start auto-de-referencing
                 if (entry->getType().isPointerOf(TY_STRUCT)) {
-                    basePtr = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+                    // Only work with GEP if it is really necessary. If we only have one 0 as index, we can fall back to a load inst
+                    if (indices.size() > 1 || (!indices.empty() && indices[0] != builder->getInt32(0)))
+                        basePtr = builder->CreateInBoundsGEP(basePtr->getType()->getPointerElementType(), basePtr, indices);
                     basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
                     indices.clear();
                     indices.push_back(builder->getInt32(0));
@@ -1652,9 +1696,6 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
                 if (!scope)
                     throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
                                   "Compiler error: Referenced undefined struct '" + structName + "'");
-                // Conclude auto-de-referencing
-                if (entry->getType().isPointerOf(TY_STRUCT))
-                    baseType = scope->lookup(structName)->getLLVMType();
             } else if (entry->getType().is(TY_IMPORT)) {
                 // Change to new scope
                 std::string importName = entry->getName();
@@ -1665,11 +1706,12 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
             // Get the index value
             llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
             indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
-            if (entry->getType().isPointer()) {
-                indices.back() = indexValue;
-            } else {
-                indices.push_back(indexValue);
+            // Add indices depending on the type
+            if (basePtr->getType()->getPointerElementType()->isPointerTy()) {
+                basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
+                indices.clear();
             }
+            indices.push_back(indexValue);
             // Increase counters
             assignCounter++;
             tokenCounter += 2; // To consume the assignExpr and the RBRACKET
@@ -1678,46 +1720,49 @@ antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ct
         tokenCounter++;
     }
 
-    // Build GEP instruction
-    llvm::Value* returnAddress = builder->CreateInBoundsGEP(baseType, basePtr, indices);
+    // Only work with GEP if it is really necessary. If we only have one 0 as index, we can fall back to a load inst
+    llvm::Value* resultPtr = basePtr;
+    if (indices.size() > 1 || (!indices.empty() && indices[0] != builder->getInt32(0))) {
+        // Build GEP instruction
+        resultPtr = builder->CreateInBoundsGEP(basePtr->getType()->getPointerElementType(), basePtr, indices);
+    }
 
     // If de-referencing operators are present, add a zero index at the end of the gep instruction for each
     for (unsigned int i = 0; i < dereferenceOperations; i++) {
-        returnAddress = builder->CreateLoad(returnAddress->getType()->getPointerElementType(), returnAddress);
+        resultPtr = builder->CreateLoad(resultPtr->getType()->getPointerElementType(), resultPtr);
     }
 
     // If referencing operators are present, store the calculated address into memory for each
     for (unsigned int i = 0; i < referenceOperations; i++) {
-        returnAddress = builder->CreateAlloca(basePtr->getType());
-        builder->CreateStore(basePtr, returnAddress);
+        llvm::Value* resultPtrPtr = builder->CreateAlloca(resultPtr->getType());
+        builder->CreateStore(resultPtr, resultPtrPtr);
+        resultPtr = resultPtrPtr;
     }
 
     // Return the calculated memory address
-    return returnAddress;
+    return resultPtr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
-    llvm::Value* llvmValue;
-
     // Value is a double constant
     if (ctx->DOUBLE()) {
         currentSymbolType = SymbolType(TY_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
-        llvmValue = llvm::ConstantFP::get(*context, llvm::APFloat(value));
+        currentConstValue = llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TY_INT);
         int v = std::stoi(ctx->INTEGER()->toString());
-        llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
+        currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
     }
 
     // Value is a char constant
     if (ctx->CHAR()) {
         currentSymbolType = SymbolType(TY_CHAR);
         char value = ctx->CHAR()->toString()[1];
-        llvmValue = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
+        currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
     }
 
     // Value is a string constant
@@ -1726,27 +1771,41 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         std::string value = ctx->STRING()->toString();
         value = std::regex_replace(value, std::regex("\\\\n"), "\n");
         value = value.substr(1, value.size() - 2);
-        llvmValue = builder->CreateGlobalStringPtr(value, "", 0, module.get());
+        currentConstValue = builder->CreateGlobalStringPtr(value, "", 0, module.get());
     }
 
     // Value is a boolean constant with value false
     if (ctx->FALSE()) {
         currentSymbolType = SymbolType(TY_BOOL);
-        llvmValue = builder->getFalse();
+        currentConstValue = builder->getFalse();
     }
 
     // Value is a boolean constant with value true
     if (ctx->TRUE()) {
         currentSymbolType = SymbolType(TY_BOOL);
-        llvmValue = builder->getTrue();
+        currentConstValue = builder->getTrue();
     }
 
-    // If global variable value -> return value immediately
-    if (!currentScope->getParent()) return llvmValue;
+    // Value is nil
+    if (ctx->NIL()) {
+        if (ctx->dataType()->TYPE_DOUBLE()) currentSymbolType = SymbolType(TY_DOUBLE);
+        if (ctx->dataType()->TYPE_INT()) currentSymbolType = SymbolType(TY_INT);
+        if (ctx->dataType()->TYPE_SHORT()) currentSymbolType = SymbolType(TY_SHORT);
+        if (ctx->dataType()->TYPE_LONG()) currentSymbolType = SymbolType(TY_LONG);
+        if (ctx->dataType()->TYPE_BYTE()) currentSymbolType = SymbolType(TY_BYTE);
+        if (ctx->dataType()->TYPE_CHAR()) currentSymbolType = SymbolType(TY_CHAR);
+        if (ctx->dataType()->TYPE_STRING()) currentSymbolType = SymbolType(TY_STRING);
+        if (ctx->dataType()->TYPE_BOOL()) currentSymbolType = SymbolType(TY_BOOL);
+        llvm::Type* nilType = visit(ctx->dataType()).as<llvm::Type*>();
+        currentConstValue = llvm::Constant::getNullValue(nilType);
+    }
+
+    // If global variable value, return value immediately, because it is already a pointer
+    if (!currentScope->getParent()) return currentConstValue;
 
     // Store the value to a tmp variable
-    llvm::Value* llvmValuePtr = builder->CreateAlloca(llvmValue->getType());
-    builder->CreateStore(llvmValue, llvmValuePtr);
+    llvm::Value* llvmValuePtr = builder->CreateAlloca(currentConstValue->getType());
+    builder->CreateStore(currentConstValue, llvmValuePtr);
     return llvmValuePtr;
 }
 
@@ -1877,14 +1936,18 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
             llvmBaseType = currentScope->lookup(symbolType.getSubType())->getLLVMType();
             break;
         }
-        default: throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName());
+        default:
+            throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName(true));
     }
 
     // Consider pointer/array hierarchy
     while (!pointerArrayList.empty()) {
         if (pointerArrayList.top() == TY_PTR) { // Pointer
             llvmBaseType = llvmBaseType->getPointerTo();
-        } else { // Array
+        } else if (sizeList.top() == 0) { // If size is 0, use the pointer type
+            llvmBaseType = llvmBaseType->getPointerTo();
+            sizeList.pop();
+        } else { // Otherwise, use the array type with a fixed size
             llvmBaseType = llvm::ArrayType::get(llvmBaseType, sizeList.top());
             sizeList.pop();
         }
@@ -1895,26 +1958,38 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 }
 
 void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
-    SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
+    if (currentScope->lookup(newStructName)->getState() == DECLARED) { // Only initialize if it was not initialized yet
+        SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
 
-    // Get field types
-    std::vector<llvm::Type*> memberTypes;
-    for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
-        SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
-        if (fieldType.is(TY_STRUCT)) {
-            std::string structName = fieldType.getSubType();
-            initExtStruct(structName, scopePrefix + "." + structName);
-            fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
-        } else if (fieldType.isPointerOf(TY_STRUCT)) {
-            std::string structName = fieldType.getContainedTy().getSubType();
-            initExtStruct(structName, scopePrefix + "." + structName);
-            fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
-            fieldType = fieldType.toPointer();
+        // Get field types
+        std::vector<llvm::Type*> memberTypes;
+        for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
+            SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
+            if (fieldType.is(TY_STRUCT)) {
+                std::string structName = fieldType.getSubType();
+                initExtStruct(structName, scopePrefix + "." + structName);
+                fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
+            } else if (fieldType.isPointerOf(TY_STRUCT)) {
+                std::string structName = fieldType.getContainedTy().getSubType();
+                initExtStruct(structName, scopePrefix + "." + structName);
+                fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
+                fieldType = fieldType.toPointer();
+            }
+            memberTypes.push_back(getTypeForSymbolType(fieldType));
         }
-        memberTypes.push_back(getTypeForSymbolType(fieldType));
-    }
 
-    // Create global struct
-    llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
-    currentScope->lookup(newStructName)->updateLLVMType(structType);
+        // Create global struct
+        llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
+        currentScope->lookup(newStructName)->updateLLVMType(structType);
+        currentScope->lookup(newStructName)->updateState(INITIALIZED);
+    }
+}
+
+bool GeneratorVisitor::compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs) {
+    if (lhs->getTypeID() != rhs->getTypeID()) return false;
+    if (lhs->getTypeID() == llvm::Type::PointerTyID)
+        return compareLLVMTypes(lhs->getPointerElementType(), rhs->getPointerElementType());
+    if (lhs->getTypeID() == llvm::Type::ArrayTyID)
+        return compareLLVMTypes(lhs->getArrayElementType(), rhs->getArrayElementType());
+    return true;
 }

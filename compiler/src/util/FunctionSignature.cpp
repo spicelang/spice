@@ -11,7 +11,7 @@ std::string FunctionSignature::toString() {
     std::string params;
     if (!paramTypes.empty()) {
         for (auto& param : paramTypes)
-            params.append(param.getName() + ",");
+            params.append(param.getName(false) + ",");
         params.pop_back();
     }
     return functionName + "(" + params + ")";

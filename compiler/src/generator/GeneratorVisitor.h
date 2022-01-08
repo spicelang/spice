@@ -107,12 +107,14 @@ private:
     std::unique_ptr<llvm::Module> module;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope;
-    SymbolTable* functionCallParentScope = nullptr;
+    SymbolTable* accessScope = nullptr;
     std::string scopePrefix;
     std::string currentVar;
     SymbolType currentSymbolType;
     bool blockAlreadyTerminated = false;
     llvm::Value* currentThisValue = nullptr;
+    bool allParamsHardcoded = true;
+    llvm::Constant* currentConstValue = nullptr;
 
     // Private methods
     void initializeExternalFunctions();
@@ -120,5 +122,6 @@ private:
     void createBr(llvm::BasicBlock*);
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
     llvm::Type* getTypeForSymbolType(SymbolType);
-    void initExtStruct(const std::string& oldStructName, const std::string& newStructName);
+    void initExtStruct(const std::string&, const std::string&);
+    bool compareLLVMTypes(llvm::Type*, llvm::Type*);
 };

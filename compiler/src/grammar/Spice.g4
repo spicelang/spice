@@ -24,8 +24,8 @@ paramLst: assignExpr (COMMA assignExpr)*;
 stmt: (declStmt | assignExpr | newStmt | arrayInitStmt | idenValue | builtinCall | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: CONST? dataType IDENTIFIER;
 functionCall: IDENTIFIER LPAREN paramLst? RPAREN;
-newStmt: CONST? dataType IDENTIFIER ASSIGN_OP NEW IDENTIFIER LBRACE paramLst? RBRACE;
-arrayInitStmt: CONST? dataType LBRACKET value RBRACKET IDENTIFIER (ASSIGN_OP LBRACE paramLst? RBRACE)?;
+newStmt: CONST? dataType IDENTIFIER ASSIGN_OP NEW IDENTIFIER (DOT IDENTIFIER)* LBRACE paramLst? RBRACE;
+arrayInitStmt: CONST? dataType IDENTIFIER (ASSIGN_OP LBRACE paramLst? RBRACE)?;
 importStmt: IMPORT STRING AS IDENTIFIER SEMICOLON;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INTEGER?;
@@ -55,7 +55,7 @@ atomicExpr: value | idenValue | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
 idenValue: (BITWISE_AND | MUL)* (functionCall | IDENTIFIER) (LBRACKET assignExpr RBRACKET)? (DOT (functionCall | IDENTIFIER) (LBRACKET assignExpr RBRACKET)?)*;
-value: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE;
+value: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE | NIL LESS dataType GREATER;
 dataType: (TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER (DOT IDENTIFIER)*) (MUL | LBRACKET INTEGER? RBRACKET)*;
 
 // Terminal tokens
@@ -84,6 +84,7 @@ AS: 'as';
 STRUCT: 'struct';
 TYPE: 'type';
 NEW: 'new';
+NIL: 'nil';
 MAIN: 'main';
 PRINTF: 'printf';
 SIZEOF: 'sizeof';

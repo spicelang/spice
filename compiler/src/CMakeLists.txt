@@ -14,8 +14,6 @@ set(SOURCES
         analyzer/SymbolTable.h
         analyzer/SymbolTableEntry.cpp
         analyzer/SymbolTableEntry.h
-        analyzer/SymbolType.cpp
-        analyzer/SymbolType.h
         analyzer/ModuleRegistry.cpp
         analyzer/ModuleRegistry.h
         generator/GeneratorVisitor.cpp

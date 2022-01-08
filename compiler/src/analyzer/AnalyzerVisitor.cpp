@@ -231,7 +231,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
         } else if (dataType != valueType) {
             throw SemanticError(*ctx->value()->start, OPERATOR_WRONG_DATA_TYPE,
                                 "Cannot apply the assign operator on different data types. You provided " +
-                                dataType.getName() + " and " + valueType.getName());
+                                dataType.getName(false) + " and " + valueType.getName(false));
         }
         state = INITIALIZED;
     }
@@ -278,9 +278,9 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
 
     // Check type of the array
     SymbolType arrayType = visit(head->assignExpr().back()).as<SymbolType>();
-    if (!arrayType.isArray())
+    if (!arrayType.isArray() && !arrayType.is(TY_STRING))
         throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
-                            "Can only apply foreach loop on an array type. You provided " + arrayType.getName());
+                            "Can only apply foreach loop on an array type. You provided " + arrayType.getName(false));
 
     // Check index assignment or declaration
     SymbolType indexType;
@@ -289,12 +289,12 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
         currentScope->lookup(head->declStmt().front()->IDENTIFIER()->toString())->updateState(INITIALIZED);
         if (!indexType.is(TY_INT))
             throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
-                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
+                                "Index in foreach loop must be of type int. You provided " + indexType.getName(false));
     } else if (head->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
         indexType = visit(head->assignExpr().front()).as<SymbolType>();
         if (!indexType.is(TY_INT))
             throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
-                                "Index in foreach loop must be of type int. You provided " + indexType.getName());
+                                "Index in foreach loop must be of type int. You provided " + indexType.getName(false));
     } else { // declStmt COLON assignExpr
         // Declare the variable with the default index variable name
         currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, SymbolType(TY_INT), INITIALIZED,
@@ -309,8 +309,8 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
     } else {
         if (itemType != arrayType.getContainedTy())
             throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Foreach loop item type does not match array type. Expected " + arrayType.getName() +
-                                ", provided " + itemType.getName());
+                                "Foreach loop item type does not match array type. Expected " + arrayType.getName(false) +
+                                ", provided " + itemType.getName(false));
     }
 
     // Visit statement list in new scope
@@ -412,13 +412,16 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     // Visit params
     std::vector<SymbolType> paramTypes;
     if (ctx->paramLst()) {
-        for (auto& param : ctx->paramLst()->assignExpr())
-            paramTypes.push_back(visit(param).as<SymbolType>());
+        for (auto& param : ctx->paramLst()->assignExpr()) {
+            SymbolType paramType = visit(param).as<SymbolType>();
+            if (paramType.isArray()) paramType = paramType.getContainedTy().toPointer();
+            paramTypes.push_back(paramType);
+        }
     }
     FunctionSignature signature = FunctionSignature(functionName, paramTypes);
 
     // Check if function signature exists in symbol table
-    SymbolTable* functionEntryTable = functionCallParentScope->lookupTableWithSymbol({ signature.toString() });
+    SymbolTable* functionEntryTable = accessScope->lookupTableWithSignature(signature.toString());
     if (!functionEntryTable)
         throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
                             "Function/Procedure '" + signature.toString() + "' could not be found");
@@ -429,7 +432,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
     // Set the function usage
     functionEntry->setUsed();
     // Add function call to the signature queue of the current scope
-    functionCallParentScope->pushSignature(signature);
+    accessScope->pushSignature(signature);
 
     // Search for symbol table of called function/procedure to read parameters
     if (functionEntry->getType().is(TY_FUNCTION)) {
@@ -437,8 +440,8 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
         // Get return type of called function
         SymbolType returnType = functionTable->lookup(RETURN_VARIABLE_NAME)->getType();
         // Structs from outside the module require more initialization
-        if (returnType.is(TY_STRUCT) && functionCallParentScope->isImported())
-            return initExtStruct(*ctx->start, returnType.getSubType(),
+        if (returnType.is(TY_STRUCT) && accessScope->isImported())
+            return initExtStruct(*ctx->start, accessScope, returnType.getSubType(),
                                  scopePrefix + "." + returnType.getSubType());
         return returnType;
     }
@@ -446,10 +449,23 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
-    SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
     std::string variableName = ctx->IDENTIFIER()[0]->toString();
+
+    // Get struct name in format a.b.c
     std::string structName = ctx->IDENTIFIER()[1]->toString();
-    std::string structScope = ScopeIdUtil::getScopeId(ctx);
+    SymbolTable* structScope = currentScope->lookupTable("struct:" + structName);
+    if (!structScope)
+        throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                            "Struct '" + structName + "' was used before defined");
+
+    for (unsigned int i = 2; i < ctx->IDENTIFIER().size(); i++) {
+        structName += "." + ctx->IDENTIFIER()[i]->toString();
+        if (i < ctx->IDENTIFIER().size() -1)
+            structScope = structScope->lookupTable("struct:" + ctx->IDENTIFIER()[i]->toString());
+        if (!structScope)
+            throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                "Struct '" + structName + "' was used before defined");
+    }
 
     // Check if symbol already exists in the symbol table
     if (currentScope->lookup(variableName))
@@ -458,16 +474,23 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 
     // Check if the struct is defined
     SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-    if (!structSymbol || !structSymbol->getType().is(TY_STRUCT) || structSymbol->getType().getSubType() != structName)
+    if (!structSymbol) {
+        initExtStruct(*ctx->IDENTIFIER()[1]->getSymbol(), structScope,
+                      ctx->IDENTIFIER().back()->toString(), structName);
+        structSymbol = currentScope->lookup(structName);
+    }
+
+    if (!structSymbol->getType().is(TY_STRUCT) || structSymbol->getType().getSubType() != structName)
         throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                             "Struct '" + structName + "' was used before defined");
     structSymbol->setUsed();
 
     // Infer type
+    SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
     if (dataType.is(TY_DYN)) dataType = structSymbol->getType();
 
     // Get the symbol table where the struct is defined
-    SymbolTable* structTable = currentScope->lookupTable(structScope);
+    SymbolTable* structTable = currentScope->lookupTable("struct:" + structName);
     // Check if the number of fields matches
     if (ctx->paramLst()) { // Also allow the empty initialization
         if (structTable->getFieldCount() != ctx->paramLst()->assignExpr().size())
@@ -485,8 +508,8 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
             // Check if type matches declaration
             if (actualType != expectedType)
                 throw SemanticError(*ternary->start, FIELD_TYPE_NOT_MATCHING,
-                                    "Expected type " + expectedType.getName() + " for the field '" +
-                                    expectedField->getName() + "', but got " + actualType.getName());
+                                    "Expected type " + expectedType.getName(false) + " for the field '" +
+                                    expectedField->getName() + "', but got " + actualType.getName(false));
         }
     }
 
@@ -499,21 +522,19 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
     // Visit data type
     std::string variableName = ctx->IDENTIFIER()->toString();
-    SymbolType dataType = visit(ctx->dataType()).as<SymbolType>();
-    SymbolType sizeType = visit(ctx->value()).as<SymbolType>();
+    SymbolType arraySymbolType = visit(ctx->dataType()).as<SymbolType>();
 
-    // Check if size is >1
-    int size = std::stoi(ctx->value()->INTEGER()->toString());
-    if (size <= 1)
-        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
-
-    // Check if size type is an integer
-    if (!sizeType.is(TY_INT))
-        throw SemanticError(*ctx->value()->start, ARRAY_SIZE_NO_INTEGER,
-                            "The size must be an integer, provided " + sizeType.getName());
+    // Check if data type is of type array and has a size attached
+    if (!arraySymbolType.isArray())
+        throw SemanticError(*ctx->dataType()->start, OPERATOR_WRONG_DATA_TYPE,
+                            "Data type of an array init stmt must be an array type");
+    if (arraySymbolType.getArraySize() == 0)
+        throw SemanticError(*ctx->dataType()->start, ARRAY_SIZE_INVALID,
+                            "Data type of an array init stmt must have a size attached");
 
     // Check if all values have the same type
     SymbolType expectedItemType = SymbolType(TY_DYN);
+    unsigned int actualSize = 0;
     if (ctx->paramLst()) {
         for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
             SymbolType itemType = visit(ctx->paramLst()->assignExpr()[i]).as<SymbolType>();
@@ -522,30 +543,30 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
             } else if (itemType != expectedItemType) {
                 throw SemanticError(*ctx->paramLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
                                     "All provided values have to be of the same data type. You provided " +
-                                    expectedItemType.getName() + " and " + itemType.getName());
+                                    expectedItemType.getName(false) + " and " + itemType.getName(false));
             }
+            actualSize++;
         }
 
         // Compiler warning when the number of provided values exceeds the array size
-        if (ctx->paramLst()->assignExpr().size() > size)
-            CompilerWarning(*ctx->paramLst()->assignExpr()[size -1]->start, ARRAY_TOO_MANY_VALUES,
-                            "You provided more values than your array can hold. Excess variables are "
-                            "being ignored by the compiler.").print();
+        if (actualSize > arraySymbolType.getArraySize())
+            CompilerWarning(*ctx->paramLst()->assignExpr()[arraySymbolType.getArraySize() - 1]->start,
+                            ARRAY_TOO_MANY_VALUES, "You provided more values than your array can hold. Excess "
+                                                   "variables are being ignored by the compiler.").print();
     }
 
     // Infer type
-    if (dataType.is(TY_DYN)) {
+    if (arraySymbolType.is(TY_DYN)) {
         if (expectedItemType.is(TY_DYN))
             throw SemanticError(*ctx->dataType()->start, UNKNOWN_DATATYPE,
                                 "Was not able to infer the data type of this array");
-
-        dataType = expectedItemType.toArray();
+        arraySymbolType = expectedItemType.toArray(actualSize);
     }
 
     // Create new symbol in the current scope
-    currentScope->insert(variableName, dataType.toArray(), INITIALIZED, *ctx->start, ctx->CONST(), parameterMode);
+    currentScope->insert(variableName, arraySymbolType, INITIALIZED, *ctx->start, ctx->CONST(), parameterMode);
 
-    return dataType.toArray();
+    return arraySymbolType;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
@@ -634,7 +655,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
             if (returnType != returnVariable->getType())
                 throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                     "Passed wrong data type to return statement. Expected " +
-                                    returnVariable->getType().getName() + " but got " + returnType.getName());
+                                    returnVariable->getType().getName(false) + " but got " + returnType.getName(false));
         }
 
         // Set the return variable to initialized
@@ -702,7 +723,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'c': {
                 if (!assignmentType.is(TY_CHAR))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects char, but got " + assignmentType.getName());
+                                        "Template string expects char, but got " + assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
@@ -714,7 +735,8 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'X': {
                 if (!assignmentType.isOneOf({ TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_BOOL }))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects int, byte or bool, but got " + assignmentType.getName());
+                                        "Template string expects int, byte or bool, but got " +
+                                        assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
@@ -728,21 +750,21 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             case 'G': {
                 if (!assignmentType.is(TY_DOUBLE))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects double, but got " + assignmentType.getName());
+                                        "Template string expects double, but got " + assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
             case 's': {
                 if (!assignmentType.is(TY_STRING) && !assignmentType.isPointerOf(TY_CHAR) && !assignmentType.isArrayOf(TY_CHAR))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects string, but got " + assignmentType.getName());
+                                        "Template string expects string, but got " + assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
             case 'p': {
-                if (!assignmentType.isPointer())
+                if (!assignmentType.isPointer() && !(assignmentType.isArray() && assignmentType.getArraySize() == 0))
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
-                                        "Template string expects pointer, but got " + assignmentType.getName());
+                                        "Template string expects pointer, but got " + assignmentType.getName(false));
                 placeholderCount++;
                 break;
             }
@@ -1064,11 +1086,11 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
             unsigned int ruleIndex = rule->getRuleIndex();
             if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
                 // Set function call parent scope
-                functionCallParentScope = scope;
+                accessScope = scope;
                 // Visit function call
                 symbolType = visit(ctx->functionCall()[functionCallCounter]).as<SymbolType>();
                 // Reset values
-                functionCallParentScope = nullptr;
+                accessScope = nullptr;
 
                 functionCallCounter++;
             }
@@ -1104,20 +1126,20 @@ antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx
                                         "Referenced undefined import '" + importName + "'");
             } else {
                 throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply member access operator on " + symbolType.getName());
+                                    "Cannot apply member access operator on " + symbolType.getName(false));
             }
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
             // Check this operation is valid on this type
-            if (!symbolType.isArray() && !symbolType.isPointer())
+            if (!symbolType.isArray() && !symbolType.isPointer() && !symbolType.is(TY_STRING))
                 throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply subscript operator on " + symbolType.getName());
+                                    "Cannot apply subscript operator on " + symbolType.getName(false));
             // Check if the index is an integer
             SymbolType indexType = visit(ctx->assignExpr()[assignCounter]).as<SymbolType>();
             if (!indexType.is(TY_INT))
                 throw SemanticError(*ctx->assignExpr()[assignCounter]->start, ARRAY_INDEX_NO_INTEGER,
-                                    "Array index must be of type int, you provided " + indexType.getName());
+                                    "Array index must be of type int, you provided " + indexType.getName(false));
             // Promote the array/pointer element type
-            symbolType = symbolType.getContainedTy();
+            symbolType = symbolType.is(TY_STRING) ? SymbolType(TY_CHAR) : symbolType.getContainedTy();
             // Increase counters
             assignCounter++;
             tokenCounter += 2; // To consume the assignExpr and the RBRACKET
@@ -1143,6 +1165,13 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->CHAR()) return SymbolType(TY_CHAR);
     if (ctx->STRING()) return SymbolType(TY_STRING);
     if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TY_BOOL);
+    if (ctx->NIL()) {
+        SymbolType nilType = visit(ctx->dataType()).as<SymbolType>();
+        if (nilType.is(TY_DYN))
+            throw SemanticError(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA,
+                                "Nil must have an explicit type");
+        return nilType;
+    }
     return nullptr;
 }
 
@@ -1162,12 +1191,13 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
         std::string structName = ctx->IDENTIFIER()[0]->toString();
         for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) structName += "." + ctx->IDENTIFIER()[i]->toString();
 
-        if (functionCallParentScope) { // Within function call
-            if (functionCallParentScope->isImported()) { // Function call to imported function
-                type = initExtStruct(*ctx->start, ctx->IDENTIFIER()[0]->toString(), structName);
+        if (accessScope) { // Within function call
+            if (accessScope->isImported()) { // Function call to imported function
+                type = initExtStruct(*ctx->start, accessScope,
+                                     ctx->IDENTIFIER()[0]->toString(), structName);
             } else { // Function call to local function
                 // Check if struct was declared
-                SymbolTableEntry* structSymbol = functionCallParentScope->lookup(structName);
+                SymbolTableEntry* structSymbol = accessScope->lookup(structName);
                 if (!structSymbol)
                     throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
                 structSymbol->setUsed();
@@ -1194,9 +1224,11 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
             unsigned int size = 0; // Default to 0 when no size is attached
             if (token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
                 int signedSize = std::stoi(token->toString());
+                // Check if size >1
                 if (signedSize <= 1)
                     throw SemanticError(*token->getSymbol(), ARRAY_SIZE_INVALID,
                                         "The size of an array must be > 1");
+                size = signedSize;
                 tokenCounter++; // Consume INTEGER
             }
             type = type.toArray(size);
@@ -1207,24 +1239,24 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
     return type;
 }
 
-SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, const std::string& oldStructName,
-                                          const std::string& newStructName) {
+SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope,
+                                          const std::string& oldStructName, const std::string& newStructName) {
     // Check if struct was declared
-    SymbolTableEntry* structSymbol = functionCallParentScope->lookup(oldStructName);
+    SymbolTableEntry* structSymbol = sourceScope->lookup(oldStructName);
     if (!structSymbol)
         throw SemanticError(token, UNKNOWN_DATATYPE, "Unknown datatype '" + newStructName + "'");
     structSymbol->setUsed();
-    SymbolTable* structTable = functionCallParentScope->lookupTable("struct:" + oldStructName);
+    SymbolTable* structTable = sourceScope->lookupTable("struct:" + oldStructName);
 
     // Initialize potential structs for field types
     for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
         SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
         if (fieldType.is(TY_STRUCT)) {
             std::string structName = fieldType.getSubType();
-            initExtStruct(token, structName, scopePrefix + "." + structName);
+            initExtStruct(token, sourceScope, structName, scopePrefix + "." + structName);
         } else if (fieldType.isPointerOf(TY_STRUCT)) {
             std::string structName = fieldType.getContainedTy().getSubType();
-            initExtStruct(token, structName, scopePrefix + "." + structName);
+            initExtStruct(token, sourceScope, structName, scopePrefix + "." + structName);
         }
     }
 
