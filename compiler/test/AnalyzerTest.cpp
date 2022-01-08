@@ -177,7 +177,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-struct-defined-before-used",
-            "Semantic error at 2:5: Unknown datatype: Unknown datatype 'Test'"
+            "Semantic error at 2:21: Referenced undefined struct: Struct 'Test' was used before defined"
         },
         {
             "error-struct-fields-match-declaration",
@@ -202,6 +202,10 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         {
             "error-foreach-wrong-item-type",
             "Semantic error at 3:13: Wrong data type for operator: Foreach loop item type does not match array type. Expected int[], provided double"
+        },
+        {
+            "error-array-size-attached",
+            "Semantic error at 2:5: Array size invalid: Data type of an array init stmt must have a size attached"
         },
         {
             "error-foreach-wrong-index-type",

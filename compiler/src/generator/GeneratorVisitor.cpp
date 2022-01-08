@@ -504,8 +504,8 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     global->setDSOLocal(true);
 
     if (ctx->value()) { // Variable is initialized here
-        llvm::Value* value = visit(ctx->value()).as<llvm::Value*>();
-        global->setInitializer((llvm::Constant*) value);
+        visit(ctx->value());
+        global->setInitializer(currentConstValue);
     }
 
     // Return true as result for the global variable definition
@@ -981,7 +981,7 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
         // Visit all params to check if they are hardcoded or not
         std::vector<llvm::Value*> itemValuePointers;
         std::vector<llvm::Constant*> itemConstants;
-        for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+        for (unsigned int i = 0; i < std::min(ctx->paramLst()->assignExpr().size(), arrayType->getArrayNumElements()); i++) {
             itemValuePointers.push_back(visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>());
             itemConstants.push_back(currentConstValue);
         }

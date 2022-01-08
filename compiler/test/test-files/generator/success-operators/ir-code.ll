@@ -37,13 +37,11 @@ entry:
   %16 = alloca i32, align 4
   store i32 %15, i32* %16, align 4
   %17 = load i32, i32* %16, align 4
-  %18 = getelementptr inbounds i32, i32* %val, i32 0
-  %19 = load i32, i32* %18, align 4
-  %20 = add i32 %19, %17
-  store i32 %20, i32* %18, align 4
-  %21 = getelementptr inbounds i32, i32* %val, i32 0
-  %22 = load i32, i32* %21, align 4
-  %23 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %22)
-  %24 = load i32, i32* %result, align 4
-  ret i32 %24
+  %18 = load i32, i32* %val, align 4
+  %19 = add i32 %18, %17
+  store i32 %19, i32* %val, align 4
+  %20 = load i32, i32* %val, align 4
+  %21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %20)
+  %22 = load i32, i32* %result, align 4
+  ret i32 %22
 }

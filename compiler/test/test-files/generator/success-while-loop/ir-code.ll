@@ -17,31 +17,28 @@ entry:
   br label %while.cond
 
 while.cond:                                       ; preds = %while, %entry
-  %2 = getelementptr inbounds i32, i32* %i, i32 0
-  %3 = alloca i32, align 4
-  store i32 10, i32* %3, align 4
+  %2 = alloca i32, align 4
+  store i32 10, i32* %2, align 4
+  %3 = load i32, i32* %i, align 4
   %4 = load i32, i32* %2, align 4
-  %5 = load i32, i32* %3, align 4
-  %6 = icmp slt i32 %4, %5
-  %7 = alloca i1, align 1
-  store i1 %6, i1* %7, align 1
-  %8 = load i1, i1* %7, align 1
-  br i1 %8, label %while, label %while.end
+  %5 = icmp slt i32 %3, %4
+  %6 = alloca i1, align 1
+  store i1 %5, i1* %6, align 1
+  %7 = load i1, i1* %6, align 1
+  br i1 %7, label %while, label %while.end
 
 while:                                            ; preds = %while.cond
-  %9 = alloca i32, align 4
-  store i32 1, i32* %9, align 4
-  %10 = load i32, i32* %9, align 4
-  %11 = getelementptr inbounds i32, i32* %i, i32 0
-  %12 = load i32, i32* %11, align 4
-  %13 = add i32 %12, %10
-  store i32 %13, i32* %11, align 4
-  %14 = getelementptr inbounds i32, i32* %i, i32 0
-  %15 = load i32, i32* %14, align 4
-  %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0), i32 %15)
+  %8 = alloca i32, align 4
+  store i32 1, i32* %8, align 4
+  %9 = load i32, i32* %8, align 4
+  %10 = load i32, i32* %i, align 4
+  %11 = add i32 %10, %9
+  store i32 %11, i32* %i, align 4
+  %12 = load i32, i32* %i, align 4
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0), i32 %12)
   br label %while.cond
 
 while.end:                                        ; preds = %while.cond
-  %17 = load i32, i32* %result, align 4
-  ret i32 %17
+  %14 = load i32, i32* %result, align 4
+  ret i32 %14
 }

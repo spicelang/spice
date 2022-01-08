@@ -453,10 +453,18 @@ antlrcpp::Any AnalyzerVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
 
     // Get struct name in format a.b.c
     std::string structName = ctx->IDENTIFIER()[1]->toString();
-    SymbolTable* structScope = currentScope->lookupTable(structName);
+    SymbolTable* structScope = currentScope->lookupTable("struct:" + structName);
+    if (!structScope)
+        throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                            "Struct '" + structName + "' was used before defined");
+
     for (unsigned int i = 2; i < ctx->IDENTIFIER().size(); i++) {
         structName += "." + ctx->IDENTIFIER()[i]->toString();
-        if (i < ctx->IDENTIFIER().size() -1) structScope = structScope->lookupTable(ctx->IDENTIFIER()[i]->toString());
+        if (i < ctx->IDENTIFIER().size() -1)
+            structScope = structScope->lookupTable("struct:" + ctx->IDENTIFIER()[i]->toString());
+        if (!structScope)
+            throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                "Struct '" + structName + "' was used before defined");
     }
 
     // Check if symbol already exists in the symbol table
@@ -516,6 +524,14 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
     std::string variableName = ctx->IDENTIFIER()->toString();
     SymbolType arraySymbolType = visit(ctx->dataType()).as<SymbolType>();
 
+    // Check if data type is of type array and has a size attached
+    if (!arraySymbolType.isArray())
+        throw SemanticError(*ctx->dataType()->start, OPERATOR_WRONG_DATA_TYPE,
+                            "Data type of an array init stmt must be an array type");
+    if (arraySymbolType.getArraySize() == 0)
+        throw SemanticError(*ctx->dataType()->start, ARRAY_SIZE_INVALID,
+                            "Data type of an array init stmt must have a size attached");
+
     // Check if all values have the same type
     SymbolType expectedItemType = SymbolType(TY_DYN);
     unsigned int actualSize = 0;
@@ -550,7 +566,7 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
     // Create new symbol in the current scope
     currentScope->insert(variableName, arraySymbolType, INITIALIZED, *ctx->start, ctx->CONST(), parameterMode);
 
-    return arraySymbolType.toArray();
+    return arraySymbolType;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {

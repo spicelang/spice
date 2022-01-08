@@ -16,12 +16,11 @@ define void @"birthday(struct(Person)*)"(%Person* %0) #0 {
 entry:
   %person = alloca %Person*, align 8
   store %Person* %0, %Person** %person, align 8
-  %1 = getelementptr inbounds %Person*, %Person** %person, i32 0
-  %2 = load %Person*, %Person** %1, align 8
-  %3 = getelementptr inbounds %Person, %Person* %2, i32 0, i32 2
-  %4 = load i32, i32* %3, align 4
-  %5 = add i32 %4, 1
-  store i32 %5, i32* %3, align 4
+  %1 = load %Person*, %Person** %person, align 8
+  %2 = getelementptr inbounds %Person, %Person* %1, i32 0, i32 2
+  %3 = load i32, i32* %2, align 4
+  %4 = add i32 %3, 1
+  store i32 %4, i32* %2, align 4
   ret void
 }
 
@@ -53,19 +52,17 @@ entry:
   %14 = getelementptr inbounds %Person, %Person* %mike, i32 0, i32 2
   %15 = load i32, i32* %14, align 4
   %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @3, i32 0, i32 0), i32 %15)
-  %17 = getelementptr inbounds %Person, %Person* %mike, i32 0
-  %18 = alloca %Person*, align 8
-  store %Person* %mike, %Person** %18, align 8
-  %19 = load %Person*, %Person** %18, align 8
-  call void @"birthday(struct(Person)*)"(%Person* %19)
-  %20 = alloca i1, align 1
-  store i1 true, i1* %20, align 1
-  %21 = getelementptr inbounds i1, i1* %20, i32 0
-  %22 = getelementptr inbounds %Person, %Person* %mike, i32 0, i32 2
-  %23 = load i32, i32* %22, align 4
-  %24 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @4, i32 0, i32 0), i32 %23)
-  %25 = load i32, i32* %result, align 4
-  ret i32 %25
+  %17 = alloca %Person*, align 8
+  store %Person* %mike, %Person** %17, align 8
+  %18 = load %Person*, %Person** %17, align 8
+  call void @"birthday(struct(Person)*)"(%Person* %18)
+  %19 = alloca i1, align 1
+  store i1 true, i1* %19, align 1
+  %20 = getelementptr inbounds %Person, %Person* %mike, i32 0, i32 2
+  %21 = load i32, i32* %20, align 4
+  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @4, i32 0, i32 0), i32 %21)
+  %23 = load i32, i32* %result, align 4
+  ret i32 %23
 }
 
 attributes #0 = { nounwind }

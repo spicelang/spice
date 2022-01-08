@@ -1,0 +1,4 @@
+f<int> main() {
+    double[] doubleArray = { 1.1, 2.2, 3.3, 4.4, 5.5 };
+    printf("doubleArray[3]: %f\n", doubleArray[3]);
+}

@@ -1,5 +1,5 @@
-import "std/type/bool" as Bool;
+import "std/type/bool" as boolTy;
 
 f<int> main() {
-    printf("Result: %d", Bool.toInt(true));
+    printf("Result: %d", boolTy.toInt(true));
 }
