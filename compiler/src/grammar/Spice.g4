@@ -151,13 +151,15 @@ ELLIPSIS: '...';
 // Regex tokens
 CHAR: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
 STRING: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
-INTEGER: NONZERO_DIGIT DIGIT*;
-DOUBLE: DIGIT+ DOT DIGIT+;
+INTEGER: SIGN? NONZERO_DIGIT DIGIT* | ZERO;
+DOUBLE: SIGN? DIGIT+ DOT DIGIT+;
 IDENTIFIER: NONDIGIT (NONDIGIT | DIGIT)*;
 
+fragment ZERO: [0];
 fragment DIGIT: [0-9];
 fragment NONZERO_DIGIT: [1-9];
 fragment NONDIGIT: [a-zA-Z_];
+fragment SIGN: [+-];
 
 // Skipped tokens
 BLOCK_COMMENT: '/*' .*? '*/' -> skip;
