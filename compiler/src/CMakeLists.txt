@@ -10,26 +10,28 @@ set(SOURCES
         CompilerInstance.h
         analyzer/AnalyzerVisitor.cpp
         analyzer/AnalyzerVisitor.h
-        analyzer/SymbolTable.cpp
-        analyzer/SymbolTable.h
-        analyzer/SymbolTableEntry.cpp
-        analyzer/SymbolTableEntry.h
-        analyzer/ModuleRegistry.cpp
-        analyzer/ModuleRegistry.h
+        analyzer/OpRuleManager.cpp
+        analyzer/OpRuleManager.h
         generator/GeneratorVisitor.cpp
         generator/GeneratorVisitor.h
         generator/OpRuleConversionsManager.cpp
         generator/OpRuleConversionsManager.h
+        symbol/SymbolTable.cpp
+        symbol/SymbolTable.h
+        symbol/SymbolTableEntry.cpp
+        symbol/SymbolTableEntry.h
+        symbol/SymbolType.cpp
+        symbol/SymbolType.h
+        symbol/SymbolSpecifiers.cpp
+        symbol/SymbolSpecifiers.h
         exception/SemanticError.cpp
         exception/SemanticError.h
         exception/IRError.cpp
         exception/IRError.h
-        type/SymbolType.cpp
-        type/SymbolType.h
-        type/OpRuleManager.cpp
-        type/OpRuleManager.h
         util/ScopeIdUtil.cpp
         util/ScopeIdUtil.h
+        util/ModuleRegistry.cpp
+        util/ModuleRegistry.h
         util/FunctionSignature.cpp
         util/FunctionSignature.h
         util/FileUtil.cpp

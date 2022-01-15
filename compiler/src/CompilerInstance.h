@@ -8,7 +8,7 @@
 #include <SpiceParser.h>
 
 #include <util/FileUtil.h>
-#include <analyzer/SymbolTable.h>
+#include "symbol/SymbolTable.h"
 #include <analyzer/AnalyzerVisitor.h>
 #include <generator/GeneratorVisitor.h>
 

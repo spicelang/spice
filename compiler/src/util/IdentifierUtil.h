@@ -3,8 +3,8 @@
 #pragma once
 
 #include <string>
-#include <analyzer/SymbolTableEntry.h>
-#include <analyzer/SymbolTable.h>
+#include "symbol/SymbolTableEntry.h"
+#include "symbol/SymbolTable.h"
 
 /**
  * Util class for identifier-related work

@@ -6,7 +6,7 @@
 #include <llvm/IR/IRBuilder.h>
 
 #include "exception/IRError.h"
-#include "type/SymbolType.h"
+#include "symbol/SymbolType.h"
 
 enum PrimitiveType {
     P_TY_DOUBLE,

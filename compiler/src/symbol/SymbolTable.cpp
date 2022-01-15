@@ -1,7 +1,8 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include "SymbolTable.h"
-#include "AnalyzerVisitor.h"
+#include "symbol/SymbolTable.h"
+
+#include <utility>
 
 /**
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
@@ -12,12 +13,15 @@
  * @param isConstant Enabled if the symbol is a constant
  * @param isParameter Enabled if the symbol is a function/procedure parameter
  */
-void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, const antlr4::Token& token,
-                         bool isConstant, bool isParameter) {
+void SymbolTable::insert(const std::string& name, SymbolType type, SymbolSpecifiers specifiers, SymbolState state,
+                         const antlr4::Token& token, bool isParameter) {
     bool isGlobal = getParent() == nullptr;
     unsigned int orderIndex = symbols.size();
     // Insert into symbols map
-    symbols.insert({ name, SymbolTableEntry(name, type, state, token, orderIndex, isConstant, isGlobal) });
+    symbols.insert({
+        name,
+        SymbolTableEntry(name, std::move(type), specifiers, state, token, orderIndex, isGlobal)
+    });
     // If the symbol is a parameter, add it to the parameters list
     if (isParameter) paramNames.push_back(name);
 }

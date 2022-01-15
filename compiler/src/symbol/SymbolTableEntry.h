@@ -6,8 +6,9 @@
 #include <stdexcept>
 #include <utility>
 
-#include <type/SymbolType.h>
-#include <exception/SemanticError.h>
+#include "symbol/SymbolType.h"
+#include "exception/SemanticError.h"
+#include "SymbolSpecifiers.h"
 #include <llvm/IR/Value.h>
 
 enum SymbolState {
@@ -21,10 +22,10 @@ enum SymbolState {
 class SymbolTableEntry {
 public:
     // Constructors
-    SymbolTableEntry(std::string name, SymbolType type, SymbolState state, const antlr4::Token& token, unsigned int orderIndex,
-                     const bool isConstant, const bool isGlobal) :
+    SymbolTableEntry(std::string name, SymbolType type, SymbolSpecifiers specifiers, SymbolState state,
+                     const antlr4::Token& token, unsigned int orderIndex, const bool isGlobal) :
             name(std::move(name)), type(std::move(type)), state(state), definitionToken(token), orderIndex(orderIndex),
-            isConstant(isConstant), isGlobal(isGlobal), used(false) {};
+            isGlobal(isGlobal), used(false) {};
 
     // Public methods
     std::string getName();
@@ -52,7 +53,6 @@ private:
     const antlr4::Token& definitionToken;
     llvm::Value* memAddress;
     unsigned int orderIndex;
-    const bool isConstant;
     const bool isGlobal;
     bool used;
 };

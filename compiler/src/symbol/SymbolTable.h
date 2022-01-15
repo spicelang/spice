@@ -7,13 +7,14 @@
 #include <map>
 #include <vector>
 #include <queue>
-#include <type/SymbolType.h>
-#include <util/FunctionSignature.h>
-#include <util/CompilerWarning.h>
+#include "symbol/SymbolType.h"
+#include "util/FunctionSignature.h"
+#include "util/CompilerWarning.h"
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/DerivedTypes.h>
-#include <SpiceParser.h>
+#include "SpiceParser.h"
 #include "SymbolTableEntry.h"
+#include "analyzer/AnalyzerVisitor.h"
 
 /**
  * Class for storing information about symbols of the AST. Symbol tables are meant to be arranged in a tree structure,
@@ -25,7 +26,7 @@ public:
     explicit SymbolTable(SymbolTable* parent, bool inMainSourceFile) : parent(parent), inMainSourceFile(inMainSourceFile) {};
 
     // Public methods
-    void insert(const std::string&, SymbolType, SymbolState, const antlr4::Token&, bool, bool);
+    void insert(const std::string&, SymbolType, SymbolSpecifiers, SymbolState, const antlr4::Token&, bool);
 
     SymbolTableEntry* lookup(const std::string&);
     SymbolTableEntry* lookupByIndexInCurrentScope(unsigned int);

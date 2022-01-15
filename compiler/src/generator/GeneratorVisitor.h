@@ -4,7 +4,7 @@
 
 #include <SpiceBaseVisitor.h>
 #include <exception/IRError.h>
-#include <analyzer/SymbolTable.h>
+#include "symbol/SymbolTable.h"
 #include <util/ScopeIdUtil.h>
 #include <util/IdentifierUtil.h>
 #include <analyzer/AnalyzerVisitor.h>

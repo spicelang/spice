@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <analyzer/SymbolTableEntry.h>
+#include "symbol/SymbolTableEntry.h"
 
 /**
  * Util class for generating function/procedure signatures

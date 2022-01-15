@@ -6,10 +6,11 @@
 #include "SpiceLexer.h"
 
 #include <CompilerInstance.h>
-#include "SymbolTable.h"
-#include "ModuleRegistry.h"
-#include <type/SymbolType.h>
-#include <type/OpRuleManager.h>
+#include "symbol/SymbolTable.h"
+#include "util/ModuleRegistry.h"
+#include "symbol/SymbolType.h"
+#include "symbol/SymbolSpecifiers.h"
+#include "OpRuleManager.h"
 #include <util/ScopeIdUtil.h>
 #include <util/FileUtil.h>
 #include <util/IdentifierUtil.h>
@@ -61,6 +62,7 @@ public:
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
     antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext* ctx) override;
+    antlrcpp::Any visitParamLstDef(SpiceParser::ParamLstDefContext* ctx) override;
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
