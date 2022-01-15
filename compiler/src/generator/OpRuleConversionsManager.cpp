@@ -257,6 +257,21 @@ llvm::Value* OpRuleConversionsManager::getBitwiseOrInst(llvm::Value* lhs, llvm::
     throw std::runtime_error("Internal compiler error: Operator fallthrough: |");
 }
 
+llvm::Value* OpRuleConversionsManager::getBitwiseXorInst(llvm::Value* lhs, llvm::Value* rhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    llvm::Type* rhsTy = rhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+    switch(COMB(lhsPTy, rhsPTy)) {
+        case COMB(P_TY_INT, P_TY_INT): // fallthrough
+        case COMB(P_TY_SHORT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
+        case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
+            return builder->CreateXor(lhs, rhs);
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ^");
+}
+
 llvm::Value* OpRuleConversionsManager::getEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
@@ -1080,6 +1095,23 @@ llvm::Value* OpRuleConversionsManager::getRemInst(llvm::Value* lhs, llvm::Value*
     throw std::runtime_error("Internal compiler error: Operator fallthrough: %");
 }
 
+llvm::Value* OpRuleConversionsManager::getPrefixMinusInst(llvm::Value* lhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    switch(lhsPTy) {
+        case P_TY_DOUBLE:
+            return builder->CreateFMul(lhs, builder->getInt32(-1));
+        case P_TY_INT:
+            return builder->CreateAdd(lhs, builder->getInt32(-1));
+        case P_TY_SHORT:
+            return builder->CreateAdd(lhs, builder->getInt16(-1));
+        case P_TY_LONG:
+            return builder->CreateAdd(lhs, builder->getInt64(-1));
+        default: break;
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: +");
+}
+
 llvm::Value* OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value* lhs) {
     llvm::Type* lhsTy = lhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -1110,6 +1142,30 @@ llvm::Value* OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value* lhs)
     throw std::runtime_error("Internal compiler error: Operator fallthrough: --");
 }
 
+llvm::Value* OpRuleConversionsManager::getPrefixNotInst(llvm::Value* lhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    switch(lhsPTy) {
+        case P_TY_BOOL:
+            return builder->CreateNot(lhs);
+        default: break;
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: !");
+}
+
+llvm::Value* OpRuleConversionsManager::getPrefixBitwiseNotInst(llvm::Value* lhs) {
+    llvm::Type* lhsTy = lhs->getType();
+    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+    switch(lhsPTy) {
+        case P_TY_INT: // fallthrough
+        case P_TY_SHORT: // fallthrough
+        case P_TY_LONG:
+            return builder->CreateNeg(lhs);
+        default: break;
+    }
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ~");
+}
+
 llvm::Value* OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value* lhs) {
     llvm::Type* lhsTy = lhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -1138,17 +1194,6 @@ llvm::Value* OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value* lhs
         default: break;
     }
     throw std::runtime_error("Internal compiler error: Operator fallthrough: --");
-}
-
-llvm::Value* OpRuleConversionsManager::getNotInst(llvm::Value* lhs) {
-    llvm::Type* lhsTy = lhs->getType();
-    PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-    switch(lhsPTy) {
-        case P_TY_BOOL:
-            return builder->CreateNot(lhs);
-        default: break;
-    }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: !");
 }
 
 llvm::Value* OpRuleConversionsManager::getCastInst(llvm::Type* lhsTy, llvm::Value* rhs) {

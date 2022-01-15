@@ -30,6 +30,7 @@ public:
     // Public methods
     std::string getName();
     SymbolType getType();
+    SymbolSpecifiers getSpecifiers();
     SymbolState getState();
     const antlr4::Token& getDefinitionToken();
     llvm::Type* getLLVMType();

@@ -338,25 +338,25 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
     currentScope = currentScope->createChildBlock(scopeId);
 
     // Check type of the array
-    SymbolType arrayType = visit(head->assignExpr().back()).as<SymbolType>();
+    SymbolType arrayType = visit(head->assignExpr()).as<SymbolType>();
     if (!arrayType.isArray() && !arrayType.is(TY_STRING))
         throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
                             "Can only apply foreach loop on an array type. You provided " + arrayType.getName(false));
 
     // Check index assignment or declaration
     SymbolType indexType;
-    if (head->declStmt().size() >= 2) { // declStmt COMMA declStmt COLON assignExpr
+    if (head->declStmt().size() >= 2) {
         indexType = visit(head->declStmt().front()).as<SymbolType>();
-        currentScope->lookup(head->declStmt().front()->IDENTIFIER()->toString())->updateState(INITIALIZED);
+
+        // Set declared variable to initialized, because we increment it internally in the loop
+        if (!head->declStmt().front()->assignExpr())
+            currentScope->lookup(head->declStmt().front()->IDENTIFIER()->toString())->updateState(INITIALIZED);
+
+        // Check if index type is int
         if (!indexType.is(TY_INT))
             throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
                                 "Index in foreach loop must be of type int. You provided " + indexType.getName(false));
-    } else if (head->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
-        indexType = visit(head->assignExpr().front()).as<SymbolType>();
-        if (!indexType.is(TY_INT))
-            throw SemanticError(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
-                                "Index in foreach loop must be of type int. You provided " + indexType.getName(false));
-    } else { // declStmt COLON assignExpr
+    } else {
         // Declare the variable with the default index variable name
         SymbolType symbolType = SymbolType(TY_INT);
         SymbolSpecifiers symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
@@ -1134,9 +1134,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
     unsigned int tokenCounter = 1;
     while (tokenCounter < ctx->children.size()) {
         auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
-        if (token->getSymbol()->getType() == SpiceParser::PLUS) { // Consider + operator
-            lhs = OpRuleManager::getPrefixPlusResultType(*ctx->postfixUnaryExpr()->start, lhs);
-        } else if (token->getSymbol()->getType() == SpiceParser::MINUS) { // Consider - operator
+        if (token->getSymbol()->getType() == SpiceParser::MINUS) { // Consider - operator
             lhs = OpRuleManager::getPrefixMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
         } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
             lhs = OpRuleManager::getPrefixPlusPlusResultType(*ctx->postfixUnaryExpr()->start, lhs);
@@ -1176,6 +1174,9 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             tokenCounter++; // Consume assignExpr
         } else if (token->getSymbol()->getType() == SpiceParser::LPAREN) { // Consider function call
             // ToDo: Support function calls
+            //lhs = ;
+        } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider member access
+            // ToDo: Support member access
             //lhs = ;
         } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
             lhs = OpRuleManager::getPostfixPlusPlusResultType(*ctx->atomicExpr()->start, lhs);

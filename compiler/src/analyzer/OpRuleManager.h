@@ -610,7 +610,6 @@ public:
     static SymbolType getMulResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getDivResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getRemResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getPrefixPlusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getPrefixMinusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getPrefixPlusPlusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getPrefixMinusMinusResultType(const antlr4::Token&, const SymbolType&);

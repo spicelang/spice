@@ -12,7 +12,7 @@ structDef: TYPE IDENTIFIER STRUCT LBRACE fieldLst RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN value)? SEMICOLON;
 forLoop: FOR assignExpr SEMICOLON assignExpr SEMICOLON assignExpr LBRACE stmtLst RBRACE;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
-foreachHead: ((declStmt | assignExpr) COMMA)? declStmt COLON assignExpr;
+foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
 whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;
 ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
 elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
@@ -63,7 +63,7 @@ baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE
 
 // Shorthands
 assignOp: ASSIGN | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | REM_EQUAL | SHL_EQUAL | SHR_EQUAL | AND_EQUAL | OR_EQUAL | XOR_EQUAL;
-prefixUnaryOp: PLUS | MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND;
+prefixUnaryOp: MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND;
 
 // Keyword tokens
 TYPE_DOUBLE: 'double';

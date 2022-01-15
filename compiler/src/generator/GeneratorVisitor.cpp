@@ -202,12 +202,9 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
 
         // Change scope back
         currentScope = currentScope->getParent();
-
-        // Return true as result for the function definition
-        return (llvm::Value*) builder->getTrue();
     }
-    // Return false as result for the function definition
-    return (llvm::Value*) builder->getFalse();
+
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext* ctx) {
@@ -246,17 +243,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     }
     // Parameters
     if (ctx->paramLstDef()) {
-        for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
+        for (auto& param : ctx->paramLstDef()->declStmt()) {
             currentVar = param->IDENTIFIER()->toString();
             paramNames.push_back(currentVar);
             llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
-            paramTypes.push_back(paramType);
-            symbolTypes.push_back(currentSymbolType);
-        }
-        for (auto& param : ctx->paramLstDef()->assignExpr()) { // Parameters with default value
-            currentVar = param->declStmt()->IDENTIFIER()->toString();
-            paramNames.push_back(currentVar);
-            llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
             paramTypes.push_back(paramType);
             symbolTypes.push_back(currentSymbolType);
         }
@@ -316,8 +306,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Restore old scope
     currentScope = oldScope;
 
-    // Return true as result for the function definition
-    return (llvm::Value*) builder->getTrue();
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext* ctx) {
@@ -351,17 +340,10 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     }
     // Parameters
     if (ctx->paramLstDef()) {
-        for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
+        for (auto& param : ctx->paramLstDef()->declStmt()) {
             currentVar = param->IDENTIFIER()->toString();
             paramNames.push_back(currentVar);
             llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
-            paramTypes.push_back(paramType);
-            symbolTypes.push_back(currentSymbolType);
-        }
-        for (auto& param : ctx->paramLstDef()->assignExpr()) { // Parameters with default value
-            currentVar = param->declStmt()->IDENTIFIER()->toString();
-            paramNames.push_back(currentVar);
-            llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
             paramTypes.push_back(paramType);
             symbolTypes.push_back(currentSymbolType);
         }
@@ -413,8 +395,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Restore old scope
     currentScope = oldScope;
 
-    // Return true as result for the function definition
-    return (llvm::Value*) builder->getTrue();
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
@@ -461,8 +442,7 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
         currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
     }
 
-    // Return true as result for the function definition
-    return (llvm::Value*) builder->getTrue();
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ctx) {
@@ -470,30 +450,34 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
 
     // Collect member types
     std::vector<llvm::Type*> memberTypes;
-    for (auto& field : ctx->fieldLst()->declStmt()) {
-        llvm::Type* memberType = visit(field->dataType()).as<llvm::Type*>();
-        memberTypes.push_back(memberType);
-    }
+    for (auto& dataType : ctx->fieldLst()->dataType())
+        memberTypes.push_back(visit(dataType).as<llvm::Type*>());
 
     // Create global struct
     llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, structName);
     currentScope->lookup(structName)->updateLLVMType(structType);
 
-    // Return true as result for the struct definition
-    return (llvm::Value*) builder->getTrue();
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) {
     std::string varName = ctx->IDENTIFIER()->toString();
+
+    // Get symbol table entry and the symbol specifiers
+    SymbolTableEntry* symbolTableEntry = currentScope->lookup(varName);
+    SymbolSpecifiers specifiers = symbolTableEntry->getSpecifiers();
+
+    // Create correctly signed LLVM type from the data type
+    currentVarSigned = specifiers.isSigned();
     llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
+    symbolTableEntry->updateLLVMType(varType);
 
     // Create global variable
     llvm::Value* memAddress = module->getOrInsertGlobal(varName, varType);
-    currentScope->lookup(varName)->updateAddress(memAddress);
-    currentScope->lookup(varName)->updateLLVMType(varType);
+    symbolTableEntry->updateAddress(memAddress);
     // Set some attributes to it
     llvm::GlobalVariable* global = module->getNamedGlobal(varName);
-    global->setConstant(ctx->CONST());
+    global->setConstant(specifiers.isConst());
     global->setDSOLocal(true);
 
     if (ctx->value()) { // Variable is initialized here
@@ -501,8 +485,7 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
         global->setInitializer(currentConstValue);
     }
 
-    // Return true as result for the global variable definition
-    return (llvm::Value*) builder->getTrue();
+    return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -554,8 +537,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) {
-    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
-    bool hasIndexVariable = ctx->foreachHead()->declStmt().size() >= 2 || ctx->foreachHead()->assignExpr().size() >= 2;
+    auto head = ctx->foreachHead();
 
     // Create blocks
     llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "foreach.loop");
@@ -570,16 +552,14 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
 
     // Initialize loop variables
     llvm::Value* indexVariablePtr;
-    if (ctx->foreachHead()->declStmt().size() >= 2) { // declStmt COMMA declStmt COLON assignExpr
+    if (head->declStmt().size() >= 2) {
         std::string indexVariableName = visit(ctx->foreachHead()->declStmt().front()).as<std::string>();
         indexVariablePtr = currentScope->lookup(indexVariableName)->getAddress();
+
         // Initialize variable with 0
-        builder->CreateStore(builder->getInt32(0), indexVariablePtr);
-    } else if (ctx->foreachHead()->assignExpr().size() >= 2) { // assignExpr COMMA declStmt COLON assignExpr
-        visit(ctx->foreachHead()->assignExpr().front()).as<llvm::Value*>();
-        std::string indexVariableName = ctx->foreachHead()->assignExpr().front()->declStmt()->IDENTIFIER()->toString();
-        indexVariablePtr = currentScope->lookup(indexVariableName)->getAddress();
-    } else { // declStmt COLON assignExpr
+        if (!head->declStmt().front()->assignExpr())
+            builder->CreateStore(builder->getInt32(0), indexVariablePtr);
+    } else {
         std::string indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
         // Create local variable for
         llvm::Type* indexVariableType = llvm::Type::getInt32Ty(*context);
@@ -595,7 +575,7 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     llvm::Value* itemVariablePtr = currentScope->lookup(itemVariableName)->getAddress();
 
     // Do loop variable initialization
-    llvm::Value* arrayValuePtr = visit(ctx->foreachHead()->assignExpr().back()).as<llvm::Value*>();
+    llvm::Value* arrayValuePtr = visit(ctx->foreachHead()->assignExpr()).as<llvm::Value*>();
     llvm::Value* arrayValue = builder->CreateLoad(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr);
     llvm::Value* maxIndex = builder->getInt32(arrayValue->getType()->getArrayNumElements() -1);
     // Load the first item into item variable
@@ -605,6 +585,9 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     llvm::Value* newItemValue = builder->CreateLoad(gepInst->getType()->getPointerElementType(), gepInst);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
+
+    // Get parent function
+    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
@@ -765,7 +748,7 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
     return currentVar;
 }
 
-antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
+/*antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
     bool isMethod = currentThisValue != nullptr;
     std::string functionName = ctx->IDENTIFIER()->toString();
 
@@ -1022,11 +1005,10 @@ antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCon
     currentScope->lookup(varName)->updateLLVMType(arrayType);
 
     return (llvm::Value*) builder->getTrue();
-}
+}*/
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
-    // Ignore subtree and return true
-    return (llvm::Value*) builder->getTrue();
+    return nullptr; // Noop
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
@@ -1128,10 +1110,12 @@ antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* 
     llvm::Value* value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
     llvm::Type* valueTy = value->getType();
 
+    // Calculate size at compile-time
     unsigned int size = valueTy->isArrayTy() ? valueTy->getArrayNumElements() : valueTy->getScalarSizeInBits();
-    llvm::Value* result = builder->getInt32(size);
-    llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
-    builder->CreateStore(result, resultPtr);
+    llvm::Value* resultPtr = builder->CreateAlloca(builder->getInt32Ty());
+    builder->CreateStore(builder->getInt32(size), resultPtr);
+
+    // Return address to where the size is saved
     return resultPtr;
 }
 
@@ -1577,84 +1561,158 @@ antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) {
-    auto value = visit(ctx->postfixUnaryExpr());
+    llvm::Value* lhsPtr = visit(ctx->postfixUnaryExpr()).as<llvm::Value*>();
 
-    // Prefix unary is: PLUS_PLUS postfixUnary
-    if (ctx->PLUS_PLUS()) {
-        llvm::Value* lhsPtr = value.as<llvm::Value*>();
+    if (!ctx->prefixUnaryOp().empty()) {
+        // Load the value
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* result = conversionsManager->getPrefixPlusPlusInst(lhs);
-        builder->CreateStore(result, lhsPtr);
+
+        unsigned int tokenCounter = 1;
+        while (tokenCounter < ctx->children.size()) {
+            auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+
+            // Insert conversion instructions depending on the used operator
+            if (token->getSymbol()->getType() == SpiceParser::MINUS) { // Consider - operator
+                lhs = conversionsManager->getPrefixMinusInst(lhs);
+            } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+                lhs = conversionsManager->getPrefixPlusPlusInst(lhs);
+            } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
+                lhs = conversionsManager->getPrefixMinusMinusInst(lhs);
+            } else if (token->getSymbol()->getType() == SpiceParser::NOT) { // Consider ! operator
+                lhs = conversionsManager->getPrefixNotInst(lhs);
+            } else if (token->getSymbol()->getType() == SpiceParser::BITWISE_NOT) { // Consider ~ operator
+                lhs = conversionsManager->getPrefixBitwiseNotInst(lhs);
+            } else if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider * operator
+                lhs = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
+            } else if (token->getSymbol()->getType() == SpiceParser::BITWISE_AND) { // Consider & operator
+                lhsPtr = builder->CreateAlloca(lhs->getType());
+                builder->CreateStore(lhs, lhsPtr);
+                lhs = lhsPtr;
+            }
+            tokenCounter++;
+        }
+
+        // Store the value back again
+        builder->CreateStore(lhs, lhsPtr);
     }
 
-    // Prefix unary is: MINUS_MINUS postfixUnary
-    if (ctx->MINUS_MINUS()) {
-        llvm::Value* lhsPtr = value.as<llvm::Value*>();
-        llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* result = conversionsManager->getPrefixMinusMinusInst(lhs);
-        builder->CreateStore(result, lhsPtr);
-    }
-
-    // Prefix unary is: NOT postfixUnary
-    if (ctx->NOT()) {
-        llvm::Value* lhsPtr = value.as<llvm::Value*>();
-        llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* result = conversionsManager->getNotInst(lhs);
-        builder->CreateStore(result, lhsPtr);
-    }
-
-    return value;
+    return lhsPtr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
-    auto value = visit(ctx->atomicExpr());
+    llvm::Value* lhsPtr = visit(ctx->atomicExpr()).as<llvm::Value*>();
 
-    // Postfix unary is: PLUS_PLUS atomicExpr
-    if (ctx->PLUS_PLUS()) {
-        llvm::Value* lhsPtr = value.as<llvm::Value*>();
+    if (ctx->children.size() > 1) {
+        // Load the value
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* result = conversionsManager->getPostfixPlusPlusInst(lhs);
-        builder->CreateStore(result, lhsPtr);
+
+        unsigned int tokenCounter = 1;
+        while (tokenCounter < ctx->children.size()) {
+            auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+
+            // Insert conversion instructions depending on the used operator
+            if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
+                lhs = conversionsManager->getPrefixMinusInst(lhs);
+            } else if (token->getSymbol()->getType() == SpiceParser::LPAREN) { // Consider function call
+                // ToDo: Support function calls
+                //lhs = ;
+            } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider member access
+                // ToDo: Support member access
+                //lhs = ;
+            } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+                lhs = conversionsManager->getPostfixPlusPlusInst(lhs);
+            } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
+                lhs = conversionsManager->getPostfixMinusMinusInst(lhs);
+            }
+            tokenCounter++;
+        }
+
+        // Store the value back again
+        builder->CreateStore(lhs, lhsPtr);
     }
 
-    // Postfix unary is: MINUS_MINUS atomicExpr
-    if (ctx->MINUS_MINUS()) {
-        llvm::Value* lhsPtr = value.as<llvm::Value*>();
-        llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        llvm::Value* result = conversionsManager->getPostfixMinusMinusInst(lhs);
-        builder->CreateStore(result, lhsPtr);
-    }
-
-    return value;
+    return lhsPtr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
     if (ctx->value()) return visit(ctx->value());
     allParamsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
+    if (ctx->IDENTIFIER()) {
+        std::string variableName = ctx->IDENTIFIER()->toString();
+        return currentScope->lookup(variableName)->getAddress();
+    }
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
+    if (ctx->primitiveValue()) {
+        llvm::Value* constantValue = visit(ctx->primitiveValue()).as<llvm::Value*>();
+
+        // If global variable value, return value immediately, because it is already a pointer
+        if (!currentScope->getParent()) return currentConstValue;
+
+        // Store the value to a tmp variable
+        llvm::Value* llvmValuePtr = builder->CreateAlloca(currentConstValue->getType());
+        builder->CreateStore(currentConstValue, llvmValuePtr);
+        return llvmValuePtr;
+    }
+
+    // Value is nil
+    if (ctx->NIL()) {
+        llvm::Type* nilType = visit(ctx->dataType()).as<llvm::Type*>();
+        currentConstValue = llvm::Constant::getNullValue(nilType);
+
+        // If global variable value, return value immediately, because it is already a pointer
+        if (!currentScope->getParent()) return currentConstValue;
+
+        // Store the value to a tmp variable
+        llvm::Value* llvmValuePtr = builder->CreateAlloca(currentConstValue->getType());
+        builder->CreateStore(currentConstValue, llvmValuePtr);
+        return llvmValuePtr;
+    }
+
+    if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
+        // ToDo: Support struct instantiations
+        //return ;
+    }
+
+    if (ctx->LBRACE()) { // Array initialization
+        // Todo: Support array initializations
+        //return ;
+    }
+
+    return nullptr;
+}
+
+antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext* ctx) {
     // Value is a double constant
     if (ctx->DOUBLE()) {
         currentSymbolType = SymbolType(TY_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
-        currentConstValue = llvm::ConstantFP::get(*context, llvm::APFloat(value));
+        return (llvm::Value*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TY_INT);
         int v = std::stoi(ctx->INTEGER()->toString());
-        currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
+        if (currentVarSigned) {
+            return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
+        } else {
+            return (llvm::Value*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), v);
+        }
     }
 
     // Value is a char constant
     if (ctx->CHAR()) {
         currentSymbolType = SymbolType(TY_CHAR);
         char value = ctx->CHAR()->toString()[1];
-        currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
+        if (currentVarSigned) {
+            return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
+        } else {
+            return (llvm::Value*) llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value);
+        }
     }
 
     // Value is a string constant
@@ -1663,46 +1721,22 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         std::string value = ctx->STRING()->toString();
         value = std::regex_replace(value, std::regex("\\\\n"), "\n");
         value = value.substr(1, value.size() - 2);
-        currentConstValue = builder->CreateGlobalStringPtr(value, "", 0, module.get());
+        return (llvm::Value*) builder->CreateGlobalStringPtr(value, "", 0, module.get());
     }
 
     // Value is a boolean constant with value false
     if (ctx->FALSE()) {
         currentSymbolType = SymbolType(TY_BOOL);
-        currentConstValue = builder->getFalse();
+        return (llvm::Value*) builder->getFalse();
     }
 
     // Value is a boolean constant with value true
     if (ctx->TRUE()) {
         currentSymbolType = SymbolType(TY_BOOL);
-        currentConstValue = builder->getTrue();
+        return (llvm::Value*) builder->getTrue();
     }
 
-    // Value is nil
-    if (ctx->NIL()) {
-        if (ctx->dataType()->TYPE_DOUBLE()) currentSymbolType = SymbolType(TY_DOUBLE);
-        if (ctx->dataType()->TYPE_INT()) currentSymbolType = SymbolType(TY_INT);
-        if (ctx->dataType()->TYPE_SHORT()) currentSymbolType = SymbolType(TY_SHORT);
-        if (ctx->dataType()->TYPE_LONG()) currentSymbolType = SymbolType(TY_LONG);
-        if (ctx->dataType()->TYPE_BYTE()) currentSymbolType = SymbolType(TY_BYTE);
-        if (ctx->dataType()->TYPE_CHAR()) currentSymbolType = SymbolType(TY_CHAR);
-        if (ctx->dataType()->TYPE_STRING()) currentSymbolType = SymbolType(TY_STRING);
-        if (ctx->dataType()->TYPE_BOOL()) currentSymbolType = SymbolType(TY_BOOL);
-        llvm::Type* nilType = visit(ctx->dataType()).as<llvm::Type*>();
-        currentConstValue = llvm::Constant::getNullValue(nilType);
-    }
-
-    // If global variable value, return value immediately, because it is already a pointer
-    if (!currentScope->getParent()) return currentConstValue;
-
-    // Store the value to a tmp variable
-    llvm::Value* llvmValuePtr = builder->CreateAlloca(currentConstValue->getType());
-    builder->CreateStore(currentConstValue, llvmValuePtr);
-    return llvmValuePtr;
-}
-
-antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext* ctx) {
-
+    throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through");
 }
 
 antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {

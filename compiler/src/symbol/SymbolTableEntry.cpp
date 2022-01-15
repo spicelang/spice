@@ -12,21 +12,30 @@ std::string SymbolTableEntry::getName() {
 }
 
 /**
- * Retrieve the state of the current symbol
- *
- * @return State of the current symbol
- */
-SymbolState SymbolTableEntry::getState() {
-    return state;
-}
-
-/**
  * Retrieve the type of the current symbol
  *
  * @return Type of the current symbol
  */
 SymbolType SymbolTableEntry::getType() {
     return type;
+}
+
+/**
+ * Retrieve the symbol specifiers of the current symbol
+ *
+ * @return Symbol Specifiers of the current symbol
+ */
+SymbolSpecifiers SymbolTableEntry::getSpecifiers() {
+    return specifiers;
+}
+
+/**
+ * Retrieve the state of the current symbol
+ *
+ * @return State of the current symbol
+ */
+SymbolState SymbolTableEntry::getState() {
+    return state;
 }
 
 /**

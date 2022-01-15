@@ -133,10 +133,6 @@ SymbolType OpRuleManager::getRemResultType(const antlr4::Token& token, const Sym
     return validateBinaryOperation(token, REM_OP_RULES, "%", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPrefixPlusResultType(const antlr4::Token& token, const SymbolType& lhs) {
-    return validateUnaryOperation(token, PREFIX_PLUS_OP_RULES, "+", lhs);
-}
-
 SymbolType OpRuleManager::getPrefixMinusResultType(const antlr4::Token& token, const SymbolType& lhs) {
     return validateUnaryOperation(token, PREFIX_MINUS_OP_RULES, "-", lhs);
 }
