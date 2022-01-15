@@ -904,10 +904,23 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
 antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext* ctx) {
     // Check if a bitwise or operator is applied
     if (ctx->children.size() > 1) {
+        SymbolType lhsTy = visit(ctx->bitwiseXorExpr()[0]).as<SymbolType>();
+        for (int i = 1; i < ctx->bitwiseXorExpr().size(); i++) {
+            SymbolType rhsTy = visit(ctx->bitwiseXorExpr()[i]).as<SymbolType>();
+            lhsTy = OpRuleManager::getBitwiseOrResultType(*ctx->start, lhsTy, rhsTy);
+        }
+        return lhsTy;
+    }
+    return visit(ctx->bitwiseXorExpr()[0]);
+}
+
+antlrcpp::Any AnalyzerVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext* ctx) {
+    // Check if a bitwise xor operator is applied
+    if (ctx->children.size() > 1) {
         SymbolType lhsTy = visit(ctx->bitwiseAndExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->bitwiseAndExpr()[i]).as<SymbolType>();
-            lhsTy = OpRuleManager::getBitwiseOrResultType(*ctx->start, lhsTy, rhsTy);
+            lhsTy = OpRuleManager::getBitwiseXorResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }
@@ -999,13 +1012,13 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
 
 antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) {
     // Check if at least one multiplicative operator is applied
-    if (ctx->prefixUnaryExpr().size() > 1) {
-        SymbolType currentType = visit(ctx->prefixUnaryExpr()[0]).as<SymbolType>();
+    if (ctx->castExpr().size() > 1) {
+        SymbolType currentType = visit(ctx->castExpr()[0]).as<SymbolType>();
         // Check if data types are compatible
         unsigned int operatorIndex = 1;
-        for (int i = 1; i < ctx->prefixUnaryExpr().size(); i++) {
+        for (int i = 1; i < ctx->castExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
-            auto next = ctx->prefixUnaryExpr()[i];
+            auto next = ctx->castExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
 
             if (op->getSymbol()->getType() == SpiceParser::MUL) { // Operator is mul
@@ -1020,37 +1033,11 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
         }
         return currentType;
     }
-    return visit(ctx->prefixUnaryExpr()[0]);
-}
-
-antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) {
-    antlrcpp::Any lhs = visit(ctx->postfixUnaryExpr());
-
-    if (ctx->PLUS_PLUS()) { // Ensure valid type when '++' is applied
-        return OpRuleManager::getPrefixPlusPlusResultType(*ctx->postfixUnaryExpr()->start, lhs.as<SymbolType>());
-    } else if (ctx->MINUS_MINUS()) { // Ensure valid type when '--' is applied
-        return OpRuleManager::getPrefixMinusMinusResultType(*ctx->postfixUnaryExpr()->start, lhs.as<SymbolType>());
-    } else if (ctx->NOT()) { // Ensure valid type if '!' is applied
-        return OpRuleManager::getNotResultType(*ctx->postfixUnaryExpr()->start, lhs.as<SymbolType>());
-    }
-
-    return lhs;
-}
-
-antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
-    antlrcpp::Any lhs = visit(ctx->castExpr());
-
-    if (ctx->PLUS_PLUS()) { // Ensure valid type when '++' is applied
-        return OpRuleManager::getPostfixPlusPlusResultType(*ctx->castExpr()->start, lhs.as<SymbolType>());
-    } else if (ctx->MINUS_MINUS()) { // Ensure valid type when '--' is applied
-        return OpRuleManager::getPostfixMinusMinusResultType(*ctx->castExpr()->start, lhs.as<SymbolType>());
-    }
-
-    return lhs;
+    return visit(ctx->castExpr()[0]);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx) {
-    antlrcpp::Any rhs = visit(ctx->atomicExpr());
+    antlrcpp::Any rhs = visit(ctx->prefixUnaryExpr());
 
     if (ctx->LPAREN()) { // Cast is applied
         SymbolType dstType = visit(ctx->dataType()).as<SymbolType>();
@@ -1060,119 +1047,74 @@ antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx) 
     return rhs;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) {
+    SymbolType lhs = visit(ctx->postfixUnaryExpr()).as<SymbolType>();
+
+    unsigned int tokenCounter = 1;
+    while (tokenCounter < ctx->children.size()) {
+        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+        if (token->getSymbol()->getType() == SpiceParser::PLUS) { // Consider + operator
+            lhs = OpRuleManager::getPrefixPlusResultType(*ctx->postfixUnaryExpr()->start, lhs);
+        } else if (token->getSymbol()->getType() == SpiceParser::MINUS) { // Consider - operator
+            lhs = OpRuleManager::getPrefixMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
+        } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+            lhs = OpRuleManager::getPrefixPlusPlusResultType(*ctx->postfixUnaryExpr()->start, lhs);
+        } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
+            lhs = OpRuleManager::getPrefixMinusMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
+        } else if (token->getSymbol()->getType() == SpiceParser::NOT) { // Consider ! operator
+            lhs = OpRuleManager::getPrefixNotResultType(*ctx->postfixUnaryExpr()->start, lhs);
+        } else if (token->getSymbol()->getType() == SpiceParser::BITWISE_NOT) { // Consider ~ operator
+            lhs = OpRuleManager::getPrefixBitwiseNotResultType(*ctx->postfixUnaryExpr()->start, lhs);
+        } else if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider * operator
+            lhs = OpRuleManager::getPrefixMulResultType(*ctx->postfixUnaryExpr()->start, lhs);
+        } else if (token->getSymbol()->getType() == SpiceParser::BITWISE_AND) { // Consider & operator
+            lhs = OpRuleManager::getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
+        }
+        tokenCounter++;
+    }
+
+    return lhs;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
+    SymbolType lhs = visit(ctx->atomicExpr()).as<SymbolType>();
+
+    unsigned int tokenCounter = 1;
+    while (tokenCounter < ctx->children.size()) {
+        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+        if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Subscript operator
+            tokenCounter++; // Consume LBRACKET
+            auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
+            SymbolType indexType = visit(rule).as<SymbolType>();
+            if (!indexType.is(TY_INT))
+                throw SemanticError(*ctx->start, ARRAY_INDEX_NO_INTEGER, "Array index must be of type int");
+            if (!lhs.is(TY_ARRAY))
+                throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
+                                    "Can only apply subscript operator on array type");
+            lhs = lhs.getContainedTy();
+            tokenCounter++; // Consume assignExpr
+        } else if (token->getSymbol()->getType() == SpiceParser::LPAREN) { // Consider function call
+            // ToDo: Support function calls
+            //lhs = ;
+        } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+            lhs = OpRuleManager::getPostfixPlusPlusResultType(*ctx->atomicExpr()->start, lhs);
+        } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
+            lhs = OpRuleManager::getPostfixMinusMinusResultType(*ctx->atomicExpr()->start, lhs);
+        }
+        tokenCounter++;
+    }
+
+    return lhs;
+}
+
 antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
     if (ctx->value()) return visit(ctx->value());
-    if (ctx->idenValue()) return visit(ctx->idenValue());
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
 }
 
-antlrcpp::Any AnalyzerVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx) {
-    SymbolType symbolType;
-    SymbolTableEntry* entry;
-    unsigned int tokenCounter = 0;
-    unsigned int assignCounter = 0;
-    unsigned int functionCallCounter = 0;
-    unsigned int referenceOperations = 0;
-    unsigned int dereferenceOperations = 0;
-    SymbolTable* scope = currentScope;
-    scopePrefix = "";
-
-    // Consider referencing operators
-    referenceOperations += ctx->BITWISE_AND().size();
-    tokenCounter += referenceOperations;
-
-    // Consider de-referencing operator
-    dereferenceOperations += ctx->MUL().size();
-    tokenCounter += dereferenceOperations;
-
-    // Loop through children
-    while (tokenCounter < ctx->children.size()) {
-        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
-        if (!token) { // Got rule context / non terminal symbol
-            auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
-            unsigned int ruleIndex = rule->getRuleIndex();
-            if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
-                // Set function call parent scope
-                accessScope = scope;
-                // Visit function call
-                symbolType = visit(ctx->functionCall()[functionCallCounter]).as<SymbolType>();
-                // Reset values
-                accessScope = nullptr;
-
-                functionCallCounter++;
-            }
-        } else if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
-            std::string variableName = token->toString();
-            entry = scope->lookup(variableName);
-            if (!entry)
-                throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
-                                    "Variable '" + variableName + "' was referenced before declared");
-            symbolType = entry->getType();
-            entry->setUsed();
-        } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
-            // Check this operation is valid on this type
-            if (symbolType.is(TY_STRUCT) || symbolType.isPointerOf(TY_STRUCT)) {
-                // De-reference automatically if it is a struct pointer
-                if (symbolType.isPointerOf(TY_STRUCT)) symbolType = symbolType.getContainedTy();
-                // Change to new scope
-                std::string structName = symbolType.getSubType();
-                scopePrefix += scopePrefix.empty() ? structName : "." + structName;
-                scope = scope->lookupTable("struct:" + structName);
-                // Check if the table exists
-                if (!scope)
-                    throw SemanticError(*token->getSymbol(), REFERENCED_UNDEFINED_STRUCT_FIELD,
-                                        "Referenced undefined struct '" + structName + "'");
-            } else if (symbolType.is(TY_IMPORT)) {
-                // Change to new scope
-                std::string importName = entry->getName();
-                scope = scope->lookupTable(importName);
-                scopePrefix += scopePrefix.empty() ? importName : "." + importName;
-                // Check if the table exists
-                if (!scope)
-                    throw SemanticError(*token->getSymbol(), REFERENCED_UNDEFINED_STRUCT_FIELD,
-                                        "Referenced undefined import '" + importName + "'");
-            } else {
-                throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply member access operator on " + symbolType.getName(false));
-            }
-        } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
-            // Check this operation is valid on this type
-            if (!symbolType.isArray() && !symbolType.isPointer() && !symbolType.is(TY_STRING))
-                throw SemanticError(*token->getSymbol(), OPERATOR_WRONG_DATA_TYPE,
-                                    "Cannot apply subscript operator on " + symbolType.getName(false));
-            // Check if the index is an integer
-            SymbolType indexType = visit(ctx->assignExpr()[assignCounter]).as<SymbolType>();
-            if (!indexType.is(TY_INT))
-                throw SemanticError(*ctx->assignExpr()[assignCounter]->start, ARRAY_INDEX_NO_INTEGER,
-                                    "Array index must be of type int, you provided " + indexType.getName(false));
-            // Promote the array/pointer element type
-            symbolType = symbolType.is(TY_STRING) ? SymbolType(TY_CHAR) : symbolType.getContainedTy();
-            // Increase counters
-            assignCounter++;
-            tokenCounter += 2; // To consume the assignExpr and the RBRACKET
-        }
-        // Increase counter
-        tokenCounter++;
-    }
-
-    // Apply referencing operators if necessary
-    for (unsigned int i = 0; i < referenceOperations; i++)
-        symbolType = symbolType.toPointer();
-
-    // Apply de-referencing operators if necessary
-    for (unsigned int i = 0; i < dereferenceOperations; i++)
-        symbolType = symbolType.getContainedTy();
-
-    return symbolType;
-}
-
 antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
-    if (ctx->DOUBLE()) return SymbolType(TY_DOUBLE);
-    if (ctx->INTEGER()) return SymbolType(TY_INT);
-    if (ctx->CHAR()) return SymbolType(TY_CHAR);
-    if (ctx->STRING()) return SymbolType(TY_STRING);
-    if (ctx->TRUE() || ctx->FALSE()) return SymbolType(TY_BOOL);
+    if (ctx->primitiveValue()) return visit(ctx->primitiveValue());
     if (ctx->NIL()) {
         SymbolType nilType = visit(ctx->dataType()).as<SymbolType>();
         if (nilType.is(TY_DYN))
@@ -1180,46 +1122,25 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                                 "Nil must have an explicit type");
         return nilType;
     }
-    return nullptr;
+    if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
+
+        return ;
+    }
+    // Array initialization
+
+    return ;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext* ctx) {
+    if (ctx->DOUBLE()) return SymbolType(TY_DOUBLE);
+    if (ctx->INTEGER()) return SymbolType(TY_INT);
+    if (ctx->CHAR()) return SymbolType(TY_CHAR);
+    if (ctx->STRING()) return SymbolType(TY_STRING);
+    return SymbolType(TY_BOOL);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
-    SymbolType type = SymbolType(TY_DYN);
-
-    if (ctx->TYPE_DOUBLE()) type = SymbolType(TY_DOUBLE);
-    if (ctx->TYPE_INT()) type = SymbolType(TY_INT);
-    if (ctx->TYPE_SHORT()) type = SymbolType(TY_SHORT);
-    if (ctx->TYPE_LONG()) type = SymbolType(TY_LONG);
-    if (ctx->TYPE_BYTE()) type = SymbolType(TY_BYTE);
-    if (ctx->TYPE_CHAR()) type = SymbolType(TY_CHAR);
-    if (ctx->TYPE_STRING()) type = SymbolType(TY_STRING);
-    if (ctx->TYPE_BOOL()) type = SymbolType(TY_BOOL);
-    if (!ctx->IDENTIFIER().empty()) { // Struct type
-        // Get type name in format: a.b.c
-        std::string structName = ctx->IDENTIFIER()[0]->toString();
-        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) structName += "." + ctx->IDENTIFIER()[i]->toString();
-
-        if (accessScope) { // Within function call
-            if (accessScope->isImported()) { // Function call to imported function
-                type = initExtStruct(*ctx->start, accessScope,
-                                     ctx->IDENTIFIER()[0]->toString(), structName);
-            } else { // Function call to local function
-                // Check if struct was declared
-                SymbolTableEntry* structSymbol = accessScope->lookup(structName);
-                if (!structSymbol)
-                    throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-                structSymbol->setUsed();
-                type = SymbolType(TY_STRUCT, structName);
-            }
-        } else { // Not within function call
-            // Check if struct was declared
-            SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-            if (!structSymbol)
-                throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-            structSymbol->setUsed();
-            type = SymbolType(TY_STRUCT, structName);
-        }
-    }
+    SymbolType type = visit(ctx->baseDataType()).as<SymbolType>();
 
     unsigned int tokenCounter = 1;
     while (tokenCounter < ctx->children.size()) {
@@ -1245,6 +1166,44 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
     }
 
     return type;
+}
+
+antlrcpp::Any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext* ctx) {
+    if (ctx->TYPE_DOUBLE()) return SymbolType(TY_DOUBLE);
+    if (ctx->TYPE_INT()) return SymbolType(TY_INT);
+    if (ctx->TYPE_SHORT()) return SymbolType(TY_SHORT);
+    if (ctx->TYPE_LONG()) return SymbolType(TY_LONG);
+    if (ctx->TYPE_BYTE()) return SymbolType(TY_BYTE);
+    if (ctx->TYPE_CHAR()) return SymbolType(TY_CHAR);
+    if (ctx->TYPE_STRING()) return SymbolType(TY_STRING);
+    if (ctx->TYPE_BOOL()) return SymbolType(TY_BOOL);
+    if (!ctx->IDENTIFIER().empty()) { // Struct type
+        // Get type name in format: a.b.c
+        std::string structName = ctx->IDENTIFIER()[0]->toString();
+        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) structName += "." + ctx->IDENTIFIER()[i]->toString();
+
+        if (accessScope) { // Within function call
+            if (accessScope->isImported()) { // Function call to imported function
+                return initExtStruct(*ctx->start, accessScope,
+                                     ctx->IDENTIFIER()[0]->toString(), structName);
+            } else { // Function call to local function
+                // Check if struct was declared
+                SymbolTableEntry* structSymbol = accessScope->lookup(structName);
+                if (!structSymbol)
+                    throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+                structSymbol->setUsed();
+                return SymbolType(TY_STRUCT, structName);
+            }
+        } else { // Not within function call
+            // Check if struct was declared
+            SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+            if (!structSymbol)
+                throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+            structSymbol->setUsed();
+            return SymbolType(TY_STRUCT, structName);
+        }
+    }
+    return SymbolType(TY_DYN);
 }
 
 SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope,

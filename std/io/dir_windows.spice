@@ -139,7 +139,7 @@ f<bool> dirExists(string path) {
     // Check if there exists something, a file or a dir
     if access(path, F_OK) == 0 {
         // Check if it is a dir
-        dyn fs = new FileStat {};
+        dyn fs = FileStat {};
         stat(path, &fs);
         return ((int) fs.mode & IF_MT) == IF_DIR;
     }
@@ -150,7 +150,7 @@ f<bool> dirExists(string path) {
  * Lists all files/subdirectories at a given path.
  */
 p listDir(string path) {
-    DirEntry dirEntry = new DirEntry {};
+    DirEntry dirEntry = DirEntry {};
     byte* handle;
     bool readMore = true;
 
@@ -174,7 +174,7 @@ p listDir(string path) {
  * Lists all files/subdirectories at a given path recursively.
  */
 p listDirRecursive(string path) {
-    DirEntry dirEntry = new DirEntry {};
+    DirEntry dirEntry = DirEntry {};
     byte* handle;
     bool readMore = true;
 

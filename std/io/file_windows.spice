@@ -60,7 +60,7 @@ f<int> createFile(string path) {
 f<File> openFile(string path, string mode) {
     FilePtr* fp = fopen(path, mode);
     // Insert check for pointer being 0 and throw an exception
-    File openedFile = new File { fp };
+    File openedFile = File { fp };
     return openedFile;
 }
 

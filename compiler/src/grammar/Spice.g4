@@ -19,9 +19,9 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt)*;
-fieldLst: declStmt*;
+fieldLst: (dataType IDENTIFIER)*;
 typeLst: dataType (COMMA dataType)* ELLIPSIS?;
-paramLstDef: (declStmt | assignExpr) (COMMA (declStmt | assignExpr))*;
+paramLstDef: declStmt (COMMA declStmt)*;
 paramLst: assignExpr (COMMA assignExpr)*;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: declSpecifiers? dataType IDENTIFIER (ASSIGN assignExpr)?;
@@ -56,7 +56,8 @@ postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | LPAREN paramLst? RP
 atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
-value: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE | LBRACE paramLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* LBRACE paramLst? RBRACE | NIL LESS dataType GREATER;
+value: primitiveValue | LBRACE paramLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* LBRACE paramLst? RBRACE | NIL LESS dataType GREATER;
+primitiveValue: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE;
 dataType: baseDataType (MUL | LBRACKET INTEGER? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER (DOT IDENTIFIER)*;
 

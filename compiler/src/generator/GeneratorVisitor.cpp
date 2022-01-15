@@ -1166,77 +1166,79 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
             lhsPtr = visit(ctx->idenValue()).as<llvm::Value*>();
         }
 
-        if (ctx->ASSIGN_OP()) {
-            // Store right side on the left one
-            if (variableEntry->isLocal()) { // Local variable
-                builder->CreateStore(rhs, lhsPtr);
-            } else { // Global variable
-                llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                if (ctx->declStmt()) {
-                    lhs->setInitializer((llvm::Constant*) rhs);
-                } else {
-                    builder->CreateStore(rhs, lhs);
+        if (ctx->assignOp()) {
+            if (ctx->ASSIGN_OP()) {
+                // Store right side on the left one
+                if (variableEntry->isLocal()) { // Local variable
+                    builder->CreateStore(rhs, lhsPtr);
+                } else { // Global variable
+                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
+                    if (ctx->declStmt()) {
+                        lhs->setInitializer((llvm::Constant*) rhs);
+                    } else {
+                        builder->CreateStore(rhs, lhs);
+                    }
                 }
-            }
-        } else if (ctx->PLUS_EQUAL()) {
-            if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            } else { // Global variable
-                llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            }
-        } else if (ctx->MINUS_EQUAL()) {
-            if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            } else { // Global variable
-                llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            }
-        } else if (ctx->MUL_EQUAL()) {
-            if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = conversionsManager->getMulEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            } else { // Global variable
-                llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = conversionsManager->getMulEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            }
-        } else if (ctx->DIV_EQUAL()) {
-            if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = conversionsManager->getDivEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            } else { // Global variable
-                llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = conversionsManager->getDivEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            }
-        } else if (ctx->SHL_EQUAL()) {
-            if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            } else { // Global variable
-                llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            }
-        } else if (ctx->SHR_EQUAL()) {
-            if (variableEntry->isLocal()) { // Local variable
-                llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                rhs = conversionsManager->getSHREqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
-            } else { // Global variable
-                llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                rhs = conversionsManager->getSHREqualInst(lhs, rhs);
-                builder->CreateStore(rhs, lhsPtr);
+            } else if (ctx->assignOp()->PLUS_EQUAL()) {
+                if (variableEntry->isLocal()) { // Local variable
+                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                    rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                } else { // Global variable
+                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
+                    rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                }
+            } else if (ctx->assignOp()->MINUS_EQUAL()) {
+                if (variableEntry->isLocal()) { // Local variable
+                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                    rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                } else { // Global variable
+                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
+                    rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                }
+            } else if (ctx->MUL_EQUAL()) {
+                if (variableEntry->isLocal()) { // Local variable
+                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                    rhs = conversionsManager->getMulEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                } else { // Global variable
+                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
+                    rhs = conversionsManager->getMulEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                }
+            } else if (ctx->DIV_EQUAL()) {
+                if (variableEntry->isLocal()) { // Local variable
+                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                    rhs = conversionsManager->getDivEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                } else { // Global variable
+                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
+                    rhs = conversionsManager->getDivEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                }
+            } else if (ctx->SHL_EQUAL()) {
+                if (variableEntry->isLocal()) { // Local variable
+                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                    rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                } else { // Global variable
+                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
+                    rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                }
+            } else if (ctx->SHR_EQUAL()) {
+                if (variableEntry->isLocal()) { // Local variable
+                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+                    rhs = conversionsManager->getSHREqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                } else { // Global variable
+                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
+                    rhs = conversionsManager->getSHREqualInst(lhs, rhs);
+                    builder->CreateStore(rhs, lhsPtr);
+                }
             }
         }
     }
@@ -1386,11 +1388,11 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
 }
 
 antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext* ctx) {
-    if (ctx->bitwiseAndExpr().size() > 1) {
-        llvm::Value* lhsPtr = visit(ctx->bitwiseAndExpr()[0]).as<llvm::Value*>();
+    if (ctx->bitwiseXorExpr().size() > 1) {
+        llvm::Value* lhsPtr = visit(ctx->bitwiseXorExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-        for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
-            llvm::Value* rhsPtr = visit(ctx->bitwiseAndExpr()[i]).as<llvm::Value*>();
+        for (int i = 1; i < ctx->bitwiseXorExpr().size(); i++) {
+            llvm::Value* rhsPtr = visit(ctx->bitwiseXorExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             lhs = conversionsManager->getBitwiseOrInst(lhs, rhs);
         }
@@ -1398,8 +1400,25 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCon
         builder->CreateStore(lhs, resultPtr);
         return resultPtr;
     }
+    return visit(ctx->bitwiseXorExpr()[0]);
+}
+
+antlrcpp::Any GeneratorVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext* ctx) {
+    if (ctx->bitwiseAndExpr().size() > 1) {
+        llvm::Value* lhsPtr = visit(ctx->bitwiseAndExpr()[0]).as<llvm::Value*>();
+        llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+        for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
+            llvm::Value* rhsPtr = visit(ctx->bitwiseAndExpr()[i]).as<llvm::Value*>();
+            llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+            lhs = conversionsManager->getBitwiseXorInst(lhs, rhs);
+        }
+        llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
+        builder->CreateStore(lhs, resultPtr);
+        return resultPtr;
+    }
     return visit(ctx->bitwiseAndExpr()[0]);
 }
+
 
 antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext* ctx) {
     if (ctx->equalityExpr().size() > 1) {
@@ -1507,7 +1526,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
 
             if (op->getSymbol()->getType() == SpiceParser::PLUS)
                 lhs = conversionsManager->getPlusInst(lhs, rhs);
-            else
+            else if (op->getSymbol()->getType() == SpiceParser::MINUS)
                 lhs = conversionsManager->getMinusInst(lhs, rhs);
 
             operatorIndex += 2;
@@ -1522,20 +1541,20 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
 
 antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) {
     // Check if at least one multiplicative operator is applied
-    if (ctx->prefixUnaryExpr().size() > 1) {
-        llvm::Value* lhsPtr = visit(ctx->prefixUnaryExpr()[0]).as<llvm::Value*>();
+    if (ctx->castExpr().size() > 1) {
+        llvm::Value* lhsPtr = visit(ctx->castExpr()[0]).as<llvm::Value*>();
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         unsigned int operatorIndex = 1;
-        for (int i = 1; i < ctx->prefixUnaryExpr().size(); i++) {
+        for (int i = 1; i < ctx->castExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
-            llvm::Value* rhsPtr = visit(ctx->prefixUnaryExpr()[i]).as<llvm::Value*>();
+            llvm::Value* rhsPtr = visit(ctx->castExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
             if (op->getSymbol()->getType() == SpiceParser::MUL)
                 lhs = conversionsManager->getMulInst(lhs, rhs);
             else if (op->getSymbol()->getType() == SpiceParser::DIV)
                 lhs = conversionsManager->getDivInst(lhs, rhs);
-            else
+            else if (op->getSymbol()->getType() == SpiceParser::REM)
                 lhs = conversionsManager->getRemInst(lhs, rhs);
 
             operatorIndex += 2;
@@ -1545,7 +1564,23 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
         builder->CreateStore(lhs, resultPtr);
         return resultPtr;
     }
-    return visit(ctx->prefixUnaryExpr()[0]);
+    return visit(ctx->castExpr()[0]);
+}
+
+antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx) {
+    auto value = visit(ctx->prefixUnaryExpr());
+
+    if (ctx->LPAREN()) { // Cast operator is applied
+        llvm::Type* dstTy = visit(ctx->dataType()).as<llvm::Type*>();
+        llvm::Value* rhsPtr = value.as<llvm::Value*>();
+        llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+        llvm::Value* result = conversionsManager->getCastInst(dstTy, rhs);
+        llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+        builder->CreateStore(result, resultPtr);
+        return resultPtr;
+    }
+
+    return value;
 }
 
 antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) {
@@ -1579,7 +1614,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
 }
 
 antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) {
-    auto value = visit(ctx->castExpr());
+    auto value = visit(ctx->atomicExpr());
 
     // Postfix unary is: PLUS_PLUS atomicExpr
     if (ctx->PLUS_PLUS()) {
@@ -1600,162 +1635,11 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
     return value;
 }
 
-antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx) {
-    auto value = visit(ctx->atomicExpr());
-
-    if (ctx->LPAREN()) { // Cast operator is applied
-        llvm::Type* dstTy = visit(ctx->dataType()).as<llvm::Type*>();
-        llvm::Value* rhsPtr = value.as<llvm::Value*>();
-        llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-        llvm::Value* result = conversionsManager->getCastInst(dstTy, rhs);
-        llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
-        builder->CreateStore(result, resultPtr);
-        return resultPtr;
-    }
-
-    return value;
-}
-
 antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
     if (ctx->value()) return visit(ctx->value());
     allParamsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
-    if (ctx->idenValue()) return visit(ctx->idenValue());
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
-}
-
-// Returns pointer
-antlrcpp::Any GeneratorVisitor::visitIdenValue(SpiceParser::IdenValueContext* ctx) {
-    llvm::Value* basePtr;
-    std::vector<llvm::Value*> indices;
-    SymbolTableEntry* entry = nullptr;
-    unsigned int tokenCounter = 0;
-    unsigned int assignCounter = 0;
-    unsigned int functionCallCounter = 0;
-    unsigned int referenceOperations = 0;
-    unsigned int dereferenceOperations = 0;
-    bool metStruct = false;
-    SymbolTable* scope = currentScope;
-    scopePrefix = "";
-
-    // Consider referencing operators
-    referenceOperations += ctx->BITWISE_AND().size();
-    tokenCounter += referenceOperations;
-
-    // Consider de-referencing operator
-    dereferenceOperations += ctx->MUL().size();
-    tokenCounter += dereferenceOperations;
-
-    // Loop through children
-    while (tokenCounter < ctx->children.size()) {
-        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
-        if (!token) { // Got rule context / non terminal symbol
-            auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
-            unsigned int ruleIndex = rule->getRuleIndex();
-            if (ruleIndex == SpiceParser::RuleFunctionCall) { // Consider function call
-                if (entry && (entry->getType().is(TY_STRUCT) || entry->getType().isPointerOf(TY_STRUCT))) {
-                    currentThisValue = basePtr;
-                    currentSymbolType = entry->getType();
-                }
-                // Set function call parent scope
-                accessScope = scope;
-                // Visit function call
-                basePtr = visit(ctx->functionCall()[functionCallCounter]).as<llvm::Value*>();
-                // Reset values
-                currentThisValue = nullptr;
-                accessScope = nullptr;
-
-                indices.clear();
-                indices.push_back(builder->getInt32(0));
-                functionCallCounter++;
-            }
-        } else if (token->getSymbol()->getType() == SpiceParser::IDENTIFIER) { // Consider identifier
-            // Apply field
-            std::string variableName = token->toString();
-            entry = scope->lookup(variableName);
-            if (metStruct) { // Struct
-                indices.push_back(builder->getInt32(entry->getOrderIndex()));
-            } else { // Local, global or imported global variable
-                if (scope->isImported()) { // Imported global variable
-                    // Initialize external global variable
-                    basePtr = module->getOrInsertGlobal(variableName, getTypeForSymbolType(entry->getType()));
-                    // Set some attributes to it
-                    llvm::GlobalVariable* global = module->getNamedGlobal(variableName);
-                    global->setDSOLocal(true);
-                    global->setExternallyInitialized(true);
-                } else { // Local or global variable
-                    basePtr = entry->getAddress();
-                    indices.push_back(builder->getInt32(0));
-                    metStruct = entry->getType().is(TY_STRUCT) || entry->getType().isPointerOf(TY_STRUCT);
-                }
-            }
-        } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider dot operator
-            // De-reference automatically if it is a struct pointer
-            if (entry->getType().is(TY_STRUCT) || entry->getType().isPointerOf(TY_STRUCT)) {
-                SymbolType symbolType = entry->getType();
-                // Start auto-de-referencing
-                if (entry->getType().isPointerOf(TY_STRUCT)) {
-                    // Only work with GEP if it is really necessary. If we only have one 0 as index, we can fall back to a load inst
-                    if (indices.size() > 1 || (!indices.empty() && indices[0] != builder->getInt32(0)))
-                        basePtr = builder->CreateInBoundsGEP(basePtr->getType()->getPointerElementType(), basePtr, indices);
-                    basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
-                    indices.clear();
-                    indices.push_back(builder->getInt32(0));
-                    symbolType = symbolType.getContainedTy();
-                }
-                // Change to new scope
-                std::string structName = symbolType.getSubType();
-                scopePrefix += scopePrefix.empty() ? structName : "." + structName;
-                scope = scope->lookupTable("struct:" + structName);
-                // Check if the table exists
-                if (!scope)
-                    throw IRError(*token->getSymbol(), VARIABLE_NOT_FOUND,
-                                  "Compiler error: Referenced undefined struct '" + structName + "'");
-            } else if (entry->getType().is(TY_IMPORT)) {
-                // Change to new scope
-                std::string importName = entry->getName();
-                scope = scope->lookupTable(importName);
-                scopePrefix += scopePrefix.empty() ? importName : "." + importName;
-            }
-        } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
-            // Get the index value
-            llvm::Value* indexValue = visit(ctx->assignExpr()[assignCounter]).as<llvm::Value*>();
-            indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
-            // Add indices depending on the type
-            if (basePtr->getType()->getPointerElementType()->isPointerTy()) {
-                basePtr = builder->CreateLoad(basePtr->getType()->getPointerElementType(), basePtr);
-                indices.clear();
-            }
-            indices.push_back(indexValue);
-            // Increase counters
-            assignCounter++;
-            tokenCounter += 2; // To consume the assignExpr and the RBRACKET
-        }
-        // Increase counter
-        tokenCounter++;
-    }
-
-    // Only work with GEP if it is really necessary. If we only have one 0 as index, we can fall back to a load inst
-    llvm::Value* resultPtr = basePtr;
-    if (indices.size() > 1 || (!indices.empty() && indices[0] != builder->getInt32(0))) {
-        // Build GEP instruction
-        resultPtr = builder->CreateInBoundsGEP(basePtr->getType()->getPointerElementType(), basePtr, indices);
-    }
-
-    // If de-referencing operators are present, add a zero index at the end of the gep instruction for each
-    for (unsigned int i = 0; i < dereferenceOperations; i++) {
-        resultPtr = builder->CreateLoad(resultPtr->getType()->getPointerElementType(), resultPtr);
-    }
-
-    // If referencing operators are present, store the calculated address into memory for each
-    for (unsigned int i = 0; i < referenceOperations; i++) {
-        llvm::Value* resultPtrPtr = builder->CreateAlloca(resultPtr->getType());
-        builder->CreateStore(resultPtr, resultPtrPtr);
-        resultPtr = resultPtrPtr;
-    }
-
-    // Return the calculated memory address
-    return resultPtr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
@@ -1824,33 +1708,12 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     return llvmValuePtr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
-    if (ctx->TYPE_DOUBLE()) { // Data type is double
-        currentSymbolType = SymbolType(TY_DOUBLE);
-    } else if (ctx->TYPE_INT()) { // Data type is int
-        currentSymbolType = SymbolType(TY_INT);
-    } else if (ctx->TYPE_SHORT()) { // Data type is short
-        currentSymbolType = SymbolType(TY_SHORT);
-    } else if (ctx->TYPE_LONG()) { // Data type is long
-        currentSymbolType = SymbolType(TY_LONG);
-    } else if (ctx->TYPE_BYTE()) { // Data type is byte
-        currentSymbolType = SymbolType(TY_BYTE);
-    } else if (ctx->TYPE_CHAR()) { // Data type is char
-        currentSymbolType = SymbolType(TY_CHAR);
-    } else if (ctx->TYPE_STRING()) { // Data type is string
-        currentSymbolType = SymbolType(TY_STRING);
-    } else if (ctx->TYPE_BOOL()) { // Data type is bool
-        currentSymbolType = SymbolType(TY_BOOL);
-    } else if (ctx->TYPE_DYN()) { // Data type is dyn
-        SymbolTableEntry* symbolTableEntry = currentScope->lookup(currentVar);
-        currentSymbolType = symbolTableEntry->getType();
-    } else if (!ctx->IDENTIFIER().empty()) { // Custom data type
-        // Get type name in format: a.b.c
-        std::string typeName = ctx->IDENTIFIER()[0]->toString();
-        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) typeName += "." + ctx->IDENTIFIER()[i]->toString();
+antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext* ctx) {
 
-        currentSymbolType = SymbolType(TY_STRUCT, typeName);
-    }
+}
+
+antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
+    currentSymbolType = visit(ctx->baseDataType()).as<SymbolType>();
 
     unsigned int tokenCounter = 1;
     while (tokenCounter < ctx->children.size()) {
@@ -1874,8 +1737,30 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
     llvm::Type* type = getTypeForSymbolType(currentSymbolType);
     // Throw an error if something went wrong.
     // This should technically never occur because of the semantic analysis
-    if (!type) throw IRError(*ctx->TYPE_DYN()->getSymbol(), UNEXPECTED_DYN_TYPE_IR, "Dyn was other");
+    if (!type) throw IRError(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, "Dyn was other");
     return type;
+}
+
+antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext* ctx) {
+    if (ctx->TYPE_DOUBLE()) return SymbolType(TY_DOUBLE);
+    if (ctx->TYPE_INT()) return SymbolType(TY_INT);
+    if (ctx->TYPE_SHORT()) return SymbolType(TY_SHORT);
+    if (ctx->TYPE_LONG()) return SymbolType(TY_LONG);
+    if (ctx->TYPE_BYTE()) return SymbolType(TY_BYTE);
+    if (ctx->TYPE_CHAR()) return SymbolType(TY_CHAR);
+    if (ctx->TYPE_STRING()) return SymbolType(TY_STRING);
+    if (ctx->TYPE_BOOL()) return SymbolType(TY_BOOL);
+    if (ctx->TYPE_DYN()) { // Data type is type inferred
+        SymbolTableEntry* symbolTableEntry = currentScope->lookup(currentVar);
+        return symbolTableEntry->getType();
+    }
+    if (!ctx->IDENTIFIER().empty()) { // Custom data type
+        // Get type name in format: a.b.c
+        std::string typeName = ctx->IDENTIFIER()[0]->toString();
+        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) typeName += "." + ctx->IDENTIFIER()[i]->toString();
+
+        return SymbolType(TY_STRUCT, typeName);
+    }
 }
 
 void GeneratorVisitor::initializeExternalFunctions() {
