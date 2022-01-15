@@ -5,4 +5,5 @@ f<int> fib(int n) {
 
 f<int> main() {
     printf("Result: %d", fib(46));
+    test = test = test;
 }

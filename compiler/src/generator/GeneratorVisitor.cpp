@@ -1120,108 +1120,61 @@ antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* 
 }
 
 antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
-    // Get value of right side
-    llvm::Value* rhsPtr = visit(ctx->ternaryExpr()).as<llvm::Value*>();
-
-    if (ctx->declStmt() || ctx->idenValue()) {
-        // Load right side value
+    // Check if there is an assign operator applied
+    if (ctx->assignOp()) { // This is an assignment
+        // Get value of right side
+        currentVariableName = "";
+        llvm::Value* rhsPtr = visit(ctx->ternaryExpr()).as<llvm::Value*>();
+        std::string variableName = currentVariableName;
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
-        // Get value of left side
-        std::string varName;
-        SymbolTableEntry* variableEntry;
-        llvm::Value* lhsPtr;
-        if (ctx->declStmt()) { // Variable was declared in this line
-            varName = visit(ctx->declStmt()).as<std::string>();
-            // Get symbol table entry
-            variableEntry = currentScope->lookup(varName);
-            lhsPtr = variableEntry->getAddress();
-        } else { // Variable was declared before and is referenced here
-            varName = ctx->idenValue()->IDENTIFIER()[0]->toString();
-            // Get symbol table entry
-            variableEntry = currentScope->lookup(varName);
-            lhsPtr = visit(ctx->idenValue()).as<llvm::Value*>();
+        // Visit the left side
+        llvm::Value* lhsPtr = visit(ctx->prefixUnaryExpr()).as<llvm::Value*>();
+
+        // Get symbol table entry
+        SymbolTableEntry* variableEntry = currentScope->lookup(variableName);
+
+        // Take a look at the operator
+        if (ctx->assignOp()->ASSIGN()) { // Simple assign
+            builder->CreateStore(rhs, lhsPtr);
+        } else { // Compound assign
+            // Get value of left side
+            llvm::Value* lhs;
+            if (variableEntry->isLocal()) {
+                lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+            } else {
+                lhs = module->getNamedGlobal(variableName);
+            }
+            // Decide what to do, based on the operator
+            if (ctx->assignOp()->PLUS_EQUAL()) {
+                rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
+            } else if (ctx->assignOp()->MINUS_EQUAL()) {
+                rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
+            } else if (ctx->assignOp()->MUL_EQUAL()) {
+                rhs = conversionsManager->getMulEqualInst(lhs, rhs);
+            } else if (ctx->assignOp()->DIV_EQUAL()) {
+                rhs = conversionsManager->getDivEqualInst(lhs, rhs);
+            } else if (ctx->assignOp()->REM_EQUAL()) {
+                rhs = conversionsManager->getRemEqualInst(lhs, rhs);
+            } else if (ctx->assignOp()->SHL_EQUAL()) {
+                rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
+            } else if (ctx->assignOp()->SHR_EQUAL()) {
+                rhs = conversionsManager->getSHREqualInst(lhs, rhs);
+            } else if (ctx->assignOp()->AND_EQUAL()) {
+                rhs = conversionsManager->getAndEqualInst(lhs, rhs);
+            } else if (ctx->assignOp()->OR_EQUAL()) {
+                rhs = conversionsManager->getOrEqualInst(lhs, rhs);
+            } else if (ctx->assignOp()->XOR_EQUAL()) {
+                rhs = conversionsManager->getXorEqualInst(lhs, rhs);
+            }
+            builder->CreateStore(rhs, lhsPtr);
         }
 
-        if (ctx->assignOp()) {
-            if (ctx->ASSIGN_OP()) {
-                // Store right side on the left one
-                if (variableEntry->isLocal()) { // Local variable
-                    builder->CreateStore(rhs, lhsPtr);
-                } else { // Global variable
-                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                    if (ctx->declStmt()) {
-                        lhs->setInitializer((llvm::Constant*) rhs);
-                    } else {
-                        builder->CreateStore(rhs, lhs);
-                    }
-                }
-            } else if (ctx->assignOp()->PLUS_EQUAL()) {
-                if (variableEntry->isLocal()) { // Local variable
-                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                    rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                } else { // Global variable
-                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                    rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                }
-            } else if (ctx->assignOp()->MINUS_EQUAL()) {
-                if (variableEntry->isLocal()) { // Local variable
-                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                    rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                } else { // Global variable
-                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                    rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                }
-            } else if (ctx->MUL_EQUAL()) {
-                if (variableEntry->isLocal()) { // Local variable
-                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                    rhs = conversionsManager->getMulEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                } else { // Global variable
-                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                    rhs = conversionsManager->getMulEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                }
-            } else if (ctx->DIV_EQUAL()) {
-                if (variableEntry->isLocal()) { // Local variable
-                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                    rhs = conversionsManager->getDivEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                } else { // Global variable
-                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                    rhs = conversionsManager->getDivEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                }
-            } else if (ctx->SHL_EQUAL()) {
-                if (variableEntry->isLocal()) { // Local variable
-                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                    rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                } else { // Global variable
-                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                    rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                }
-            } else if (ctx->SHR_EQUAL()) {
-                if (variableEntry->isLocal()) { // Local variable
-                    llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-                    rhs = conversionsManager->getSHREqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                } else { // Global variable
-                    llvm::GlobalVariable* lhs = module->getNamedGlobal(varName);
-                    rhs = conversionsManager->getSHREqualInst(lhs, rhs);
-                    builder->CreateStore(rhs, lhsPtr);
-                }
-            }
-        }
+        return lhsPtr;
     }
 
-    // Return the value on the right side
-    return rhsPtr;
+    // This is a fallthrough case, just visit the ternary expression
+    return visit(ctx->ternaryExpr());
 }
 
 antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {
@@ -1638,8 +1591,8 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
     if (ctx->value()) return visit(ctx->value());
     allParamsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
     if (ctx->IDENTIFIER()) {
-        std::string variableName = ctx->IDENTIFIER()->toString();
-        return currentScope->lookup(variableName)->getAddress();
+        currentVariableName = ctx->IDENTIFIER()->toString();
+        return currentScope->lookup(currentVariableName)->getAddress();
     }
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
