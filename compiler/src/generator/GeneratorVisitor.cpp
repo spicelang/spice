@@ -147,24 +147,17 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         std::vector<std::string> paramNames;
         std::vector<llvm::Type*> paramTypes;
         if (ctx->paramLstDef()) {
-            for (auto& param : ctx->paramLstDef()->declStmt()) { // Parameters without default value
+            for (auto& param : ctx->paramLstDef()->declStmt()) {
                 currentVar = param->IDENTIFIER()->toString();
                 paramNames.push_back(currentVar);
                 llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
                 paramTypes.push_back(paramType);
                 symbolTypes.push_back(currentSymbolType);
             }
-            for (auto& param : ctx->paramLstDef()->assignExpr()) { // Parameters with default value
-                currentVar = param->declStmt()->IDENTIFIER()->toString();
-                paramNames.push_back(currentVar);
-                llvm::Type* paramType = visit(param->declStmt()->dataType()).as<llvm::Type*>();
-                paramTypes.push_back(paramType);
-                symbolTypes.push_back(currentSymbolType);
-            }
         }
 
         // Build function itself
-        llvm::Type* returnType = llvm::Type::getInt32Ty(*context);
+        llvm::Type* returnType = builder->getInt32Ty();
         llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
         llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
                                                      MAIN_FUNCTION_NAME, module.get());
