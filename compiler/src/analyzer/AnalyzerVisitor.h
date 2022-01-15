@@ -39,7 +39,7 @@ public:
             objectDir(std::move(outputPath)),
             debugOutput(debugOutput),
             optLevel(optLevel),
-            mustHaveMainFunction(mustHaveMainFunction),
+            requiresMainFunction(mustHaveMainFunction),
             stdFile(stdFile) {
         if (targetArch.empty()) {
             llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
@@ -101,14 +101,15 @@ private:
     std::string objectDir;
     bool debugOutput;
     int optLevel;
-    bool mustHaveMainFunction = true;
+    bool requiresMainFunction = true;
     bool hasMainFunction = false;
-    SymbolTable* currentScope = new SymbolTable(nullptr, mustHaveMainFunction);
+    bool stdFile = false;
+    SymbolTable* currentScope = new SymbolTable(nullptr, requiresMainFunction);
     SymbolTable* accessScope = nullptr;
     std::string scopePrefix;
     bool parameterMode = false;
     int nestedLoopCounter = 0;
-    bool stdFile = false;
+    std::string currentVariableName;
 
     // Private methods
     SymbolType initExtStruct(const antlr4::Token&, SymbolTable*, const std::string&, const std::string&);

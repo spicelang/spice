@@ -12,7 +12,7 @@
  * @param objectDir Full path to an output file (absolute or relative)
  * @param debugOutput Set to true to show compiler debug output
  * @param optLevel Number in range 1-3 to control optimization level
- * @param mustHaveMainFunction true = main source file, false = not main source file
+ * @param requiresMainFunction true = main source file, false = not main source file
  *
  * @return Symbol table of this program part
  */
@@ -24,7 +24,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         const std::string& objectDir,
         bool debugOutput,
         int optLevel,
-        bool mustHaveMainFunction,
+        bool requiresMainFunction,
         bool stdFile
 ) {
     // Read from file
@@ -48,7 +48,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             objectDir,
             debugOutput,
             optLevel,
-            mustHaveMainFunction,
+            requiresMainFunction,
             stdFile
     );
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
@@ -71,7 +71,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             objectDir + "/" + fileName + ".o",
             debugOutput,
             optLevel,
-            mustHaveMainFunction
+            requiresMainFunction
     );
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code

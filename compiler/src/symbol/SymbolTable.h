@@ -14,7 +14,6 @@
 #include <llvm/IR/DerivedTypes.h>
 #include "SpiceParser.h"
 #include "SymbolTableEntry.h"
-#include "analyzer/AnalyzerVisitor.h"
 
 /**
  * Class for storing information about symbols of the AST. Symbol tables are meant to be arranged in a tree structure,

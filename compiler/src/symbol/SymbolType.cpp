@@ -52,6 +52,10 @@ bool SymbolType::is(SymbolSuperType superType) {
     return getSuperType() == superType;
 }
 
+bool SymbolType::is(SymbolSuperType superType, const std::string& subType) {
+    return getSuperType() == superType && getSubType() == subType;
+}
+
 bool SymbolType::isOneOf(const std::vector<SymbolSuperType>& superTypes) {
     SymbolSuperType superType = getSuperType();
     return std::any_of(superTypes.begin(), superTypes.end(), [&superType](int type) {

@@ -24,8 +24,8 @@ public:
     // Constructors
     SymbolTableEntry(std::string name, SymbolType type, SymbolSpecifiers specifiers, SymbolState state,
                      const antlr4::Token& token, unsigned int orderIndex, const bool isGlobal) :
-            name(std::move(name)), type(std::move(type)), state(state), definitionToken(token), orderIndex(orderIndex),
-            isGlobal(isGlobal), used(false) {};
+            name(std::move(name)), type(std::move(type)), specifiers(specifiers), state(state), definitionToken(token),
+            orderIndex(orderIndex), isGlobal(isGlobal), used(false) {};
 
     // Public methods
     std::string getName();
@@ -48,6 +48,7 @@ private:
     // Members
     std::string name;
     SymbolType type;
+    SymbolSpecifiers specifiers;
     llvm::Type* llvmType;
     SymbolState state;
     const antlr4::Token& definitionToken;

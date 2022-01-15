@@ -49,6 +49,7 @@ public:
     bool isArray();
     bool isArrayOf(SymbolSuperType);
     bool is(SymbolSuperType);
+    bool is(SymbolSuperType, const std::string&);
     bool isOneOf(const std::vector<SymbolSuperType>&);
     bool matches(SymbolType);
     bool matches(SymbolType, SymbolSuperType);

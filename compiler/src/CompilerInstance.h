@@ -13,7 +13,7 @@
 #include <generator/GeneratorVisitor.h>
 
 /**
- * Represents the compilation process of a single source file
+ * Represents the compilation process of a single source file to a LLVM module / object file
  */
 class CompilerInstance {
 public:

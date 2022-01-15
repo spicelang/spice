@@ -11,7 +11,7 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 
     // --- Post traversing actions
     // Check if the visitor got a main function
-    if (mustHaveMainFunction && !hasMainFunction)
+    if (requiresMainFunction && !hasMainFunction)
         throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
 
     // Print compiler warnings
@@ -459,6 +459,14 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
 
     // Get the type of the symbol
     SymbolType symbolType = visit(ctx->dataType()).as<SymbolType>();
+
+    // Visit the right side
+    if (ctx->assignExpr()) {
+        SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
+        // Check if type has to be inferred or both types are fixed
+        symbolType = symbolType.is(TY_DYN) ? rhsTy : OpRuleManager::getAssignResultType(*ctx->start, symbolType, rhsTy);
+    }
+
     if (parameterMode && symbolType.isArray()) // Change array type to pointer type for function/procedure parameters
         symbolType = symbolType.getContainedTy().toPointer();
 
@@ -611,10 +619,10 @@ antlrcpp::Any AnalyzerVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtCont
     // Check if data type is of type array and has a size attached
     if (!arraySymbolType.isArray())
         throw SemanticError(*ctx->dataType()->start, OPERATOR_WRONG_DATA_TYPE,
-                            "Data type of an array init stmt must be an array type");
+                            "Data type of array init stmt must be an array type");
     if (arraySymbolType.getArraySize() == 0)
         throw SemanticError(*ctx->dataType()->start, ARRAY_SIZE_INVALID,
-                            "Data type of an array init stmt must have a size attached");
+                            "Data type of array init stmt must have a size attached");
 
     // Check if all values have the same type
     SymbolType expectedItemType = SymbolType(TY_DYN);
@@ -871,65 +879,61 @@ antlrcpp::Any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
-    // Take a look on the right side
-    SymbolType rhsTy = visit(ctx->ternaryExpr()).as<SymbolType>();
-
     // Check if there is an assign operator applied
-    if (ctx->declStmt() || ctx->idenValue()) {
-        // Take a look on the left side
-        SymbolType lhsTy;
-        antlr4::Token* token;
-        SymbolTableEntry* symbolTableEntry;
-        bool allowTypeInference = true;
-        bool allowStateUpdate = true;
+    if (ctx->assignOp()) { // This is an assignment
+        // Visit the right side
+        currentVariableName = "";
+        SymbolType rhsTy = visit(ctx->ternaryExpr()).as<SymbolType>();
+        std::string variableName = currentVariableName;
 
-        if (ctx->declStmt()) { // Variable was declared in this line
-            lhsTy = visit(ctx->declStmt()).as<SymbolType>();
-            std::string variableName = ctx->declStmt()->IDENTIFIER()->toString();
-            token = ctx->declStmt()->IDENTIFIER()->getSymbol();
-            // Get symbol table entry
-            symbolTableEntry = currentScope->lookup(variableName);
-        } else { // Variable was declared before and is referenced here
-            lhsTy = visit(ctx->idenValue()).as<SymbolType>();
-            token = ctx->idenValue()->start;
-            // Get symbol table entry
-            if (ctx->idenValue()->IDENTIFIER().size() == 1) {
-                symbolTableEntry = currentScope->lookup(ctx->idenValue()->IDENTIFIER()[0]->toString());
-            } else {
-                allowTypeInference = false; // Types in structs are not inferable
-                allowStateUpdate = false;
-            }
-        }
+        // Visit the left side
+        SymbolType lhsTy = visit(ctx->prefixUnaryExpr()).as<SymbolType>();
 
         // Take a look at the operator
-        if (ctx->ASSIGN_OP()) {
-            // If left type is dyn, do type inference
-            if (lhsTy.is(TY_DYN) && allowTypeInference) {
-                lhsTy = rhsTy;
-                symbolTableEntry->updateType(rhsTy, false);
-            }
-
-            // Update variable in symbol table
-            if (allowStateUpdate) symbolTableEntry->updateState(INITIALIZED);
-
-            return OpRuleManager::getAssignResultType(*ctx->start, lhsTy, rhsTy);
-        } else if (ctx->PLUS_EQUAL()) {
-            return OpRuleManager::getPlusEqualResultType(*ctx->start, lhsTy, rhsTy);
-        } else if (ctx->MINUS_EQUAL()) {
-            return OpRuleManager::getMinusEqualResultType(*ctx->start, lhsTy, rhsTy);
-        } else if (ctx->MUL_EQUAL()) {
-            return OpRuleManager::getMulEqualResultType(*ctx->start, lhsTy, rhsTy);
-        } else if (ctx->DIV_EQUAL()) {
-            return OpRuleManager::getDivEqualResultType(*ctx->start, lhsTy, rhsTy);
-        } else if (ctx->SHL_EQUAL()) {
-            return OpRuleManager::getSHLEqualResultType(*ctx->start, lhsTy, rhsTy);
-        } else if (ctx->SHR_EQUAL()) {
-            return OpRuleManager::getSHREqualResultType(*ctx->start, lhsTy, rhsTy);
+        if (ctx->assignOp()->ASSIGN()) {
+            rhsTy = OpRuleManager::getAssignResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->PLUS_EQUAL()) {
+            rhsTy = OpRuleManager::getPlusEqualResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->MINUS_EQUAL()) {
+            rhsTy = OpRuleManager::getMinusEqualResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->MUL_EQUAL()) {
+            rhsTy = OpRuleManager::getMulEqualResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->DIV_EQUAL()) {
+            rhsTy = OpRuleManager::getDivEqualResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->REM_EQUAL()) {
+            rhsTy = OpRuleManager::getRemEqualResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->SHL_EQUAL()) {
+            rhsTy = OpRuleManager::getSHLEqualResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->SHR_EQUAL()) {
+            rhsTy = OpRuleManager::getSHREqualResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->AND_EQUAL()) {
+            rhsTy = OpRuleManager::getAndEqualResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->OR_EQUAL()) {
+            rhsTy = OpRuleManager::getOrEqualResultType(*ctx->start, lhsTy, rhsTy);
+        } else if (ctx->assignOp()->XOR_EQUAL()) {
+            rhsTy = OpRuleManager::getXorEqualResultType(*ctx->start, lhsTy, rhsTy);
         }
+
+        if (!variableName.empty()) { // Variable is involved on the left side
+            SymbolTableEntry* symbolTableEntry = currentScope->lookup(variableName);
+
+            // Perform type inference
+            if (lhsTy.is(TY_DYN)) symbolTableEntry->updateType(rhsTy, false);
+
+            // Update state in symbol table
+            symbolTableEntry->updateState(INITIALIZED);
+
+            // Print compiler warning if the rhs size exceeds the lhs size
+            if (lhsTy.isArray() && rhsTy.getArraySize() > lhsTy.getArraySize())
+                CompilerWarning(*ctx->assignExpr()->start, ARRAY_TOO_MANY_VALUES, "You provided more values "
+                                      "than your array can hold. Excess variables are being ignored by the compiler.").print();
+        }
+
+        return rhsTy;
     }
 
-    // Return the rhs type
-    return rhsTy;
+    // This is a fallthrough case, just visit the ternary expression
+    return visit(ctx->ternaryExpr());
 }
 
 antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {
@@ -1186,12 +1190,17 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
 antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) {
     if (ctx->value()) return visit(ctx->value());
+    if (ctx->IDENTIFIER()) {
+        currentVariableName = ctx->IDENTIFIER()->toString();
+        return currentScope->lookup(currentVariableName)->getType();
+    }
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
 }
 
 antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->primitiveValue()) return visit(ctx->primitiveValue());
+
     if (ctx->NIL()) {
         SymbolType nilType = visit(ctx->dataType()).as<SymbolType>();
         if (nilType.is(TY_DYN))
@@ -1199,13 +1208,96 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                                 "Nil must have an explicit type");
         return nilType;
     }
+
     if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
+        // Retrieve fully qualified struct name and the scope where to search it
+        std::string fullyQualifiedStructName;
+        SymbolTable* structScope = currentScope;
+        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) {
+            std::string iden = ctx->IDENTIFIER()[i]->toString();
+            fullyQualifiedStructName += fullyQualifiedStructName.empty() ? iden : "." + iden;
+            if (i < ctx->IDENTIFIER().size() -1) {
+                SymbolTableEntry* entry = structScope->lookup(iden);
+                if (!entry)
+                    throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                        "Struct '" + fullyQualifiedStructName + "' was used before defined");
+                // Check the type of the symbol table entry
+                if (entry->getType().is(TY_IMPORT)) {
+                    structScope = structScope->lookupTable(iden);
+                } else if (entry->getType().is(TY_STRUCT)) {
+                    structScope = structScope->lookupTable("struct:" + iden);
+                } else {
+                    throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                        "The variable '" + iden + "' is of type " + entry->getType().getName(false) +
+                                        ". Expected struct or import");
+                }
+            }
+        }
 
-        return ;
+        // Check if a symbol is existing with that fully qualified name
+        SymbolTableEntry* structSymbol = currentScope->lookup(fullyQualifiedStructName);
+        if (!structSymbol) { // Not found
+            // Trigger an external struct initialization which loads the struct from another source file and modifies the
+            // symbol table accordingly
+            initExtStruct(*ctx->IDENTIFIER()[1]->getSymbol(), structScope,
+                          ctx->IDENTIFIER().back()->toString(), fullyQualifiedStructName);
+            // Reload the struct symbol
+            structSymbol = currentScope->lookup(fullyQualifiedStructName);
+        }
+
+        // Check if the symbol is of the expected struct type
+        if (!structSymbol->getType().is(TY_STRUCT, fullyQualifiedStructName))
+            throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                "Struct '" + fullyQualifiedStructName + "' was used before defined");
+        structSymbol->setUsed();
+
+        // Check if the number of fields matches
+        SymbolTable* structTable = currentScope->lookupTable("struct:" + fullyQualifiedStructName);
+        if (ctx->paramLst()) { // Check if any fields are passed. Empty braces are also allowed
+            if (structTable->getFieldCount() != ctx->paramLst()->assignExpr().size())
+                throw SemanticError(*ctx->paramLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
+                                    "You've passed too less/many field values. Pass either none or all of them");
+
+            // Check if the field types are matching
+            for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+                // Get actual type
+                auto ternary = ctx->paramLst()->assignExpr()[i];
+                SymbolType actualType = visit(ternary).as<SymbolType>();
+                // Get expected type
+                SymbolTableEntry* expectedField = structTable->lookupByIndexInCurrentScope(i);
+                SymbolType expectedType = expectedField->getType();
+                // Check if type matches declaration
+                if (actualType != expectedType)
+                    throw SemanticError(*ternary->start, FIELD_TYPE_NOT_MATCHING,
+                                        "Expected type " + expectedType.getName(false) + " for the field '" +
+                                        expectedField->getName() + "', but got " + actualType.getName(false));
+            }
+        }
+
+        return structSymbol;
     }
-    // Array initialization
 
-    return ;
+    if (ctx->LBRACE()) { // Array initialization
+        // Check if all values have the same type
+        SymbolType expectedItemType = SymbolType(TY_DYN);
+        unsigned int actualSize = 0;
+        if (ctx->paramLst()) {
+            for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+                SymbolType itemType = visit(ctx->paramLst()->assignExpr()[i]).as<SymbolType>();
+                if (expectedItemType.is(TY_DYN)) {
+                    expectedItemType = itemType;
+                } else if (itemType != expectedItemType) {
+                    throw SemanticError(*ctx->paramLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
+                                        "All provided values have to be of the same data type. You provided " +
+                                        expectedItemType.getName(false) + " and " + itemType.getName(false));
+                }
+                actualSize++;
+            }
+        }
+        return expectedItemType.toArray(actualSize);
+    }
+
+    return nullptr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext* ctx) {
@@ -1294,12 +1386,12 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTabl
 
     // Initialize potential structs for field types
     for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
-        SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
-        if (fieldType.is(TY_STRUCT)) {
-            std::string structName = fieldType.getSubType();
+        SymbolType fieldTy = structTable->lookupByIndexInCurrentScope(i)->getType();
+        if (fieldTy.is(TY_STRUCT)) {
+            std::string structName = fieldTy.getSubType();
             initExtStruct(token, sourceScope, structName, scopePrefix + "." + structName);
-        } else if (fieldType.isPointerOf(TY_STRUCT)) {
-            std::string structName = fieldType.getContainedTy().getSubType();
+        } else if (fieldTy.isPointerOf(TY_STRUCT)) {
+            std::string structName = fieldTy.getContainedTy().getSubType();
             initExtStruct(token, sourceScope, structName, scopePrefix + "." + structName);
         }
     }
@@ -1312,10 +1404,11 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTabl
     while (rootScope->getParent()) rootScope = rootScope->getParent();
 
     // Copy struct symbol and struct table to the root scope of the current source file
-    SymbolType newStructType = SymbolType(TY_STRUCT, newStructName);
-    rootScope->insert(newStructName, newStructType, DECLARED, structSymbol->getDefinitionToken(), true, false);
+    SymbolType newStructTy = SymbolType(TY_STRUCT, newStructName);
+    rootScope->insert(newStructName, newStructTy, SymbolSpecifiers(newStructTy), DECLARED,
+                      structSymbol->getDefinitionToken(), false);
     rootScope->lookup(newStructName)->setUsed();
     rootScope->mountChildBlock("struct:" + newStructName, structTable);
     rootScope->lookupTable("struct:" + newStructName)->setImported();
-    return newStructType;
+    return newStructTy;
 }
