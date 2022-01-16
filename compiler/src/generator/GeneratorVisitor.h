@@ -6,7 +6,6 @@
 #include <exception/IRError.h>
 #include "symbol/SymbolTable.h"
 #include <util/ScopeIdUtil.h>
-#include <util/IdentifierUtil.h>
 #include <analyzer/AnalyzerVisitor.h>
 
 #include <llvm/IR/IRBuilder.h>

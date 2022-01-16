@@ -503,14 +503,14 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     currentScope->setBreakBlock(bEnd);
 
     // Execute pre-loop stmts
-    visit(ctx->assignExpr()[0]);
+    visit(ctx->declStmt());
     // Jump into condition block
     createBr(bCond);
 
     // Fill condition block
     parentFct->getBasicBlockList().push_back(bCond);
     moveInsertPointToBlock(bCond);
-    llvm::Value* condValuePtr = visit(ctx->assignExpr()[1]).as<llvm::Value*>();
+    llvm::Value* condValuePtr = visit(ctx->assignExpr()[0]).as<llvm::Value*>();
     llvm::Value* condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
     // Jump to loop body or to loop end
     createCondBr(condValue, bLoop, bEnd);
@@ -521,7 +521,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Generate IR for nested statements
     visit(ctx->stmtLst());
     // Run post-loop actions
-    visit(ctx->assignExpr()[2]);
+    visit(ctx->assignExpr()[1]);
     // Jump into condition block
     createBr(bCond);
 

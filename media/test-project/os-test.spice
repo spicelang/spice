@@ -14,7 +14,7 @@ f<int> main() {
     a.appendChar('A');
 }*/
 
-import "std/runtime/string_rt" as str;
+/*import "std/runtime/string_rt" as str;
 
 f<int> main() {
     str.StringStruct a = str.StringStruct {};
@@ -23,4 +23,13 @@ f<int> main() {
     a.appendChar('A');
     printf("String: %s\n", a.value);
     a.destructor();
+}*/
+
+f<int> fib(int n) {
+    if n <= 2 { return 1; }
+    return fib(n - 1) + fib(n - 2);
+}
+
+f<int> main() {
+    printf("Result: %d", fib(46));
 }

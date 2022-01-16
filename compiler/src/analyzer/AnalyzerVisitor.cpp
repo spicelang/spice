@@ -312,15 +312,15 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
-    // Visit assignment in new scope
-    visit(ctx->assignExpr()[0]);
+    // Visit loop variable declaration in new scope
+    visit(ctx->declStmt());
     // Visit condition in new scope
-    SymbolType conditionType = visit(ctx->assignExpr()[1]).as<SymbolType>();
+    SymbolType conditionType = visit(ctx->assignExpr()[0]).as<SymbolType>();
     if (!conditionType.is(TY_BOOL))
-        throw SemanticError(*ctx->assignExpr()[1]->start, CONDITION_MUST_BE_BOOL,
+        throw SemanticError(*ctx->assignExpr()[0]->start, CONDITION_MUST_BE_BOOL,
                             "For loop condition must be of type bool");
     // Visit incrementer in new scope
-    visit(ctx->assignExpr()[2]);
+    visit(ctx->assignExpr()[1]);
     // Visit statement list in new scope
     nestedLoopCounter++;
     visit(ctx->stmtLst());
@@ -489,48 +489,6 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
 
     return symbolType;
 }
-
-/*antlrcpp::Any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
-    std::string functionName = ctx->IDENTIFIER()->toString();
-
-    // Visit params
-    std::vector<SymbolType> paramTypes;
-    if (ctx->paramLst()) {
-        for (auto& param : ctx->paramLst()->assignExpr()) {
-            SymbolType paramType = visit(param).as<SymbolType>();
-            if (paramType.isArray()) paramType = paramType.getContainedTy().toPointer();
-            paramTypes.push_back(paramType);
-        }
-    }
-    FunctionSignature signature = FunctionSignature(functionName, paramTypes);
-
-    // Check if function signature exists in symbol table
-    SymbolTable* functionEntryTable = accessScope->lookupTableWithSignature(signature.toString());
-    if (!functionEntryTable)
-        throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
-                            "Function/Procedure '" + signature.toString() + "' could not be found");
-    SymbolTableEntry* functionEntry = functionEntryTable->lookup(signature.toString());
-    if (!functionEntry)
-        throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
-                            "Function/Procedure '" + signature.toString() + "' could not be found");
-    // Set the function usage
-    functionEntry->setUsed();
-    // Add function call to the signature queue of the current scope
-    accessScope->pushSignature(signature);
-
-    // Search for symbol table of called function/procedure to read parameters
-    if (functionEntry->getType().is(TY_FUNCTION)) {
-        SymbolTable* functionTable = functionEntryTable->getChild(signature.toString());
-        // Get return type of called function
-        SymbolType returnType = functionTable->lookup(RETURN_VARIABLE_NAME)->getType();
-        // Structs from outside the module require more initialization
-        if (returnType.is(TY_STRUCT) && accessScope->isImported())
-            return initExtStruct(*ctx->start, accessScope, returnType.getSubType(),
-                                 scopePrefix + "." + returnType.getSubType());
-        return returnType;
-    }
-    return SymbolType(TY_BOOL); // Bool with value 'true' for procedures;
-}*/
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
@@ -750,14 +708,22 @@ antlrcpp::Any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
+    // Visit the right side
+    currentVariableName = ""; // Reset the current variable name
+    scopePrefix = ""; // Reset the scope prefix
+    scopePath.clear(); // Clear the scope path
+    auto rhs = visit(ctx->ternaryExpr());
+
     // Check if there is an assign operator applied
     if (ctx->assignOp()) { // This is an assignment
-        // Visit the right side
-        currentVariableName = "";
-        SymbolType rhsTy = visit(ctx->ternaryExpr()).as<SymbolType>();
+        // Get symbol type of right side
+        SymbolType rhsTy = rhs.as<SymbolType>();
         std::string variableName = currentVariableName;
 
         // Visit the left side
+        currentVariableName = ""; // Reset the current variable name
+        scopePrefix = ""; // Reset the scope prefix
+        scopePath.clear(); // Clear the scope path
         SymbolType lhsTy = visit(ctx->prefixUnaryExpr()).as<SymbolType>();
 
         // Take a look at the operator
@@ -804,7 +770,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
     }
 
     // This is a fallthrough case, just visit the ternary expression
-    return visit(ctx->ternaryExpr());
+    return rhs;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {
@@ -1044,18 +1010,75 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             lhs = lhs.getContainedTy();
             tokenCounter++; // Consume assignExpr
         } else if (token->getSymbol()->getType() == SpiceParser::LPAREN) { // Consider function call
-            // ToDo: Support function calls
-            //lhs = ;
+            tokenCounter++; // Consume LPAREN
+            std::string functionName = currentVariableName;
+
+            // Save the scope path to restore it after visiting the params
+            ScopePath scopePathBackup = scopePath;
+
+            // Visit params
+            std::vector<SymbolType> paramTypes;
+            auto* paramLst = dynamic_cast<SpiceParser::ParamLstContext*>(ctx->children[tokenCounter]);
+            if (paramLst != nullptr) {
+                for (auto& param : paramLst->assignExpr()) {
+                    SymbolType paramType = visit(param).as<SymbolType>();
+                    if (paramType.isArray()) paramType = paramType.getContainedTy().toPointer();
+                    paramTypes.push_back(paramType);
+                }
+            }
+            tokenCounter++; // Consume paramLst
+
+            // Restore scope path
+            scopePath = scopePathBackup;
+
+            // Get function scope
+            FunctionSignature signature = FunctionSignature(functionName, paramTypes);
+            SymbolTable* functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+            functionParentScope = functionParentScope->lookupTableWithSignature(signature.toString());
+            if (!functionParentScope)
+                throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
+                                    "Function/Procedure '" + signature.toString() + "' could not be found");
+            scopePath.pushFragment(signature.toString(), functionParentScope);
+            currentVariableName = signature.toString();
+
+            // Get function entry
+            SymbolTableEntry* functionEntry = functionParentScope->lookup(signature.toString());
+            functionEntry->setUsed(); // Set the function to used
+
+            // Add function call to the signature queue of the current scope
+            scopePath.getCurrentScope()->pushSignature(signature);
+
+            // Search for symbol table of called function/procedure to read parameters
+            if (functionEntry->getType().is(TY_FUNCTION)) {
+                SymbolTable* functionTable = functionParentScope->getChild(signature.toString());
+                // Get return type of called function
+                SymbolType returnType = functionTable->lookup(RETURN_VARIABLE_NAME)->getType();
+                // Structs from outside the module require more initialization
+                if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported())
+                    return initExtStruct(*ctx->start, scopePath.getCurrentScope(),
+                                         returnType.getSubType(),
+                                         scopePrefix + "." + returnType.getSubType());
+                lhs = returnType;
+            } else {
+                lhs = SymbolType(TY_BOOL);
+            }
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider member access
-            // ToDo: Support member access
-            //lhs = ;
+            tokenCounter++; // Consume dot
+            auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
+            lhs = visit(postfixUnary).as<SymbolType>();
         } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
             lhs = OpRuleManager::getPostfixPlusPlusResultType(*ctx->atomicExpr()->start, lhs);
         } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
             lhs = OpRuleManager::getPostfixMinusMinusResultType(*ctx->atomicExpr()->start, lhs);
         }
-        tokenCounter++;
+        tokenCounter++; // Consume token
     }
+
+    // Check if referenced variable exists
+    SymbolTable* accessScope = scopePath.getCurrentScope();
+    if (accessScope && !accessScope->lookup(currentVariableName))
+        throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
+                            "Variable '" + currentVariableName + "' was referenced before defined");
 
     return lhs;
 }
@@ -1064,13 +1087,25 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
     if (ctx->value()) return visit(ctx->value());
     if (ctx->IDENTIFIER()) {
         currentVariableName = ctx->IDENTIFIER()->toString();
+        scopePrefix += scopePrefix.empty() ? currentVariableName : "." + currentVariableName;
 
         // Check if this is a reserved keyword
         if (std::find(RESERVED_KEYWORDS.begin(), RESERVED_KEYWORDS.end(), currentVariableName) != RESERVED_KEYWORDS.end())
             throw SemanticError(*ctx->start, RESERVED_KEYWORD, "'' is a reserved keyword for future"
                                     " development of the language. Please use another identifier instead");
 
-        return currentScope->lookup(currentVariableName)->getType();
+        // Load symbol table entry
+        SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+        SymbolTableEntry* entry = accessScope->lookup(currentVariableName);
+
+        // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
+        // The existence of the variable is checked in the visitPostfixUnaryExpr method.
+        if (!entry) return SymbolType(TY_DYN);
+
+        // Otherwise, push the current scope to the scope path
+        scopePath.pushFragment(currentVariableName, currentScope);
+
+        return entry->getType();
     }
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
@@ -1229,13 +1264,13 @@ antlrcpp::Any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContex
         std::string structName = ctx->IDENTIFIER()[0]->toString();
         for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) structName += "." + ctx->IDENTIFIER()[i]->toString();
 
-        if (accessScope) { // Within function call
-            if (accessScope->isImported()) { // Function call to imported function
-                return initExtStruct(*ctx->start, accessScope,
+        if (scopePath.getCurrentScope()) { // Within function call
+            if (scopePath.getCurrentScope()->isImported()) { // Function call to imported function
+                return initExtStruct(*ctx->start, scopePath.getCurrentScope(),
                                      ctx->IDENTIFIER()[0]->toString(), structName);
             } else { // Function call to local function
                 // Check if struct was declared
-                SymbolTableEntry* structSymbol = accessScope->lookup(structName);
+                SymbolTableEntry* structSymbol = scopePath.getCurrentScope()->lookup(structName);
                 if (!structSymbol)
                     throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
                 structSymbol->setUsed();

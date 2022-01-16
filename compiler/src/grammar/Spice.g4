@@ -10,7 +10,7 @@ procedureDef: P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE s
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
 structDef: TYPE IDENTIFIER STRUCT LBRACE fieldLst RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN value)? SEMICOLON;
-forLoop: FOR assignExpr SEMICOLON assignExpr SEMICOLON assignExpr LBRACE stmtLst RBRACE;
+forLoop: FOR declStmt SEMICOLON assignExpr SEMICOLON assignExpr LBRACE stmtLst RBRACE;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
 foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
 whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;

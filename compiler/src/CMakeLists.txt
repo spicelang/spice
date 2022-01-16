@@ -22,6 +22,8 @@ set(SOURCES
         symbol/SymbolTableEntry.h
         symbol/SymbolType.cpp
         symbol/SymbolType.h
+        symbol/ScopePath.cpp
+        symbol/ScopePath.h
         symbol/SymbolSpecifiers.cpp
         symbol/SymbolSpecifiers.h
         exception/SemanticError.cpp
@@ -36,8 +38,6 @@ set(SOURCES
         util/FunctionSignature.h
         util/FileUtil.cpp
         util/FileUtil.h
-        util/IdentifierUtil.cpp
-        util/IdentifierUtil.h
         util/CompilerWarning.cpp
         util/CompilerWarning.h)
 

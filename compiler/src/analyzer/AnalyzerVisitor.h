@@ -7,13 +7,13 @@
 
 #include <CompilerInstance.h>
 #include "symbol/SymbolTable.h"
+#include "symbol/ScopePath.h"
 #include "util/ModuleRegistry.h"
 #include "symbol/SymbolType.h"
 #include "symbol/SymbolSpecifiers.h"
 #include "OpRuleManager.h"
 #include <util/ScopeIdUtil.h>
 #include <util/FileUtil.h>
-#include <util/IdentifierUtil.h>
 #include <exception/SemanticError.h>
 
 #include <llvm/ADT/Triple.h>
@@ -106,7 +106,7 @@ private:
     bool hasMainFunction = false;
     bool stdFile = false;
     SymbolTable* currentScope = new SymbolTable(nullptr, requiresMainFunction);
-    SymbolTable* accessScope = nullptr;
+    ScopePath scopePath;
     std::string scopePrefix;
     bool parameterMode = false;
     int nestedLoopCounter = 0;
