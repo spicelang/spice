@@ -1064,6 +1064,12 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
     if (ctx->value()) return visit(ctx->value());
     if (ctx->IDENTIFIER()) {
         currentVariableName = ctx->IDENTIFIER()->toString();
+
+        // Check if this is a reserved keyword
+        if (std::find(RESERVED_KEYWORDS.begin(), RESERVED_KEYWORDS.end(), currentVariableName) != RESERVED_KEYWORDS.end())
+            throw SemanticError(*ctx->start, RESERVED_KEYWORD, "'' is a reserved keyword for future"
+                                    " development of the language. Please use another identifier instead");
+
         return currentScope->lookup(currentVariableName)->getType();
     }
     if (ctx->builtinCall()) return visit(ctx->builtinCall());

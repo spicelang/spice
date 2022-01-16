@@ -1741,6 +1741,7 @@ antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeConte
 
         return SymbolType(TY_STRUCT, typeName);
     }
+    throw std::runtime_error("Internal compiler error: Base datatype generator fall-through");
 }
 
 void GeneratorVisitor::initializeExternalFunctions() {

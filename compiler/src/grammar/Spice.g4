@@ -152,15 +152,14 @@ ELLIPSIS: '...';
 // Regex tokens
 CHAR: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
 STRING: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
-INTEGER: SIGN? NONZERO_DIGIT DIGIT* | ZERO;
-DOUBLE: SIGN? DIGIT+ DOT DIGIT+;
+INTEGER: NONZERO_DIGIT DIGIT* | ZERO;
+DOUBLE: DIGIT+ DOT DIGIT+;
 IDENTIFIER: NONDIGIT (NONDIGIT | DIGIT)*;
 
 fragment ZERO: [0];
 fragment DIGIT: [0-9];
 fragment NONZERO_DIGIT: [1-9];
 fragment NONDIGIT: [a-zA-Z_];
-fragment SIGN: [+-];
 
 // Skipped tokens
 BLOCK_COMMENT: '/*' .*? '*/' -> skip;
