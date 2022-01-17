@@ -148,8 +148,8 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         std::vector<llvm::Type*> paramTypes;
         if (ctx->paramLstDef()) {
             for (auto& param : ctx->paramLstDef()->declStmt()) {
-                currentVar = param->IDENTIFIER()->toString();
-                paramNames.push_back(currentVar);
+                currentVariableName = param->IDENTIFIER()->toString();
+                paramNames.push_back(currentVariableName);
                 llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
                 paramTypes.push_back(paramType);
                 symbolTypes.push_back(currentSymbolType);
@@ -225,7 +225,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     currentScope = currentScope->getChild(signature.toString());
 
     // Get return type
-    currentVar = RETURN_VARIABLE_NAME;
+    currentVariableName = RETURN_VARIABLE_NAME;
     llvm::Type* returnType = visit(ctx->dataType()).as<llvm::Type*>();
     std::vector<SymbolType> symbolTypes;
     symbolTypes.push_back(currentSymbolType);
@@ -244,8 +244,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Parameters
     if (ctx->paramLstDef()) {
         for (auto& param : ctx->paramLstDef()->declStmt()) {
-            currentVar = param->IDENTIFIER()->toString();
-            paramNames.push_back(currentVar);
+            currentVariableName = param->IDENTIFIER()->toString();
+            paramNames.push_back(currentVariableName);
             llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
             paramTypes.push_back(paramType);
             symbolTypes.push_back(currentSymbolType);
@@ -341,8 +341,8 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Parameters
     if (ctx->paramLstDef()) {
         for (auto& param : ctx->paramLstDef()->declStmt()) {
-            currentVar = param->IDENTIFIER()->toString();
-            paramNames.push_back(currentVar);
+            currentVariableName = param->IDENTIFIER()->toString();
+            paramNames.push_back(currentVariableName);
             llvm::Type* paramType = visit(param->dataType()).as<llvm::Type*>();
             paramTypes.push_back(paramType);
             symbolTypes.push_back(currentSymbolType);
@@ -735,17 +735,17 @@ antlrcpp::Any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) {
-    currentVar = ctx->IDENTIFIER()->toString();
+    currentVariableName = ctx->IDENTIFIER()->toString();
     llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
 
     // Create local variable
-    llvm::Value* memAddress = builder->CreateAlloca(varType, nullptr, currentVar);
-    SymbolTableEntry* entry = currentScope->lookup(currentVar);
+    llvm::Value* memAddress = builder->CreateAlloca(varType, nullptr, currentVariableName);
+    SymbolTableEntry* entry = currentScope->lookup(currentVariableName);
     entry->updateAddress(memAddress);
     entry->updateLLVMType(varType);
 
     // Return the variable name
-    return currentVar;
+    return currentVariableName;
 }
 
 /*antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
@@ -1567,11 +1567,146 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
             if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
                 lhs = conversionsManager->getPrefixMinusInst(lhs);
             } else if (token->getSymbol()->getType() == SpiceParser::LPAREN) { // Consider function call
-                // ToDo: Support function calls
-                //lhs = ;
+                tokenCounter++; // Consume LPAREN
+
+                // Check if the function is a method and retrieve the function name based on that
+                bool isMethod = currentThisValue != nullptr;
+                std::string functionName = isMethod ? scopePrefix + "." + currentVariableName : currentVariableName;
+
+                // Get function by signature
+                FunctionSignature signature = accessScope->popSignature();
+                // Check if function exists in the current module
+                bool functionFound = false;
+                std::string fctIdentifier = signature.toString();
+                for (auto& function : module->getFunctionList()) { // Search for function definition
+                    if (function.getName() == signature.toString()) {
+                        functionFound = true;
+                        break;
+                    } else if (function.getName() == signature.getFunctionName()) {
+                        functionFound = true;
+                        fctIdentifier = signature.getFunctionName();
+                        break;
+                    }
+                }
+                if (!functionFound) { // Not found => Declare function, which will be linked in
+                    // Get the symbol table of the module where the function is defined
+                    SymbolTable* table = accessScope->lookupTableWithSignature(signature.toString());
+                    // Check if it is a function or a procedure
+                    if (!table->getFunctionDeclaration(signature.toString()).empty()) { // Function
+                        std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
+
+                        // Get return type
+                        SymbolType returnSymbolType = symbolTypes[0];
+                        // Check if the return type is an imported struct. Due to not supporting pointers as return values, we do
+                        // not have to check for nested structs in pointers here.
+                        if (accessScope->isImported() && returnSymbolType.is(TY_STRUCT)) {
+                            // If the return type is an imported struct, initialize it first
+                            initExtStruct(returnSymbolType.getSubType(), scopePrefix + "." + returnSymbolType.getSubType());
+                            returnSymbolType = SymbolType(TY_STRUCT, scopePrefix + "." + returnSymbolType.getSubType());
+                        }
+                        llvm::Type* returnType = getTypeForSymbolType(returnSymbolType);
+                        if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
+
+                        // Get parameter types
+                        std::vector<llvm::Type*> paramTypes;
+                        for (int i = 1; i < symbolTypes.size(); i++) {
+                            SymbolType paramSymbolType = symbolTypes[i];
+                            // Check if it is an imported struct. If so, replace the subtype with the scope prefix
+                            if (accessScope->isImported() && paramSymbolType.isBaseType(TY_STRUCT))
+                                paramSymbolType = paramSymbolType.replaceSubType(scopePrefix);
+                            // Retrieve the LLVM type of the symbol type
+                            llvm::Type* paramType = getTypeForSymbolType(paramSymbolType);
+                            if (!paramType) throw std::runtime_error("Internal compiler error: Could not get parameter type of function call");
+                            paramTypes.push_back(paramType);
+                        }
+
+                        // Declare the function
+                        llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
+                        module->getOrInsertFunction(fctIdentifier, fctType);
+                    } else if (!table->getProcedureDeclaration(signature.toString()).empty()) { // Procedure
+                        std::vector<SymbolType> symbolTypes = table->getProcedureDeclaration(signature.toString());
+
+                        // Get parameter types
+                        std::vector<llvm::Type*> paramTypes;
+                        for (auto& paramSymbolType : symbolTypes) {
+                            // Check if it is an imported struct. If so, replace the subtype with the scope prefix
+                            if (accessScope->isImported() && paramSymbolType.isBaseType(TY_STRUCT))
+                                paramSymbolType = paramSymbolType.replaceSubType(scopePrefix);
+                            // Retrieve the LLVM type of the symbol type
+                            llvm::Type* paramType = getTypeForSymbolType(paramSymbolType);
+                            if (!paramType) throw std::runtime_error("Internal compiler error");
+                            paramTypes.push_back(paramType);
+                        }
+
+                        // Declare the procedure
+                        llvm::Type* returnType = llvm::Type::getVoidTy(*context);
+                        llvm::FunctionType* procType = llvm::FunctionType::get(returnType, paramTypes, false);
+                        module->getOrInsertFunction(fctIdentifier, procType);
+                    }
+                }
+
+                // Get the declared function and its type
+                llvm::Function* fct = module->getFunction(fctIdentifier);
+                llvm::FunctionType* fctType = fct->getFunctionType();
+
+                // Fill parameter list
+                int paramIndex = 0;
+                std::vector<llvm::Value*> argValues;
+                if (isMethod) { // If it is a method, pass 'this' as implicit first argument
+                    argValues.push_back(currentThisValue);
+                    paramIndex++;
+                }
+                auto* paramLst = dynamic_cast<SpiceParser::ParamLstContext*>(ctx->children[tokenCounter]);
+                if (paramLst != nullptr) {
+                    for (auto& param : paramLst->assignExpr()) {
+                        // Get expected arg type
+                        llvm::Type* expectedArgType = fctType->getParamType(paramIndex);
+                        // Get the actual arg value
+                        llvm::Value* actualArgPtr = visit(param).as<llvm::Value*>();
+                        if (!compareLLVMTypes(actualArgPtr->getType()->getPointerElementType(), expectedArgType)) {
+                            llvm::Value* actualArg = actualArgPtr;
+                            // Unpack the pointers until a pointer of another type is met
+                            unsigned int loadCounter = 0;
+                            while (actualArg->getType()->getPointerElementType()->isPointerTy()) {
+                                actualArg = builder->CreateLoad(actualArg->getType()->getPointerElementType(), actualArg);
+                                loadCounter++;
+                            }
+                            // GEP or bit-cast
+                            if (expectedArgType->isPointerTy() && actualArg->getType()->getPointerElementType()->isArrayTy()) {
+                                std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
+                                llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
+                                actualArg = builder->CreateInBoundsGEP(actualArgType, actualArg, indices);
+                            } else {
+                                llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
+                                actualArg = builder->CreateLoad(actualArgType, actualArg);
+                                actualArg = builder->CreateBitCast(actualArg, expectedArgType);
+                            }
+                            // Pack the pointers together again
+                            for (;loadCounter > 0; loadCounter--) {
+                                llvm::Value* newActualArg = builder->CreateAlloca(actualArg->getType());
+                                builder->CreateStore(actualArg, newActualArg);
+                                actualArg = newActualArg;
+                            }
+                            argValues.push_back(actualArg);
+                        } else {
+                            argValues.push_back(builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr));
+                        }
+                        paramIndex++;
+                    }
+                }
+
+                // Create the function call
+                llvm::Value* callResult = builder->CreateCall(fct, argValues);
+
+                // Handle return values
+                if (!callResult->getType()->isSized()) callResult = builder->getTrue();
+                llvm::Value* callResultPtr = builder->CreateAlloca(callResult->getType());
+                builder->CreateStore(callResult, callResultPtr);
+                return callResultPtr;
             } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider member access
-                // ToDo: Support member access
-                //lhs = ;
+                tokenCounter++; // Consume dot
+                auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
+                lhs = visit(postfixUnary).as<llvm::Value*>();
             } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
                 lhs = conversionsManager->getPostfixPlusPlusInst(lhs);
             } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
@@ -1600,7 +1735,8 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
 
 antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     if (ctx->primitiveValue()) {
-        llvm::Value* constantValue = visit(ctx->primitiveValue()).as<llvm::Value*>();
+        // Visit the primitive value
+        currentConstValue = visit(ctx->primitiveValue()).as<llvm::Constant*>();
 
         // If global variable value, return value immediately, because it is already a pointer
         if (!currentScope->getParent()) return currentConstValue;
@@ -1643,7 +1779,7 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     if (ctx->DOUBLE()) {
         currentSymbolType = SymbolType(TY_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
-        return (llvm::Value*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
+        return (llvm::Constant*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
@@ -1651,9 +1787,9 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
         currentSymbolType = SymbolType(TY_INT);
         int v = std::stoi(ctx->INTEGER()->toString());
         if (currentVarSigned) {
-            return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
+            return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
         } else {
-            return (llvm::Value*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), v);
+            return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), v);
         }
     }
 
@@ -1662,9 +1798,9 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
         currentSymbolType = SymbolType(TY_CHAR);
         char value = ctx->CHAR()->toString()[1];
         if (currentVarSigned) {
-            return (llvm::Value*) llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
+            return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
         } else {
-            return (llvm::Value*) llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value);
+            return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value);
         }
     }
 
@@ -1674,19 +1810,19 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
         std::string value = ctx->STRING()->toString();
         value = std::regex_replace(value, std::regex("\\\\n"), "\n");
         value = value.substr(1, value.size() - 2);
-        return (llvm::Value*) builder->CreateGlobalStringPtr(value, "", 0, module.get());
+        return (llvm::Constant*) builder->CreateGlobalStringPtr(value, "", 0, module.get());
     }
 
     // Value is a boolean constant with value false
     if (ctx->FALSE()) {
         currentSymbolType = SymbolType(TY_BOOL);
-        return (llvm::Value*) builder->getFalse();
+        return (llvm::Constant*) builder->getFalse();
     }
 
     // Value is a boolean constant with value true
     if (ctx->TRUE()) {
         currentSymbolType = SymbolType(TY_BOOL);
-        return (llvm::Value*) builder->getTrue();
+        return (llvm::Constant*) builder->getTrue();
     }
 
     throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through");
@@ -1731,7 +1867,7 @@ antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeConte
     if (ctx->TYPE_STRING()) return SymbolType(TY_STRING);
     if (ctx->TYPE_BOOL()) return SymbolType(TY_BOOL);
     if (ctx->TYPE_DYN()) { // Data type is type inferred
-        SymbolTableEntry* symbolTableEntry = currentScope->lookup(currentVar);
+        SymbolTableEntry* symbolTableEntry = currentScope->lookup(currentVariableName);
         return symbolTableEntry->getType();
     }
     if (!ctx->IDENTIFIER().empty()) { // Custom data type

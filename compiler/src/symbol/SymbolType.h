@@ -44,12 +44,15 @@ public:
     SymbolType toPointer();
     SymbolType toArray(unsigned int = 0);
     SymbolType getContainedTy();
+    SymbolType replaceSubType(const std::string& newSubType);
     bool isPointer();
     bool isPointerOf(SymbolSuperType);
     bool isArray();
     bool isArrayOf(SymbolSuperType);
     bool is(SymbolSuperType);
     bool is(SymbolSuperType, const std::string&);
+    bool isBaseType(SymbolSuperType);
+    bool isBaseType(SymbolSuperType, const std::string&);
     bool isOneOf(const std::vector<SymbolSuperType>&);
     bool matches(SymbolType);
     bool matches(SymbolType, SymbolSuperType);

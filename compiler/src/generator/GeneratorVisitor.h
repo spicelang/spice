@@ -107,7 +107,6 @@ private:
     SymbolTable* currentScope;
     SymbolTable* accessScope = nullptr;
     std::string scopePrefix;
-    std::string currentVar;
     SymbolType currentSymbolType;
     bool blockAlreadyTerminated = false;
     llvm::Value* currentThisValue = nullptr;
