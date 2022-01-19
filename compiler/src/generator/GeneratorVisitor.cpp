@@ -482,6 +482,7 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
 
     if (ctx->value()) { // Variable is initialized here
         visit(ctx->value());
+        constNegate = ctx->MINUS();
         global->setInitializer(currentConstValue);
     }
 
@@ -1076,7 +1077,7 @@ antlrcpp::Any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext
 antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* ctx) {
     llvm::Function* printf = module->getFunction("printf");
     std::vector<llvm::Value*> printfArgs;
-    std::string stringTemplate = ctx->STRING()->toString();
+    std::string stringTemplate = ctx->STRING_LITERAL()->toString();
     stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\n"), "\n");
     stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
@@ -1557,7 +1558,8 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 
     if (ctx->children.size() > 1) {
         // Load the value
-        llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+        llvm::Value* lhs = nullptr;
+        if (lhsPtr) lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
 
         unsigned int tokenCounter = 1;
         while (tokenCounter < ctx->children.size()) {
@@ -1565,6 +1567,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 
             // Insert conversion instructions depending on the used operator
             if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
+                assert(lhs != nullptr);
                 lhs = conversionsManager->getPrefixMinusInst(lhs);
             } else if (token->getSymbol()->getType() == SpiceParser::LPAREN) { // Consider function call
                 tokenCounter++; // Consume LPAREN
@@ -1572,6 +1575,9 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 // Check if the function is a method and retrieve the function name based on that
                 bool isMethod = currentThisValue != nullptr;
                 std::string functionName = isMethod ? scopePrefix + "." + currentVariableName : currentVariableName;
+
+                // Retrieve the access scope
+                SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
                 // Get function by signature
                 FunctionSignature signature = accessScope->popSignature();
@@ -1704,12 +1710,15 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 builder->CreateStore(callResult, callResultPtr);
                 return callResultPtr;
             } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider member access
+                assert(lhs != nullptr);
                 tokenCounter++; // Consume dot
                 auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
                 lhs = visit(postfixUnary).as<llvm::Value*>();
             } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+                assert(lhs != nullptr);
                 lhs = conversionsManager->getPostfixPlusPlusInst(lhs);
             } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
+                assert(lhs != nullptr);
                 lhs = conversionsManager->getPostfixMinusMinusInst(lhs);
             }
             tokenCounter++;
@@ -1727,7 +1736,17 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
     allParamsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
     if (ctx->IDENTIFIER()) {
         currentVariableName = ctx->IDENTIFIER()->toString();
-        return currentScope->lookup(currentVariableName)->getAddress();
+
+        // Load symbol table entry
+        SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+        SymbolTableEntry* entry = accessScope->lookup(currentVariableName);
+
+        if (!entry) return (llvm::Value*) nullptr;
+
+        // Otherwise, push the current scope to the scope path
+        scopePath.pushFragment(currentVariableName, currentScope);
+
+        return entry->getAddress();
     }
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
@@ -1779,24 +1798,26 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     if (ctx->DOUBLE()) {
         currentSymbolType = SymbolType(TY_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
+        if (constNegate) value = -value;
         return (llvm::Constant*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
     // Value is an integer constant
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TY_INT);
-        int v = std::stoi(ctx->INTEGER()->toString());
+        int value = std::stoi(ctx->INTEGER()->toString());
+        if (constNegate) value = -value;
         if (currentVarSigned) {
-            return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), v);
+            return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value);
         } else {
-            return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), v);
+            return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value);
         }
     }
 
     // Value is a char constant
-    if (ctx->CHAR()) {
+    if (ctx->CHAR_LITERAL()) {
         currentSymbolType = SymbolType(TY_CHAR);
-        char value = ctx->CHAR()->toString()[1];
+        char value = ctx->CHAR_LITERAL()->toString()[1];
         if (currentVarSigned) {
             return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
         } else {
@@ -1805,9 +1826,9 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     }
 
     // Value is a string constant
-    if (ctx->STRING()) {
+    if (ctx->STRING_LITERAL()) {
         currentSymbolType = SymbolType(TY_STRING);
-        std::string value = ctx->STRING()->toString();
+        std::string value = ctx->STRING_LITERAL()->toString();
         value = std::regex_replace(value, std::regex("\\\\n"), "\n");
         value = value.substr(1, value.size() - 2);
         return (llvm::Constant*) builder->CreateGlobalStringPtr(value, "", 0, module.get());

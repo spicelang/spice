@@ -5,6 +5,7 @@
 #include <SpiceBaseVisitor.h>
 #include <exception/IRError.h>
 #include "symbol/SymbolTable.h"
+#include "symbol/ScopePath.h"
 #include <util/ScopeIdUtil.h>
 #include <analyzer/AnalyzerVisitor.h>
 
@@ -105,11 +106,12 @@ private:
     std::unique_ptr<llvm::Module> module;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope;
-    SymbolTable* accessScope = nullptr;
     std::string scopePrefix;
     SymbolType currentSymbolType;
+    ScopePath scopePath;
     bool blockAlreadyTerminated = false;
     llvm::Value* currentThisValue = nullptr;
+    bool constNegate = false;
     bool allParamsHardcoded = true;
     llvm::Constant* currentConstValue = nullptr;
     bool currentVarSigned = false;

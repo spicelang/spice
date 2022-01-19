@@ -44,6 +44,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
             return "Array initialization item count exceeds arrays capacity";
         case INDEX_EXCEEDS_ARRAY_SIZE:
             return "Array index exceeds its size";
+        case NEGATIVE_VALUE_TO_UNSIGNED_VAR:
+            return "Negative value assigned to unsigned variable";
     }
     return "Unknown warning";
 }

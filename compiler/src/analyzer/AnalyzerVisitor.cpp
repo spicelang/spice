@@ -298,6 +298,12 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
                 symbolTypeSpecifiers.setSigned(true);
             } else if (specifier->UNSIGNED()) {
                 symbolTypeSpecifiers.setSigned(false);
+
+                // Check if there is a negative value attached. If yes, print a compiler warning
+                if (ctx->MINUS())
+                    CompilerWarning(*ctx->MINUS()->getSymbol(), NEGATIVE_VALUE_TO_UNSIGNED_VAR,
+                                    "Please mind that assigning a negative value to an unsigned variable causes a wrap-around")
+                                    .print();
             }
         }
     }
@@ -492,7 +498,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     // Check if imported library exists
-    std::string importPath = ctx->STRING()->toString();
+    std::string importPath = ctx->STRING_LITERAL()->toString();
     importPath = importPath.substr(1, importPath.size() - 2);
 
     // Check if source file exists
@@ -509,7 +515,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
             stdPath = std::string(std::getenv("SPICE_STD_DIR"));
             if (stdPath.rfind('/') != stdPath.size() - 1) stdPath += "/";
         } else {
-            throw SemanticError(*ctx->STRING()->getSymbol(), STD_NOT_FOUND,
+            throw SemanticError(*ctx->STRING_LITERAL()->getSymbol(), STD_NOT_FOUND,
                                 "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
         }
         // Check if source file exists
@@ -520,7 +526,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
         } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice")) {
             filePath = stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice";
         } else {
-            throw SemanticError(*ctx->STRING()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
+            throw SemanticError(*ctx->STRING_LITERAL()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
                                 "The source file '" + importPath + ".spice' was not found in standard library");
         }
     } else { // Include own source file
@@ -536,7 +542,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
         } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice")) {
             filePath = sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice";
         } else {
-            throw SemanticError(*ctx->STRING()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
+            throw SemanticError(*ctx->STRING_LITERAL()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
                                 "The source file '" + importPath + ".spice' does not exist");
         }
     }
@@ -632,7 +638,7 @@ antlrcpp::Any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext*
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* ctx) {
-    std::string templateString = ctx->STRING()->toString();
+    std::string templateString = ctx->STRING_LITERAL()->toString();
     templateString = templateString.substr(1, templateString.size() - 2);
 
     // Check if assignment types match placeholder types
@@ -1216,8 +1222,8 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 antlrcpp::Any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext* ctx) {
     if (ctx->DOUBLE()) return SymbolType(TY_DOUBLE);
     if (ctx->INTEGER()) return SymbolType(TY_INT);
-    if (ctx->CHAR()) return SymbolType(TY_CHAR);
-    if (ctx->STRING()) return SymbolType(TY_STRING);
+    if (ctx->CHAR_LITERAL()) return SymbolType(TY_CHAR);
+    if (ctx->STRING_LITERAL()) return SymbolType(TY_STRING);
     return SymbolType(TY_BOOL);
 }
 

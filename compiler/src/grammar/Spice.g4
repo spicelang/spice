@@ -9,7 +9,7 @@ functionDef: F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLs
 procedureDef: P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
 structDef: TYPE IDENTIFIER STRUCT LBRACE fieldLst RBRACE;
-globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN value)? SEMICOLON;
+globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
 forLoop: FOR declStmt SEMICOLON assignExpr SEMICOLON assignExpr LBRACE stmtLst RBRACE;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
 foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
@@ -27,14 +27,14 @@ stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: declSpecifiers? dataType IDENTIFIER (ASSIGN assignExpr)?;
 declSpecifiers: declSpecifier+;
 declSpecifier: CONST | SIGNED | UNSIGNED;
-importStmt: IMPORT STRING AS IDENTIFIER SEMICOLON;
+importStmt: IMPORT STRING_LITERAL AS IDENTIFIER SEMICOLON;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
 
 // Builtin functions
 builtinCall: printfCall | sizeOfCall;
-printfCall: PRINTF LPAREN STRING (COMMA assignExpr)* RPAREN;
+printfCall: PRINTF LPAREN STRING_LITERAL (COMMA assignExpr)* RPAREN;
 sizeOfCall: SIZEOF LPAREN assignExpr RPAREN;
 
 // Expression loop
@@ -57,7 +57,7 @@ atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
 value: primitiveValue | LBRACE paramLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* LBRACE paramLst? RBRACE | NIL LESS dataType GREATER;
-primitiveValue: DOUBLE | INTEGER | CHAR | STRING | TRUE | FALSE;
+primitiveValue: DOUBLE | INTEGER | CHAR_LITERAL | STRING_LITERAL | TRUE | FALSE;
 dataType: baseDataType (MUL | LBRACKET INTEGER? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER (DOT IDENTIFIER)*;
 
@@ -150,8 +150,8 @@ DOT: '.';
 ELLIPSIS: '...';
 
 // Regex tokens
-CHAR: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
-STRING: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
+CHAR_LITERAL: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
+STRING_LITERAL: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
 INTEGER: NONZERO_DIGIT DIGIT* | ZERO;
 DOUBLE: DIGIT+ DOT DIGIT+;
 IDENTIFIER: NONDIGIT (NONDIGIT | DIGIT)*;
