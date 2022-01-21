@@ -749,265 +749,6 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
     return currentVariableName;
 }
 
-/*antlrcpp::Any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext* ctx) {
-    bool isMethod = currentThisValue != nullptr;
-    std::string functionName = ctx->IDENTIFIER()->toString();
-
-    if (isMethod) {
-        functionName = scopePrefix + "." + functionName;
-    }
-
-    // Get function by signature
-    FunctionSignature signature = accessScope->popSignature();
-    // Check if function exists in module
-    bool functionFound = false;
-    std::string fctIdentifier = signature.toString();
-    for (auto& function : module->getFunctionList()) { // Search for function definition
-        if (function.getName() == signature.toString()) {
-            functionFound = true;
-            break;
-        } else if (function.getName() == signature.getFunctionName()) {
-            functionFound = true;
-            fctIdentifier = signature.getFunctionName();
-            break;
-        }
-    }
-    if (!functionFound) { // Not found => Declare function, which will be linked in
-        SymbolTable* table = accessScope->lookupTableWithSignature(signature.toString());
-        // Check if it is a function or a procedure
-        if (!table->getFunctionDeclaration(signature.toString()).empty()) { // Function
-            std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
-
-            // Get return type
-            SymbolType returnSymbolType = symbolTypes[0];
-            llvm::Type* returnType;
-            if (returnSymbolType.is(TY_STRUCT) && accessScope->isImported()) {
-                initExtStruct(returnSymbolType.getSubType(), scopePrefix + "." + returnSymbolType.getSubType());
-                SymbolType newSymbolType = SymbolType(TY_STRUCT, scopePrefix + "." + returnSymbolType.getSubType());
-                returnType = getTypeForSymbolType(newSymbolType);
-                if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
-            } else {
-                returnType = getTypeForSymbolType(returnSymbolType);
-                if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
-            }
-
-            // Get parameter types
-            std::vector<llvm::Type*> paramTypes;
-            for (int i = 1; i < symbolTypes.size(); i++) {
-                SymbolType paramSymbolType = symbolTypes[i];
-                if (accessScope->isImported()) {
-                    // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
-                    if (paramSymbolType.is(TY_STRUCT)) {
-                        paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
-                    } else if (paramSymbolType.isPointerOf(TY_STRUCT)) {
-                        paramSymbolType = SymbolType(TY_STRUCT, scopePrefix);
-                        paramSymbolType = paramSymbolType.toPointer();
-                    }
-                }
-                llvm::Type* paramType = getTypeForSymbolType(paramSymbolType);
-                if (!paramType) throw std::runtime_error("Internal compiler error: Could not get parameter type of function call");
-                paramTypes.push_back(paramType);
-            }
-
-            llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-            module->getOrInsertFunction(fctIdentifier, fctType);
-        } else if (!table->getProcedureDeclaration(signature.toString()).empty()) { // Procedure
-            std::vector<SymbolType> symbolTypes = table->getProcedureDeclaration(signature.toString());
-
-            // Get parameter types
-            std::vector<llvm::Type*> paramTypes;
-            for (auto& symbolType : symbolTypes) {
-                if (accessScope->isImported()) {
-                    // ToDo: Support nested pointers as well. Supporting the base type and one pointer of it is just a workaround
-                    if (symbolType.is(TY_STRUCT)) {
-                        symbolType = SymbolType(TY_STRUCT, scopePrefix);
-                    } else if (symbolType.isPointerOf(TY_STRUCT)) {
-                        symbolType = SymbolType(TY_STRUCT, scopePrefix);
-                        symbolType = symbolType.toPointer();
-                    }
-                }
-                llvm::Type* paramType = getTypeForSymbolType(symbolType);
-                if (!paramType) throw std::runtime_error("Internal compiler error");
-                paramTypes.push_back(paramType);
-            }
-
-            llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
-                                                                   paramTypes, false);
-            module->getOrInsertFunction(fctIdentifier, procType);
-        }
-    }
-    llvm::Function* fct = module->getFunction(fctIdentifier);
-    llvm::FunctionType* fctType = fct->getFunctionType();
-
-    // Fill parameter list
-    int paramIndex = 0;
-    std::vector<llvm::Value*> argValues;
-    if (isMethod) {
-        argValues.push_back(currentThisValue);
-        paramIndex++;
-    }
-    if (ctx->paramLst()) {
-        for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-            // Get expected arg type
-            llvm::Type* expectedArgType = fctType->getParamType(paramIndex);
-            // Get the actual arg value
-            llvm::Value* actualArgPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-            if (!compareLLVMTypes(actualArgPtr->getType()->getPointerElementType(), expectedArgType)) {
-                llvm::Value* actualArg = actualArgPtr;
-                // Unpack the pointers until a pointer of another type is met
-                unsigned int loadCounter = 0;
-                while (actualArg->getType()->getPointerElementType()->isPointerTy()) {
-                    actualArg = builder->CreateLoad(actualArg->getType()->getPointerElementType(), actualArg);
-                    loadCounter++;
-                }
-                // GEP or bit-cast
-                if (expectedArgType->isPointerTy() && actualArg->getType()->getPointerElementType()->isArrayTy()) {
-                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
-                    llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
-                    actualArg = builder->CreateInBoundsGEP(actualArgType, actualArg, indices);
-                } else {
-                    llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
-                    actualArg = builder->CreateLoad(actualArgType, actualArg);
-                    actualArg = builder->CreateBitCast(actualArg, expectedArgType);
-                }
-                // Pack the pointers together again
-                for (;loadCounter > 0; loadCounter--) {
-                    llvm::Value* newActualArg = builder->CreateAlloca(actualArg->getType());
-                    builder->CreateStore(actualArg, newActualArg);
-                    actualArg = newActualArg;
-                }
-                argValues.push_back(actualArg);
-            } else {
-                argValues.push_back(builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr));
-            }
-            paramIndex++;
-        }
-    }
-
-    llvm::Value* callResult = builder->CreateCall(fct, argValues);
-    llvm::Value* callResultPtr;
-    if (callResult->getType()->isSized()) {
-        callResultPtr = builder->CreateAlloca(callResult->getType());
-    } else {
-        callResult = builder->getTrue();
-        callResultPtr = builder->CreateAlloca(callResult->getType());
-    }
-    builder->CreateStore(callResult, callResultPtr);
-    return callResultPtr;
-}
-
-antlrcpp::Any GeneratorVisitor::visitNewStmt(SpiceParser::NewStmtContext* ctx) {
-    std::string variableName = currentVar = ctx->IDENTIFIER()[0]->toString();
-
-    // Get struct name in format a.b.c and struct scope
-    std::string structName;
-    SymbolTable* structScope = currentScope;
-    for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) {
-        std::string iden = ctx->IDENTIFIER()[i]->toString();
-        structName += structName.empty() ? iden : "." + iden;
-        if (i < ctx->IDENTIFIER().size() -1) {
-            SymbolTableEntry* entry = structScope->lookup(iden);
-            if (!entry)
-                throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                                    "Struct '" + structName + "' was used before defined");
-            if (entry->getType().is(TY_IMPORT)) {
-                structScope = structScope->lookupTable(iden);
-            } else if (entry->getType().is(TY_STRUCT)) {
-                structScope = structScope->lookupTable("struct:" + iden);
-            } else {
-                throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                                    "The variable '" + iden + "' is of type " + entry->getType().getName(false) +
-                                    ". Expected struct or import");
-            }
-        }
-    }
-
-    // Check if the struct is defined
-    if (structScope->isImported()) initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
-    SymbolTableEntry* structSymbol = currentScope->lookup(structName);
-    llvm::Type* structType = structSymbol->getLLVMType();
-
-    // Allocate space for the struct in memory
-    llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr, currentVar);
-    currentScope->lookup(variableName)->updateAddress(structAddress);
-    currentScope->lookup(variableName)->updateLLVMType(structType);
-
-    // Fill the struct with the stated values
-    if (ctx->paramLst()) {
-        for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-            // Visit assignment
-            llvm::Value* assignmentPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
-            llvm::Value* assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
-            // Get pointer to struct element
-            llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
-            // Store value to address
-            builder->CreateStore(assignment, fieldAddress);
-        }
-    }
-
-    return structAddress;
-}
-
-antlrcpp::Any GeneratorVisitor::visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) {
-    // Get size and data type
-    std::string varName = currentVar = ctx->IDENTIFIER()->toString();
-
-    // Get data type
-    llvm::Type* itemType;
-    llvm::Type* arrayType;
-    if (ctx->dataType()->TYPE_DYN()) {
-        SymbolType dataType = currentScope->lookup(varName)->getType();
-        arrayType = getTypeForSymbolType(dataType);
-        itemType = arrayType->getArrayElementType();
-    } else {
-        arrayType = visit(ctx->dataType()).as<llvm::Type*>();
-        itemType = arrayType->getArrayElementType();
-    }
-
-    // Allocate array
-    llvm::Value* arrayAddress = builder->CreateAlloca(arrayType, nullptr, currentVar);
-
-    // Fill items with the stated values
-    if (ctx->paramLst()) {
-        allParamsHardcoded = true;
-        // Visit all params to check if they are hardcoded or not
-        std::vector<llvm::Value*> itemValuePointers;
-        std::vector<llvm::Constant*> itemConstants;
-        for (unsigned int i = 0; i < std::min(ctx->paramLst()->assignExpr().size(), arrayType->getArrayNumElements()); i++) {
-            itemValuePointers.push_back(visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>());
-            itemConstants.push_back(currentConstValue);
-        }
-        // Decide if the array can be defined globally
-        if (allParamsHardcoded) { // All params hardcoded => array can be defined globally
-            // Create hardcoded array
-            llvm::Constant* constArray = llvm::ConstantArray::get((llvm::ArrayType*) arrayType, itemConstants);
-            // Create global variable
-            arrayAddress = module->getOrInsertGlobal(varName, arrayType);
-            // Set some attributes to it
-            llvm::GlobalVariable* global = module->getNamedGlobal(varName);
-            global->setConstant(ctx->CONST());
-            global->setDSOLocal(true);
-            global->setInitializer(constArray);
-        } else { // Some params are not hardcoded => fallback to individual indexing
-            for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-                llvm::Value* itemValuePtr = itemValuePointers[i];
-                llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
-                // Calculate item address
-                std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(i) };
-                llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
-                // Store value to item address
-                builder->CreateStore(itemValue, itemAddress);
-            }
-        }
-    }
-
-    // Update address in symbol table
-    currentScope->lookup(varName)->updateAddress(arrayAddress);
-    currentScope->lookup(varName)->updateLLVMType(arrayType);
-
-    return (llvm::Value*) builder->getTrue();
-}*/
-
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* ctx) {
     return nullptr; // Noop
 }
@@ -1121,15 +862,22 @@ antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* 
 }
 
 antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
+    // Visit the right side
+    currentVariableName = ""; // Reset the current variable name
+    scopePrefix = ""; // Reset the scope prefix
+    scopePath.clear(); // Clear the scope path
+
     // Check if there is an assign operator applied
     if (ctx->assignOp()) { // This is an assignment
         // Get value of right side
-        currentVariableName = "";
-        llvm::Value* rhsPtr = visit(ctx->ternaryExpr()).as<llvm::Value*>();
+        llvm::Value* rhsPtr = visit(ctx->assignExpr()).as<llvm::Value*>();
         std::string variableName = currentVariableName;
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
         // Visit the left side
+        currentVariableName = ""; // Reset the current variable name
+        scopePrefix = ""; // Reset the scope prefix
+        scopePath.clear(); // Clear the scope path
         llvm::Value* lhsPtr = visit(ctx->prefixUnaryExpr()).as<llvm::Value*>();
 
         // Get symbol table entry
@@ -1173,8 +921,6 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
 
         return lhsPtr;
     }
-
-    // This is a fallthrough case, just visit the ternary expression
     return visit(ctx->ternaryExpr());
 }
 
@@ -1576,11 +1322,8 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 bool isMethod = currentThisValue != nullptr;
                 std::string functionName = isMethod ? scopePrefix + "." + currentVariableName : currentVariableName;
 
-                // Retrieve the access scope
-                SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
-
                 // Get function by signature
-                FunctionSignature signature = accessScope->popSignature();
+                FunctionSignature signature = currentScope->popSignature();
                 // Check if function exists in the current module
                 bool functionFound = false;
                 std::string fctIdentifier = signature.toString();
@@ -1594,6 +1337,10 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                         break;
                     }
                 }
+
+                // Retrieve the access scope
+                SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+
                 if (!functionFound) { // Not found => Declare function, which will be linked in
                     // Get the symbol table of the module where the function is defined
                     SymbolTable* table = accessScope->lookupTableWithSignature(signature.toString());
@@ -1781,13 +1528,113 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
     }
 
     if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
-        // ToDo: Support struct instantiations
-        //return ;
+        std::string variableName = currentVariableName = ctx->IDENTIFIER()[0]->toString();
+
+        // Get struct name in format a.b.c and struct scope
+        std::string structName;
+        SymbolTable* structScope = currentScope;
+        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) {
+            std::string iden = ctx->IDENTIFIER()[i]->toString();
+            structName += structName.empty() ? iden : "." + iden;
+            if (i < ctx->IDENTIFIER().size() -1) {
+                SymbolTableEntry* entry = structScope->lookup(iden);
+                if (!entry)
+                    throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                        "Struct '" + structName + "' was used before defined");
+                if (entry->getType().is(TY_IMPORT)) {
+                    structScope = structScope->lookupTable(iden);
+                } else if (entry->getType().is(TY_STRUCT)) {
+                    structScope = structScope->lookupTable("struct:" + iden);
+                } else {
+                    throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                        "The variable '" + iden + "' is of type " + entry->getType().getName(false) +
+                                        ". Expected struct or import");
+                }
+            }
+        }
+
+        // Check if the struct is defined
+        if (structScope->isImported()) initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
+        SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+        llvm::Type* structType = structSymbol->getLLVMType();
+
+        // Allocate space for the struct in memory
+        llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr, currentVariableName);
+        currentScope->lookup(variableName)->updateAddress(structAddress);
+        currentScope->lookup(variableName)->updateLLVMType(structType);
+
+        // Fill the struct with the stated values
+        if (ctx->paramLst()) {
+            for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+                // Visit assignment
+                llvm::Value* assignmentPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+                llvm::Value* assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
+                // Get pointer to struct element
+                llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
+                // Store value to address
+                builder->CreateStore(assignment, fieldAddress);
+            }
+        }
+
+        return structAddress;
     }
 
     if (ctx->LBRACE()) { // Array initialization
-        // Todo: Support array initializations
-        //return ;
+        // Get data type
+        llvm::Type* itemType;
+        llvm::Type* arrayType;
+        if (ctx->dataType()->baseDataType()->TYPE_DYN()) {
+            SymbolType dataType = currentScope->lookup(currentVariableName)->getType();
+            arrayType = getTypeForSymbolType(dataType);
+            itemType = arrayType->getArrayElementType();
+        } else {
+            arrayType = visit(ctx->dataType()).as<llvm::Type*>();
+            itemType = arrayType->getArrayElementType();
+        }
+
+        // Allocate array
+        llvm::Value* arrayAddress = builder->CreateAlloca(arrayType, nullptr, currentVariableName);
+
+        // Fill items with the stated values
+        if (ctx->paramLst()) {
+            allParamsHardcoded = true;
+            // Visit all params to check if they are hardcoded or not
+            std::vector<llvm::Value*> itemValuePointers;
+            std::vector<llvm::Constant*> itemConstants;
+            for (unsigned int i = 0; i < std::min(ctx->paramLst()->assignExpr().size(), arrayType->getArrayNumElements()); i++) {
+                itemValuePointers.push_back(visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>());
+                itemConstants.push_back(currentConstValue);
+            }
+            // Decide if the array can be defined globally
+            if (allParamsHardcoded) { // All params hardcoded => array can be defined globally
+                // Create hardcoded array
+                llvm::Constant* constArray = llvm::ConstantArray::get((llvm::ArrayType*) arrayType, itemConstants);
+                // Create global variable
+                arrayAddress = module->getOrInsertGlobal(currentVariableName, arrayType);
+                // Set some attributes to it
+                llvm::GlobalVariable* global = module->getNamedGlobal(currentVariableName);
+                global->setConstant(true);
+                global->setDSOLocal(true);
+                global->setInitializer(constArray);
+            } else { // Some params are not hardcoded => fallback to individual indexing
+                for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+                    llvm::Value* itemValuePtr = itemValuePointers[i];
+                    llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
+                    // Calculate item address
+                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(i) };
+                    llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
+                    // Store value to item address
+                    builder->CreateStore(itemValue, itemAddress);
+                }
+            }
+        }
+
+        // Update address and LLVM type in symbol table
+        SymbolTableEntry* arrayVar = currentScope->lookup(currentVariableName);
+        arrayVar->updateAddress(arrayAddress);
+        arrayVar->updateLLVMType(arrayType);
+
+        return (llvm::Value*) builder->getTrue();
     }
 
     return nullptr;

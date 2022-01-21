@@ -718,12 +718,11 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
     currentVariableName = ""; // Reset the current variable name
     scopePrefix = ""; // Reset the scope prefix
     scopePath.clear(); // Clear the scope path
-    auto rhs = visit(ctx->ternaryExpr());
 
     // Check if there is an assign operator applied
     if (ctx->assignOp()) { // This is an assignment
         // Get symbol type of right side
-        SymbolType rhsTy = rhs.as<SymbolType>();
+        SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
         std::string variableName = currentVariableName;
 
         // Visit the left side
@@ -776,7 +775,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
     }
 
     // This is a fallthrough case, just visit the ternary expression
-    return rhs;
+    return visit(ctx->ternaryExpr());
 }
 
 antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {
@@ -1052,7 +1051,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             functionEntry->setUsed(); // Set the function to used
 
             // Add function call to the signature queue of the current scope
-            scopePath.getCurrentScope()->pushSignature(signature);
+            currentScope->pushSignature(signature);
 
             // Search for symbol table of called function/procedure to read parameters
             if (functionEntry->getType().is(TY_FUNCTION)) {
