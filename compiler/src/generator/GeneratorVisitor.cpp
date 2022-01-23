@@ -742,10 +742,17 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
     currentVariableName = ctx->IDENTIFIER()->toString();
     llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
 
-    // Create local variable
-    llvm::Value* memAddress = insertAlloca(varType, currentVariableName, nullptr);
+    // Get variable entry
     SymbolTableEntry* entry = currentScope->lookup(currentVariableName);
-    entry->updateAddress(memAddress);
+    llvm::Value* ptr;
+    if (ctx->assignExpr()) {
+        // Visit right side
+        ptr = visit(ctx->assignExpr()).as<llvm::Value*>();
+    } else {
+        // Allocate new memory
+        ptr = insertAlloca(varType, currentVariableName);
+    }
+    entry->updateAddress(ptr);
     entry->updateLLVMType(varType);
 
     // Return the variable name
@@ -1315,10 +1322,25 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
             auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
 
             // Insert conversion instructions depending on the used operator
-            if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider subscript operator
+            unsigned long long symbolType = token->getSymbol()->getType();
+            if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
                 assert(lhs != nullptr);
-                lhs = conversionsManager->getPrefixMinusInst(lhs);
-            } else if (token->getSymbol()->getType() == SpiceParser::LPAREN) { // Consider function call
+                tokenCounter++; // Consume LBRACKET
+
+                // Get the index value
+                auto* assignExpr = dynamic_cast<SpiceParser::AssignExprContext*>(ctx->children[tokenCounter]);
+                llvm::Value* indexValue = visit(assignExpr).as<llvm::Value*>();
+                indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
+                tokenCounter++; // Consume assignExpr
+
+                // Auto-de-reference
+                std::vector<llvm::Value*> indices;
+                if (lhs->getType()->isPointerTy()) indices.push_back(builder->getInt32(0));
+
+                // Get array item
+                indices.push_back(indexValue);
+                lhs = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indices);
+            } else if (symbolType == SpiceParser::LPAREN) { // Consider function call
                 tokenCounter++; // Consume LPAREN
 
                 // Check if the function is a method and retrieve the function name based on that
@@ -1450,24 +1472,24 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                         paramIndex++;
                     }
                 }
+                tokenCounter++; // Consume paramLst
 
                 // Create the function call
-                llvm::Value* callResult = builder->CreateCall(fct, argValues);
+                lhs = builder->CreateCall(fct, argValues);
 
                 // Handle return values
-                if (!callResult->getType()->isSized()) callResult = builder->getTrue();
-                llvm::Value* callResultPtr = insertAlloca(callResult->getType());
-                builder->CreateStore(callResult, callResultPtr);
-                return callResultPtr;
-            } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider member access
+                if (!lhs->getType()->isSized()) lhs = builder->getTrue();
+                lhsPtr = insertAlloca(lhs->getType());
+                builder->CreateStore(lhs, lhsPtr);
+            } else if (symbolType == SpiceParser::DOT) { // Consider member access
                 assert(lhs != nullptr);
                 tokenCounter++; // Consume dot
                 auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
                 lhs = visit(postfixUnary).as<llvm::Value*>();
-            } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+            } else if (symbolType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
                 assert(lhs != nullptr);
                 lhs = conversionsManager->getPostfixPlusPlusInst(lhs);
-            } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
+            } else if (symbolType == SpiceParser::MINUS_MINUS) { // Consider -- operator
                 assert(lhs != nullptr);
                 lhs = conversionsManager->getPostfixMinusMinusInst(lhs);
             }
