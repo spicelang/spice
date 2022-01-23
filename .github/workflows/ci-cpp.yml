@@ -49,7 +49,7 @@ jobs:
         run: |
           mkdir ./compiler/bin
           cd ./compiler/bin
-          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -Wattributes ..
           cmake --build . --target Spice_test
 
       - name: Run Test target

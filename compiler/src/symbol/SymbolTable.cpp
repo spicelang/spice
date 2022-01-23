@@ -93,6 +93,7 @@ SymbolTable* SymbolTable::lookupTableWithSignature(const std::string& signature)
  * @throws runtime_error When trying to update a non-existent symbol
  * @param name Name of the symbol to update
  * @param newState New state of the symbol to update
+ * @param token Lexer token, where the symbol table update was initiated
  */
 void SymbolTable::update(const std::string& name, SymbolState newState) {
     // If not available in the current scope, search in the parent scope
@@ -111,7 +112,7 @@ void SymbolTable::update(const std::string& name, SymbolState newState) {
  * @param name Name of the symbol to update
  * @param newType New type of the symbol to update
  */
-void SymbolTable::update(const std::string& name, SymbolType newType) {
+void SymbolTable::update(const std::string& name, const SymbolType& newType) {
     // If not available in the current scope, search in the parent scope
     if (symbols.find(name) == symbols.end()) {
         if (parent == nullptr) throw std::runtime_error("Updating a non-existent symbol: " + name);

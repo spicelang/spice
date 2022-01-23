@@ -161,9 +161,10 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
         llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
                                                      MAIN_FUNCTION_NAME, module.get());
-        llvm::BasicBlock* bMain = llvm::BasicBlock::Create(*context, "entry");
-        fct->getBasicBlockList().push_back(bMain);
-        moveInsertPointToBlock(bMain);
+        llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+        allocaInsertInst = nullptr;
+        fct->getBasicBlockList().push_back(bEntry);
+        moveInsertPointToBlock(bEntry);
 
         // Store function params
         unsigned int declStmtCount = ctx->paramLstDef() ? ctx->paramLstDef()->declStmt().size() : 0;
@@ -171,14 +172,14 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
             unsigned paramNo = param.getArgNo();
             std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
-            llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+            llvm::Value* memAddress = insertAlloca(paramType, paramName);
             currentScope->lookup(paramName)->updateAddress(memAddress);
             currentScope->lookup(paramName)->updateLLVMType(paramType);
             builder->CreateStore(&param, memAddress);
         }
 
         // Declare result variable and set it to 0 for positive return code
-        llvm::Value* memAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
+        llvm::Value* memAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
         currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(memAddress);
         currentScope->lookup(RETURN_VARIABLE_NAME)->updateLLVMType(returnType);
         builder->CreateStore(builder->getInt32(0), currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
@@ -259,7 +260,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     fct->addFnAttr(llvm::Attribute::NoUnwind);
 
     // Create entry block
-    llvm::BasicBlock* bEntry = llvm::BasicBlock::Create(*context, "entry");
+    llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+    allocaInsertInst = nullptr;
     fct->getBasicBlockList().push_back(bEntry);
     moveInsertPointToBlock(bEntry);
 
@@ -269,14 +271,14 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         unsigned paramNo = param.getArgNo();
         std::string paramName = paramNames[paramNo];
         llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
-        llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+        llvm::Value* memAddress = insertAlloca(paramType, paramName);
         currentScope->lookup(paramName)->updateAddress(memAddress);
         currentScope->lookup(paramName)->updateLLVMType(paramType);
         builder->CreateStore(&param, memAddress);
     }
 
     // Declare result variable
-    llvm::Value* returnMemAddress = builder->CreateAlloca(returnType, nullptr, RETURN_VARIABLE_NAME);
+    llvm::Value* returnMemAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);;
     currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(returnMemAddress);
     currentScope->lookup(RETURN_VARIABLE_NAME)->updateLLVMType(returnType);
 
@@ -357,7 +359,8 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     proc->addFnAttr(llvm::Attribute::NoUnwind);
 
     // Create entry block
-    llvm::BasicBlock* bEntry = llvm::BasicBlock::Create(*context, "entry");
+    llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+    allocaInsertInst = nullptr;
     proc->getBasicBlockList().push_back(bEntry);
     moveInsertPointToBlock(bEntry);
 
@@ -366,7 +369,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         unsigned paramNo = param.getArgNo();
         std::string paramName = paramNames[paramNo];
         llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
-        llvm::Value* memAddress = builder->CreateAlloca(paramType, nullptr, paramName);
+        llvm::Value* memAddress = insertAlloca(paramType, paramName);
         currentScope->lookup(paramName)->updateAddress(memAddress);
         currentScope->lookup(paramName)->updateLLVMType(paramType);
         builder->CreateStore(&param, memAddress);
@@ -564,7 +567,7 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
         std::string indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
         // Create local variable for
         llvm::Type* indexVariableType = llvm::Type::getInt32Ty(*context);
-        indexVariablePtr = builder->CreateAlloca(indexVariableType, nullptr, indexVariableName);
+        indexVariablePtr = insertAlloca(indexVariableType, indexVariableName);
         SymbolTableEntry* entry = currentScope->lookup(indexVariableName);
         entry->updateAddress(indexVariablePtr);
         entry->updateLLVMType(indexVariableType);
@@ -740,7 +743,7 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
     llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
 
     // Create local variable
-    llvm::Value* memAddress = builder->CreateAlloca(varType, nullptr, currentVariableName);
+    llvm::Value* memAddress = insertAlloca(varType, currentVariableName, nullptr);
     SymbolTableEntry* entry = currentScope->lookup(currentVariableName);
     entry->updateAddress(memAddress);
     entry->updateLLVMType(varType);
@@ -854,7 +857,7 @@ antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* 
 
     // Calculate size at compile-time
     unsigned int size = valueTy->isArrayTy() ? valueTy->getArrayNumElements() : valueTy->getScalarSizeInBits();
-    llvm::Value* resultPtr = builder->CreateAlloca(builder->getInt32Ty());
+    llvm::Value* resultPtr = insertAlloca(builder->getInt32Ty());
     builder->CreateStore(builder->getInt32(size), resultPtr);
 
     // Return address to where the size is saved
@@ -961,7 +964,7 @@ antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext
         phi->addIncoming(thenValue, bThen);
         phi->addIncoming(elseValue, bElse);
 
-        llvm::Value* resultPtr = builder->CreateAlloca(phi->getType());
+        llvm::Value* resultPtr = insertAlloca(phi->getType());
         builder->CreateStore(phi, resultPtr);
         return resultPtr;
     }
@@ -1009,7 +1012,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
             phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
 
         // Store the result
-        llvm::Value* resultPtr = builder->CreateAlloca(phi->getType());
+        llvm::Value* resultPtr = insertAlloca(phi->getType());
         builder->CreateStore(phi, resultPtr);
         return resultPtr;
     }
@@ -1057,7 +1060,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
             phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
 
         // Store the result
-        llvm::Value* resultPtr = builder->CreateAlloca(phi->getType());
+        llvm::Value* resultPtr = insertAlloca(phi->getType());
         builder->CreateStore(phi, resultPtr);
         return resultPtr;
     }
@@ -1073,7 +1076,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCon
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             lhs = conversionsManager->getBitwiseOrInst(lhs, rhs);
         }
-        llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
+        llvm::Value* resultPtr = insertAlloca(lhs->getType());
         builder->CreateStore(lhs, resultPtr);
         return resultPtr;
     }
@@ -1089,7 +1092,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprC
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             lhs = conversionsManager->getBitwiseXorInst(lhs, rhs);
         }
-        llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
+        llvm::Value* resultPtr = insertAlloca(lhs->getType());
         builder->CreateStore(lhs, resultPtr);
         return resultPtr;
     }
@@ -1106,7 +1109,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprC
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             lhs = conversionsManager->getBitwiseAndInst(lhs, rhs);
         }
-        llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
+        llvm::Value* resultPtr = insertAlloca(lhs->getType());
         builder->CreateStore(lhs, resultPtr);
         return resultPtr;
     }
@@ -1122,12 +1125,12 @@ antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprConte
 
         if (ctx->EQUAL()) { // Equality expr is: relationalExpr EQUAL relationalExpr
             llvm::Value* result = conversionsManager->getEqualInst(lhs, rhs);
-            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
         } else if (ctx->NOT_EQUAL()) { // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
             llvm::Value* result = conversionsManager->getNotEqualInst(lhs, rhs);
-            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
         }
@@ -1144,22 +1147,22 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
 
         if (ctx->LESS()) { // Relational expr is: shiftExpr LESS shiftExpr
             llvm::Value* result = conversionsManager->getLessInst(lhs, rhs);
-            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
         } else if (ctx->GREATER()) { // Relational expr is: shiftExpr GREATER shiftExpr
             llvm::Value* result = conversionsManager->getGreaterInst(lhs, rhs);
-            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
         } else if (ctx->LESS_EQUAL()) { // Relational expr is: shiftExpr LESS_EQUAL shiftExpr
             llvm::Value* result = conversionsManager->getLessEqualInst(lhs, rhs);
-            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
         } else if (ctx->GREATER_EQUAL()) { // Relational expr is: shiftExpr GREATER_EQUAL shiftExpr
             llvm::Value* result = conversionsManager->getGreaterEqualInst(lhs, rhs);
-            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
         }
@@ -1177,12 +1180,12 @@ antlrcpp::Any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ct
 
         if (ctx->SHL()) { // Shift expr is: additiveExpr SHL additiveExpr
             llvm::Value* result = conversionsManager->getShiftLeftInst(lhs, rhs);
-            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
         } else if (ctx->SHR()) { // Shift expr is: additiveExpr SHR additiveExpr
             llvm::Value* result = conversionsManager->getShiftRightInst(lhs, rhs);
-            llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+            llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
         }
@@ -1209,7 +1212,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
             operatorIndex += 2;
         }
 
-        llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
+        llvm::Value* resultPtr = insertAlloca(lhs->getType());
         builder->CreateStore(lhs, resultPtr);
         return resultPtr;
     }
@@ -1237,7 +1240,7 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
             operatorIndex += 2;
         }
 
-        llvm::Value* resultPtr = builder->CreateAlloca(lhs->getType());
+        llvm::Value* resultPtr = insertAlloca(lhs->getType());
         builder->CreateStore(lhs, resultPtr);
         return resultPtr;
     }
@@ -1252,7 +1255,7 @@ antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx)
         llvm::Value* rhsPtr = value.as<llvm::Value*>();
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
         llvm::Value* result = conversionsManager->getCastInst(dstTy, rhs);
-        llvm::Value* resultPtr = builder->CreateAlloca(result->getType());
+        llvm::Value* resultPtr = insertAlloca(result->getType());
         builder->CreateStore(result, resultPtr);
         return resultPtr;
     }
@@ -1285,7 +1288,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
             } else if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider * operator
                 lhs = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
             } else if (token->getSymbol()->getType() == SpiceParser::BITWISE_AND) { // Consider & operator
-                lhsPtr = builder->CreateAlloca(lhs->getType());
+                lhsPtr = insertAlloca(lhs->getType());
                 builder->CreateStore(lhs, lhsPtr);
                 lhs = lhsPtr;
             }
@@ -1436,7 +1439,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                             }
                             // Pack the pointers together again
                             for (;loadCounter > 0; loadCounter--) {
-                                llvm::Value* newActualArg = builder->CreateAlloca(actualArg->getType());
+                                llvm::Value* newActualArg = insertAlloca(actualArg->getType());
                                 builder->CreateStore(actualArg, newActualArg);
                                 actualArg = newActualArg;
                             }
@@ -1453,7 +1456,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 
                 // Handle return values
                 if (!callResult->getType()->isSized()) callResult = builder->getTrue();
-                llvm::Value* callResultPtr = builder->CreateAlloca(callResult->getType());
+                llvm::Value* callResultPtr = insertAlloca(callResult->getType());
                 builder->CreateStore(callResult, callResultPtr);
                 return callResultPtr;
             } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider member access
@@ -1508,7 +1511,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         if (!currentScope->getParent()) return currentConstValue;
 
         // Store the value to a tmp variable
-        llvm::Value* llvmValuePtr = builder->CreateAlloca(currentConstValue->getType());
+        llvm::Value* llvmValuePtr = insertAlloca(currentConstValue->getType());
         builder->CreateStore(currentConstValue, llvmValuePtr);
         return llvmValuePtr;
     }
@@ -1522,7 +1525,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         if (!currentScope->getParent()) return currentConstValue;
 
         // Store the value to a tmp variable
-        llvm::Value* llvmValuePtr = builder->CreateAlloca(currentConstValue->getType());
+        llvm::Value* llvmValuePtr = insertAlloca(currentConstValue->getType());
         builder->CreateStore(currentConstValue, llvmValuePtr);
         return llvmValuePtr;
     }
@@ -1559,7 +1562,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         llvm::Type* structType = structSymbol->getLLVMType();
 
         // Allocate space for the struct in memory
-        llvm::Value* structAddress = builder->CreateAlloca(structType, nullptr, currentVariableName);
+        llvm::Value* structAddress = insertAlloca(structType, currentVariableName);
         currentScope->lookup(variableName)->updateAddress(structAddress);
         currentScope->lookup(variableName)->updateLLVMType(structType);
 
@@ -1593,7 +1596,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         }
 
         // Allocate array
-        llvm::Value* arrayAddress = builder->CreateAlloca(arrayType, nullptr, currentVariableName);
+        llvm::Value* arrayAddress = insertAlloca(arrayType, currentVariableName);
 
         // Fill items with the stated values
         if (ctx->paramLst()) {
@@ -1772,6 +1775,32 @@ void GeneratorVisitor::createCondBr(llvm::Value* condition, llvm::BasicBlock* tr
 void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
     builder->SetInsertPoint(block);
     blockAlreadyTerminated = false;
+}
+
+llvm::Value* GeneratorVisitor::insertAlloca(llvm::Type* llvmType) {
+    return insertAlloca(llvmType, "", nullptr);
+}
+
+llvm::Value* GeneratorVisitor::insertAlloca(llvm::Type* llvmType, const std::string& varName) {
+    return insertAlloca(llvmType, varName, nullptr);
+}
+
+llvm::Value* GeneratorVisitor::insertAlloca(llvm::Type* llvmType, const std::string& varName, llvm::Value* arraySize) {
+    if (allocaInsertInst != nullptr) {
+        llvm::AllocaInst* allocaInst = builder->CreateAlloca(llvmType, arraySize, varName);
+        allocaInst->moveAfter(allocaInsertInst);
+        allocaInsertInst = allocaInst;
+    } else {
+        // Save current basic block and move insert cursor to entry block of the current function
+        llvm::BasicBlock* currentBlock = builder->GetInsertBlock();
+        builder->SetInsertPoint(allocaInsertBlock);
+
+        allocaInsertInst = builder->CreateAlloca(llvmType, arraySize, varName);
+
+        // Restore old basic block
+        builder->SetInsertPoint(currentBlock);
+    }
+    return (llvm::Value*) allocaInsertInst;
 }
 
 llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {

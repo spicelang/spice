@@ -33,7 +33,7 @@ public:
     SymbolTable* lookupTableWithSignature(const std::string&);
 
     void update(const std::string&, SymbolState);
-    void update(const std::string&, SymbolType);
+    void update(const std::string&, const SymbolType&);
 
     SymbolTable* createChildBlock(const std::string&);
     void mountChildBlock(const std::string&, SymbolTable*);

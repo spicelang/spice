@@ -355,8 +355,10 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
         indexType = visit(head->declStmt().front()).as<SymbolType>();
 
         // Set declared variable to initialized, because we increment it internally in the loop
-        if (!head->declStmt().front()->assignExpr())
-            currentScope->lookup(head->declStmt().front()->IDENTIFIER()->toString())->updateState(INITIALIZED);
+        if (!head->declStmt().front()->assignExpr()) {
+            std::string varName = head->declStmt().front()->IDENTIFIER()->toString();
+            currentScope->lookup(varName)->updateState(INITIALIZED);
+        }
 
         // Check if index type is int
         if (!indexType.is(TY_INT))
@@ -372,7 +374,8 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
 
     // Check type of the item
     SymbolType itemType = visit(head->declStmt().back()).as<SymbolType>();
-    currentScope->lookup(head->declStmt().back()->IDENTIFIER()->toString())->updateState(INITIALIZED);
+    std::string varName = head->declStmt().back()->IDENTIFIER()->toString();
+    currentScope->lookup(varName)->updateState(INITIALIZED);
     if (itemType.is(TY_DYN)) {
         itemType = arrayType.getContainedTy();
     } else {
@@ -759,11 +762,17 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
         if (!variableName.empty()) { // Variable is involved on the left side
             SymbolTableEntry* symbolTableEntry = currentScope->lookup(variableName);
 
+            // Check if the symbol exists
+            if (!symbolTableEntry)
+                throw SemanticError(*ctx->prefixUnaryExpr()->start, REFERENCED_UNDEFINED_VARIABLE,
+                                    "The variable '" + variableName +"' was referenced before defined");
+
             // Perform type inference
             if (lhsTy.is(TY_DYN)) symbolTableEntry->updateType(rhsTy, false);
 
             // Update state in symbol table
-            symbolTableEntry->updateState(INITIALIZED);
+            if (!symbolTableEntry->getType().isOneOf({ TY_FUNCTION, TY_PROCEDURE }))
+                symbolTableEntry->updateState(INITIALIZED);
 
             // Print compiler warning if the rhs size exceeds the lhs size
             if (lhsTy.isArray() && rhsTy.getArraySize() > lhsTy.getArraySize())
@@ -1106,6 +1115,9 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
         // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
         // The existence of the variable is checked in the visitPostfixUnaryExpr method.
         if (!entry) return SymbolType(TY_DYN);
+
+        // Set symbol to used
+        entry->setUsed();
 
         // Otherwise, push the current scope to the scope path
         scopePath.pushFragment(currentVariableName, currentScope);

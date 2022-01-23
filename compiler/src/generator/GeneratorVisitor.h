@@ -111,6 +111,8 @@ private:
     ScopePath scopePath;
     bool blockAlreadyTerminated = false;
     llvm::Value* currentThisValue = nullptr;
+    llvm::BasicBlock* allocaInsertBlock = nullptr;
+    llvm::Instruction* allocaInsertInst = nullptr;
     bool constNegate = false;
     bool allParamsHardcoded = true;
     llvm::Constant* currentConstValue = nullptr;
@@ -122,6 +124,9 @@ private:
     void moveInsertPointToBlock(llvm::BasicBlock*);
     void createBr(llvm::BasicBlock*);
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
+    llvm::Value* insertAlloca(llvm::Type*);
+    llvm::Value* insertAlloca(llvm::Type*, const std::string&);
+    llvm::Value* insertAlloca(llvm::Type*, const std::string&, llvm::Value*);
     llvm::Type* getTypeForSymbolType(SymbolType);
     void initExtStruct(const std::string&, const std::string&);
     bool compareLLVMTypes(llvm::Type*, llvm::Type*);
