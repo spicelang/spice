@@ -53,7 +53,7 @@ private:
     llvm::Type* llvmType;
     SymbolState state;
     const antlr4::Token& definitionToken;
-    llvm::Value* memAddress;
+    llvm::Value* memAddress = nullptr;
     unsigned int orderIndex;
     const bool isGlobal;
     bool used;

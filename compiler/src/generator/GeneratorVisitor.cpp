@@ -1512,6 +1512,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
         // Load symbol table entry
         SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
         SymbolTableEntry* entry = accessScope->lookup(currentVariableName);
+        while (entry && !entry->getAddress()) entry = accessScope->getParent()->lookup(currentVariableName);
 
         if (!entry) return (llvm::Value*) nullptr;
 
