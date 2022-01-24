@@ -881,7 +881,6 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
     if (ctx->assignOp()) { // This is an assignment
         // Get value of right side
         llvm::Value* rhsPtr = visit(ctx->assignExpr()).as<llvm::Value*>();
-        std::string variableName = currentVariableName;
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
         // Visit the left side
@@ -891,7 +890,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         llvm::Value* lhsPtr = visit(ctx->prefixUnaryExpr()).as<llvm::Value*>();
 
         // Get symbol table entry
-        SymbolTableEntry* variableEntry = currentScope->lookup(variableName);
+        SymbolTableEntry* variableEntry = currentScope->lookup(currentVariableName);
 
         // Take a look at the operator
         if (ctx->assignOp()->ASSIGN()) { // Simple assign
@@ -902,7 +901,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
             if (variableEntry->isLocal()) {
                 lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
             } else {
-                lhs = module->getNamedGlobal(variableName);
+                lhs = module->getNamedGlobal(currentVariableName);
             }
             // Decide what to do, based on the operator
             if (ctx->assignOp()->PLUS_EQUAL()) {

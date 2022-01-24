@@ -25,15 +25,8 @@ f<int> main() {
     a.destructor();
 }*/
 
-f<int> faculty(int input) {
-    if input < 2 {
-        return 1;
-    }
-    result = input * faculty(input - 1);
-}
-
 f<int> main() {
-    dyn input = 10;
-    int faculty = faculty(input);
-    printf("Faculty of %d is: %d", input, faculty);
+    int val = 1;
+    val += ((1++)--) * 2 << 2;
+    printf("Value: %d", val);
 }
