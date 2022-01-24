@@ -117,7 +117,8 @@ private:
     bool allParamsHardcoded = true;
     llvm::Constant* currentConstValue = nullptr;
     bool currentVarSigned = false;
-    std::string currentVariableName;
+    std::string currentVarName;
+    std::string lhsVariableName;
 
     // Private methods
     void initializeExternalFunctions();

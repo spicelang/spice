@@ -717,22 +717,22 @@ antlrcpp::Any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
-    // Visit the right side
+    // Visit the left side
     currentVariableName = ""; // Reset the current variable name
     scopePrefix = ""; // Reset the scope prefix
     scopePath.clear(); // Clear the scope path
 
     // Check if there is an assign operator applied
     if (ctx->assignOp()) { // This is an assignment
-        // Get symbol type of right side
-        SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
+        // Get symbol type of left side
+        SymbolType lhsTy = visit(ctx->assignExpr()).as<SymbolType>();
         std::string variableName = currentVariableName;
 
-        // Visit the left side
+        // Visit the right side
         currentVariableName = ""; // Reset the current variable name
         scopePrefix = ""; // Reset the scope prefix
         scopePath.clear(); // Clear the scope path
-        SymbolType lhsTy = visit(ctx->prefixUnaryExpr()).as<SymbolType>();
+        SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
 
         // Take a look at the operator
         if (ctx->assignOp()->ASSIGN()) {
