@@ -1283,27 +1283,27 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
         // Load the value
         llvm::Value* lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
 
-        unsigned int tokenCounter = 1;
-        while (tokenCounter < ctx->children.size()) {
-            auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
+        unsigned int tokenCounter = 0;
+        while (tokenCounter < ctx->children.size() -1) {
+            auto* token = dynamic_cast<SpiceParser::PrefixUnaryOpContext*>(ctx->children[tokenCounter]);
 
             // Insert conversion instructions depending on the used operator
-            if (token->getSymbol()->getType() == SpiceParser::MINUS) { // Consider - operator
+            if (token->MINUS()) { // Consider - operator
                 lhs = conversionsManager->getPrefixMinusInst(lhs);
-            } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+            } else if (token->PLUS_PLUS()) { // Consider ++ operator
                 lhs = conversionsManager->getPrefixPlusPlusInst(lhs);
-            } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
+            } else if (token->MINUS_MINUS()) { // Consider -- operator
                 lhs = conversionsManager->getPrefixMinusMinusInst(lhs);
-            } else if (token->getSymbol()->getType() == SpiceParser::NOT) { // Consider ! operator
+            } else if (token->NOT()) { // Consider ! operator
                 lhs = conversionsManager->getPrefixNotInst(lhs);
-            } else if (token->getSymbol()->getType() == SpiceParser::BITWISE_NOT) { // Consider ~ operator
+            } else if (token->BITWISE_NOT()) { // Consider ~ operator
                 lhs = conversionsManager->getPrefixBitwiseNotInst(lhs);
-            } else if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider * operator
+            } else if (token->MUL()) { // Consider * operator
                 lhs = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-            } else if (token->getSymbol()->getType() == SpiceParser::BITWISE_AND) { // Consider & operator
+                lhsPtr = builder->CreateAlloca(lhs->getType());
+            } else if (token->BITWISE_AND()) { // Consider & operator
                 lhsPtr = insertAlloca(lhs->getType());
                 builder->CreateStore(lhs, lhsPtr);
-                lhs = lhsPtr;
             }
             tokenCounter++;
         }

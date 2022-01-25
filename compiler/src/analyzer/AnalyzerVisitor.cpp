@@ -880,7 +880,7 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
 
         if (ctx->EQUAL()) // Operator was equal
             return OpRuleManager::getEqualResultType(*ctx->start, lhsTy, rhsTy);
-        else // Operator was not equal
+        else if (ctx->NOT_EQUAL()) // Operator was not equal
             return OpRuleManager::getNotEqualResultType(*ctx->start, lhsTy, rhsTy);
     }
     return visit(ctx->relationalExpr()[0]);
@@ -898,7 +898,7 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
             return OpRuleManager::getGreaterResultType(*ctx->start, lhsTy, rhsTy);
         else if (ctx->LESS_EQUAL()) // Operator was less equal
             return OpRuleManager::getLessEqualResultType(*ctx->start, lhsTy, rhsTy);
-        else // Operator was greater equal
+        else if (ctx->GREATER_EQUAL()) // Operator was greater equal
             return OpRuleManager::getGreaterEqualResultType(*ctx->start, lhsTy, rhsTy);
     }
     return visit(ctx->shiftExpr()[0]);
@@ -912,7 +912,7 @@ antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ctx
 
         if (ctx->SHL()) // Operator was shl
             return OpRuleManager::getShiftLeftResultType(*ctx->start, lhsTy, rhsTy);
-        else // Operator was shr
+        else if (ctx->SHR()) // Operator was shr
             return OpRuleManager::getShiftRightResultType(*ctx->start, lhsTy, rhsTy);
     }
     return visit(ctx->additiveExpr()[0]);
@@ -926,12 +926,13 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
         unsigned int operatorIndex = 1;
         for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
+            const size_t tokenType = op->getSymbol()->getType();
             auto next = ctx->multiplicativeExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
 
-            if (op->getSymbol()->getType() == SpiceParser::PLUS) { // Operator was plus
+            if (tokenType == SpiceParser::PLUS) { // Operator was plus
                 OpRuleManager::getPlusResultType(*next->start, currentType, nextType);
-            } else { // Operator was minus
+            } else if (tokenType == SpiceParser::MINUS) { // Operator was minus
                 OpRuleManager::getMinusResultType(*next->start, currentType, nextType);
             }
 
@@ -950,14 +951,15 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
         unsigned int operatorIndex = 1;
         for (int i = 1; i < ctx->castExpr().size(); i++) {
             auto* op = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[operatorIndex]);
+            const size_t tokenType = op->getSymbol()->getType();
             auto next = ctx->castExpr()[i];
             SymbolType nextType = visit(next).as<SymbolType>();
 
-            if (op->getSymbol()->getType() == SpiceParser::MUL) { // Operator is mul
+            if (tokenType == SpiceParser::MUL) { // Operator is mul
                 OpRuleManager::getMulResultType(*next->start, currentType, nextType);
-            } else if (op->getSymbol()->getType() == SpiceParser::DIV) { // Operator is div
+            } else if (tokenType == SpiceParser::DIV) { // Operator is div
                 OpRuleManager::getDivResultType(*next->start, currentType, nextType);
-            } else { // Operator is rem
+            } else if (tokenType == SpiceParser::REM) { // Operator is rem
                 OpRuleManager::getRemResultType(*next->start, currentType, nextType);
             }
 
@@ -982,22 +984,22 @@ antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx) 
 antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) {
     SymbolType lhs = visit(ctx->postfixUnaryExpr()).as<SymbolType>();
 
-    unsigned int tokenCounter = 1;
-    while (tokenCounter < ctx->children.size()) {
-        auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
-        if (token->getSymbol()->getType() == SpiceParser::MINUS) { // Consider - operator
+    unsigned int tokenCounter = 0;
+    while (tokenCounter < ctx->children.size() -1) {
+        auto* token = dynamic_cast<SpiceParser::PrefixUnaryOpContext*>(ctx->children[tokenCounter]);
+        if (token->MINUS()) { // Consider - operator
             lhs = OpRuleManager::getPrefixMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
-        } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+        } else if (token->PLUS_PLUS()) { // Consider ++ operator
             lhs = OpRuleManager::getPrefixPlusPlusResultType(*ctx->postfixUnaryExpr()->start, lhs);
-        } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
+        } else if (token->MINUS_MINUS()) { // Consider -- operator
             lhs = OpRuleManager::getPrefixMinusMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
-        } else if (token->getSymbol()->getType() == SpiceParser::NOT) { // Consider ! operator
+        } else if (token->NOT()) { // Consider ! operator
             lhs = OpRuleManager::getPrefixNotResultType(*ctx->postfixUnaryExpr()->start, lhs);
-        } else if (token->getSymbol()->getType() == SpiceParser::BITWISE_NOT) { // Consider ~ operator
+        } else if (token->BITWISE_NOT()) { // Consider ~ operator
             lhs = OpRuleManager::getPrefixBitwiseNotResultType(*ctx->postfixUnaryExpr()->start, lhs);
-        } else if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider * operator
+        } else if (token->MUL()) { // Consider * operator
             lhs = OpRuleManager::getPrefixMulResultType(*ctx->postfixUnaryExpr()->start, lhs);
-        } else if (token->getSymbol()->getType() == SpiceParser::BITWISE_AND) { // Consider & operator
+        } else if (token->BITWISE_AND()) { // Consider & operator
             lhs = OpRuleManager::getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
         }
         tokenCounter++;
@@ -1012,7 +1014,8 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
     unsigned int tokenCounter = 1;
     while (tokenCounter < ctx->children.size()) {
         auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
-        if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Subscript operator
+        const size_t tokenType = token->getSymbol()->getType();
+        if (tokenType == SpiceParser::LBRACKET) { // Subscript operator
             tokenCounter++; // Consume LBRACKET
             auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
             SymbolType indexType = visit(rule).as<SymbolType>();
@@ -1023,7 +1026,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
                                     "Can only apply subscript operator on array type");
             lhs = lhs.getContainedTy();
             tokenCounter++; // Consume assignExpr
-        } else if (token->getSymbol()->getType() == SpiceParser::LPAREN) { // Consider function call
+        } else if (tokenType == SpiceParser::LPAREN) { // Consider function call
             tokenCounter++; // Consume LPAREN
             std::string functionName = currentVariableName;
 
@@ -1079,14 +1082,14 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             } else {
                 lhs = SymbolType(TY_BOOL);
             }
-        } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider member access
+        } else if (tokenType == SpiceParser::DOT) { // Consider member access
             tokenCounter++; // Consume dot
             // Visit rhs
             auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
             lhs = visit(postfixUnary).as<SymbolType>();
-        } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+        } else if (tokenType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
             lhs = OpRuleManager::getPostfixPlusPlusResultType(*ctx->atomicExpr()->start, lhs);
-        } else if (token->getSymbol()->getType() == SpiceParser::MINUS_MINUS) { // Consider -- operator
+        } else if (tokenType == SpiceParser::MINUS_MINUS) { // Consider -- operator
             lhs = OpRuleManager::getPostfixMinusMinusResultType(*ctx->atomicExpr()->start, lhs);
         }
         tokenCounter++; // Consume token
