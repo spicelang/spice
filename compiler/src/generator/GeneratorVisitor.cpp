@@ -272,15 +272,19 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         std::string paramName = paramNames[paramNo];
         llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
         llvm::Value* memAddress = insertAlloca(paramType, paramName);
-        currentScope->lookup(paramName)->updateAddress(memAddress);
-        currentScope->lookup(paramName)->updateLLVMType(paramType);
+        SymbolTableEntry* paramEntry = currentScope->lookup(paramName);
+        assert(paramEntry != nullptr);
+        paramEntry->updateAddress(memAddress);
+        paramEntry->updateLLVMType(paramType);
         builder->CreateStore(&param, memAddress);
     }
 
     // Declare result variable
     llvm::Value* returnMemAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);;
-    currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(returnMemAddress);
-    currentScope->lookup(RETURN_VARIABLE_NAME)->updateLLVMType(returnType);
+    SymbolTableEntry* returnValueEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
+    assert(returnValueEntry != nullptr);
+    returnValueEntry->updateAddress(returnMemAddress);
+    returnValueEntry->updateLLVMType(returnType);
 
     // Generate IR for function body
     visit(ctx->stmtLst());
@@ -1478,16 +1482,15 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 
                 // Create the function call
                 lhs = builder->CreateCall(fct, argValues);
-
-                // Handle return values
                 if (!lhs->getType()->isSized()) lhs = builder->getTrue();
+
+                // Insert alloca
                 lhsPtr = insertAlloca(lhs->getType());
-                builder->CreateStore(lhs, lhsPtr);
             } else if (symbolType == SpiceParser::DOT) { // Consider member access
-                assert(lhs != nullptr);
                 tokenCounter++; // Consume dot
                 auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
-                lhs = visit(postfixUnary).as<llvm::Value*>();
+                lhsPtr = visit(postfixUnary).as<llvm::Value*>();
+                lhs = nullptr;
             } else if (symbolType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
                 assert(lhs != nullptr);
                 lhs = conversionsManager->getPostfixPlusPlusInst(lhs);
@@ -1499,7 +1502,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
         }
 
         // Store the value back again
-        builder->CreateStore(lhs, lhsPtr);
+        if (lhs != nullptr) builder->CreateStore(lhs, lhsPtr);
     }
 
     return lhsPtr;
@@ -1514,12 +1517,22 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
         // Load symbol table entry
         SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
         SymbolTableEntry* entry = accessScope->lookup(currentVarName);
-        while (entry && !entry->getAddress()) entry = accessScope->getParent()->lookup(currentVarName);
+        while (entry && !entry->getAddress() && !entry->getType().is(TY_IMPORT))
+            entry = accessScope->getParent()->lookup(currentVarName);
 
         if (!entry) return (llvm::Value*) nullptr;
 
+        // Retrieve scope for the new scope path fragment
+        SymbolTable* newAccessScope = accessScope;
+        if (entry->getType().is(TY_IMPORT)) { // Import
+            newAccessScope = accessScope->lookupTable(entry->getName());
+        } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
+            newAccessScope = accessScope->lookupTable("struct:" + entry->getName());
+        }
+        assert(newAccessScope != nullptr);
+
         // Otherwise, push the current scope to the scope path
-        scopePath.pushFragment(currentVarName, currentScope);
+        scopePath.pushFragment(currentVarName, newAccessScope);
 
         return entry->getAddress();
     }
@@ -1539,7 +1552,9 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         llvm::Value* llvmValuePtr = insertAlloca(currentConstValue->getType());
         builder->CreateStore(currentConstValue, llvmValuePtr);
         return llvmValuePtr;
-    } else  if (ctx->NIL()) { // Value is nil
+    }
+
+    if (ctx->NIL()) { // Value is nil
         llvm::Type* nilType = visit(ctx->dataType()).as<llvm::Type*>();
         currentConstValue = llvm::Constant::getNullValue(nilType);
 
@@ -1550,7 +1565,9 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         llvm::Value* llvmValuePtr = insertAlloca(currentConstValue->getType());
         builder->CreateStore(currentConstValue, llvmValuePtr);
         return llvmValuePtr;
-    } else if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
+    }
+
+    if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
         std::string variableName = currentVarName = ctx->IDENTIFIER()[0]->toString();
 
         // Get struct name in format a.b.c and struct scope
@@ -1600,7 +1617,9 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         }
 
         return structAddress;
-    } else if (ctx->LBRACE()) { // Array initialization
+    }
+
+    if (ctx->LBRACE()) { // Array initialization
         // Get data type
         unsigned int numArrayElements = ctx->paramLst() ? ctx->paramLst()->assignExpr().size() : 0;
         SymbolTableEntry* arrayVar = currentScope->lookup(lhsVarName);

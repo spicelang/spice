@@ -289,6 +289,7 @@ void SymbolTable::pushSignature(const FunctionSignature& signature) {
  * @return Signature of the function/procedure
  */
 FunctionSignature SymbolTable::popSignature() {
+    assert(!functionSignatures.empty());
     auto signature = functionSignatures.front();
     functionSignatures.pop();
     return signature;

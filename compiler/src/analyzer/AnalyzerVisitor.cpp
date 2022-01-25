@@ -1057,6 +1057,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
             // Get function entry
             SymbolTableEntry* functionEntry = functionParentScope->lookup(signature.toString());
+            assert(functionEntry != nullptr);
             functionEntry->setUsed(); // Set the function to used
 
             // Add function call to the signature queue of the current scope
@@ -1066,7 +1067,9 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             if (functionEntry->getType().is(TY_FUNCTION)) {
                 SymbolTable* functionTable = functionParentScope->getChild(signature.toString());
                 // Get return type of called function
-                SymbolType returnType = functionTable->lookup(RETURN_VARIABLE_NAME)->getType();
+                SymbolTableEntry* returnValueEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
+                assert(returnValueEntry != nullptr);
+                SymbolType returnType = returnValueEntry->getType();
                 // Structs from outside the module require more initialization
                 if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported())
                     return initExtStruct(*ctx->start, scopePath.getCurrentScope(),
@@ -1078,6 +1081,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             }
         } else if (token->getSymbol()->getType() == SpiceParser::DOT) { // Consider member access
             tokenCounter++; // Consume dot
+            // Visit rhs
             auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
             lhs = visit(postfixUnary).as<SymbolType>();
         } else if (token->getSymbol()->getType() == SpiceParser::PLUS_PLUS) { // Consider ++ operator
@@ -1110,6 +1114,7 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
 
         // Load symbol table entry
         SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+        assert(accessScope != nullptr);
         SymbolTableEntry* entry = accessScope->lookup(currentVariableName);
 
         // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
@@ -1119,8 +1124,17 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
         // Set symbol to used
         entry->setUsed();
 
-        // Otherwise, push the current scope to the scope path
-        scopePath.pushFragment(currentVariableName, currentScope);
+        // Retrieve scope for the new scope path fragment
+        SymbolTable* newAccessScope = accessScope;
+        if (entry->getType().is(TY_IMPORT)) { // Import
+            newAccessScope = accessScope->lookupTable(entry->getName());
+        } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
+            newAccessScope = accessScope->lookupTable("struct:" + entry->getName());
+        }
+        assert(newAccessScope != nullptr);
+
+        // Otherwise, push the retrieved scope to the scope path
+        scopePath.pushFragment(currentVariableName, newAccessScope);
 
         return entry->getType();
     }
