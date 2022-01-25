@@ -118,7 +118,7 @@ private:
     llvm::Constant* currentConstValue = nullptr;
     bool currentVarSigned = false;
     std::string currentVarName;
-    std::string lhsVariableName;
+    std::string lhsVarName;
 
     // Private methods
     void initializeExternalFunctions();
