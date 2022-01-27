@@ -1299,9 +1299,10 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
             } else if (token->BITWISE_NOT()) { // Consider ~ operator
                 lhs = conversionsManager->getPrefixBitwiseNotInst(lhs);
             } else if (token->MUL()) { // Consider * operator
+                lhsPtr = lhs;
                 lhs = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-                lhsPtr = builder->CreateAlloca(lhs->getType());
             } else if (token->BITWISE_AND()) { // Consider & operator
+                lhs = lhsPtr;
                 lhsPtr = insertAlloca(lhs->getType());
                 builder->CreateStore(lhs, lhsPtr);
             }
