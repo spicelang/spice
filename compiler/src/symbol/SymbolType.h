@@ -58,6 +58,7 @@ public:
     bool matches(SymbolType, SymbolSuperType);
     SymbolSuperType getSuperType();
     std::string getSubType();
+    SymbolType getBaseType();
     std::string getName(bool);
     void setArraySize(unsigned int);
     unsigned int getArraySize();

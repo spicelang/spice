@@ -1132,7 +1132,7 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
         if (entry->getType().is(TY_IMPORT)) { // Import
             newAccessScope = accessScope->lookupTable(entry->getName());
         } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
-            newAccessScope = accessScope->lookupTable("struct:" + entry->getName());
+            newAccessScope = accessScope->lookupTable("struct:" + entry->getType().getBaseType().getSubType());
         }
         assert(newAccessScope != nullptr);
 

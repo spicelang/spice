@@ -25,16 +25,20 @@ f<int> main() {
     a.destructor();
 }*/
 
+type Person struct {
+    string firstName
+    string lastName
+    int age
+}
+
+p birthday(Person* person) {
+    person.age++;
+}
+
 f<int> main() {
-    string food = "Pizza";
-    string* ptr = &food;
-
-    printf("Pointer address: %p, value: %s", ptr, *ptr);
-
-    *ptr = "Burger";
-
-    dyn restoredFood = *ptr;
-    printf("Restored value: %s", restoredFood);
-
-    printf("Restored value address: %p", &restoredFood);
+    dyn mike = Person { "Mike", "Miller", 32 };
+    printf("Person: %s, %s", mike.lastName, mike.firstName);
+    printf("Age before birthday: %d", mike.age);
+    birthday(&mike);
+    printf("Age after birthday: %d", mike.age);
 }

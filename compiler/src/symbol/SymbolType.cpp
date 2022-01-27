@@ -118,6 +118,15 @@ std::string SymbolType::getSubType() {
     return std::get<1>(typeChain.top());
 }
 
+SymbolType SymbolType::getBaseType() {
+    // Copy the stack to not destroy the present one
+    TypeChain chainCopy = typeChain;
+    // Unwrap the chain until the base type can be retrieved
+    while (std::get<0>(chainCopy.top()) == TY_PTR || std::get<0>(chainCopy.top()) == TY_ARRAY) chainCopy.pop();
+    // Check if it is of the given superType and subType
+    return SymbolType(chainCopy);
+}
+
 std::string SymbolType::getName(bool withSize) {
     std::string name;
     TypeChain chain = typeChain;
