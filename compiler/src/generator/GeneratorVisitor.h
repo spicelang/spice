@@ -119,6 +119,7 @@ private:
     bool currentVarSigned = false;
     std::string currentVarName;
     std::string lhsVarName;
+    std::vector<llvm::Value*> structAccessIndices;
 
     // Private methods
     void initializeExternalFunctions();

@@ -8,7 +8,7 @@ mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE 
 functionDef: F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
-structDef: TYPE IDENTIFIER STRUCT LBRACE fieldLst RBRACE;
+structDef: TYPE IDENTIFIER STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
 forLoop: FOR declStmt SEMICOLON assignExpr SEMICOLON assignExpr LBRACE stmtLst RBRACE;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
@@ -19,7 +19,7 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt)*;
-fieldLst: (dataType IDENTIFIER)*;
+field: declSpecifiers? dataType IDENTIFIER;
 typeLst: dataType (COMMA dataType)* ELLIPSIS?;
 paramLstDef: declStmt (COMMA declStmt)*;
 paramLst: assignExpr (COMMA assignExpr)*;

@@ -28,7 +28,7 @@ f<int> main() {
 type Person struct {
     string firstName
     string lastName
-    int age
+    unsigned int age
 }
 
 p birthday(Person* person) {

@@ -252,7 +252,29 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
     // Visit field list in a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
-    visit(ctx->fieldLst());
+    // Insert a field for each field list entry
+    for (auto& field : ctx->field()) {
+        std::string fieldName = field->IDENTIFIER()->toString();
+        SymbolType fieldType = visit(field->dataType()).as<SymbolType>();
+
+        // Build symbol specifiers
+        SymbolSpecifiers fieldTypeSpecifiers = SymbolSpecifiers(symbolType);
+        if (field->declSpecifiers()) {
+            for (auto& specifier : field->declSpecifiers()->declSpecifier()) {
+                if (specifier->CONST()) {
+                    // Struct fields cannot be const
+                    throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                                        "Struct fields cannot have the const specifier attached");
+                } else if (specifier->SIGNED()) {
+                    fieldTypeSpecifiers.setSigned(true);
+                } else if (specifier->UNSIGNED()) {
+                    fieldTypeSpecifiers.setSigned(false);
+                }
+            }
+        }
+
+        currentScope->insert(fieldName, fieldType, fieldTypeSpecifiers, DECLARED, *field->start, false);
+    }
     // Return to the old scope
     currentScope = currentScope->getParent();
     return nullptr;
@@ -1096,10 +1118,10 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
     }
 
     // Check if referenced variable exists
-    SymbolTable* accessScope = scopePath.getCurrentScope();
+    /*SymbolTable* accessScope = scopePath.getCurrentScope();
     if (accessScope && !accessScope->lookup(currentVariableName))
         throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
-                            "Variable '" + currentVariableName + "' was referenced before defined");
+                            "Variable '" + currentVariableName + "' was referenced before defined");*/
 
     return lhs;
 }
@@ -1160,7 +1182,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         // Retrieve fully qualified struct name and the scope where to search it
         std::string fullyQualifiedStructName;
         SymbolTable* structScope = currentScope;
-        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) {
+        for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
             std::string iden = ctx->IDENTIFIER()[i]->toString();
             fullyQualifiedStructName += fullyQualifiedStructName.empty() ? iden : "." + iden;
             if (i < ctx->IDENTIFIER().size() -1) {
@@ -1186,7 +1208,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         if (!structSymbol) { // Not found
             // Trigger an external struct initialization which loads the struct from another source file and modifies the
             // symbol table accordingly
-            initExtStruct(*ctx->IDENTIFIER()[1]->getSymbol(), structScope,
+            initExtStruct(*ctx->IDENTIFIER()[0]->getSymbol(), structScope,
                           ctx->IDENTIFIER().back()->toString(), fullyQualifiedStructName);
             // Reload the struct symbol
             structSymbol = currentScope->lookup(fullyQualifiedStructName);
@@ -1212,6 +1234,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                 SymbolType actualType = visit(ternary).as<SymbolType>();
                 // Get expected type
                 SymbolTableEntry* expectedField = structTable->lookupByIndexInCurrentScope(i);
+                assert(expectedField != nullptr);
                 SymbolType expectedType = expectedField->getType();
                 // Check if type matches declaration
                 if (actualType != expectedType)
@@ -1221,7 +1244,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
             }
         }
 
-        return structSymbol;
+        return structSymbol->getType();
     }
 
     if (ctx->LBRACE()) { // Array initialization

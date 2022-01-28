@@ -280,7 +280,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     }
 
     // Declare result variable
-    llvm::Value* returnMemAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);;
+    llvm::Value* returnMemAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
     SymbolTableEntry* returnValueEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     assert(returnValueEntry != nullptr);
     returnValueEntry->updateAddress(returnMemAddress);
@@ -457,8 +457,8 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
 
     // Collect member types
     std::vector<llvm::Type*> memberTypes;
-    for (auto& dataType : ctx->fieldLst()->dataType())
-        memberTypes.push_back(visit(dataType).as<llvm::Type*>());
+    for (auto& field : ctx->field())
+        memberTypes.push_back(visit(field->dataType()).as<llvm::Type*>());
 
     // Create global struct
     llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, structName);
@@ -1518,6 +1518,8 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
         // Load symbol table entry
         SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
         SymbolTableEntry* entry = accessScope->lookup(currentVarName);
+        // For the case that in the current scope there is a variable with the same name, but it is initialized later, so the
+        // symbol above in the hierarchy is meant to be used.
         while (entry && !entry->getAddress() && !entry->getType().is(TY_IMPORT))
             entry = accessScope->getParent()->lookup(currentVarName);
 
@@ -1528,7 +1530,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
         if (entry->getType().is(TY_IMPORT)) { // Import
             newAccessScope = accessScope->lookupTable(entry->getName());
         } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
-            newAccessScope = accessScope->lookupTable("struct:" + entry->getName());
+            newAccessScope = accessScope->lookupTable("struct:" + entry->getType().getBaseType().getSubType());
         }
         assert(newAccessScope != nullptr);
 
@@ -1604,14 +1606,22 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         currentScope->lookup(variableName)->updateAddress(structAddress);
         currentScope->lookup(variableName)->updateLLVMType(structType);
 
+        // Get struct table
+        SymbolTable* structTable = currentScope->lookupTable("struct:" + structName);
+        assert(structTable != nullptr);
+
         // Fill the struct with the stated values
         if (ctx->paramLst()) {
             for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+                // Set address to the struct instance field
+                SymbolTableEntry* fieldEntry = structTable->lookupByIndexInCurrentScope(i);
+                assert(fieldEntry != nullptr);
                 // Visit assignment
                 llvm::Value* assignmentPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
                 llvm::Value* assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
                 // Get pointer to struct element
                 llvm::Value* fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
+                fieldEntry->updateAddress(fieldAddress);
                 // Store value to address
                 builder->CreateStore(assignment, fieldAddress);
             }

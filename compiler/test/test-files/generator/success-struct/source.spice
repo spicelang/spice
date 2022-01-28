@@ -4,7 +4,7 @@ type Nested struct {
 }
 
 type TestStruct struct {
-    int* field1
+    signed int* field1
     double field2
     Nested* nested
 }
