@@ -10,8 +10,8 @@ p birthday(Person* person) {
 
 f<int> main() {
     dyn mike = Person { "Mike", "Miller", 32 };
-    printf("Person: %s, %s", mike.lastName, mike.firstName);
-    printf("Age before birthday: %d", mike.age);
+    printf("Person: %s, %s\n", mike.lastName, mike.firstName);
+    printf("Age before birthday: %d\n", mike.age);
     birthday(&mike);
-    printf("Age after birthday: %d", mike.age);
+    printf("Age after birthday: %d\n", mike.age);
 }

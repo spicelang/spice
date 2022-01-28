@@ -883,7 +883,8 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
     currentVarName = ""; // Reset the current variable name
     scopePrefix = ""; // Reset the scope prefix
     scopePath.clear(); // Clear the scope path
-    structAccessIndices.clear();
+    structAccessIndices.clear(); // Clear struct access indices
+    currentThisValue = nullptr; // Reset this value
 
     // Check if there is an assign operator applied
     if (ctx->assignOp()) { // This is an assignment or compound assignment
@@ -895,6 +896,8 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         currentVarName = ""; // Reset the current variable name
         scopePrefix = ""; // Reset the scope prefix
         scopePath.clear(); // Clear the scope path
+        structAccessIndices.clear(); // Clear struct access indices
+        currentThisValue = nullptr; // Reset this value
         llvm::Value* lhsPtr = visit(ctx->prefixUnaryExpr()).as<llvm::Value*>();
 
         // Get symbol table entry
@@ -1529,7 +1532,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
                 structAccessIndices.push_back(builder->getInt32(0)); // To de-reference pointer input of GEP
                 // Set the access type and address
                 structAccessType = entry->getLLVMType();
-                structAccessAddress = entry->getAddress();
+                structAccessAddress = currentThisValue = entry->getAddress();
             } else { // This is a struct field in a struct
                 // Just add the index to the index list
                 unsigned int fieldIndex = entry->getOrderIndex();
@@ -1537,9 +1540,11 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
                 SymbolType tmpType = entry->getType();
                 while (tmpType.isPointer()) {
                     // Execute GEP with the collected indices to de-reference the pointer
-                    structAccessAddress = builder->CreateGEP(structAccessType, structAccessAddress, structAccessIndices);
+                    structAccessAddress = builder->CreateGEP(structAccessType, structAccessAddress,
+                                                             structAccessIndices);
                     // Load the value and store it as new address
-                    structAccessAddress = builder->CreateLoad(structAccessAddress->getType()->getPointerElementType(), structAccessAddress);
+                    structAccessAddress = currentThisValue =builder->CreateLoad(
+                            structAccessAddress->getType()->getPointerElementType(), structAccessAddress);
                     // Set new struct access type
                     SymbolTableEntry* nestedStructEntry = accessScope->lookup(entry->getType().getBaseType().getSubType());
                     assert(nestedStructEntry != nullptr);
