@@ -119,6 +119,8 @@ private:
     bool currentVarSigned = false;
     std::string currentVarName;
     std::string lhsVarName;
+    llvm::Type* structAccessType;
+    llvm::Value* structAccessAddress;
     std::vector<llvm::Value*> structAccessIndices;
 
     // Private methods

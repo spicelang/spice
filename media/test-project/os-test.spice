@@ -25,20 +25,23 @@ f<int> main() {
     a.destructor();
 }*/
 
-type Person struct {
-    string firstName
-    string lastName
-    unsigned int age
+type Nested struct {
+    string nested1
+    bool* nested2
 }
 
-p birthday(Person* person) {
-    person.age++;
+type TestStruct struct {
+    signed int* field1
+    double field2
+    Nested* nested
 }
 
 f<int> main() {
-    dyn mike = Person { "Mike", "Miller", 32 };
-    printf("Person: %s, %s", mike.lastName, mike.firstName);
-    printf("Age before birthday: %d", mike.age);
-    birthday(&mike);
-    printf("Age after birthday: %d", mike.age);
+    int input = 12;
+    bool boolean = true;
+    Nested nestedInstance = Nested { "Hello World!", &boolean };
+    dyn instance = TestStruct { &input, 46.34, &nestedInstance };
+    TestStruct instance1 = instance;
+    printf("Field1: %d, field2: %f", *instance.nested.nested2, instance1.field2);
+    printf("Output: %s, %p", instance1.nested.nested1, instance.field1);
 }

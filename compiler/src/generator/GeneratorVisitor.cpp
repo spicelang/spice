@@ -1518,12 +1518,38 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
         // Load symbol table entry
         SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
         SymbolTableEntry* entry = accessScope->lookup(currentVarName);
-        // For the case that in the current scope there is a variable with the same name, but it is initialized later, so the
-        // symbol above in the hierarchy is meant to be used.
-        while (entry && !entry->getAddress() && !entry->getType().is(TY_IMPORT))
-            entry = accessScope->getParent()->lookup(currentVarName);
 
         if (!entry) return (llvm::Value*) nullptr;
+
+        llvm::Value* memAddress = entry->getAddress();
+        if (entry->getType().isBaseType(TY_STRUCT)) { // If base type is a struct
+            // Initialize GEP calculation
+            structAccessIndices.clear();
+            structAccessIndices.push_back(builder->getInt32(0)); // To de-reference pointer input of GEP
+            // Set the access type and address
+            structAccessType = entry->getLLVMType();
+            structAccessAddress = entry->getAddress();
+        } else if (!structAccessIndices.empty()) { // A struct was met already, so this is a struct field
+            unsigned int fieldIndex = entry->getOrderIndex();
+            // Push field index to index list
+            structAccessIndices.push_back(builder->getInt32(fieldIndex));
+            // Unpack address
+            while (structAccessType->isPointerTy()) {
+                structAccessAddress = builder->CreateLoad(structAccessType, structAccessAddress);
+                structAccessType = structAccessType->getPointerElementType();
+            }
+            // Execute GEP calculation
+            memAddress = builder->CreateGEP(structAccessType, structAccessAddress, structAccessIndices);
+            // Clear index list
+            structAccessIndices.clear();
+        } else {
+            // For the case that in the current scope there is a variable with the same name, but it is initialized later, so the
+            // symbol above in the hierarchy is meant to be used.
+            while (entry && !entry->getAddress() && !entry->getType().is(TY_IMPORT))
+                entry = accessScope->getParent()->lookup(currentVarName);
+
+            if (!entry) return (llvm::Value*) nullptr;
+        }
 
         // Retrieve scope for the new scope path fragment
         SymbolTable* newAccessScope = accessScope;
@@ -1537,7 +1563,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
         // Otherwise, push the current scope to the scope path
         scopePath.pushFragment(currentVarName, newAccessScope);
 
-        return entry->getAddress();
+        return memAddress;
     }
     if (ctx->builtinCall()) return visit(ctx->builtinCall());
     return visit(ctx->assignExpr());
@@ -1576,7 +1602,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         // Get struct name in format a.b.c and struct scope
         std::string structName;
         SymbolTable* structScope = currentScope;
-        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) {
+        for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
             std::string iden = ctx->IDENTIFIER()[i]->toString();
             structName += structName.empty() ? iden : "." + iden;
             if (i < ctx->IDENTIFIER().size() -1) {
@@ -1599,6 +1625,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         // Check if the struct is defined
         if (structScope->isImported()) initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
         SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+        assert(structSymbol != nullptr);
         llvm::Type* structType = structSymbol->getLLVMType();
 
         // Allocate space for the struct in memory
