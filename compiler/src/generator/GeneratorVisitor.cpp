@@ -883,6 +883,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
     currentVarName = ""; // Reset the current variable name
     scopePrefix = ""; // Reset the scope prefix
     scopePath.clear(); // Clear the scope path
+    structAccessIndices.clear();
 
     // Check if there is an assign operator applied
     if (ctx->assignOp()) { // This is an assignment or compound assignment
@@ -1523,12 +1524,33 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
 
         llvm::Value* memAddress = entry->getAddress();
         if (entry->getType().isBaseType(TY_STRUCT)) { // If base type is a struct
-            // Initialize GEP calculation
-            structAccessIndices.clear();
-            structAccessIndices.push_back(builder->getInt32(0)); // To de-reference pointer input of GEP
-            // Set the access type and address
-            structAccessType = entry->getLLVMType();
-            structAccessAddress = entry->getAddress();
+            if (structAccessIndices.empty()) { // No struct was seen before
+                // Initialize GEP calculation
+                structAccessIndices.push_back(builder->getInt32(0)); // To de-reference pointer input of GEP
+                // Set the access type and address
+                structAccessType = entry->getLLVMType();
+                structAccessAddress = entry->getAddress();
+            } else { // This is a struct field in a struct
+                // Just add the index to the index list
+                unsigned int fieldIndex = entry->getOrderIndex();
+                structAccessIndices.push_back(builder->getInt32(fieldIndex));
+                SymbolType tmpType = entry->getType();
+                while (tmpType.isPointer()) {
+                    // Execute GEP with the collected indices to de-reference the pointer
+                    structAccessAddress = builder->CreateGEP(structAccessType, structAccessAddress, structAccessIndices);
+                    // Load the value and store it as new address
+                    structAccessAddress = builder->CreateLoad(structAccessAddress->getType()->getPointerElementType(), structAccessAddress);
+                    // Set new struct access type
+                    SymbolTableEntry* nestedStructEntry = accessScope->lookup(entry->getType().getBaseType().getSubType());
+                    assert(nestedStructEntry != nullptr);
+                    structAccessType = nestedStructEntry->getLLVMType();
+                    // Reset index list
+                    structAccessIndices.clear();
+                    structAccessIndices.push_back(builder->getInt32(0));
+                    // Unpack symbol type
+                    tmpType = tmpType.getContainedTy();
+                }
+            }
         } else if (!structAccessIndices.empty()) { // A struct was met already, so this is a struct field
             unsigned int fieldIndex = entry->getOrderIndex();
             // Push field index to index list
