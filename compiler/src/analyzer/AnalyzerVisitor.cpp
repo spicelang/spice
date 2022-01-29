@@ -715,7 +715,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
                 break;
             }
             case 'p': {
-                if (!assignmentType.isPointer() && !(assignmentType.isArray() && assignmentType.getArraySize() == 0))
+                if (!assignmentType.isPointer() && !assignmentType.isArray())
                     throw SemanticError(*assignment->start, PRINTF_TYPE_ERROR,
                                         "Template string expects pointer, but got " + assignmentType.getName(false));
                 placeholderCount++;
@@ -1023,6 +1023,9 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
             lhs = OpRuleManager::getPrefixMulResultType(*ctx->postfixUnaryExpr()->start, lhs);
         } else if (token->BITWISE_AND()) { // Consider & operator
             lhs = OpRuleManager::getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
+        } else if (token->LOGICAL_AND()) { // Consider doubled & operator
+            lhs = OpRuleManager::getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = OpRuleManager::getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
         }
         tokenCounter++;
     }
@@ -1043,7 +1046,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             SymbolType indexType = visit(rule).as<SymbolType>();
             if (!indexType.is(TY_INT))
                 throw SemanticError(*ctx->start, ARRAY_INDEX_NO_INTEGER, "Array index must be of type int");
-            if (!lhs.is(TY_ARRAY))
+            if (!lhs.isOneOf({ TY_ARRAY, TY_STRING }))
                 throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply subscript operator on array type");
             lhs = lhs.getContainedTy();

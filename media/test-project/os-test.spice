@@ -25,20 +25,23 @@ f<int> main() {
     a.destructor();
 }*/
 
-type Person struct {
-    string firstName
-    string lastName
-    unsigned int age
-}
-
-p birthday(Person* person) {
-    person.age++;
-}
+/*p testProc(int[]** nums) {
+    int[] nums1 = **nums;
+    //printf("De-referenced: %p\n", nums1);
+    nums1[2] = 10;
+    printf("1: %d\n", nums1[0]);
+    printf("2: %d\n", nums1[1]);
+    printf("3: %d\n", nums1[2]);
+    printf("4: %d\n", nums1[3]);
+}*/
 
 f<int> main() {
-    dyn mike = Person { "Mike", "Miller", 32 };
-    printf("Person: %s, %s", mike.lastName, mike.firstName);
-    printf("Age before birthday: %d", mike.age);
-    birthday(&mike);
-    printf("Age after birthday: %d", mike.age);
+    //int[4] intArray = { 1, 2, 3, 4 };
+    //printf("1: %d\n", intArray[2]);
+    //printf("Pointer: %p\n", intArray);
+    //testProc(&&intArray);
+
+    string test = "test";
+    char c1 = test[2];
+    printf("Char: %c\n", c1);
 }

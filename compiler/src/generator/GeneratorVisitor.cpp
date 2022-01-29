@@ -751,15 +751,14 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 
     // Get variable entry
     SymbolTableEntry* entry = currentScope->lookup(currentVarName);
-    llvm::Value* ptr;
+    llvm::Value* memAddress = insertAlloca(varType, currentVarName);
     if (ctx->assignExpr()) {
         // Visit right side
-        ptr = visit(ctx->assignExpr()).as<llvm::Value*>();
-    } else {
-        // Allocate new memory
-        ptr = insertAlloca(varType, currentVarName);
+        llvm::Value* rhsPtr = visit(ctx->assignExpr()).as<llvm::Value*>();
+        llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+        builder->CreateStore(rhs, memAddress);
     }
-    entry->updateAddress(ptr);
+    entry->updateAddress(memAddress);
     entry->updateLLVMType(varType);
 
     // Return the variable name
@@ -1303,9 +1302,20 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
             } else if (token->BITWISE_NOT()) { // Consider ~ operator
                 lhs = conversionsManager->getPrefixBitwiseNotInst(lhs);
             } else if (token->MUL()) { // Consider * operator
+                // De-reference
                 lhsPtr = lhs;
                 lhs = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
             } else if (token->BITWISE_AND()) { // Consider & operator
+                // Create a reference
+                lhs = lhsPtr;
+                lhsPtr = insertAlloca(lhs->getType());
+                builder->CreateStore(lhs, lhsPtr);
+            } else if (token->LOGICAL_AND()) { // Consider doubled & operator
+                // First reference
+                lhs = lhsPtr;
+                lhsPtr = insertAlloca(lhs->getType());
+                builder->CreateStore(lhs, lhsPtr);
+                // Second reference
                 lhs = lhsPtr;
                 lhsPtr = insertAlloca(lhs->getType());
                 builder->CreateStore(lhs, lhsPtr);
@@ -1335,7 +1345,6 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
             // Insert conversion instructions depending on the used operator
             unsigned long long symbolType = token->getSymbol()->getType();
             if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
-                assert(lhs != nullptr);
                 tokenCounter++; // Consume LBRACKET
 
                 // Get the index value
@@ -1344,13 +1353,22 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
                 tokenCounter++; // Consume assignExpr
 
-                // Auto-de-reference
-                std::vector<llvm::Value*> indices;
-                if (lhs->getType()->isPointerTy()) indices.push_back(builder->getInt32(0));
+                if (lhs == nullptr) lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
 
                 // Get array item
-                indices.push_back(indexValue);
-                lhs = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indices);
+                if (lhsPtr->getType()->getPointerElementType()->isArrayTy()) {
+                    std::vector<llvm::Value*> indices = { builder->getInt32(0), indexValue };
+                    lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, indices);
+                } else {
+                    std::vector<llvm::Value*> indices = { indexValue };
+                    lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indices);
+                }
+                lhs = nullptr;
+                /*std::vector<llvm::Value*> indices = { indexValue };
+                llvm::Type* ty = lhs->getType()->isPointerTy() ? lhs->getType()->getPointerElementType() :
+                        lhs->getType()->getArrayElementType();
+                lhsPtr = builder->CreateInBoundsGEP(ty, lhs, indices);
+                lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);*/
             } else if (symbolType == SpiceParser::LPAREN) { // Consider function call
                 tokenCounter++; // Consume LPAREN
 
@@ -1540,10 +1558,10 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
                 SymbolType tmpType = entry->getType();
                 while (tmpType.isPointer()) {
                     // Execute GEP with the collected indices to de-reference the pointer
-                    structAccessAddress = builder->CreateGEP(structAccessType, structAccessAddress,
+                    structAccessAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress,
                                                              structAccessIndices);
                     // Load the value and store it as new address
-                    structAccessAddress = currentThisValue =builder->CreateLoad(
+                    structAccessAddress = currentThisValue = builder->CreateLoad(
                             structAccessAddress->getType()->getPointerElementType(), structAccessAddress);
                     // Set new struct access type
                     SymbolTableEntry* nestedStructEntry = accessScope->lookup(entry->getType().getBaseType().getSubType());
@@ -1566,7 +1584,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
                 structAccessType = structAccessType->getPointerElementType();
             }
             // Execute GEP calculation
-            memAddress = builder->CreateGEP(structAccessType, structAccessAddress, structAccessIndices);
+            memAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
             // Clear index list
             structAccessIndices.clear();
         } else {

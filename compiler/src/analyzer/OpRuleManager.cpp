@@ -7,6 +7,8 @@ SymbolType OpRuleManager::getAssignResultType(const antlr4::Token& token, Symbol
     if (lhs.is(TY_DYN)) return rhs;
     // Allow pointers, arrays and structs of the same type straight away
     if (lhs.isOneOf({ TY_PTR, TY_ARRAY, TY_STRUCT }) && lhs == rhs) return rhs;
+    // Allow pointer to array
+    if (lhs.is(TY_ARRAY) && rhs.is(TY_PTR)) return rhs;
     // Allow char* = string
     if (lhs.isPointerOf(TY_CHAR) && rhs.is(TY_STRING)) return lhs;
     // Check primitive type combinations

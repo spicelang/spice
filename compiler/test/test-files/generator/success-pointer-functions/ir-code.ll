@@ -18,7 +18,7 @@ entry:
   store %Person* %0, %Person** %person, align 8
   %1 = load %Person*, %Person** %person, align 8
   %2 = load %Person*, %Person** %person, align 8
-  %3 = getelementptr %Person, %Person* %2, i32 0, i32 2
+  %3 = getelementptr inbounds %Person, %Person* %2, i32 0, i32 2
   %4 = load i32, i32* %3, align 4
   %5 = add i32 %4, 1
   store i32 %5, i32* %3, align 4
@@ -28,6 +28,7 @@ entry:
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
+  %mike = alloca %Person, align 8
   %Person = alloca %Person, align 8
   %0 = alloca i8*, align 8
   %1 = alloca i8*, align 8
@@ -48,28 +49,30 @@ entry:
   %10 = getelementptr inbounds %Person, %Person* %Person, i32 0, i32 2
   store i32 %9, i32* %10, align 4
   %11 = load %Person, %Person* %Person, align 8
-  %12 = getelementptr %Person, %Person* %Person, i32 0, i32 1
-  %13 = load i8*, i8** %12, align 8
-  %14 = load %Person, %Person* %Person, align 8
-  %15 = getelementptr %Person, %Person* %Person, i32 0, i32 0
-  %16 = load i8*, i8** %15, align 8
-  %17 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @2, i32 0, i32 0), i8* %13, i8* %16)
-  %18 = load %Person, %Person* %Person, align 8
-  %19 = getelementptr %Person, %Person* %Person, i32 0, i32 2
-  %20 = load i32, i32* %19, align 4
-  %21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @3, i32 0, i32 0), i32 %20)
-  %22 = load %Person, %Person* %Person, align 8
-  store %Person* %Person, %Person** %3, align 8
-  store %Person* %Person, %Person** %3, align 8
-  %23 = load %Person*, %Person** %3, align 8
-  call void @"birthday(struct(Person)*)"(%Person* %23)
+  store %Person %11, %Person* %mike, align 8
+  %12 = load %Person, %Person* %mike, align 8
+  %13 = getelementptr inbounds %Person, %Person* %mike, i32 0, i32 1
+  %14 = load i8*, i8** %13, align 8
+  %15 = load %Person, %Person* %mike, align 8
+  %16 = getelementptr inbounds %Person, %Person* %mike, i32 0, i32 0
+  %17 = load i8*, i8** %16, align 8
+  %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @2, i32 0, i32 0), i8* %14, i8* %17)
+  %19 = load %Person, %Person* %mike, align 8
+  %20 = getelementptr inbounds %Person, %Person* %mike, i32 0, i32 2
+  %21 = load i32, i32* %20, align 4
+  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @3, i32 0, i32 0), i32 %21)
+  %23 = load %Person, %Person* %mike, align 8
+  store %Person* %mike, %Person** %3, align 8
+  store %Person* %mike, %Person** %3, align 8
+  %24 = load %Person*, %Person** %3, align 8
+  call void @"birthday(struct(Person)*)"(%Person* %24)
   store i1 true, i1* %4, align 1
-  %24 = load %Person, %Person* %Person, align 8
-  %25 = getelementptr %Person, %Person* %Person, i32 0, i32 2
-  %26 = load i32, i32* %25, align 4
-  %27 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @4, i32 0, i32 0), i32 %26)
-  %28 = load i32, i32* %result, align 4
-  ret i32 %28
+  %25 = load %Person, %Person* %mike, align 8
+  %26 = getelementptr inbounds %Person, %Person* %mike, i32 0, i32 2
+  %27 = load i32, i32* %26, align 4
+  %28 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @4, i32 0, i32 0), i32 %27)
+  %29 = load i32, i32* %result, align 4
+  ret i32 %29
 }
 
 attributes #0 = { nounwind }
