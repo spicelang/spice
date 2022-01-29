@@ -1046,9 +1046,9 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             SymbolType indexType = visit(rule).as<SymbolType>();
             if (!indexType.is(TY_INT))
                 throw SemanticError(*ctx->start, ARRAY_INDEX_NO_INTEGER, "Array index must be of type int");
-            if (!lhs.isOneOf({ TY_ARRAY, TY_STRING }))
+            if (!lhs.isOneOf({ TY_ARRAY, TY_STRING, TY_PTR }))
                 throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Can only apply subscript operator on array type");
+                                    "Can only apply subscript operator on array type, got " + lhs.getName(true));
             lhs = lhs.getContainedTy();
             tokenCounter++; // Consume assignExpr
         } else if (tokenType == SpiceParser::LPAREN) { // Consider function call

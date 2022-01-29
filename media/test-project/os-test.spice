@@ -25,23 +25,9 @@ f<int> main() {
     a.destructor();
 }*/
 
-/*p testProc(int[]** nums) {
-    int[] nums1 = **nums;
-    //printf("De-referenced: %p\n", nums1);
-    nums1[2] = 10;
-    printf("1: %d\n", nums1[0]);
-    printf("2: %d\n", nums1[1]);
-    printf("3: %d\n", nums1[2]);
-    printf("4: %d\n", nums1[3]);
-}*/
-
 f<int> main() {
-    //int[4] intArray = { 1, 2, 3, 4 };
-    //printf("1: %d\n", intArray[2]);
-    //printf("Pointer: %p\n", intArray);
-    //testProc(&&intArray);
-
-    string test = "test";
-    char c1 = test[2];
-    printf("Char: %c\n", c1);
+    int[10] intArray = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
+    printf("intArray[3]: %d\n", intArray[3]);
+    printf("intArray[7]: %d\n", intArray[7]);
+    printf("intArray[9]: %d\n", intArray[9]);
 }
