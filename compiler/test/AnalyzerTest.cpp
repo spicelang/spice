@@ -128,10 +128,6 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "Semantic error at 2:5: Types of printf call not matching: Number of placeholders does not match the number of passed arguments"
         },
         {
-            "error-break-count-valid",
-            "Semantic error at 7:23: Invalid number of break calls: Break count must be >= 1, you provided -10"
-        },
-        {
             "error-break-count-not-too-high",
             "Semantic error at 7:23: Invalid number of break calls: We can only break 2 time(s) here"
         },
@@ -239,13 +235,23 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
     if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
     antlr4::ANTLRInputStream input(sourceStream);
 
-    // Parse input to AST
+    // Create error handlers for lexer and parser
+    AntlrThrowingErrorListener lexerErrorHandler = AntlrThrowingErrorListener(LEXER);
+    AntlrThrowingErrorListener parserErrorHandler = AntlrThrowingErrorListener(PARSER);
+
+    // Tokenize input
     SpiceLexer lexer(&input);
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(&lexerErrorHandler);
     antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
+
+    // Parse input to AST
     SpiceParser parser(&tokens);
+    parser.removeErrorListeners();
+    parser.addErrorListener(&parserErrorHandler);
+    antlr4::tree::ParseTree *tree = parser.entry();
 
     // Execute syntactical analysis
-    antlr4::tree::ParseTree *tree = parser.entry();
     try {
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
@@ -274,10 +280,12 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
         EXPECT_EQ(expectedSymbolTable, symbolTable->toString());
 
         SUCCEED();
-    } catch (SemanticError &error) {
+    } catch (SemanticError& error) {
         if (param.errorMessage.length() == 0)
             FAIL() << "Expected no error, but got '" + std::string(error.what()) + "'";
         EXPECT_EQ(std::string(error.what()), param.errorMessage);
+    } catch (LexerParserError& error) {
+        FAIL() << "Hit lexer/parser error '" + std::string(error.what()) + "'";
     }
 }
 

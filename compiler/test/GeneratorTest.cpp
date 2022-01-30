@@ -102,13 +102,23 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
     if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
     antlr4::ANTLRInputStream input(sourceStream);
 
-    // Parse input to AST
+    // Create error handlers for lexer and parser
+    AntlrThrowingErrorListener lexerErrorHandler = AntlrThrowingErrorListener(LEXER);
+    AntlrThrowingErrorListener parserErrorHandler = AntlrThrowingErrorListener(PARSER);
+
+    // Tokenize input
     SpiceLexer lexer(&input);
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(&lexerErrorHandler);
     antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
+
+    // Parse input to AST
     SpiceParser parser(&tokens);
+    parser.removeErrorListeners();
+    parser.addErrorListener(&parserErrorHandler);
+    antlr4::tree::ParseTree *tree = parser.entry();
 
     // Execute syntactical analysis
-    antlr4::tree::ParseTree *tree = parser.entry();
     SymbolTable* symbolTable;
     try {
         // Execute semantic analysis
@@ -163,6 +173,10 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
         if (param.errorMessage.length() == 0)
             FAIL() << "Expected no error, but got '" + std::string(error.what()) + "'";
         EXPECT_EQ(std::string(error.what()), param.errorMessage);
+    } catch (SemanticError& error) {
+        FAIL() << "Hit semantic error '" + std::string(error.what()) + "'";
+    } catch (LexerParserError& error) {
+        FAIL() << "Hit lexer/parser error '" + std::string(error.what()) + "'";
     }
 }
 

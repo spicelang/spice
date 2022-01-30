@@ -24,11 +24,3 @@ f<int> main() {
     printf("String: %s\n", a.value);
     a.destructor();
 }*/
-
-f<int> testFunction(int arg0, dyn arg1 = "value", dyn arg2) {
-    ,;
-}
-
-f<int> main() {
-    testFunction();
-}

@@ -31,6 +31,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     std::ifstream stream(sourceFile);
     if (!stream) throw std::runtime_error("Source file at path '" + sourceFile + "' does not exist.");
 
+    // Create error handlers for lexer and parser
     AntlrThrowingErrorListener lexerErrorHandler = AntlrThrowingErrorListener(LEXER);
     AntlrThrowingErrorListener parserErrorHandler = AntlrThrowingErrorListener(PARSER);
 
@@ -39,9 +40,9 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     SpiceLexer lexer(&input);
     lexer.removeErrorListeners();
     lexer.addErrorListener(&lexerErrorHandler);
+    antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
 
     // Parse input to AST
-    antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
     SpiceParser parser(&tokens); // Check for syntax errors
     parser.removeErrorListeners();
     parser.addErrorListener(&parserErrorHandler);
