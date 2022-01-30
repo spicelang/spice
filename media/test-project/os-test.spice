@@ -25,9 +25,10 @@ f<int> main() {
     a.destructor();
 }*/
 
+f<int> testFunction(int arg0, dyn arg1 = "value", dyn arg2) {
+    ,;
+}
+
 f<int> main() {
-    int[10] intArray = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
-    printf("intArray[3]: %d\n", intArray[3]);
-    printf("intArray[7]: %d\n", intArray[7]);
-    printf("intArray[9]: %d\n", intArray[9]);
+    testFunction();
 }

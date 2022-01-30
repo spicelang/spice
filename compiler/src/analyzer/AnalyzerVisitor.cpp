@@ -492,10 +492,12 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
     SymbolType symbolType = visit(ctx->dataType()).as<SymbolType>();
 
     // Visit the right side
+    SymbolState initialState = DECLARED;
     if (ctx->assignExpr()) {
         SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
         // Check if type has to be inferred or both types are fixed
         symbolType = symbolType.is(TY_DYN) ? rhsTy : OpRuleManager::getAssignResultType(*ctx->start, symbolType, rhsTy);
+        initialState = INITIALIZED;
     }
 
     if (parameterMode && symbolType.isArray()) // Change array type to pointer type for function/procedure parameters
@@ -516,7 +518,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
     }
 
     // Insert variable into symbol table
-    currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, DECLARED, *ctx->start, parameterMode);
+    currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, initialState, *ctx->start, parameterMode);
 
     return symbolType;
 }
@@ -1120,6 +1122,10 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         tokenCounter++; // Consume token
     }
 
+    if (lhs.is(TY_INVALID))
+        throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
+                            "Variable '" + currentVariableName + "' was referenced before declared");
+
     // Check if referenced variable exists
     /*SymbolTable* accessScope = scopePath.getCurrentScope();
     if (accessScope && !accessScope->lookup(currentVariableName))
@@ -1147,7 +1153,7 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
 
         // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
         // The existence of the variable is checked in the visitPostfixUnaryExpr method.
-        if (!entry) return SymbolType(TY_DYN);
+        if (!entry) return SymbolType(TY_INVALID);
 
         // Set symbol to used
         entry->setUsed();

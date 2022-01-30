@@ -12,6 +12,7 @@
 #include "exception/SemanticError.h"
 
 enum SymbolSuperType {
+    TY_INVALID,
     TY_DOUBLE,
     TY_INT,
     TY_SHORT,

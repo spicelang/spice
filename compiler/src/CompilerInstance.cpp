@@ -31,11 +31,20 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     std::ifstream stream(sourceFile);
     if (!stream) throw std::runtime_error("Source file at path '" + sourceFile + "' does not exist.");
 
-    // Parse input to AST
+    AntlrThrowingErrorListener lexerErrorHandler = AntlrThrowingErrorListener(LEXER);
+    AntlrThrowingErrorListener parserErrorHandler = AntlrThrowingErrorListener(PARSER);
+
+    // Tokenize input
     antlr4::ANTLRInputStream input(stream);
     SpiceLexer lexer(&input);
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(&lexerErrorHandler);
+
+    // Parse input to AST
     antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
     SpiceParser parser(&tokens); // Check for syntax errors
+    parser.removeErrorListeners();
+    parser.addErrorListener(&parserErrorHandler);
     antlr4::tree::ParseTree* tree = parser.entry(); // Get AST
 
     // Execute syntactical analysis

@@ -177,6 +177,7 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement& chainEle
         case TY_FUNCTION: return "function";
         case TY_PROCEDURE: return "procedure";
         case TY_IMPORT: return "import";
+        case TY_INVALID: return "invalid";
     }
     return "unknown";
 }

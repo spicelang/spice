@@ -26,7 +26,6 @@ class IRError : public std::exception {
 public:
     // Constructors
     explicit IRError(const antlr4::Token&, IRErrorType, const std::string&);
-
     explicit IRError(IRErrorType, const std::string&);
 
     // Public methods
@@ -34,7 +33,7 @@ public:
 
 private:
     // Members
-    std::string errorMessage{};
+    std::string errorMessage;
 
     static std::string getMessagePrefix(IRErrorType);
 };

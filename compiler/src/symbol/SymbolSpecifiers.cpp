@@ -46,6 +46,7 @@ SymbolSpecifiers::SymbolSpecifiers(SymbolType type) {
         case TY_IMPORT:
             specifierValue = SPECIFIER_DEFAULTS_IMPORT;
             break;
+        case TY_DYN: break;
         default:
             throw std::runtime_error("Symbol specifier fallthrough");
     }

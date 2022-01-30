@@ -53,7 +53,6 @@ class SemanticError : public std::exception {
 public:
     // Constructors
     explicit SemanticError(const antlr4::Token& token, SemanticErrorType type, const std::string& message);
-
     explicit SemanticError(SemanticErrorType type, const std::string& message);
 
     // Public methods
@@ -61,7 +60,7 @@ public:
 
 private:
     // Members
-    std::string errorMessage{};
+    std::string errorMessage;
 
     static std::string getMessagePrefix(SemanticErrorType);
 };

@@ -30,6 +30,10 @@ set(SOURCES
         exception/SemanticError.h
         exception/IRError.cpp
         exception/IRError.h
+        exception/LexerParserError.cpp
+        exception/LexerParserError.h
+        exception/AntlrThrowingErrorListener.cpp
+        exception/AntlrThrowingErrorListener.h
         util/ScopeIdUtil.cpp
         util/ScopeIdUtil.h
         util/ModuleRegistry.cpp
