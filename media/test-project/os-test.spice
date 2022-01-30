@@ -10,17 +10,22 @@ p StringStruct.appendChar(char c) {
 }
 
 f<int> main() {
-    StringStruct a = new StringStruct {};
+    StringStruct a = StringStruct {};
     a.appendChar('A');
 }*/
 
-import "std/runtime/string_rt" as str;
+/*import "std/runtime/string_rt" as str;
 
 f<int> main() {
-    str.StringStruct a = new str.StringStruct {};
+    str.StringStruct a = str.StringStruct {};
     a.constructor();
     printf("String: %s\n", a.value);
     a.appendChar('A');
     printf("String: %s\n", a.value);
     a.destructor();
+}*/
+
+f<int> main() {
+    double[] doubleArray = { 1.1, 2.2, 3.3, 4.4, 5.5 };
+    printf("doubleArray[3]: %f\n", doubleArray[3]);
 }

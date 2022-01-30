@@ -7,12 +7,12 @@
 #include <map>
 #include <vector>
 #include <queue>
-#include <type/SymbolType.h>
-#include <util/FunctionSignature.h>
-#include <util/CompilerWarning.h>
+#include "symbol/SymbolType.h"
+#include "util/FunctionSignature.h"
+#include "util/CompilerWarning.h"
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/DerivedTypes.h>
-#include <SpiceParser.h>
+#include "SpiceParser.h"
 #include "SymbolTableEntry.h"
 
 /**
@@ -25,7 +25,7 @@ public:
     explicit SymbolTable(SymbolTable* parent, bool inMainSourceFile) : parent(parent), inMainSourceFile(inMainSourceFile) {};
 
     // Public methods
-    void insert(const std::string&, SymbolType, SymbolState, const antlr4::Token&, bool, bool);
+    void insert(const std::string&, SymbolType, SymbolSpecifiers, SymbolState, const antlr4::Token&, bool);
 
     SymbolTableEntry* lookup(const std::string&);
     SymbolTableEntry* lookupByIndexInCurrentScope(unsigned int);
@@ -33,7 +33,7 @@ public:
     SymbolTable* lookupTableWithSignature(const std::string&);
 
     void update(const std::string&, SymbolState);
-    void update(const std::string&, SymbolType);
+    void update(const std::string&, const SymbolType&);
 
     SymbolTable* createChildBlock(const std::string&);
     void mountChildBlock(const std::string&, SymbolTable*);

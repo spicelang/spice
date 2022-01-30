@@ -30,6 +30,26 @@ SymbolType SymbolType::getContainedTy() {
     return SymbolType(newTypeChain);
 }
 
+SymbolType SymbolType::replaceSubType(const std::string& newSubType) {
+    // Copy the stack to not destroy the present one
+    TypeChain chainCopy = typeChain;
+    // Unwrap the chain until the base type can be retrieved. To be able to restore the structure later, save it to the tmp chain
+    TypeChain tmp;
+    while (std::get<0>(chainCopy.top()) == TY_PTR || std::get<0>(chainCopy.top()) == TY_ARRAY) {
+        tmp.push(chainCopy.top());
+        chainCopy.pop();
+    }
+    // Replace the subType of the base chain element
+    std::get<1>(chainCopy.top()) = newSubType;
+    // Restore the other chain elements
+    for (unsigned int i = 0; i < tmp.size(); i++) {
+        chainCopy.push(tmp.top());
+        tmp.pop();
+    }
+    // Return the new chain as a symbol type
+    return SymbolType(chainCopy);
+}
+
 bool SymbolType::isPointer() {
     return getSuperType() == TY_PTR;
 }
@@ -50,6 +70,28 @@ bool SymbolType::isArrayOf(SymbolSuperType elementSuperType) {
 
 bool SymbolType::is(SymbolSuperType superType) {
     return getSuperType() == superType;
+}
+
+bool SymbolType::is(SymbolSuperType superType, const std::string& subType) {
+    return getSuperType() == superType && getSubType() == subType;
+}
+
+bool SymbolType::isBaseType(SymbolSuperType superType) {
+    // Copy the stack to not destroy the present one
+    TypeChain chainCopy = typeChain;
+    // Unwrap the chain until the base type can be retrieved
+    while (std::get<0>(chainCopy.top()) == TY_PTR || std::get<0>(chainCopy.top()) == TY_ARRAY) chainCopy.pop();
+    // Check if it is of the given superType and subType
+    return std::get<0>(chainCopy.top()) == superType;
+}
+
+bool SymbolType::isBaseType(SymbolSuperType superType, const std::string& subType) {
+    // Copy the stack to not destroy the present one
+    TypeChain chainCopy = typeChain;
+    // Unwrap the chain until the base type can be retrieved
+    while (std::get<0>(chainCopy.top()) == TY_PTR || std::get<0>(chainCopy.top()) == TY_ARRAY) chainCopy.pop();
+    // Check if it is of the given superType and subType
+    return std::get<0>(chainCopy.top()) == superType && std::get<1>(chainCopy.top()) == subType;
 }
 
 bool SymbolType::isOneOf(const std::vector<SymbolSuperType>& superTypes) {
@@ -74,6 +116,15 @@ SymbolSuperType SymbolType::getSuperType() {
 
 std::string SymbolType::getSubType() {
     return std::get<1>(typeChain.top());
+}
+
+SymbolType SymbolType::getBaseType() {
+    // Copy the stack to not destroy the present one
+    TypeChain chainCopy = typeChain;
+    // Unwrap the chain until the base type can be retrieved
+    while (std::get<0>(chainCopy.top()) == TY_PTR || std::get<0>(chainCopy.top()) == TY_ARRAY) chainCopy.pop();
+    // Check if it is of the given superType and subType
+    return SymbolType(chainCopy);
 }
 
 std::string SymbolType::getName(bool withSize) {
@@ -126,6 +177,7 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement& chainEle
         case TY_FUNCTION: return "function";
         case TY_PROCEDURE: return "procedure";
         case TY_IMPORT: return "import";
+        case TY_INVALID: return "invalid";
     }
     return "unknown";
 }

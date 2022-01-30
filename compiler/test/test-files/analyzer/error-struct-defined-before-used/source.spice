@@ -1,5 +1,5 @@
 f<int> main() {
-    Test inst = new Test { false };
+    Test inst = Test { false };
     printf("%u", inst.testField);
 }
 

@@ -9,5 +9,5 @@ f<int> main() {
     dyn restoredFood = *ptr;
     printf("Restored value: %s", restoredFood);
 
-    printf("Restored value address: %p", &restoredFood);
+    printf("Restored value address: %p\n", &restoredFood);
 }

@@ -2,4 +2,4 @@
 mkdir lib
 cd lib
 
-git clone https://github.com/antlr/antlr4.git
+git clone --depth 1 --branch 4.9.3 https://github.com/antlr/antlr4.git

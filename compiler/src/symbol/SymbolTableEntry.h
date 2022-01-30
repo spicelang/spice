@@ -6,8 +6,9 @@
 #include <stdexcept>
 #include <utility>
 
-#include <type/SymbolType.h>
-#include <exception/SemanticError.h>
+#include "symbol/SymbolType.h"
+#include "exception/SemanticError.h"
+#include "SymbolSpecifiers.h"
 #include <llvm/IR/Value.h>
 
 enum SymbolState {
@@ -21,14 +22,15 @@ enum SymbolState {
 class SymbolTableEntry {
 public:
     // Constructors
-    SymbolTableEntry(std::string name, SymbolType type, SymbolState state, const antlr4::Token& token, unsigned int orderIndex,
-                     const bool isConstant, const bool isGlobal) :
-            name(std::move(name)), type(std::move(type)), state(state), definitionToken(token), orderIndex(orderIndex),
-            isConstant(isConstant), isGlobal(isGlobal), used(false) {};
+    SymbolTableEntry(std::string name, SymbolType type, SymbolSpecifiers specifiers, SymbolState state,
+                     const antlr4::Token& token, unsigned int orderIndex, const bool isGlobal) :
+            name(std::move(name)), type(std::move(type)), specifiers(specifiers), state(state), definitionToken(token),
+            orderIndex(orderIndex), isGlobal(isGlobal), used(false) {};
 
     // Public methods
     std::string getName();
     SymbolType getType();
+    SymbolSpecifiers getSpecifiers();
     SymbolState getState();
     const antlr4::Token& getDefinitionToken();
     llvm::Type* getLLVMType();
@@ -47,12 +49,12 @@ private:
     // Members
     std::string name;
     SymbolType type;
+    SymbolSpecifiers specifiers;
     llvm::Type* llvmType;
     SymbolState state;
     const antlr4::Token& definitionToken;
-    llvm::Value* memAddress;
+    llvm::Value* memAddress = nullptr;
     unsigned int orderIndex;
-    const bool isConstant;
     const bool isGlobal;
     bool used;
 };

@@ -9,6 +9,6 @@ type AnotherStruct struct {
 }
 
 f<int> main() {
-    AnotherStruct testInstance = new TestStruct { 6.456, "Hi!", false };
+    AnotherStruct testInstance = TestStruct { 6.456, "Hi!", false };
     printf("Double: %f", testInstance.dbl);
 }

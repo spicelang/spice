@@ -4,6 +4,7 @@ cmake-build-debug/*
 
 # Third party libs
 lib/*
+gen/*
 
 # CLion
 .idea/*

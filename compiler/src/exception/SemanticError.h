@@ -41,6 +41,8 @@ enum SemanticErrorType {
     VARARG_APPLIED_WRONGLY,
     DYN_POINTERS_NOT_ALLOWED,
     DYN_ARRAYS_NOT_ALLOWED,
+    SPECIFIER_AT_ILLEGAL_CONTEXT,
+    RESERVED_KEYWORD,
     COMING_SOON_SA,
 };
 
@@ -51,7 +53,6 @@ class SemanticError : public std::exception {
 public:
     // Constructors
     explicit SemanticError(const antlr4::Token& token, SemanticErrorType type, const std::string& message);
-
     explicit SemanticError(SemanticErrorType type, const std::string& message);
 
     // Public methods
@@ -59,7 +60,7 @@ public:
 
 private:
     // Members
-    std::string errorMessage{};
+    std::string errorMessage;
 
     static std::string getMessagePrefix(SemanticErrorType);
 };

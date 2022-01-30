@@ -7,6 +7,10 @@ SymbolType OpRuleManager::getAssignResultType(const antlr4::Token& token, Symbol
     if (lhs.is(TY_DYN)) return rhs;
     // Allow pointers, arrays and structs of the same type straight away
     if (lhs.isOneOf({ TY_PTR, TY_ARRAY, TY_STRUCT }) && lhs == rhs) return rhs;
+    // Allow pointer to array
+    if (lhs.is(TY_ARRAY) && rhs.is(TY_PTR)) return rhs;
+    // Allow array to larger array
+    if (lhs.isArray() && rhs.isArray() && lhs.getContainedTy() == rhs.getContainedTy()) return lhs;
     // Allow char* = string
     if (lhs.isPointerOf(TY_CHAR) && rhs.is(TY_STRING)) return lhs;
     // Check primitive type combinations
@@ -29,12 +33,28 @@ SymbolType OpRuleManager::getDivEqualResultType(const antlr4::Token& token, cons
     return validateBinaryOperation(token, DIV_EQUAL_OP_RULES, "/=", lhs, rhs);
 }
 
+SymbolType OpRuleManager::getRemEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, REM_EQUAL_OP_RULES, "%=", lhs, rhs);
+}
+
 SymbolType OpRuleManager::getSHLEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
     return validateBinaryOperation(token, SHL_EQUAL_OP_RULES, "<<=", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getSHREqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
     return validateBinaryOperation(token, SHR_EQUAL_OP_RULES, ">>=", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getAndEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, AND_EQUAL_OP_RULES, "&=", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getOrEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, OR_EQUAL_OP_RULES, "|=", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getXorEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, XOR_EQUAL_OP_RULES, "^=", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getLogicalAndResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
@@ -51,6 +71,10 @@ SymbolType OpRuleManager::getBitwiseAndResultType(const antlr4::Token& token, co
 
 SymbolType OpRuleManager::getBitwiseOrResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
     return validateBinaryOperation(token, BITWISE_OR_OP_RULES, "|", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getBitwiseXorResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs) {
+    return validateBinaryOperation(token, BITWISE_XOR_OP_RULES, "^", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getEqualResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs) {
@@ -113,6 +137,10 @@ SymbolType OpRuleManager::getRemResultType(const antlr4::Token& token, const Sym
     return validateBinaryOperation(token, REM_OP_RULES, "%", lhs, rhs);
 }
 
+SymbolType OpRuleManager::getPrefixMinusResultType(const antlr4::Token& token, const SymbolType& lhs) {
+    return validateUnaryOperation(token, PREFIX_MINUS_OP_RULES, "-", lhs);
+}
+
 SymbolType OpRuleManager::getPrefixPlusPlusResultType(const antlr4::Token& token, const SymbolType& lhs) {
     return validateUnaryOperation(token, PREFIX_PLUS_PLUS_OP_RULES, "++", lhs);
 }
@@ -121,16 +149,31 @@ SymbolType OpRuleManager::getPrefixMinusMinusResultType(const antlr4::Token& tok
     return validateUnaryOperation(token, PREFIX_MINUS_MINUS_OP_RULES, "--", lhs);
 }
 
+SymbolType OpRuleManager::getPrefixNotResultType(const antlr4::Token& token, const SymbolType& lhs) {
+    return validateUnaryOperation(token, PREFIX_NOT_OP_RULES, "!", lhs);
+}
+
+SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const antlr4::Token& token, const SymbolType& lhs) {
+    return validateUnaryOperation(token, PREFIX_BITWISE_NOT_OP_RULES, "~", lhs);
+}
+
+SymbolType OpRuleManager::getPrefixMulResultType(const antlr4::Token& token, SymbolType lhs) {
+    if (!lhs.isPointer())
+        throw SemanticError(token, OPERATOR_WRONG_DATA_TYPE,
+                            "Cannot apply de-referencing operator on type " + lhs.getName(true));
+    return lhs.getContainedTy();
+}
+
+SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const antlr4::Token& token, SymbolType lhs) {
+    return lhs.toPointer();
+}
+
 SymbolType OpRuleManager::getPostfixPlusPlusResultType(const antlr4::Token& token, const SymbolType& lhs) {
     return validateUnaryOperation(token, POSTFIX_PLUS_PLUS_OP_RULES, "++", lhs);
 }
 
 SymbolType OpRuleManager::getPostfixMinusMinusResultType(const antlr4::Token& token, const SymbolType& lhs) {
     return validateUnaryOperation(token, POSTFIX_MINUS_MINUS_OP_RULES, "--", lhs);
-}
-
-SymbolType OpRuleManager::getNotResultType(const antlr4::Token& token, const SymbolType& lhs) {
-    return validateUnaryOperation(token, NOT_OP_RULES, "!", lhs);
 }
 
 SymbolType OpRuleManager::getCastResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs) { // double dbl = (double) 10;

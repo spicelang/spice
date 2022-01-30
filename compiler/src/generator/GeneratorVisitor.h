@@ -4,9 +4,9 @@
 
 #include <SpiceBaseVisitor.h>
 #include <exception/IRError.h>
-#include <analyzer/SymbolTable.h>
+#include "symbol/SymbolTable.h"
+#include "symbol/ScopePath.h"
 #include <util/ScopeIdUtil.h>
-#include <util/IdentifierUtil.h>
 #include <analyzer/AnalyzerVisitor.h>
 
 #include <llvm/IR/IRBuilder.h>
@@ -64,9 +64,6 @@ public:
     antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext* ctx) override;
     antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext* ctx) override;
     antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext* ctx) override;
-    antlrcpp::Any visitFunctionCall(SpiceParser::FunctionCallContext* ctx) override;
-    antlrcpp::Any visitNewStmt(SpiceParser::NewStmtContext* ctx) override;
-    antlrcpp::Any visitArrayInitStmt(SpiceParser::ArrayInitStmtContext* ctx) override;
     antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext* ctx) override;
     antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) override;
     antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext* ctx) override;
@@ -79,19 +76,21 @@ public:
     antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) override;
     antlrcpp::Any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext* ctx) override;
     antlrcpp::Any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext* ctx) override;
+    antlrcpp::Any visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext* ctx) override;
     antlrcpp::Any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext* ctx) override;
     antlrcpp::Any visitEqualityExpr(SpiceParser::EqualityExprContext* ctx) override;
     antlrcpp::Any visitRelationalExpr(SpiceParser::RelationalExprContext* ctx) override;
     antlrcpp::Any visitShiftExpr(SpiceParser::ShiftExprContext* ctx) override;
     antlrcpp::Any visitAdditiveExpr(SpiceParser::AdditiveExprContext* ctx) override;
     antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext* ctx) override;
+    antlrcpp::Any visitCastExpr(SpiceParser::CastExprContext* ctx) override;
     antlrcpp::Any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext* ctx) override;
     antlrcpp::Any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext* ctx) override;
-    antlrcpp::Any visitCastExpr(SpiceParser::CastExprContext* ctx) override;
     antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext* ctx) override;
-    antlrcpp::Any visitIdenValue(SpiceParser::IdenValueContext* ctx) override;
     antlrcpp::Any visitValue(SpiceParser::ValueContext* ctx) override;
+    antlrcpp::Any visitPrimitiveValue(SpiceParser::PrimitiveValueContext* ctx) override;
     antlrcpp::Any visitDataType(SpiceParser::DataTypeContext* ctx) override;
+    antlrcpp::Any visitBaseDataType(SpiceParser::BaseDataTypeContext* ctx) override;
 
 private:
     // Members
@@ -107,21 +106,33 @@ private:
     std::unique_ptr<llvm::Module> module;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope;
-    SymbolTable* accessScope = nullptr;
     std::string scopePrefix;
-    std::string currentVar;
     SymbolType currentSymbolType;
+    ScopePath scopePath;
     bool blockAlreadyTerminated = false;
     llvm::Value* currentThisValue = nullptr;
+    llvm::BasicBlock* allocaInsertBlock = nullptr;
+    llvm::Instruction* allocaInsertInst = nullptr;
+    bool constNegate = false;
     bool allParamsHardcoded = true;
     llvm::Constant* currentConstValue = nullptr;
+    bool currentVarSigned = false;
+    std::string currentVarName;
+    std::string lhsVarName;
+    llvm::Type* structAccessType;
+    llvm::Value* structAccessAddress;
+    std::vector<llvm::Value*> structAccessIndices;
 
     // Private methods
     void initializeExternalFunctions();
     void moveInsertPointToBlock(llvm::BasicBlock*);
     void createBr(llvm::BasicBlock*);
     void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
+    llvm::Value* insertAlloca(llvm::Type*);
+    llvm::Value* insertAlloca(llvm::Type*, const std::string&);
+    llvm::Value* insertAlloca(llvm::Type*, const std::string&, llvm::Value*);
     llvm::Type* getTypeForSymbolType(SymbolType);
     void initExtStruct(const std::string&, const std::string&);
     bool compareLLVMTypes(llvm::Type*, llvm::Type*);
+    llvm::Value* doImplicitCast(llvm::Value*, llvm::Type*);
 };

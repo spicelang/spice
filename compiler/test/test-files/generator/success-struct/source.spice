@@ -4,7 +4,7 @@ type Nested struct {
 }
 
 type TestStruct struct {
-    int* field1
+    signed int* field1
     double field2
     Nested* nested
 }
@@ -12,9 +12,9 @@ type TestStruct struct {
 f<int> main() {
     int input = 12;
     bool boolean = true;
-    Nested nestedInstance = new Nested { "Hello World!", &boolean };
-    dyn instance = new TestStruct { &input, 46.34, &nestedInstance };
+    Nested nestedInstance = Nested { "Hello World!", &boolean };
+    dyn instance = TestStruct { &input, 46.34, &nestedInstance };
     TestStruct instance1 = instance;
-    printf("Field1: %d, field2: %f", *instance.nested.nested2, instance1.field2);
-    printf("Output: %s, %p", instance1.nested.nested1, instance.field1);
+    printf("Field1: %d, field2: %f\n", *instance.nested.nested2, instance1.field2);
+    printf("Output: %s, %p\n", instance1.nested.nested1, instance.field1);
 }

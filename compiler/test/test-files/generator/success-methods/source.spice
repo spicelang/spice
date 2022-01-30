@@ -11,7 +11,7 @@ p Letter.setContent(string text) {
 }
 
 f<int> main() {
-    dyn letter = new Letter { "No content" };
+    dyn letter = Letter { "No content" };
     letter.setContent("Hello World!");
-    printf("Content: %s", letter.getContent());
+    printf("Content: %s\n", letter.getContent());
 }

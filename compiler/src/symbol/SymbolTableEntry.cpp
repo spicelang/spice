@@ -12,21 +12,30 @@ std::string SymbolTableEntry::getName() {
 }
 
 /**
- * Retrieve the state of the current symbol
- *
- * @return State of the current symbol
- */
-SymbolState SymbolTableEntry::getState() {
-    return state;
-}
-
-/**
  * Retrieve the type of the current symbol
  *
  * @return Type of the current symbol
  */
 SymbolType SymbolTableEntry::getType() {
     return type;
+}
+
+/**
+ * Retrieve the symbol specifiers of the current symbol
+ *
+ * @return Symbol Specifiers of the current symbol
+ */
+SymbolSpecifiers SymbolTableEntry::getSpecifiers() {
+    return specifiers;
+}
+
+/**
+ * Retrieve the state of the current symbol
+ *
+ * @return State of the current symbol
+ */
+SymbolState SymbolTableEntry::getState() {
+    return state;
 }
 
 /**
@@ -91,7 +100,7 @@ bool  SymbolTableEntry::isUsed() const {
  * @param newState New state of the current symbol
  */
 void SymbolTableEntry::updateState(SymbolState newState) {
-    if (state == INITIALIZED && isConstant)
+    if (state == INITIALIZED && specifiers.isConst())
         throw SemanticError(definitionToken, REASSIGN_CONST_VARIABLE,
                             "Not re-assignable variable '" + name + "'");
     if (newState == INITIALIZED && type == SymbolType(TY_DYN))
@@ -142,8 +151,9 @@ void SymbolTableEntry::setUsed() {
  */
 std::string SymbolTableEntry::toString() {
     std::string stateStr = state == INITIALIZED ? "initialized" : "declared";
-    std::string constStr = isConstant ? "yes" : "no";
+    std::string constStr = specifiers.isConst() ? "yes" : "no";
+    std::string signedStr = specifiers.isSigned() ? "yes" : "no";
     std::string globalStr = isGlobal ? "yes" : "no";
     return "Name: " + name + ", Type: " + type.getName(true) + ", OrderIndex: " + std::to_string(orderIndex) + ", State: " +
-        stateStr + ", Const: " + constStr + ", IsGlobal: " + globalStr;
+        stateStr + ", Const: " + constStr + ", Signed: " + signedStr + ", IsGlobal: " + globalStr;
 }

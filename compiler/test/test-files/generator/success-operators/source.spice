@@ -1,5 +1,5 @@
 f<int> main() {
     int val = 1;
     val += ((1++)--) * 2 << 2;
-    printf("Value: %d", val);
+    printf("Value: %d\n", val);
 }

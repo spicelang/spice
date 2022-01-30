@@ -6,7 +6,7 @@
 #include <llvm/IR/IRBuilder.h>
 
 #include "exception/IRError.h"
-#include "type/SymbolType.h"
+#include "symbol/SymbolType.h"
 
 enum PrimitiveType {
     P_TY_DOUBLE,
@@ -29,10 +29,15 @@ public:
     llvm::Value* getMinusEqualInst(llvm::Value*, llvm::Value*);
     llvm::Value* getMulEqualInst(llvm::Value*, llvm::Value*);
     llvm::Value* getDivEqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getRemEqualInst(llvm::Value*, llvm::Value*);
     llvm::Value* getSHLEqualInst(llvm::Value*, llvm::Value*);
     llvm::Value* getSHREqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getAndEqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getOrEqualInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getXorEqualInst(llvm::Value*, llvm::Value*);
     llvm::Value* getBitwiseAndInst(llvm::Value*, llvm::Value*);
     llvm::Value* getBitwiseOrInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getBitwiseXorInst(llvm::Value*, llvm::Value*);
     llvm::Value* getEqualInst(llvm::Value*, llvm::Value*);
     llvm::Value* getNotEqualInst(llvm::Value*, llvm::Value*);
     llvm::Value* getLessInst(llvm::Value*, llvm::Value*);
@@ -46,11 +51,13 @@ public:
     llvm::Value* getMulInst(llvm::Value*, llvm::Value*);
     llvm::Value* getDivInst(llvm::Value*, llvm::Value*);
     llvm::Value* getRemInst(llvm::Value*, llvm::Value*);
+    llvm::Value* getPrefixMinusInst(llvm::Value*);
     llvm::Value* getPrefixPlusPlusInst(llvm::Value*);
     llvm::Value* getPrefixMinusMinusInst(llvm::Value*);
+    llvm::Value* getPrefixNotInst(llvm::Value*);
+    llvm::Value* getPrefixBitwiseNotInst(llvm::Value*);
     llvm::Value* getPostfixPlusPlusInst(llvm::Value*);
     llvm::Value* getPostfixMinusMinusInst(llvm::Value*);
-    llvm::Value* getNotInst(llvm::Value*);
     llvm::Value* getCastInst(llvm::Type*, llvm::Value*);
 private:
     // Members

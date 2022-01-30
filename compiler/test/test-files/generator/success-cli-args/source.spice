@@ -1,7 +1,7 @@
 f<int> main(int argc, string[] argv) {
-    printf("Argc: %d", argc);
-    printf("Argv no. 0: %s", argv[0]);
+    printf("Argc: %d\n", argc);
+    printf("Argv no. 0: %s\n", argv[0]);
     if (argc > 1) {
-        printf("Argv no. 1: %s", argv[1]);
+        printf("Argv no. 1: %s\n", argv[1]);
     }
 }

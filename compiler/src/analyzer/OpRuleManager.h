@@ -3,7 +3,7 @@
 #pragma once
 
 #include <tuple>
-#include "SymbolType.h"
+#include "symbol/SymbolType.h"
 
 // Types: double, int, short, long, byte, char, string, bool
 
@@ -86,6 +86,21 @@ const std::vector<BinaryOpRule> DIV_EQUAL_OP_RULES = {
         BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte /= byte = byte
 };
 
+// Rem equal op rules
+const std::vector<BinaryOpRule> REM_EQUAL_OP_RULES = {
+        BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE),    // double %= double = double
+        BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int %= int = int
+        BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int %= short = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_LONG),           // int %= long = long
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short %= int = int
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short %= short = short
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG),         // short %= long = long
+        BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long %= int = long
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long %= short = long
+        BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long %= long = long
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte %= byte = byte
+};
+
 // Shl equal op rules
 const std::vector<BinaryOpRule> SHL_EQUAL_OP_RULES = {
         BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int <<= int = int
@@ -114,6 +129,48 @@ const std::vector<BinaryOpRule> SHR_EQUAL_OP_RULES = {
         BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte >>= byte = byte
 };
 
+// And equal op rules
+const std::vector<BinaryOpRule> AND_EQUAL_OP_RULES = {
+        BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int &= int = int
+        BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int &= short = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_LONG),           // int &= long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short &= int = short
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short &= short = short
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG),         // short &= long = short
+        BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long &= int = long
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long &= short = long
+        BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long &= long = long
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte &= byte = byte
+};
+
+// Or equal op rules
+const std::vector<BinaryOpRule> OR_EQUAL_OP_RULES = {
+        BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int |= int = int
+        BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int |= short = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_LONG),           // int |= long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short |= int = short
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short |= short = short
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG),         // short |= long = short
+        BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long |= int = long
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long |= short = long
+        BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long |= long = long
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte |= byte = byte
+};
+
+// Xor equal op rules
+const std::vector<BinaryOpRule> XOR_EQUAL_OP_RULES = {
+        BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int ^= int = int
+        BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int ^= short = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_LONG),           // int ^= long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short ^= int = short
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short ^= short = short
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG),         // short ^= long = short
+        BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long ^= int = long
+        BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long ^= short = long
+        BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long ^= long = long
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte ^= byte = byte
+};
+
 // Logical and op rules
 const std::vector<BinaryOpRule> LOGICAL_AND_OP_RULES = {
         BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL)           // bool && bool = bool
@@ -138,6 +195,14 @@ const std::vector<BinaryOpRule> BITWISE_OR_OP_RULES = {
         BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short | short = short
         BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long | long = long
         BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte | byte = byte
+};
+
+// Bitwise xor op rules
+const std::vector<BinaryOpRule> BITWISE_XOR_OP_RULES = {
+        BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int ^ int = int
+        BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short ^ short = short
+        BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long ^ long = long
+        BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),          // byte ^ byte = byte
 };
 
 // Equal op rules
@@ -433,6 +498,20 @@ const std::vector<BinaryOpRule> REM_OP_RULES = {
         BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long % long = long
 };
 
+// Prefix Plus op rules
+const std::vector<UnaryOpRule> PREFIX_PLUS_OP_RULES = {
+        UnaryOpRule(TY_INT, TY_INT),                      // +int = int
+        UnaryOpRule(TY_SHORT, TY_SHORT),                  // +short = short
+        UnaryOpRule(TY_LONG, TY_LONG),                    // +long = long
+};
+
+// Prefix Minus op rules
+const std::vector<UnaryOpRule> PREFIX_MINUS_OP_RULES = {
+        UnaryOpRule(TY_INT, TY_INT),                      // -int = int
+        UnaryOpRule(TY_SHORT, TY_SHORT),                  // -short = short
+        UnaryOpRule(TY_LONG, TY_LONG),                    // -long = long
+};
+
 // Prefix Plus-Plus op rules
 const std::vector<UnaryOpRule> PREFIX_PLUS_PLUS_OP_RULES = {
         UnaryOpRule(TY_INT, TY_INT),                      // int++ = int
@@ -442,9 +521,22 @@ const std::vector<UnaryOpRule> PREFIX_PLUS_PLUS_OP_RULES = {
 
 // Prefix Minus-Minus op rules
 const std::vector<UnaryOpRule> PREFIX_MINUS_MINUS_OP_RULES = {
-        UnaryOpRule(TY_INT, TY_INT),                      // int++ = int
-        UnaryOpRule(TY_SHORT, TY_SHORT),                  // short++ = short
-        UnaryOpRule(TY_LONG, TY_LONG),                    // long++ = long
+        UnaryOpRule(TY_INT, TY_INT),                      // in--+ = int
+        UnaryOpRule(TY_SHORT, TY_SHORT),                  // short-- = short
+        UnaryOpRule(TY_LONG, TY_LONG),                    // long-- = long
+};
+
+// Prefix not op rules
+const std::vector<UnaryOpRule> PREFIX_NOT_OP_RULES = {
+        UnaryOpRule(TY_BOOL, TY_BOOL),                    // !bool = bool
+};
+
+// Prefix bitwise not op rules
+const std::vector<UnaryOpRule> PREFIX_BITWISE_NOT_OP_RULES = {
+        UnaryOpRule(TY_INT, TY_INT),                      // ~int = int
+        UnaryOpRule(TY_SHORT, TY_SHORT),                  // ~short = short
+        UnaryOpRule(TY_LONG, TY_LONG),                    // ~long = long
+        UnaryOpRule(TY_BYTE, TY_BYTE),                    // ~byte = byte
 };
 
 // Postfix Plus-Plus op rules
@@ -459,11 +551,6 @@ const std::vector<UnaryOpRule> POSTFIX_MINUS_MINUS_OP_RULES = {
         UnaryOpRule(TY_INT, TY_INT),                      // int++ = int
         UnaryOpRule(TY_SHORT, TY_SHORT),                  // short++ = short
         UnaryOpRule(TY_LONG, TY_LONG),                    // long++ = long
-};
-
-// Not op rules
-const std::vector<UnaryOpRule> NOT_OP_RULES = {
-        UnaryOpRule(TY_BOOL, TY_BOOL),                    // !bool = bool
 };
 
 // Cast op rules
@@ -499,12 +586,17 @@ public:
     static SymbolType getMinusEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getMulEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getDivEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getRemEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getSHLEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getSHREqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getAndEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getOrEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getXorEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getLogicalAndResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getLogicalOrResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getBitwiseAndResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getBitwiseOrResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getBitwiseXorResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getEqualResultType(const antlr4::Token&, SymbolType, SymbolType);
     static SymbolType getNotEqualResultType(const antlr4::Token&, SymbolType, SymbolType);
     static SymbolType getLessResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
@@ -518,11 +610,15 @@ public:
     static SymbolType getMulResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getDivResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
     static SymbolType getRemResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
+    static SymbolType getPrefixMinusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getPrefixPlusPlusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getPrefixMinusMinusResultType(const antlr4::Token&, const SymbolType&);
+    static SymbolType getPrefixNotResultType(const antlr4::Token&, const SymbolType&);
+    static SymbolType getPrefixBitwiseNotResultType(const antlr4::Token&, const SymbolType&);
+    static SymbolType getPrefixMulResultType(const antlr4::Token&, SymbolType);
+    static SymbolType getPrefixBitwiseAndResultType(const antlr4::Token&, SymbolType);
     static SymbolType getPostfixPlusPlusResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getPostfixMinusMinusResultType(const antlr4::Token&, const SymbolType&);
-    static SymbolType getNotResultType(const antlr4::Token&, const SymbolType&);
     static SymbolType getCastResultType(const antlr4::Token&, SymbolType, SymbolType);
 private:
     static SymbolType validateBinaryOperation(const antlr4::Token& token, const std::vector<BinaryOpRule>& opRules,

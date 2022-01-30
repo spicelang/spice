@@ -1,19 +1,19 @@
 SymbolTable(
-(Name: calledFunction(int,bool), Type: function, OrderIndex: 0, State: initialized, Const: yes, IsGlobal: yes)
-(Name: calledFunction(string), Type: function, OrderIndex: 1, State: initialized, Const: yes, IsGlobal: yes)
-(Name: main(), Type: function, OrderIndex: 2, State: initialized, Const: yes, IsGlobal: yes)
+(Name: calledFunction(int,bool), Type: function, OrderIndex: 0, State: initialized, Const: yes, Signed: no, IsGlobal: yes)
+(Name: calledFunction(string), Type: function, OrderIndex: 1, State: initialized, Const: yes, Signed: no, IsGlobal: yes)
+(Name: main(), Type: function, OrderIndex: 2, State: initialized, Const: yes, Signed: no, IsGlobal: yes)
 ) {
 calledFunction(int,bool): SymbolTable(
-(Name: mandatoryParam, Type: int, OrderIndex: 0, State: declared, Const: no, IsGlobal: no)
-(Name: optionalParam, Type: bool, OrderIndex: 1, State: initialized, Const: no, IsGlobal: no)
-(Name: result, Type: double, OrderIndex: 2, State: initialized, Const: no, IsGlobal: no)
+(Name: mandatoryParam, Type: int, OrderIndex: 0, State: declared, Const: no, Signed: yes, IsGlobal: no)
+(Name: optionalParam, Type: bool, OrderIndex: 1, State: initialized, Const: no, Signed: no, IsGlobal: no)
+(Name: result, Type: double, OrderIndex: 2, State: initialized, Const: no, Signed: no, IsGlobal: no)
 )
 calledFunction(string): SymbolTable(
-(Name: result, Type: double, OrderIndex: 1, State: initialized, Const: no, IsGlobal: no)
-(Name: testString, Type: string, OrderIndex: 0, State: declared, Const: no, IsGlobal: no)
+(Name: result, Type: double, OrderIndex: 1, State: initialized, Const: no, Signed: no, IsGlobal: no)
+(Name: testString, Type: string, OrderIndex: 0, State: declared, Const: no, Signed: no, IsGlobal: no)
 )
 main(): SymbolTable(
-(Name: res, Type: double, OrderIndex: 1, State: initialized, Const: no, IsGlobal: no)
-(Name: result, Type: int, OrderIndex: 0, State: initialized, Const: no, IsGlobal: no)
+(Name: res, Type: double, OrderIndex: 1, State: initialized, Const: no, Signed: yes, IsGlobal: no)
+(Name: result, Type: int, OrderIndex: 0, State: initialized, Const: no, Signed: yes, IsGlobal: no)
 )
 }

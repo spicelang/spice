@@ -4,5 +4,6 @@ f<int> fib(int n) {
 }
 
 f<int> main() {
-    printf("Result: %d", fib(46));
+    int base = 46;
+    printf("Fibonacci of %d: %d", base, fib(base));
 }

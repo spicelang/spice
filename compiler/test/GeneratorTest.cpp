@@ -102,15 +102,23 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
     if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
     antlr4::ANTLRInputStream input(sourceStream);
 
-    // Parse input to AST
-    SpiceLexer lexer(&input);
-    antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
-    SpiceParser parser(&tokens);
+    // Create error handlers for lexer and parser
+    AntlrThrowingErrorListener lexerErrorHandler = AntlrThrowingErrorListener(LEXER);
+    AntlrThrowingErrorListener parserErrorHandler = AntlrThrowingErrorListener(PARSER);
 
-    // Execute syntactical analysis
-    antlr4::tree::ParseTree *tree = parser.entry();
-    SymbolTable* symbolTable;
     try {
+        // Tokenize input
+        SpiceLexer lexer(&input);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(&lexerErrorHandler);
+        antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
+
+        // Parse input to AST
+        SpiceParser parser(&tokens);
+        parser.removeErrorListeners();
+        parser.addErrorListener(&parserErrorHandler);
+        antlr4::tree::ParseTree* tree = parser.entry();
+
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
                 sourceFile,
@@ -123,13 +131,9 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
                 true,
                 false
         );
-        symbolTable = analyzer.visit(tree).as<SymbolTable*>();
-    } catch (SemanticError &error) {
-        FAIL() << "Error thrown in semantic analysis while testing the generator: " << error.what();
-    }
+        SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
-    // Execute generator
-    try {
+        // Execute generator
         GeneratorVisitor generator = GeneratorVisitor(
                 symbolTable,
                 sourceFile,
@@ -146,7 +150,7 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
 
         // Fail if an error was expected
         if (param.errorMessage.length() > 0)
-            FAIL() << "Expected error message '" + param.errorMessage + "', but got no error";
+            FAIL() << "Expected error message '" << param.errorMessage << "', but got no error";
 
         // Check if the symbol table matches the expected output
         std::string irCodeFile = "./test-files/generator/" + param.testCaseName + "/ir-code.ll";
@@ -159,9 +163,13 @@ TEST_P(GeneratorTests, TestGeneratorWithValidAndInvalidTestFiles) {
         EXPECT_EQ(expectedIR, generator.getIRString());
 
         SUCCEED();
+    } catch (LexerParserError& error) {
+        FAIL() << "Hit lexer/parser error: " << error.what();
+    } catch (SemanticError &error) {
+        FAIL() << "Hit semantic error: " << error.what();
     } catch (IRError& error) {
         if (param.errorMessage.length() == 0)
-            FAIL() << "Expected no error, but got '" + std::string(error.what()) + "'";
+            FAIL() << "Expected no error, but got '" << error.what() << "'";
         EXPECT_EQ(std::string(error.what()), param.errorMessage);
     }
 }

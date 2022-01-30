@@ -12,7 +12,7 @@
  * @param objectDir Full path to an output file (absolute or relative)
  * @param debugOutput Set to true to show compiler debug output
  * @param optLevel Number in range 1-3 to control optimization level
- * @param mustHaveMainFunction true = main source file, false = not main source file
+ * @param requiresMainFunction true = main source file, false = not main source file
  *
  * @return Symbol table of this program part
  */
@@ -24,18 +24,28 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         const std::string& objectDir,
         bool debugOutput,
         int optLevel,
-        bool mustHaveMainFunction,
+        bool requiresMainFunction,
         bool stdFile
 ) {
     // Read from file
     std::ifstream stream(sourceFile);
     if (!stream) throw std::runtime_error("Source file at path '" + sourceFile + "' does not exist.");
 
-    // Parse input to AST
+    // Create error handlers for lexer and parser
+    AntlrThrowingErrorListener lexerErrorHandler = AntlrThrowingErrorListener(LEXER);
+    AntlrThrowingErrorListener parserErrorHandler = AntlrThrowingErrorListener(PARSER);
+
+    // Tokenize input
     antlr4::ANTLRInputStream input(stream);
     SpiceLexer lexer(&input);
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(&lexerErrorHandler);
     antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
+
+    // Parse input to AST
     SpiceParser parser(&tokens); // Check for syntax errors
+    parser.removeErrorListeners();
+    parser.addErrorListener(&parserErrorHandler);
     antlr4::tree::ParseTree* tree = parser.entry(); // Get AST
 
     // Execute syntactical analysis
@@ -48,7 +58,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             objectDir,
             debugOutput,
             optLevel,
-            mustHaveMainFunction,
+            requiresMainFunction,
             stdFile
     );
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
@@ -71,7 +81,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             objectDir + "/" + fileName + ".o",
             debugOutput,
             optLevel,
-            mustHaveMainFunction
+            requiresMainFunction
     );
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code

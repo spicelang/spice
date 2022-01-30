@@ -1,7 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include "SymbolTable.h"
-#include "AnalyzerVisitor.h"
+#include "symbol/SymbolTable.h"
+#include "analyzer/AnalyzerVisitor.h" // Must remain here due to circular import
 
 /**
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
@@ -12,12 +12,15 @@
  * @param isConstant Enabled if the symbol is a constant
  * @param isParameter Enabled if the symbol is a function/procedure parameter
  */
-void SymbolTable::insert(const std::string& name, SymbolType type, SymbolState state, const antlr4::Token& token,
-                         bool isConstant, bool isParameter) {
+void SymbolTable::insert(const std::string& name, SymbolType type, SymbolSpecifiers specifiers, SymbolState state,
+                         const antlr4::Token& token, bool isParameter) {
     bool isGlobal = getParent() == nullptr;
     unsigned int orderIndex = symbols.size();
     // Insert into symbols map
-    symbols.insert({ name, SymbolTableEntry(name, type, state, token, orderIndex, isConstant, isGlobal) });
+    symbols.insert({
+        name,
+        SymbolTableEntry(name, std::move(type), specifiers, state, token, orderIndex, isGlobal)
+    });
     // If the symbol is a parameter, add it to the parameters list
     if (isParameter) paramNames.push_back(name);
 }
@@ -90,6 +93,7 @@ SymbolTable* SymbolTable::lookupTableWithSignature(const std::string& signature)
  * @throws runtime_error When trying to update a non-existent symbol
  * @param name Name of the symbol to update
  * @param newState New state of the symbol to update
+ * @param token Lexer token, where the symbol table update was initiated
  */
 void SymbolTable::update(const std::string& name, SymbolState newState) {
     // If not available in the current scope, search in the parent scope
@@ -108,7 +112,7 @@ void SymbolTable::update(const std::string& name, SymbolState newState) {
  * @param name Name of the symbol to update
  * @param newType New type of the symbol to update
  */
-void SymbolTable::update(const std::string& name, SymbolType newType) {
+void SymbolTable::update(const std::string& name, const SymbolType& newType) {
     // If not available in the current scope, search in the parent scope
     if (symbols.find(name) == symbols.end()) {
         if (parent == nullptr) throw std::runtime_error("Updating a non-existent symbol: " + name);
@@ -285,6 +289,7 @@ void SymbolTable::pushSignature(const FunctionSignature& signature) {
  * @return Signature of the function/procedure
  */
 FunctionSignature SymbolTable::popSignature() {
+    assert(!functionSignatures.empty());
     auto signature = functionSignatures.front();
     functionSignatures.pop();
     return signature;
