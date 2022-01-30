@@ -5,5 +5,5 @@ type Test struct {
 
 f<int> main() {
     bool boolean = false;
-    NonExisting instance = new Test { "test", &boolean };
+    NonExisting instance = Test { "test", &boolean };
 }

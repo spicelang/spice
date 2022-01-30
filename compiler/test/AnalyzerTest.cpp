@@ -132,10 +132,6 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "Semantic error at 7:23: Invalid number of break calls: We can only break 2 time(s) here"
         },
         {
-            "error-continue-count-valid",
-            "Semantic error at 7:26: Invalid number of continue calls: Continue count must be >= 1, you provided -10"
-        },
-        {
             "error-continue-count-not-too-high",
             "Semantic error at 7:26: Invalid number of continue calls: We can only continue 2 time(s) here"
         },
@@ -173,19 +169,19 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-struct-defined-before-used",
-            "Semantic error at 2:21: Unknown datatype: Unknown datatype 'Test'"
+            "Semantic error at 2:5: Unknown datatype: Unknown datatype 'Test'"
         },
         {
             "error-struct-fields-match-declaration",
-            "Semantic error at 8:41: The type of a field value does not match the declaration: Expected type double* for the field 'dbl', but got double"
+            "Semantic error at 8:37: The type of a field value does not match the declaration: Expected type double* for the field 'dbl', but got double"
         },
         {
             "error-struct-passed-too-many-less-values",
-            "Semantic error at 9:41: Number of struct fields not matching declaration: You've passed too less/many field values"
+            "Semantic error at 9:37: Number of struct fields not matching declaration: You've passed too less/many field values. Pass either none or all of them"
         },
         {
             "error-struct-types-not-matching",
-            "Semantic error at 13:26: Referenced undefined variable: Variable 'dbl' was referenced before declared"
+            "Semantic error at 12:5: Wrong data type for operator: Cannot apply '=' operator on types struct(AnotherStruct) and struct(TestStruct)"
         },
         {
             "error-return-without-value-result",
@@ -201,7 +197,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         },
         {
             "error-array-size-attached",
-            "Semantic error at 2:5: Array size invalid: Data type of an array init stmt must have a size attached"
+            "Semantic error at 2:5: Array size invalid: The declaration of an array type must have a size attached"
         },
         {
             "error-foreach-wrong-index-type",
@@ -239,20 +235,19 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
     AntlrThrowingErrorListener lexerErrorHandler = AntlrThrowingErrorListener(LEXER);
     AntlrThrowingErrorListener parserErrorHandler = AntlrThrowingErrorListener(PARSER);
 
-    // Tokenize input
-    SpiceLexer lexer(&input);
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(&lexerErrorHandler);
-    antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
-
-    // Parse input to AST
-    SpiceParser parser(&tokens);
-    parser.removeErrorListeners();
-    parser.addErrorListener(&parserErrorHandler);
-    antlr4::tree::ParseTree *tree = parser.entry();
-
-    // Execute syntactical analysis
     try {
+        // Tokenize input
+        SpiceLexer lexer(&input);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(&lexerErrorHandler);
+        antlr4::CommonTokenStream tokens((antlr4::TokenSource*) &lexer);
+
+        // Parse input to AST
+        SpiceParser parser(&tokens);
+        parser.removeErrorListeners();
+        parser.addErrorListener(&parserErrorHandler);
+        antlr4::tree::ParseTree* tree = parser.entry();
+
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
                 sourceFile,
@@ -269,7 +264,7 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
 
         // Fail if an error was expected
         if (param.errorMessage.length() > 0)
-            FAIL() << "Expected error message '" + param.errorMessage + "', but got no error";
+            FAIL() << "Expected error message '" << param.errorMessage << "', but got no error";
 
         // Check if the symbol table matches the expected output
         std::ifstream symbolTableStream;
@@ -280,12 +275,12 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
         EXPECT_EQ(expectedSymbolTable, symbolTable->toString());
 
         SUCCEED();
+    } catch (LexerParserError& error) {
+        FAIL() << "Hit lexer/parser error: " << error.what();
     } catch (SemanticError& error) {
         if (param.errorMessage.length() == 0)
-            FAIL() << "Expected no error, but got '" + std::string(error.what()) + "'";
+            FAIL() << "Expected no error, but got '" << error.what() << "'";
         EXPECT_EQ(std::string(error.what()), param.errorMessage);
-    } catch (LexerParserError& error) {
-        FAIL() << "Hit lexer/parser error '" + std::string(error.what()) + "'";
     }
 }
 

@@ -134,4 +134,5 @@ private:
     llvm::Type* getTypeForSymbolType(SymbolType);
     void initExtStruct(const std::string&, const std::string&);
     bool compareLLVMTypes(llvm::Type*, llvm::Type*);
+    llvm::Value* doImplicitCast(llvm::Value*, llvm::Type*);
 };

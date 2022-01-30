@@ -1,15 +1,15 @@
 SymbolTable(
-(Name: fibo(int), Type: function, OrderIndex: 0, State: initialized, Const: yes, IsGlobal: yes)
-(Name: main(), Type: function, OrderIndex: 1, State: initialized, Const: yes, IsGlobal: yes)
+(Name: fibo(int), Type: function, OrderIndex: 0, State: initialized, Const: yes, Signed: no, IsGlobal: yes)
+(Name: main(), Type: function, OrderIndex: 1, State: initialized, Const: yes, Signed: no, IsGlobal: yes)
 ) {
 fibo(int): SymbolTable(
-(Name: n, Type: int, OrderIndex: 0, State: declared, Const: no, IsGlobal: no)
-(Name: result, Type: int, OrderIndex: 1, State: initialized, Const: no, IsGlobal: no)
+(Name: n, Type: int, OrderIndex: 0, State: declared, Const: no, Signed: yes, IsGlobal: no)
+(Name: result, Type: int, OrderIndex: 1, State: initialized, Const: no, Signed: yes, IsGlobal: no)
 ) {
 if:2:4: SymbolTable(
 )
 }
 main(): SymbolTable(
-(Name: result, Type: int, OrderIndex: 0, State: initialized, Const: no, IsGlobal: no)
+(Name: result, Type: int, OrderIndex: 0, State: initialized, Const: no, Signed: yes, IsGlobal: no)
 )
 }

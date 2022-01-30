@@ -6,6 +6,6 @@ type TestStruct struct {
 
 f<int> main() {
     dyn str = "Hello!";
-    dyn testInstance = new TestStruct { &str, false };
+    dyn testInstance = TestStruct { &str, false };
     printf("Double: %f", testInstance.dbl);
 }

@@ -8,6 +8,6 @@ f<byte> Test.getByte() {
 }
 
 f<int> main() {
-    dyn test = new Test { 4.51, false };
+    dyn test = Test { 4.51, false };
     result = test.getInt();
 }

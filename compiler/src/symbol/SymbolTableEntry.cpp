@@ -155,5 +155,5 @@ std::string SymbolTableEntry::toString() {
     std::string signedStr = specifiers.isSigned() ? "yes" : "no";
     std::string globalStr = isGlobal ? "yes" : "no";
     return "Name: " + name + ", Type: " + type.getName(true) + ", OrderIndex: " + std::to_string(orderIndex) + ", State: " +
-        stateStr + ", Const: " + constStr + ", " + signedStr + ", IsGlobal: " + globalStr;
+        stateStr + ", Const: " + constStr + ", Signed: " + signedStr + ", IsGlobal: " + globalStr;
 }

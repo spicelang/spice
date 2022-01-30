@@ -1471,30 +1471,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                         // Get the actual arg value
                         llvm::Value* actualArgPtr = visit(param).as<llvm::Value*>();
                         if (!compareLLVMTypes(actualArgPtr->getType()->getPointerElementType(), expectedArgType)) {
-                            llvm::Value* actualArg = actualArgPtr;
-                            // Unpack the pointers until a pointer of another type is met
-                            unsigned int loadCounter = 0;
-                            while (actualArg->getType()->getPointerElementType()->isPointerTy()) {
-                                actualArg = builder->CreateLoad(actualArg->getType()->getPointerElementType(), actualArg);
-                                loadCounter++;
-                            }
-                            // GEP or bit-cast
-                            if (expectedArgType->isPointerTy() && actualArg->getType()->getPointerElementType()->isArrayTy()) {
-                                std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
-                                llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
-                                actualArg = builder->CreateInBoundsGEP(actualArgType, actualArg, indices);
-                            } else {
-                                llvm::Type* actualArgType = actualArg->getType()->getPointerElementType();
-                                actualArg = builder->CreateLoad(actualArgType, actualArg);
-                                actualArg = builder->CreateBitCast(actualArg, expectedArgType);
-                            }
-                            // Pack the pointers together again
-                            for (;loadCounter > 0; loadCounter--) {
-                                llvm::Value* newActualArg = insertAlloca(actualArg->getType());
-                                builder->CreateStore(actualArg, newActualArg);
-                                actualArg = newActualArg;
-                            }
-                            argValues.push_back(actualArg);
+                            argValues.push_back(doImplicitCast(actualArgPtr, expectedArgType));
                         } else {
                             argValues.push_back(builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr));
                         }
@@ -1707,7 +1684,6 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         unsigned int numArrayElements = ctx->paramLst() ? ctx->paramLst()->assignExpr().size() : 0;
         SymbolTableEntry* arrayVar = currentScope->lookup(lhsVarName);
         llvm::Type* arrayType = getTypeForSymbolType(arrayVar->getType());
-        llvm::Type* itemType = getTypeForSymbolType(arrayVar->getType().getContainedTy());
 
         // Allocate array
         llvm::Value* arrayAddress = insertAlloca(arrayType, currentVarName);
@@ -2021,4 +1997,30 @@ bool GeneratorVisitor::compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs) {
     if (lhs->getTypeID() == llvm::Type::ArrayTyID)
         return compareLLVMTypes(lhs->getArrayElementType(), rhs->getArrayElementType());
     return true;
+}
+
+llvm::Value* GeneratorVisitor::doImplicitCast(llvm::Value* srcValue, llvm::Type* dstType) {
+    // Unpack the pointers until a pointer of another type is met
+    unsigned int loadCounter = 0;
+    while (srcValue->getType()->getPointerElementType()->isPointerTy()) {
+        srcValue = builder->CreateLoad(srcValue->getType()->getPointerElementType(), srcValue);
+        loadCounter++;
+    }
+    // GEP or bit-cast
+    if (dstType->isPointerTy() && srcValue->getType()->getPointerElementType()->isArrayTy()) {
+        std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
+        llvm::Type* actualArgType = srcValue->getType()->getPointerElementType();
+        srcValue = builder->CreateInBoundsGEP(actualArgType, srcValue, indices);
+    } else {
+        llvm::Type* actualArgType = srcValue->getType()->getPointerElementType();
+        srcValue = builder->CreateLoad(actualArgType, srcValue);
+        srcValue = builder->CreateBitCast(srcValue, dstType);
+    }
+    // Pack the pointers together again
+    for (;loadCounter > 0; loadCounter--) {
+        llvm::Value* newActualArg = insertAlloca(srcValue->getType());
+        builder->CreateStore(srcValue, newActualArg);
+        srcValue = newActualArg;
+    }
+    return srcValue;
 }

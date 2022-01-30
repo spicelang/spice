@@ -498,6 +498,11 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
         // Check if type has to be inferred or both types are fixed
         symbolType = symbolType.is(TY_DYN) ? rhsTy : OpRuleManager::getAssignResultType(*ctx->start, symbolType, rhsTy);
         initialState = INITIALIZED;
+
+        // If the rhs is of type array and was the array initialization, there must be a size attached
+        if (symbolType.isArray() && symbolType.getArraySize() == 0 && currentVariableName.empty())
+            throw SemanticError(*ctx->dataType()->start, ARRAY_SIZE_INVALID,
+                                "The declaration of an array type must have a size attached");
     }
 
     if (parameterMode && symbolType.isArray()) // Change array type to pointer type for function/procedure parameters
