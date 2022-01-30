@@ -1694,7 +1694,8 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
             // Visit all params to check if they are hardcoded or not
             std::vector<llvm::Value*> itemValuePointers;
             std::vector<llvm::Constant*> itemConstants;
-            for (unsigned int i = 0; i < std::min(ctx->paramLst()->assignExpr().size(), arrayType->getArrayNumElements()); i++) {
+            unsigned int actualItemCount = std::min((uint64_t) ctx->paramLst()->assignExpr().size(), arrayType->getArrayNumElements());
+            for (unsigned int i = 0; i < actualItemCount; i++) {
                 itemValuePointers.push_back(visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>());
                 itemConstants.push_back(currentConstValue);
             }

@@ -35,14 +35,14 @@ jobs:
           #  }
           - {
               arch: linux-x86,
-              #dockcross: 20210805-77da067,
-              dockcross: 20211222-f096312,
+              dockcross: 20210805-77da067,
+              #dockcross: 20220128-2dcae35,
               cmake_params:
             }
           - {
               arch: linux-x64,
-              #dockcross: 20210805-77da067,
-              dockcross: 20211222-f096312,
+              dockcross: 20210805-77da067,
+              #dockcross: 20220128-2dcae35,
               cmake_params:
             }
           #- {
@@ -58,56 +58,61 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      
-      - name: Prepare builder
+
+      - name: Setup builder
         run: |
           docker run --rm dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} > ./dockcross
           chmod +x dockcross
-          mkdir bin
 
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-13-0-0-${{ matrix.config.arch }}
+          key: llvm-13-0-0-${{ matrix.config.arch }}-clear1
+
+      - name: Clone LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: git clone --depth 1 --branch llvmorg-13.0.0 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: | #-DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON
-          git clone --depth 1 --branch llvmorg-13.0.0 https://github.com/llvm/llvm-project llvm
           ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" ${{ matrix.config.cmake_params }} -Wno-dev -Wattributes
-
+      
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} ninja -C./llvm/build
+        run: |
+          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} bash -c 'cd ./llvm/build && cmake --build .'
 
       - name: Download Libs
         run: |
           mkdir -p ./compiler/lib
           cd ./compiler/lib
-          git clone --depth 1 https://github.com/antlr/antlr4.git
+          git clone --branch 4.9.3 --depth 1 https://github.com/antlr/antlr4.git
       
-#      - name: Configure & compile project
-#        run: ./dockcross -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" sh -c "sudo mkdir -p /usr/share/man/man1 && sudo apt-get update -y && sudo apt-get install --ignore-missing --no-install-recommends --yes libc6-i386 openjdk-11-jre uuid-dev && cmake -Bbin -H./compiler -GNinja && ninja -Cbin"
-#
-#      - name: Process build output - Linux
-#        if: ${{ startsWith(matrix.config.arch, 'linux') }}
-#        working-directory: bin
-#        run: |
-#          mv ./src/Spice_run spicec
-#          chmod +x spicec
-#          
-#      - name: Process build output - Windows
-#        if: ${{ startsWith(matrix.config.arch, 'windows') }}
-#        working-directory: bin
-#        run: mv ./src/Spice_run.exe spicec.exe
-#
-#      - name: Upload artifact
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: spicec-${{ matrix.config.arch }}
-#          path: ./bin/spicec**
+      - name: Configure & compile project
+        run: |
+          mkdir bin
+          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" bash -c "sudo mkdir -p /usr/share/man/man1 && sudo apt-get update -y && sudo apt-get install --ignore-missing --no-install-recommends --yes libc6-i386 openjdk-11-jre uuid-dev && cd ./bin && cmake -GNinja ../compiler && cmake --build ."
+
+      - name: Process build output - Linux
+        if: ${{ startsWith(matrix.config.arch, 'linux') }}
+        working-directory: bin
+        run: |
+          mv ./src/Spice_run spicec
+          chmod +x spicec
+          
+      - name: Process build output - Windows
+        if: ${{ startsWith(matrix.config.arch, 'windows') }}
+        working-directory: bin
+        run: mv ./src/Spice_run.exe spicec.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: spicec-${{ matrix.config.arch }}
+          path: ./bin/spicec**
 
   build-cli:
     name: Build CLI binaries

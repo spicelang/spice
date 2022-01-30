@@ -135,7 +135,8 @@ archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     files:
       - LICENSE
-      - bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/*
+      - src: bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/**
+        dst: ./
     format_overrides:
       - goos: windows
         format: zip
