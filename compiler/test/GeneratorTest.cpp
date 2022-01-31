@@ -8,7 +8,7 @@
 #include "SpiceParser.h"
 #include <generator/GeneratorVisitor.h>
 
-struct GeneratorParams {
+/*struct GeneratorParams {
     const std::string testCaseName;
     const std::string errorMessage; // Empty error message for testing for no error
 };
@@ -178,4 +178,4 @@ INSTANTIATE_TEST_SUITE_P(
         GeneratorTests,
         GeneratorTests,
         ::testing::ValuesIn(GENERATOR_TEST_PARAMETERS)
-);
+);*/
