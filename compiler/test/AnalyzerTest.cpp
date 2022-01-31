@@ -8,12 +8,26 @@
 #include "SpiceParser.h"
 #include <analyzer/AnalyzerVisitor.h>
 
-struct AnalyzerParams {
-    const std::string testCaseName;
-    const std::string errorMessage; // Empty error message for testing for no error
+struct AnalyzerTestCase {
+    const std::string displayName;
+    const std::string dirName;
 };
 
-const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
+struct AnalyzerTestSuite {
+    const std::string displayName;
+    const std::string dirName;
+    AnalyzerTestCase testCases[];
+};
+
+AnalyzerTestCase[] detectTestCases() {
+
+}
+
+AnalyzerTestSuite[] detectTestSuites() {
+
+}
+
+const AnalyzerTestSuite ANALYZER_TEST_SUITES[] = {
         // Failing tests
         {
             "error-assignment-same-type",
@@ -56,7 +70,7 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
             "Semantic error at 2:5: Cannot re-assign constant variable: Not re-assignable variable 'variable'"
         },
         {
-            "error-functions-defined-before-called",
+            "error-function-defined-before-called",
             "Semantic error at 7:25: Referenced undefined function: Function/Procedure 'testFunction(int)' could not be found"
         },
         {
@@ -218,10 +232,10 @@ const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
         }
 };
 
-class AnalyzerTests : public ::testing::TestWithParam<AnalyzerParams> {};
+class AnalyzerTests : public ::testing::TestWithParam<AnalyzerTestSuite> {};
 
-TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
-    AnalyzerParams param = GetParam();
+TEST_P(AnalyzerTests, TestAnalyzer) {
+    AnalyzerTestSuite param = GetParam();
 
     std::string sourceFile = "./test-files/analyzer/" + param.testCaseName + "/source.spice";
 
@@ -287,5 +301,5 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerTests,
         AnalyzerTests,
-        ::testing::ValuesIn(ANALYZER_TEST_PARAMETERS)
+        ::testing::ValuesIn(detectTestSuites())
 );

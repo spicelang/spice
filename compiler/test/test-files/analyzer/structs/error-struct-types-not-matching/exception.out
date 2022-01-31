@@ -1,0 +1,1 @@
+Semantic error at 12:5: Wrong data type for operator: Cannot apply '=' operator on types struct(AnotherStruct) and struct(TestStruct)
