@@ -508,6 +508,7 @@ const std::vector<UnaryOpRule> PREFIX_PLUS_OP_RULES = {
 // Prefix Minus op rules
 const std::vector<UnaryOpRule> PREFIX_MINUS_OP_RULES = {
         UnaryOpRule(TY_INT, TY_INT),                      // -int = int
+        UnaryOpRule(TY_DOUBLE, TY_DOUBLE),                // -double = double
         UnaryOpRule(TY_SHORT, TY_SHORT),                  // -short = short
         UnaryOpRule(TY_LONG, TY_LONG),                    // -long = long
 };

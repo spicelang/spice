@@ -1227,7 +1227,7 @@ llvm::Value* OpRuleConversionsManager::getPrefixMinusInst(llvm::Value* lhs) {
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
     switch(lhsPTy) {
         case P_TY_DOUBLE:
-            return builder->CreateFMul(lhs, builder->getInt32(-1));
+            return builder->CreateFMul(lhs, llvm::ConstantFP::get(builder->getContext(), llvm::APFloat(double(-1))));
         case P_TY_INT:
             return builder->CreateAdd(lhs, builder->getInt32(-1));
         case P_TY_SHORT:

@@ -14,8 +14,8 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     if (requiresMainFunction && !hasMainFunction)
         throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
 
-    // Print compiler warnings
-    if (!stdFile) { // Do not print compiler warnings for std files
+    // Print compiler warnings once the whole ast is present, but not for std files
+    if (requiresMainFunction && !stdFile) {
         SymbolTable* rootScope = currentScope;
         while (rootScope->getParent()) rootScope = rootScope->getParent();
         rootScope->printCompilerWarnings();
@@ -286,7 +286,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
     // Check if symbol already exists in the symbol table
     if (currentScope->lookup(variableName))
         throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
-                            "The variable '" + variableName + "' was declared more than once");
+                            "The global variable '" + variableName + "' was declared more than once");
 
     // Insert variable name to symbol table
     SymbolType symbolType = visit(ctx->dataType()).as<SymbolType>();
@@ -1287,6 +1287,8 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 antlrcpp::Any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext* ctx) {
     if (ctx->DOUBLE()) return SymbolType(TY_DOUBLE);
     if (ctx->INTEGER()) return SymbolType(TY_INT);
+    if (ctx->SHORT()) return SymbolType(TY_SHORT);
+    if (ctx->LONG()) return SymbolType(TY_LONG);
     if (ctx->CHAR_LITERAL()) return SymbolType(TY_CHAR);
     if (ctx->STRING_LITERAL()) return SymbolType(TY_STRING);
     return SymbolType(TY_BOOL);

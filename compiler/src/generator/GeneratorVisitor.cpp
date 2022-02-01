@@ -173,23 +173,25 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
             std::string paramName = paramNames[paramNo];
             llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
             llvm::Value* memAddress = insertAlloca(paramType, paramName);
-            currentScope->lookup(paramName)->updateAddress(memAddress);
-            currentScope->lookup(paramName)->updateLLVMType(paramType);
+            SymbolTableEntry* paramSymbol = currentScope->lookup(paramName);
+            paramSymbol->updateAddress(memAddress);
+            paramSymbol->updateLLVMType(paramType);
             builder->CreateStore(&param, memAddress);
         }
 
         // Declare result variable and set it to 0 for positive return code
         llvm::Value* memAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
-        currentScope->lookup(RETURN_VARIABLE_NAME)->updateAddress(memAddress);
-        currentScope->lookup(RETURN_VARIABLE_NAME)->updateLLVMType(returnType);
-        builder->CreateStore(builder->getInt32(0), currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress());
+        SymbolTableEntry* returnSymbol = currentScope->lookup(RETURN_VARIABLE_NAME);
+        returnSymbol->updateAddress(memAddress);
+        returnSymbol->updateLLVMType(returnType);
+        builder->CreateStore(builder->getInt32(0), returnSymbol->getAddress());
 
         // Generate IR for function body
         visit(ctx->stmtLst());
 
         // Generate return statement for result variable
         if (!blockAlreadyTerminated) {
-            llvm::Value* result = currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress();
+            llvm::Value* result = returnSymbol->getAddress();
             builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
         }
 
@@ -281,17 +283,17 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 
     // Declare result variable
     llvm::Value* returnMemAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
-    SymbolTableEntry* returnValueEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
-    assert(returnValueEntry != nullptr);
-    returnValueEntry->updateAddress(returnMemAddress);
-    returnValueEntry->updateLLVMType(returnType);
+    SymbolTableEntry* returnSymbol = currentScope->lookup(RETURN_VARIABLE_NAME);
+    assert(returnSymbol != nullptr);
+    returnSymbol->updateAddress(returnMemAddress);
+    returnSymbol->updateLLVMType(returnType);
 
     // Generate IR for function body
     visit(ctx->stmtLst());
 
     // Generate return statement for result variable
     if (!blockAlreadyTerminated) {
-        llvm::Value* result = currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress();
+        llvm::Value* result = returnSymbol->getAddress();
         builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
     }
 
@@ -374,8 +376,9 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         std::string paramName = paramNames[paramNo];
         llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
         llvm::Value* memAddress = insertAlloca(paramType, paramName);
-        currentScope->lookup(paramName)->updateAddress(memAddress);
-        currentScope->lookup(paramName)->updateLLVMType(paramType);
+        SymbolTableEntry* paramSymbol = currentScope->lookup(paramName);
+        paramSymbol->updateAddress(memAddress);
+        paramSymbol->updateLLVMType(paramType);
         builder->CreateStore(&param, memAddress);
     }
 
@@ -1652,8 +1655,9 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
         // Allocate space for the struct in memory
         llvm::Value* structAddress = insertAlloca(structType, currentVarName);
-        currentScope->lookup(variableName)->updateAddress(structAddress);
-        currentScope->lookup(variableName)->updateLLVMType(structType);
+        SymbolTableEntry* variableSymbol = currentScope->lookup(variableName);
+        variableSymbol->updateAddress(structAddress);
+        variableSymbol->updateLLVMType(structType);
 
         // Get struct table
         SymbolTable* structTable = currentScope->lookupTable("struct:" + structName);
@@ -1738,7 +1742,7 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     if (ctx->DOUBLE()) {
         currentSymbolType = SymbolType(TY_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
-        if (constNegate) value = -value;
+        if (constNegate) value *= -1;
         return (llvm::Constant*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
@@ -1746,11 +1750,35 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TY_INT);
         int value = std::stoi(ctx->INTEGER()->toString());
-        if (constNegate) value = -value;
+        if (constNegate) value *= -1;
         if (currentVarSigned) {
             return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value);
         } else {
             return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value);
+        }
+    }
+
+    // Value is a short constant
+    if (ctx->SHORT()) {
+        currentSymbolType = SymbolType(TY_SHORT);
+        int value = std::stoi(ctx->SHORT()->toString());
+        if (constNegate) value *= -1;
+        if (currentVarSigned) {
+            return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value);
+        } else {
+            return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value);
+        }
+    }
+
+    // Value is a long constant
+    if (ctx->LONG()) {
+        currentSymbolType = SymbolType(TY_LONG);
+        long long value = std::stoll(ctx->LONG()->toString());
+        if (constNegate) value = -value;
+        if (currentVarSigned) {
+            return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value);
+        } else {
+            return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value);
         }
     }
 
@@ -1986,8 +2014,9 @@ void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std
 
         // Create global struct
         llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
-        currentScope->lookup(newStructName)->updateLLVMType(structType);
-        currentScope->lookup(newStructName)->updateState(INITIALIZED);
+        SymbolTableEntry* newStructSymbol = currentScope->lookup(newStructName);
+        newStructSymbol->updateLLVMType(structType);
+        newStructSymbol->updateState(INITIALIZED);
     }
 }
 

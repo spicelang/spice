@@ -1,5 +1,7 @@
+Size of double: 64
 Size of int: 32
 Size of short: 16
+Size of long: 64
 Size of byte: 8
 Size of char: 8
 Size of string: 0

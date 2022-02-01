@@ -137,6 +137,7 @@ archives:
       - LICENSE
       - src: bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/**
         dst: ./
+        strip_parent: true
     format_overrides:
       - goos: windows
         format: zip

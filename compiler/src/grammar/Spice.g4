@@ -57,7 +57,7 @@ atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
 value: primitiveValue | LBRACE paramLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* LBRACE paramLst? RBRACE | NIL LESS dataType GREATER;
-primitiveValue: DOUBLE | INTEGER | CHAR_LITERAL | STRING_LITERAL | TRUE | FALSE;
+primitiveValue: DOUBLE | INTEGER | SHORT | LONG | CHAR_LITERAL | STRING_LITERAL | TRUE | FALSE;
 dataType: baseDataType (MUL | LBRACKET INTEGER? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER (DOT IDENTIFIER)*;
 
@@ -154,6 +154,8 @@ CHAR_LITERAL: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
 INTEGER: NONZERO_DIGIT DIGIT* | ZERO;
 DOUBLE: DIGIT+ DOT DIGIT+;
+SHORT: INTEGER 's';
+LONG: INTEGER 'l';
 IDENTIFIER: NONDIGIT (NONDIGIT | DIGIT)*;
 
 fragment ZERO: [0];
