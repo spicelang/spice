@@ -11,7 +11,7 @@ std::vector<std::string> TestUtil::getSubdirs(const std::string& basePath) {
     DIR* dir;
     struct dirent* ent;
     if ((dir = opendir(basePath.c_str())) != NULL) {
-        while ((ent = readdir (dir)) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
             if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
                 subdirs.emplace_back(ent->d_name);
         }
@@ -36,6 +36,26 @@ std::string TestUtil::toCamelCase(std::string input) {
         }
     }
     return input;
+}
+
+std::string TestUtil::exec(const std::string& cmd) {
+    std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+    if (!pipe) return "ERROR";
+    char buffer[128];
+    std::string result;
+    while (!feof(pipe.get())) {
+        if (fgets(buffer, 128, pipe.get()) != NULL)
+            result += buffer;
+    }
+    return result;
+}
+
+std::string TestUtil::getDefaultExecutableName() {
+    std::string executableName = "./source";
+#ifdef OS_Windows
+    executableName = ".\\source.exe";
+#endif
+    return executableName;
 }
 
 /*template <typename T1, typename T2>

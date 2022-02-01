@@ -98,6 +98,23 @@ void executeTest(const GeneratorTestCase& testCase) {
             EXPECT_EQ(expectedSymbolTable, symbolTable->toString());
         }
 
+        // Determine the expected opt level
+        std::string irCodeO1FileName = testCase.testPath + "/ir-code-O1.ll";
+        std::string irCodeO2FileName = testCase.testPath + "/ir-code-O2.ll";
+        std::string irCodeO3FileName = testCase.testPath + "/ir-code-O3.ll";
+        std::string expectedOptIR;
+        unsigned int expectedOptLevel = 0;
+        if (TestUtil::fileExists(irCodeO1FileName)) {
+            expectedOptLevel = 1;
+            expectedOptIR = TestUtil::getFileContent(irCodeO1FileName);
+        } else if (TestUtil::fileExists(irCodeO2FileName)) {
+            expectedOptLevel = 2;
+            expectedOptIR = TestUtil::getFileContent(irCodeO2FileName);
+        } else if (TestUtil::fileExists(irCodeO3FileName)) {
+            expectedOptLevel = 3;
+            expectedOptIR = TestUtil::getFileContent(irCodeO3FileName);
+        }
+
         // Execute generator
         GeneratorVisitor generator = GeneratorVisitor(
                 symbolTable,
@@ -105,7 +122,7 @@ void executeTest(const GeneratorTestCase& testCase) {
                 "",
                 "",
                 "",
-                ".",
+                "./source.spice.o",
                 false,
                 3,
                 true
@@ -120,13 +137,25 @@ void executeTest(const GeneratorTestCase& testCase) {
             EXPECT_EQ(expectedIR, generator.getIRString());
         }
 
+        // Check if the optimized ir code matches the expected output
+        if (expectedOptLevel > 0) {
+            generator.optimize();
+            EXPECT_EQ(expectedOptIR, generator.getIRString());
+        }
+
         // Check if the execution output matches the expected output
-        std::string outputFileName = testCase.testPath + "/output.out";
+        std::string outputFileName = testCase.testPath + "/cout.out";
         if (TestUtil::fileExists(outputFileName)) {
             std::string expectedOutput = TestUtil::getFileContent(outputFileName);
 
-            // Execute the test file
-            std::string executionOutput;
+            // Emit the object file
+            generator.emit(); // Emit object file for specified platform
+
+            // Link
+            TestUtil::exec("gcc source.spice.o -o source");
+
+            // Execute the program and get the output
+            std::string executionOutput = TestUtil::exec(TestUtil::getDefaultExecutableName());
 
             // Check if the outputs are matching
             EXPECT_EQ(expectedOutput, executionOutput);
