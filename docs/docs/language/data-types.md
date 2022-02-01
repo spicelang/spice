@@ -32,10 +32,10 @@ Integers are signed, whole numbers of 16-bit, which have a range from a min of -
 
 In Spice, variables of type `short` can be defined like this:
 ```spice
-short variable1 = 15;
+short variable1 = 15s;
 
 short variable2;
-variable2 = 0;
+variable2 = 0s;
 ```
 
 ## The `long` data type
@@ -43,10 +43,10 @@ Integers are signed, whole numbers of 64-bit, which have a range from a min of -
 
 In Spice, variables of type `long` can be defined like this:
 ```spice
-long variable1 = 12492309573;
+long variable1 = 12492309573l;
 
 long variable2;
-variable2 = -34945968;
+variable2 = -34945968l;
 ```
 
 ## The `byte` data type
@@ -54,10 +54,10 @@ Bytes are unsigned, whole numbers of 8-bit, which have a range from a min of 0 t
 
 In Spice, variables of type `byte` can be defined like this:
 ```spice
-byte variable1 = 11;
+byte variable1 = (byte) 11;
 
 byte variable2;
-variable2 = 12;
+variable2 = (byte) 12;
 ```
 
 ## The `char` data type

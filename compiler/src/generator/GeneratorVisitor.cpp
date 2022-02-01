@@ -1738,7 +1738,7 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     if (ctx->DOUBLE()) {
         currentSymbolType = SymbolType(TY_DOUBLE);
         double value = std::stod(ctx->DOUBLE()->toString());
-        if (constNegate) value = -value;
+        if (constNegate) value *= -1;
         return (llvm::Constant*) llvm::ConstantFP::get(*context, llvm::APFloat(value));
     }
 
@@ -1746,11 +1746,35 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     if (ctx->INTEGER()) {
         currentSymbolType = SymbolType(TY_INT);
         int value = std::stoi(ctx->INTEGER()->toString());
-        if (constNegate) value = -value;
+        if (constNegate) value *= -1;
         if (currentVarSigned) {
             return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value);
         } else {
             return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value);
+        }
+    }
+
+    // Value is a short constant
+    if (ctx->SHORT()) {
+        currentSymbolType = SymbolType(TY_SHORT);
+        int value = std::stoi(ctx->SHORT()->toString());
+        if (constNegate) value *= -1;
+        if (currentVarSigned) {
+            return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value);
+        } else {
+            return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value);
+        }
+    }
+
+    // Value is a long constant
+    if (ctx->LONG()) {
+        currentSymbolType = SymbolType(TY_LONG);
+        long long value = std::stoll(ctx->LONG()->toString());
+        if (constNegate) value = -value;
+        if (currentVarSigned) {
+            return (llvm::Constant*) llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value);
+        } else {
+            return (llvm::Constant*) llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value);
         }
     }
 

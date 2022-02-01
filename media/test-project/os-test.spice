@@ -25,7 +25,7 @@ f<int> main() {
     a.destructor();
 }*/
 
-f<int> makePi() {
+/*f<int> makePi() {
     // Initialize variables
     int q = 1;
     int r = 0;
@@ -60,4 +60,9 @@ f<int> makePi() {
 
 f<int> main() {
     makePi();
+}*/
+
+f<int> main() {
+    double d = -4.5;
+    printf("Double: %f", d);
 }
