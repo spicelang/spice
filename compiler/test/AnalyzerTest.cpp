@@ -2,11 +2,11 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
-#include <dirent.h>
 #include "antlr4-runtime.h"
 
 #include "SpiceLexer.h"
 #include "SpiceParser.h"
+#include "TestUtil.h"
 #include <analyzer/AnalyzerVisitor.h>
 
 struct AnalyzerTestCase {
@@ -16,58 +16,28 @@ struct AnalyzerTestCase {
 
 typedef std::vector<AnalyzerTestCase> AnalyzerTestSuite;
 
-std::vector<std::string> getSubdirs(const std::string& basePath) {
-    std::vector<std::string> subdirs;
-    DIR* dir;
-    struct dirent* ent;
-    if ((dir = opendir(basePath.c_str())) != NULL) {
-        while ((ent = readdir (dir)) != NULL) {
-            if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
-                subdirs.emplace_back(ent->d_name);
-        }
-        closedir(dir);
-    }
-    return subdirs;
-}
-
-std::vector<AnalyzerTestCase> detectTestCases(const std::string& suitePath) {
-    std::vector<std::string> subDirs = getSubdirs(suitePath);
+std::vector<AnalyzerTestCase> detectAnalyzerTestCases(const std::string& suitePath) {
+    std::vector<std::string> subDirs = TestUtil::getSubdirs(suitePath);
 
     std::vector<AnalyzerTestCase> testCases;
     testCases.reserve(subDirs.size());
     for (std::string& dirName : subDirs) {
         // Save test suite
-        testCases.push_back({
-            dirName,
-            suitePath + "/" + dirName
-        });
+        testCases.push_back({dirName, suitePath + "/" + dirName});
     }
 
     return testCases;
 }
 
-std::vector<AnalyzerTestSuite> detectTestSuites() {
-    std::string testFilesPath = "./test-files/analyzer";
-    std::vector<std::string> subDirs = getSubdirs(testFilesPath);
+std::vector<AnalyzerTestSuite> detectAnalyzerTestSuites(const std::string& testFilesPath) {
+    std::vector<std::string> subDirs = TestUtil::getSubdirs(testFilesPath);
 
     std::vector<AnalyzerTestSuite> testSuites;
     testSuites.reserve(subDirs.size());
     for (std::string& dirName : subDirs)
-        testSuites.push_back(detectTestCases(testFilesPath + "/" + dirName));
+        testSuites.push_back(detectAnalyzerTestCases(testFilesPath + "/" + dirName));
 
     return testSuites;
-}
-
-std::string getFileContent(const std::string& filePath) {
-    std::ifstream symbolTableStream;
-    symbolTableStream.open(filePath);
-    std::ostringstream stringStream;
-    stringStream << symbolTableStream.rdbuf();
-    return stringStream.str();
-}
-
-inline bool fileExists(const std::string& filePath) {
-    return std::ifstream(filePath.c_str()).good();
 }
 
 void executeTest(const AnalyzerTestCase& testCase) {
@@ -111,7 +81,7 @@ void executeTest(const AnalyzerTestCase& testCase) {
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected
-        if (fileExists(testCase.testPath + "/exception.out"))
+        if (TestUtil::fileExists(testCase.testPath + "/exception.out"))
             FAIL() << "Expected error, but got no error";
 
         // Check if the AST matches the expected output
@@ -123,8 +93,8 @@ void executeTest(const AnalyzerTestCase& testCase) {
 
         // Check if the symbol table matches the expected output
         std::string symbolTableFileName = testCase.testPath + "/symbol-table.txt";
-        if (fileExists(symbolTableFileName)) {
-            std::string expectedSymbolTable = getFileContent(symbolTableFileName);
+        if (TestUtil::fileExists(symbolTableFileName)) {
+            std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
             EXPECT_EQ(expectedSymbolTable, symbolTable->toString());
         }
 
@@ -134,8 +104,8 @@ void executeTest(const AnalyzerTestCase& testCase) {
     } catch (SemanticError& error) {
         // Check if the exception message matches the expected output
         std::string exceptionFile = testCase.testPath + "/exception.out";
-        if (fileExists(exceptionFile)) {
-            std::string expectedException = getFileContent(exceptionFile);
+        if (TestUtil::fileExists(exceptionFile)) {
+            std::string expectedException = TestUtil::getFileContent(exceptionFile);
             EXPECT_EQ(std::string(error.what()), expectedException);
         } else {
             FAIL() << "Expected no error, but got '" << error.what() << "'";
@@ -154,7 +124,7 @@ class AnalyzerFunctionCallTests : public ::testing::TestWithParam<AnalyzerTestCa
 class AnalyzerFunctionTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerIfStatementTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerImportTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
-class AnalyzerLoopControlInstructionTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerLoopCtlInstTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerMethodTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerOperatorTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerProcedureTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
@@ -202,7 +172,7 @@ TEST_P(AnalyzerImportTests, ImportTests) {
     executeTest(GetParam());
 }
 
-TEST_P(AnalyzerLoopControlInstructionTests, LoopControlInstructionTests) {
+TEST_P(AnalyzerLoopCtlInstTests, LoopCtlInstTests) {
     executeTest(GetParam());
 }
 
@@ -240,130 +210,122 @@ TEST_P(AnalyzerWhileLoopTests, WhileLoopTests) {
 
 // Name resolver
 
-std::string toCamelCase(std::string text) {
-    for (auto it = text.begin(); it != text.end(); it++) {
-        if (*it == '-' || *it == '_') {
-            it = text.erase(it);
-            *it = toupper(*it);
-        }
-    }
-    return text;
-}
-
 struct NameResolver {
     template <class AnalyzerTestCase>
     std::string operator()(const ::testing::TestParamInfo<AnalyzerTestCase>& info) const {
         auto testCase = static_cast<AnalyzerTestCase>(info.param);
-        return toCamelCase(testCase.testName);
+        return TestUtil::toCamelCase(testCase.testName);
     }
 };
 
 // Instantiations
 
+const std::vector<AnalyzerTestSuite> testSuites = detectAnalyzerTestSuites("./test-files/analyzer");
+
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerArbitraryTests,
         AnalyzerArbitraryTests,
-        ::testing::ValuesIn(detectTestSuites()[0]),
+        ::testing::ValuesIn(testSuites[0]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerArrayTests,
         AnalyzerArrayTests,
-        ::testing::ValuesIn(detectTestSuites()[1]),
+        ::testing::ValuesIn(testSuites[1]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerBuiltinTests,
         AnalyzerBuiltinTests,
-        ::testing::ValuesIn(detectTestSuites()[2]),
+        ::testing::ValuesIn(testSuites[2]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerForLoopTests,
         AnalyzerForLoopTests,
-        ::testing::ValuesIn(detectTestSuites()[3]),
+        ::testing::ValuesIn(testSuites[3]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerForEachLoopTests,
         AnalyzerForEachLoopTests,
-        ::testing::ValuesIn(detectTestSuites()[4]),
+        ::testing::ValuesIn(testSuites[4]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerFunctionCallTests,
         AnalyzerFunctionCallTests,
-        ::testing::ValuesIn(detectTestSuites()[5]),
+        ::testing::ValuesIn(testSuites[5]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerFunctionTests,
         AnalyzerFunctionTests,
-        ::testing::ValuesIn(detectTestSuites()[6]),
+        ::testing::ValuesIn(testSuites[6]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerIfStatementTests,
         AnalyzerIfStatementTests,
-        ::testing::ValuesIn(detectTestSuites()[7]),
+        ::testing::ValuesIn(testSuites[7]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerImportTests,
         AnalyzerImportTests,
-        ::testing::ValuesIn(detectTestSuites()[8]),
+        ::testing::ValuesIn(testSuites[8]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerLoopControlInstructionTests,
-        AnalyzerLoopControlInstructionTests,
-        ::testing::ValuesIn(detectTestSuites()[9]),
+        AnalyzerLoopCtlInstTests,
+        AnalyzerLoopCtlInstTests,
+        ::testing::ValuesIn(testSuites[9]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerMethodTests,
         AnalyzerMethodTests,
-        ::testing::ValuesIn(detectTestSuites()[10]),
+        ::testing::ValuesIn(testSuites[10]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerOperatorTests,
         AnalyzerOperatorTests,
-        ::testing::ValuesIn(detectTestSuites()[11]),
+        ::testing::ValuesIn(testSuites[11]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerProcedureTests,
         AnalyzerProcedureTests,
-        ::testing::ValuesIn(detectTestSuites()[12]),
+        ::testing::ValuesIn(testSuites[12]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerStructTests,
         AnalyzerStructTests,
-        ::testing::ValuesIn(detectTestSuites()[13]),
+        ::testing::ValuesIn(testSuites[13]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerTernaryTests,
         AnalyzerTernaryTests,
-        ::testing::ValuesIn(detectTestSuites()[14]),
+        ::testing::ValuesIn(testSuites[14]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerTypeSystemTests,
         AnalyzerTypeSystemTests,
-        ::testing::ValuesIn(detectTestSuites()[15]),
+        ::testing::ValuesIn(testSuites[15]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerVariableTests,
         AnalyzerVariableTests,
-        ::testing::ValuesIn(detectTestSuites()[16]),
+        ::testing::ValuesIn(testSuites[16]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerWhileLoopTests,
         AnalyzerWhileLoopTests,
-        ::testing::ValuesIn(detectTestSuites()[17]),
+        ::testing::ValuesIn(testSuites[17]),
         NameResolver());

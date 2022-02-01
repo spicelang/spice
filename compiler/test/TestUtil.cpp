@@ -1,0 +1,65 @@
+// Copyright (c) 2021-2022 ChilliBits. All rights reserved.
+
+#include "TestUtil.h"
+
+bool TestUtil::fileExists(const std::string& filePath) {
+    return std::ifstream(filePath.c_str()).good();
+}
+
+std::vector<std::string> TestUtil::getSubdirs(const std::string& basePath) {
+    std::vector<std::string> subdirs;
+    DIR* dir;
+    struct dirent* ent;
+    if ((dir = opendir(basePath.c_str())) != NULL) {
+        while ((ent = readdir (dir)) != NULL) {
+            if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
+                subdirs.emplace_back(ent->d_name);
+        }
+        closedir(dir);
+    }
+    return subdirs;
+}
+
+std::string TestUtil::getFileContent(const std::string& filePath) {
+    std::ifstream symbolTableStream;
+    symbolTableStream.open(filePath);
+    std::ostringstream stringStream;
+    stringStream << symbolTableStream.rdbuf();
+    return stringStream.str();
+}
+
+std::string TestUtil::toCamelCase(std::string input) {
+    for (auto it = input.begin(); it != input.end(); it++) {
+        if (*it == '-' || *it == '_') {
+            it = input.erase(it);
+            *it = toupper(*it);
+        }
+    }
+    return input;
+}
+
+/*template <typename T1, typename T2>
+std::vector<T1> TestUtil::detectTestSuites(const std::string& testFilesPath) {
+    std::vector<std::string> subDirs = TestUtil::getSubdirs(testFilesPath);
+
+    std::vector<T1> testSuites;
+    testSuites.reserve(subDirs.size());
+    for (std::string& dirName : subDirs)
+        testSuites.push_back(detectTestCases<T2>(testFilesPath + "/" + dirName));
+
+    return testSuites;
+}
+
+template <typename T>
+std::vector<T> TestUtil::detectTestCases(const std::string& suitePath) {
+    std::vector<std::string> subDirs = TestUtil::getSubdirs(suitePath);
+
+    std::vector<T> testCases;
+    testCases.reserve(subDirs.size());
+    for (std::string& dirName : subDirs) {
+        // Save test suite
+        testCases.push_back({dirName, suitePath + "/" + dirName});
+    }
+
+    return testCases;
+}*/
