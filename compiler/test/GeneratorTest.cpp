@@ -84,13 +84,6 @@ void executeTest(const GeneratorTestCase& testCase) {
         if (TestUtil::fileExists(testCase.testPath + "/exception.out"))
             FAIL() << "Expected error, but got no error";
 
-        // Check if the AST matches the expected output
-        /*std::string astFileName = testCase.testPath + "/syntax-tree.ast";
-        if (fileExists(astFileName)) {
-            std::string expectedSymbolTable = getFileContent(astFileName);
-            EXPECT_EQ(expectedSymbolTable, tree->toStringTree(true));
-        }*/
-
         // Check if the symbol table matches the expected output
         std::string symbolTableFileName = testCase.testPath + "/symbol-table.txt";
         if (TestUtil::fileExists(symbolTableFileName)) {
@@ -346,16 +339,4 @@ INSTANTIATE_TEST_SUITE_P(
         GeneratorStructTests,
         GeneratorStructTests,
         ::testing::ValuesIn(generatorSuites[12]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorVariableTests,
-        GeneratorVariableTests,
-        ::testing::ValuesIn(generatorSuites[13]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorWhileLoopTests,
-        GeneratorWhileLoopTests,
-        ::testing::ValuesIn(generatorSuites[14]),
         NameResolver());

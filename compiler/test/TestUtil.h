@@ -25,6 +25,4 @@ public:
     static std::string toCamelCase(std::string input);
     static std::string exec(const std::string& cmd);
     static std::string getDefaultExecutableName();
-    //template <typename T1, typename T2> static std::vector<T1> detectTestSuites(const std::string& testFilesPath);
-    //template<typename T> static std::vector<T> detectTestCases(const std::string& suitePath);
 };

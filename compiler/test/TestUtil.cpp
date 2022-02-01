@@ -57,29 +57,3 @@ std::string TestUtil::getDefaultExecutableName() {
 #endif
     return executableName;
 }
-
-/*template <typename T1, typename T2>
-std::vector<T1> TestUtil::detectTestSuites(const std::string& testFilesPath) {
-    std::vector<std::string> subDirs = TestUtil::getSubdirs(testFilesPath);
-
-    std::vector<T1> testSuites;
-    testSuites.reserve(subDirs.size());
-    for (std::string& dirName : subDirs)
-        testSuites.push_back(detectTestCases<T2>(testFilesPath + "/" + dirName));
-
-    return testSuites;
-}
-
-template <typename T>
-std::vector<T> TestUtil::detectTestCases(const std::string& suitePath) {
-    std::vector<std::string> subDirs = TestUtil::getSubdirs(suitePath);
-
-    std::vector<T> testCases;
-    testCases.reserve(subDirs.size());
-    for (std::string& dirName : subDirs) {
-        // Save test suite
-        testCases.push_back({dirName, suitePath + "/" + dirName});
-    }
-
-    return testCases;
-}*/
