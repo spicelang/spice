@@ -145,7 +145,7 @@ void executeTest(const GeneratorTestCase& testCase) {
             generator.emit(); // Emit object file for specified platform
 
             // Link
-            TestUtil::exec("gcc source.spice.o -o source");
+            TestUtil::exec("gcc -no-pie -o source source.spice.o");
 
             // Execute the program and get the output
             std::string executionOutput = TestUtil::exec(TestUtil::getDefaultExecutableName());

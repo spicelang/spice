@@ -6,7 +6,7 @@ source_filename = "source.spice"
 
 @0 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
 @1 = private unnamed_addr constant [24 x i8] c"Field1: %d, field2: %f\0A\00", align 1
-@2 = private unnamed_addr constant [16 x i8] c"Output: %s, %p\0A\00", align 1
+@2 = private unnamed_addr constant [12 x i8] c"Output: %s\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
 
@@ -86,10 +86,7 @@ entry:
   %41 = load %Nested*, %Nested** %22, align 8
   %42 = getelementptr inbounds %Nested, %Nested* %40, i32 0, i32 0
   %43 = load i8*, i8** %42, align 8
-  %44 = load %TestStruct, %TestStruct* %instance, align 8
-  %45 = getelementptr inbounds %TestStruct, %TestStruct* %instance, i32 0, i32 0
-  %46 = load i32*, i32** %45, align 8
-  %47 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @2, i32 0, i32 0), i8* %43, i32* %46)
-  %48 = load i32, i32* %result, align 4
-  ret i32 %48
+  %44 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @2, i32 0, i32 0), i8* %43)
+  %45 = load i32, i32* %result, align 4
+  ret i32 %45
 }
