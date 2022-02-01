@@ -41,9 +41,12 @@ std::vector<GeneratorTestSuite> detectGeneratorTestSuites(const std::string& tes
 }
 
 void executeTest(const GeneratorTestCase& testCase) {
-    std::string sourceFile = testCase.testPath + "/source.spice";
+    // Check if disabled
+    std::string disabledFile = testCase.testPath + "/disabled";
+    if (TestUtil::fileExists(disabledFile)) GTEST_SKIP();
 
     // Read source file
+    std::string sourceFile = testCase.testPath + "/source.spice";
     std::ifstream sourceStream;
     sourceStream.open(sourceFile);
     if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
@@ -173,6 +176,7 @@ void executeTest(const GeneratorTestCase& testCase) {
 
 class GeneratorArbitraryTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorArrayTests : public ::testing::TestWithParam<GeneratorTestCase> {};
+class GeneratorBuiltinTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorCliArgsTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorForLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorForEachLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
@@ -194,6 +198,10 @@ TEST_P(GeneratorArbitraryTests, ArbitraryTests) {
 }
 
 TEST_P(GeneratorArrayTests, ArrayTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(GeneratorBuiltinTests, BuiltinTests) {
     executeTest(GetParam());
 }
 
@@ -276,67 +284,73 @@ INSTANTIATE_TEST_SUITE_P(
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorCliArgsTests,
-        GeneratorCliArgsTests,
+        GeneratorBuiltinTests,
+        GeneratorBuiltinTests,
         ::testing::ValuesIn(generatorSuites[2]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        GeneratorCliArgsTests,
+        GeneratorCliArgsTests,
+        ::testing::ValuesIn(generatorSuites[3]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         GeneratorForLoopTests,
         GeneratorForLoopTests,
-        ::testing::ValuesIn(generatorSuites[3]),
+        ::testing::ValuesIn(generatorSuites[4]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerForEachLoopTests,
         GeneratorForEachLoopTests,
-        ::testing::ValuesIn(generatorSuites[4]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorFunctionTests,
-        GeneratorFunctionTests,
         ::testing::ValuesIn(generatorSuites[5]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorIfStatementTests,
-        GeneratorIfStatementTests,
+        GeneratorFunctionTests,
+        GeneratorFunctionTests,
         ::testing::ValuesIn(generatorSuites[6]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorImportTests,
-        GeneratorImportTests,
+        GeneratorIfStatementTests,
+        GeneratorIfStatementTests,
         ::testing::ValuesIn(generatorSuites[7]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorMethodTests,
-        GeneratorMethodTests,
+        GeneratorImportTests,
+        GeneratorImportTests,
         ::testing::ValuesIn(generatorSuites[8]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorOperatorTests,
-        GeneratorOperatorTests,
+        GeneratorMethodTests,
+        GeneratorMethodTests,
         ::testing::ValuesIn(generatorSuites[9]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorPointerTests,
-        GeneratorPointerTests,
+        GeneratorOperatorTests,
+        GeneratorOperatorTests,
         ::testing::ValuesIn(generatorSuites[10]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorProcedureTests,
-        GeneratorProcedureTests,
+        GeneratorPointerTests,
+        GeneratorPointerTests,
         ::testing::ValuesIn(generatorSuites[11]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        GeneratorProcedureTests,
+        GeneratorProcedureTests,
+        ::testing::ValuesIn(generatorSuites[12]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         GeneratorStructTests,
         GeneratorStructTests,
-        ::testing::ValuesIn(generatorSuites[12]),
+        ::testing::ValuesIn(generatorSuites[13]),
         NameResolver());

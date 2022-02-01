@@ -1,0 +1,7 @@
+Size of int: 32
+Size of short: 16
+Size of byte: 8
+Size of char: 8
+Size of string: 0
+Size of bool: 1
+Size of int[]: 7

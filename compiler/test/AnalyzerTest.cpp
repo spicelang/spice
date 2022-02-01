@@ -41,9 +41,12 @@ std::vector<AnalyzerTestSuite> detectAnalyzerTestSuites(const std::string& testF
 }
 
 void executeTest(const AnalyzerTestCase& testCase) {
-    std::string sourceFile = testCase.testPath + "/source.spice";
+    // Check if disabled
+    std::string disabledFile = testCase.testPath + "/disabled";
+    if (TestUtil::fileExists(disabledFile)) GTEST_SKIP();
 
     // Read source file
+    std::string sourceFile = testCase.testPath + "/source.spice";
     std::ifstream sourceStream;
     sourceStream.open(sourceFile);
     if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
