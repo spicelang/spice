@@ -1,0 +1,1 @@
+Semantic error at 7:1: Multiple declarations of a struct with the same name: Duplicate struct 'Person'

@@ -1,0 +1,1 @@
+Semantic error at 2:9: Wrong data type for operator: Cannot apply '==' operator on types string and double

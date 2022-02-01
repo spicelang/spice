@@ -1,0 +1,20 @@
+/*type Struct struct {
+    int fieldA
+    bool fieldB
+    string fieldC
+}*/
+
+f<int> main() {
+    //printf("Size of double: %d\n", sizeof(-19.34989));
+    printf("Size of int: %d\n", sizeof(353));
+    printf("Size of short: %d\n", sizeof((short) 35));
+    //printf("Size of long: %d\n", sizeof((long) 9223372036854775807));
+    printf("Size of byte: %d\n", sizeof((byte) 13));
+    printf("Size of char: %d\n", sizeof((char) 65));
+    printf("Size of string: %d\n", sizeof("Hello Spice!"));
+    printf("Size of bool: %d\n", sizeof(false));
+    int[7] intArray = { 1, 2, 3, 4, 5, 6, 7 };
+    printf("Size of int[]: %d\n", sizeof(intArray));
+    //dyn structInstance = Struct { 5, true, "This is a test" };
+    //printf("Size of struct instance: %d\n", sizeof(structInstance));
+}

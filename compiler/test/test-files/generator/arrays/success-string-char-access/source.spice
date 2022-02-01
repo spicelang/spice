@@ -1,0 +1,5 @@
+f<int> main() {
+    string test = "test";
+    char c1 = test[2];
+    printf("Char: %c\n", c1);
+}

@@ -1,0 +1,1 @@
+Semantic error at 3:12: Wrong data type for operator: Cannot apply '>' operator on types double and string

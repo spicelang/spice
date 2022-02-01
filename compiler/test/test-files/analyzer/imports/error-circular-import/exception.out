@@ -1,0 +1,1 @@
+Semantic error - Circular import detected: './test-files/analyzer/imports/error-circular-import/source1.spice'

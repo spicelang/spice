@@ -1,0 +1,1 @@
+Semantic error at 3:13: Wrong data type for operator: Foreach loop item type does not match array type. Expected int[], provided double

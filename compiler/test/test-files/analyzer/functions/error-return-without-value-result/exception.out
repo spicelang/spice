@@ -1,0 +1,1 @@
+Semantic error at 4:9: Return without initialization of result variable: Return without value, but result variable is not initialized yet

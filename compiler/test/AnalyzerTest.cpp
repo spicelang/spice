@@ -6,226 +6,47 @@
 
 #include "SpiceLexer.h"
 #include "SpiceParser.h"
+#include "TestUtil.h"
 #include <analyzer/AnalyzerVisitor.h>
 
-struct AnalyzerParams {
-    const std::string testCaseName;
-    const std::string errorMessage; // Empty error message for testing for no error
+struct AnalyzerTestCase {
+    const std::string testName;
+    const std::string testPath;
 };
 
-const AnalyzerParams ANALYZER_TEST_PARAMETERS[] = {
-        // Failing tests
-        {
-            "error-assignment-same-type",
-            "Semantic error at 2:5: Wrong data type for operator: Cannot apply '=' operator on types int and string"
-        },
-        {
-            "error-if-condition-bool",
-            "Semantic error at 2:8: Condition must be bool: If condition must be of type bool"
-        },
-        {
-            "error-else-if-condition-bool",
-            "Semantic error at 4:15: Condition must be bool: If condition must be of type bool"
-        },
-        {
-            "error-while-condition-bool",
-            "Semantic error at 2:11: Condition must be bool: While loop condition must be of type bool"
-        },
-        {
-            "error-for-condition-bool",
-            "Semantic error at 2:20: Condition must be bool: For loop condition must be of type bool"
-        },
-        {
-            "error-ternary-condition-bool",
-            "Semantic error at 2:25: Wrong data type for operator: Condition operand in ternary must be a bool"
-        },
-        {
-            "error-ternary-types-match",
-            "Semantic error at 2:25: Wrong data type for operator: True and false operands in ternary must be of same data type"
-        },
-        {
-            "error-variable-declared-before-referenced",
-            "Semantic error at 2:26: Referenced undefined variable: Variable 'test' was referenced before declared"
-        },
-        {
-            "error-variable-declared-only-once",
-            "Semantic error at 3:5: Multiple declarations of the same variable: The variable 'i' was declared more than once"
-        },
-        {
-            "error-variable-const-not-modified",
-            "Semantic error at 2:5: Cannot re-assign constant variable: Not re-assignable variable 'variable'"
-        },
-        {
-            "error-functions-defined-before-called",
-            "Semantic error at 7:25: Referenced undefined function: Function/Procedure 'testFunction(int)' could not be found"
-        },
-        {
-            "error-cannot-call-variables",
-            "Semantic error at 3:22: Referenced undefined function: Function/Procedure 'variable()' could not be found"
-        },
-        {
-            "error-function-params-match-declaration",
-            "Semantic error at 6:5: Referenced undefined function: Function/Procedure 'testFunction()' could not be found"
-        },
-        {
-            "error-function-param-types-match-declaration",
-            "Semantic error at 6:5: Referenced undefined function: Function/Procedure 'testFunction(string)' could not be found"
-        },
-        {
-            "error-return-type-matches-def",
-            "Semantic error at 2:12: Wrong data type for operator: Passed wrong data type to return statement. Expected string but got int"
-        },
-        {
-            "error-logical-operators-are-booleans",
-            "Semantic error at 2:9: Wrong data type for operator: Cannot apply '||' operator on types string and bool"
-        },
-        {
-            "error-bitwise-operators-are-booleans-or-integers",
-            "Semantic error at 2:22: Wrong data type for operator: Cannot apply '|' operator on types string and int"
-        },
-        {
-            "error-equality-operators-some-combinations",
-            "Semantic error at 2:9: Wrong data type for operator: Cannot apply '==' operator on types string and double"
-        },
-        {
-            "error-relational-operators-are-doubles-or-integers",
-            "Semantic error at 3:12: Wrong data type for operator: Cannot apply '>' operator on types double and string"
-        },
-        {
-            "error-additive-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Cannot apply '+' operator on types bool and string"
-        },
-        {
-            "error-multiplicative-operators-some-combinations",
-            "Semantic error at 2:29: Wrong data type for operator: Cannot apply '*' operator on types bool and string"
-        },
-        {
-            "error-prefix-unary-only-integer-identifiers",
-            "Semantic error at 2:7: Wrong data type for operator: Cannot apply '--' operator on type string"
-        },
-        {
-            "error-postfix-unary-only-integer-identifiers",
-            "Semantic error at 2:5: Wrong data type for operator: Cannot apply '++' operator on type string"
-        },
-        {
-            "error-must-contain-main-function",
-            "Semantic error at 1:1: Spice programs must contain a main function: No main function found"
-        },
-        {
-            "error-function-arg-decl-type-dyn",
-            "Semantic error at 1:51: Parameter type dyn not valid in function/procedure definition without default value: Type of parameter 'arg2' is invalid"
-        },
-        {
-            "error-dyn-return-types-not-matching",
-            "Semantic error at 3:12: Wrong data type for operator: Passed wrong data type to return statement. Expected string but got double"
-        },
-        {
-            "error-printf-type-incompatibility",
-            "Semantic error at 6:36: Types of printf call not matching: Template string expects char, but got string"
-        },
-        {
-            "error-printf-arg-number-matches",
-            "Semantic error at 2:5: Types of printf call not matching: Number of placeholders does not match the number of passed arguments"
-        },
-        {
-            "error-break-count-not-too-high",
-            "Semantic error at 7:23: Invalid number of break calls: We can only break 2 time(s) here"
-        },
-        {
-            "error-continue-count-not-too-high",
-            "Semantic error at 7:26: Invalid number of continue calls: We can only continue 2 time(s) here"
-        },
-        {
-            "error-imported-file-not-existing",
-            "Semantic error at 1:8: Imported source file not existing: The source file 'source2.spice' does not exist"
-        },
-        {
-            "error-imported-std-not-existing",
-            "Semantic error at 1:8: Imported source file not existing: The source file 'std/non-existing/foo.spice' was not found in standard library"
-        },
-        {
-            "error-circular-import",
-            "Semantic error - Circular import detected: './test-files/analyzer/error-circular-import/source1.spice'"
-        },
-        {
-            "error-duplicate-struct-def",
-            "Semantic error at 7:1: Multiple declarations of a struct with the same name: Duplicate struct 'Person'"
-        },
-        {
-            "error-duplicate-function-def",
-            "Semantic error at 5:1: Multiple declarations of a function with the same name: Function 'exampleFunc()' is declared twice"
-        },
-        {
-            "error-duplicate-main-function-def",
-            "Semantic error at 5:1: Multiple declarations of a function with the same name: Main function is declared twice"
-        },
-        {
-            "error-duplicate-procedure-def",
-            "Semantic error at 5:1: Multiple declarations of a procedure with the same name: Procedure 'exampleProcedure()' is declared twice"
-        },
-        {
-            "error-custom-type-unknown",
-            "Semantic error at 8:5: Unknown datatype: Unknown datatype 'NonExisting'"
-        },
-        {
-            "error-struct-defined-before-used",
-            "Semantic error at 2:5: Unknown datatype: Unknown datatype 'Test'"
-        },
-        {
-            "error-struct-fields-match-declaration",
-            "Semantic error at 8:37: The type of a field value does not match the declaration: Expected type double* for the field 'dbl', but got double"
-        },
-        {
-            "error-struct-passed-too-many-less-values",
-            "Semantic error at 9:37: Number of struct fields not matching declaration: You've passed too less/many field values. Pass either none or all of them"
-        },
-        {
-            "error-struct-types-not-matching",
-            "Semantic error at 12:5: Wrong data type for operator: Cannot apply '=' operator on types struct(AnotherStruct) and struct(TestStruct)"
-        },
-        {
-            "error-return-without-value-result",
-            "Semantic error at 4:9: Return without initialization of result variable: Return without value, but result variable is not initialized yet"
-        },
-        {
-            "error-foreach-wrong-array-type",
-            "Semantic error at 3:13: Wrong data type for operator: Can only apply foreach loop on an array type. You provided bool"
-        },
-        {
-            "error-foreach-wrong-item-type",
-            "Semantic error at 3:13: Wrong data type for operator: Foreach loop item type does not match array type. Expected int[], provided double"
-        },
-        {
-            "error-array-size-attached",
-            "Semantic error at 2:5: Array size invalid: The declaration of an array type must have a size attached"
-        },
-        {
-            "error-foreach-wrong-index-type",
-            "Semantic error at 3:13: Array index not of type int: Index in foreach loop must be of type int. You provided double"
-        },
-        {
-            "error-method-not-existing",
-            "Semantic error at 12:19: Referenced undefined function: Function/Procedure 'getInt()' could not be found"
-        },
-        // Successful tests
-        {
-            "success-fibonacci",
-            ""
-        },
-        {
-            "success-function-overloading",
-            ""
-        }
-};
+typedef std::vector<AnalyzerTestCase> AnalyzerTestSuite;
 
-class AnalyzerTests : public ::testing::TestWithParam<AnalyzerParams> {};
+std::vector<AnalyzerTestCase> detectAnalyzerTestCases(const std::string& suitePath) {
+    std::vector<std::string> subDirs = TestUtil::getSubdirs(suitePath);
 
-TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
-    AnalyzerParams param = GetParam();
+    std::vector<AnalyzerTestCase> testCases;
+    testCases.reserve(subDirs.size());
+    for (std::string& dirName : subDirs) {
+        // Save test suite
+        testCases.push_back({dirName, suitePath + "/" + dirName});
+    }
 
-    std::string sourceFile = "./test-files/analyzer/" + param.testCaseName + "/source.spice";
+    return testCases;
+}
+
+std::vector<AnalyzerTestSuite> detectAnalyzerTestSuites(const std::string& testFilesPath) {
+    std::vector<std::string> subDirs = TestUtil::getSubdirs(testFilesPath);
+
+    std::vector<AnalyzerTestSuite> testSuites;
+    testSuites.reserve(subDirs.size());
+    for (std::string& dirName : subDirs)
+        testSuites.push_back(detectAnalyzerTestCases(testFilesPath + "/" + dirName));
+
+    return testSuites;
+}
+
+void executeTest(const AnalyzerTestCase& testCase) {
+    // Check if disabled
+    std::string disabledFile = testCase.testPath + "/disabled";
+    if (TestUtil::fileExists(disabledFile)) GTEST_SKIP();
 
     // Read source file
+    std::string sourceFile = testCase.testPath + "/source.spice";
     std::ifstream sourceStream;
     sourceStream.open(sourceFile);
     if (!sourceStream) throw std::runtime_error("Test file '" + sourceFile + "' does not exist");
@@ -263,29 +84,251 @@ TEST_P(AnalyzerTests, TestAnalyzerWithValidAndInvalidTestFiles) {
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected
-        if (param.errorMessage.length() > 0)
-            FAIL() << "Expected error message '" << param.errorMessage << "', but got no error";
+        if (TestUtil::fileExists(testCase.testPath + "/exception.out"))
+            FAIL() << "Expected error, but got no error";
+
+        // Check if the AST matches the expected output
+        /*std::string astFileName = testCase.testPath + "/syntax-tree.ast";
+        if (fileExists(astFileName)) {
+            std::string expectedSymbolTable = getFileContent(astFileName);
+            EXPECT_EQ(expectedSymbolTable, tree->toStringTree(true));
+        }*/
 
         // Check if the symbol table matches the expected output
-        std::ifstream symbolTableStream;
-        symbolTableStream.open("./test-files/analyzer/" + param.testCaseName + "/symbol-table.txt");
-        std::ostringstream stringStream;
-        stringStream << symbolTableStream.rdbuf();
-        std::string expectedSymbolTable = stringStream.str();
-        EXPECT_EQ(expectedSymbolTable, symbolTable->toString());
+        std::string symbolTableFileName = testCase.testPath + "/symbol-table.txt";
+        if (TestUtil::fileExists(symbolTableFileName)) {
+            std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
+            EXPECT_EQ(expectedSymbolTable, symbolTable->toString());
+        }
 
         SUCCEED();
     } catch (LexerParserError& error) {
         FAIL() << "Hit lexer/parser error: " << error.what();
     } catch (SemanticError& error) {
-        if (param.errorMessage.length() == 0)
+        // Check if the exception message matches the expected output
+        std::string exceptionFile = testCase.testPath + "/exception.out";
+        if (TestUtil::fileExists(exceptionFile)) {
+            std::string expectedException = TestUtil::getFileContent(exceptionFile);
+            EXPECT_EQ(std::string(error.what()), expectedException);
+        } else {
             FAIL() << "Expected no error, but got '" << error.what() << "'";
-        EXPECT_EQ(std::string(error.what()), param.errorMessage);
+        }
     }
 }
 
+// Test classes
+
+class AnalyzerArbitraryTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerArrayTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerBuiltinTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerForLoopTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerForEachLoopTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerFunctionCallTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerFunctionTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerIfStatementTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerImportTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerLoopCtlInstTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerMethodTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerOperatorTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerProcedureTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerStructTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerTernaryTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerTypeSystemTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerVariableTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerWhileLoopTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+
+// Test macros
+
+TEST_P(AnalyzerArbitraryTests, ArbitraryTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerArrayTests, ArrayTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerBuiltinTests, BuiltinTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerForLoopTests, ForLoopTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerForEachLoopTests, ForEachLoopTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerFunctionCallTests, FunctionCallTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerFunctionTests, FunctionTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerIfStatementTests, IfStatementTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerImportTests, ImportTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerLoopCtlInstTests, LoopCtlInstTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerMethodTests, MethodTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerOperatorTests, OperatorTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerProcedureTests, ProcedureTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerStructTests, StructTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerTernaryTests, TernaryTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerTypeSystemTests, TypeSystemTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerVariableTests, VariableTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerWhileLoopTests, WhileLoopTests) {
+    executeTest(GetParam());
+}
+
+// Name resolver
+
+struct NameResolver {
+    template <class AnalyzerTestCase>
+    std::string operator()(const ::testing::TestParamInfo<AnalyzerTestCase>& info) const {
+        auto testCase = static_cast<AnalyzerTestCase>(info.param);
+        return TestUtil::toCamelCase(testCase.testName);
+    }
+};
+
+// Instantiations
+
+const std::vector<AnalyzerTestSuite> testSuites = detectAnalyzerTestSuites("./test-files/analyzer");
+
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerTests,
-        AnalyzerTests,
-        ::testing::ValuesIn(ANALYZER_TEST_PARAMETERS)
-);
+        AnalyzerArbitraryTests,
+        AnalyzerArbitraryTests,
+        ::testing::ValuesIn(testSuites[0]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerArrayTests,
+        AnalyzerArrayTests,
+        ::testing::ValuesIn(testSuites[1]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerBuiltinTests,
+        AnalyzerBuiltinTests,
+        ::testing::ValuesIn(testSuites[2]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerForLoopTests,
+        AnalyzerForLoopTests,
+        ::testing::ValuesIn(testSuites[3]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerForEachLoopTests,
+        AnalyzerForEachLoopTests,
+        ::testing::ValuesIn(testSuites[4]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerFunctionCallTests,
+        AnalyzerFunctionCallTests,
+        ::testing::ValuesIn(testSuites[5]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerFunctionTests,
+        AnalyzerFunctionTests,
+        ::testing::ValuesIn(testSuites[6]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerIfStatementTests,
+        AnalyzerIfStatementTests,
+        ::testing::ValuesIn(testSuites[7]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerImportTests,
+        AnalyzerImportTests,
+        ::testing::ValuesIn(testSuites[8]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerLoopCtlInstTests,
+        AnalyzerLoopCtlInstTests,
+        ::testing::ValuesIn(testSuites[9]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerMethodTests,
+        AnalyzerMethodTests,
+        ::testing::ValuesIn(testSuites[10]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerOperatorTests,
+        AnalyzerOperatorTests,
+        ::testing::ValuesIn(testSuites[11]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerProcedureTests,
+        AnalyzerProcedureTests,
+        ::testing::ValuesIn(testSuites[12]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerStructTests,
+        AnalyzerStructTests,
+        ::testing::ValuesIn(testSuites[13]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerTernaryTests,
+        AnalyzerTernaryTests,
+        ::testing::ValuesIn(testSuites[14]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerTypeSystemTests,
+        AnalyzerTypeSystemTests,
+        ::testing::ValuesIn(testSuites[15]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerVariableTests,
+        AnalyzerVariableTests,
+        ::testing::ValuesIn(testSuites[16]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerWhileLoopTests,
+        AnalyzerWhileLoopTests,
+        ::testing::ValuesIn(testSuites[17]),
+        NameResolver());

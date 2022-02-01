@@ -1,30 +1,3 @@
-/*type StringStruct struct {
-    int len
-    char* value
-    int maxLen
-    int growthFactor
-}
-
-p StringStruct.appendChar(char c) {
-    this.value[1] = c;
-}
-
-f<int> main() {
-    StringStruct a = StringStruct {};
-    a.appendChar('A');
-}*/
-
-/*import "std/runtime/string_rt" as str;
-
-f<int> main() {
-    str.StringStruct a = str.StringStruct {};
-    a.constructor();
-    printf("String: %s\n", a.value);
-    a.appendChar('A');
-    printf("String: %s\n", a.value);
-    a.destructor();
-}*/
-
 f<int> makePi() {
     // Initialize variables
     int q = 1;
