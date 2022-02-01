@@ -1,0 +1,1 @@
+Semantic error at 3:2: Multiple declarations of the same variable: The global variable 'GLOBAL_VAR' was declared more than once

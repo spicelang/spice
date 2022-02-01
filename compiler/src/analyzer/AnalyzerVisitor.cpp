@@ -286,7 +286,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
     // Check if symbol already exists in the symbol table
     if (currentScope->lookup(variableName))
         throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
-                            "The variable '" + variableName + "' was declared more than once");
+                            "The global variable '" + variableName + "' was declared more than once");
 
     // Insert variable name to symbol table
     SymbolType symbolType = visit(ctx->dataType()).as<SymbolType>();
