@@ -55,3 +55,8 @@ jobs:
 
       - name: Run security scan
         run: gosec -exclude=G204 ./...
+
+      - name: Validate Goreleaser config
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          args: check
