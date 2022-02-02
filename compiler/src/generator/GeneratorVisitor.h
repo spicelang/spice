@@ -2,12 +2,17 @@
 
 #pragma once
 
-#include <SpiceBaseVisitor.h>
-#include <exception/IRError.h>
-#include "symbol/SymbolTable.h"
-#include "symbol/ScopePath.h"
-#include <util/ScopeIdUtil.h>
+#include <utility>
+#include <regex>
+
 #include <analyzer/AnalyzerVisitor.h>
+#include <generator/OpRuleConversionsManager.h>
+#include <symbol/SymbolTable.h>
+#include <symbol/ScopePath.h>
+#include <util/ScopeIdUtil.h>
+#include <exception/IRError.h>
+
+#include <SpiceBaseVisitor.h>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -20,14 +25,9 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
-#include <llvm/Transforms/InstCombine/InstCombine.h>
-#include <llvm/Transforms/Scalar.h>
-#include <llvm/Transforms/Scalar/GVN.h>
-#include <llvm/Transforms/Utils.h>
-
-#include <utility>
-#include <regex>
-#include "OpRuleConversionsManager.h"
+#include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Analysis/AliasAnalysis.h>
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
@@ -97,6 +97,7 @@ private:
     std::unique_ptr<OpRuleConversionsManager> conversionsManager;
     std::string mainSourceFile;
     llvm::Triple targetTriple;
+    llvm::TargetMachine* targetMachine;
     std::string objectDir;
     bool debugOutput;
     int optLevel;
@@ -135,4 +136,5 @@ private:
     void initExtStruct(const std::string&, const std::string&);
     bool compareLLVMTypes(llvm::Type*, llvm::Type*);
     llvm::Value* doImplicitCast(llvm::Value*, llvm::Type*);
+    llvm::PassBuilder::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

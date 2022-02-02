@@ -3,7 +3,7 @@
 #pragma once
 
 #include <tuple>
-#include "symbol/SymbolType.h"
+#include <symbol/SymbolType.h>
 
 // Types: double, int, short, long, byte, char, string, bool
 

@@ -15,87 +15,51 @@ void GeneratorVisitor::init() {
     llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmParsers();
     llvm::InitializeAllAsmPrinters();
-}
 
-void GeneratorVisitor::optimize() {
-    if (debugOutput) std::cout << "\nOptimizing on level " + std::to_string(optLevel) << " ..." << std::endl;
-
-    // Declare map with all optimization passes in the required order
-    llvm::Pass* passes[] = {
-            llvm::createCFGSimplificationPass(),
-            llvm::createSROAPass(),
-            llvm::createEarlyCSEPass(),
-            llvm::createPromoteMemoryToRegisterPass(),
-            llvm::createInstructionCombiningPass(true),
-            llvm::createCFGSimplificationPass(),
-            llvm::createSROAPass(),
-            llvm::createEarlyCSEPass(true),
-            llvm::createSpeculativeExecutionIfHasBranchDivergencePass(),
-            llvm::createJumpThreadingPass(),
-            llvm::createCorrelatedValuePropagationPass(),
-            llvm::createCFGSimplificationPass(),
-            llvm::createInstructionCombiningPass(true),
-            llvm::createLibCallsShrinkWrapPass(),
-            llvm::createTailCallEliminationPass(),
-            llvm::createCFGSimplificationPass(),
-            llvm::createReassociatePass(),
-            llvm::createLoopRotatePass(-1),
-            llvm::createGVNPass(),
-            llvm::createLICMPass(),
-            llvm::createLoopUnswitchPass(),
-            llvm::createCFGSimplificationPass(),
-            llvm::createInstructionCombiningPass(true),
-            llvm::createIndVarSimplifyPass(),
-            llvm::createLoopIdiomPass(),
-            llvm::createLoopDeletionPass(),
-            llvm::createCFGSimplificationPass(),
-            llvm::createSimpleLoopUnrollPass(optLevel),
-            llvm::createMergedLoadStoreMotionPass(),
-            llvm::createGVNPass(),
-            llvm::createMemCpyOptPass(),
-            llvm::createSCCPPass(),
-            llvm::createBitTrackingDCEPass(),
-            llvm::createInstructionCombiningPass(true),
-            llvm::createJumpThreadingPass(),
-            llvm::createCorrelatedValuePropagationPass(),
-            llvm::createDeadStoreEliminationPass(),
-            llvm::createLICMPass(),
-            llvm::createAggressiveDCEPass(),
-            llvm::createCFGSimplificationPass(),
-            llvm::createInstructionCombiningPass(true),
-            llvm::createFloat2IntPass()
-    };
-
-    // Register optimization passes
-    std::unique_ptr<llvm::legacy::FunctionPassManager> fpm =
-            std::make_unique<llvm::legacy::FunctionPassManager>(module.get());
-    for (llvm::Pass* pass : passes) fpm->add(pass);
-
-    // Run optimizing passes for all functions
-    fpm->doInitialization();
-    for (llvm::Function* fct : functions) fpm->run(*fct);
-}
-
-void GeneratorVisitor::emit() {
     // Configure output target
     std::string tripletString = targetTriple.getTriple();
     module->setTargetTriple(tripletString);
-
-    if (debugOutput)
-        std::cout << "\nEmitting executable for triplet '" << tripletString << "' to path: " << objectDir << std::endl;
 
     // Search after selected target
     std::string error;
     const llvm::Target* target = llvm::TargetRegistry::lookupTarget(tripletString, error);
     if (!target) throw IRError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error);
 
-    std::string cpu = "generic";
-
     llvm::TargetOptions opt;
     llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
-    llvm::TargetMachine* targetMachine = target->createTargetMachine(tripletString, cpu, "", opt, rm);
+    targetMachine = target->createTargetMachine(tripletString, "generic", "", opt, rm);
 
     module->setDataLayout(targetMachine->createDataLayout());
+}
+
+void GeneratorVisitor::optimize() {
+    if (debugOutput) std::cout << "\nOptimizing on level " + std::to_string(optLevel) << " ..." << std::endl;
+
+    llvm::LoopAnalysisManager loopAnalysisMgr;
+    llvm::FunctionAnalysisManager functionAnalysisMgr;
+    llvm::CGSCCAnalysisManager cgsccAnalysisMgr;
+    llvm::ModuleAnalysisManager moduleAnalysisMgr;
+    llvm::PassBuilder passBuilder(targetMachine);
+
+    functionAnalysisMgr.registerPass([&] {
+        return passBuilder.buildDefaultAAPipeline();
+    });
+
+    passBuilder.registerModuleAnalyses(moduleAnalysisMgr);
+    passBuilder.registerCGSCCAnalyses(cgsccAnalysisMgr);
+    passBuilder.registerFunctionAnalyses(functionAnalysisMgr);
+    passBuilder.registerLoopAnalyses(loopAnalysisMgr);
+    passBuilder.crossRegisterProxies(loopAnalysisMgr, functionAnalysisMgr, cgsccAnalysisMgr, moduleAnalysisMgr);
+
+    // Run passes
+    llvm::PassBuilder::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
+    llvm::ModulePassManager modulePassMgr = passBuilder.buildPerModuleDefaultPipeline(llvmOptLevel);
+    modulePassMgr.run(*module, moduleAnalysisMgr);
+}
+
+void GeneratorVisitor::emit() {
+    if (debugOutput)
+        std::cout << "\nEmitting executable for triplet '" << targetTriple.getTriple() << "' to path: " << objectDir << std::endl;
 
     // Open file output stream
     std::error_code errorCode;
@@ -2053,4 +2017,14 @@ llvm::Value* GeneratorVisitor::doImplicitCast(llvm::Value* srcValue, llvm::Type*
         srcValue = newActualArg;
     }
     return srcValue;
+}
+
+llvm::PassBuilder::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {
+    // Get LLVM opt level from Spice opt level
+    switch (optLevel) {
+        case 1: return llvm::PassBuilder::OptimizationLevel::O1;
+        case 2: return llvm::PassBuilder::OptimizationLevel::O2;
+        case 3: return llvm::PassBuilder::OptimizationLevel::O3;
+        default: case 0: return llvm::PassBuilder::OptimizationLevel::O0;
+    }
 }
