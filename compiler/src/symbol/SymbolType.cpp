@@ -2,6 +2,8 @@
 
 #include "SymbolType.h"
 
+#include <exception/SemanticError.h>
+
 SymbolType SymbolType::toPointer() {
     // Do not allow pointers of dyn
     if (std::get<0>(typeChain.top()) == TY_DYN)

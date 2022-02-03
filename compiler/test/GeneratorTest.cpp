@@ -1,13 +1,23 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include <gtest/gtest.h>
 #include <iostream>
-#include "antlr4-runtime.h"
 
-#include "SpiceLexer.h"
-#include "SpiceParser.h"
-#include "TestUtil.h"
+#include <gtest/gtest.h>
+
+#include <antlr4-runtime.h>
+
+#include <SpiceLexer.h>
+#include <SpiceParser.h>
+
 #include <analyzer/AnalyzerVisitor.h>
+#include "generator/GeneratorVisitor.h"
+#include "exception/AntlrThrowingErrorListener.h"
+#include "exception/LexerParserError.h"
+#include "exception/SemanticError.h"
+
+#include "TestUtil.h"
+
+const unsigned int IR_FILE_SKIP_LINES = 4;
 
 struct GeneratorTestCase {
     const std::string testName;
@@ -77,7 +87,7 @@ void executeTest(const GeneratorTestCase& testCase) {
                 "",
                 ".",
                 false,
-                3,
+                0,
                 true,
                 false
         );
@@ -88,10 +98,10 @@ void executeTest(const GeneratorTestCase& testCase) {
             FAIL() << "Expected error, but got no error";
 
         // Check if the symbol table matches the expected output
-        std::string symbolTableFileName = testCase.testPath + "/symbol-table.txt";
+        std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
         if (TestUtil::fileExists(symbolTableFileName)) {
             std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
-            EXPECT_EQ(expectedSymbolTable, symbolTable->toString());
+            EXPECT_EQ(expectedSymbolTable, symbolTable->toJSON().dump(2));
         }
 
         // Determine the expected opt level
@@ -99,7 +109,7 @@ void executeTest(const GeneratorTestCase& testCase) {
         std::string irCodeO2FileName = testCase.testPath + "/ir-code-O2.ll";
         std::string irCodeO3FileName = testCase.testPath + "/ir-code-O3.ll";
         std::string expectedOptIR;
-        unsigned int expectedOptLevel = 0;
+        int expectedOptLevel = 0;
         if (TestUtil::fileExists(irCodeO1FileName)) {
             expectedOptLevel = 1;
             expectedOptIR = TestUtil::getFileContent(irCodeO1FileName);
@@ -120,7 +130,7 @@ void executeTest(const GeneratorTestCase& testCase) {
                 "",
                 "./source.spice.o",
                 false,
-                3,
+                expectedOptLevel,
                 true
         );
         generator.init(); // Initialize code generation
@@ -130,13 +140,25 @@ void executeTest(const GeneratorTestCase& testCase) {
         std::string irCodeFileName = testCase.testPath + "/ir-code.ll";
         if (TestUtil::fileExists(irCodeFileName)) {
             std::string expectedIR = TestUtil::getFileContent(irCodeFileName);
-            EXPECT_EQ(expectedIR, generator.getIRString());
+            std::string actualIR = generator.getIRString();
+            // Cut of first n lines to have a target independent
+            for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
+                expectedIR.erase(0, expectedIR.find('\n') + 1);
+                actualIR.erase(0, actualIR.find('\n') + 1);
+            }
+            EXPECT_EQ(expectedIR, actualIR);
         }
 
         // Check if the optimized ir code matches the expected output
         if (expectedOptLevel > 0) {
             generator.optimize();
-            EXPECT_EQ(expectedOptIR, generator.getIRString());
+            std::string actualOptimizedIR = generator.getIRString();
+            // Cut of first n lines to have a target independent
+            for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
+                expectedOptIR.erase(0, expectedOptIR.find('\n') + 1);
+                actualOptimizedIR.erase(0, actualOptimizedIR.find('\n') + 1);
+            }
+            EXPECT_EQ(expectedOptIR, actualOptimizedIR);
         }
 
         // Check if the execution output matches the expected output

@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <exception>
 #include <string>
+#include <exception>
+#include <utility>
 
 /**
  * Custom exception for errors, occurring in the semantic analysis phase
@@ -11,7 +12,7 @@
 class LexerParserError : public std::exception {
 public:
     // Constructors
-    explicit LexerParserError(const std::string& message): errorMessage(message) {}
+    explicit LexerParserError(std::string  message): errorMessage(std::move(message)) {}
 
     // Public methods
     const char* what() const noexcept override;

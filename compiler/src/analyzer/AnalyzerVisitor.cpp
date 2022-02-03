@@ -2,6 +2,15 @@
 
 #include "AnalyzerVisitor.h"
 
+#include <CompilerInstance.h>
+#include <analyzer/OpRuleManager.h>
+#include <symbol/SymbolSpecifiers.h>
+#include <util/ModuleRegistry.h>
+#include <util/ScopeIdUtil.h>
+#include <util/FileUtil.h>
+#include "util/CompilerWarning.h"
+#include <exception/SemanticError.h>
+
 antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // --- Pre-traversing actions
     // ...

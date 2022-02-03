@@ -2,14 +2,12 @@
 
 #pragma once
 
-#include <utility>
-#include <algorithm>
+//#include <utility>
+//#include <algorithm>
 #include <string>
 #include <vector>
 #include <stack>
 #include <tuple>
-
-#include "exception/SemanticError.h"
 
 enum SymbolSuperType {
     TY_INVALID,

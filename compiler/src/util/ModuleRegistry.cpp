@@ -1,8 +1,9 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include <algorithm>
-#include "exception/SemanticError.h"
-#include "ModuleRegistry.h"
+
+#include <util/ModuleRegistry.h>
+#include <exception/SemanticError.h>
 
 // Instance of the module registry
 ModuleRegistry* ModuleRegistry::instance = nullptr;

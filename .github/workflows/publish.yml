@@ -69,11 +69,11 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-13-0-0-${{ matrix.config.arch }}-clear1
+          key: llvm-13-0-1-${{ matrix.config.arch }}
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-13.0.0 https://github.com/llvm/llvm-project.git llvm
+        run: git clone --depth 1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -90,6 +90,8 @@ jobs:
           mkdir -p ./compiler/lib
           cd ./compiler/lib
           git clone --branch 4.9.3 --depth 1 https://github.com/antlr/antlr4.git
+          mkdir json
+          curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
       
       - name: Configure & compile project
         run: |

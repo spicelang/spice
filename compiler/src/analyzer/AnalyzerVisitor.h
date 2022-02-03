@@ -2,24 +2,14 @@
 
 #pragma once
 
-#include "SpiceBaseVisitor.h"
-#include "SpiceLexer.h"
+#include <SpiceBaseVisitor.h>
 
-#include <CompilerInstance.h>
-#include "symbol/SymbolTable.h"
-#include "symbol/ScopePath.h"
-#include "util/ModuleRegistry.h"
-#include "symbol/SymbolType.h"
-#include "symbol/SymbolSpecifiers.h"
-#include "OpRuleManager.h"
-#include <util/ScopeIdUtil.h>
-#include <util/FileUtil.h>
-#include <exception/SemanticError.h>
+#include <symbol/SymbolTable.h>
+#include <symbol/ScopePath.h>
+#include <symbol/SymbolType.h>
 
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
-
-#include <utility>
 
 const static std::string MAIN_FUNCTION_NAME = "main";
 const static std::string RETURN_VARIABLE_NAME = "result";

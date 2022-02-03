@@ -2,6 +2,11 @@
 
 #include "FileUtil.h"
 
+#include <iostream>
+#include <fstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 /**
  * Checks if a certain file exists on the file system
  *

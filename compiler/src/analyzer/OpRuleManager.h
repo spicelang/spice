@@ -3,7 +3,11 @@
 #pragma once
 
 #include <tuple>
-#include "symbol/SymbolType.h"
+
+#include <Token.h>
+
+#include <symbol/SymbolType.h>
+#include <exception/SemanticError.h>
 
 // Types: double, int, short, long, byte, char, string, bool
 

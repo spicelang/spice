@@ -2,6 +2,8 @@
 
 #include "AntlrThrowingErrorListener.h"
 
+#include "LexerParserError.h"
+
 void AntlrThrowingErrorListener::syntaxError(antlr4::Recognizer* recognizer, antlr4::Token* offendingSymbol, size_t line,
                                              size_t charPositionInLine, const std::string& msg, std::exception_ptr e) {
     // Create message fragments

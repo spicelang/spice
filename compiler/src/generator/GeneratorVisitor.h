@@ -2,32 +2,17 @@
 
 #pragma once
 
-#include <SpiceBaseVisitor.h>
-#include <exception/IRError.h>
-#include "symbol/SymbolTable.h"
-#include "symbol/ScopePath.h"
-#include <util/ScopeIdUtil.h>
-#include <analyzer/AnalyzerVisitor.h>
-
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/LegacyPassManager.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Verifier.h>
-#include <llvm/Support/FileSystem.h>
-#include <llvm/Support/Host.h>
-#include <llvm/Support/TargetRegistry.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Target/TargetMachine.h>
-#include <llvm/Target/TargetOptions.h>
-#include <llvm/Transforms/InstCombine/InstCombine.h>
-#include <llvm/Transforms/Scalar.h>
-#include <llvm/Transforms/Scalar/GVN.h>
-#include <llvm/Transforms/Utils.h>
-
-#include <utility>
 #include <regex>
-#include "OpRuleConversionsManager.h"
+
+#include <generator/OpRuleConversionsManager.h>
+#include <symbol/SymbolTable.h>
+#include <symbol/ScopePath.h>
+
+#include <SpiceBaseVisitor.h>
+
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Support/Host.h>
+#include <llvm/Passes/PassBuilder.h>
 
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
@@ -97,6 +82,7 @@ private:
     std::unique_ptr<OpRuleConversionsManager> conversionsManager;
     std::string mainSourceFile;
     llvm::Triple targetTriple;
+    llvm::TargetMachine* targetMachine{};
     std::string objectDir;
     bool debugOutput;
     int optLevel;
@@ -119,8 +105,8 @@ private:
     bool currentVarSigned = false;
     std::string currentVarName;
     std::string lhsVarName;
-    llvm::Type* structAccessType;
-    llvm::Value* structAccessAddress;
+    llvm::Type* structAccessType = nullptr;
+    llvm::Value* structAccessAddress = nullptr;
     std::vector<llvm::Value*> structAccessIndices;
 
     // Private methods
@@ -135,4 +121,5 @@ private:
     void initExtStruct(const std::string&, const std::string&);
     bool compareLLVMTypes(llvm::Type*, llvm::Type*);
     llvm::Value* doImplicitCast(llvm::Value*, llvm::Type*);
+    llvm::PassBuilder::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

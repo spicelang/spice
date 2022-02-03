@@ -1,5 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
+target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [20 x i8] c"Size of double: %d\0A\00", align 1
 @1 = private unnamed_addr constant [17 x i8] c"Size of int: %d\0A\00", align 1
@@ -65,8 +67,8 @@ entry:
   store i32 16, i32* %5, align 4
   %36 = load i32, i32* %5, align 4
   %37 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @2, i32 0, i32 0), i32 %36)
-  store i64 9223372036854775807, i64* %6, align 4
-  %38 = load i64, i64* %6, align 4
+  store i64 9223372036854775807, i64* %6, align 8
+  %38 = load i64, i64* %6, align 8
   store i32 64, i32* %7, align 4
   %39 = load i32, i32* %7, align 4
   %40 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @3, i32 0, i32 0), i32 %39)

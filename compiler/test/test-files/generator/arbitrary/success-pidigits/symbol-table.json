@@ -1,0 +1,163 @@
+{
+  "children": [
+    {
+      "children": [],
+      "symbols": [
+        {
+          "isGlobal": false,
+          "name": "result",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [],
+              "symbols": []
+            },
+            {
+              "children": [],
+              "symbols": []
+            }
+          ],
+          "symbols": [
+            {
+              "isGlobal": false,
+              "name": "i",
+              "orderIndex": 0,
+              "specifiers": {
+                "const": false,
+                "signed": true
+              },
+              "state": "initialized",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "symbols": [
+        {
+          "isGlobal": false,
+          "name": "k",
+          "orderIndex": 4,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "m",
+          "orderIndex": 5,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "outputCounter",
+          "orderIndex": 7,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "q",
+          "orderIndex": 1,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "r",
+          "orderIndex": 2,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "result",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "t",
+          "orderIndex": 3,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "x",
+          "orderIndex": 6,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "symbols": [
+    {
+      "isGlobal": true,
+      "name": "main()",
+      "orderIndex": 1,
+      "specifiers": {
+        "const": true,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    },
+    {
+      "isGlobal": true,
+      "name": "makePi()",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": true,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    }
+  ]
+}

@@ -2,6 +2,14 @@
 
 #include "CompilerInstance.h"
 
+#include <SpiceLexer.h>
+#include <SpiceParser.h>
+
+#include <analyzer/AnalyzerVisitor.h>
+#include <generator/GeneratorVisitor.h>
+#include <util/FileUtil.h>
+#include <exception/AntlrThrowingErrorListener.h>
+
 /**
  * Compiles a single source file to an object
  *
@@ -65,7 +73,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     if (debugOutput) {
         // Print symbol table
         std::cout << "\nSymbol table of file " << sourceFile << ":\n" << std::endl;
-        std::cout << symbolTable->toString() << std::endl;
+        std::cout << symbolTable->toJSON().dump(2) << std::endl;
     }
 
     // Get file name from file path

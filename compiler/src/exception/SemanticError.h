@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <exception>
 #include <string>
-#include <TokenSource.h>
+#include <exception>
+
 #include <Token.h>
 
 enum SemanticErrorType {

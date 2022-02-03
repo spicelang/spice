@@ -3,13 +3,16 @@
 #pragma once
 
 #include <string>
-#include <stdexcept>
 #include <utility>
 
-#include "symbol/SymbolType.h"
-#include "exception/SemanticError.h"
-#include "SymbolSpecifiers.h"
+#include "Token.h"
+
+#include <symbol/SymbolType.h>
+#include <symbol/SymbolSpecifiers.h>
+
 #include <llvm/IR/Value.h>
+
+#include "../../lib/json/json.hpp"
 
 enum SymbolState {
     DECLARED,
@@ -43,7 +46,7 @@ public:
     void updateLLVMType(llvm::Type*);
     void updateAddress(llvm::Value*);
     void setUsed();
-    std::string toString();
+    nlohmann::ordered_json toJSON();
 
 private:
     // Members

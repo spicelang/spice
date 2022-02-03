@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <string>
+
 #include <Token.h>
 
 enum IRErrorType {

@@ -2,6 +2,10 @@
 
 #include "CompilerInstance.h"
 
+#include <exception/LexerParserError.h>
+#include <exception/SemanticError.h>
+#include <exception/IRError.h>
+
 /**
  * Entry point to the Spice compiler
  *

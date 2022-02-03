@@ -1,18 +1,19 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
+target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-w64-windows-gnu"
 
-declare i32 @printf(i8*, ...)
-
-; Function Attrs: nounwind
-define i32 @"makePi()"() #0 {
+; Function Attrs: nofree norecurse nosync nounwind readnone
+define i32 @"makePi()"() local_unnamed_addr #0 {
 entry:
   ret i32 3
 }
 
-define i32 @main() {
+; Function Attrs: mustprogress nofree norecurse nosync nounwind readnone willreturn
+define i32 @main() local_unnamed_addr #1 {
 entry:
-  %0 = tail call i32 @"makePi()"()
   ret i32 0
 }
 
-attributes #0 = { nounwind }
+attributes #0 = { nofree norecurse nosync nounwind readnone }
+attributes #1 = { mustprogress nofree norecurse nosync nounwind readnone willreturn }

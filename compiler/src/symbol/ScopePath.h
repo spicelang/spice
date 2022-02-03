@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 #include <tuple>
-#include "SymbolTable.h"
+
+#include <symbol/SymbolTable.h>
 
 class ScopePath {
 public:

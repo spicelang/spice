@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "string"
-#include <TokenSource.h>
+#include <string>
+
 #include <Token.h>
 
 enum CompilerWarningType {

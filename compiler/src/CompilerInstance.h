@@ -4,14 +4,7 @@
 
 #include <string>
 
-#include <SpiceLexer.h>
-#include <SpiceParser.h>
-
-#include <util/FileUtil.h>
 #include <symbol/SymbolTable.h>
-#include <analyzer/AnalyzerVisitor.h>
-#include <generator/GeneratorVisitor.h>
-#include <exception/AntlrThrowingErrorListener.h>
 
 /**
  * Represents the compilation process of a single source file to a LLVM module / object file

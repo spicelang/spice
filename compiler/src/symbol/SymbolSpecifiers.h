@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "SymbolType.h"
+#include <symbol/SymbolType.h>
 
 // Bit indices from right to left
 const unsigned short BIT_INDEX_SIGNED = 0;
