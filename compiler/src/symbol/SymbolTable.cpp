@@ -366,19 +366,36 @@ void SymbolTable::printCompilerWarnings() {
 /**
  * Stringify a symbol table to a human-readable form. This is used to realize dumps of symbol tables
  *
+ * Example:
+ * {
+ *   "symbols": [
+ *     ... (SymbolTableEntry)
+ *   ],
+ *   "children": [
+ *     ... (SymbolTable)
+ *   ]
+ * }
+ *
  * @return Symbol table if form of a string
  */
-std::string SymbolTable::toString() {
-    std::string symbolsString, childrenString;
-    // Build symbols string
+nlohmann::ordered_json SymbolTable::toJSON() {
+    // Collect all symbols
+    std::vector<nlohmann::json> jsonSymbols;
+    jsonSymbols.reserve(symbols.size());
     for (auto& symbol : symbols)
-        symbolsString.append("(" + symbol.second.toString() + ")\n");
-    // Build children string
+        jsonSymbols.push_back(symbol.second.toJSON());
+
+    // Collect all children
+    std::vector<nlohmann::json> jsonChildren;
+    jsonChildren.reserve(symbols.size());
     for (auto& child : children)
-        childrenString.append(child.first + ": " + child.second.toString() + "\n");
-    if (childrenString.empty())
-        return "SymbolTable(\n" + symbolsString + ")";
-    return "SymbolTable(\n" + symbolsString + ") {\n" + childrenString + "}";
+        jsonChildren.push_back(child.second.toJSON());
+
+    // Generate json
+    nlohmann::json result;
+    result["symbols"] = jsonSymbols;
+    result["children"] = jsonChildren;
+    return result;
 }
 
 /**
@@ -393,6 +410,6 @@ void SymbolTable::setImported() {
  *
  * @return Imported / not imported
  */
-bool SymbolTable::isImported() {
+bool SymbolTable::isImported() const {
     return imported;
 }

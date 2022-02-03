@@ -37,6 +37,17 @@
       "symbols": [
         {
           "isGlobal": false,
+          "name": "base",
+          "orderIndex": 1,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
           "name": "result",
           "orderIndex": 0,
           "specifiers": {
@@ -52,7 +63,7 @@
   "symbols": [
     {
       "isGlobal": true,
-      "name": "fibo(int)",
+      "name": "fib(int)",
       "orderIndex": 0,
       "specifiers": {
         "const": true,

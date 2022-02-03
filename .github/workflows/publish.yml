@@ -90,6 +90,8 @@ jobs:
           mkdir -p ./compiler/lib
           cd ./compiler/lib
           git clone --branch 4.9.3 --depth 1 https://github.com/antlr/antlr4.git
+          mkdir json
+          curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
       
       - name: Configure & compile project
         run: |

@@ -65,7 +65,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     if (debugOutput) {
         // Print symbol table
         std::cout << "\nSymbol table of file " << sourceFile << ":\n" << std::endl;
-        std::cout << symbolTable->toString() << std::endl;
+        std::cout << symbolTable->toJSON().dump(2) << std::endl;
     }
 
     // Get file name from file path

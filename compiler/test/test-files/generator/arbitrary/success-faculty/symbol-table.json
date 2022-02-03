@@ -10,7 +10,7 @@
       "symbols": [
         {
           "isGlobal": false,
-          "name": "n",
+          "name": "input",
           "orderIndex": 0,
           "specifiers": {
             "const": false,
@@ -37,6 +37,28 @@
       "symbols": [
         {
           "isGlobal": false,
+          "name": "faculty",
+          "orderIndex": 2,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "input",
+          "orderIndex": 1,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
           "name": "result",
           "orderIndex": 0,
           "specifiers": {
@@ -52,7 +74,7 @@
   "symbols": [
     {
       "isGlobal": true,
-      "name": "fibo(int)",
+      "name": "faculty(int)",
       "orderIndex": 0,
       "specifiers": {
         "const": true,

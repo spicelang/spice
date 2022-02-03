@@ -90,10 +90,10 @@ void executeTest(const GeneratorTestCase& testCase) {
             FAIL() << "Expected error, but got no error";
 
         // Check if the symbol table matches the expected output
-        std::string symbolTableFileName = testCase.testPath + "/symbol-table.txt";
+        std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
         if (TestUtil::fileExists(symbolTableFileName)) {
             std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
-            EXPECT_EQ(expectedSymbolTable, symbolTable->toString());
+            EXPECT_EQ(expectedSymbolTable, symbolTable->toJSON().dump(2));
         }
 
         // Determine the expected opt level

@@ -7,13 +7,18 @@
 #include <map>
 #include <vector>
 #include <queue>
-#include "symbol/SymbolType.h"
-#include "util/FunctionSignature.h"
-#include "util/CompilerWarning.h"
+
+#include "SpiceParser.h"
+
+#include <symbol/SymbolTableEntry.h>
+#include <symbol/SymbolType.h>
+#include <util/FunctionSignature.h>
+#include <util/CompilerWarning.h>
+
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/DerivedTypes.h>
-#include "SpiceParser.h"
-#include "SymbolTableEntry.h"
+
+#include "../../lib/json/json.hpp"
 
 /**
  * Class for storing information about symbols of the AST. Symbol tables are meant to be arranged in a tree structure,
@@ -63,10 +68,10 @@ public:
 
     void printCompilerWarnings();
 
-    std::string toString();
+    nlohmann::ordered_json toJSON();
 
     void setImported();
-    bool isImported();
+    bool isImported() const;
 
 private:
     // Members

@@ -147,13 +147,28 @@ void SymbolTableEntry::setUsed() {
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.
  *
- * @return Symbol table entry in form of a string
+ * Example:
+ * {
+ *   "name": "testIden",
+ *   "type": "int[]*",
+ *   "orderIndex": 4,
+ *   "state": "initialized",
+ *   "specifiers: [
+ *     "const": true,
+ *     "signed": false
+ *   ],
+ *   "isGlobal": false
+ * }
+ *
+ * @return Symbol table entry as a JSON object
  */
-std::string SymbolTableEntry::toString() {
-    std::string stateStr = state == INITIALIZED ? "initialized" : "declared";
-    std::string constStr = specifiers.isConst() ? "yes" : "no";
-    std::string signedStr = specifiers.isSigned() ? "yes" : "no";
-    std::string globalStr = isGlobal ? "yes" : "no";
-    return "Name: " + name + ", Type: " + type.getName(true) + ", OrderIndex: " + std::to_string(orderIndex) + ", State: " +
-        stateStr + ", Const: " + constStr + ", Signed: " + signedStr + ", IsGlobal: " + globalStr;
+nlohmann::ordered_json SymbolTableEntry::toJSON() {
+    nlohmann::json result;
+    result["name"] = name;
+    result["type"] = type.getName(true);
+    result["orderIndex"] = orderIndex;
+    result["state"] = state == INITIALIZED ? "initialized" : "declared";
+    result["specifiers"] = { { "const", specifiers.isConst() }, { "signed", specifiers.isSigned() } };
+    result["isGlobal"] = isGlobal;
+    return result;
 }
