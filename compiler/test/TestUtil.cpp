@@ -2,6 +2,11 @@
 
 #include "TestUtil.h"
 
+#include <fstream>
+#include <dirent.h>
+#include <sstream>
+#include <memory>
+
 bool TestUtil::fileExists(const std::string& filePath) {
     return std::ifstream(filePath.c_str()).good();
 }

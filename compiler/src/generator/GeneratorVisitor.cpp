@@ -2,6 +2,25 @@
 
 #include "GeneratorVisitor.h"
 
+#include <util/FileUtil.h>
+#include <util/ScopeIdUtil.h>
+#include <exception/IRError.h>
+
+#include <analyzer/AnalyzerVisitor.h>
+#include <exception/SemanticError.h>
+
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetOptions.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/Analysis/AliasAnalysis.h>
+
 void GeneratorVisitor::init() {
     // Create LLVM base components
     context = std::make_unique<llvm::LLVMContext>();
@@ -66,12 +85,12 @@ void GeneratorVisitor::emit() {
     llvm::raw_fd_ostream dest(objectDir, errorCode, llvm::sys::fs::OF_None);
     if (errorCode) throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + objectDir + "' could not be opened");
 
-    llvm::legacy::PassManager pass;
-    if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, llvm::CGFT_ObjectFile))
+    llvm::legacy::PassManager passManager;
+    if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CGFT_ObjectFile))
         throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type");
 
     // Emit object file
-    pass.run(*module);
+    passManager.run(*module);
     dest.flush();
 }
 

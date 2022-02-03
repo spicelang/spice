@@ -2,6 +2,9 @@
 
 #include "OpRuleConversionsManager.h"
 
+#include <symbol/SymbolType.h>
+#include <exception/IRError.h>
+
 llvm::Value* OpRuleConversionsManager::getPlusEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();

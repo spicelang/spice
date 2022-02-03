@@ -10,6 +10,10 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
+#include "exception/AntlrThrowingErrorListener.h"
+#include "exception/LexerParserError.h"
+#include "exception/SemanticError.h"
+
 #include "TestUtil.h"
 
 struct AnalyzerTestCase {

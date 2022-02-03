@@ -2,21 +2,11 @@
 
 #pragma once
 
-#include <utility>
-
 #include <SpiceBaseVisitor.h>
-#include <SpiceLexer.h>
 
-#include <CompilerInstance.h>
-#include <analyzer/OpRuleManager.h>
 #include <symbol/SymbolTable.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
-#include <symbol/SymbolSpecifiers.h>
-#include <util/ModuleRegistry.h>
-#include <util/ScopeIdUtil.h>
-#include <util/FileUtil.h>
-#include <exception/SemanticError.h>
 
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>

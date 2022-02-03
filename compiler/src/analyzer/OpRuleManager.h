@@ -4,7 +4,10 @@
 
 #include <tuple>
 
+#include <Token.h>
+
 #include <symbol/SymbolType.h>
+#include <exception/SemanticError.h>
 
 // Types: double, int, short, long, byte, char, string, bool
 

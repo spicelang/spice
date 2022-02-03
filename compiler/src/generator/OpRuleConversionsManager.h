@@ -2,9 +2,6 @@
 
 #pragma once
 
-#include <symbol/SymbolType.h>
-#include <exception/IRError.h>
-
 #include <llvm/IR/Value.h>
 #include <llvm/IR/IRBuilder.h>
 

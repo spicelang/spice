@@ -2,6 +2,14 @@
 
 #include "CompilerInstance.h"
 
+#include <SpiceLexer.h>
+#include <SpiceParser.h>
+
+#include <analyzer/AnalyzerVisitor.h>
+#include <generator/GeneratorVisitor.h>
+#include <util/FileUtil.h>
+#include <exception/AntlrThrowingErrorListener.h>
+
 /**
  * Compiles a single source file to an object
  *

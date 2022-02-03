@@ -3,20 +3,15 @@
 #pragma once
 
 #include <string>
-#include <utility>
 #include <map>
 #include <vector>
 #include <queue>
 
-#include <SpiceParser.h>
-
 #include <symbol/SymbolTableEntry.h>
 #include <symbol/SymbolType.h>
 #include <util/FunctionSignature.h>
-#include <util/CompilerWarning.h>
 
 #include <llvm/IR/BasicBlock.h>
-#include <llvm/IR/DerivedTypes.h>
 
 #include "../../lib/json/json.hpp"
 

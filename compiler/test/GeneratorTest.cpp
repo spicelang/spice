@@ -10,6 +10,11 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
+#include "generator/GeneratorVisitor.h"
+#include "exception/AntlrThrowingErrorListener.h"
+#include "exception/LexerParserError.h"
+#include "exception/SemanticError.h"
+
 #include "TestUtil.h"
 
 const unsigned int IR_FILE_SKIP_LINES = 4;

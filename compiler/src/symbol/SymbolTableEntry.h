@@ -3,12 +3,12 @@
 #pragma once
 
 #include <string>
-#include <stdexcept>
 #include <utility>
+
+#include "Token.h"
 
 #include <symbol/SymbolType.h>
 #include <symbol/SymbolSpecifiers.h>
-#include <exception/SemanticError.h>
 
 #include <llvm/IR/Value.h>
 

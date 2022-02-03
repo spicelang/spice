@@ -1,7 +1,9 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "symbol/SymbolTable.h"
-#include "analyzer/AnalyzerVisitor.h" // Must remain here due to circular import
+
+#include <analyzer/AnalyzerVisitor.h>
+#include <util/CompilerWarning.h>
 
 /**
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
