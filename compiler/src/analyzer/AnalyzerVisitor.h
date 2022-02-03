@@ -4,8 +4,8 @@
 
 #include <utility>
 
-#include "SpiceBaseVisitor.h"
-#include "SpiceLexer.h"
+#include <SpiceBaseVisitor.h>
+#include <SpiceLexer.h>
 
 #include <CompilerInstance.h>
 #include <analyzer/OpRuleManager.h>
@@ -20,7 +20,6 @@
 
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
-
 
 const static std::string MAIN_FUNCTION_NAME = "main";
 const static std::string RETURN_VARIABLE_NAME = "result";

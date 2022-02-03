@@ -1,13 +1,16 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include <gtest/gtest.h>
 #include <iostream>
-#include "antlr4-runtime.h"
 
-#include "SpiceLexer.h"
-#include "SpiceParser.h"
-#include "TestUtil.h"
+#include <gtest/gtest.h>
+
+#include <antlr4-runtime.h>
+
+#include <SpiceLexer.h>
+#include <SpiceParser.h>
+
 #include <analyzer/AnalyzerVisitor.h>
+#include "TestUtil.h"
 
 const unsigned int IR_FILE_SKIP_LINES = 4;
 

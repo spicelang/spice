@@ -9,7 +9,7 @@
 #include <stack>
 #include <tuple>
 
-#include "exception/SemanticError.h"
+#include <exception/SemanticError.h>
 
 enum SymbolSuperType {
     TY_INVALID,

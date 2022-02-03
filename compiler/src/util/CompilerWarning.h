@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "string"
-#include <TokenSource.h>
+#include <string>
+
 #include <Token.h>
+#include <TokenSource.h>
 
 enum CompilerWarningType {
     UNUSED_FUNCTION,

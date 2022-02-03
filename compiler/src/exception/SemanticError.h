@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <exception>
 #include <string>
-#include <TokenSource.h>
+#include <exception>
+
 #include <Token.h>
+#include <TokenSource.h>
 
 enum SemanticErrorType {
     REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,

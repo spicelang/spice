@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <exception>
 #include <string>
+#include <exception>
 
 /**
  * Custom exception for errors, occurring in the semantic analysis phase

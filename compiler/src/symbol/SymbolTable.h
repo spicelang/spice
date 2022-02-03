@@ -8,7 +8,7 @@
 #include <vector>
 #include <queue>
 
-#include "SpiceParser.h"
+#include <SpiceParser.h>
 
 #include <symbol/SymbolTableEntry.h>
 #include <symbol/SymbolType.h>
