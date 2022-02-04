@@ -20,6 +20,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Setup Ninja
+        run: sudo apt-get install ninja-build
+
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v2
@@ -34,7 +37,7 @@ jobs:
           git clone --depth  1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs
