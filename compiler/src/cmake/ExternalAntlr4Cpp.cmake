@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 
+cmake_policy(SET CMP0114 NEW)
+
 include(ExternalProject)
 
 set(ANTLR4_ROOT ${CMAKE_CURRENT_BINARY_DIR}/antlr4_runtime/src/antlr4_runtime)

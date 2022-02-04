@@ -31,8 +31,10 @@ int main(int argc, char** argv) { // Call ./spicec filePath targetArch targetVen
     // Add relative prefix to filename
     if (mainSourceFile.find("/\\") != std::string::npos) mainSourceFile = "./" + mainSourceFile;
 
-    /* Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
-     * function again. */
+    /*
+     * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
+     * function again.
+     */
     try {
         CompilerInstance::CompileSourceFile(mainSourceFile, targetArch, targetVendor, targetOs, objectDir, debugOutput,
                                             optLevel, true, false);
