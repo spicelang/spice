@@ -51,7 +51,7 @@ jobs:
         run: |
           mkdir ./compiler/bin
           cd ./compiler/bin
-          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Release -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" -Wattributes ..
           cmake --build . --target Spice_test
 
       - name: Run Test target

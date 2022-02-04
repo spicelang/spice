@@ -14,19 +14,6 @@ updates:
     assignees:
       - spicelang/compiler-team
 
-  # VS Code integration
-  - package-ecosystem: npm
-    directory: /integration/vscode
-    schedule:
-      interval: daily
-      time: "04:00"
-    open-pull-requests-limit: 20
-    target-branch: develop
-    reviewers:
-    - spicelang/compiler-team
-    assignees:
-    - spicelang/compiler-team
-
   # Dockerfile
   - package-ecosystem: docker
     directory: /

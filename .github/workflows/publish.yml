@@ -96,7 +96,7 @@ jobs:
       - name: Configure & compile project
         run: |
           mkdir bin
-          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" bash -c "sudo mkdir -p /usr/share/man/man1 && sudo apt-get update -y && sudo apt-get install --ignore-missing --no-install-recommends --yes libc6-i386 openjdk-11-jre uuid-dev && cd ./bin && cmake -GNinja ../compiler && cmake --build ."
+          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" bash -c "sudo mkdir -p /usr/share/man/man1 && sudo apt-get update -y && sudo apt-get install --ignore-missing --no-install-recommends --yes libc6-i386 openjdk-11-jre uuid-dev && cd ./bin && cmake -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler && cmake --build ."
 
       - name: Process build output - Linux
         if: ${{ startsWith(matrix.config.arch, 'linux') }}
