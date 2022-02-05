@@ -41,10 +41,10 @@ public:
     unsigned int getOrderIndex() const;
     bool isLocal() const;
     bool isUsed() const;
-    void updateState(SymbolState);
-    void updateType(SymbolType, bool);
-    void updateLLVMType(llvm::Type*);
-    void updateAddress(llvm::Value*);
+    void updateState(SymbolState newState);
+    void updateType(SymbolType newType, bool force);
+    void updateLLVMType(llvm::Type* newType);
+    void updateAddress(llvm::Value* newAddress);
     void setUsed();
     nlohmann::ordered_json toJSON();
 

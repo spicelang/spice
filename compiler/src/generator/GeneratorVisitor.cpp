@@ -918,16 +918,16 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         structAccessIndices.clear(); // Clear struct access indices
         currentThisValue = nullptr; // Reset this value
         llvm::Value* lhsPtr = visit(ctx->prefixUnaryExpr()).as<llvm::Value*>();
-
-        // Get symbol table entry
         lhsVarName = currentVarName;
-        SymbolTableEntry* variableEntry = currentScope->lookup(lhsVarName);
-        assert(variableEntry != nullptr);
 
         // Take a look at the operator
         if (ctx->assignOp()->ASSIGN()) { // Simple assign
             builder->CreateStore(rhs, lhsPtr);
         } else { // Compound assign
+            // Get symbol table entry
+            SymbolTableEntry* variableEntry = currentScope->lookup(lhsVarName);
+            assert(variableEntry != nullptr);
+
             // Get value of left side
             llvm::Value* lhs;
             if (variableEntry->isLocal()) {
@@ -1368,11 +1368,14 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
             if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
                 tokenCounter++; // Consume LBRACKET
 
+                std::string arrayName = currentVarName; // Save array name
+
                 // Get the index value
                 auto* assignExpr = dynamic_cast<SpiceParser::AssignExprContext*>(ctx->children[tokenCounter]);
                 llvm::Value* indexValue = visit(assignExpr).as<llvm::Value*>();
                 indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
                 tokenCounter++; // Consume assignExpr
+                currentVarName = arrayName; // Restore array name
 
                 if (lhs == nullptr) lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
 

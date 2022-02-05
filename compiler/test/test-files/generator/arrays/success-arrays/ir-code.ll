@@ -45,25 +45,27 @@ entry:
   store i32 2, i32* %5, align 4
   %20 = load i32, i32* %5, align 4
   %21 = getelementptr inbounds [5 x i32], [5 x i32]* %intArray, i32 0, i32 %20
-  store i32 %18, i32* %21, align 4
+  %22 = load i32, i32* %21, align 4
+  %23 = mul i32 %22, %18
+  store i32 %23, i32* %21, align 4
   store i32 3, i32* %6, align 4
-  %22 = load i32, i32* %6, align 4
-  %23 = load [5 x i32], [5 x i32]* %intArray, align 4
+  %24 = load i32, i32* %6, align 4
+  %25 = load [5 x i32], [5 x i32]* %intArray, align 4
   store i32 0, i32* %7, align 4
-  %24 = load i32, i32* %7, align 4
-  %25 = getelementptr inbounds [5 x i32], [5 x i32]* %intArray, i32 0, i32 %24
-  store i32 %22, i32* %25, align 4
-  %26 = load [5 x i32], [5 x i32]* %intArray, align 4
+  %26 = load i32, i32* %7, align 4
+  %27 = getelementptr inbounds [5 x i32], [5 x i32]* %intArray, i32 0, i32 %26
+  store i32 %24, i32* %27, align 4
+  %28 = load [5 x i32], [5 x i32]* %intArray, align 4
   store i32 0, i32* %8, align 4
-  %27 = load i32, i32* %8, align 4
-  %28 = getelementptr inbounds [5 x i32], [5 x i32]* %intArray, i32 0, i32 %27
-  %29 = load i32, i32* %28, align 4
-  %30 = load [5 x i32], [5 x i32]* %intArray, align 4
+  %29 = load i32, i32* %8, align 4
+  %30 = getelementptr inbounds [5 x i32], [5 x i32]* %intArray, i32 0, i32 %29
+  %31 = load i32, i32* %30, align 4
+  %32 = load [5 x i32], [5 x i32]* %intArray, align 4
   store i32 2, i32* %9, align 4
-  %31 = load i32, i32* %9, align 4
-  %32 = getelementptr inbounds [5 x i32], [5 x i32]* %intArray, i32 0, i32 %31
-  %33 = load i32, i32* %32, align 4
-  %34 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @0, i32 0, i32 0), i32 %29, i32 %33)
-  %35 = load i32, i32* %result, align 4
-  ret i32 %35
+  %33 = load i32, i32* %9, align 4
+  %34 = getelementptr inbounds [5 x i32], [5 x i32]* %intArray, i32 0, i32 %33
+  %35 = load i32, i32* %34, align 4
+  %36 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @0, i32 0, i32 0), i32 %31, i32 %35)
+  %37 = load i32, i32* %result, align 4
+  ret i32 %37
 }

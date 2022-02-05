@@ -25,7 +25,7 @@ f<int> main() {
     a.destructor();
 }*/
 
-f<int> makePi() {
+/*f<int> makePi() {
     // Initialize variables
     int q = 1;
     int r = 0;
@@ -51,7 +51,7 @@ f<int> makePi() {
             r = (2 * q + r) * x;
             t = t * x;
             k = k + 1;
-            m = ( q * (7 * k + 2) + r * x) / (t * x);
+            m = (q * (7 * k + 2) + r * x) / (t * x);
             x = x + 2;
         }
     }
@@ -60,4 +60,18 @@ f<int> makePi() {
 
 f<int> main() {
     makePi();
+}*/
+
+/*f<int> main() {
+    foreach dyn item : { 1, 2, 3, 4, 5 } {
+        printf("Item %d: %d", idx, item);
+    }
+}*/
+
+f<int> main() {
+    int value0 = 2;
+    int[5] intArray = { value0, 7, 4 };
+    intArray[2] += 11;
+    intArray[0] = 3;
+    printf("Item 0: %d, item 2: %d", intArray[0], intArray[2]);
 }
