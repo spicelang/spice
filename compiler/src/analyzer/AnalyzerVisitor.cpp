@@ -119,10 +119,9 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     FunctionSignature signature = FunctionSignature(functionName, paramTypes);
 
     // Check if the function is already defined
-    if (currentScope->lookup(signature.toString())) {
+    if (currentScope->lookup(signature.toString()))
         throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE,
                             "Function '" + signature.toString() + "' is declared twice");
-    }
     SymbolType symbolType = SymbolType(TY_FUNCTION);
     currentScope->insert(signature.toString(), symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
     currentScope->pushSignature(signature);
@@ -188,10 +187,9 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     FunctionSignature signature = FunctionSignature(procedureName, paramTypes);
 
     // Check if the procedure is already defined
-    if (currentScope->lookup(signature.toString())) {
+    if (currentScope->lookup(signature.toString()))
         throw SemanticError(*ctx->start, PROCEDURE_DECLARED_TWICE,
                             "Procedure '" + signature.toString() + "' is declared twice");
-    }
     SymbolType symbolType = SymbolType(TY_PROCEDURE);
     currentScope->insert(signature.toString(), symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
     currentScope->pushSignature(signature);
@@ -607,7 +605,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
     // Check if return variable is in the symbol table
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
-    if (!returnVariable) throw std::runtime_error("Internal compiler error: Cannot assign return statement to a function");
+    assert(returnVariable != nullptr);
 
     // Check if there is a value attached to the return statement
     SymbolType returnType;

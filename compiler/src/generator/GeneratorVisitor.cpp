@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "GeneratorVisitor.h"
+#include "util/CompilerWarning.h"
 
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
@@ -157,6 +158,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
             llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
             llvm::Value* memAddress = insertAlloca(paramType, paramName);
             SymbolTableEntry* paramSymbol = currentScope->lookup(paramName);
+            assert(paramSymbol != nullptr);
             paramSymbol->updateAddress(memAddress);
             paramSymbol->updateLLVMType(paramType);
             builder->CreateStore(&param, memAddress);
@@ -165,6 +167,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         // Declare result variable and set it to 0 for positive return code
         llvm::Value* memAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
         SymbolTableEntry* returnSymbol = currentScope->lookup(RETURN_VARIABLE_NAME);
+        assert(returnSymbol != nullptr);
         returnSymbol->updateAddress(memAddress);
         returnSymbol->updateLLVMType(returnType);
         builder->CreateStore(builder->getInt32(0), returnSymbol->getAddress());
@@ -188,6 +191,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
 
         // Change scope back
         currentScope = currentScope->getParent();
+        assert(currentScope != nullptr);
     }
 
     return nullptr;
@@ -204,6 +208,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         isMethod = true;
         // Change to the struct scope
         currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
+        assert(currentScope != nullptr);
     }
 
     // Change scope
@@ -223,6 +228,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     if (isMethod) {
         paramNames.push_back(THIS_VARIABLE_NAME);
         SymbolTableEntry* thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
+        assert(thisEntry != nullptr);
         llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
         paramTypes.push_back(paramType);
         symbolTypes.push_back(thisEntry->getType().toPointer());
@@ -290,6 +296,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 
     // Change scope back
     currentScope = currentScope->getParent();
+    assert(currentScope != nullptr);
 
     // Insert function declaration into symbol table
     currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
@@ -311,11 +318,13 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         isMethod = true;
         // Change to the struct scope
         currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
+        assert(currentScope != nullptr);
     }
 
     // Change scope
     FunctionSignature signature = currentScope->popSignature();
     currentScope = currentScope->getChild(signature.toString());
+    assert(currentScope != nullptr);
 
     // Create parameter list
     std::vector<std::string> paramNames;
@@ -325,6 +334,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     if (isMethod) {
         paramNames.push_back(THIS_VARIABLE_NAME);
         SymbolTableEntry* thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
+        assert(thisEntry != nullptr);
         llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
         paramTypes.push_back(paramType);
         symbolTypes.push_back(thisEntry->getType().toPointer());
@@ -360,6 +370,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
         llvm::Value* memAddress = insertAlloca(paramType, paramName);
         SymbolTableEntry* paramSymbol = currentScope->lookup(paramName);
+        assert(paramSymbol != nullptr);
         paramSymbol->updateAddress(memAddress);
         paramSymbol->updateLLVMType(paramType);
         builder->CreateStore(&param, memAddress);
@@ -381,6 +392,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 
     // Change scope back
     currentScope = currentScope->getParent();
+    assert(currentScope != nullptr);
 
     // Insert function declaration into symbol table
     currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
@@ -404,7 +416,9 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
     if (ctx->dataType()) {
         returnType = visit(ctx->dataType()).as<llvm::Type*>();
         SymbolTable* functionTable = currentScope->getChild(signature.toString());
+        assert(functionTable != nullptr);
         SymbolTableEntry* returnEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
+        assert(returnEntry != nullptr);
         symbolTypes.push_back(returnEntry->getType());
     } else {
         returnType = llvm::Type::getVoidTy(*context);
@@ -448,7 +462,9 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
 
     // Create global struct
     llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, structName);
-    currentScope->lookup(structName)->updateLLVMType(structType);
+    SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+    assert(structSymbol != nullptr);
+    structSymbol->updateLLVMType(structType);
 
     return nullptr;
 }
@@ -458,6 +474,7 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
 
     // Get symbol table entry and the symbol specifiers
     SymbolTableEntry* symbolTableEntry = currentScope->lookup(varName);
+    assert(symbolTableEntry != nullptr);
     SymbolSpecifiers specifiers = symbolTableEntry->getSpecifiers();
 
     // Create correctly signed LLVM type from the data type
@@ -493,6 +510,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+    assert(currentScope != nullptr);
     currentScope->setContinueBlock(bCond);
     currentScope->setBreakBlock(bEnd);
 
@@ -525,6 +543,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 
     // Change scope back
     currentScope = currentScope->getParent();
+    assert(currentScope != nullptr);
 
     // Return true as result for the loop
     return (llvm::Value*) builder->getTrue();
@@ -541,6 +560,7 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+    assert(currentScope != nullptr);
     currentScope->setContinueBlock(bInc);
     currentScope->setBreakBlock(bEnd);
 
@@ -548,9 +568,9 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     llvm::Value* indexVariablePtr;
     if (head->declStmt().size() >= 2) {
         std::string indexVariableName = visit(ctx->foreachHead()->declStmt().front()).as<std::string>();
-        assert(!indexVariableName.empty());
-        indexVariablePtr = currentScope->lookup(indexVariableName)->getAddress();
-        assert(indexVariablePtr != nullptr);
+        SymbolTableEntry* indexVariableEntry = currentScope->lookup(indexVariableName);
+        assert(indexVariableEntry != nullptr);
+        indexVariablePtr = indexVariableEntry->getAddress();
 
         // Initialize variable with 0
         if (!head->declStmt().front()->assignExpr())
@@ -560,16 +580,18 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
         // Create local variable for
         llvm::Type* indexVariableType = llvm::Type::getInt32Ty(*context);
         indexVariablePtr = insertAlloca(indexVariableType, indexVariableName);
-        SymbolTableEntry* entry = currentScope->lookup(indexVariableName);
-        assert(entry != nullptr);
-        entry->updateAddress(indexVariablePtr);
-        entry->updateLLVMType(indexVariableType);
-        entry->setUsed();
+        SymbolTableEntry* indexVariableEntry = currentScope->lookup(indexVariableName);
+        assert(indexVariableEntry != nullptr);
+        indexVariableEntry->updateAddress(indexVariablePtr);
+        indexVariableEntry->updateLLVMType(indexVariableType);
+        indexVariableEntry->setUsed();
         // Initialize variable with 0
         builder->CreateStore(builder->getInt32(0), indexVariablePtr);
     }
     std::string itemVariableName = visit(ctx->foreachHead()->declStmt().back()).as<std::string>();
-    llvm::Value* itemVariablePtr = currentScope->lookup(itemVariableName)->getAddress();
+    SymbolTableEntry* itemVariableEntry = currentScope->lookup(itemVariableName);
+    assert(itemVariableEntry != nullptr);
+    llvm::Value* itemVariablePtr = itemVariableEntry->getAddress();
 
     // Do loop variable initialization
     llvm::Value* arrayValuePtr = visit(ctx->foreachHead()->assignExpr()).as<llvm::Value*>();
@@ -616,6 +638,7 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
 
     // Change scope back
     currentScope = currentScope->getParent();
+    assert(currentScope != nullptr);
 
     // Return true as result for the loop
     return (llvm::Value*) builder->getTrue();
@@ -632,6 +655,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+    assert(currentScope != nullptr);
     currentScope->setContinueBlock(bCond);
     currentScope->setBreakBlock(bLoopEnd);
 
@@ -659,6 +683,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
 
     // Change scope back
     currentScope = currentScope->getParent();
+    assert(currentScope != nullptr);
 
     // Return true as result for the loop
     return (llvm::Value*) builder->getTrue();
@@ -675,6 +700,7 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+    assert(currentScope != nullptr);
 
     llvm::Value* condValuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
     llvm::Value* condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
@@ -697,6 +723,7 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
 
     // Change scope back
     currentScope = currentScope->getParent();
+    assert(currentScope != nullptr);
 
     // Fill else block
     if (ctx->elseStmt()) {
@@ -721,12 +748,14 @@ antlrcpp::Any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx)
         // Change scope
         std::string scopeId = ScopeIdUtil::getScopeId(ctx);
         currentScope = currentScope->getChild(scopeId);
+        assert(currentScope != nullptr);
 
         // Generate IR for nested statements
         visit(ctx->stmtLst());
 
         // Change scope back
         currentScope = currentScope->getParent();
+        assert(currentScope != nullptr);
     }
     return nullptr;
 }
@@ -737,6 +766,7 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
 
     // Get variable entry
     SymbolTableEntry* entry = currentScope->lookup(currentVarName);
+    assert(entry != nullptr);
     llvm::Value* memAddress = insertAlloca(varType, currentVarName);
     if (ctx->assignExpr()) {
         // Visit right side
@@ -761,7 +791,9 @@ antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* 
     if (ctx->assignExpr()) {
         returnValuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
     } else {
-        returnValuePtr = currentScope->lookup(RETURN_VARIABLE_NAME)->getAddress();
+        SymbolTableEntry* returnVariableEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
+        assert(returnVariableEntry != nullptr);
+        returnValuePtr = returnVariableEntry->getAddress();
     }
     llvm::Value* returnValue = builder->CreateLoad(returnValuePtr->getType()->getPointerElementType(), returnValuePtr);
 
@@ -780,6 +812,7 @@ antlrcpp::Any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ct
 
     // Get destination block
     SymbolTable* scope = currentScope;
+    assert(scope != nullptr);
     while (!scope->getBreakBlock()) scope = scope->getParent();
     for (int i = 1; i < breakCount; i++) {
         scope = scope->getParent();
@@ -799,6 +832,7 @@ antlrcpp::Any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtConte
 
     // Get destination block
     SymbolTable* scope = currentScope;
+    assert(scope != nullptr);
     while (!scope->getBreakBlock()) scope = scope->getParent();
     for (int i = 1; i < continueCount; i++) {
         scope = scope->getParent();
@@ -888,6 +922,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         // Get symbol table entry
         lhsVarName = currentVarName;
         SymbolTableEntry* variableEntry = currentScope->lookup(lhsVarName);
+        assert(variableEntry != nullptr);
 
         // Take a look at the operator
         if (ctx->assignOp()->ASSIGN()) { // Simple assign
@@ -1350,11 +1385,6 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                     lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indices);
                 }
                 lhs = nullptr;
-                /*std::vector<llvm::Value*> indices = { indexValue };
-                llvm::Type* ty = lhs->getType()->isPointerTy() ? lhs->getType()->getPointerElementType() :
-                        lhs->getType()->getArrayElementType();
-                lhsPtr = builder->CreateInBoundsGEP(ty, lhs, indices);
-                lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);*/
             } else if (symbolType == SpiceParser::LPAREN) { // Consider function call
                 tokenCounter++; // Consume LPAREN
 
@@ -1384,6 +1414,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 if (!functionFound) { // Not found => Declare function, which will be linked in
                     // Get the symbol table of the module where the function is defined
                     SymbolTable* table = accessScope->lookupTableWithSignature(signature.toString());
+                    assert(table != nullptr);
                     // Check if it is a function or a procedure
                     if (!table->getFunctionDeclaration(signature.toString()).empty()) { // Function
                         std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
@@ -1670,6 +1701,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         // Get data type
         unsigned int numArrayElements = ctx->paramLst() ? ctx->paramLst()->assignExpr().size() : 0;
         SymbolTableEntry* arrayVar = currentScope->lookup(lhsVarName);
+        assert(arrayVar != nullptr);
         llvm::Type* arrayType = getTypeForSymbolType(arrayVar->getType());
 
         // Allocate array
@@ -1950,6 +1982,7 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
         }
         case TY_STRUCT: {
             llvmBaseType = currentScope->lookup(symbolType.getSubType())->getLLVMType();
+            assert(llvmBaseType != nullptr);
             break;
         }
         default:
@@ -1974,8 +2007,11 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 }
 
 void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
-    if (currentScope->lookup(newStructName)->getState() == DECLARED) { // Only initialize if it was not initialized yet
+    SymbolTableEntry* newStructSymbol = currentScope->lookup(newStructName);
+    assert(newStructSymbol != nullptr);
+    if (newStructSymbol->getState() == DECLARED) { // Only initialize if it was not initialized yet
         SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
+        assert(structTable != nullptr);
 
         // Get field types
         std::vector<llvm::Type*> memberTypes;
@@ -1997,7 +2033,6 @@ void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std
 
         // Create global struct
         llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
-        SymbolTableEntry* newStructSymbol = currentScope->lookup(newStructName);
         newStructSymbol->updateLLVMType(structType);
         newStructSymbol->updateState(INITIALIZED);
     }
