@@ -9,8 +9,8 @@
  */
 class FileUtil {
 public:
-    static bool fileExists(const std::string&);
-    static bool dirExists(const std::string&);
-    static std::string getFileName(const std::string&);
-    static std::string getFileDir(const std::string&);
+    static bool fileExists(const std::string& filePath);
+    static bool dirExists(const std::string& dirPath);
+    static std::string getFileName(const std::string& filePath);
+    static std::string getFileDir(const std::string& filePath);
 };

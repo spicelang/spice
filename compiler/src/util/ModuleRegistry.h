@@ -11,9 +11,9 @@ public:
     static ModuleRegistry* getInstance();
 
     // Public methods
-    void addModule(const std::string&);
+    void addModule(const std::string& moduleName);
 private:
-    explicit ModuleRegistry() {}
+    explicit ModuleRegistry() = default;
 
     static ModuleRegistry* instance;
     std::vector<std::string> modulePaths;

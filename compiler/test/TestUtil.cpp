@@ -12,6 +12,12 @@ bool TestUtil::fileExists(const std::string& filePath) {
     return std::ifstream(filePath.c_str()).good();
 }
 
+/**
+ * Get subdirectories of the given path
+ *
+ * @param basePath Path to a directory
+ * @return Vector of subdirs
+ */
 std::vector<std::string> TestUtil::getSubdirs(const std::string& basePath) {
     std::vector<std::string> subdirs;
     DIR* dir;
@@ -26,6 +32,12 @@ std::vector<std::string> TestUtil::getSubdirs(const std::string& basePath) {
     return subdirs;
 }
 
+/**
+ * Retrieve the contents of a file as a string
+ *
+ * @param filePath File path
+ * @return File contents as a string
+ */
 std::string TestUtil::getFileContent(const std::string& filePath) {
     std::ifstream symbolTableStream;
     symbolTableStream.open(filePath);
@@ -34,6 +46,12 @@ std::string TestUtil::getFileContent(const std::string& filePath) {
     return stringStream.str();
 }
 
+/**
+ * Convert a string to camel case
+ *
+ * @param input Input string
+ * @return Camel-cased string
+ */
 std::string TestUtil::toCamelCase(std::string input) {
     for (auto it = input.begin(); it != input.end(); it++) {
         if (*it == '-' || *it == '_') {
@@ -44,6 +62,12 @@ std::string TestUtil::toCamelCase(std::string input) {
     return input;
 }
 
+/**
+ * Execute external command. Used to execute compiled binaries
+ *
+ * @param cmd Command to execute
+ * @return Output of the command as a string
+ */
 std::string TestUtil::exec(const std::string& cmd) {
     std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
     if (!pipe) return "ERROR";
@@ -56,6 +80,11 @@ std::string TestUtil::exec(const std::string& cmd) {
     return result;
 }
 
+/**
+ * Get default executable name of the compiled binary
+ *
+ * @return Name of the executable including the file extension
+ */
 std::string TestUtil::getDefaultExecutableName() {
     std::string executableName = "./source";
 #ifdef OS_Windows

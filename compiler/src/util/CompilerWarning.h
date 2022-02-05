@@ -30,5 +30,5 @@ private:
     // Members
     std::string warningMessage{};
 
-    static std::string getMessagePrefix(CompilerWarningType);
+    static std::string getMessagePrefix(CompilerWarningType warningType);
 };

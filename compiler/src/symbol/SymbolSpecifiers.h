@@ -39,7 +39,7 @@ const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b10;
 
 class SymbolSpecifiers {
 public:
-    explicit SymbolSpecifiers(SymbolType);
+    explicit SymbolSpecifiers(SymbolType symbolType);
     void setConst(bool value);
     bool isConst() const;
     void setSigned(bool value);

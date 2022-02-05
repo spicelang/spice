@@ -12,7 +12,7 @@
 class LexerParserError : public std::exception {
 public:
     // Constructors
-    explicit LexerParserError(std::string  message): errorMessage(std::move(message)) {}
+    explicit LexerParserError(std::string message): errorMessage(std::move(message)) {}
 
     // Public methods
     const char* what() const noexcept override;

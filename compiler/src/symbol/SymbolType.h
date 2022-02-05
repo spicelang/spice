@@ -41,25 +41,23 @@ public:
 
     // Public methods
     SymbolType toPointer();
-    SymbolType toArray(unsigned int = 0);
+    SymbolType toArray(unsigned int size = 0);
     SymbolType getContainedTy();
     SymbolType replaceSubType(const std::string& newSubType);
     bool isPointer();
-    bool isPointerOf(SymbolSuperType);
+    bool isPointerOf(SymbolSuperType superType);
     bool isArray();
-    bool isArrayOf(SymbolSuperType);
-    bool is(SymbolSuperType);
-    bool is(SymbolSuperType, const std::string&);
-    bool isBaseType(SymbolSuperType);
-    bool isBaseType(SymbolSuperType, const std::string&);
-    bool isOneOf(const std::vector<SymbolSuperType>&);
-    bool matches(SymbolType);
-    bool matches(SymbolType, SymbolSuperType);
+    bool isArrayOf(SymbolSuperType superType);
+    bool is(SymbolSuperType superType);
+    bool is(SymbolSuperType superType, const std::string& subType);
+    bool isBaseType(SymbolSuperType superType);
+    bool isBaseType(SymbolSuperType superType, const std::string& subType);
+    bool isOneOf(const std::vector<SymbolSuperType>& superTypes);
     SymbolSuperType getSuperType();
     std::string getSubType();
     SymbolType getBaseType();
-    std::string getName(bool);
-    void setArraySize(unsigned int);
+    std::string getName(bool withSize);
+    void setArraySize(unsigned int newArraySize);
     unsigned int getArraySize();
     friend bool operator== (const SymbolType& lhs, const SymbolType& rhs);
     friend bool operator!= (const SymbolType& lhs, const SymbolType& rhs);
@@ -68,5 +66,5 @@ private:
     TypeChain typeChain;
 
     // Private methods
-    static std::string getNameFromChainElement(const TypeChainElement&, bool);
+    static std::string getNameFromChainElement(const TypeChainElement& chainElement, bool withSize);
 };

@@ -21,6 +21,7 @@
  * @param debugOutput Set to true to show compiler debug output
  * @param optLevel Number in range 1-3 to control optimization level
  * @param requiresMainFunction true = main source file, false = not main source file
+ * @param stdFile true = std source file, false = not std source file
  *
  * @return Symbol table of this program part
  */

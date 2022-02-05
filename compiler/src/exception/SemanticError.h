@@ -63,5 +63,5 @@ private:
     // Members
     std::string errorMessage;
 
-    static std::string getMessagePrefix(SemanticErrorType);
+    static std::string getMessagePrefix(SemanticErrorType errorType);
 };

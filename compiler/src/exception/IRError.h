@@ -26,8 +26,8 @@ enum IRErrorType {
 class IRError : public std::exception {
 public:
     // Constructors
-    explicit IRError(const antlr4::Token&, IRErrorType, const std::string&);
-    explicit IRError(IRErrorType, const std::string&);
+    explicit IRError(const antlr4::Token& token, IRErrorType errorType, const std::string& messageSuffix);
+    explicit IRError(IRErrorType errorType, const std::string& messageSuffix);
 
     // Public methods
     const char* what() const noexcept override;
@@ -36,5 +36,5 @@ private:
     // Members
     std::string errorMessage;
 
-    static std::string getMessagePrefix(IRErrorType);
+    static std::string getMessagePrefix(IRErrorType errorType);
 };

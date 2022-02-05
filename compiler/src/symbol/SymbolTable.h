@@ -27,38 +27,38 @@ public:
     // Public methods
     void insert(const std::string&, SymbolType, SymbolSpecifiers, SymbolState, const antlr4::Token&, bool);
 
-    SymbolTableEntry* lookup(const std::string&);
+    SymbolTableEntry* lookup(const std::string& symbolName);
     SymbolTableEntry* lookupByIndexInCurrentScope(unsigned int);
-    SymbolTable* lookupTable(const std::string&);
-    SymbolTable* lookupTableWithSignature(const std::string&);
+    SymbolTable* lookupTable(const std::string& tableName);
+    SymbolTable* lookupTableWithSignature(const std::string& signature);
 
-    void update(const std::string&, SymbolState);
-    void update(const std::string&, const SymbolType&);
+    void update(const std::string& symbolName, SymbolState newState);
+    void update(const std::string& symbolName, const SymbolType& newType);
 
-    SymbolTable* createChildBlock(const std::string&);
-    void mountChildBlock(const std::string&, SymbolTable*);
-    void renameChildBlock(const std::string&, const std::string&);
+    SymbolTable* createChildBlock(const std::string& tableName);
+    void mountChildBlock(const std::string& tableName, SymbolTable* symbolTable);
+    void renameChildBlock(const std::string& oldName, const std::string& newName);
 
     SymbolTable* getParent();
-    SymbolTable* getChild(const std::string&);
+    SymbolTable* getChild(const std::string& tableName);
 
     unsigned int getFieldCount();
 
-    void insertFunctionDeclaration(const std::string&, const std::vector<SymbolType>&);
-    std::vector<SymbolType> getFunctionDeclaration(const std::string&);
+    void insertFunctionDeclaration(const std::string& functionName, const std::vector<SymbolType>& argTypes);
+    std::vector<SymbolType> getFunctionDeclaration(const std::string& functionName);
 
-    void insertProcedureDeclaration(const std::string&, const std::vector<SymbolType>&);
-    std::vector<SymbolType> getProcedureDeclaration(const std::string&);
+    void insertProcedureDeclaration(const std::string& procedureName, const std::vector<SymbolType>& argTypes);
+    std::vector<SymbolType> getProcedureDeclaration(const std::string& procedureName);
 
-    void updateSymbolTypes(const SymbolType&, const SymbolType&);
+    void updateSymbolTypes(const SymbolType& oldType, const SymbolType& newType);
 
-    void pushSignature(const FunctionSignature&);
+    void pushSignature(const FunctionSignature& signature);
     FunctionSignature popSignature();
 
-    void setContinueBlock(llvm::BasicBlock*);
+    void setContinueBlock(llvm::BasicBlock* continueBlock);
     llvm::BasicBlock* getContinueBlock() const;
 
-    void setBreakBlock(llvm::BasicBlock*);
+    void setBreakBlock(llvm::BasicBlock* breakBlock);
     llvm::BasicBlock* getBreakBlock() const;
 
     void printCompilerWarnings();

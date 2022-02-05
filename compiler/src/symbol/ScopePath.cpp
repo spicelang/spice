@@ -3,24 +3,24 @@
 #include "ScopePath.h"
 
 /**
- * Adds a new fragment and symbolTable to the scope path
+ * Add a new fragment and the associated symbolTable to the scope path
  *
- * @param fragment
- * @param symbolTable
+ * @param fragmentName Fragment name
+ * @param symbolTable Associated symbol table
  */
 void ScopePath::pushFragment(const std::string& fragmentName, SymbolTable* symbolTable) {
     fragments.emplace_back(fragmentName, symbolTable);
 }
 
 /**
- * Clears the scope path
+ * Clear the scope path
  */
 void ScopePath::clear() {
     fragments.clear();
 }
 
 /**
- * Returns the current access scope of the scope path
+ * Return the current access scope of the scope path
  *
  * @return Pointer to the symbol table, representing the current access scope
  */
@@ -30,7 +30,7 @@ SymbolTable* ScopePath::getCurrentScope() {
 }
 
 /**
- * Returns the scope path in a string representation
+ * Return the scope path in a string representation
  *
  * @return Symbol path string
  */

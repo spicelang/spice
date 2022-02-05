@@ -103,5 +103,6 @@ private:
     std::string currentVarName;
 
     // Private methods
-    SymbolType initExtStruct(const antlr4::Token&, SymbolTable*, const std::string&, const std::string&);
+    SymbolType initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope,
+                             const std::string& oldStructName, const std::string& newStructName);
 };

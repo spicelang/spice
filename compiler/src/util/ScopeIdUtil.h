@@ -11,21 +11,21 @@
  */
 class ScopeIdUtil {
 public:
-    static std::string getScopeId(SpiceParser::MainFunctionDefContext*);
+    static std::string getScopeId(SpiceParser::MainFunctionDefContext* context);
 
-    static std::string getScopeId(SpiceParser::FunctionDefContext*);
+    static std::string getScopeId(SpiceParser::FunctionDefContext* context);
 
-    static std::string getScopeId(SpiceParser::StructDefContext*);
+    static std::string getScopeId(SpiceParser::StructDefContext* context);
 
-    static std::string getScopeId(SpiceParser::ProcedureDefContext*);
+    static std::string getScopeId(SpiceParser::ProcedureDefContext* context);
 
-    static std::string getScopeId(SpiceParser::ForLoopContext*);
+    static std::string getScopeId(SpiceParser::ForLoopContext* context);
 
-    static std::string getScopeId(SpiceParser::ForeachLoopContext*);
+    static std::string getScopeId(SpiceParser::ForeachLoopContext* context);
 
-    static std::string getScopeId(SpiceParser::WhileLoopContext*);
+    static std::string getScopeId(SpiceParser::WhileLoopContext* context);
 
-    static std::string getScopeId(SpiceParser::IfStmtContext*);
+    static std::string getScopeId(SpiceParser::IfStmtContext* context);
 
-    static std::string getScopeId(SpiceParser::ElseStmtContext*);
+    static std::string getScopeId(SpiceParser::ElseStmtContext* context);
 };
