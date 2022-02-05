@@ -101,6 +101,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Array item type not matching";
         case RETURN_WITHOUT_VALUE_RESULT:
             return "Return without initialization of result variable";
+        case RETURN_WITH_VALUE_IN_PROCEDURE:
+            return "Return with value in procedure";
         case VARARG_APPLIED_WRONGLY:
             return "Vararg applied wrongly";
         case DYN_POINTERS_NOT_ALLOWED:

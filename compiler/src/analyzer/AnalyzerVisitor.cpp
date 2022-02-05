@@ -506,7 +506,8 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
     if (ctx->assignExpr()) {
         SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
         // Check if type has to be inferred or both types are fixed
-        symbolType = symbolType.is(TY_DYN) ? rhsTy : OpRuleManager::getAssignResultType(*ctx->start, symbolType, rhsTy);
+        symbolType = symbolType.is(TY_DYN) ? rhsTy : OpRuleManager::getAssignResultType(*ctx->start,symbolType,
+                                                                                        rhsTy, true);
         initialState = INITIALIZED;
 
         // If the rhs is of type array and was the array initialization, there must be a size attached
@@ -606,13 +607,16 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 }
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
-    // Check if return variable is in the symbol table
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
-    assert(returnVariable != nullptr);
 
     // Check if there is a value attached to the return statement
     SymbolType returnType;
     if (ctx->assignExpr()) {
+        // Procedure returns may not have a value
+        if (returnVariable == nullptr)
+            throw SemanticError(*ctx->assignExpr()->start, RETURN_WITH_VALUE_IN_PROCEDURE,
+                                "Return statements in procedures may not have a value attached");
+
         // Visit the value
         returnType = visit(ctx->assignExpr()).as<SymbolType>();
 
@@ -775,7 +779,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
 
         // Take a look at the operator
         if (ctx->assignOp()->ASSIGN()) {
-            rhsTy = OpRuleManager::getAssignResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = OpRuleManager::getAssignResultType(*ctx->start, lhsTy, rhsTy, false);
         } else if (ctx->assignOp()->PLUS_EQUAL()) {
             rhsTy = OpRuleManager::getPlusEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->MINUS_EQUAL()) {

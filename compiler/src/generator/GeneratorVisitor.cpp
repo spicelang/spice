@@ -494,6 +494,7 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
         visit(ctx->value());
         constNegate = ctx->MINUS();
         global->setInitializer(currentConstValue);
+        constNegate = false;
     }
 
     return nullptr;
@@ -762,7 +763,7 @@ antlrcpp::Any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx)
 
 antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) {
     currentVarName = lhsVarName = ctx->IDENTIFIER()->toString();
-    llvm::Type* varType = visit(ctx->dataType()).as<llvm::Type*>();
+    llvm::Type* varType = lhsType = visit(ctx->dataType()).as<llvm::Type*>();
 
     // Get variable entry
     SymbolTableEntry* entry = currentScope->lookup(currentVarName);
@@ -777,6 +778,8 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
     entry->updateAddress(memAddress);
     entry->updateLLVMType(varType);
 
+    lhsType = nullptr; // Reset nullptr
+
     // Return the variable name
     return lhsVarName;
 }
@@ -786,22 +789,32 @@ antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* 
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
-    // Check if a value is attached to the return statement
-    llvm::Value* returnValuePtr;
-    if (ctx->assignExpr()) {
-        returnValuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
-    } else {
-        SymbolTableEntry* returnVariableEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
-        assert(returnVariableEntry != nullptr);
-        returnValuePtr = returnVariableEntry->getAddress();
-    }
-    llvm::Value* returnValue = builder->CreateLoad(returnValuePtr->getType()->getPointerElementType(), returnValuePtr);
+    if (blockAlreadyTerminated) return nullptr;
 
-    // Build return value
-    if (!blockAlreadyTerminated) {
-        builder->CreateRet(returnValue);
-        blockAlreadyTerminated = true;
+    SymbolTableEntry* returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
+
+    // Check if a value is attached to the return statement
+    llvm::Value* returnValuePtr = nullptr;
+    if (ctx->assignExpr()) {
+        assert(returnVarEntry != nullptr);
+        // Set the expected type of the value
+        lhsType = getTypeForSymbolType(returnVarEntry->getType());
+        // Visit return value
+        returnValuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
+    } else if (returnVarEntry != nullptr) { // Function. Procedures do not have a return variable
+        returnValuePtr = returnVarEntry->getAddress();
     }
+
+    // No return value
+    if (returnValuePtr == nullptr) {
+        builder->CreateRetVoid();
+        return nullptr;
+    }
+
+    // Return value
+    llvm::Value* returnValue = builder->CreateLoad(returnValuePtr->getType()->getPointerElementType(), returnValuePtr);
+    builder->CreateRet(returnValue);
+    blockAlreadyTerminated = true;
     return returnValuePtr;
 }
 
@@ -907,6 +920,8 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
 
     // Check if there is an assign operator applied
     if (ctx->assignOp()) { // This is an assignment or compound assignment
+        lhsType = nullptr; // Reset lhs type
+
         // Get value of right side
         llvm::Value* rhsPtr = visit(ctx->assignExpr()).as<llvm::Value*>();
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
@@ -961,7 +976,10 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
         }
         return lhsPtr;
     }
-    return visit(ctx->ternaryExpr());
+
+    antlrcpp::Any rhs = visit(ctx->ternaryExpr());
+    lhsType = nullptr; // Reset lhs type
+    return rhs;
 }
 
 antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {
@@ -1702,54 +1720,74 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
     if (ctx->LBRACE()) { // Array initialization
         // Get data type
-        unsigned int numArrayElements = ctx->paramLst() ? ctx->paramLst()->assignExpr().size() : 0;
-        SymbolTableEntry* arrayVar = currentScope->lookup(lhsVarName);
-        assert(arrayVar != nullptr);
-        llvm::Type* arrayType = getTypeForSymbolType(arrayVar->getType());
-
-        // Allocate array
-        llvm::Value* arrayAddress = insertAlloca(arrayType, currentVarName);
+        size_t actualItemCount = ctx->paramLst() ? ctx->paramLst()->assignExpr().size() : 0;
+        size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
+        llvm::Type* arrayType = lhsType;
 
         // Fill items with the stated values
         if (ctx->paramLst()) {
-            allParamsHardcoded = true;
             // Visit all params to check if they are hardcoded or not
             std::vector<llvm::Value*> itemValuePointers;
             std::vector<llvm::Constant*> itemConstants;
-            unsigned int actualItemCount = std::min((uint64_t) ctx->paramLst()->assignExpr().size(), arrayType->getArrayNumElements());
-            for (unsigned int i = 0; i < actualItemCount; i++) {
-                itemValuePointers.push_back(visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>());
+            allParamsHardcoded = true;
+            for (size_t i = 0; i < std::min(ctx->paramLst()->assignExpr().size(), arraySize); i++) {
+                llvm::Value* itemValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value*>();
+                itemValuePointers.push_back(itemValuePtr);
                 itemConstants.push_back(currentConstValue);
             }
+
+            if (arrayType == nullptr) {
+                llvm::Type* itemType = itemValuePointers[0]->getType()->getPointerElementType();
+                arrayType = llvm::ArrayType::get(itemType, arraySize);
+            }
+
             // Decide if the array can be defined globally
+            llvm::Value* arrayAddress;
             if (allParamsHardcoded) { // All params hardcoded => array can be defined globally
                 // Create hardcoded array
                 llvm::Constant* constArray = llvm::ConstantArray::get((llvm::ArrayType*) arrayType, itemConstants);
                 // Create global variable
-                arrayAddress = module->getOrInsertGlobal(lhsVarName, arrayType);
+                std::string globalVarName = lhsVarName;
+                if (globalVarName.empty()) { // Get unused anonymous global var name
+                    unsigned int suffixNumber = 0;
+                    do {
+                        globalVarName = "anonymous." + std::to_string(suffixNumber);
+                        suffixNumber++;
+                    } while (module->getNamedGlobal(globalVarName) != nullptr);
+                }
+                arrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
                 // Set some attributes to it
-                llvm::GlobalVariable* global = module->getNamedGlobal(lhsVarName);
+                llvm::GlobalVariable* global = module->getNamedGlobal(globalVarName);
                 global->setConstant(true);
                 global->setDSOLocal(true);
                 global->setInitializer(constArray);
             } else { // Some params are not hardcoded => fallback to individual indexing
-                for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-                    llvm::Value* itemValuePtr = itemValuePointers[i];
+                // Allocate array
+                arrayAddress = insertAlloca(arrayType, currentVarName);
+
+                // Insert all given values
+                size_t valueIndex = 0;
+                for (; valueIndex < std::min(ctx->paramLst()->assignExpr().size(), arraySize); valueIndex++) {
+                    llvm::Value* itemValuePtr = itemValuePointers[valueIndex];
                     llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
                     // Calculate item address
-                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(i) };
+                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(valueIndex) };
                     llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
                     // Store value to item address
                     builder->CreateStore(itemValue, itemAddress);
                 }
+
+                // Fill up the rest of the values with default values
+                for (; valueIndex < arraySize; valueIndex++) {
+                    // ToDo: Fill up with default values
+                }
             }
+            return arrayAddress;
         }
 
-        // Update address and LLVM type in symbol table
-        arrayVar->updateAddress(arrayAddress);
-        arrayVar->updateLLVMType(arrayType);
-
-        return arrayAddress;
+        // Empty array: '{}'
+        assert(arrayType != nullptr);
+        return insertAlloca(arrayType, currentVarName);
     }
 
     return nullptr;
@@ -1838,7 +1876,7 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
 antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) {
     currentSymbolType = visit(ctx->baseDataType()).as<SymbolType>();
 
-    unsigned int tokenCounter = 1;
+    size_t tokenCounter = 1;
     while (tokenCounter < ctx->children.size()) {
         auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
         if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
@@ -1881,7 +1919,7 @@ antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeConte
     if (!ctx->IDENTIFIER().empty()) { // Custom data type
         // Get type name in format: a.b.c
         std::string typeName = ctx->IDENTIFIER()[0]->toString();
-        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) typeName += "." + ctx->IDENTIFIER()[i]->toString();
+        for (size_t i = 1; i < ctx->IDENTIFIER().size(); i++) typeName += "." + ctx->IDENTIFIER()[i]->toString();
 
         return SymbolType(TY_STRUCT, typeName);
     }
@@ -1896,17 +1934,15 @@ void GeneratorVisitor::initializeExternalFunctions() {
 }
 
 void GeneratorVisitor::createBr(llvm::BasicBlock* targetBlock) {
-    if (!blockAlreadyTerminated) {
-        builder->CreateBr(targetBlock);
-        blockAlreadyTerminated = true;
-    }
+    if (blockAlreadyTerminated) return;
+    builder->CreateBr(targetBlock);
+    blockAlreadyTerminated = true;
 }
 
 void GeneratorVisitor::createCondBr(llvm::Value* condition, llvm::BasicBlock* trueBlock, llvm::BasicBlock* falseBlock) {
-    if (!blockAlreadyTerminated) {
-        builder->CreateCondBr(condition, trueBlock, falseBlock);
-        blockAlreadyTerminated = true;
-    }
+    if (blockAlreadyTerminated) return;
+    builder->CreateCondBr(condition, trueBlock, falseBlock);
+    blockAlreadyTerminated = true;
 }
 
 void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
@@ -1944,11 +1980,11 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
     currentSymbolType = symbolType;
 
     // Get base symbol type
-    std::stack<SymbolSuperType> pointerArrayList;
-    std::stack<unsigned int> sizeList;
+    std::stack<std::pair<SymbolSuperType, size_t>> pointerArrayList;
     while (symbolType.isPointer() || symbolType.isArray()) {
-        pointerArrayList.push(symbolType.isPointer() ? TY_PTR : TY_ARRAY);
-        if (symbolType.isArray()) sizeList.push(symbolType.getArraySize());
+        SymbolSuperType superType = symbolType.isPointer() ? TY_PTR : TY_ARRAY;
+        size_t arraySize = symbolType.isPointer() ? 0 : symbolType.getArraySize();
+        pointerArrayList.push(std::make_pair(superType, arraySize));
         symbolType = symbolType.getContainedTy();
     }
 
@@ -1994,20 +2030,70 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 
     // Consider pointer/array hierarchy
     while (!pointerArrayList.empty()) {
-        if (pointerArrayList.top() == TY_PTR) { // Pointer
+        if (pointerArrayList.top().first == TY_PTR) { // Pointer
             llvmBaseType = llvmBaseType->getPointerTo();
-        } else if (sizeList.top() == 0) { // If size is 0, use the pointer type
+        } else if (pointerArrayList.top().second == 0) { // If size is 0, use the pointer type
             llvmBaseType = llvmBaseType->getPointerTo();
-            sizeList.pop();
         } else { // Otherwise, use the array type with a fixed size
-            llvmBaseType = llvm::ArrayType::get(llvmBaseType, sizeList.top());
-            sizeList.pop();
+            llvmBaseType = llvm::ArrayType::get(llvmBaseType, pointerArrayList.top().second);
         }
         pointerArrayList.pop();
     }
 
     return llvmBaseType;
 }
+
+/*llvm::Value* GeneratorVisitor::getDefaultValueForType(SymbolType symbolType) {
+    // Unpack symbol type
+    std::stack<SymbolSuperType> ptrArrayStack;
+    while (symbolType.isPointer() || symbolType.isArray()) {
+        ptrArrayStack.push(symbolType.getSuperType());
+        symbolType = symbolType.getContainedTy();
+    }
+
+    llvm::Value* defaultValue;
+    switch (symbolType.getSuperType()) {
+        case TY_DOUBLE:
+            defaultValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), 0);
+            break;
+        case TY_INT:
+            defaultValue = builder->getInt32(0);
+            break;
+        case TY_SHORT:
+            defaultValue = builder->getInt16(0);
+            break;
+        case TY_LONG:
+            defaultValue = builder->getInt64(0);
+            break;
+        case TY_BYTE: // fall-through
+        case TY_CHAR:
+            defaultValue = builder->getInt8(0);
+            break;
+        case TY_STRING:
+            defaultValue = builder->CreateGlobalStringPtr("", "", 0, module.get());
+            break;
+        case TY_BOOL:
+            defaultValue = builder->getInt1(false);
+            break;
+        case TY_STRUCT: {
+            llvm::Type* structType = getTypeForSymbolType(symbolType);
+            llvm::Value* structAddress = insertAlloca(structType, currentVarName);
+
+            break;
+        }
+        default:
+            throw std::runtime_error("Internal compiler error. Cannot determine default value for type" +
+                symbolType.getName(true));
+    }
+
+    // Pack value
+    while (!ptrArrayStack.empty()) {
+
+        ptrArrayStack.pop();
+    }
+
+    return defaultValue;
+}*/
 
 void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
     SymbolTableEntry* newStructSymbol = currentScope->lookup(newStructName);
@@ -2077,8 +2163,7 @@ llvm::Value* GeneratorVisitor::doImplicitCast(llvm::Value* srcValue, llvm::Type*
 }
 
 llvm::PassBuilder::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {
-    // Get LLVM opt level from Spice opt level
-    switch (optLevel) {
+    switch (optLevel) { // Get LLVM opt level from Spice opt level
         case 1: return llvm::PassBuilder::OptimizationLevel::O1;
         case 2: return llvm::PassBuilder::OptimizationLevel::O2;
         case 3: return llvm::PassBuilder::OptimizationLevel::O3;

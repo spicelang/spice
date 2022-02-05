@@ -13,9 +13,9 @@ entry:
   %value0 = alloca i32, align 4
   %0 = alloca i32, align 4
   %intArray = alloca [5 x i32], align 4
-  %1 = alloca [5 x i32], align 4
+  %1 = alloca i32, align 4
   %2 = alloca i32, align 4
-  %3 = alloca i32, align 4
+  %3 = alloca [5 x i32], align 4
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
   %6 = alloca i32, align 4
@@ -26,18 +26,18 @@ entry:
   store i32 2, i32* %0, align 4
   %10 = load i32, i32* %0, align 4
   store i32 %10, i32* %value0, align 4
-  store i32 7, i32* %2, align 4
-  store i32 4, i32* %3, align 4
+  store i32 7, i32* %1, align 4
+  store i32 4, i32* %2, align 4
   %11 = load i32, i32* %value0, align 4
-  %12 = getelementptr inbounds [5 x i32], [5 x i32]* %1, i32 0, i32 0
+  %12 = getelementptr inbounds [5 x i32], [5 x i32]* %3, i32 0, i32 0
   store i32 %11, i32* %12, align 4
-  %13 = load i32, i32* %2, align 4
-  %14 = getelementptr inbounds [5 x i32], [5 x i32]* %1, i32 0, i32 1
+  %13 = load i32, i32* %1, align 4
+  %14 = getelementptr inbounds [5 x i32], [5 x i32]* %3, i32 0, i32 1
   store i32 %13, i32* %14, align 4
-  %15 = load i32, i32* %3, align 4
-  %16 = getelementptr inbounds [5 x i32], [5 x i32]* %1, i32 0, i32 2
+  %15 = load i32, i32* %2, align 4
+  %16 = getelementptr inbounds [5 x i32], [5 x i32]* %3, i32 0, i32 2
   store i32 %15, i32* %16, align 4
-  %17 = load [5 x i32], [5 x i32]* %1, align 4
+  %17 = load [5 x i32], [5 x i32]* %3, align 4
   store [5 x i32] %17, [5 x i32]* %intArray, align 4
   store i32 11, i32* %4, align 4
   %18 = load i32, i32* %4, align 4
