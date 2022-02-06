@@ -52,6 +52,11 @@ SymbolSpecifiers::SymbolSpecifiers(SymbolType type) {
     }
 }
 
+/**
+ * Set the const flag
+ *
+ * @param value True or false
+ */
 void SymbolSpecifiers::setConst(bool value) {
     if (value)
         setBit(BIT_INDEX_CONST);
@@ -59,10 +64,20 @@ void SymbolSpecifiers::setConst(bool value) {
         clearBit(BIT_INDEX_CONST);
 }
 
+/**
+ * Check if the const flag is set
+ *
+ * @return True or false
+ */
 bool SymbolSpecifiers::isConst() const {
     return getBit(BIT_INDEX_CONST);
 }
 
+/**
+ * Set the signed flag
+ *
+ * @param value True or false
+ */
 void SymbolSpecifiers::setSigned(bool value) {
     if (value)
         setBit(BIT_INDEX_SIGNED);
@@ -70,18 +85,39 @@ void SymbolSpecifiers::setSigned(bool value) {
         clearBit(BIT_INDEX_SIGNED);
 }
 
+/**
+ * Check if the signed flag is set
+ *
+ * @return True or false
+ */
 bool SymbolSpecifiers::isSigned() const {
     return getBit(BIT_INDEX_SIGNED);
 }
 
+/**
+ * Set bit in specifier value
+ *
+ * @param index Index of the bit to set
+ */
 void SymbolSpecifiers::setBit(unsigned short index) {
     specifierValue |= (1 << index);
 }
 
+/**
+ * Clear bit in specifier value
+ *
+ * @param index Index of the bit to clear
+ */
 void SymbolSpecifiers::clearBit(unsigned short index) {
     specifierValue &= ~(1 << index);
 }
 
+/**
+ * Get the bit at a specific index
+ *
+ * @param index Index of the bit to get
+ * @return True or false
+ */
 bool SymbolSpecifiers::getBit(unsigned short index) const {
     return ((specifierValue >> index) & 1) == 1;
 }

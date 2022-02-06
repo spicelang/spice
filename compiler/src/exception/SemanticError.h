@@ -38,6 +38,7 @@ enum SemanticErrorType {
     ARRAY_INDEX_NO_INTEGER,
     ARRAY_ITEM_TYPE_NOT_MATCHING,
     RETURN_WITHOUT_VALUE_RESULT,
+    RETURN_WITH_VALUE_IN_PROCEDURE,
     VARARG_APPLIED_WRONGLY,
     DYN_POINTERS_NOT_ALLOWED,
     DYN_ARRAYS_NOT_ALLOWED,
@@ -62,5 +63,5 @@ private:
     // Members
     std::string errorMessage;
 
-    static std::string getMessagePrefix(SemanticErrorType);
+    static std::string getMessagePrefix(SemanticErrorType errorType);
 };

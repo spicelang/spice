@@ -11,8 +11,8 @@ target triple = "x86_64-w64-windows-gnu"
 @5 = private unnamed_addr constant [18 x i8] c"Size of char: %d\0A\00", align 1
 @6 = private unnamed_addr constant [20 x i8] c"Size of string: %d\0A\00", align 1
 @7 = private unnamed_addr constant [18 x i8] c"Size of bool: %d\0A\00", align 1
-@intArray = dso_local local_unnamed_addr constant [7 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7]
 @8 = private unnamed_addr constant [19 x i8] c"Size of int[]: %d\0A\00", align 1
+@anonymous.0 = dso_local local_unnamed_addr constant [7 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7]
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0

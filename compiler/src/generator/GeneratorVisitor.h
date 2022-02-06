@@ -105,21 +105,21 @@ private:
     bool currentVarSigned = false;
     std::string currentVarName;
     std::string lhsVarName;
+    llvm::Type* lhsType = nullptr;
     llvm::Type* structAccessType = nullptr;
     llvm::Value* structAccessAddress = nullptr;
     std::vector<llvm::Value*> structAccessIndices;
 
     // Private methods
     void initializeExternalFunctions();
-    void moveInsertPointToBlock(llvm::BasicBlock*);
-    void createBr(llvm::BasicBlock*);
-    void createCondBr(llvm::Value*, llvm::BasicBlock*, llvm::BasicBlock*);
-    llvm::Value* insertAlloca(llvm::Type*);
-    llvm::Value* insertAlloca(llvm::Type*, const std::string&);
-    llvm::Value* insertAlloca(llvm::Type*, const std::string&, llvm::Value*);
-    llvm::Type* getTypeForSymbolType(SymbolType);
-    void initExtStruct(const std::string&, const std::string&);
-    bool compareLLVMTypes(llvm::Type*, llvm::Type*);
-    llvm::Value* doImplicitCast(llvm::Value*, llvm::Type*);
-    llvm::PassBuilder::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
+    void moveInsertPointToBlock(llvm::BasicBlock* block);
+    void createBr(llvm::BasicBlock* targetBlock);
+    void createCondBr(llvm::Value* condition, llvm::BasicBlock* trueBlock, llvm::BasicBlock* falseBlock);
+    llvm::Value* insertAlloca(llvm::Type* llvmType, const std::string& varName = "", llvm::Value* arraySize = nullptr);
+    llvm::Type* getTypeForSymbolType(SymbolType symbolType);
+    //llvm::Value* getDefaultValueForType(SymbolType symbolType);
+    void initExtStruct(const std::string& oldStructName, const std::string& newStructName);
+    bool compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs);
+    llvm::Value* doImplicitCast(llvm::Value* lhs, llvm::Type* rhs);
+    [[nodiscard]] llvm::PassBuilder::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

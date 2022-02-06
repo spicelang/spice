@@ -11,9 +11,9 @@
 
 // Types: double, int, short, long, byte, char, string, bool
 
-// Unary operator rule tuple: lhs type, result type
-typedef std::tuple<SymbolType, SymbolType> UnaryOpRule;
-// Binary operator rule tuple: lhs type, rhs type, result type
+// Unary operator rule pair: lhs type, result type
+typedef std::pair<SymbolType, SymbolType> UnaryOpRule;
+// Binary operator rule pair: lhs type, rhs type, result type
 typedef std::tuple<SymbolType, SymbolType, SymbolType> BinaryOpRule;
 
 // Assign op rules
@@ -586,45 +586,45 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
 class OpRuleManager {
 public:
     // Public methods
-    static SymbolType getAssignResultType(const antlr4::Token&, SymbolType, SymbolType);
-    static SymbolType getPlusEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getMinusEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getMulEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getDivEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getRemEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getSHLEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getSHREqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getAndEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getOrEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getXorEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getLogicalAndResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getLogicalOrResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getBitwiseAndResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getBitwiseOrResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getBitwiseXorResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getEqualResultType(const antlr4::Token&, SymbolType, SymbolType);
-    static SymbolType getNotEqualResultType(const antlr4::Token&, SymbolType, SymbolType);
-    static SymbolType getLessResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getGreaterResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getLessEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getGreaterEqualResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getShiftLeftResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getShiftRightResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getPlusResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getMinusResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getMulResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getDivResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getRemResultType(const antlr4::Token&, const SymbolType&, const SymbolType&);
-    static SymbolType getPrefixMinusResultType(const antlr4::Token&, const SymbolType&);
-    static SymbolType getPrefixPlusPlusResultType(const antlr4::Token&, const SymbolType&);
-    static SymbolType getPrefixMinusMinusResultType(const antlr4::Token&, const SymbolType&);
-    static SymbolType getPrefixNotResultType(const antlr4::Token&, const SymbolType&);
-    static SymbolType getPrefixBitwiseNotResultType(const antlr4::Token&, const SymbolType&);
-    static SymbolType getPrefixMulResultType(const antlr4::Token&, SymbolType);
-    static SymbolType getPrefixBitwiseAndResultType(const antlr4::Token&, SymbolType);
-    static SymbolType getPostfixPlusPlusResultType(const antlr4::Token&, const SymbolType&);
-    static SymbolType getPostfixMinusMinusResultType(const antlr4::Token&, const SymbolType&);
-    static SymbolType getCastResultType(const antlr4::Token&, SymbolType, SymbolType);
+    static SymbolType getAssignResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs, bool declStmt);
+    static SymbolType getPlusEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getMinusEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getMulEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getDivEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getRemEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getSHLEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getSHREqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getAndEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getOrEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getXorEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getLogicalAndResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getLogicalOrResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getBitwiseAndResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getBitwiseOrResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getBitwiseXorResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getEqualResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs);
+    static SymbolType getNotEqualResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs);
+    static SymbolType getLessResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getGreaterResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getLessEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getGreaterEqualResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getShiftLeftResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getShiftRightResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getPlusResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getMinusResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getMulResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getDivResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getRemResultType(const antlr4::Token& token, const SymbolType& lhs, const SymbolType& rhs);
+    static SymbolType getPrefixMinusResultType(const antlr4::Token& token, const SymbolType& lhs);
+    static SymbolType getPrefixPlusPlusResultType(const antlr4::Token& token, const SymbolType& lhs);
+    static SymbolType getPrefixMinusMinusResultType(const antlr4::Token& token, const SymbolType& lhs);
+    static SymbolType getPrefixNotResultType(const antlr4::Token& token, const SymbolType& lhs);
+    static SymbolType getPrefixBitwiseNotResultType(const antlr4::Token& token, const SymbolType& lhs);
+    static SymbolType getPrefixMulResultType(const antlr4::Token& token, SymbolType lhs);
+    static SymbolType getPrefixBitwiseAndResultType(const antlr4::Token& token, SymbolType lhs);
+    static SymbolType getPostfixPlusPlusResultType(const antlr4::Token& token, const SymbolType& lhs);
+    static SymbolType getPostfixMinusMinusResultType(const antlr4::Token& token, const SymbolType& lhs);
+    static SymbolType getCastResultType(const antlr4::Token& token, SymbolType lhs, SymbolType);
 private:
     static SymbolType validateBinaryOperation(const antlr4::Token& token, const std::vector<BinaryOpRule>& opRules,
                                               const std::string& opName, const SymbolType& lhs, const SymbolType& rhs);

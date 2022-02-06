@@ -13,8 +13,7 @@ f<int> main() {
     printf("Size of char: %d\n", sizeof((char) 65));
     printf("Size of string: %d\n", sizeof("Hello Spice!"));
     printf("Size of bool: %d\n", sizeof(false));
-    int[7] intArray = { 1, 2, 3, 4, 5, 6, 7 };
-    printf("Size of int[]: %d\n", sizeof(intArray));
+    printf("Size of int[]: %d\n", sizeof({ 1, 2, 3, 4, 5, 6, 7 }));
     //dyn structInstance = Struct { 5, true, "This is a test" };
     //printf("Size of struct instance: %d\n", sizeof(structInstance));
 }

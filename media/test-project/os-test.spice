@@ -25,7 +25,7 @@ f<int> main() {
     a.destructor();
 }*/
 
-f<int> makePi() {
+/*f<int> makePi() {
     // Initialize variables
     int q = 1;
     int r = 0;
@@ -51,7 +51,7 @@ f<int> makePi() {
             r = (2 * q + r) * x;
             t = t * x;
             k = k + 1;
-            m = ( q * (7 * k + 2) + r * x) / (t * x);
+            m = (q * (7 * k + 2) + r * x) / (t * x);
             x = x + 2;
         }
     }
@@ -60,4 +60,4 @@ f<int> makePi() {
 
 f<int> main() {
     makePi();
-}
+}*/

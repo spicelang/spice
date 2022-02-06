@@ -63,3 +63,13 @@ jobs:
         run: |
           cd ./compiler/bin/test
           ./Spice_test
+
+# Currently not working because the data layout and the target triple is present in the ir test refs
+#      - name: Check if test refs are up to date
+#        env:
+#          SPICE_STD_DIR: /home/runner/work/spice/spice/std
+#        run: |
+#          cd ./compiler/bin/test
+#          ./Spice_test true
+#          git status --porcelain
+#          git diff --exit-code

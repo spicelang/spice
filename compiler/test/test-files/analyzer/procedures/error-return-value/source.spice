@@ -1,0 +1,8 @@
+p test() {
+    printf("Test called.");
+    return "Invalid return value";
+}
+
+f<int> main() {
+    test();
+}
