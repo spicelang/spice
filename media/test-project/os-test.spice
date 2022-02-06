@@ -61,3 +61,39 @@ f<int> main() {
 f<int> main() {
     makePi();
 }*/
+
+type ShoppingItem struct {
+    string name
+    double amount
+    string unit
+}
+
+type ShoppingCart struct {
+    ShoppingItem[3] items
+    string label
+}
+
+f<ShoppingCart> newShoppingCart() {
+    ShoppingItem[3] items;
+    items[0] = ShoppingItem { "Spaghetti", 100.0, "g" };
+    items[1] = ShoppingItem { "Rice", 125.5, "g" };
+    items[2] = ShoppingItem { "Doughnut", 6.0, "pcs" };
+    return ShoppingCart { items, "Shopping Cart" };
+}
+
+/*f<ShoppingCart> anotherShoppingCart() {
+    ShoppingItem[3] items = {
+        ShoppingItem { "Spaghetti", 100.0, "g" },
+        ShoppingItem { "Rice", 125.5, "g" },
+        ShoppingItem { "Doughnut", 6.0, "pcs" }
+    };
+    return ShoppingCart { "Another Cart", items };
+}*/
+
+f<int> main() {
+    ShoppingCart shoppingCart = newShoppingCart();
+    printf("Shopping cart item 1: %s", shoppingCart.items[1].name);
+
+    //shoppingCart = anotherShoppingCart();
+    //printf("Another cart item 2 unit: %s", shoppingCart.items[2].unit);
+}

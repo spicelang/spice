@@ -115,9 +115,7 @@ private:
     void moveInsertPointToBlock(llvm::BasicBlock* block);
     void createBr(llvm::BasicBlock* targetBlock);
     void createCondBr(llvm::Value* condition, llvm::BasicBlock* trueBlock, llvm::BasicBlock* falseBlock);
-    llvm::Value* insertAlloca(llvm::Type* llvmType);
-    llvm::Value* insertAlloca(llvm::Type* llvmType, const std::string& varName);
-    llvm::Value* insertAlloca(llvm::Type* llvmType, const std::string& varName, llvm::Value* arraySize);
+    llvm::Value* insertAlloca(llvm::Type* llvmType, const std::string& varName = "", llvm::Value* arraySize = nullptr);
     llvm::Type* getTypeForSymbolType(SymbolType symbolType);
     //llvm::Value* getDefaultValueForType(SymbolType symbolType);
     void initExtStruct(const std::string& oldStructName, const std::string& newStructName);

@@ -1063,17 +1063,37 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         const size_t tokenType = token->getSymbol()->getType();
         if (tokenType == SpiceParser::LBRACKET) { // Subscript operator
             tokenCounter++; // Consume LBRACKET
+
             std::string arrayName = currentVarName; // Save array name
+            ScopePath scopePathBackup = scopePath; // Save scope path
+            scopePrefix += "[idx]";
+
             auto* rule = dynamic_cast<antlr4::RuleContext*>(ctx->children[tokenCounter]);
             SymbolType indexType = visit(rule).as<SymbolType>();
+            tokenCounter++; // Consume assignExpr
+
             if (!indexType.is(TY_INT))
                 throw SemanticError(*ctx->start, ARRAY_INDEX_NO_INTEGER, "Array index must be of type int");
             if (!lhs.isOneOf({ TY_ARRAY, TY_STRING, TY_PTR }))
                 throw SemanticError(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                                     "Can only apply subscript operator on array type, got " + lhs.getName(true));
+
+            // Get array item type
             lhs = lhs.getContainedTy();
+
             currentVarName = arrayName; // Restore array name
-            tokenCounter++; // Consume assignExpr
+            scopePath = scopePathBackup; // Restore scope path
+
+            // Retrieve scope for the new scope path fragment
+            if (lhs.isBaseType(TY_STRUCT)) { // Struct
+                SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+                assert(accessScope != nullptr);
+
+                SymbolTable* newAccessScope = accessScope->lookupTable("struct:" + lhs.getBaseType().getSubType());
+                assert(newAccessScope != nullptr);
+                // Push the retrieved scope to the scope path
+                scopePath.pushFragment("[idx]", newAccessScope);
+            }
         } else if (tokenType == SpiceParser::LPAREN) { // Consider function call
             tokenCounter++; // Consume LPAREN
             std::string functionName = currentVarName;
@@ -1132,6 +1152,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             }
         } else if (tokenType == SpiceParser::DOT) { // Consider member access
             tokenCounter++; // Consume dot
+            scopePrefix += ".";
             // Visit rhs
             auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
             lhs = visit(postfixUnary).as<SymbolType>();
@@ -1147,12 +1168,6 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
                             "Variable '" + currentVarName + "' was referenced before declared");
 
-    // Check if referenced variable exists
-    /*SymbolTable* accessScope = scopePath.getCurrentScope();
-    if (accessScope && !accessScope->lookup(currentVariableName))
-        throw SemanticError(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
-                            "Variable '" + currentVariableName + "' was referenced before defined");*/
-
     return lhs;
 }
 
@@ -1160,7 +1175,7 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
     if (ctx->value()) return visit(ctx->value());
     if (ctx->IDENTIFIER()) {
         currentVarName = ctx->IDENTIFIER()->toString();
-        scopePrefix += scopePrefix.empty() ? currentVarName : "." + currentVarName;
+        scopePrefix += currentVarName;
 
         // Check if this is a reserved keyword
         if (std::find(RESERVED_KEYWORDS.begin(), RESERVED_KEYWORDS.end(), currentVarName) != RESERVED_KEYWORDS.end())

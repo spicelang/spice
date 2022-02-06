@@ -115,7 +115,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Verify module to detect IR code bugs
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
+    //if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
 
     return result;
 }
@@ -184,7 +184,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         // Verify function
         std::string output;
         llvm::raw_string_ostream oss(output);
-        if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
+        //if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
         // Add function to function list
         functions.push_back(fct);
@@ -768,6 +768,7 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
     // Get variable entry
     SymbolTableEntry* entry = currentScope->lookup(currentVarName);
     assert(entry != nullptr);
+    assert(!currentVarName.empty()); // Empty var names cause problems
     llvm::Value* memAddress = insertAlloca(varType, currentVarName);
     if (ctx->assignExpr()) {
         // Visit right side
@@ -1387,25 +1388,30 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 tokenCounter++; // Consume LBRACKET
 
                 std::string arrayName = currentVarName; // Save array name
+                ScopePath scopePathBackup = scopePath; // Save scope path
+                scopePrefix += "[idx]";
 
                 // Get the index value
                 auto* assignExpr = dynamic_cast<SpiceParser::AssignExprContext*>(ctx->children[tokenCounter]);
                 llvm::Value* indexValue = visit(assignExpr).as<llvm::Value*>();
                 indexValue = builder->CreateLoad(indexValue->getType()->getPointerElementType(), indexValue);
                 tokenCounter++; // Consume assignExpr
-                currentVarName = arrayName; // Restore array name
-
-                if (lhs == nullptr) lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
 
                 // Get array item
                 if (lhsPtr->getType()->getPointerElementType()->isArrayTy()) {
                     std::vector<llvm::Value*> indices = { builder->getInt32(0), indexValue };
                     lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, indices);
                 } else {
+                    if (lhs == nullptr) lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+
                     std::vector<llvm::Value*> indices = { indexValue };
                     lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indices);
                 }
-                lhs = nullptr;
+
+                currentVarName = arrayName; // Restore current var name
+                scopePath = scopePathBackup; // Restore scope path
+
+                lhs = nullptr; // Set lhs to nullptr to prevent a store
             } else if (symbolType == SpiceParser::LPAREN) { // Consider function call
                 tokenCounter++; // Consume LPAREN
 
@@ -1551,6 +1557,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
     allParamsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
     if (ctx->IDENTIFIER()) {
         currentVarName = ctx->IDENTIFIER()->toString();
+        scopePrefix += currentVarName;
 
         // Load symbol table entry
         SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
@@ -1689,6 +1696,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         llvm::Type* structType = structSymbol->getLLVMType();
 
         // Allocate space for the struct in memory
+        assert(!currentVarName.empty()); // Empty var names cause problems
         llvm::Value* structAddress = insertAlloca(structType, currentVarName);
         SymbolTableEntry* variableSymbol = currentScope->lookup(variableName);
         variableSymbol->updateAddress(structAddress);
@@ -1787,6 +1795,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
         // Empty array: '{}'
         assert(arrayType != nullptr);
+        assert(!currentVarName.empty()); // Empty var names cause problems
         return insertAlloca(arrayType, currentVarName);
     }
 
@@ -1948,14 +1957,6 @@ void GeneratorVisitor::createCondBr(llvm::Value* condition, llvm::BasicBlock* tr
 void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock* block) {
     builder->SetInsertPoint(block);
     blockAlreadyTerminated = false;
-}
-
-llvm::Value* GeneratorVisitor::insertAlloca(llvm::Type* llvmType) {
-    return insertAlloca(llvmType, "", nullptr);
-}
-
-llvm::Value* GeneratorVisitor::insertAlloca(llvm::Type* llvmType, const std::string& varName) {
-    return insertAlloca(llvmType, varName, nullptr);
 }
 
 llvm::Value* GeneratorVisitor::insertAlloca(llvm::Type* llvmType, const std::string& varName, llvm::Value* arraySize) {
