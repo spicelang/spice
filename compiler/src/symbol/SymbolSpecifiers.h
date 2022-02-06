@@ -28,8 +28,8 @@ const unsigned short SPECIFIER_DEFAULTS_BOOL = 0b00;
 const unsigned short SPECIFIER_DEFAULTS_PTR = 0b00;
 // Defaults: Const: 0, Signed: 0
 const unsigned short SPECIFIER_DEFAULTS_ARRAY = 0b00;
-// Defaults: Const: 1, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_STRUCT = 0b10;
+// Defaults: Const: 0, Signed: 0
+const unsigned short SPECIFIER_DEFAULTS_STRUCT = 0b00;
 // Defaults: Const: 1, Signed: 0
 const unsigned short SPECIFIER_DEFAULTS_FUNCTION = 0b10;
 // Defaults: Const: 1, Signed: 0

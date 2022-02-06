@@ -2124,7 +2124,7 @@ void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std
         // Create global struct
         llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
         newStructSymbol->updateLLVMType(structType);
-        newStructSymbol->updateState(INITIALIZED);
+        newStructSymbol->updateState(INITIALIZED, newStructSymbol->getDefinitionToken());
     }
 }
 

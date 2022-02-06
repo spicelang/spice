@@ -97,14 +97,14 @@ SymbolTable* SymbolTable::lookupTableWithSignature(const std::string& signature)
  * @param newState New state of the symbol to update
  * @param token Lexer token, where the symbol table update was initiated
  */
-void SymbolTable::update(const std::string& name, SymbolState newState) {
+void SymbolTable::update(const std::string& name, SymbolState newState, const antlr4::Token& token) {
     // If not available in the current scope, search in the parent scope
     if (symbols.find(name) == symbols.end()) {
-        if (parent == nullptr) throw std::runtime_error("Updating a non-existent symbol: " + name);
-        parent->update(name, newState);
+        if (parent == nullptr) throw std::runtime_error("Internal compiler error: Updating a non-existent symbol: " + name);
+        parent->update(name, newState, token);
     }
     // Otherwise, update the entry
-    symbols.at(name).updateState(newState);
+    symbols.at(name).updateState(newState, token);
 }
 
 /**

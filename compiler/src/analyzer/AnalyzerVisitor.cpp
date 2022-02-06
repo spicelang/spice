@@ -386,7 +386,8 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
         // Set declared variable to initialized, because we increment it internally in the loop
         if (!head->declStmt().front()->assignExpr()) {
             std::string varName = head->declStmt().front()->IDENTIFIER()->toString();
-            currentScope->lookup(varName)->updateState(INITIALIZED);
+            currentScope->lookup(varName)->updateState(INITIALIZED,
+                                                       *head->declStmt().front()->IDENTIFIER()->getSymbol());
         }
 
         // Check if index type is int
@@ -412,10 +413,10 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
     } else {
         if (itemType != arrayType.getContainedTy())
             throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
-                                "Foreach loop item type does not match array type. Expected " + arrayType.getName(false) +
-                                ", provided " + itemType.getName(false));
+                                "Foreach loop item type does not match array type. Expected " +
+                                arrayType.getName(false) + ", provided " + itemType.getName(false));
     }
-    itemVarSymbol->updateState(INITIALIZED);
+    itemVarSymbol->updateState(INITIALIZED, *head->declStmt().back()->IDENTIFIER()->getSymbol());
 
     // Visit statement list in new scope
     nestedLoopCounter++;
@@ -633,7 +634,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
         }
 
         // Set the return variable to initialized
-        returnVariable->updateState(INITIALIZED);
+        returnVariable->updateState(INITIALIZED, *ctx->start);
     } else {
         // Check if result variable is initialized
         if (returnVariable->getState() != INITIALIZED)
@@ -815,7 +816,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
 
             // Update state in symbol table
             if (!symbolTableEntry->getType().isOneOf({ TY_FUNCTION, TY_PROCEDURE }))
-                symbolTableEntry->updateState(INITIALIZED);
+                symbolTableEntry->updateState(INITIALIZED, *ctx->prefixUnaryExpr()->start);
 
             // Print compiler warning if the rhs size exceeds the lhs size
             if (lhsTy.isArray() && rhsTy.getArraySize() > lhsTy.getArraySize())

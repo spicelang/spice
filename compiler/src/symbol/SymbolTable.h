@@ -32,7 +32,7 @@ public:
     SymbolTable* lookupTable(const std::string& tableName);
     SymbolTable* lookupTableWithSignature(const std::string& signature);
 
-    void update(const std::string& symbolName, SymbolState newState);
+    void update(const std::string& symbolName, SymbolState newState, const antlr4::Token& token);
     void update(const std::string& symbolName, const SymbolType& newType);
 
     SymbolTable* createChildBlock(const std::string& tableName);
