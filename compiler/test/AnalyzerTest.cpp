@@ -115,8 +115,13 @@ void executeTest(const AnalyzerTestCase& testCase) {
         // Check if the exception message matches the expected output
         std::string exceptionFile = testCase.testPath + "/exception.out";
         if (TestUtil::fileExists(exceptionFile)) {
-            std::string expectedException = TestUtil::getFileContent(exceptionFile);
-            EXPECT_EQ(std::string(error.what()), expectedException);
+            if (TestUtil::isUpdateRefsEnabled()) {
+                // Update ref
+                TestUtil::setFileContent(exceptionFile, error.what());
+            } else {
+                std::string expectedException = TestUtil::getFileContent(exceptionFile);
+                EXPECT_EQ(std::string(error.what()), expectedException);
+            }
         } else {
             FAIL() << "Expected no error, but got '" << error.what() << "'";
         }

@@ -115,7 +115,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Verify module to detect IR code bugs
     std::string output;
     llvm::raw_string_ostream oss(output);
-    //if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
+    if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
 
     return result;
 }
@@ -184,7 +184,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         // Verify function
         std::string output;
         llvm::raw_string_ostream oss(output);
-        //if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
+        if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
         // Add function to function list
         functions.push_back(fct);
@@ -1697,7 +1697,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
         // Allocate space for the struct in memory
         assert(!currentVarName.empty()); // Empty var names cause problems
-        llvm::Value* structAddress = insertAlloca(structType, currentVarName);
+        llvm::Value* structAddress = insertAlloca(structType);
         SymbolTableEntry* variableSymbol = currentScope->lookup(variableName);
         variableSymbol->updateAddress(structAddress);
         variableSymbol->updateLLVMType(structType);

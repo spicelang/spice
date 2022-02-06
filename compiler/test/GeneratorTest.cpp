@@ -108,16 +108,20 @@ void executeTest(const GeneratorTestCase& testCase) {
         std::string irCodeO1FileName = testCase.testPath + "/ir-code-O1.ll";
         std::string irCodeO2FileName = testCase.testPath + "/ir-code-O2.ll";
         std::string irCodeO3FileName = testCase.testPath + "/ir-code-O3.ll";
+        std::string irCodeOptFileName;
         std::string expectedOptIR;
         int expectedOptLevel = 0;
         if (TestUtil::fileExists(irCodeO1FileName)) {
             expectedOptLevel = 1;
+            irCodeOptFileName = irCodeO1FileName;
             expectedOptIR = TestUtil::getFileContent(irCodeO1FileName);
         } else if (TestUtil::fileExists(irCodeO2FileName)) {
             expectedOptLevel = 2;
+            irCodeOptFileName = irCodeO2FileName;
             expectedOptIR = TestUtil::getFileContent(irCodeO2FileName);
         } else if (TestUtil::fileExists(irCodeO3FileName)) {
             expectedOptLevel = 3;
+            irCodeOptFileName = irCodeO3FileName;
             expectedOptIR = TestUtil::getFileContent(irCodeO3FileName);
         }
 
@@ -139,33 +143,41 @@ void executeTest(const GeneratorTestCase& testCase) {
         // Check if the ir code matches the expected output
         std::string irCodeFileName = testCase.testPath + "/ir-code.ll";
         if (TestUtil::fileExists(irCodeFileName)) {
-            std::string expectedIR = TestUtil::getFileContent(irCodeFileName);
             std::string actualIR = generator.getIRString();
-            // Cut of first n lines to have a target independent
-            for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
-                expectedIR.erase(0, expectedIR.find('\n') + 1);
-                actualIR.erase(0, actualIR.find('\n') + 1);
+            if (TestUtil::isUpdateRefsEnabled()) {
+                // Update ref
+                TestUtil::setFileContent(irCodeFileName, actualIR);
+            } else {
+                std::string expectedIR = TestUtil::getFileContent(irCodeFileName);
+                // Cut of first n lines to have a target independent
+                for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
+                    expectedIR.erase(0, expectedIR.find('\n') + 1);
+                    actualIR.erase(0, actualIR.find('\n') + 1);
+                }
+                EXPECT_EQ(expectedIR, actualIR);
             }
-            EXPECT_EQ(expectedIR, actualIR);
         }
 
         // Check if the optimized ir code matches the expected output
         if (expectedOptLevel > 0) {
             generator.optimize();
             std::string actualOptimizedIR = generator.getIRString();
-            // Cut of first n lines to have a target independent
-            for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
-                expectedOptIR.erase(0, expectedOptIR.find('\n') + 1);
-                actualOptimizedIR.erase(0, actualOptimizedIR.find('\n') + 1);
+            if (TestUtil::isUpdateRefsEnabled()) {
+                // Update ref
+                TestUtil::setFileContent(irCodeOptFileName, actualOptimizedIR);
+            } else {
+                // Cut of first n lines to have a target independent
+                for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
+                    expectedOptIR.erase(0, expectedOptIR.find('\n') + 1);
+                    actualOptimizedIR.erase(0, actualOptimizedIR.find('\n') + 1);
+                }
+                EXPECT_EQ(expectedOptIR, actualOptimizedIR);
             }
-            EXPECT_EQ(expectedOptIR, actualOptimizedIR);
         }
 
         // Check if the execution output matches the expected output
         std::string outputFileName = testCase.testPath + "/cout.out";
         if (TestUtil::fileExists(outputFileName)) {
-            std::string expectedOutput = TestUtil::getFileContent(outputFileName);
-
             // Emit the object file
             generator.emit(); // Emit object file for specified platform
 
@@ -173,10 +185,17 @@ void executeTest(const GeneratorTestCase& testCase) {
             TestUtil::exec("gcc -no-pie -o source source.spice.o");
 
             // Execute the program and get the output
-            std::string executionOutput = TestUtil::exec(TestUtil::getDefaultExecutableName());
+            std::string actualOutput = TestUtil::exec(TestUtil::getDefaultExecutableName());
 
-            // Check if the outputs are matching
-            EXPECT_EQ(expectedOutput, executionOutput);
+            if (TestUtil::isUpdateRefsEnabled()) {
+                // Update ref
+                TestUtil::setFileContent(outputFileName, actualOutput);
+            } else {
+                std::string expectedOutput = TestUtil::getFileContent(outputFileName);
+
+                // Check if the outputs are matching
+                EXPECT_EQ(expectedOutput, actualOutput);
+            }
         }
 
         SUCCEED();

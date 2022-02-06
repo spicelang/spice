@@ -22,4 +22,5 @@ add_test(NAME ${BINARY} COMMAND ${BINARY})
 target_link_libraries(${BINARY} PUBLIC ${CMAKE_PROJECT_NAME}_lib gtest antlr4_static ${LLVM_LIBS})
 
 # Test files
-file(COPY test-files DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#file(COPY test-files DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/test-files ${CMAKE_CURRENT_BINARY_DIR}/test-files SYMBOLIC)

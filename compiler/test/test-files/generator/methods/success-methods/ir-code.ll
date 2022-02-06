@@ -43,30 +43,30 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   %letter = alloca %Letter, align 8
-  %Letter = alloca %Letter, align 8
-  %0 = alloca i8*, align 8
+  %0 = alloca %Letter, align 8
   %1 = alloca i8*, align 8
-  %2 = alloca i1, align 1
-  %3 = alloca i8*, align 8
+  %2 = alloca i8*, align 8
+  %3 = alloca i1, align 1
+  %4 = alloca i8*, align 8
   store i32 0, i32* %result, align 4
-  store i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i32 0, i32 0), i8** %0, align 8
-  %4 = load i8*, i8** %0, align 8
-  %5 = getelementptr inbounds %Letter, %Letter* %Letter, i32 0, i32 0
-  store i8* %4, i8** %5, align 8
-  %6 = load %Letter, %Letter* %Letter, align 8
-  store %Letter %6, %Letter* %letter, align 8
-  %7 = load %Letter, %Letter* %letter, align 8
-  store i8* getelementptr inbounds ([13 x i8], [13 x i8]* @1, i32 0, i32 0), i8** %1, align 8
-  %8 = load i8*, i8** %1, align 8
-  call void @"setContent(string)"(%Letter* %letter, i8* %8)
-  store i1 true, i1* %2, align 1
-  %9 = load %Letter, %Letter* %letter, align 8
-  %10 = call i8* @"getContent()"(%Letter* %letter)
-  store i8* %10, i8** %3, align 8
-  %11 = load i8*, i8** %3, align 8
-  %12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @2, i32 0, i32 0), i8* %11)
-  %13 = load i32, i32* %result, align 4
-  ret i32 %13
+  store i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i32 0, i32 0), i8** %1, align 8
+  %5 = load i8*, i8** %1, align 8
+  %6 = getelementptr inbounds %Letter, %Letter* %0, i32 0, i32 0
+  store i8* %5, i8** %6, align 8
+  %7 = load %Letter, %Letter* %0, align 8
+  store %Letter %7, %Letter* %letter, align 8
+  %8 = load %Letter, %Letter* %letter, align 8
+  store i8* getelementptr inbounds ([13 x i8], [13 x i8]* @1, i32 0, i32 0), i8** %2, align 8
+  %9 = load i8*, i8** %2, align 8
+  call void @"setContent(string)"(%Letter* %letter, i8* %9)
+  store i1 true, i1* %3, align 1
+  %10 = load %Letter, %Letter* %letter, align 8
+  %11 = call i8* @"getContent()"(%Letter* %letter)
+  store i8* %11, i8** %4, align 8
+  %12 = load i8*, i8** %4, align 8
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @2, i32 0, i32 0), i8* %12)
+  %14 = load i32, i32* %result, align 4
+  ret i32 %14
 }
 
 attributes #0 = { nounwind }

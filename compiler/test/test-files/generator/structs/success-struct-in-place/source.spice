@@ -1,3 +1,5 @@
+// See Issue #82
+
 type ShoppingItem struct {
     string name
     double amount

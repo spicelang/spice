@@ -39,11 +39,22 @@ std::vector<std::string> TestUtil::getSubdirs(const std::string& basePath) {
  * @return File contents as a string
  */
 std::string TestUtil::getFileContent(const std::string& filePath) {
-    std::ifstream symbolTableStream;
-    symbolTableStream.open(filePath);
+    std::ifstream inputFileStream;
+    inputFileStream.open(filePath);
     std::ostringstream stringStream;
-    stringStream << symbolTableStream.rdbuf();
+    stringStream << inputFileStream.rdbuf();
     return stringStream.str();
+}
+
+/**
+ * Write a string to a certain file. The string will replace the original contents of the file
+ *
+ * @param filePath File path
+ * @param content New contents as a string
+ */
+void TestUtil::setFileContent(const std::string& filePath, const std::string& content) {
+    std::ofstream outputFileStream(filePath);
+    outputFileStream << content;
 }
 
 /**
@@ -70,7 +81,7 @@ std::string TestUtil::toCamelCase(std::string input) {
  */
 std::string TestUtil::exec(const std::string& cmd) {
     std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-    if (!pipe) return "ERROR";
+    if (!pipe) throw std::runtime_error("Failed to execute command: " + cmd);
     char buffer[128];
     std::string result;
     while (!feof(pipe.get())) {
@@ -91,4 +102,13 @@ std::string TestUtil::getDefaultExecutableName() {
     executableName = ".\\source.exe";
 #endif
     return executableName;
+}
+
+/**
+ * Check if the update refs mode is enabled
+ *
+ * @return Enabled or not
+ */
+bool TestUtil::isUpdateRefsEnabled() {
+    return updateRefs;
 }

@@ -11,12 +11,16 @@
 #include <string>
 #include <vector>
 
+extern bool updateRefs;
+
 class TestUtil {
 public:
     static bool fileExists(const std::string& filePath);
     static std::vector<std::string> getSubdirs(const std::string& basePath);
     static std::string getFileContent(const std::string& filePath);
+    static void setFileContent(const std::string& filePath, const std::string& content);
     static std::string toCamelCase(std::string input);
     static std::string exec(const std::string& cmd);
     static std::string getDefaultExecutableName();
+    static bool isUpdateRefsEnabled();
 };
