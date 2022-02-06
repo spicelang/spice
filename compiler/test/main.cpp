@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-bool updateRefs;
+bool updateRefs = false;
 
 /**
  * Entry point to the Spice testing suite
@@ -14,11 +14,11 @@ bool updateRefs;
 int main(int argc, char **argv) { // Call ./spicetest update-refs
     // Parse cli args
     std::vector<std::string> args;
-    for (size_t iArg = 0; iArg < argc; ++iArg)
-        args.emplace_back(argv[iArg]);
+    for (size_t i = 1; i < argc; i++)
+        args.emplace_back(argv[i]);
 
     // Extract cli args
-    updateRefs = args[1] == "true";
+    updateRefs = !args.empty() && args[0] == "true";
 
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
