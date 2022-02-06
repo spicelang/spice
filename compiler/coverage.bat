@@ -1,0 +1,2 @@
+mkdir coverage
+gcovr -r .
