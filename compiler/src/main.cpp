@@ -2,6 +2,8 @@
 
 #include "CompilerInstance.h"
 
+#include <stdexcept>
+
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
 #include <exception/IRError.h>

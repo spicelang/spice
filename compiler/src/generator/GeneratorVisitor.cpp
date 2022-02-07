@@ -2,6 +2,8 @@
 
 #include "GeneratorVisitor.h"
 
+#include <stdexcept>
+
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
 #include <util/CompilerWarning.h>

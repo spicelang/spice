@@ -2,6 +2,8 @@
 
 #include "symbol/SymbolSpecifiers.h"
 
+#include <stdexcept>
+
 SymbolSpecifiers::SymbolSpecifiers(SymbolType type) {
     switch (type.getSuperType()) {
         case TY_DOUBLE:
