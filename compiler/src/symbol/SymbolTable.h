@@ -55,12 +55,6 @@ public:
     void pushSignature(const FunctionSignature& signature);
     FunctionSignature popSignature();
 
-    void setContinueBlock(llvm::BasicBlock* continueBlock);
-    llvm::BasicBlock* getContinueBlock() const;
-
-    void setBreakBlock(llvm::BasicBlock* breakBlock);
-    llvm::BasicBlock* getBreakBlock() const;
-
     void printCompilerWarnings();
 
     nlohmann::ordered_json toJSON();

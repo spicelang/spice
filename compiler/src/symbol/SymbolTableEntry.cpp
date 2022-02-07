@@ -105,8 +105,8 @@ void SymbolTableEntry::updateState(SymbolState newState, const antlr4::Token& to
     if (state == INITIALIZED && specifiers.isConst())
         throw SemanticError(token, REASSIGN_CONST_VARIABLE,
                             "Not re-assignable variable '" + name + "'");
-    if (newState == INITIALIZED && type == SymbolType(TY_DYN))
-        throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'");
+    if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                               // GCOV_EXCL_LINE
+        throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
     state = newState;
 }
 
@@ -116,8 +116,8 @@ void SymbolTableEntry::updateState(SymbolState newState, const antlr4::Token& to
  * @param newType New type of the current symbol
  */
 void SymbolTableEntry::updateType(SymbolType newType, bool force) {
-    if (!force && type != SymbolType(TY_DYN))
-        throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn");
+    if (!force && type != SymbolType(TY_DYN))                                      // GCOV_EXCL_LINE
+        throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn"); // GCOV_EXCL_LINE
     type = std::move(newType);
 }
 

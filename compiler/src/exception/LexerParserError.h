@@ -12,7 +12,7 @@
 class LexerParserError : public std::exception {
 public:
     // Constructors
-    explicit LexerParserError(std::string message): errorMessage(std::move(message)) {}
+    explicit LexerParserError(std::string message): errorMessage(std::move(message)) {} // GCOV_EXCL_LINE
 
     // Public methods
     const char* what() const noexcept override;

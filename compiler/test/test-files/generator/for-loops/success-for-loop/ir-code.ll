@@ -21,7 +21,7 @@ entry:
   store i32 %4, i32* %i, align 4
   br label %for.cond
 
-for.cond:                                         ; preds = %for, %entry
+for.cond:                                         ; preds = %for.post, %entry
   store i32 10, i32* %1, align 4
   %5 = load i32, i32* %i, align 4
   %6 = load i32, i32* %1, align 4
@@ -33,6 +33,9 @@ for.cond:                                         ; preds = %for, %entry
 for:                                              ; preds = %for.cond
   %9 = load i32, i32* %i, align 4
   %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0), i32 %9)
+  br label %for.post
+
+for.post:                                         ; preds = %for
   store i32 2, i32* %3, align 4
   %11 = load i32, i32* %3, align 4
   %12 = load i32, i32* %i, align 4

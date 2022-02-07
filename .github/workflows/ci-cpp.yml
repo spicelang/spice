@@ -70,7 +70,7 @@ jobs:
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
           cd ./compiler/bin/test
-          ./Spice_test
+          ./Spice_test "false"
 
       - name: Generate coverage report
         run: |

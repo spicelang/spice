@@ -99,6 +99,8 @@ private:
     llvm::Value* currentThisValue = nullptr;
     llvm::BasicBlock* allocaInsertBlock = nullptr;
     llvm::Instruction* allocaInsertInst = nullptr;
+    std::stack<llvm::BasicBlock*> breakBlocks;
+    std::stack<llvm::BasicBlock*> continueBlocks;
     bool constNegate = false;
     bool allParamsHardcoded = true;
     llvm::Constant* currentConstValue = nullptr;
