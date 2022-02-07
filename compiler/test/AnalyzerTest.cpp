@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include <iostream>
+#include <stdexcept>
 
 #include <gtest/gtest.h>
 
@@ -110,7 +110,19 @@ void executeTest(const AnalyzerTestCase& testCase) {
 
         SUCCEED();
     } catch (LexerParserError& error) {
-        FAIL() << "Hit lexer/parser error: " << error.what();
+        // Check if the exception message matches the expected output
+        std::string exceptionFile = testCase.testPath + "/exception.out";
+        if (TestUtil::fileExists(exceptionFile)) {
+            if (TestUtil::isUpdateRefsEnabled()) {
+                // Update ref
+                TestUtil::setFileContent(exceptionFile, error.what());
+            } else {
+                std::string expectedException = TestUtil::getFileContent(exceptionFile);
+                EXPECT_EQ(std::string(error.what()), expectedException);
+            }
+        } else {
+            FAIL() << "Expected no error, but got '" << error.what() << "'";
+        }
     } catch (SemanticError& error) {
         // Check if the exception message matches the expected output
         std::string exceptionFile = testCase.testPath + "/exception.out";
@@ -139,9 +151,11 @@ class AnalyzerFunctionCallTests : public ::testing::TestWithParam<AnalyzerTestCa
 class AnalyzerFunctionTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerIfStatementTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerImportTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerLexerTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerLoopCtlInstTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerMethodTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerOperatorTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerParserTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerProcedureTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerStructTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerTernaryTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
@@ -187,6 +201,10 @@ TEST_P(AnalyzerImportTests, ImportTests) {
     executeTest(GetParam());
 }
 
+TEST_P(AnalyzerLexerTests, LexerTests) {
+    executeTest(GetParam());
+}
+
 TEST_P(AnalyzerLoopCtlInstTests, LoopCtlInstTests) {
     executeTest(GetParam());
 }
@@ -196,6 +214,10 @@ TEST_P(AnalyzerMethodTests, MethodTests) {
 }
 
 TEST_P(AnalyzerOperatorTests, OperatorTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(AnalyzerParserTests, ParserTests) {
     executeTest(GetParam());
 }
 
@@ -292,55 +314,67 @@ INSTANTIATE_TEST_SUITE_P(
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerLoopCtlInstTests,
-        AnalyzerLoopCtlInstTests,
+        AnalyzerLexerTests,
+        AnalyzerLexerTests,
         ::testing::ValuesIn(testSuites[9]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerMethodTests,
-        AnalyzerMethodTests,
+        AnalyzerLoopCtlInstTests,
+        AnalyzerLoopCtlInstTests,
         ::testing::ValuesIn(testSuites[10]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerOperatorTests,
-        AnalyzerOperatorTests,
+        AnalyzerMethodTests,
+        AnalyzerMethodTests,
         ::testing::ValuesIn(testSuites[11]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerProcedureTests,
-        AnalyzerProcedureTests,
+        AnalyzerOperatorTests,
+        AnalyzerOperatorTests,
         ::testing::ValuesIn(testSuites[12]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerStructTests,
-        AnalyzerStructTests,
+        AnalyzerParserTests,
+        AnalyzerParserTests,
         ::testing::ValuesIn(testSuites[13]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerTernaryTests,
-        AnalyzerTernaryTests,
+        AnalyzerProcedureTests,
+        AnalyzerProcedureTests,
         ::testing::ValuesIn(testSuites[14]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerTypeSystemTests,
-        AnalyzerTypeSystemTests,
+        AnalyzerStructTests,
+        AnalyzerStructTests,
         ::testing::ValuesIn(testSuites[15]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        AnalyzerVariableTests,
-        AnalyzerVariableTests,
+        AnalyzerTernaryTests,
+        AnalyzerTernaryTests,
         ::testing::ValuesIn(testSuites[16]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerTypeSystemTests,
+        AnalyzerTypeSystemTests,
+        ::testing::ValuesIn(testSuites[17]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        AnalyzerVariableTests,
+        AnalyzerVariableTests,
+        ::testing::ValuesIn(testSuites[18]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         AnalyzerWhileLoopTests,
         AnalyzerWhileLoopTests,
-        ::testing::ValuesIn(testSuites[17]),
+        ::testing::ValuesIn(testSuites[19]),
         NameResolver());

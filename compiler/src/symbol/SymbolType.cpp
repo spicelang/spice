@@ -2,6 +2,8 @@
 
 #include "SymbolType.h"
 
+#include <stdexcept>
+
 #include <exception/SemanticError.h>
 
 /**

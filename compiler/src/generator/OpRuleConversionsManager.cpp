@@ -2,6 +2,8 @@
 
 #include "OpRuleConversionsManager.h"
 
+#include <stdexcept>
+
 #include <symbol/SymbolType.h>
 #include <exception/IRError.h>
 

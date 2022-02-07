@@ -16,6 +16,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Setup Ninja
+        run: sudo apt-get install ninja-build
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v1
         with:
@@ -26,16 +29,16 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-13-0-0
+          key: llvm-13-0-1
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
-          git clone --depth 1 --branch llvmorg-13.0.0 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -G "Unix Makefiles" ../llvm
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -52,7 +55,7 @@ jobs:
         run: |
           mkdir ./compiler/bin
           cd ./compiler/bin
-          cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DWITH_TESTS=ON -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Release -GNinja -Wattributes ..
           cmake --build . --target Spice_test
 
       - name: Run Test target
@@ -60,7 +63,7 @@ jobs:
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
           cd ./compiler/bin/test
-          ./Spice_test
+          ./Spice_test "false"
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1

@@ -6,7 +6,8 @@
 #include <dirent.h>
 #include <sstream>
 #include <memory>
-#include <cstring>
+#include <cstring> // Required by builds on Linux
+#include <stdexcept>
 
 bool TestUtil::fileExists(const std::string& filePath) {
     return std::ifstream(filePath.c_str()).good();

@@ -2,6 +2,8 @@
 
 #include "symbol/SymbolTable.h"
 
+#include <stdexcept>
+
 #include <analyzer/AnalyzerVisitor.h>
 #include <util/CompilerWarning.h>
 
