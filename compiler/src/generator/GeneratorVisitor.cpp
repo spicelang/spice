@@ -613,8 +613,8 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     llvm::Value* maxIndex = builder->getInt32(value->getType()->getArrayNumElements() - 1);
     // Load the first item into item variable
     llvm::Value* index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
-    llvm::ArrayRef<llvm::Value*> idxList = { builder->getInt32(0), index };
-    llvm::Value* itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, idxList);
+    llvm::Value* itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr,
+                                                      { builder->getInt32(0), index });
     llvm::Value* newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
@@ -642,8 +642,8 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     index = builder->CreateAdd(index, builder->getInt32(1), "idx.inc");
     builder->CreateStore(index, indexVariablePtr);
     // Load new item into item variable
-    idxList = { builder->getInt32(0), index };
-    itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, idxList);
+    itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr,
+                                         { builder->getInt32(0), index });
     newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
