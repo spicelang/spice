@@ -1,10 +1,10 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "GeneratorVisitor.h"
-#include "util/CompilerWarning.h"
 
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
+#include <util/CompilerWarning.h>
 #include <exception/IRError.h>
 
 #include <analyzer/AnalyzerVisitor.h>

@@ -1,2 +1,2 @@
 mkdir coverage
-gcovr -r .
+gcovr -s -r . -f ../src -f ../test
