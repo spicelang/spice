@@ -1,0 +1,1 @@
+Semantic error at 1:27: Wrong data type for operator: Cannot apply the assign operator on different data types. You provided int and short

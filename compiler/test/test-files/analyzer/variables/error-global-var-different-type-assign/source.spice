@@ -1,0 +1,5 @@
+const unsigned int test = 6s;
+
+f<int> main() {
+    printf("Int: %d", test);
+}
