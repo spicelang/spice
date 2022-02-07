@@ -1,0 +1,4 @@
+f<int> main() {
+    short s = 123s;
+    dyn** dynPointer = &&s;
+}

@@ -62,5 +62,5 @@ std::string IRError::getMessagePrefix(IRErrorType type) {
         case COMING_SOON_IR:
             return "Coming soon";
     }
-    return "Unknown error";
+    return "Unknown error"; // GCOV_EXCL_LINE
 }

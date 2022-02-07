@@ -1,0 +1,13 @@
+const int MODE_ALL_RWX   = 511;   // Decimal for octal: 0000777
+
+ext<int> mkdir(string, int);
+ext<int> rmdir(string);
+ext free(char*);
+
+f<int> main() {
+    printf("Creating dir ...\n");
+    mkdir("./test-dir", MODE_ALL_RWX);
+    printf("Deleting dir ...\n");
+    rmdir("./test-dir");
+    printf("Done.");
+}

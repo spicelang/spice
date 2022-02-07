@@ -37,14 +37,14 @@ foreach.loop:                                     ; preds = %foreach.inc, %entry
   %10 = load i32, i32* %item, align 4
   %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @0, i32 0, i32 0), i32 %9, i32 %10)
   %12 = load i32, i32* %idx, align 4
-  %foreach_idx_cmp = icmp slt i32 %12, 4
-  br i1 %foreach_idx_cmp, label %foreach.inc, label %foreach.end
+  %13 = icmp slt i32 %12, 4
+  br i1 %13, label %foreach.inc, label %foreach.end
 
 foreach.inc:                                      ; preds = %foreach.loop
-  %13 = load i32, i32* %idx, align 4
-  %foreach_idx_inc = add i32 %13, 1
-  store i32 %foreach_idx_inc, i32* %idx, align 4
-  %14 = getelementptr inbounds [5 x i32], [5 x i32]* @item, i32 0, i32 %foreach_idx_inc
+  %idx1 = load i32, i32* %idx, align 4
+  %idx.inc = add i32 %idx1, 1
+  store i32 %idx.inc, i32* %idx, align 4
+  %14 = getelementptr inbounds [5 x i32], [5 x i32]* @item, i32 0, i32 %idx.inc
   %15 = load i32, i32* %14, align 4
   store i32 %15, i32* %item, align 4
   br label %foreach.loop

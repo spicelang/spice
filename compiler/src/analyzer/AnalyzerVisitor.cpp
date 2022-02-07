@@ -635,15 +635,17 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
 
         // Set the return variable to initialized
         returnVariable->updateState(INITIALIZED, *ctx->start);
-    } else {
-        // Check if result variable is initialized
-        if (returnVariable->getState() != INITIALIZED)
-            throw SemanticError(*ctx->start, RETURN_WITHOUT_VALUE_RESULT,
-                                "Return without value, but result variable is not initialized yet");
-        returnType = returnVariable->getType();
+    } else if (returnVariable == nullptr) {
+        return SymbolType(TY_BOOL);
     }
+
+    // Check if result variable is initialized
+    if (returnVariable->getState() != INITIALIZED)
+        throw SemanticError(*ctx->start, RETURN_WITHOUT_VALUE_RESULT,
+                            "Return without value, but result variable is not initialized yet");
     returnVariable->setUsed();
-    return returnType;
+
+    return returnVariable->getType();
 }
 
 antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx) {
@@ -681,7 +683,7 @@ antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContex
 antlrcpp::Any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) {
     if (ctx->printfCall()) return visit(ctx->printfCall());
     if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
-    throw std::runtime_error("Internal compiler error: Could not find builtin function");
+    throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* ctx) {

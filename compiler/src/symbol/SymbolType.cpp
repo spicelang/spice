@@ -40,7 +40,8 @@ SymbolType SymbolType::toArray(unsigned int size) {
  * @return Base type
  */
 SymbolType SymbolType::getContainedTy() {
-    if (typeChain.empty()) throw std::runtime_error("Internal compiler error: Cannot get contained type of empty type");
+    if (typeChain.empty())                                                                            // GCOV_EXCL_LINE
+        throw std::runtime_error("Internal compiler error: Cannot get contained type of empty type"); // GCOV_EXCL_LINE
     if (std::get<0>(typeChain.top()) == TY_STRING) return SymbolType(TY_CHAR);
     TypeChain newTypeChain = typeChain;
     newTypeChain.pop();
@@ -150,22 +151,6 @@ bool SymbolType::isBaseType(SymbolSuperType superType) {
 }
 
 /**
- * Check if the base type of the current type chain is of a certain super type and sub type
- *
- * @param superType Super type to check for
- * @param subType Sub type to check for
- * @return Applicable or not
- */
-bool SymbolType::isBaseType(SymbolSuperType superType, const std::string& subType) {
-    // Copy the stack to not destroy the present one
-    TypeChain chainCopy = typeChain;
-    // Unwrap the chain until the base type can be retrieved
-    while (std::get<0>(chainCopy.top()) == TY_PTR || std::get<0>(chainCopy.top()) == TY_ARRAY) chainCopy.pop();
-    // Check if it is of the given superType and subType
-    return std::get<0>(chainCopy.top()) == superType && std::get<1>(chainCopy.top()) == subType;
-}
-
-/**
  * Check if the current type is amongst a collection of certain super types
  *
  * @param superTypes Vector of super types
@@ -228,25 +213,13 @@ std::string SymbolType::getName(bool withSize) {
 }
 
 /**
- * Set the size of the current size
- *
- * @param size New array size
- */
-void SymbolType::setArraySize(unsigned int size) {
-    if (std::get<0>(typeChain.top()) != TY_ARRAY)
-        throw std::runtime_error("Internal compiler error: Cannot set size of non-array type");
-
-    std::get<1>(typeChain.top()) = std::to_string(size);
-}
-
-/**
  * Get the size of the current type
  *
  * @return Size
  */
 unsigned int SymbolType::getArraySize() {
-    if (std::get<0>(typeChain.top()) != TY_ARRAY)
-        throw std::runtime_error("Internal compiler error: Cannot get size of non-array type");
+    if (std::get<0>(typeChain.top()) != TY_ARRAY)                                             // GCOV_EXCL_LINE
+        throw std::runtime_error("Internal compiler error: Cannot get size of non-array type");  // GCOV_EXCL_LINE
 
     return std::stoi(std::get<1>(typeChain.top()));
 }
@@ -283,7 +256,7 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement& chainEle
         case TY_FUNCTION: return "function";
         case TY_PROCEDURE: return "procedure";
         case TY_IMPORT: return "import";
-        case TY_INVALID: return "invalid";
+        case TY_INVALID: return "invalid"; // GCOV_EXCL_LINE
     }
-    return "unknown";
+    return "unknown"; // GCOV_EXCL_LINE
 }

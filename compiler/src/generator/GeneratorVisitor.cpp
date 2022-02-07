@@ -1,10 +1,10 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "GeneratorVisitor.h"
-#include "util/CompilerWarning.h"
 
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
+#include <util/CompilerWarning.h>
 #include <exception/IRError.h>
 
 #include <analyzer/AnalyzerVisitor.h>
@@ -505,6 +505,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
 
     // Create blocks
     llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "for.cond");
+    llvm::BasicBlock* bPost = llvm::BasicBlock::Create(*context, "for.post");
     llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "for");
     llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "for.end");
 
@@ -512,8 +513,8 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
     assert(currentScope != nullptr);
-    currentScope->setContinueBlock(bCond);
-    currentScope->setBreakBlock(bEnd);
+    breakBlocks.push(bEnd);
+    continueBlocks.push(bPost);
 
     // Execute pre-loop stmts
     visit(ctx->declStmt());
@@ -533,6 +534,12 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     moveInsertPointToBlock(bLoop);
     // Generate IR for nested statements
     visit(ctx->stmtLst());
+    // Jump into post block
+    createBr(bPost);
+
+    // Fill loop post block
+    parentFct->getBasicBlockList().push_back(bPost);
+    moveInsertPointToBlock(bPost);
     // Run post-loop actions
     visit(ctx->assignExpr()[1]);
     // Jump into condition block
@@ -541,6 +548,10 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bEnd);
     moveInsertPointToBlock(bEnd);
+
+    // Pop basic blocks from break and continue stacks
+    breakBlocks.pop();
+    continueBlocks.pop();
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -562,8 +573,8 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
     assert(currentScope != nullptr);
-    currentScope->setContinueBlock(bInc);
-    currentScope->setBreakBlock(bEnd);
+    breakBlocks.push(bEnd);
+    continueBlocks.push(bInc);
 
     // Initialize loop variables
     llvm::Value* indexVariablePtr;
@@ -595,14 +606,14 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     llvm::Value* itemVariablePtr = itemVariableEntry->getAddress();
 
     // Do loop variable initialization
-    llvm::Value* arrayValuePtr = visit(ctx->foreachHead()->assignExpr()).as<llvm::Value*>();
-    llvm::Value* arrayValue = builder->CreateLoad(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr);
-    llvm::Value* maxIndex = builder->getInt32(arrayValue->getType()->getArrayNumElements() -1);
+    llvm::Value* valuePtr = visit(ctx->foreachHead()->assignExpr()).as<llvm::Value*>();
+    llvm::Value* value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    llvm::Value* maxIndex = builder->getInt32(value->getType()->getArrayNumElements() - 1);
     // Load the first item into item variable
-    llvm::Value* indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
-    llvm::Value* gepInst = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(),
-                                                      arrayValuePtr, { builder->getInt32(0), indexValue });
-    llvm::Value* newItemValue = builder->CreateLoad(gepInst->getType()->getPointerElementType(), gepInst);
+    llvm::Value* index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+    llvm::ArrayRef<llvm::Value*> idxList = { builder->getInt32(0), index };
+    llvm::Value* itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, idxList);
+    llvm::Value* newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
 
@@ -615,27 +626,33 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     // Generate IR for nested statements
     visit(ctx->stmtLst());
     // Check if the index variable reached the size -2
-    indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
-    llvm::Value* cond = builder->CreateICmpSLT(indexValue, maxIndex, "foreach_idx_cmp");
-    createCondBr(cond, bInc, bEnd);
+    if (!blockAlreadyTerminated) {
+        index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+        llvm::Value* cond = builder->CreateICmpSLT(index, maxIndex);
+        createCondBr(cond, bInc, bEnd);
+    }
 
     // Fill inc block
     parentFct->getBasicBlockList().push_back(bInc);
     moveInsertPointToBlock(bInc);
     // Increment index variable
-    indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
-    indexValue = builder->CreateAdd(indexValue, builder->getInt32(1), "foreach_idx_inc");
-    builder->CreateStore(indexValue, indexVariablePtr);
+    index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr, "idx");
+    index = builder->CreateAdd(index, builder->getInt32(1), "idx.inc");
+    builder->CreateStore(index, indexVariablePtr);
     // Load new item into item variable
-    gepInst = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(),
-                                         arrayValuePtr, { builder->getInt32(0), indexValue });
-    newItemValue = builder->CreateLoad(gepInst->getType()->getPointerElementType(), gepInst);
+    idxList = { builder->getInt32(0), index };
+    itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, idxList);
+    newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
 
     // Fill loop end block
     parentFct->getBasicBlockList().push_back(bEnd);
     moveInsertPointToBlock(bEnd);
+
+    // Pop basic blocks from break and continue stacks
+    breakBlocks.pop();
+    continueBlocks.pop();
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -651,14 +668,14 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     // Create blocks
     llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "while.cond");
     llvm::BasicBlock* bLoop = llvm::BasicBlock::Create(*context, "while");
-    llvm::BasicBlock* bLoopEnd = llvm::BasicBlock::Create(*context, "while.end");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "while.end");
 
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
     assert(currentScope != nullptr);
-    currentScope->setContinueBlock(bCond);
-    currentScope->setBreakBlock(bLoopEnd);
+    breakBlocks.push(bEnd);
+    continueBlocks.push(bCond);
 
     // Jump into condition block
     createBr(bCond);
@@ -668,7 +685,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     moveInsertPointToBlock(bCond);
     llvm::Value* condValuePtr = visit(ctx->assignExpr()).as<llvm::Value*>();
     llvm::Value* condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
-    createCondBr(condValue, bLoop, bLoopEnd);
+    createCondBr(condValue, bLoop, bEnd);
 
     // Fill loop block
     parentFct->getBasicBlockList().push_back(bLoop);
@@ -679,8 +696,8 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ct
     createBr(bCond);
 
     // Fill loop end block
-    parentFct->getBasicBlockList().push_back(bLoopEnd);
-    moveInsertPointToBlock(bLoopEnd);
+    parentFct->getBasicBlockList().push_back(bEnd);
+    moveInsertPointToBlock(bEnd);
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -806,6 +823,9 @@ antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* 
         returnValuePtr = returnVarEntry->getAddress();
     }
 
+    // Set block to terminated
+    blockAlreadyTerminated = true;
+
     // No return value
     if (returnValuePtr == nullptr) {
         builder->CreateRetVoid();
@@ -815,7 +835,6 @@ antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* 
     // Return value
     llvm::Value* returnValue = builder->CreateLoad(returnValuePtr->getType()->getPointerElementType(), returnValuePtr);
     builder->CreateRet(returnValue);
-    blockAlreadyTerminated = true;
     return returnValuePtr;
 }
 
@@ -825,17 +844,10 @@ antlrcpp::Any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ct
     if (ctx->INTEGER()) breakCount = std::stoi(ctx->INTEGER()->toString());
 
     // Get destination block
-    SymbolTable* scope = currentScope;
-    assert(scope != nullptr);
-    while (!scope->getBreakBlock()) scope = scope->getParent();
-    for (int i = 1; i < breakCount; i++) {
-        scope = scope->getParent();
-        while (!scope->getBreakBlock()) scope = scope->getParent();
-    }
-    llvm::BasicBlock* destinationBlock = scope->getBreakBlock();
+    for (int i = 1; i < breakCount; i++) breakBlocks.pop();
 
     // Jump to destination block
-    createBr(destinationBlock);
+    createBr(breakBlocks.top());
     return nullptr;
 }
 
@@ -845,17 +857,10 @@ antlrcpp::Any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtConte
     if (ctx->INTEGER()) continueCount = std::stoi(ctx->INTEGER()->toString());
 
     // Get destination block
-    SymbolTable* scope = currentScope;
-    assert(scope != nullptr);
-    while (!scope->getBreakBlock()) scope = scope->getParent();
-    for (int i = 1; i < continueCount; i++) {
-        scope = scope->getParent();
-        while (!scope->getBreakBlock()) scope = scope->getParent();
-    }
-    llvm::BasicBlock* destinationBlock = scope->getContinueBlock();
+    for (int i = 1; i < continueCount; i++) continueBlocks.pop();
 
     // Jump to destination block
-    createBr(destinationBlock);
+    createBr(continueBlocks.top());
     return nullptr;
 }
 

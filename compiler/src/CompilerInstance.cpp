@@ -71,11 +71,11 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             stdFile
     );
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
-    if (debugOutput) {
+    if (debugOutput) { // GCOV_EXCL_START
         // Print symbol table
         std::cout << "\nSymbol table of file " << sourceFile << ":\n" << std::endl;
         std::cout << symbolTable->toJSON().dump(2) << std::endl;
-    }
+    } // GCOV_EXCL_STOP
 
     // Get file name from file path
     std::string fileName = FileUtil::getFileName(sourceFile);
@@ -94,19 +94,19 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     );
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
-    if (debugOutput) {
+    if (debugOutput) { // GCOV_EXCL_START
         // Dump unoptimized IR code
         std::cout << "\nIR code:" << std::endl;
         generator.dumpIR();
-    }
+    } // GCOV_EXCL_STOP
 
     if (optLevel >= 1 && optLevel <= 3) {
         generator.optimize(); // Optimize IR code
-        if (debugOutput) {
+        if (debugOutput) { // GCOV_EXCL_START
             // Dump optimized IR code
             std::cout << "\nOptimized IR code:" << std::endl;
             generator.dumpIR();
-        }
+        } // GCOV_EXCL_STOP
     }
 
     generator.emit(); // Emit object file for specified platform

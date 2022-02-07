@@ -1,0 +1,8 @@
+p executeAction(bool input) {
+    if (input) { return; }
+    printf("Input was false");
+}
+
+f<int> main() {
+    executeAction(false);
+}

@@ -4,6 +4,9 @@ project(Spice)
 set(CMAKE_CXX_STANDARD 20)
 set(LLVM_DIR $ENV{LLVM_DIR})
 
+# Coverage
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fprofile-arcs -ftest-coverage ${CMAKE_CXX_FLAGS_DEBUG}")
+
 # Antlr
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
 add_definitions(-DANTLR4CPP_STATIC)
@@ -39,6 +42,11 @@ llvm_map_components_to_libnames(LLVM_LIBS aarch64asmparser aarch64codegen aarch6
         webassemblyasmparser webassemblycodegen webassemblydesc webassemblydisassembler webassemblyinfo webassemblyutils
         windowsmanifest x86asmparser x86codegen x86desc x86disassembler x86info xcorecodegen xcoredesc
         xcoredisassembler xcoreinfo xray)
+
+# Coverage
+file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage.bat ${CMAKE_CURRENT_BINARY_DIR}/coverage.bat SYMBOLIC)
+file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage.sh ${CMAKE_CURRENT_BINARY_DIR}/coverage.sh SYMBOLIC)
+file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/gcovr.cfg ${CMAKE_CURRENT_BINARY_DIR}/gcovr.cfg SYMBOLIC)
 
 # Main module
 include_directories(src)

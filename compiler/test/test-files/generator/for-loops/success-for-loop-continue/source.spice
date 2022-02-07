@@ -1,0 +1,14 @@
+f<int> main() {
+    for int counter = 0; counter < 10; counter+=2 {
+        printf("Loop run %d\n", counter);
+        if (counter >= 5) {
+            for int subCounter = 100; subCounter >= 10; --subCounter {
+                printf("Inner loop run %d\n", subCounter);
+                if (subCounter == 11) {
+                    continue 2;
+                }
+            }
+        }
+    }
+    printf("End.");
+}

@@ -51,13 +51,11 @@ public:
     bool is(SymbolSuperType superType);
     bool is(SymbolSuperType superType, const std::string& subType);
     bool isBaseType(SymbolSuperType superType);
-    bool isBaseType(SymbolSuperType superType, const std::string& subType);
     bool isOneOf(const std::vector<SymbolSuperType>& superTypes);
     SymbolSuperType getSuperType();
     std::string getSubType();
     SymbolType getBaseType();
     std::string getName(bool withSize);
-    void setArraySize(unsigned int newArraySize);
     unsigned int getArraySize();
     friend bool operator== (const SymbolType& lhs, const SymbolType& rhs);
     friend bool operator!= (const SymbolType& lhs, const SymbolType& rhs);

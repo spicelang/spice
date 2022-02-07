@@ -93,7 +93,7 @@ entry:
   store i32 %57, i32* %i, align 4
   br label %for.cond
 
-for.cond:                                         ; preds = %if.end, %entry
+for.cond:                                         ; preds = %for.post, %entry
   store i32 1000, i32* %8, align 4
   %58 = load i32, i32* %i, align 4
   %59 = load i32, i32* %8, align 4
@@ -265,6 +265,9 @@ if.else:                                          ; preds = %for
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
+  br label %for.post
+
+for.post:                                         ; preds = %if.end
   %163 = load i32, i32* %i, align 4
   %164 = add i32 %163, 1
   store i32 %164, i32* %i, align 4

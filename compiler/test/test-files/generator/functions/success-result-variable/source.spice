@@ -1,0 +1,15 @@
+f<int> getAge() {
+    dyn i;
+    if (true) {
+        result = 20;
+        return;
+    } else if (i = false) {
+        result = 19;
+    }
+    return 15;
+}
+
+f<int> main() {
+    int age = getAge();
+    printf("The age is: %d", age);
+}

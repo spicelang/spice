@@ -298,42 +298,6 @@ FunctionSignature SymbolTable::popSignature() {
 }
 
 /**
- * Set continue block, which marks where to continue when a continue instruction is executed in the current scope
- *
- * @param block
- */
-void SymbolTable::setContinueBlock(llvm::BasicBlock* block) {
-    continueBlock = block;
-}
-
-/**
- * Retrieve the LLVM BasicBlock, which is currently set as continue block for the current scope
- *
- * @return Continue block
- */
-llvm::BasicBlock* SymbolTable::getContinueBlock() const {
-    return continueBlock;
-}
-
-/**
- * Set break block, which marks where to continue when a break instruction is executed in the current scope
- *
- * @param block
- */
-void SymbolTable::setBreakBlock(llvm::BasicBlock* block) {
-    breakBlock = block;
-}
-
-/**
- * Retrieve the LLVM BasicBlock, which is currently set as break block for the current scope
- *
- * @return Break block
- */
-llvm::BasicBlock* SymbolTable::getBreakBlock() const {
-    return breakBlock;
-}
-
-/**
  * Prints compiler values with regard to the symbol table
  */
 void SymbolTable::printCompilerWarnings() {
@@ -355,7 +319,7 @@ void SymbolTable::printCompilerWarnings() {
                 CompilerWarning(entry.getDefinitionToken(), UNUSED_IMPORT,
                                 "The import '" + entry.getName() + "' is unused").print();
             } else {
-                if (entry.getName() != UNUSED_VARIABLE_NAME)
+                if (entry.getName() != UNUSED_VARIABLE_NAME && entry.getName() != FOREACH_DEFAULT_IDX_VARIABLE_NAME)
                     CompilerWarning(entry.getDefinitionToken(), UNUSED_VARIABLE,
                                     "The variable '" + entry.getName() + "' is unused").print();
             }

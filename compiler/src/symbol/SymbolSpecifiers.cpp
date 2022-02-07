@@ -47,8 +47,8 @@ SymbolSpecifiers::SymbolSpecifiers(SymbolType type) {
             specifierValue = SPECIFIER_DEFAULTS_IMPORT;
             break;
         case TY_DYN: break;
-        default:
-            throw std::runtime_error("Symbol specifier fallthrough");
+        default:                                                      // GCOV_EXCL_LINE
+            throw std::runtime_error("Symbol specifier fallthrough"); // GCOV_EXCL_LINE
     }
 }
 
