@@ -606,14 +606,14 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     llvm::Value* itemVariablePtr = itemVariableEntry->getAddress();
 
     // Do loop variable initialization
-    llvm::Value* arrayValuePtr = visit(ctx->foreachHead()->assignExpr()).as<llvm::Value*>();
-    llvm::Value* arrayValue = builder->CreateLoad(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr);
-    llvm::Value* maxIndex = builder->getInt32(arrayValue->getType()->getArrayNumElements() -1);
+    llvm::Value* valuePtr = visit(ctx->foreachHead()->assignExpr()).as<llvm::Value*>();
+    llvm::Value* value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    llvm::Value* maxIndex = builder->getInt32(value->getType()->getArrayNumElements() - 1);
     // Load the first item into item variable
-    llvm::Value* indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
-    llvm::Value* gepInst = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(),
-                                                      arrayValuePtr, { builder->getInt32(0), indexValue });
-    llvm::Value* newItemValue = builder->CreateLoad(gepInst->getType()->getPointerElementType(), gepInst);
+    llvm::Value* index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+    llvm::ArrayRef<llvm::Value*> idxList = { builder->getInt32(0), index };
+    llvm::Value* itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, idxList);
+    llvm::Value* newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
 
@@ -626,19 +626,23 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     // Generate IR for nested statements
     visit(ctx->stmtLst());
     // Check if the index variable reached the size -2
-    createBr(bInc);
+    if (!blockAlreadyTerminated) {
+        index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+        llvm::Value* cond = builder->CreateICmpSLT(index, maxIndex);
+        createCondBr(cond, bInc, bEnd);
+    }
 
     // Fill inc block
     parentFct->getBasicBlockList().push_back(bInc);
     moveInsertPointToBlock(bInc);
     // Increment index variable
-    indexValue = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
-    indexValue = builder->CreateAdd(indexValue, builder->getInt32(1), "foreach_idx_inc");
-    builder->CreateStore(indexValue, indexVariablePtr);
+    index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr, "idx");
+    index = builder->CreateAdd(index, builder->getInt32(1), "idx.inc");
+    builder->CreateStore(index, indexVariablePtr);
     // Load new item into item variable
-    gepInst = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(),
-                                         arrayValuePtr, { builder->getInt32(0), indexValue });
-    newItemValue = builder->CreateLoad(gepInst->getType()->getPointerElementType(), gepInst);
+    idxList = { builder->getInt32(0), index };
+    itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, idxList);
+    newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
 

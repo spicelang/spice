@@ -49,18 +49,20 @@ foreach.loop:                                     ; preds = %foreach.inc, %entry
   %17 = load i32, i32* %idx, align 4
   %18 = add i32 %17, 1
   store i32 %18, i32* %idx, align 4
-  br label %foreach.inc
+  %19 = load i32, i32* %idx, align 4
+  %20 = icmp slt i32 %19, 6
+  br i1 %20, label %foreach.inc, label %foreach.end
 
 foreach.inc:                                      ; preds = %foreach.loop
-  %19 = load i32, i32* %idx, align 4
-  %foreach_idx_inc = add i32 %19, 1
-  store i32 %foreach_idx_inc, i32* %idx, align 4
-  %20 = getelementptr inbounds [7 x i32], [7 x i32]* %intArray, i32 0, i32 %foreach_idx_inc
-  %21 = load i32, i32* %20, align 4
-  store i32 %21, i32* %item, align 4
+  %idx1 = load i32, i32* %idx, align 4
+  %idx.inc = add i32 %idx1, 1
+  store i32 %idx.inc, i32* %idx, align 4
+  %21 = getelementptr inbounds [7 x i32], [7 x i32]* %intArray, i32 0, i32 %idx.inc
+  %22 = load i32, i32* %21, align 4
+  store i32 %22, i32* %item, align 4
   br label %foreach.loop
 
-foreach.end:                                      ; No predecessors!
-  %22 = load i32, i32* %result, align 4
-  ret i32 %22
+foreach.end:                                      ; preds = %foreach.loop
+  %23 = load i32, i32* %result, align 4
+  ret i32 %23
 }

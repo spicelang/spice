@@ -78,7 +78,7 @@ jobs:
           sudo chmod +x coverage.sh
           sudo ./coverage.sh
 
-      - name: Upload coverage report
+      - name: Upload coverage report - coverage.spicelang.com
         uses: sebastianpopp/ftp-action@releases/v2
         with:
           host: ${{ secrets.FTP_SERVER }}
@@ -86,6 +86,13 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           localDir: ./compiler/bin/coverage
           remoteDir: chillibits.com/spice/coverage
+
+      - name: Upload coverage report - Codecov
+        working-directory: ./compiler/bin
+        run: |
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov -t ${{ secrets.CODECOV_TOKEN }}
 
 # Currently not working because the data layout and the target triple is present in the ir test refs
 #      - name: Check if test refs are up to date

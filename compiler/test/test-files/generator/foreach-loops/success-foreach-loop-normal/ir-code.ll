@@ -43,18 +43,20 @@ foreach.loop:                                     ; preds = %foreach.inc, %entry
   %12 = load i32, i32* %idx, align 4
   %13 = load i32, i32* %item, align 4
   %14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0), i32 %12, i32 %13)
-  br label %foreach.inc
+  %15 = load i32, i32* %idx, align 4
+  %16 = icmp slt i32 %15, 6
+  br i1 %16, label %foreach.inc, label %foreach.end
 
 foreach.inc:                                      ; preds = %foreach.loop
-  %15 = load i32, i32* %idx, align 4
-  %foreach_idx_inc = add i32 %15, 1
-  store i32 %foreach_idx_inc, i32* %idx, align 4
-  %16 = getelementptr inbounds [7 x i32], [7 x i32]* %intArray, i32 0, i32 %foreach_idx_inc
-  %17 = load i32, i32* %16, align 4
-  store i32 %17, i32* %item, align 4
+  %idx1 = load i32, i32* %idx, align 4
+  %idx.inc = add i32 %idx1, 1
+  store i32 %idx.inc, i32* %idx, align 4
+  %17 = getelementptr inbounds [7 x i32], [7 x i32]* %intArray, i32 0, i32 %idx.inc
+  %18 = load i32, i32* %17, align 4
+  store i32 %18, i32* %item, align 4
   br label %foreach.loop
 
-foreach.end:                                      ; No predecessors!
-  %18 = load i32, i32* %result, align 4
-  ret i32 %18
+foreach.end:                                      ; preds = %foreach.loop
+  %19 = load i32, i32* %result, align 4
+  ret i32 %19
 }

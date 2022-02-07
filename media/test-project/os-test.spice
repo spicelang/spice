@@ -63,16 +63,8 @@ f<int> main() {
 }*/
 
 f<int> main() {
-    dyn s1 = 5s;
-    short[5] shortArray = { 1s, s1, 25s -27s, -63s };
-    foreach short s : shortArray {
-        printf("Short %d\n", s);
-        if ((s & 1s) == 1) {
-            foreach dyn l : { 1l, 2l } {
-                printf("Long %d\n", l);
-                break 2;
-            }
-        }
+    int[7] intArray = { 1, 5, 4, 0, 12, 12345, 9 };
+    foreach const int item : intArray {
+        printf("Item at index %d: %d\n", idx, item);
     }
-    printf("End.");
 }
