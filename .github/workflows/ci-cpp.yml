@@ -42,7 +42,7 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
-          git clone --depth  1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
@@ -62,7 +62,7 @@ jobs:
         run: |
           mkdir ./compiler/bin
           cd ./compiler/bin
-          cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Release -GNinja -Wattributes ..
           cmake --build . --target Spice_test
 
       - name: Run Test target
