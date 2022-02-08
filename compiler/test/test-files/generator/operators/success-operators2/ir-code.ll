@@ -21,66 +21,62 @@ entry:
   %6 = alloca i64, align 8
   %7 = alloca i64, align 8
   %8 = alloca i64, align 8
-  %9 = alloca i64, align 8
-  %10 = alloca i64, align 8
-  %11 = alloca i64, align 8
-  %12 = alloca i64, align 8
   store i32 0, i32* %result, align 4
   store i32 1, i32* %0, align 4
-  %13 = load i32, i32* %0, align 4
-  store i32 %13, i32* %i, align 4
+  %9 = load i32, i32* %0, align 4
+  store i32 %9, i32* %i, align 4
   store i16 2, i16* %1, align 2
-  %14 = load i16, i16* %1, align 2
+  %10 = load i16, i16* %1, align 2
+  %11 = load i32, i32* %i, align 4
+  %12 = sext i16 %10 to i32
+  %13 = add i32 %11, %12
+  store i32 %13, i32* %i, align 4
+  store i16 2, i16* %2, align 2
+  %14 = load i16, i16* %2, align 2
   %15 = load i32, i32* %i, align 4
   %16 = sext i16 %14 to i32
-  %17 = add i32 %15, %16
+  %17 = mul i32 %15, %16
   store i32 %17, i32* %i, align 4
-  store i16 2, i16* %2, align 2
-  %18 = load i16, i16* %2, align 2
+  store i16 2, i16* %3, align 2
+  %18 = load i16, i16* %3, align 2
   %19 = load i32, i32* %i, align 4
   %20 = sext i16 %18 to i32
-  %21 = mul i32 %19, %20
+  %21 = sdiv i32 %19, %20
   store i32 %21, i32* %i, align 4
-  store i16 2, i16* %3, align 2
-  %22 = load i16, i16* %3, align 2
+  store i16 2, i16* %4, align 2
+  %22 = load i16, i16* %4, align 2
   %23 = load i32, i32* %i, align 4
   %24 = sext i16 %22 to i32
-  %25 = sdiv i32 %23, %24
+  %25 = sub i32 %23, %24
   store i32 %25, i32* %i, align 4
-  store i16 2, i16* %4, align 2
-  %26 = load i16, i16* %4, align 2
-  %27 = load i32, i32* %i, align 4
-  %28 = sext i16 %26 to i32
-  %29 = sub i32 %27, %28
-  store i32 %29, i32* %i, align 4
-  %30 = load i32, i32* %i, align 4
-  %31 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @0, i32 0, i32 0), i32 %30)
+  %26 = load i32, i32* %i, align 4
+  %27 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @0, i32 0, i32 0), i32 %26)
   store i64 223372036854775807, i64* %5, align 8
-  %32 = load i64, i64* %5, align 8
+  %28 = load i64, i64* %5, align 8
+  %29 = load i32, i32* %i, align 4
+  %30 = trunc i64 %28 to i32
+  %31 = add i32 %29, %30
+  store i32 %31, i32* %i, align 4
+  store i64 2, i64* %6, align 8
+  %32 = load i64, i64* %6, align 8
   %33 = load i32, i32* %i, align 4
-  %34 = sext i32 %33 to i64
-  %35 = add i64 %34, %32
-  store i64 %35, i64* %6, align 8
+  %34 = trunc i64 %32 to i32
+  %35 = sdiv i32 %33, %34
+  store i32 %35, i32* %i, align 4
   store i64 2, i64* %7, align 8
   %36 = load i64, i64* %7, align 8
   %37 = load i32, i32* %i, align 4
-  %38 = sext i32 %37 to i64
-  %39 = sdiv i64 %38, %36
-  store i64 %39, i64* %8, align 8
-  store i64 2, i64* %9, align 8
-  %40 = load i64, i64* %9, align 8
+  %38 = trunc i64 %36 to i32
+  %39 = mul i32 %37, %38
+  store i32 %39, i32* %i, align 4
+  store i64 223372036854775807, i64* %8, align 8
+  %40 = load i64, i64* %8, align 8
   %41 = load i32, i32* %i, align 4
-  %42 = sext i32 %41 to i64
-  %43 = mul i64 %42, %40
-  store i64 %43, i64* %10, align 8
-  store i64 223372036854775807, i64* %11, align 8
-  %44 = load i64, i64* %11, align 8
-  %45 = load i32, i32* %i, align 4
-  %46 = sext i32 %45 to i64
-  %47 = sub i64 %46, %44
-  store i64 %47, i64* %12, align 8
-  %48 = load i32, i32* %i, align 4
-  %49 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @1, i32 0, i32 0), i32 %48)
-  %50 = load i32, i32* %result, align 4
-  ret i32 %50
+  %42 = trunc i64 %40 to i32
+  %43 = sub i32 %41, %42
+  store i32 %43, i32* %i, align 4
+  %44 = load i32, i32* %i, align 4
+  %45 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @1, i32 0, i32 0), i32 %44)
+  %46 = load i32, i32* %result, align 4
+  ret i32 %46
 }
