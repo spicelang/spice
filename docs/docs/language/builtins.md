@@ -2,7 +2,7 @@
 title: Builtin Functions
 ---
 
-Spice offers two builtin functions out of the box. Those can be used anywhere without having to be importen manually and can be used to establish a minimal setup for testing or the like.
+Spice offers two builtin functions out of the box. Those can be used anywhere without having to be imported manually and can be used to establish a minimal setup for testing or the like.
 
 ## The `printf` builtin
 Printf works the same as the `printf` function in C and is designed for printing a string to the standard text output (cout).
