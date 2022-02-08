@@ -70,6 +70,7 @@ nav:
   - Documentation:
     - language/hello-world.md
     - language/main-function.md
+    - language/builtins.md
     - language/data-types.md
     - language/casts.md
     - language/if-statements.md

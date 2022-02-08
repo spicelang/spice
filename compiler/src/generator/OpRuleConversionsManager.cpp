@@ -7,7 +7,7 @@
 #include <symbol/SymbolType.h>
 #include <exception/IRError.h>
 
-llvm::Value* OpRuleConversionsManager::getPlusEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getPlusEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -17,26 +17,20 @@ llvm::Value* OpRuleConversionsManager::getPlusEqualInst(llvm::Value* lhs, llvm::
             return builder->CreateFAdd(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateAdd(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_INT, P_TY_LONG): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
             return builder->CreateAdd(lhs, rhsInt);
         }
-        case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateAdd(lhsLong, rhs);
-        }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsInt->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateAdd(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateAdd(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateAdd(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateAdd(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateAdd(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -59,7 +53,7 @@ llvm::Value* OpRuleConversionsManager::getPlusEqualInst(llvm::Value* lhs, llvm::
     throw std::runtime_error("Internal compiler error: Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
 
-llvm::Value* OpRuleConversionsManager::getMinusEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getMinusEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -69,26 +63,20 @@ llvm::Value* OpRuleConversionsManager::getMinusEqualInst(llvm::Value* lhs, llvm:
             return builder->CreateFSub(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateSub(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_INT, P_TY_LONG): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
             return builder->CreateSub(lhs, rhsInt);
         }
-        case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateSub(lhsLong, rhs);
-        }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsInt->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateSub(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateSub(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateSub(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -102,7 +90,7 @@ llvm::Value* OpRuleConversionsManager::getMinusEqualInst(llvm::Value* lhs, llvm:
     throw std::runtime_error("Internal compiler error: Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
 
-llvm::Value* OpRuleConversionsManager::getMulEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getMulEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -112,26 +100,20 @@ llvm::Value* OpRuleConversionsManager::getMulEqualInst(llvm::Value* lhs, llvm::V
             return builder->CreateFMul(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateMul(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_INT, P_TY_LONG): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
             return builder->CreateMul(lhs, rhsInt);
         }
-        case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateMul(lhsLong, rhs);
-        }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsInt->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateMul(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateMul(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateMul(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateMul(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateMul(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -145,7 +127,7 @@ llvm::Value* OpRuleConversionsManager::getMulEqualInst(llvm::Value* lhs, llvm::V
     throw std::runtime_error("Internal compiler error: Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
-llvm::Value* OpRuleConversionsManager::getDivEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getDivEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -155,26 +137,20 @@ llvm::Value* OpRuleConversionsManager::getDivEqualInst(llvm::Value* lhs, llvm::V
             return builder->CreateFDiv(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateSDiv(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_INT, P_TY_LONG): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
             return builder->CreateSDiv(lhs, rhsInt);
         }
-        case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateSDiv(lhsLong, rhs);
-        }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsInt->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateSDiv(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSDiv(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateSDiv(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateSDiv(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSDiv(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -188,7 +164,7 @@ llvm::Value* OpRuleConversionsManager::getDivEqualInst(llvm::Value* lhs, llvm::V
     throw std::runtime_error("Internal compiler error: Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
-llvm::Value* OpRuleConversionsManager::getRemEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getRemEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -198,26 +174,20 @@ llvm::Value* OpRuleConversionsManager::getRemEqualInst(llvm::Value* lhs, llvm::V
             return builder->CreateFRem(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateSDiv(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
-            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-            return builder->CreateSRem(lhs, rhsInt);
-        }
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
         case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateSRem(lhsLong, rhs);
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsInt);
         }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsInt->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateSRem(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateSRem(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            allocator(lhsLong->getType()); // Re-allocate memory, cause the new type is wider
-            return builder->CreateSRem(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -231,7 +201,7 @@ llvm::Value* OpRuleConversionsManager::getRemEqualInst(llvm::Value* lhs, llvm::V
     throw std::runtime_error("Internal compiler error: Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
-llvm::Value* OpRuleConversionsManager::getSHLEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getSHLEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -260,7 +230,7 @@ llvm::Value* OpRuleConversionsManager::getSHLEqualInst(llvm::Value* lhs, llvm::V
     throw std::runtime_error("Internal compiler error: Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
-llvm::Value* OpRuleConversionsManager::getSHREqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getSHREqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -289,7 +259,7 @@ llvm::Value* OpRuleConversionsManager::getSHREqualInst(llvm::Value* lhs, llvm::V
     throw std::runtime_error("Internal compiler error: Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
-llvm::Value* OpRuleConversionsManager::getAndEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getAndEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -301,7 +271,6 @@ llvm::Value* OpRuleConversionsManager::getAndEqualInst(llvm::Value* lhs, llvm::V
         case COMB(P_TY_INT, P_TY_LONG): // fallthrough
         case COMB(P_TY_SHORT, P_TY_INT): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-            allocator(rhsInt->getType()); // Re-allocate memory, cause the new type is wider
             return builder->CreateAnd(lhs, rhsInt);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
@@ -319,7 +288,7 @@ llvm::Value* OpRuleConversionsManager::getAndEqualInst(llvm::Value* lhs, llvm::V
     throw std::runtime_error("Internal compiler error: Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
-llvm::Value* OpRuleConversionsManager::getOrEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getOrEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -331,7 +300,6 @@ llvm::Value* OpRuleConversionsManager::getOrEqualInst(llvm::Value* lhs, llvm::Va
         case COMB(P_TY_INT, P_TY_LONG): // fallthrough
         case COMB(P_TY_SHORT, P_TY_INT): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-            allocator(rhsInt->getType()); // Re-allocate memory, cause the new type is wider
             return builder->CreateOr(lhs, rhsInt);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
@@ -349,7 +317,7 @@ llvm::Value* OpRuleConversionsManager::getOrEqualInst(llvm::Value* lhs, llvm::Va
     throw std::runtime_error("Internal compiler error: Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
-llvm::Value* OpRuleConversionsManager::getXorEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator) {
+llvm::Value* OpRuleConversionsManager::getXorEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
     llvm::Type* lhsTy = lhs->getType();
     llvm::Type* rhsTy = rhs->getType();
     PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
@@ -361,7 +329,6 @@ llvm::Value* OpRuleConversionsManager::getXorEqualInst(llvm::Value* lhs, llvm::V
         case COMB(P_TY_INT, P_TY_LONG): // fallthrough
         case COMB(P_TY_SHORT, P_TY_INT): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-            allocator(rhsInt->getType()); // Re-allocate memory, cause the new type is wider
             return builder->CreateXor(lhs, rhsInt);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):

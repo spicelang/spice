@@ -978,32 +978,27 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
                 lhs = module->getNamedGlobal(lhsVarName);
             }
 
-            // Create allocator lambda to give the OpRuleConversionManager access to the insertAlloca method
-            auto opRuleConversionAllocator = [this, &lhsPtr](llvm::Type* newLhsType) {
-                lhsPtr = this->insertAlloca(newLhsType, "", nullptr);
-            };
-
             // Decide what to do, based on the operator
             if (ctx->assignOp()->PLUS_EQUAL()) {
-                rhs = conversionsManager->getPlusEqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
             } else if (ctx->assignOp()->MINUS_EQUAL()) {
-                rhs = conversionsManager->getMinusEqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
             } else if (ctx->assignOp()->MUL_EQUAL()) {
-                rhs = conversionsManager->getMulEqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getMulEqualInst(lhs, rhs);
             } else if (ctx->assignOp()->DIV_EQUAL()) {
-                rhs = conversionsManager->getDivEqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getDivEqualInst(lhs, rhs);
             } else if (ctx->assignOp()->REM_EQUAL()) {
-                rhs = conversionsManager->getRemEqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getRemEqualInst(lhs, rhs);
             } else if (ctx->assignOp()->SHL_EQUAL()) {
-                rhs = conversionsManager->getSHLEqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getSHLEqualInst(lhs, rhs);
             } else if (ctx->assignOp()->SHR_EQUAL()) {
-                rhs = conversionsManager->getSHREqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getSHREqualInst(lhs, rhs);
             } else if (ctx->assignOp()->AND_EQUAL()) {
-                rhs = conversionsManager->getAndEqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getAndEqualInst(lhs, rhs);
             } else if (ctx->assignOp()->OR_EQUAL()) {
-                rhs = conversionsManager->getOrEqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getOrEqualInst(lhs, rhs);
             } else if (ctx->assignOp()->XOR_EQUAL()) {
-                rhs = conversionsManager->getXorEqualInst(lhs, rhs, opRuleConversionAllocator);
+                rhs = conversionsManager->getXorEqualInst(lhs, rhs);
             }
             builder->CreateStore(rhs, lhsPtr);
         }

@@ -17,23 +17,21 @@ enum PrimitiveType {
 
 #define COMB(en1, en2) ((en1) | ((en2) << 16))
 
-typedef std::function<void(llvm::Type*)> ConversionAllocator;
-
 class OpRuleConversionsManager {
 public:
     explicit OpRuleConversionsManager(llvm::IRBuilder<>* builder) : builder(builder) {}
 
     // Public methods
-    llvm::Value* getPlusEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
-    llvm::Value* getMinusEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
-    llvm::Value* getMulEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
-    llvm::Value* getDivEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
-    llvm::Value* getRemEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
-    llvm::Value* getSHLEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
-    llvm::Value* getSHREqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
-    llvm::Value* getAndEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
-    llvm::Value* getOrEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
-    llvm::Value* getXorEqualInst(llvm::Value* lhs, llvm::Value* rhs, const ConversionAllocator& allocator);
+    llvm::Value* getPlusEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getMinusEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getMulEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getDivEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getRemEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getSHLEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getSHREqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getAndEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getOrEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getXorEqualInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getBitwiseAndInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getBitwiseOrInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getBitwiseXorInst(llvm::Value* lhs, llvm::Value* rhs);

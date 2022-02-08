@@ -1,8 +1,8 @@
-/*type Struct struct {
+type Struct struct {
     int fieldA
     bool fieldB
     string fieldC
-}*/
+}
 
 f<int> main() {
     printf("Size of double: %d\n", sizeof(-19.34989));
@@ -14,6 +14,6 @@ f<int> main() {
     printf("Size of string: %d\n", sizeof("Hello Spice!"));
     printf("Size of bool: %d\n", sizeof(false));
     printf("Size of int[]: %d\n", sizeof({ 1, 2, 3, 4, 5, 6, 7 }));
-    //dyn structInstance = Struct { 5, true, "This is a test" };
-    //printf("Size of struct instance: %d\n", sizeof(structInstance));
+    dyn structInstance = Struct { 5, true, "This is a test" };
+    printf("Size of struct instance: %d\n", sizeof(structInstance));
 }
