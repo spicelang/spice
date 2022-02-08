@@ -718,6 +718,11 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
     std::size_t index = templateString.find_first_of('%');
     int placeholderCount = 0;
     while (index != std::string::npos) {
+        // Check if there is another assignExpr
+        if (ctx->assignExpr().size() <= placeholderCount)
+            throw SemanticError(*ctx->STRING_LITERAL()->getSymbol(), PRINTF_ARG_COUNT_ERROR,
+                                "The placeholder string contains more placeholders that arguments were passed");
+
         auto assignment = ctx->assignExpr()[placeholderCount];
         SymbolType assignmentType = visit(assignment).as<SymbolType>();
         switch (templateString[index + 1]) {
@@ -774,9 +779,9 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
     }
 
     // Check if the number of placeholders matches the number of params
-    if (placeholderCount != ctx->assignExpr().size())
-        throw SemanticError(*ctx->start, PRINTF_TYPE_ERROR,
-                            "Number of placeholders does not match the number of passed arguments");
+    if (placeholderCount < ctx->assignExpr().size())
+        throw SemanticError(*ctx->start, PRINTF_ARG_COUNT_ERROR,
+                            "The placeholder string contains less placeholders that arguments were passed");
 
     return SymbolType(TY_BOOL);
 }

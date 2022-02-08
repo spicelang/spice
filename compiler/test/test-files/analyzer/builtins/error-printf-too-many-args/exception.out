@@ -1,1 +1,1 @@
-Semantic error at 2:5: Types of printf call not matching: Number of placeholders does not match the number of passed arguments
+Semantic error at 2:5: Printf arg number not matching template string: The placeholder string contains less placeholders that arguments were passed
