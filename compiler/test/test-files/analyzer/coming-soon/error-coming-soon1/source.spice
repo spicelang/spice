@@ -1,0 +1,8 @@
+f<int*> escapingFunction(int param) {
+    return &param;
+}
+
+f<int> main() {
+    int* intPtr = escapingFunction(5);
+    printf("Int ptr: %p", intPtr);
+}

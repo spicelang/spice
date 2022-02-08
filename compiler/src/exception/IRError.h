@@ -30,7 +30,7 @@ public:
     explicit IRError(IRErrorType errorType, const std::string& messageSuffix);
 
     // Public methods
-    const char* what() const noexcept override;
+    [[nodiscard]] const char* what() const noexcept override;
 
 private:
     // Members

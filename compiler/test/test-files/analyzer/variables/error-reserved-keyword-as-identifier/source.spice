@@ -1,0 +1,4 @@
+f<int> main() {
+    int new = 90;
+    printf("New is: %s", new);
+}

@@ -1,0 +1,1 @@
+Semantic error at 2:41: Array item type not matching: All provided values have to be of the same data type. You provided long and bool

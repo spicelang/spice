@@ -1426,7 +1426,8 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTabl
     // Check if struct was declared
     SymbolTableEntry* structSymbol = sourceScope->lookup(oldStructName);
     if (!structSymbol)
-        throw SemanticError(token, UNKNOWN_DATATYPE, "Unknown datatype '" + newStructName + "'");
+        throw SemanticError(token, REFERENCED_UNDEFINED_STRUCT,
+                            "Struct '" + newStructName + "' was used before defined");
     structSymbol->setUsed();
     SymbolTable* structTable = sourceScope->lookupTable("struct:" + oldStructName);
 

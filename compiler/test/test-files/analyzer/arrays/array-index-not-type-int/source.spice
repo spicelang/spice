@@ -1,0 +1,4 @@
+f<int> main() {
+    long[7] longArray = { 1l, 2l , 3l, 4l , 5l, 6l, 7l };
+    printf("Array item: %d", longArray[1s]);
+}

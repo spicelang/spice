@@ -1,0 +1,9 @@
+type TestStruct struct {
+    int f1
+    int f2
+}
+
+f<int> main() {
+    TestStruct a = TestStructTypo { 1, 2 };
+    printf("Field 1: %d", a.f1);
+}

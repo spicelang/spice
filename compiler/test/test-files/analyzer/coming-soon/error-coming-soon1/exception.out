@@ -1,0 +1,1 @@
+Semantic error at 1:1: Coming soon: Spice currently not supports pointer return types due to not supporting heap allocations.
