@@ -11,8 +11,6 @@
 #include "util/CompilerWarning.h"
 #include <exception/SemanticError.h>
 
-#include <utility>
-
 AnalyzerVisitor::AnalyzerVisitor(const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
                                  const std::string& targetOs, const std::string& outputPath, bool debugOutput, int optLevel,
                                  bool requiresMainFct, bool isStdFile) {
