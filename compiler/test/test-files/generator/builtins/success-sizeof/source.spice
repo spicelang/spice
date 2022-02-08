@@ -1,8 +1,8 @@
-/*type Struct struct {
+type Struct struct {
     int fieldA
     bool fieldB
     string fieldC
-}*/
+}
 
 f<int> main() {
     printf("Size of double: %d\n", sizeof(-19.34989));

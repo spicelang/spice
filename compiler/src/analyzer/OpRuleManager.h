@@ -33,10 +33,10 @@ const std::vector<BinaryOpRule> PLUS_EQUAL_OP_RULES = {
         BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE),    // double += double = double
         BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int += int = int
         BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int += short = int
-        BinaryOpRule(TY_INT, TY_LONG, TY_LONG),           // int += long = long
-        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short += int = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_INT),            // int += long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short += int = short
         BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short += short = short
-        BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG),         // short += long = long
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),        // short += long = short
         BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long += int = long
         BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long += short = long
         BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long += long = long
@@ -50,10 +50,10 @@ const std::vector<BinaryOpRule> MINUS_EQUAL_OP_RULES = {
         BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE),    // double -= double = double
         BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int -= int = int
         BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int -= short = int
-        BinaryOpRule(TY_INT, TY_LONG, TY_LONG),           // int -= long = long
-        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short -= int = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_INT),            // int -= long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short -= int = short
         BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short -= short = short
-        BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG),         // short -= long = long
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),        // short -= long = short
         BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long -= int = long
         BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long -= short = long
         BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long -= long = long
@@ -65,10 +65,10 @@ const std::vector<BinaryOpRule> MUL_EQUAL_OP_RULES = {
         BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE),    // double *= double = double
         BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int *= int = int
         BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int *= short = int
-        BinaryOpRule(TY_INT, TY_LONG, TY_LONG),           // int *= long = long
-        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short *= int = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_INT),            // int *= long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short *= int = short
         BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short *= short = short
-        BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG),         // short *= long = long
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),        // short *= long = short
         BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long *= int = long
         BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long *= short = long
         BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long *= long = long
@@ -80,10 +80,10 @@ const std::vector<BinaryOpRule> DIV_EQUAL_OP_RULES = {
         BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE),    // double /= double = double
         BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int /= int = int
         BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int /= short = int
-        BinaryOpRule(TY_INT, TY_LONG, TY_LONG),           // int /= long = long
-        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short /= int = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_INT),            // int /= long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short /= int = short
         BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short /= short = short
-        BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG),         // short /= long = long
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),        // short /= long = short
         BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long /= int = long
         BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long /= short = long
         BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long /= long = long
@@ -95,10 +95,10 @@ const std::vector<BinaryOpRule> REM_EQUAL_OP_RULES = {
         BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE),    // double %= double = double
         BinaryOpRule(TY_INT, TY_INT, TY_INT),             // int %= int = int
         BinaryOpRule(TY_INT, TY_SHORT, TY_INT),           // int %= short = int
-        BinaryOpRule(TY_INT, TY_LONG, TY_LONG),           // int %= long = long
-        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short %= int = int
+        BinaryOpRule(TY_INT, TY_LONG, TY_INT),            // int %= long = int
+        BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT),         // short %= int = short
         BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT),       // short %= short = short
-        BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG),         // short %= long = long
+        BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT),        // short %= long = short
         BinaryOpRule(TY_LONG, TY_INT, TY_LONG),           // long %= int = long
         BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),         // long %= short = long
         BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),          // long %= long = long

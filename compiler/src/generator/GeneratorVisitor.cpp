@@ -977,6 +977,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
             } else {
                 lhs = module->getNamedGlobal(lhsVarName);
             }
+
             // Decide what to do, based on the operator
             if (ctx->assignOp()->PLUS_EQUAL()) {
                 rhs = conversionsManager->getPlusEqualInst(lhs, rhs);

@@ -17,23 +17,20 @@ llvm::Value* OpRuleConversionsManager::getPlusEqualInst(llvm::Value* lhs, llvm::
             return builder->CreateFAdd(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateAdd(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_INT, P_TY_LONG): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
             return builder->CreateAdd(lhs, rhsInt);
         }
-        case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateAdd(lhsLong, rhs);
-        }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateAdd(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateAdd(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateAdd(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateAdd(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateAdd(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -45,13 +42,15 @@ llvm::Value* OpRuleConversionsManager::getPlusEqualInst(llvm::Value* lhs, llvm::
             return builder->CreateAdd(lhs, rhs);
         case COMB(P_TY_STRING, P_TY_BYTE_OR_CHAR):
             // ToDo(@marcauberer): Insert call to appendChar in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
         case COMB(P_TY_STRING, P_TY_STRING): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");
         }
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: +=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getMinusEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -64,23 +63,20 @@ llvm::Value* OpRuleConversionsManager::getMinusEqualInst(llvm::Value* lhs, llvm:
             return builder->CreateFSub(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateSub(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_INT, P_TY_LONG): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
             return builder->CreateSub(lhs, rhsInt);
         }
-        case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateSub(lhsLong, rhs);
-        }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateSub(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateSub(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateSub(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -91,7 +87,7 @@ llvm::Value* OpRuleConversionsManager::getMinusEqualInst(llvm::Value* lhs, llvm:
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateSub(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: -=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getMulEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -104,23 +100,20 @@ llvm::Value* OpRuleConversionsManager::getMulEqualInst(llvm::Value* lhs, llvm::V
             return builder->CreateFMul(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateMul(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_INT, P_TY_LONG): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
             return builder->CreateMul(lhs, rhsInt);
         }
-        case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateMul(lhsLong, rhs);
-        }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateMul(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateMul(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateMul(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateMul(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateMul(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -131,7 +124,7 @@ llvm::Value* OpRuleConversionsManager::getMulEqualInst(llvm::Value* lhs, llvm::V
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateMul(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: *=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getDivEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -144,23 +137,20 @@ llvm::Value* OpRuleConversionsManager::getDivEqualInst(llvm::Value* lhs, llvm::V
             return builder->CreateFDiv(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateSDiv(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
+        case COMB(P_TY_INT, P_TY_LONG): {
             llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
             return builder->CreateSDiv(lhs, rhsInt);
         }
-        case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateSDiv(lhsLong, rhs);
-        }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateSDiv(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSDiv(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateSDiv(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateSDiv(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSDiv(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -171,7 +161,7 @@ llvm::Value* OpRuleConversionsManager::getDivEqualInst(llvm::Value* lhs, llvm::V
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateSDiv(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: /=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getRemEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -184,23 +174,20 @@ llvm::Value* OpRuleConversionsManager::getRemEqualInst(llvm::Value* lhs, llvm::V
             return builder->CreateFRem(lhs, rhs);
         case COMB(P_TY_INT, P_TY_INT):
             return builder->CreateSDiv(lhs, rhs);
-        case COMB(P_TY_INT, P_TY_SHORT): {
-            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-            return builder->CreateSRem(lhs, rhsInt);
-        }
+        case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
         case COMB(P_TY_INT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateSRem(lhsLong, rhs);
+            llvm::Value* rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsInt);
         }
         case COMB(P_TY_SHORT, P_TY_INT): {
-            llvm::Value* lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateSRem(lhsInt, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsShort);
         }
         case COMB(P_TY_SHORT, P_TY_SHORT):
             return builder->CreateSRem(lhs, rhs);
         case COMB(P_TY_SHORT, P_TY_LONG): {
-            llvm::Value* lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-            return builder->CreateSRem(lhsLong, rhs);
+            llvm::Value* rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
+            return builder->CreateSub(lhs, rhsShort);
         }
         case COMB(P_TY_LONG, P_TY_INT): // fallthrough
         case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -211,7 +198,7 @@ llvm::Value* OpRuleConversionsManager::getRemEqualInst(llvm::Value* lhs, llvm::V
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateSRem(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: %=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getSHLEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -240,7 +227,7 @@ llvm::Value* OpRuleConversionsManager::getSHLEqualInst(llvm::Value* lhs, llvm::V
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateShl(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: <<=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getSHREqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -269,7 +256,7 @@ llvm::Value* OpRuleConversionsManager::getSHREqualInst(llvm::Value* lhs, llvm::V
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateLShr(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: >>=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getAndEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -298,7 +285,7 @@ llvm::Value* OpRuleConversionsManager::getAndEqualInst(llvm::Value* lhs, llvm::V
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateAnd(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: &=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getOrEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -327,7 +314,7 @@ llvm::Value* OpRuleConversionsManager::getOrEqualInst(llvm::Value* lhs, llvm::Va
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateOr(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: |=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getXorEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -356,7 +343,7 @@ llvm::Value* OpRuleConversionsManager::getXorEqualInst(llvm::Value* lhs, llvm::V
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateXor(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ^=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getBitwiseAndInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -371,7 +358,7 @@ llvm::Value* OpRuleConversionsManager::getBitwiseAndInst(llvm::Value* lhs, llvm:
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateAnd(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: &");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getBitwiseOrInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -386,7 +373,7 @@ llvm::Value* OpRuleConversionsManager::getBitwiseOrInst(llvm::Value* lhs, llvm::
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateOr(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: |");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: |"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getBitwiseXorInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -401,7 +388,7 @@ llvm::Value* OpRuleConversionsManager::getBitwiseXorInst(llvm::Value* lhs, llvm:
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateXor(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ^");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -498,11 +485,12 @@ llvm::Value* OpRuleConversionsManager::getEqualInst(llvm::Value* lhs, llvm::Valu
             return builder->CreateICmpEQ(lhs, rhs);
         case COMB(P_TY_STRING, P_TY_STRING):
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '==' operator for lhs=string and rhs=string yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '==' operator for lhs=string and rhs=string yet");
         case COMB(P_TY_BOOL, P_TY_BOOL):
             return builder->CreateICmpEQ(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ==");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getNotEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -586,11 +574,12 @@ llvm::Value* OpRuleConversionsManager::getNotEqualInst(llvm::Value* lhs, llvm::V
             return builder->CreateICmpNE(lhs, rhs);
         case COMB(P_TY_STRING, P_TY_STRING):
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '!=' operator for lhs=string and rhs=string yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '!=' operator for lhs=string and rhs=string yet");
         case COMB(P_TY_BOOL, P_TY_BOOL):
             return builder->CreateICmpNE(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: !=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: !="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getLessInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -648,7 +637,7 @@ llvm::Value* OpRuleConversionsManager::getLessInst(llvm::Value* lhs, llvm::Value
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateICmpSLT(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: <");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: <"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getGreaterInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -706,7 +695,7 @@ llvm::Value* OpRuleConversionsManager::getGreaterInst(llvm::Value* lhs, llvm::Va
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateICmpSGT(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: >");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: >"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getLessEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -764,7 +753,7 @@ llvm::Value* OpRuleConversionsManager::getLessEqualInst(llvm::Value* lhs, llvm::
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateICmpSLE(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: <=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: <="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getGreaterEqualInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -822,7 +811,7 @@ llvm::Value* OpRuleConversionsManager::getGreaterEqualInst(llvm::Value* lhs, llv
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateICmpSGE(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: >=");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: >="); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getShiftLeftInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -858,7 +847,7 @@ llvm::Value* OpRuleConversionsManager::getShiftLeftInst(llvm::Value* lhs, llvm::
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateShl(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: <<");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: <<"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getShiftRightInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -894,7 +883,7 @@ llvm::Value* OpRuleConversionsManager::getShiftRightInst(llvm::Value* lhs, llvm:
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateLShr(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: >>");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: >>"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPlusInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -956,10 +945,11 @@ llvm::Value* OpRuleConversionsManager::getPlusInst(llvm::Value* lhs, llvm::Value
             return builder->CreateAdd(lhs, rhs);
         case COMB(P_TY_STRING, P_TY_STRING): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
         }
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: +");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getMinusInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -1020,7 +1010,7 @@ llvm::Value* OpRuleConversionsManager::getMinusInst(llvm::Value* lhs, llvm::Valu
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateSub(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: -");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getMulInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -1053,11 +1043,13 @@ llvm::Value* OpRuleConversionsManager::getMulInst(llvm::Value* lhs, llvm::Value*
         }
         case COMB(P_TY_INT, P_TY_BYTE_OR_CHAR): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=char yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=int and rhs=char yet");
         }
         case COMB(P_TY_INT, P_TY_STRING): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
         }
         case COMB(P_TY_SHORT, P_TY_DOUBLE): {
             llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
@@ -1075,11 +1067,13 @@ llvm::Value* OpRuleConversionsManager::getMulInst(llvm::Value* lhs, llvm::Value*
         }
         case COMB(P_TY_SHORT, P_TY_BYTE_OR_CHAR): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=char yet");
+            throw IRError(COMING_SOON_IR,
+            "The compiler does not support the '*' operator for lhs=short and rhs=char yet");
         }
         case COMB(P_TY_SHORT, P_TY_STRING): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=string yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=short and rhs=string yet");
         }
         case COMB(P_TY_LONG, P_TY_DOUBLE): {
             llvm::Value* lhsFP = builder->CreateSIToFP(lhs, rhsTy);
@@ -1094,40 +1088,48 @@ llvm::Value* OpRuleConversionsManager::getMulInst(llvm::Value* lhs, llvm::Value*
             return builder->CreateMul(lhs, rhs);
         case COMB(P_TY_LONG, P_TY_BYTE_OR_CHAR): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=char yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=long and rhs=char yet");
         }
         case COMB(P_TY_LONG, P_TY_STRING): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=string yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=long and rhs=string yet");
         }
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateMul(lhs, rhs);
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_INT): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=int yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=char and rhs=int yet");
         }
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_SHORT): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=short yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=char and rhs=short yet");
         }
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_LONG): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=long yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=char and rhs=long yet");
         }
         case COMB(P_TY_STRING, P_TY_INT): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
         }
         case COMB(P_TY_STRING, P_TY_SHORT): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=short yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=string and rhs=short yet");
         }
         case COMB(P_TY_STRING, P_TY_LONG): {
             // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-            throw IRError(COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=long yet");
+            throw IRError(COMING_SOON_IR,
+                          "The compiler does not support the '*' operator for lhs=string and rhs=long yet");
         }
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: *");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: *"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getDivInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -1185,7 +1187,7 @@ llvm::Value* OpRuleConversionsManager::getDivInst(llvm::Value* lhs, llvm::Value*
         case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
             return builder->CreateSDiv(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: /");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: /"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getRemInst(llvm::Value* lhs, llvm::Value* rhs) {
@@ -1224,7 +1226,7 @@ llvm::Value* OpRuleConversionsManager::getRemInst(llvm::Value* lhs, llvm::Value*
         case COMB(P_TY_LONG, P_TY_LONG):
             return builder->CreateSRem(lhs, rhs);
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: %");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: %"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPrefixMinusInst(llvm::Value* lhs) {
@@ -1241,7 +1243,7 @@ llvm::Value* OpRuleConversionsManager::getPrefixMinusInst(llvm::Value* lhs) {
             return builder->CreateMul(lhs, builder->getInt64(-1));
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: +");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value* lhs) {
@@ -1256,7 +1258,7 @@ llvm::Value* OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value* lhs) {
             return builder->CreateAdd(lhs, builder->getInt64(1));
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value* lhs) {
@@ -1271,7 +1273,7 @@ llvm::Value* OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value* lhs)
             return builder->CreateSub(lhs, builder->getInt64(1));
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: --");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: --"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPrefixNotInst(llvm::Value* lhs) {
@@ -1282,7 +1284,7 @@ llvm::Value* OpRuleConversionsManager::getPrefixNotInst(llvm::Value* lhs) {
             return builder->CreateNot(lhs);
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: !");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPrefixBitwiseNotInst(llvm::Value* lhs) {
@@ -1295,7 +1297,7 @@ llvm::Value* OpRuleConversionsManager::getPrefixBitwiseNotInst(llvm::Value* lhs)
             return builder->CreateNeg(lhs);
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ~");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ~"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value* lhs) {
@@ -1310,7 +1312,7 @@ llvm::Value* OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value* lhs) 
             return builder->CreateAdd(lhs, builder->getInt64(1));
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value* lhs) {
@@ -1325,7 +1327,7 @@ llvm::Value* OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value* lhs
             return builder->CreateSub(lhs, builder->getInt64(1));
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: --");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: --"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getCastInst(llvm::Type* lhsTy, llvm::Value* rhs) {
@@ -1358,7 +1360,7 @@ llvm::Value* OpRuleConversionsManager::getCastInst(llvm::Type* lhsTy, llvm::Valu
         case COMB(P_TY_BOOL, P_TY_BOOL):
             return rhs;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)");
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
 }
 
 PrimitiveType OpRuleConversionsManager::getPrimitiveTypeFromLLVMType(llvm::Type* ty) {
@@ -1369,7 +1371,7 @@ PrimitiveType OpRuleConversionsManager::getPrimitiveTypeFromLLVMType(llvm::Type*
     if (isByteOrChar(ty)) return P_TY_BYTE_OR_CHAR;
     if (isString(ty)) return P_TY_STRING;
     if (isBool(ty)) return P_TY_BOOL;
-    throw std::runtime_error("Internal compiler error: Cannot find primitive type of llvm type");
+    throw std::runtime_error("Internal compiler error: Cannot find primitive type of llvm type"); // GCOV_EXCL_LINE
 }
 
 bool OpRuleConversionsManager::isDouble(llvm::Type* ty) {
