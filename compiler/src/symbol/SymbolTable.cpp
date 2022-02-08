@@ -92,41 +92,6 @@ SymbolTable* SymbolTable::lookupTableWithSignature(const std::string& signature)
 }
 
 /**
- * Update the state of a symbol in the current symbol table or a parent scope.
- *
- * @throws runtime_error When trying to update a non-existent symbol
- * @param name Name of the symbol to update
- * @param newState New state of the symbol to update
- * @param token Lexer token, where the symbol table update was initiated
- */
-void SymbolTable::update(const std::string& name, SymbolState newState, const antlr4::Token& token) {
-    // If not available in the current scope, search in the parent scope
-    if (symbols.find(name) == symbols.end()) {
-        if (parent == nullptr) throw std::runtime_error("Internal compiler error: Updating a non-existent symbol: " + name);
-        parent->update(name, newState, token);
-    }
-    // Otherwise, update the entry
-    symbols.at(name).updateState(newState, token);
-}
-
-/**
- * Update the type of a symbol in the current symbol table or a parent scope. This is used for type inference of
- * dyn variables
- *
- * @param name Name of the symbol to update
- * @param newType New type of the symbol to update
- */
-void SymbolTable::update(const std::string& name, const SymbolType& newType) {
-    // If not available in the current scope, search in the parent scope
-    if (symbols.find(name) == symbols.end()) {
-        if (parent == nullptr) throw std::runtime_error("Updating a non-existent symbol: " + name);
-        parent->update(name, newType);
-    }
-    // Otherwise, update the entry
-    symbols.at(name).updateType(newType, false);
-}
-
-/**
  * Create a child leaf for the tree of symbol tables and return it
  *
  * @param blockName Name of the child scope
