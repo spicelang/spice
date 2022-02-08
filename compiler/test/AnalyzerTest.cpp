@@ -92,7 +92,7 @@ void executeTest(const AnalyzerTestCase& testCase) {
 
         // Fail if an error was expected
         if (TestUtil::fileExists(testCase.testPath + "/exception.out"))
-            FAIL() << "Expected error, but got no error";
+            FAIL() << "Expected error, but got no error";  // GCOV_EXCL_LINE
 
         // Check if the AST matches the expected output
         /*std::string astFileName = testCase.testPath + "/syntax-tree.ast";
@@ -115,13 +115,13 @@ void executeTest(const AnalyzerTestCase& testCase) {
         if (TestUtil::fileExists(exceptionFile)) {
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
-                TestUtil::setFileContent(exceptionFile, error.what());
+                TestUtil::setFileContent(exceptionFile, error.what()); // GCOV_EXCL_LINE
             } else {
                 std::string expectedException = TestUtil::getFileContent(exceptionFile);
                 EXPECT_EQ(std::string(error.what()), expectedException);
             }
         } else {
-            FAIL() << "Expected no error, but got '" << error.what() << "'";
+            FAIL() << "Expected no error, but got '" << error.what() << "'"; // GCOV_EXCL_LINE
         }
     } catch (SemanticError& error) {
         // Check if the exception message matches the expected output
@@ -129,13 +129,13 @@ void executeTest(const AnalyzerTestCase& testCase) {
         if (TestUtil::fileExists(exceptionFile)) {
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
-                TestUtil::setFileContent(exceptionFile, error.what());
+                TestUtil::setFileContent(exceptionFile, error.what()); // GCOV_EXCL_LINE
             } else {
                 std::string expectedException = TestUtil::getFileContent(exceptionFile);
                 EXPECT_EQ(std::string(error.what()), expectedException);
             }
         } else {
-            FAIL() << "Expected no error, but got '" << error.what() << "'";
+            FAIL() << "Expected no error, but got '" << error.what() << "'"; // GCOV_EXCL_LINE
         }
     }
 }

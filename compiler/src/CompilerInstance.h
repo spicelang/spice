@@ -11,7 +11,8 @@
  */
 class CompilerInstance {
 public:
-    static SymbolTable* CompileSourceFile(std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
-                                          const std::string& targetOs, const std::string& objectDir, bool debugOutput,
-                                          int optLevel, bool requiresMainFunction, bool stdFile);
+    static SymbolTable* CompileSourceFile(const std::string& sourceFile, const std::string& targetArch,
+                                          const std::string& targetVendor, const std::string& targetOs,
+                                          const std::string& objectDir, bool debugOutput, int optLevel, bool requiresMainFct,
+                                          bool stdFile);
 };

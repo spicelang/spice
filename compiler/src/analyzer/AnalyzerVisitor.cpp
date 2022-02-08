@@ -11,21 +11,47 @@
 #include "util/CompilerWarning.h"
 #include <exception/SemanticError.h>
 
+#include <utility>
+
+AnalyzerVisitor::AnalyzerVisitor(const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
+                                 const std::string& targetOs, const std::string& outputPath, bool debugOutput, int optLevel,
+                                 bool requiresMainFct, bool isStdFile) {
+    // Save parameters
+    this->mainSourceFile = sourceFile;
+    this->outputPath = outputPath;
+    this->debugOutput = debugOutput;
+    this->optLevel = optLevel;
+    this->requiresMainFct = requiresMainFct;
+    this->isStdFile = isStdFile;
+
+    // Use default target triple if empty
+    if (targetArch.empty()) {
+        llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+        this->targetArch = targetTriple.getArchName();
+        this->targetVendor = targetTriple.getVendorName();
+        this->targetOs = targetTriple.getOSName();
+    } else {
+        this->targetArch = targetArch;
+        this->targetVendor = targetVendor;
+        this->targetOs = targetOs;
+    }
+}
+
 antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // --- Pre-traversing actions
-    // ...
+    // Create current scope
+    SymbolTable* rootScope = currentScope = new SymbolTable(nullptr, requiresMainFct);
 
     // --- Traverse AST
     visitChildren(ctx);
 
     // --- Post traversing actions
     // Check if the visitor got a main function
-    if (requiresMainFunction && !hasMainFunction)
+    if (requiresMainFct && !hasMainFunction)
         throw SemanticError(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
 
     // Print compiler warnings once the whole ast is present, but not for std files
-    if (requiresMainFunction && !stdFile) {
-        SymbolTable* rootScope = currentScope;
+    if (requiresMainFct && !isStdFile) {
         while (rootScope->getParent()) rootScope = rootScope->getParent();
         rootScope->printCompilerWarnings();
     }
@@ -592,7 +618,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     }
 
     // Kick off the compilation of the imported source file
-    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetArch, targetVendor, targetOs, objectDir,
+    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetArch, targetVendor, targetOs, outputPath,
                                                                    debugOutput, optLevel, false, isStdFile);
 
     // Create symbol of type TYPE_IMPORT in the current scope

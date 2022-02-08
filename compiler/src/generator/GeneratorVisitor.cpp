@@ -24,11 +24,30 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/Analysis/AliasAnalysis.h>
 
+GeneratorVisitor::GeneratorVisitor(SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
+                                   const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
+                                   bool debugOutput, int optLevel, bool requiresMainFct) {
+    // Save parameters
+    this->currentScope = symbolTable;
+    this->sourceFile = sourceFile;
+    this->outputPath = outputPath;
+    this->debugOutput = debugOutput;
+    this->optLevel = optLevel;
+    this->requiresMainFct = requiresMainFct;
+
+    // Get target triple
+    if (targetArch.empty()) {
+        targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+    } else {
+        targetTriple = llvm::Triple(targetArch, targetVendor, targetOs);
+    }
+}
+
 void GeneratorVisitor::init() {
     // Create LLVM base components
     context = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
-    module = std::make_unique<llvm::Module>(FileUtil::getFileName(mainSourceFile), *context);
+    module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile), *context);
     conversionsManager = std::make_unique<OpRuleConversionsManager>(builder.get());
 
     // Initialize LLVM
@@ -81,12 +100,12 @@ void GeneratorVisitor::optimize() {
 
 void GeneratorVisitor::emit() {
     if (debugOutput)
-        std::cout << "\nEmitting executable for triplet '" << targetTriple.getTriple() << "' to path: " << objectDir << std::endl;
+        std::cout << "\nEmitting executable for triplet '" << targetTriple.getTriple() << "' to path: " << outputPath << std::endl;
 
     // Open file output stream
     std::error_code errorCode;
-    llvm::raw_fd_ostream dest(objectDir, errorCode, llvm::sys::fs::OF_None);
-    if (errorCode) throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + objectDir + "' could not be opened");
+    llvm::raw_fd_ostream dest(outputPath, errorCode, llvm::sys::fs::OF_None);
+    if (errorCode) throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + outputPath + "' could not be opened");
 
     llvm::legacy::PassManager passManager;
     if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CGFT_ObjectFile))
@@ -123,7 +142,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
 }
 
 antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext* ctx) {
-    if (mustHaveMainFunction) { // Only create main function when it is required
+    if (requiresMainFct) { // Only create main function when it is required
         // Change scope
         std::string scopeId = ScopeIdUtil::getScopeId(ctx);
         currentScope = currentScope->getChild(scopeId);

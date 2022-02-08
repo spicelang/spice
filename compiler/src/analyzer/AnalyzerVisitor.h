@@ -21,24 +21,9 @@ const std::vector<std::string> RESERVED_KEYWORDS = { "new", "switch", "case" };
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
-    explicit AnalyzerVisitor(std::string sourceFile, std::string targetArch, std::string targetVendor, std::string targetOs,
-                             std::string outputPath, bool debugOutput, int optLevel, bool mustHaveMainFunction, bool stdFile) :
-            mainSourceFile(std::move(sourceFile)),
-            targetArch(std::move(targetArch)),
-            targetVendor(std::move(targetVendor)),
-            targetOs(std::move(targetOs)),
-            objectDir(std::move(outputPath)),
-            debugOutput(debugOutput),
-            optLevel(optLevel),
-            requiresMainFunction(mustHaveMainFunction),
-            stdFile(stdFile) {
-        if (targetArch.empty()) {
-            llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-            targetArch = targetTriple.getArchName();
-            targetVendor = targetTriple.getVendorName();
-            targetOs = targetTriple.getOSName();
-        }
-    }
+    explicit AnalyzerVisitor(const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
+                             const std::string& targetOs, const std::string& outputPath, bool debugOutput, int optLevel,
+                             bool requiresMainFct, bool stdFile);
 
     // Public methods
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;
@@ -89,13 +74,13 @@ private:
     std::string targetArch;
     std::string targetVendor;
     std::string targetOs;
-    std::string objectDir;
+    std::string outputPath;
     bool debugOutput;
     int optLevel;
-    bool requiresMainFunction = true;
+    bool requiresMainFct = true;
     bool hasMainFunction = false;
-    bool stdFile = false;
-    SymbolTable* currentScope = new SymbolTable(nullptr, requiresMainFunction);
+    bool isStdFile = false;
+    SymbolTable* currentScope = nullptr;
     ScopePath scopePath;
     std::string scopePrefix;
     bool parameterMode = false;

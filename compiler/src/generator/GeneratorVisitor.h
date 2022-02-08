@@ -17,17 +17,9 @@
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
-    explicit GeneratorVisitor(SymbolTable* symbolTable, std::string sourceFile, const std::string& targetArch,
-                              const std::string& targetVendor, const std::string& targetOs, std::string outputPath,
-                              bool debugOutput, int optLevel, bool mustHaveMainFunction) :
-            currentScope(symbolTable), mainSourceFile(std::move(sourceFile)), objectDir(std::move(outputPath)),
-            debugOutput(debugOutput), optLevel(optLevel), mustHaveMainFunction(mustHaveMainFunction) {
-        if (targetArch.empty()) {
-            targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-        } else {
-            targetTriple = llvm::Triple(targetArch, targetVendor, targetOs);
-        }
-    }
+    explicit GeneratorVisitor(SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
+                              const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
+                              bool debugOutput, int optLevel, bool requiresMainFct);
 
     // Public methods
     void init();
@@ -80,13 +72,13 @@ public:
 private:
     // Members
     std::unique_ptr<OpRuleConversionsManager> conversionsManager;
-    std::string mainSourceFile;
+    std::string sourceFile;
     llvm::Triple targetTriple;
     llvm::TargetMachine* targetMachine{};
-    std::string objectDir;
+    std::string outputPath;
     bool debugOutput;
     int optLevel;
-    bool mustHaveMainFunction = true;
+    bool requiresMainFct = true;
     std::unique_ptr<llvm::LLVMContext> context;
     std::unique_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<llvm::Module> module;

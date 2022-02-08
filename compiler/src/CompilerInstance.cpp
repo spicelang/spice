@@ -20,20 +20,20 @@
  * @param objectDir Full path to an output file (absolute or relative)
  * @param debugOutput Set to true to show compiler debug output
  * @param optLevel Number in range 1-3 to control optimization level
- * @param requiresMainFunction true = main source file, false = not main source file
+ * @param requiresMainFct true = main source file, false = not main source file
  * @param stdFile true = std source file, false = not std source file
  *
  * @return Symbol table of this program part
  */
 SymbolTable* CompilerInstance::CompileSourceFile(
-        std::string& sourceFile,
+        const std::string& sourceFile,
         const std::string& targetArch,
         const std::string& targetVendor,
         const std::string& targetOs,
         const std::string& objectDir,
         bool debugOutput,
         int optLevel,
-        bool requiresMainFunction,
+        bool requiresMainFct,
         bool stdFile
 ) {
     // Read from file
@@ -67,13 +67,13 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             objectDir,
             debugOutput,
             optLevel,
-            requiresMainFunction,
+            requiresMainFct,
             stdFile
     );
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
     if (debugOutput) { // GCOV_EXCL_START
         // Print symbol table
-        std::cout << "\nSymbol table of file " << sourceFile << ":\n" << std::endl;
+        std::cout << std::endl << "Symbol table of file " << sourceFile << ":" << std::endl << std::endl;
         std::cout << symbolTable->toJSON().dump(2) << std::endl;
     } // GCOV_EXCL_STOP
 
@@ -90,13 +90,13 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             objectDir + "/" + fileName + ".o",
             debugOutput,
             optLevel,
-            requiresMainFunction
+            requiresMainFct
     );
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
     if (debugOutput) { // GCOV_EXCL_START
         // Dump unoptimized IR code
-        std::cout << "\nIR code:" << std::endl;
+        std::cout  << std::endl << "IR code:" << std::endl;
         generator.dumpIR();
     } // GCOV_EXCL_STOP
 
@@ -104,7 +104,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         generator.optimize(); // Optimize IR code
         if (debugOutput) { // GCOV_EXCL_START
             // Dump optimized IR code
-            std::cout << "\nOptimized IR code:" << std::endl;
+            std::cout  << std::endl << "Optimized IR code:" << std::endl;
             generator.dumpIR();
         } // GCOV_EXCL_STOP
     }

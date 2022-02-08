@@ -47,5 +47,5 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
         case NEGATIVE_VALUE_TO_UNSIGNED_VAR:
             return "Negative value assigned to unsigned variable";
     }
-    return "Unknown warning";
+    return "Unknown warning"; // GCOV_EXCL_LINE
 }
