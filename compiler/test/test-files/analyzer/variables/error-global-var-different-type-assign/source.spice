@@ -1,4 +1,5 @@
-const unsigned int test = 6s;
+unsigned short unsignedShort = -10;
+const signed int test = 6s;
 
 f<int> main() {
     printf("Int: %d", test);

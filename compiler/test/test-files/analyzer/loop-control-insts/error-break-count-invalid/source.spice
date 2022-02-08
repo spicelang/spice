@@ -1,0 +1,5 @@
+f<int> main() {
+    while true {
+        break 0;
+    }
+}
