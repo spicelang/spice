@@ -15,7 +15,7 @@ public:
     explicit LexerParserError(std::string message): errorMessage(std::move(message)) {} // GCOV_EXCL_LINE
 
     // Public methods
-    const char* what() const noexcept override;
+    [[nodiscard]] const char* what() const noexcept override;
 
 private:
     // Members

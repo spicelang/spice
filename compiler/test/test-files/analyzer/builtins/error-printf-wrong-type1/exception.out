@@ -1,0 +1,1 @@
+Semantic error at 2:18: Types of printf call not matching: Template string expects int, byte or bool, but got double

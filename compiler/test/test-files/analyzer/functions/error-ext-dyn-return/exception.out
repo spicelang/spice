@@ -1,0 +1,1 @@
+Semantic error at 1:5: Unexpected dyn type: Dyn data type is not allowed as return type for external functions

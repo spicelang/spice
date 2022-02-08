@@ -1,0 +1,1 @@
+Semantic error at 7:20: Referenced undefined struct: Struct 'TestStructTypo' was used before defined

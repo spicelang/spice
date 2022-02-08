@@ -47,8 +47,6 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Referenced undefined variable";
         case REFERENCED_UNDEFINED_STRUCT:
             return "Referenced undefined struct";
-        case REFERENCED_UNDEFINED_STRUCT_FIELD:
-            return "Referenced undefined struct field";
         case VARIABLE_DECLARED_TWICE:
             return "Multiple declarations of the same variable";
         case FUNCTION_DECLARED_TWICE:
@@ -91,8 +89,6 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Number of struct fields not matching declaration";
         case FIELD_TYPE_NOT_MATCHING:
             return "The type of a field value does not match the declaration";
-        case ARRAY_SIZE_NO_INTEGER:
-            return "Array size not of type int";
         case ARRAY_SIZE_INVALID:
             return "Array size invalid";
         case ARRAY_INDEX_NO_INTEGER:
@@ -103,8 +99,6 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Return without initialization of result variable";
         case RETURN_WITH_VALUE_IN_PROCEDURE:
             return "Return with value in procedure";
-        case VARARG_APPLIED_WRONGLY:
-            return "Vararg applied wrongly";
         case DYN_POINTERS_NOT_ALLOWED:
             return "Dyn pointers not allowed";
         case DYN_ARRAYS_NOT_ALLOWED:
@@ -116,5 +110,5 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
         case COMING_SOON_SA:
             return "Coming soon";
     }
-    return "Unknown error";
+    return "Unknown error"; // GCOV_EXCL_LINE
 }

@@ -1,0 +1,6 @@
+dyn test = true;
+dyn invalid;
+
+f<int> main() {
+    printf("Bool: %d", test);
+}

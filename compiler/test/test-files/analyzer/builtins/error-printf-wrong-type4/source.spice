@@ -1,0 +1,6 @@
+type NotAPointer struct {}
+
+f<int> main() {
+    NotAPointer nonPtr = NotAPointer {};
+    printf("%p", nonPtr);
+}

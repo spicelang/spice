@@ -1,0 +1,1 @@
+Semantic error at 5:18: Types of printf call not matching: Template string expects pointer, but got struct(NotAPointer)

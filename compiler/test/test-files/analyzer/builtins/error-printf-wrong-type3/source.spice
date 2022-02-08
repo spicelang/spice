@@ -1,0 +1,4 @@
+f<int> main() {
+    dyn integer = 1;
+    printf("%s", &integer);
+}

@@ -1,0 +1,1 @@
+Semantic error at 1:26: Unexpected dyn type: Dyn data type is not allowed as param type for external functions

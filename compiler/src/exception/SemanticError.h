@@ -11,7 +11,6 @@ enum SemanticErrorType {
     REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
     REFERENCED_UNDEFINED_VARIABLE,
     REFERENCED_UNDEFINED_STRUCT,
-    REFERENCED_UNDEFINED_STRUCT_FIELD,
     VARIABLE_DECLARED_TWICE,
     FUNCTION_DECLARED_TWICE,
     PROCEDURE_DECLARED_TWICE,
@@ -33,13 +32,11 @@ enum SemanticErrorType {
     UNKNOWN_DATATYPE,
     NUMBER_OF_FIELDS_NOT_MATCHING,
     FIELD_TYPE_NOT_MATCHING,
-    ARRAY_SIZE_NO_INTEGER,
     ARRAY_SIZE_INVALID,
     ARRAY_INDEX_NO_INTEGER,
     ARRAY_ITEM_TYPE_NOT_MATCHING,
     RETURN_WITHOUT_VALUE_RESULT,
     RETURN_WITH_VALUE_IN_PROCEDURE,
-    VARARG_APPLIED_WRONGLY,
     DYN_POINTERS_NOT_ALLOWED,
     DYN_ARRAYS_NOT_ALLOWED,
     SPECIFIER_AT_ILLEGAL_CONTEXT,
@@ -57,7 +54,7 @@ public:
     explicit SemanticError(SemanticErrorType type, const std::string& message);
 
     // Public methods
-    const char* what() const noexcept override;
+    [[nodiscard]] const char* what() const noexcept override;
 
 private:
     // Members

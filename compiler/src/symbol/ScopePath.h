@@ -14,7 +14,6 @@ public:
     void pushFragment(const std::string& fragment, SymbolTable* symbolTable);
     void clear();
     SymbolTable* getCurrentScope();
-    std::string toString();
 private:
     std::vector<std::tuple<std::string, SymbolTable*>> fragments;
 };

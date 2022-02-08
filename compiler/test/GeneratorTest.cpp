@@ -94,8 +94,8 @@ void executeTest(const GeneratorTestCase& testCase) {
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected
-        if (TestUtil::fileExists(testCase.testPath + "/exception.out"))
-            FAIL() << "Expected error, but got no error";
+        if (TestUtil::fileExists(testCase.testPath + "/exception.out")) // GCOV_EXCL_LINE
+            FAIL() << "Expected error, but got no error";                      // GCOV_EXCL_LINE
 
         // Check if the symbol table matches the expected output
         std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
@@ -146,7 +146,7 @@ void executeTest(const GeneratorTestCase& testCase) {
             std::string actualIR = generator.getIRString();
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
-                TestUtil::setFileContent(irCodeFileName, actualIR);
+                TestUtil::setFileContent(irCodeFileName, actualIR); // GCOV_EXCL_LINE
             } else {
                 std::string expectedIR = TestUtil::getFileContent(irCodeFileName);
                 // Cut of first n lines to have a target independent
@@ -164,7 +164,7 @@ void executeTest(const GeneratorTestCase& testCase) {
             std::string actualOptimizedIR = generator.getIRString();
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
-                TestUtil::setFileContent(irCodeOptFileName, actualOptimizedIR);
+                TestUtil::setFileContent(irCodeOptFileName, actualOptimizedIR); // GCOV_EXCL_LINE
             } else {
                 // Cut of first n lines to have a target independent
                 for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
@@ -189,7 +189,7 @@ void executeTest(const GeneratorTestCase& testCase) {
 
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
-                TestUtil::setFileContent(outputFileName, actualOutput);
+                TestUtil::setFileContent(outputFileName, actualOutput); // GCOV_EXCL_LINE
             } else {
                 std::string expectedOutput = TestUtil::getFileContent(outputFileName);
 
@@ -199,7 +199,7 @@ void executeTest(const GeneratorTestCase& testCase) {
         }
 
         SUCCEED();
-    } catch (LexerParserError& error) {
+    } catch (LexerParserError& error) { // GCOV_EXCL_START
         FAIL() << "Hit lexer/parser error: " << error.what();
     } catch (SemanticError& error) {
         // Check if the exception message matches the expected output
@@ -210,7 +210,7 @@ void executeTest(const GeneratorTestCase& testCase) {
         } else {
             FAIL() << "Expected no error, but got '" << error.what() << "'";
         }
-    }
+    } // GCOV_EXCL_STOP
 }
 
 // Test classes
