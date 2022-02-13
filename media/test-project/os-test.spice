@@ -25,7 +25,7 @@ f<int> main() {
     a.destructor();
 }*/
 
-/*f<int> makePi() {
+f<int> makePi() {
     // Initialize variables
     int q = 1;
     int r = 0;
@@ -34,7 +34,7 @@ f<int> main() {
     int m = 3;
     int x = 3;
     // Loop
-    //int[1000] output = {};
+    int[1000] output = {};
     int outputCounter = 0;
     for int i = 0; i < 1000; i++ {
         if (4 * q + r - t < m * t) {
@@ -60,18 +60,4 @@ f<int> main() {
 
 f<int> main() {
     makePi();
-}*/
-
-/*import "std/io/dir" as dir;
-
-f<int> main() {
-    dir.mkDir("./test", dir.MODE_ALL_RWX);
-}*/
-
-f<long> getInlinedValue() {
-    return 12l;
-}
-
-f<int> main() {
-    printf("Inlined value: %d\n", getInlinedValue());
 }

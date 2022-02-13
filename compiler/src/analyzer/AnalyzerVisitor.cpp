@@ -572,7 +572,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
                             "The variable '" + variableName + "' was declared more than once");
 
     // Get the type of the symbol
-    SymbolType symbolType = visit(ctx->dataType()).as<SymbolType>();
+    SymbolType symbolType = lhsType = visit(ctx->dataType()).as<SymbolType>();
 
     // Visit the right side
     SymbolState initialState = DECLARED;
@@ -622,9 +622,9 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 
     // Check if source file exists
     std::string filePath;
-    bool isStdFile = false;
+    bool foundInStd = false;
     if (importPath.rfind("std/", 0) == 0) { // Include source file from standard library
-        isStdFile = true;
+        foundInStd = true;
         std::string sourceFileIden = importPath.substr(importPath.find("std/") + 4);
         // Find std library
         std::string stdPath;
@@ -646,7 +646,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
             filePath = stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice";
         } else {
             throw SemanticError(*ctx->STRING_LITERAL()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
-                                "The source file '" + importPath + ".spice' was not found in standard library");
+                                "The source file '" + importPath + ".spice' was not found in the standard library");
         }
     } else { // Include own source file
         // Check in module registry if the file can be imported
@@ -667,8 +667,9 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     }
 
     // Kick off the compilation of the imported source file
-    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetArch, targetVendor, targetOs, outputPath,
-                                                                   debugOutput, optLevel, false, isStdFile);
+    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetArch, targetVendor, targetOs,
+                                                                   outputPath, debugOutput, optLevel, false,
+                                                                   foundInStd);
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();
@@ -684,6 +685,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
+    lhsType = returnVariable->getType();
 
     // Check if there is a value attached to the return statement
     SymbolType returnType;
@@ -705,7 +707,8 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
             if (returnType != returnVariable->getType())
                 throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
                                     "Passed wrong data type to return statement. Expected " +
-                                    returnVariable->getType().getName(false) + " but got " + returnType.getName(false));
+                                    returnVariable->getType().getName(false) + " but got " +
+                                    returnType.getName(false));
         }
 
         // Set the return variable to initialized
@@ -1386,7 +1389,8 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
     if (ctx->LBRACE()) { // Array initialization
         // Check if all values have the same type
-        SymbolType expectedItemType = SymbolType(TY_DYN);
+        assert(lhsType.isArray());
+        SymbolType expectedItemType = lhsType.getContainedTy();
         unsigned int actualSize = 0;
         if (ctx->paramLst()) {
             for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
