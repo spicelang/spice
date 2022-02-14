@@ -14,11 +14,31 @@ var InstallCliFlags = []cli.Flag{
 		Usage:   "Print compiler output for debugging",
 		Value:   false,
 	},
-	&cli.IntFlag{
-		Name:    "opt-level",
+	&cli.BoolFlag{
+		Name:    "opt-0",
+		Aliases: []string{"O0"},
+		Usage:   "Set optimization level to 0",
+	},
+	&cli.BoolFlag{
+		Name:    "opt-1",
+		Aliases: []string{"O1"},
+		Usage:   "Set optimization level to 1",
+	},
+	&cli.BoolFlag{
+		Name:    "opt-2",
+		Aliases: []string{"O2"},
+		Usage:   "Set optimization level to 2",
+		Value:   true,
+	},
+	&cli.BoolFlag{
+		Name:    "opt-3",
+		Aliases: []string{"O3"},
+		Usage:   "Set optimization level to 3",
+	},
+	&cli.PathFlag{
+		Name:    "output",
 		Aliases: []string{"o"},
-		Usage:   "Set optimization level",
-		Value:   2,
+		Usage:   "Path to the location where the output executable should go",
 	},
 }
 
@@ -29,7 +49,14 @@ func Install(c *cli.Context) error {
 	// Extract flags
 	sourceFile := c.Args().Get(0)
 	debugOutput := c.Bool("debug-output")
-	optLevel := c.Int("opt-level")
+	optLevel := 2
+	if c.Bool("opt-0") {
+		optLevel = 0
+	} else if c.Bool("opt-1") {
+		optLevel = 1
+	} else if c.Bool("opt-3") {
+		optLevel = 3
+	}
 
 	// Only execute the command if the environment is not dockerized
 	if util.IsDockerized() {
