@@ -17,7 +17,6 @@ var RunCliFlags = []cli.Flag{
 		Name:    "debug-output",
 		Aliases: []string{"d"},
 		Usage:   "Print compiler output for debugging",
-		Value:   false,
 	},
 	&cli.BoolFlag{
 		Name:    "opt-0",
