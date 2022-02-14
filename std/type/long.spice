@@ -1,3 +1,7 @@
+const int SIZE = 64;
+const long MIN_VALUE = -9223372036854775808;
+const long MAX_VALUE = 9223372036854775807;
+
 // Converts a long to a double
 f<double> toDouble(long input) {
     return 0.0 + input;

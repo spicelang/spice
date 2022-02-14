@@ -1,3 +1,7 @@
+const int SIZE = 8;
+const char MIN_VALUE = (char) 0;
+const char MAX_VALUE = (char) 255;
+
 // Converts a char to a double
 f<double> toDouble(char input) {
     return 0.0;

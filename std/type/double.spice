@@ -1,3 +1,7 @@
+const int SIZE = 64;
+const double MIN_VALUE = 0; // ToDo: Fix
+const double MAX_VALUE = 0; // ToDo: Fix
+
 // Converts a double to an int
 f<int> toInt(double input) {
     // ToDo: Implement

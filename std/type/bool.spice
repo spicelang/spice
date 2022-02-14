@@ -1,3 +1,7 @@
+const int SIZE = 1;
+const bool TRUE = true;
+const bool FALSE = false;
+
 // Converts a bool to a double
 f<double> toDouble(bool input) {
     return input ? 1.0 : 0.0;

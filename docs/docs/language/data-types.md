@@ -28,7 +28,7 @@ variable2 = -2;
 ```
 
 ## The `short` data type
-Integers are signed, whole numbers of 16-bit, which have a range from a min of -32.768 to a max of 32.767.
+Integers are signed, whole numbers of 16-bit, which have a range from a min of -32,768 to a max of 32,767.
 
 In Spice, variables of type `short` can be defined like this:
 ```spice

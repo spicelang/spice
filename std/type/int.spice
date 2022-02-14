@@ -1,3 +1,7 @@
+const int SIZE = 32;
+const int MIN_VALUE = -2147483648;
+const int MAX_VALUE = 2147483647;
+
 // Converts an int to a double
 f<double> toDouble(int input) {
     // ToDo: Implement
