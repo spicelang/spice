@@ -43,11 +43,16 @@ type FileStat struct {
 }
 
 type DirEntry struct {
-    long dInodeNo // unsigned
+    unsigned long dInodeNo
     long dOffset
-    short dRecordLen // unsigned
-    char dType // unsigned
+    unsigned short dRecordLen
+    char dType
     char* dName
+}
+
+type DirStream struct {
+    int fileDescriptor
+
 }
 
 // Link external functions
@@ -56,6 +61,9 @@ ext<int> rmdir(string);
 ext<int> rename(string, string);
 ext<int> access(string, int);
 ext<int> stat(string, FileStat*);
+ext<DirStream*> opendir(string);
+ext<int> closedir(DirStream*);
+ext<DirEntry*> readdir(DirStream*);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
@@ -122,14 +130,26 @@ f<bool> dirExists(string path) {
     // Check if there exists something, a file or a dir
     if access(path, F_OK) == 0 {
         // Check if it is a dir
-        dyn fs = FileStat {};
+        dyn fs = FileStat{};
         stat(path, &fs);
         return ((int) fs.mode & IF_MT) == IF_DIR;
     }
     return false;
 }
 
-f<DirEntry[]> listDir(string path) {
+/**
+ * Lists all files/subdirectories at a given path.
+ */
+p listDir(string path) {
+    // Open the directory stream
+    DirStream* dirStream = opendir(path);
 
-    return ;
+    // Return empty array if stream result is nil
+    if (dirStream == nil<DirStream*>) { return {}; }
+
+    dyn dirEntry = &DirEntry{};
+    while (dirEntry = readdir(dirStream)) != nil<DirEntry*> {
+        printf("Filename: %s\n", dirEntry.fileName);
+    }
+    closedir(dirStream);
 }
