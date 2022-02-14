@@ -17,7 +17,6 @@ var BuildCliFlags = []cli.Flag{
 		Name:    "debug-output",
 		Aliases: []string{"d"},
 		Usage:   "Print compiler output for debugging",
-		Value:   false,
 	},
 	&cli.StringFlag{
 		Name:    "target-arch",
@@ -34,15 +33,31 @@ var BuildCliFlags = []cli.Flag{
 		Aliases: []string{"to"},
 		Usage:   "Target os for the emitted executable (for cross-compiling)",
 	},
-	&cli.IntFlag{
-		Name:    "opt-level",
-		Aliases: []string{"o"},
-		Usage:   "Set optimization level",
-		Value:   2,
+	&cli.BoolFlag{
+		Name:    "opt-0",
+		Aliases: []string{"O0"},
+		Usage:   "Set optimization level to 0",
+	},
+	&cli.BoolFlag{
+		Name:    "opt-1",
+		Aliases: []string{"O1"},
+		Usage:   "Set optimization level to 1",
+	},
+	&cli.BoolFlag{
+		Name:    "opt-2",
+		Aliases: []string{"O2"},
+		Usage:   "Set optimization level to 2",
+		Value:   true,
+	},
+	&cli.BoolFlag{
+		Name:    "opt-3",
+		Aliases: []string{"O3"},
+		Usage:   "Set optimization level to 3",
 	},
 	&cli.PathFlag{
-		Name:  "output",
-		Usage: "Path to the location where the output executable should go",
+		Name:    "output",
+		Aliases: []string{"o"},
+		Usage:   "Path to the location where the output executable should go",
 	},
 }
 
@@ -57,7 +72,14 @@ func Build(c *cli.Context) error {
 	targetOs := c.String("target-os")
 	outputFile := c.Path("output")
 	debugOutput := c.Bool("debug-output")
-	optLevel := c.Int("opt-level")
+	optLevel := 2
+	if c.Bool("opt-0") {
+		optLevel = 0
+	} else if c.Bool("opt-1") {
+		optLevel = 1
+	} else if c.Bool("opt-3") {
+		optLevel = 3
+	}
 
 	return buildFromSourceFile(sourceFile, targetArch, targetVendor, targetOs, outputFile, debugOutput, optLevel)
 }
