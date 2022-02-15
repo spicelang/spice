@@ -1,0 +1,5 @@
+import "std/os/os" as os;
+
+f<int> main() {
+    printf("OS name: %s", os.OS_NAME);
+}

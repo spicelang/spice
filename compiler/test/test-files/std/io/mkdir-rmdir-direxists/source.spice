@@ -1,0 +1,10 @@
+import "std/io/dir" as dir;
+
+f<int> main() {
+    printf("Existing before: %d\n", dir.dirExists("./test"));
+    dyn mkReturnCode = dir.mkDir("./test", dir.MODE_ALL_RWX);
+    printf("mkDir return code: %d\n", mkReturnCode);
+    printf("Existing before: %d\n", dir.dirExists("./test"));
+    dyn rmReturnCode = dir.rmDir("./test");
+    printf("rmDir return code: %d\n", rmReturnCode);
+}
