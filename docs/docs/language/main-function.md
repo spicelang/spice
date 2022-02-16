@@ -15,3 +15,18 @@ Like any other [function](../functions), the `main` function automatically decla
 
 !!! info "Hello World program"
     Now, as you know how to start a program in Spice, you may like to write your first Spice program. Visit the guide for the [Hello World example](../hello-world) to get started!
+
+### CLI Arguments
+Spice programs can accept command line arguments similar you would write it in C:
+
+```spice
+f<int> main(int argc, string[] argv) {
+    printf("Argc: %d\n", argc);
+    printf("Argv no. 0: %s\n", argv[0]);
+    if (argc > 1) {
+        printf("Argv no. 1: %s\n", argv[1]);
+    }
+}
+```
+
+The parameter `argc` holds the number of passed arguments and the `argv` array contains the values of those arguments.

@@ -11,13 +11,13 @@ short shortVar = (short) 12;
 
 Example for casting for a function fall:
 ```spice
-f<int> testFunc(char c, long l) {
+p testFunc(char c, long l) {
     printf("Char was: %c, long was: %d", c, l);
 }
 
 f<int> main() {
     int i = 1234567;
-    short s = 65;
+    short s = 65s;
     testFunc((char) s, (long) i);
 }
 ```

@@ -26,7 +26,7 @@ type Person struct {
 }
 
 f<int> main() {
-	Person john = new Person { "John", "Doe", 46 };
+	Person john = Person { "John", "Doe", 46 };
 	john.age = 47;
 	printf("John's age: %d", john.age);
 }
