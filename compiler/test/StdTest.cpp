@@ -10,7 +10,8 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
-#include "generator/GeneratorVisitor.h"
+#include <generator/GeneratorVisitor.h>
+
 #include "exception/AntlrThrowingErrorListener.h"
 #include "exception/LexerParserError.h"
 #include "exception/SemanticError.h"
@@ -19,17 +20,17 @@
 
 const unsigned int IR_FILE_SKIP_LINES = 4;
 
-struct GeneratorTestCase {
+struct StdTestCase {
     const std::string testName;
     const std::string testPath;
 };
 
-typedef std::vector<GeneratorTestCase> GeneratorTestSuite;
+typedef std::vector<StdTestCase> StdTestSuite;
 
-std::vector<GeneratorTestCase> detectGeneratorTestCases(const std::string& suitePath) {
+std::vector<StdTestCase> detectStdTestCases(const std::string& suitePath) {
     std::vector<std::string> subDirs = TestUtil::getSubdirs(suitePath);
 
-    std::vector<GeneratorTestCase> testCases;
+    std::vector<StdTestCase> testCases;
     testCases.reserve(subDirs.size());
     for (std::string& dirName : subDirs) {
         // Save test suite
@@ -39,18 +40,18 @@ std::vector<GeneratorTestCase> detectGeneratorTestCases(const std::string& suite
     return testCases;
 }
 
-std::vector<GeneratorTestSuite> detectGeneratorTestSuites(const std::string& testFilesPath) {
+std::vector<StdTestSuite> detectStdTestSuites(const std::string& testFilesPath) {
     std::vector<std::string> subDirs = TestUtil::getSubdirs(testFilesPath);
 
-    std::vector<GeneratorTestSuite> testSuites;
+    std::vector<StdTestSuite> testSuites;
     testSuites.reserve(subDirs.size());
     for (std::string& dirName : subDirs)
-        testSuites.push_back(detectGeneratorTestCases(testFilesPath + "/" + dirName));
+        testSuites.push_back(detectStdTestCases(testFilesPath + "/" + dirName));
 
     return testSuites;
 }
 
-void executeTest(const GeneratorTestCase& testCase) {
+void executeTest(const StdTestCase& testCase) {
     // Check if disabled
     std::string disabledFile = testCase.testPath + "/disabled";
     if (TestUtil::fileExists(disabledFile)) GTEST_SKIP();
@@ -221,206 +222,41 @@ void executeTest(const GeneratorTestCase& testCase) {
 
 // Test classes
 
-class GeneratorArbitraryTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorArrayTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorBuiltinTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorCliArgsTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorExtDeclTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorForLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorForEachLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorFunctionTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorIfStatementTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorImportTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorMethodTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorOperatorTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorPointerTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorProcedureTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorStructTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorVariableTests : public ::testing::TestWithParam<GeneratorTestCase> {};
-class GeneratorWhileLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
+class StdIOTests : public ::testing::TestWithParam<StdTestCase> {};
+class StdOSTests : public ::testing::TestWithParam<StdTestCase> {};
 
 // Test macros
 
-TEST_P(GeneratorArbitraryTests, ArbitraryTests) {
+TEST_P(StdIOTests, IOTests) {
     executeTest(GetParam());
 }
 
-TEST_P(GeneratorArrayTests, ArrayTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorBuiltinTests, BuiltinTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorCliArgsTests, CliArgTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorExtDeclTests, ExtDeclTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorForLoopTests, ForLoopTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorForEachLoopTests, ForEachLoopTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorFunctionTests, FunctionTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorIfStatementTests, IfStatementTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorImportTests, ImportTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorMethodTests, MethodTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorOperatorTests, OperatorTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorPointerTests, PointerTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorProcedureTests, ProcedureTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorStructTests, StructTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorVariableTests, VariableTests) {
-    executeTest(GetParam());
-}
-
-TEST_P(GeneratorWhileLoopTests, WhileLoopTests) {
+TEST_P(StdOSTests, OSTests) {
     executeTest(GetParam());
 }
 
 // Name resolver
 
 struct NameResolver {
-    template <class AnalyzerTestCase>
-    std::string operator()(const ::testing::TestParamInfo<AnalyzerTestCase>& info) const {
-        auto testCase = static_cast<AnalyzerTestCase>(info.param);
+    template <class StdTestCase>
+    std::string operator()(const ::testing::TestParamInfo<StdTestCase>& info) const {
+        auto testCase = static_cast<StdTestCase>(info.param);
         return TestUtil::toCamelCase(testCase.testName);
     }
 };
 
 // Instantiations
 
-const std::vector<GeneratorTestSuite> generatorSuites = detectGeneratorTestSuites("./test-files/generator");
+const std::vector<StdTestSuite> testSuites = detectStdTestSuites("./test-files/std");
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorArbitraryTests,
-        GeneratorArbitraryTests,
-        ::testing::ValuesIn(generatorSuites[0]),
+        StdIOTests,
+        StdIOTests,
+        ::testing::ValuesIn(testSuites[0]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorArrayTests,
-        GeneratorArrayTests,
-        ::testing::ValuesIn(generatorSuites[1]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorBuiltinTests,
-        GeneratorBuiltinTests,
-        ::testing::ValuesIn(generatorSuites[2]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorCliArgsTests,
-        GeneratorCliArgsTests,
-        ::testing::ValuesIn(generatorSuites[3]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorExtDeclTests,
-        GeneratorExtDeclTests,
-        ::testing::ValuesIn(generatorSuites[4]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorForLoopTests,
-        GeneratorForLoopTests,
-        ::testing::ValuesIn(generatorSuites[5]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorForEachLoopTests,
-        GeneratorForEachLoopTests,
-        ::testing::ValuesIn(generatorSuites[6]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorFunctionTests,
-        GeneratorFunctionTests,
-        ::testing::ValuesIn(generatorSuites[7]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorIfStatementTests,
-        GeneratorIfStatementTests,
-        ::testing::ValuesIn(generatorSuites[8]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorImportTests,
-        GeneratorImportTests,
-        ::testing::ValuesIn(generatorSuites[9]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorMethodTests,
-        GeneratorMethodTests,
-        ::testing::ValuesIn(generatorSuites[10]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorOperatorTests,
-        GeneratorOperatorTests,
-        ::testing::ValuesIn(generatorSuites[11]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorPointerTests,
-        GeneratorPointerTests,
-        ::testing::ValuesIn(generatorSuites[12]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorProcedureTests,
-        GeneratorProcedureTests,
-        ::testing::ValuesIn(generatorSuites[13]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorStructTests,
-        GeneratorStructTests,
-        ::testing::ValuesIn(generatorSuites[14]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorVariableTests,
-        GeneratorVariableTests,
-        ::testing::ValuesIn(generatorSuites[15]),
-        NameResolver());
-
-INSTANTIATE_TEST_SUITE_P(
-        GeneratorWhileLoopTests,
-        GeneratorWhileLoopTests,
-        ::testing::ValuesIn(generatorSuites[16]),
+        StdOSTests,
+        StdOSTests,
+        ::testing::ValuesIn(testSuites[1]),
         NameResolver());

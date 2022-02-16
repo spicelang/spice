@@ -8,7 +8,6 @@
     <a target="_blank" href="./.github/workflows/ci-go.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-go.yml/badge.svg"></a>
 	<a target="_blank" href="./.github/workflows/ci-cpp.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
 	<a target="_blank" href="./.github/workflows/codeql-analysis.yml"><img src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
-    <a target="_blank" href="https://goreportcard.com/report/github.com/spicelang/spice"><img src="https://goreportcard.com/badge/github.com/spicelang/spice"></a>
     <a target="_blank" href="https://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
     <a target="_blank" href="./LICENSE.md"><img src="https://img.shields.io/github/license/spicelang/spice"></a>
   </p>

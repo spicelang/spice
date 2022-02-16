@@ -23,5 +23,8 @@ You can apply following options to the `build` command:
 | ---------------- | ----- | --------------------------------------------------------------- |
 | `--debug-output` | `-d`  | Print compiler output for debugging.                            |
 | `--target`       | `-t`  | Target triple for the emitted executable (for cross-compiling). |
-| `--opt-level`    | `-o`  | Set optimization level.                                         |
-| `--output`       | -     | Path to the location where the output executable should go.     |
+| `--output`       | `-o`  | Set path for executable output.                                 |
+| `--opt-0`        | `-O0` | Set optimization to level 0.                                    |
+| `--opt-1`        | `-O1` | Set optimization to level 1.                                    |
+| `--opt-2`        | `-O2` | Set optimization to level 2.                                    |
+| `--opt-3`        | `-O3` | Set optimization to level 3.                                    |

@@ -1,3 +1,7 @@
+const int SIZE = 16;
+const short MIN_VALUE = -32768;
+const short MAX_VALUE = 32767;
+
 // Converts a short to a double
 f<double> toDouble(short input) {
     return 0.0 + input;

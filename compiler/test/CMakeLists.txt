@@ -8,6 +8,7 @@ set(SOURCES
         main.cpp
         AnalyzerTest.cpp
         GeneratorTest.cpp
+        StdTest.cpp
         TestUtil.cpp
         TestUtil.h)
 

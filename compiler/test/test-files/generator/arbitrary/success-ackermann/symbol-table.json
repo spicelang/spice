@@ -1,0 +1,113 @@
+{
+  "children": [
+    {
+      "children": [
+        {
+          "children": [],
+          "symbols": []
+        },
+        {
+          "children": [],
+          "symbols": []
+        }
+      ],
+      "symbols": [
+        {
+          "isGlobal": false,
+          "name": "m",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "declared",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "n",
+          "orderIndex": 1,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "declared",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "result",
+          "orderIndex": 2,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "children": [],
+      "symbols": [
+        {
+          "isGlobal": false,
+          "name": "baseM",
+          "orderIndex": 1,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "baseN",
+          "orderIndex": 2,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "result",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "symbols": [
+    {
+      "isGlobal": true,
+      "name": "ack(int,int)",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": true,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    },
+    {
+      "isGlobal": true,
+      "name": "main()",
+      "orderIndex": 1,
+      "specifiers": {
+        "const": true,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    }
+  ]
+}

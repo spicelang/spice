@@ -1,0 +1,313 @@
+name                   = spice
+file_extensions []     = spice;
+description            = Grammar for the Spice Programming Language
+textmate_compatible    = true
+folding_start_marker  \= (\{)
+folding_end_marker    \= (\})
+
+################################################################
+## Styles
+################################################################
+
+styles [] {
+
+   .comment : style {
+      color                 = green
+      italic                = true
+      ace_scope             = comment
+      textmate_scope        = comment
+      pygments_scope        = Comment
+   }
+   
+   .keyword : style {
+      color                 = light_blue
+      ace_scope             = keyword
+      textmate_scope        = keyword
+      pygments_scope        = Keyword
+   }
+   
+   .keyword_declaration : style {
+      color                 = light_blue
+      ace_scope             = keyword.control
+      textmate_scope        = keyword.control
+      pygments_scope        = Keyword.Declaration
+   }
+   
+   .keyword_namespace : style {
+      color                 = purple
+      ace_scope             = keyword.keyword.other.unit
+      textmate_scope        = keyword.keyword.other.unit
+      pygments_scope        = Keyword.Namespace
+   }
+   
+   .keyword_builtin : style {
+      color                 = pink
+      ace_scope             = support.function
+      textmate_scope        = support.function
+      pygments_scope        = Name.Builtin
+   }
+   
+   .constant : style {
+      color                 = purple
+      ace_scope             = storage.type
+      textmate_scope        = storage.type
+      pygments_scope        = Keyword.Type
+   }
+   
+   .type : style {
+      color                 = light_green
+      ace_scope             = storage.type
+      textmate_scope        = storage.type
+      pygments_scope        = Keyword.Constant
+   }
+   
+   .numeric : style {
+      color                 = gold
+      ace_scope             = constant.numeric
+      textmate_scope        = constant.numeric
+      pygments_scope        = Number
+   }
+   
+   .variable : style {
+      color                 = white
+      ace_scope             = variable
+      textmate_scope        = variable
+      pygments_scope        = Name.Variable
+   }
+   
+   .escape_char : style {
+      color                 = cyan
+      ace_scope             = constant.character.escape
+      textmate_scope        = constant.character.escape
+      pygments_scope        = String.Escape
+   }
+   
+   .operator : style {
+      color                 = grey
+      ace_scope             = keyword.operator
+      textmate_scope        = keyword.operator
+      pygments_scope        = Operator
+   }
+   
+   .punctuation : style {
+      color                 = grey
+      ace_scope             = punctuation
+      textmate_scope        = punctuation
+      pygments_scope        = Punctuation
+   }
+   
+   .text : style {
+      color                 = orange
+      ace_scope             = string
+      textmate_scope        = string
+      pygments_scope        = String
+   }
+   
+   .illegal : style {
+      color                 = white
+      background_color      = red
+      ace_scope             = invalid
+      textmate_scope        = invalid
+      pygments_scope        = Generic.Error
+   }
+
+}
+
+#################################################
+## Parse contexts
+#################################################
+contexts [] {
+
+   main : context {
+   
+      : inline_push {
+         regex          \= (\")
+         styles []       = .text;
+         : pop {
+            regex       \= (\")
+            styles []    = .text;
+         }
+         : pattern {
+            regex    \= ((?:\\u[0-9a-f]{4})|(?:\\["\\/bfnrt]))
+            styles [] = .escape_char;
+         }
+         : pattern { // Matches everything until the " char
+            regex    \= (.*(?=\"))
+            styles [] = .text;
+         }
+      }
+      
+      : inline_push {
+         regex          \= (')
+         styles []       = .text;
+         : pop {
+            regex       \= (')
+            styles []    = .text;
+         }
+         : pattern {
+            regex    \= ((?:\\u[0-9a-f]{4})|(?:\\["\\/bfnrt]))
+            styles [] = .escape_char;
+         }
+         : pattern { // Matches everything which includes two or more chars until the ' char
+            regex    \= (.{2,}(?='))
+            styles [] = .illegal;
+         }
+         : pattern { // Matches a single char
+            regex    \= (.)
+            styles [] = .text;
+         }
+      }
+      
+      : pattern {
+         regex          \= (//.*)
+         styles []       = .comment;
+      }
+      
+      : inline_push {
+         regex          \= (/\*)
+         styles []       = .comment;
+         default_style   = .comment
+         : pop {
+            regex       \= (\*/)
+            styles []    = .comment;
+         }
+      }
+   
+      : pattern {
+         regex          \= (\b(if|else|for|foreach|while|break|continue|return|ext)\b)
+         styles []       = .keyword;
+      }
+      
+      : pattern {
+         regex          \= (\b(import|as)\b)
+         styles []       = .keyword_namespace;
+      }
+      
+      : pattern {
+         regex          \= (\b(f|p|type|struct|const|signed|unsigned)\b)
+         styles []       = .keyword_declaration;
+      }
+      
+      : pattern {
+         regex          \= (\b(printf|sizeof)\b)
+         styles []       = .keyword_builtin;
+      }
+      
+      : pattern {
+         regex          \= (\b(true|false|nil)\b)
+         styles []       = .constant;
+      }
+      
+      : include "type";
+      
+      : pattern {
+         regex          \= ([a-zA-Z][0-9a-zA-Z_]*)
+         styles []       = .variable;
+      }
+      
+      : pattern { // Double
+         regex          \= (\d+\.\d+)
+         styles []       = .numeric;
+      }
+      
+      : pattern { // Short
+         regex          \= (\d+s)
+         styles []       = .numeric;
+      }
+      
+      : pattern { // Long
+         regex          \= (\d+l)
+         styles []       = .numeric;
+      }
+      
+      : include "integer";
+      
+      : pattern { // Operators
+         regex          \= (=|!|<<=|>>=|<<|>>|<=|>=|\+=|-=|\*=|/=|&&|\|\||&|\||\+\+|--|\%|==|!=|\.\.\.|\+|-|\*|/|&)
+         styles []       = .operator;
+      }
+      
+      : include "parantheses";
+      
+      : include "curly_braces";
+      
+      : include "brackets";
+      
+      : include "diamond_braces";
+      
+      : pattern {
+         regex          \= (\.|,|;|\:|\?)
+         styles []       = .punctuation;
+      }
+      
+      : pattern {
+         regex          \= ([^\s])
+         styles []       = .illegal;
+      }
+      
+   }
+   
+   parantheses : context {
+      : inline_push {
+         regex          \= (\()
+         styles []       = .punctuation;
+         : pop {  
+            regex       \= (\))
+            styles []    = .punctuation;
+         }
+         : include "main";
+      }
+   }
+   
+   diamond_braces : context {
+      description        = diamond braces
+      : inline_push {
+         regex          \= (<)
+         styles []       = .punctuation;
+         : pop {  
+            regex       \= (>)
+            styles []    = .punctuation;
+         }
+         : include "type";
+      }
+   }
+   
+   curly_braces : context {
+      : inline_push {
+         regex          \= (\{)
+         styles []       = .punctuation;
+         : pop {  
+            regex       \= (\})
+            styles []    = .punctuation;
+         }
+         : include "main";
+      }
+   }
+   
+   brackets : context {
+      description        = brackets
+      : inline_push {
+         regex          \= (\[)
+         styles []       = .punctuation;
+         : pop {  
+            regex       \= (\])
+            styles []    = .punctuation;
+         }
+         : include "integer";
+      }
+   }
+   
+   type : context {
+      : pattern {
+         regex          \= (\b(double|int|short|long|byte|char|string|bool|dyn)\b)
+         styles []       = .type;
+      }
+   }
+   
+   integer : context {
+      : pattern {
+         regex          \= (\d+)
+         styles []       = .numeric;
+      }
+   }
+}

@@ -84,7 +84,7 @@ void executeTest(const AnalyzerTestCase& testCase) {
                 "",
                 ".",
                 false,
-                3,
+                0,
                 true,
                 false
         );
