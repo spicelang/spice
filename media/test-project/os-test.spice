@@ -62,20 +62,8 @@ f<int> main() {
     makePi();
 }*/
 
-/*import "std/io/dir" as dir;
+import "std/io/dir" as dir;
 
 f<int> main() {
     dir.mkDir("./test", dir.MODE_ALL_RWX);
-}*/
-
-type Person struct {
-	string firstName
-	string lastName
-	int age
-}
-
-f<int> main() {
-	Person john = Person { "John", "Doe", 46 };
-	john.age = 47;
-	printf("John's age: %d", john.age);
 }
