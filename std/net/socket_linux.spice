@@ -21,7 +21,10 @@ type Socket struct {
     short errorCode
 }
 
-const short ERROR_SOCKET = 1s;
+const short ERROR_SOCKET = -1s;
+const short ERROR_BIND = -2s;
+const short ERROR_LISTEN = -3s;
+const short ERROR_ACCEPT = -4s;
 
 ext<int> socket(int, int, int);
 ext<int> bind(int, SockAddrIn*, int);
@@ -31,11 +34,47 @@ ext<int> close(int);
 ext<int> htonl(int);     // Fairly simple to re-implement in Spice
 ext<short> htons(short); // Fairly simple to re-implement in Spice
 
-f<int> openServerSocket(unsigned short port) {
+/**
+ * Accept an incoming connection to the socket and save the connection file desceiptor
+ * to the socket object.
+ *
+ * @return Connection file descriptor
+ */
+f<int> Socket.acceptConnection() {
+    SockAddrIn cliAddr = SockAddrIn {};
+    this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
+    if this.connFd == -1 {
+        //result.errorCode = ERROR_ACCEPT;
+        return -1;
+    }
+    return this.connFd;
+}
+
+p Socket.waitForIncomingConnections() {
+    // ToDo: Implement
+}
+
+/**
+ * Closes the socket. This method should always be called by the user before exiting the program.
+ *
+ * @return Error code for closing the socket
+ */
+f<int> Socket.close() {
+    return close(this.sockFd);
+}
+
+/**
+ * Opens a TCP server socket and exposes it to the given port.
+ * You can specify the maximum number of waiting client connections by passing an integer for maxWaitingConnections.
+ * The default value there is 5.
+ *
+ * @return Socket file descriptor
+ */
+f<int> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
     Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
 
     // Cancel on failure
-    if s.sockFd == -1s {
+    if s.sockFd == -1 {
         //result.errorCode = ERROR_SOCKET;
         return -1;
     }
@@ -44,28 +83,23 @@ f<int> openServerSocket(unsigned short port) {
     SockAddrIn servaddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
 
     int bindResult = bind(s.sockFd, &servaddr, 16 /* hardcoded sizeof(servaddr) */);
-    if bindResult != 0 { return -2; }
+    if bindResult != 0 {
+        //result.errorCode = ERROR_BIND;
+        return bindResult;
+    }
 
-    int listenResult = listen(s.sockFd, 5 /* backlog */);
-    if listenResult != 0 { return -3; }
+    int listenResult = listen(s.sockFd, maxWaitingConnections);
+    if listenResult != 0 {
+        //result.errorCode = ERROR_LISTEN;
+        return listenResult;
+    }
+
+    s.acceptConnection();
 
     return s.sockFd;
-}
-
-f<int> Socket.acceptConnection() {
-    SockAddrIn cliAddr = SockAddrIn {};
-    return this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
-}
-
-p Socket.waitForIncomingConnections() {
-    // ToDo: Implement
 }
 
 // Tmp function until bug #95 is fixed
 f<int> closeSocket(int fd) {
     return close(fd);
-}
-
-f<int> Socket.close() {
-    return close(this.sockFd);
 }

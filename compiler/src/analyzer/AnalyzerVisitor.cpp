@@ -262,6 +262,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext* ctx) {
         // Add return symbol for function
         SymbolTable* functionTable = currentScope->createChildBlock(signature.toString());
         functionTable->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, *ctx->start, false);
+        functionTable->lookup(RETURN_VARIABLE_NAME)->setUsed();
     } else { // Procedure
         FunctionSignature signature = FunctionSignature(functionName, paramTypes);
         SymbolType symbolType = SymbolType(TY_PROCEDURE);
