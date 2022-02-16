@@ -62,8 +62,8 @@ f<int> main() {
     makePi();
 }*/
 
-/*import "std/io/dir" as dir;
+import "std/io/dir" as dir;
 
 f<int> main() {
     dir.mkDir("./test", dir.MODE_ALL_RWX);
-}*/
+}

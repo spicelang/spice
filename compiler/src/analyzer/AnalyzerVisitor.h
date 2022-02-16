@@ -86,6 +86,7 @@ private:
     bool parameterMode = false;
     int nestedLoopCounter = 0;
     std::string currentVarName;
+    SymbolTableEntry* currentEntry = nullptr;
 
     // Private methods
     SymbolType initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope,

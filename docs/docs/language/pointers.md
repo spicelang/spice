@@ -22,12 +22,12 @@ type Person struct {
 }
 
 p birthday(Person* person) {
-    *person.age++;
+    person.age++;
 }
 
 f<int> main() {
-    dyn mike = new Person { "Mike", "Miller", 32 };
-    printf("Age before birthday: %d", mike.age);
+    dyn mike = Person { "Mike", "Miller", 32 };
+    printf("Age before birthday: %d\n", mike.age);
     birthday(&mike);
     printf("Age after birthday: %d", mike.age);
 }

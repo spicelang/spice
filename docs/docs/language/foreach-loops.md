@@ -23,9 +23,9 @@ foreach (const int item : myIntArray) {
 As soon as you need to access the index of the array item as well, you can use the indexed 
 
 ```spice
-string[5] welcomeMessage = { "Hello", "Spice", "programmers!" };
-foreach int i, int word : welcomeMessage {
-    printf("Word no. %d: %s", i, word);
+string[3] welcomeMessage = { "Hello", "Spice", "programmers!" };
+foreach int i, string word : welcomeMessage {
+    printf("Word no. %d: %s\n", i, word);
 }
 ```
 

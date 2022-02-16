@@ -835,19 +835,17 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
         }
 
         if (!variableName.empty()) { // Variable is involved on the left side
-            SymbolTableEntry* symbolTableEntry = currentScope->lookup(variableName);
-
             // Check if the symbol exists
-            if (!symbolTableEntry)
+            if (!currentEntry)
                 throw SemanticError(*ctx->prefixUnaryExpr()->start, REFERENCED_UNDEFINED_VARIABLE,
                                     "The variable '" + variableName +"' was referenced before defined");
 
             // Perform type inference
-            if (lhsTy.is(TY_DYN)) symbolTableEntry->updateType(rhsTy, false);
+            if (lhsTy.is(TY_DYN)) currentEntry->updateType(rhsTy, false);
 
             // Update state in symbol table
-            if (!symbolTableEntry->getType().isOneOf({ TY_FUNCTION, TY_PROCEDURE }))
-                symbolTableEntry->updateState(INITIALIZED, *ctx->prefixUnaryExpr()->start);
+            if (!currentEntry->getType().isOneOf({ TY_FUNCTION, TY_PROCEDURE }))
+                currentEntry->updateState(INITIALIZED, *ctx->prefixUnaryExpr()->start);
 
             // Print compiler warning if the rhs size exceeds the lhs size
             if (lhsTy.isArray() && rhsTy.getArraySize() > lhsTy.getArraySize())
@@ -1217,7 +1215,7 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
         // Load symbol table entry
         SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
         assert(accessScope != nullptr);
-        SymbolTableEntry* entry = accessScope->lookup(currentVarName);
+        SymbolTableEntry* entry = currentEntry = accessScope->lookup(currentVarName);
 
         // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
         // The existence of the variable is checked in the visitPostfixUnaryExpr method.

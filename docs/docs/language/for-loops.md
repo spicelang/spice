@@ -7,7 +7,7 @@ For loops are designed to execute a block of code n times. That means that you c
 Here is an example of a simple `for` loop:
 ```spice
 for int i = 1; i <= 10; i++ {
-	printf("Round %d", i);
+	printf("Round %d\n", i);
 }
 ```
 
