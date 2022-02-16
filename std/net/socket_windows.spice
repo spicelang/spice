@@ -1,0 +1,20 @@
+ext<int> socket(int, int, int);
+
+const int TCP = 0;
+const int UDP = 1;
+
+type WebSocketData struct {
+    int wVersion
+    int wHighVersion
+    unsigned short iMaxSockets
+    unsigned short iMaxUdpDg
+    char* lpVendorInfo
+    char[257] szDescription;
+    char[129] szSystemStatus;
+    // To be extended
+}
+
+f<int> openServerSocket() {
+
+    return 0;
+}

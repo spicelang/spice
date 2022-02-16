@@ -1,0 +1,61 @@
+const int AF_INET = 2;
+const int SOCK_STREAM = 1;
+const int SOCK_DGRAM = 2;
+const int IPPROTO_IP = 0;
+const int IPPROTO_UDP = 17;
+const int INADDR_ANY = 0;
+
+type InAddr struct {
+    unsigned int addr
+}
+
+type SockAddrIn struct {
+    unsigned short sinFamily
+    unsigned short sinPort
+    InAddr sinAddr
+}
+
+type Socket struct {
+    int sockFd // Actual socket
+    short errorCode
+}
+
+const short ERROR_SOCKET = 1s;
+
+ext<int> socket(int, int, int);
+ext<int> bind(int, SockAddrIn*, int);
+ext<int> close(int);
+ext<int> htonl(int);     // Fairly simple to re-implement in Spice
+ext<short> htons(short); // Fairly simple to re-implement in Spice
+
+f<int> openServerSocket(unsigned short port) {
+    dyn s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0s };
+
+    // Cancel on failure
+    if s.sockFd == -1s {
+        //result.errorCode = ERROR_SOCKET;
+        return -1;
+    }
+
+    dyn inAddr = InAddr { htonl(INADDR_ANY) };
+    dyn servaddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
+    //SockAddrIn cli;
+
+    int bindResult = bind(s.sockFd, &servaddr, 16 /* hardcoded sizeof(servaddr) */);
+    if bindResult != 0 { return -2; }
+
+    return s.sockFd;
+}
+
+p Socket.waitForIncomingConnections() {
+    // ToDo: Implement
+}
+
+// Tmp function until bug #95 is fixed
+f<int> closeSocket(int fd) {
+    return close(fd);
+}
+
+f<int> Socket.close() {
+    return close(this.sockFd);
+}
