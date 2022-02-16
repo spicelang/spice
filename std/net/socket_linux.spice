@@ -17,6 +17,7 @@ type SockAddrIn struct {
 
 type Socket struct {
     int sockFd // Actual socket
+    int connFd // Current connection
     short errorCode
 }
 
@@ -24,12 +25,14 @@ const short ERROR_SOCKET = 1s;
 
 ext<int> socket(int, int, int);
 ext<int> bind(int, SockAddrIn*, int);
+ext<int> listen(int, int);
+ext<int> accept(int, SockAddrIn*, int);
 ext<int> close(int);
 ext<int> htonl(int);     // Fairly simple to re-implement in Spice
 ext<short> htons(short); // Fairly simple to re-implement in Spice
 
 f<int> openServerSocket(unsigned short port) {
-    dyn s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0s };
+    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
 
     // Cancel on failure
     if s.sockFd == -1s {
@@ -37,14 +40,21 @@ f<int> openServerSocket(unsigned short port) {
         return -1;
     }
 
-    dyn inAddr = InAddr { htonl(INADDR_ANY) };
-    dyn servaddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
-    //SockAddrIn cli;
+    InAddr inAddr = InAddr { htonl(INADDR_ANY) };
+    SockAddrIn servaddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
 
     int bindResult = bind(s.sockFd, &servaddr, 16 /* hardcoded sizeof(servaddr) */);
     if bindResult != 0 { return -2; }
 
+    int listenResult = listen(s.sockFd, 5 /* backlog */);
+    if listenResult != 0 { return -3; }
+
     return s.sockFd;
+}
+
+f<int> Socket.acceptConnection() {
+    SockAddrIn cliAddr = SockAddrIn {};
+    return this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
 }
 
 p Socket.waitForIncomingConnections() {
