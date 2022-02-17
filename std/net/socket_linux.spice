@@ -1,0 +1,151 @@
+const int AF_INET = 2;
+const int SOCK_STREAM = 1;
+const int SOCK_DGRAM = 2;
+const int IPPROTO_IP = 0;
+const int IPPROTO_UDP = 17;
+const int INADDR_ANY = 0;
+
+type InAddr struct {
+    unsigned int addr
+}
+
+type SockAddrIn struct {
+    unsigned short sinFamily
+    unsigned short sinPort
+    InAddr sinAddr
+}
+
+type Socket struct {
+    int sockFd // Actual socket
+    int connFd // Current connection
+    short errorCode
+}
+
+const short ERROR_SOCKET = -1s;
+const short ERROR_BIND = -2s;
+const short ERROR_LISTEN = -3s;
+const short ERROR_ACCEPT = -4s;
+const short ERROR_CONNECT = -5s;
+
+ext<int> socket(int, int, int);
+ext<int> bind(int, SockAddrIn*, int);
+ext<int> listen(int, int);
+ext<int> accept(int, SockAddrIn*, int);
+ext<long> read(int, byte*, long);
+ext<long> write(int, byte*, long);
+ext<int> close(int);
+ext<int> htonl(int);     // Fairly simple to re-implement in Spice
+ext<short> htons(short); // Fairly simple to re-implement in Spice
+ext<int> inet_addr(string);
+ext<int> connect(int, SockAddrIn*, int);
+
+/**
+ * Accept an incoming connection to the socket and save the connection file desceiptor
+ * to the socket object.
+ *
+ * @return Connection file descriptor
+ */
+f<int> Socket.acceptConnection() {
+    SockAddrIn cliAddr = SockAddrIn {};
+    this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
+    if this.connFd == -1 {
+        //result.errorCode = ERROR_ACCEPT;
+        return -1;
+    }
+    return this.connFd;
+}
+
+f<long> Socket.write(string message) {
+    //if message.empty() { return 0; } ToDo: Comment out when the empty method on string type is implemented
+    //return write(this.connFd, content, message.length() * 8); // ToDo: Comment out when the length method on string type is implemented
+    return 0l;
+}
+
+f<long> Socket.write(byte[] content) {
+    if sizeof(content) == 0 { return 0l; }
+    long size = (long) (sizeof(content) * sizeof(content[0]));
+    printf("Write size: %d\n", size);
+    return write(this.connFd, content, size);
+}
+
+f<long> Socket.read(byte* ptr, long size) {
+    return read(this.connFd, ptr, size);
+}
+
+/**
+ * Closes the socket. This method should always be called by the user before exiting the program.
+ *
+ * @return Error code for closing the socket
+ */
+f<int> Socket.close() {
+    return close(this.sockFd);
+}
+
+// Tmp function until bug #95 is fixed
+f<int> closeSocket(int fd) {
+    return close(fd);
+}
+
+/**
+ * Opens a TCP server socket and exposes it to the given port.
+ * You can specify the maximum number of waiting client connections by passing an integer for maxWaitingConnections.
+ * The default value there is 5.
+ *
+ * @return Socket file descriptor
+ */
+f<int> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
+    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
+
+    // Cancel on failure
+    if s.sockFd == -1 {
+        s.errorCode = ERROR_SOCKET;
+        return -1;
+    }
+
+    InAddr inAddr = InAddr { htonl(INADDR_ANY) };
+    SockAddrIn servAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
+
+    int bindResult = bind(s.sockFd, &servAddr, 16 /* hardcoded sizeof(servaddr) */);
+    if bindResult != 0 {
+        s.errorCode = ERROR_BIND;
+        return bindResult;
+    }
+
+    int listenResult = listen(s.sockFd, maxWaitingConnections);
+    if listenResult != 0 {
+        s.errorCode = ERROR_LISTEN;
+        return listenResult;
+    }
+
+    s.acceptConnection();
+
+    return s.sockFd;
+}
+
+/**
+ * Opens a TCP client socket and tries to connect it to a server socket.
+ * The target host can be specified via the host argument and the target port can be
+ * specified with the port argument.
+ *
+ * @return Socket file descriptor
+ */
+f<int> openClientSocket(string host, unsigned short port) {
+    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
+
+    // Cancel on failure
+    if s.sockFd == -1 {
+        s.errorCode = ERROR_SOCKET;
+        return -1;
+    }
+
+    InAddr inAddr = InAddr { inet_addr(host) };
+    SockAddrIn cliAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
+
+    int connectResult = connect(s.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
+    if connectResult != 0 {
+        s.errorCode = ERROR_CONNECT;
+        return -1;
+    }
+
+    return s.sockFd;
+}
