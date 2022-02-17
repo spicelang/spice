@@ -31,7 +31,8 @@ ext<int> socket(int, int, int);
 ext<int> bind(int, SockAddrIn*, int);
 ext<int> listen(int, int);
 ext<int> accept(int, SockAddrIn*, int);
-ext<int> write(SockAddrIn*, byte*, long);
+ext<long> read(int, byte*, long);
+ext<long> write(int, byte*, long);
 ext<int> close(int);
 ext<int> htonl(int);     // Fairly simple to re-implement in Spice
 ext<short> htons(short); // Fairly simple to re-implement in Spice
@@ -54,15 +55,22 @@ f<int> Socket.acceptConnection() {
     return this.connFd;
 }
 
-/*f<int> Socket.write(string message) {
-    if message.empty() { return 0; }
-    return write(this.connFd, content, sizeof(content) * sizeof(content[0]));
+f<long> Socket.write(string message) {
+    //if message.empty() { return 0; } ToDo: Comment out when the empty method on string type is implemented
+    //return write(this.connFd, content, message.length() * 8); // ToDo: Comment out when the length method on string type is implemented
+    return 0l;
 }
 
-f<int> Socket.write(byte[] content) {
-    if sizeof(content) { return 0; }
-    return write(this.connFd, content, sizeof(content) * sizeof(content[0]));
-}*/
+f<long> Socket.write(byte[] content) {
+    if sizeof(content) == 0 { return 0l; }
+    long size = (long) (sizeof(content) * sizeof(content[0]));
+    printf("Write size: %d\n", size);
+    return write(this.connFd, content, size);
+}
+
+f<long> Socket.read(byte* ptr, long size) {
+    return read(this.connFd, ptr, size);
+}
 
 /**
  * Closes the socket. This method should always be called by the user before exiting the program.
@@ -139,5 +147,5 @@ f<int> openClientSocket(string host, unsigned short port) {
         return -1;
     }
 
-    return 0;
+    return s.sockFd;
 }
