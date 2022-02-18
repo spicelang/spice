@@ -1,2 +1,6 @@
 # Build output
 bin/*
+spice.exe
+spice
+spicec.exe
+spicec

@@ -6,8 +6,8 @@ ENV SPICE_DOCKERIZED=1
 
 ARG COMPILER_PATH=linux-amd64
 
-RUN apk update && apk add --no-cache alpine-sdk ncurses-dev && rm -rf /var/cache/apk/*
-RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
+RUN apk update && apk add --no-cache alpine-sdk ncurses-dev libc6-compat gcompat && rm -rf /var/cache/apk/*
+RUN ln -sf /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
 
 COPY std/ /usr/lib/spice/std/
 COPY spice /usr/bin/spice
