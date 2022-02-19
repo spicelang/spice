@@ -270,6 +270,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
                                                  signature.toString(), module.get());
     fct->addFnAttr(llvm::Attribute::NoUnwind);
+    if (ctx->INLINE()) fct->addFnAttr(llvm::Attribute::AlwaysInline);
 
     // Create entry block
     llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
@@ -377,6 +378,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     llvm::Function* proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage,
                                                   signature.toString(), module.get());
     proc->addFnAttr(llvm::Attribute::NoUnwind);
+    if (ctx->INLINE()) proc->addFnAttr(llvm::Attribute::AlwaysInline);
 
     // Create entry block
     llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");

@@ -5,8 +5,8 @@ grammar Spice;
 // Control structures
 entry: (mainFunctionDef | functionDef | procedureDef | structDef | globalVarDef | importStmt | extDecl)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
-functionDef: F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
-procedureDef: P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
+functionDef: INLINE? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: INLINE? P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
 structDef: TYPE IDENTIFIER STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
@@ -99,6 +99,7 @@ PRINTF: 'printf';
 SIZEOF: 'sizeof';
 EXT: 'ext';
 DLL: 'dll';
+INLINE: 'inline';
 TRUE: 'true';
 FALSE: 'false';
 
