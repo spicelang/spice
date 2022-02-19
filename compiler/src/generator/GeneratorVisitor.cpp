@@ -23,6 +23,8 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/IR/PassManager.h>
 #include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/Transforms/IPO/AlwaysInliner.h>
+#include <llvm/IR/GlobalValue.h>
 
 GeneratorVisitor::GeneratorVisitor(SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
                                    const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
@@ -95,6 +97,7 @@ void GeneratorVisitor::optimize() {
     // Run passes
     llvm::PassBuilder::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
     llvm::ModulePassManager modulePassMgr = passBuilder.buildPerModuleDefaultPipeline(llvmOptLevel);
+    modulePassMgr.addPass(llvm::AlwaysInlinerPass());
     modulePassMgr.run(*module, moduleAnalysisMgr);
 }
 
@@ -267,9 +270,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 
     // Create function itself
     llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-    llvm::Function* fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage,
-                                                 signature.toString(), module.get());
+    llvm::GlobalValue::LinkageTypes linkage = ctx->INLINE() ? llvm::Function::InternalLinkage : llvm::Function::ExternalLinkage;
+    llvm::Function* fct = llvm::Function::Create(fctType, linkage, signature.toString(), module.get());
     fct->addFnAttr(llvm::Attribute::NoUnwind);
+    if (ctx->INLINE()) fct->addFnAttr(llvm::Attribute::AlwaysInline);
 
     // Create entry block
     llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
@@ -374,9 +378,10 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Create procedure itself
     llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
                                                            paramTypes, false);
-    llvm::Function* proc = llvm::Function::Create(procType, llvm::Function::ExternalLinkage,
-                                                  signature.toString(), module.get());
+    llvm::GlobalValue::LinkageTypes linkage = ctx->INLINE() ? llvm::Function::InternalLinkage : llvm::Function::ExternalLinkage;
+    llvm::Function* proc = llvm::Function::Create(procType, linkage, signature.toString(), module.get());
     proc->addFnAttr(llvm::Attribute::NoUnwind);
+    if (ctx->INLINE()) proc->addFnAttr(llvm::Attribute::AlwaysInline);
 
     // Create entry block
     llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");

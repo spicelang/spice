@@ -1,0 +1,9 @@
+inline p printAValue() {
+    printf("This is a value: %d\n", 5);
+}
+
+f<int> main() {
+    printf("Before value\n");
+    printAValue();
+    printf("After value\n");
+}
