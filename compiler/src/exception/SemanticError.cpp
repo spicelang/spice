@@ -107,6 +107,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Dyn arrays not allowed";
         case SPECIFIER_AT_ILLEGAL_CONTEXT:
             return "Specifier at illegal context";
+        case INSUFFICIENT_VISIBILITY:
+            return "Insufficient symbol visibility";
         case RESERVED_KEYWORD:
             return "Reserved keyword used as identifier";
         case COMING_SOON_SA:

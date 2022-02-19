@@ -1264,6 +1264,11 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
         assert(accessScope != nullptr);
         SymbolTableEntry* entry = currentEntry = accessScope->lookup(currentVarName);
 
+        // Check if the entry is public if it is imported
+        if (accessScope->isImported() && !entry->getSpecifiers().isPublic())
+            throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
+                                " Cannot access '" + currentVarName + "' due to its private visibility");
+
         // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
         // The existence of the variable is checked in the visitPostfixUnaryExpr method.
         if (!entry) return SymbolType(TY_INVALID);

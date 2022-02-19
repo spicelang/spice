@@ -526,6 +526,8 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     SymbolTableEntry* symbolTableEntry = currentScope->lookup(varName);
     assert(symbolTableEntry != nullptr);
     SymbolSpecifiers specifiers = symbolTableEntry->getSpecifiers();
+    llvm::GlobalValue::LinkageTypes linkage = specifiers.isPublic() ? llvm::GlobalValue::LinkageTypes::ExternalLinkage :
+            llvm::GlobalValue::LinkageTypes::InternalLinkage;
 
     // Create correctly signed LLVM type from the data type
     currentVarSigned = specifiers.isSigned();
@@ -537,6 +539,7 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     symbolTableEntry->updateAddress(memAddress);
     // Set some attributes to it
     llvm::GlobalVariable* global = module->getNamedGlobal(varName);
+    global->setLinkage(linkage);
     global->setConstant(specifiers.isConst());
     global->setDSOLocal(true);
 

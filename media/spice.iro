@@ -184,7 +184,7 @@ contexts [] {
       }
       
       : pattern {
-         regex          \= (\b(f|p|type|struct|const|signed|unsigned)\b)
+         regex          \= (\b(f|p|type|struct|const|signed|unsigned|inline|public)\b)
          styles []       = .keyword_declaration;
       }
       
