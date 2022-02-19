@@ -1,6 +1,6 @@
 import "source3" as s3;
 
-f<int> forwardToOtherModule() {
+public f<int> forwardToOtherModule() {
     result = s3.spawnInteger();
     printf("Spawned integer: %d", result);
 }

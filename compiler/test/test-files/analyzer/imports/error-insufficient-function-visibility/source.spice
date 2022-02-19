@@ -1,0 +1,6 @@
+import "source1" as src1;
+
+f<int> main() {
+    int res = src1.testFunc();
+    printf("Result: %d\n", res);
+}

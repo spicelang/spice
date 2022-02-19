@@ -1,38 +1,38 @@
-const int SIZE = 64;
-const double MIN_VALUE = 0; // ToDo: Fix
-const double MAX_VALUE = 0; // ToDo: Fix
+public const int SIZE = 64;
+public const double MIN_VALUE = 0; // ToDo: Fix
+public const double MAX_VALUE = 0; // ToDo: Fix
 
 // Converts a double to an int
-f<int> toInt(double input) {
+public f<int> toInt(double input) {
     // ToDo: Implement
     return 0;
 }
 
 // Converts a double to a short
-f<short> toInt(double input) {
+public f<short> toInt(double input) {
     // ToDo: Implement
     return (short) 0;
 }
 
 // Converts a double to a long
-f<long> toInt(double input) {
+public f<long> toInt(double input) {
     // ToDo: Implement
     return (long) 0;
 }
 
 // Converts a double to a byte
-f<byte> toByte(double input) {
+public f<byte> toByte(double input) {
     // ToDo: Implement
     result = (byte) 0;
 }
 
 // Converts a double to a string
-f<string> toString(double input) {
+public f<string> toString(double input) {
     // ToDo: Implement
     return "";
 }
 
 // Converts a double to a boolean
-f<bool> toBool(double input) {
+public f<bool> toBool(double input) {
     return input >= 0.5;
 }

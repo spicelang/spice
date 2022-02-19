@@ -14,7 +14,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @printf(i8*, ...)
 
 ; Function Attrs: nounwind
-define void @"birthday(struct(Person)*)"(%Person* %0) #0 {
+define internal void @"birthday(struct(Person)*)"(%Person* %0) #0 {
 entry:
   %person = alloca %Person*, align 8
   store %Person* %0, %Person** %person, align 8

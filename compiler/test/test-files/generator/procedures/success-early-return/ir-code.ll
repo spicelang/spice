@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @printf(i8*, ...)
 
 ; Function Attrs: nounwind
-define void @"executeAction(bool)"(i1 %0) #0 {
+define internal void @"executeAction(bool)"(i1 %0) #0 {
 entry:
   %input = alloca i1, align 1
   store i1 %0, i1* %input, align 1

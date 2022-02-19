@@ -97,6 +97,27 @@ bool SymbolSpecifiers::isSigned() const {
 }
 
 /**
+ * Set the public flag
+ *
+ * @param value True or false
+ */
+void SymbolSpecifiers::setPublic(bool value) {
+    if (value)
+        setBit(BIT_INDEX_PUBLIC);
+    else
+        clearBit(BIT_INDEX_PUBLIC);
+}
+
+/**
+ * Check if the public flag is set
+ *
+ * @return True or false
+ */
+bool SymbolSpecifiers::isPublic() const {
+    return getBit(BIT_INDEX_PUBLIC);
+}
+
+/**
  * Set bit in specifier value
  *
  * @param index Index of the bit to set

@@ -7,7 +7,7 @@ ext<int> system(char*);
  *
  * @return Process id
  */
-f<int> getPID() {
+public f<int> getPID() {
     return getpid();
 }
 
@@ -16,7 +16,7 @@ f<int> getPID() {
  *
  * @return Return code of the shell comand
  */
-f<int> execCmd(string cmdStr) {
+public f<int> execCmd(string cmdStr) {
     char* cmd = cmdStr;
     return system(cmd);
 }

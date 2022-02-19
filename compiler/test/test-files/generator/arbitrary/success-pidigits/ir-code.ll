@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @printf(i8*, ...)
 
 ; Function Attrs: nounwind
-define i32 @"makePi()"() #0 {
+define internal i32 @"makePi()"() #0 {
 entry:
   %result = alloca i32, align 4
   %q = alloca i32, align 4

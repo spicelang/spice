@@ -5,37 +5,38 @@
 #include <symbol/SymbolType.h>
 
 // Bit indices from right to left
-const unsigned short BIT_INDEX_SIGNED = 0;
-const unsigned short BIT_INDEX_CONST = 1;
+const unsigned short BIT_INDEX_PUBLIC = 0;
+const unsigned short BIT_INDEX_SIGNED = 1;
+const unsigned short BIT_INDEX_CONST = 2;
 
-// Defaults: Const: 0, Signed: 1
-const unsigned short SPECIFIER_DEFAULTS_DOUBLE = 0b01;
-// Defaults: Const: 0, Signed: 1
-const unsigned short SPECIFIER_DEFAULTS_INT = 0b01;
-// Defaults: Const: 0, Signed: 1
-const unsigned short SPECIFIER_DEFAULTS_SHORT = 0b01;
-// Defaults: Const: 0, Signed: 1
-const unsigned short SPECIFIER_DEFAULTS_LONG = 0b01;
-// Defaults: Const: 0, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_BYTE = 0b00;
-// Defaults: Const: 0, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_CHAR = 0b00;
-// Defaults: Const: 0, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_STRING = 0b00;
-// Defaults: Const: 0, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_BOOL = 0b00;
-// Defaults: Const: 0, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_PTR = 0b00;
-// Defaults: Const: 0, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_ARRAY = 0b00;
-// Defaults: Const: 0, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_STRUCT = 0b00;
-// Defaults: Const: 1, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_FUNCTION = 0b10;
-// Defaults: Const: 1, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_PROCEDURE = 0b10;
-// Defaults: Const: 1, Signed: 0
-const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b10;
+// Defaults: Const: 0, Signed: 1, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_DOUBLE = 0b010;
+// Defaults: Const: 0, Signed: 1, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_INT = 0b010;
+// Defaults: Const: 0, Signed: 1, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_SHORT = 0b010;
+// Defaults: Const: 0, Signed: 1, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_LONG = 0b010;
+// Defaults: Const: 0, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_BYTE = 0b000;
+// Defaults: Const: 0, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_CHAR = 0b000;
+// Defaults: Const: 0, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_STRING = 0b000;
+// Defaults: Const: 0, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_BOOL = 0b000;
+// Defaults: Const: 0, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_PTR = 0b000;
+// Defaults: Const: 0, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_ARRAY = 0b000;
+// Defaults: Const: 0, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_STRUCT = 0b000;
+// Defaults: Const: 1, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_FUNCTION = 0b100;
+// Defaults: Const: 1, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_PROCEDURE = 0b100;
+// Defaults: Const: 1, Signed: 0, Public: 1
+const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b101;
 
 class SymbolSpecifiers {
 public:
@@ -44,6 +45,8 @@ public:
     bool isConst() const;
     void setSigned(bool value);
     bool isSigned() const;
+    void setPublic(bool value);
+    bool isPublic() const;
 private:
     unsigned short specifierValue = 0;
     void setBit(unsigned short index);

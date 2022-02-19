@@ -6,7 +6,7 @@ ext<int> putenv(char*);
  *
  * @return Env variable content
  */
-f<string> getEnv(string name) {
+public f<string> getEnv(string name) {
     return (string) getenv((char*) name);
 }
 
@@ -15,7 +15,7 @@ f<string> getEnv(string name) {
  *
  * @return Result code: 0 = successful, -1 = failed
  */
-f<int> setEnv(string name, string value) {
+public f<int> setEnv(string name, string value) {
     // ToDo: Uncomment when string concationations are supported
     //return putenv((char*) name + "=" + value);
     return 0;

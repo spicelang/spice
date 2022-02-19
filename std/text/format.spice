@@ -3,7 +3,7 @@
  *
  * @return Formatted size string
  */
-f<string> formatStorageSize(long bytes) {
+public f<string> formatStorageSize(long bytes) {
     // ToDo when string concatenation works
     return "";
 }

@@ -1,0 +1,1 @@
+Semantic error at 4:33: Insufficient symbol visibility: Cannot access 'globalTestVar' due to its private visibility

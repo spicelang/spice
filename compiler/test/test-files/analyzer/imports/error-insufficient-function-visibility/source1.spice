@@ -1,0 +1,3 @@
+f<int> testFunc() {
+    return 12345;
+}

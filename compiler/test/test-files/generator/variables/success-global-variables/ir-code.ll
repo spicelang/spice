@@ -3,11 +3,11 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-@test1 = dso_local global i32 10
-@test2 = dso_local global i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0)
+@test1 = internal global i32 10
+@test2 = internal global i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0)
 @0 = private unnamed_addr constant [12 x i8] c"test string\00", align 1
-@test3 = dso_local global double 5.830000e+00
-@test4 = dso_local global i1 false
+@test3 = internal global double 5.830000e+00
+@test4 = internal global i1 false
 @1 = private unnamed_addr constant [5 x i8] c"test\00", align 1
 @2 = private unnamed_addr constant [32 x i8] c"Variable values: %d, %s, %f, %u\00", align 1
 

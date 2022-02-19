@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @printf(i8*, ...)
 
 ; Function Attrs: nounwind
-define i8* @"getContent()"(%Letter* %0) #0 {
+define internal i8* @"getContent()"(%Letter* %0) #0 {
 entry:
   %this = alloca %Letter*, align 8
   %result = alloca i8*, align 8
@@ -25,7 +25,7 @@ entry:
 }
 
 ; Function Attrs: nounwind
-define void @"setContent(string)"(%Letter* %0, i8* %1) #0 {
+define internal void @"setContent(string)"(%Letter* %0, i8* %1) #0 {
 entry:
   %this = alloca %Letter*, align 8
   %text = alloca i8*, align 8

@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
 
 ; Function Attrs: nofree nosync nounwind readnone
-define i32 @"ack(int,int)"(i32 %0, i32 %1) local_unnamed_addr #1 {
+define internal fastcc i32 @"ack(int,int)"(i32 %0, i32 %1) unnamed_addr #1 {
 entry:
   %2 = icmp eq i32 %0, 0
   br i1 %2, label %if.then, label %if.end
@@ -33,14 +33,14 @@ tailrecurse.backedge:                             ; preds = %if.end, %if.end2
 
 if.end2:                                          ; preds = %if.end
   %6 = add i32 %.tr2325, -1
-  %7 = tail call i32 @"ack(int,int)"(i32 %.tr24, i32 %6)
+  %7 = tail call fastcc i32 @"ack(int,int)"(i32 %.tr24, i32 %6)
   br label %tailrecurse.backedge
 }
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
 entry:
-  %0 = tail call i32 @"ack(int,int)"(i32 3, i32 12)
+  %0 = tail call fastcc i32 @"ack(int,int)"(i32 3, i32 12)
   %1 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([36 x i8], [36 x i8]* @0, i64 0, i64 0), i32 3, i32 12, i32 %0)
   ret i32 0
 }

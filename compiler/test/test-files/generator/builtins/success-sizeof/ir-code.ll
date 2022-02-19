@@ -13,7 +13,7 @@ target triple = "x86_64-w64-windows-gnu"
 @7 = private unnamed_addr constant [13 x i8] c"Hello Spice!\00", align 1
 @8 = private unnamed_addr constant [18 x i8] c"Size of bool: %d\0A\00", align 1
 @9 = private unnamed_addr constant [19 x i8] c"Size of int[]: %d\0A\00", align 1
-@anonymous.0 = dso_local constant [7 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7]
+@anonymous.0 = constant [7 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7]
 
 declare i32 @printf(i8*, ...)
 

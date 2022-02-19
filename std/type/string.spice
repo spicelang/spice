@@ -1,11 +1,11 @@
 // Converts a string to a double
-f<double> toDouble(string input) {
+public f<double> toDouble(string input) {
     // ToDo: implement
     return 0.0;
 }
 
 // Converts a string to an int
-f<int> toInt(string input) {
+public f<int> toInt(string input) {
     if input == "" {
         return 0;
     }
@@ -18,7 +18,7 @@ f<int> toInt(string input) {
 }
 
 // Converts a string to a short
-f<short> toShort(string input) {
+public f<short> toShort(string input) {
     if input == "" {
         return (short) 0;
     }
@@ -31,7 +31,7 @@ f<short> toShort(string input) {
 }
 
 // Converts a string to a long
-f<long> toLong(string input) {
+public f<long> toLong(string input) {
     if input == "" {
         return (long) 0;
     }
@@ -44,7 +44,7 @@ f<long> toLong(string input) {
 }
 
 // Converts a string to a byte
-f<byte> toByte(string input) {
+public f<byte> toByte(string input) {
     if input == "" {
         return (byte) 0;
     }
@@ -57,24 +57,24 @@ f<byte> toByte(string input) {
 }
 
 // Converts a string to a char
-f<char> toChar(string input) {
+public f<char> toChar(string input) {
     // ToDo: Implement
     return '0';
 }
 
 // Converts a string to a bool
-f<bool> toBool(string input) {
+public f<bool> toBool(string input) {
     return input == "true";
 }
 
 // Returns the length of a string
-f<int> len(string input) {
+public f<int> len(string input) {
     //for result = 0; input[result] != '\0'; result++ {}
     return 0;
 }
 
 // Returns true if the input string contains the input substring
-f<bool> contains(string input, string substring) {
+public f<bool> contains(string input, string substring) {
     // ToDo: implement
     return false;
 }

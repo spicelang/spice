@@ -1,0 +1,1 @@
+Semantic error at 4:28: Insufficient symbol visibility: Cannot access function/procedure 'testFunc()' due to its private visibility

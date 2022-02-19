@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @printf(i8*, ...)
 
 ; Function Attrs: nounwind
-define i32 @"getAge()"() #0 {
+define internal i32 @"getAge()"() #0 {
 entry:
   %result = alloca i32, align 4
   %i = alloca i1, align 1

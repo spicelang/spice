@@ -9,7 +9,7 @@ ext<int> waitpid(int, int*, int);
  *
  * @return Pid of the fork
  */
-f<int> createFork() {
+public f<int> createFork() {
     return fork();
 }
 
@@ -18,7 +18,7 @@ f<int> createFork() {
  *
  * @return Process id
  */
-f<int> getPID() {
+public f<int> getPID() {
     return getpid();
 }
 
@@ -27,7 +27,7 @@ f<int> getPID() {
  *
  * @return Return code of the shell comand
  */
-f<int> execCmd(string cmdStr) {
+public f<int> execCmd(string cmdStr) {
     char* cmd = cmdStr;
     int pid = fork();
     if pid == 0 { // Child process

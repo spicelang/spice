@@ -1,10 +1,10 @@
 // File open modes
-const string MODE_READ                  = "r";
-const string MODE_WRITE                 = "w";
-const string MODE_APPEND                = "a";
-const string MODE_READ_WRITE            = "r+";
-const string MODE_READ_WRITE_OVERWRITE  = "w+";
-const string MODE_READ_WRITE_APPEND     = "a+";
+public const string MODE_READ                  = "r";
+public const string MODE_WRITE                 = "w";
+public const string MODE_APPEND                = "a";
+public const string MODE_READ_WRITE            = "r+";
+public const string MODE_READ_WRITE_OVERWRITE  = "w+";
+public const string MODE_READ_WRITE_APPEND     = "a+";
 
 const int MODE_CREATE   = 64; // Decimal for octal: 100
 const int MODE_RDWR     = 2;  // Decimal for octal: 2
@@ -20,11 +20,11 @@ const int SEEK_SET = 0;
 const int SEEK_CUR = 1;
 const int SEEK_END = 2;
 
-type FilePtr struct {
+public type FilePtr struct {
     byte* ptr
 }
 
-type File struct {
+public type File struct {
     FilePtr* filePtr
 }
 
@@ -44,7 +44,7 @@ ext<long> ftell(FilePtr*);
  *
  * @return Result code of the create operation: 0 = successful, -1 = failed
  */
-f<int> createFile(string path) {
+public f<int> createFile(string path) {
     return open(path, MODE_CREATE|MODE_RDWR);
 }
 
@@ -57,7 +57,7 @@ f<int> createFile(string path) {
  *
  * @return File pointer
  */
-f<File> openFile(string path, string mode) {
+public f<File> openFile(string path, string mode) {
     FilePtr* fp = fopen(path, mode);
     // Insert check for pointer being 0 and throw an exception
     File openedFile = File { fp };
@@ -69,7 +69,7 @@ f<File> openFile(string path, string mode) {
  *
  * @return Result code of the close operation: 0 = successful, -1 = failed
  */
-f<int> File.close() {
+public f<int> File.close() {
     return fclose(this.filePtr);
 }
 
@@ -78,7 +78,7 @@ f<int> File.close() {
  *
  * @return Char in form of an int, because of EOF = -1.
  */
-f<int> File.readChar() {
+public f<int> File.readChar() {
     return fgetc(this.filePtr);
 }
 
@@ -87,7 +87,7 @@ f<int> File.readChar() {
  * 
  * @return Result code of the write operation: 0 = successful, -1 = failed
  */
-f<int> File.writeChar(char value) {
+public f<int> File.writeChar(char value) {
     return fputc((int) value, this.filePtr);
 }
 
@@ -96,7 +96,7 @@ f<int> File.writeChar(char value) {
  *
  * @return Result code of the write operation: 0 = successful, -1 = failed
  */
-f<int> File.writeString(string value) {
+public f<int> File.writeString(string value) {
     return fputs(value, this.filePtr);
 }
 
@@ -105,7 +105,7 @@ f<int> File.writeString(string value) {
  *
  * @return File size in bytes
  */
-f<long> File.getSize() {
+public f<long> File.getSize() {
     // Remember current cursor position
     long curPos = ftell(this.filePtr);
     // Move the cursor to the end of the file
@@ -122,7 +122,7 @@ f<long> File.getSize() {
  *
  * @return Content in form of a string
  */
-f<string> readFile(string path) {
+public f<string> readFile(string path) {
     // Open the file in read mode
     File file = openFile(path, MODE_READ);
     // Read from the file char by char
@@ -142,7 +142,7 @@ f<string> readFile(string path) {
  *
  * @return Result code of the write operation: 0 = successful, -1 = failed
  */
-f<int> writeFile(string path, string content) {
+public f<int> writeFile(string path, string content) {
     // Open the file in write mode
     File file = openFile(path, MODE_WRITE);
     // Write the string to the file
@@ -157,7 +157,7 @@ f<int> writeFile(string path, string content) {
  *
  * @return File size in bytes
  */
-f<long> getFileSize(string path) {
+public f<long> getFileSize(string path) {
     // Open the file in read mode
     File file = openFile(path, MODE_READ);
     // Get the file size
@@ -172,7 +172,7 @@ f<long> getFileSize(string path) {
  * 
  * @return Existing / not existing
  */
-f<bool> fileExists(string path) {
+public f<bool> fileExists(string path) {
     return access(path, F_OK) == 0;
 }
 
@@ -181,7 +181,7 @@ f<bool> fileExists(string path) {
  * 
  * @return Readable / not readable
  */
-f<bool> fileReadable(string path) {
+public f<bool> fileReadable(string path) {
     return access(path, R_OK) == 0;
 }
 
@@ -190,7 +190,7 @@ f<bool> fileReadable(string path) {
  * 
  * @return Writable / not writable
  */
-f<bool> fileWritable(string path) {
+public f<bool> fileWritable(string path) {
     return access(path, W_OK) == 0;
 }
 
@@ -199,6 +199,6 @@ f<bool> fileWritable(string path) {
  * 
  * @return Executable / not executable
  */
-f<bool> fileExecutable(string path) {
+public f<bool> fileExecutable(string path) {
     return access(path, X_OK) == 0;
 }

@@ -1,39 +1,39 @@
-const int SIZE = 64;
-const long MIN_VALUE = -9223372036854775808;
-const long MAX_VALUE = 9223372036854775807;
+public const int SIZE = 64;
+public const long MIN_VALUE = -9223372036854775808;
+public const long MAX_VALUE = 9223372036854775807;
 
 // Converts a long to a double
-f<double> toDouble(long input) {
+public f<double> toDouble(long input) {
     return 0.0 + input;
 }
 
 // Converts a long to an int
-f<int> toInt(long input) {
+public f<int> toInt(long input) {
     return (int) input;
 }
 
 // Converts a long to a short
-f<short> toShort(long input) {
+public f<short> toShort(long input) {
     return (short) input;
 }
 
 // Converts a long to a byte
-f<byte> toByte(long input) {
+public f<byte> toByte(long input) {
     return (byte) input;
 }
 
 // Converts a long to a char
-f<char> toChar(long input) {
+public f<char> toChar(long input) {
     return (char) input;
 }
 
 // Converts a long to a string
-f<string> toString(long input) {
+public f<string> toString(long input) {
     // ToDo: Implement (See https://github.com/golang/go/blob/master/src/strconv/itoa.go)
     return "";
 }
 
 // Converts a long to a boolean
-f<bool> toBool(long input) {
+public f<bool> toBool(long input) {
     return input >= 1;
 }

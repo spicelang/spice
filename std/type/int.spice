@@ -1,40 +1,40 @@
-const int SIZE = 32;
-const int MIN_VALUE = -2147483648;
-const int MAX_VALUE = 2147483647;
+public const int SIZE = 32;
+public const int MIN_VALUE = -2147483648;
+public const int MAX_VALUE = 2147483647;
 
 // Converts an int to a double
-f<double> toDouble(int input) {
+public f<double> toDouble(int input) {
     // ToDo: Implement
     return 0.0;
 }
 
 // Converts an int to a short
-f<short> toShort(int input) {
+public f<short> toShort(int input) {
     return (short) input;
 }
 
 // Converts an int to a long
-f<long> toLong(int input) {
+public f<long> toLong(int input) {
     return (long) input;
 }
 
 // Converts an int to a byte
-f<byte> toByte(int input) {
+public f<byte> toByte(int input) {
     return (byte) input;
 }
 
 // Converts an int to a char
-f<char> toChar(int input) {
+public f<char> toChar(int input) {
     return (char) input;
 }
 
 // Converts an int to a string
-f<string> toString(int input) {
+public f<string> toString(int input) {
     // ToDo: Implement (See https://github.com/golang/go/blob/master/src/strconv/itoa.go)
     return "";
 }
 
 // Converts an int to a boolean
-f<bool> toBool(int input) {
+public f<bool> toBool(int input) {
     return input >= 1;
 }
