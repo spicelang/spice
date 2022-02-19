@@ -68,7 +68,7 @@ f<int> main() {
     dir.mkDir("./test", dir.MODE_ALL_RWX);
 }*/
 
-public f<long> getInlinedValue() {
+f<long> getInlinedValue() {
     return 12l;
 }
 

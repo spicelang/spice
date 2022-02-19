@@ -268,12 +268,24 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         }
     }
 
+    // Check if function is public and/or explicit inlined
+    llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
+    bool explicitInlined = false;
+    if (ctx->declSpecifiers()) {
+        for (auto& specifier : ctx->declSpecifiers()->declSpecifier()) {
+            if (specifier->INLINE()) {
+                explicitInlined = true;
+            } else if (specifier->PUBLIC()) {
+                linkage = llvm::Function::ExternalLinkage;
+            }
+        }
+    }
+
     // Create function itself
     llvm::FunctionType* fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-    llvm::GlobalValue::LinkageTypes linkage = ctx->INLINE() ? llvm::Function::InternalLinkage : llvm::Function::ExternalLinkage;
     llvm::Function* fct = llvm::Function::Create(fctType, linkage, signature.toString(), module.get());
     fct->addFnAttr(llvm::Attribute::NoUnwind);
-    if (ctx->INLINE()) fct->addFnAttr(llvm::Attribute::AlwaysInline);
+    if (explicitInlined) fct->addFnAttr(llvm::Attribute::AlwaysInline);
 
     // Create entry block
     llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
@@ -375,13 +387,25 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         }
     }
 
+    // Check if function is public and/or explicit inlined
+    llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
+    bool explicitInlined = false;
+    if (ctx->declSpecifiers()) {
+        for (auto& specifier : ctx->declSpecifiers()->declSpecifier()) {
+            if (specifier->INLINE()) {
+                explicitInlined = true;
+            } else if (specifier->PUBLIC()) {
+                linkage = llvm::Function::ExternalLinkage;
+            }
+        }
+    }
+
     // Create procedure itself
     llvm::FunctionType* procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context),
                                                            paramTypes, false);
-    llvm::GlobalValue::LinkageTypes linkage = ctx->INLINE() ? llvm::Function::InternalLinkage : llvm::Function::ExternalLinkage;
     llvm::Function* proc = llvm::Function::Create(procType, linkage, signature.toString(), module.get());
     proc->addFnAttr(llvm::Attribute::NoUnwind);
-    if (ctx->INLINE()) proc->addFnAttr(llvm::Attribute::AlwaysInline);
+    if (explicitInlined) proc->addFnAttr(llvm::Attribute::AlwaysInline);
 
     // Create entry block
     llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");

@@ -147,7 +147,18 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
         throw SemanticError(*ctx->start, FUNCTION_DECLARED_TWICE,
                             "Function '" + signature.toString() + "' is declared twice");
     SymbolType symbolType = SymbolType(TY_FUNCTION);
-    currentScope->insert(signature.toString(), symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
+    SymbolSpecifiers functionSymbolSpecifiers = SymbolSpecifiers(symbolType);
+    if (ctx->declSpecifiers()) {
+        for (auto& specifier : ctx->declSpecifiers()->declSpecifier()) {
+            if (specifier->PUBLIC()) {
+                functionSymbolSpecifiers.setPublic(true);
+            } else {
+                throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                                    "Cannot use the specifier " + specifier->toString() + " on a function definition");
+            }
+        }
+    }
+    currentScope->insert(signature.toString(), symbolType, functionSymbolSpecifiers, INITIALIZED, *ctx->start, false);
     currentScope->pushSignature(signature);
 
     // Rename function scope block to support function overloading
@@ -215,7 +226,18 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
         throw SemanticError(*ctx->start, PROCEDURE_DECLARED_TWICE,
                             "Procedure '" + signature.toString() + "' is declared twice");
     SymbolType symbolType = SymbolType(TY_PROCEDURE);
-    currentScope->insert(signature.toString(), symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
+    SymbolSpecifiers procedureSymbolSpecifiers = SymbolSpecifiers(symbolType);
+    if (ctx->declSpecifiers()) {
+        for (auto& specifier : ctx->declSpecifiers()->declSpecifier()) {
+            if (specifier->PUBLIC()) {
+                procedureSymbolSpecifiers.setPublic(true);
+            } else {
+                throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                                    "Cannot use the specifier " + specifier->toString() + " on a procedure definition");
+            }
+        }
+    }
+    currentScope->insert(signature.toString(), symbolType, procedureSymbolSpecifiers, INITIALIZED, *ctx->start, false);
     currentScope->pushSignature(signature);
 
     // Rename function scope block to support function overloading
@@ -280,7 +302,18 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
         throw SemanticError(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate struct '" + structName + "'");
     // Create a new table entry for the struct
     SymbolType symbolType = SymbolType(TY_STRUCT, structName);
-    currentScope->insert(structName, symbolType, SymbolSpecifiers(symbolType), DECLARED, *ctx->start, false);
+    SymbolSpecifiers structSymbolSpecifiers = SymbolSpecifiers(symbolType);
+    if (ctx->declSpecifiers()) {
+        for (auto& specifier : ctx->declSpecifiers()->declSpecifier()) {
+            if (specifier->PUBLIC()) {
+                structSymbolSpecifiers.setPublic(true);
+            } else {
+                throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                                    "Cannot use the specifier " + specifier->toString() + " on a struct definition");
+            }
+        }
+    }
+    currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start, false);
     // Visit field list in a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -301,6 +334,11 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
                     fieldTypeSpecifiers.setSigned(true);
                 } else if (specifier->UNSIGNED()) {
                     fieldTypeSpecifiers.setSigned(false);
+                } else if (specifier->PUBLIC()) {
+                    fieldTypeSpecifiers.setPublic(true);
+                } else {
+                    throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                                        "Cannot use the specifier " + specifier->toString() + " on a struct field definition");
                 }
             }
         }
@@ -358,6 +396,11 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
                     CompilerWarning(*ctx->MINUS()->getSymbol(), NEGATIVE_VALUE_TO_UNSIGNED_VAR,
                                     "Please mind that assigning a negative value to an unsigned variable causes a wrap-around")
                                     .print();
+            } else if (specifier->PUBLIC()) {
+                symbolTypeSpecifiers.setPublic(true);
+            } else {
+                throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                                    "Cannot use the specifier " + specifier->toString() + " on a global variable definition");
             }
         }
     }
@@ -555,6 +598,9 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
                 symbolTypeSpecifiers.setSigned(true);
             } else if (specifier->UNSIGNED()) {
                 symbolTypeSpecifiers.setSigned(false);
+            } else {
+                throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                                    "Cannot use the specifier " + specifier->toString() + " on a local variable declaration");
             }
         }
     }
