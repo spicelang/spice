@@ -541,7 +541,6 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     llvm::GlobalVariable* global = module->getNamedGlobal(varName);
     global->setLinkage(linkage);
     global->setConstant(specifiers.isConst());
-    global->setDSOLocal(true);
 
     if (ctx->value()) { // Variable is initialized here
         visit(ctx->value());
@@ -1826,7 +1825,6 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                 // Set some attributes to it
                 llvm::GlobalVariable* global = module->getNamedGlobal(globalVarName);
                 global->setConstant(true);
-                global->setDSOLocal(true);
                 global->setInitializer(constArray);
             } else { // Some params are not hardcoded => fallback to individual indexing
                 // Allocate array

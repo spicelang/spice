@@ -4,7 +4,7 @@ target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [10 x i8] c"Short %d\0A\00", align 1
-@l = dso_local local_unnamed_addr constant [2 x i64] [i64 1, i64 2]
+@l = local_unnamed_addr constant [2 x i64] [i64 1, i64 2]
 @1 = private unnamed_addr constant [9 x i8] c"Long %d\0A\00", align 1
 @2 = private unnamed_addr constant [5 x i8] c"End.\00", align 1
 

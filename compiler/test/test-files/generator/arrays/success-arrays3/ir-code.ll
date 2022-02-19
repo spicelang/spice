@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-@intArray = dso_local constant [2 x i32] [i32 1, i32 2]
+@intArray = constant [2 x i32] [i32 1, i32 2]
 @0 = private unnamed_addr constant [17 x i8] c"intArray[1]: %d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)

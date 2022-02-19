@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [7 x i8] c"2: %d\0A\00", align 1
 @2 = private unnamed_addr constant [7 x i8] c"3: %d\0A\00", align 1
 @3 = private unnamed_addr constant [7 x i8] c"4: %d\0A\00", align 1
-@intArray = dso_local constant [4 x i32] [i32 1, i32 2, i32 3, i32 4]
+@intArray = constant [4 x i32] [i32 1, i32 2, i32 3, i32 4]
 @4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
