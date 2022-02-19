@@ -1,0 +1,7 @@
+inline f<long> getInlinedValue() {
+    return 12l;
+}
+
+f<int> main() {
+    printf("Inlined value: %d\n", getInlinedValue());
+}
