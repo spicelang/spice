@@ -5,9 +5,9 @@
 #include <symbol/SymbolType.h>
 
 // Bit indices from right to left
-const unsigned short BIT_INDEX_SIGNED = 0;
-const unsigned short BIT_INDEX_CONST = 1;
-const unsigned short BIT_INDEX_PUBLIC = 2;
+const unsigned short BIT_INDEX_PUBLIC = 0;
+const unsigned short BIT_INDEX_SIGNED = 1;
+const unsigned short BIT_INDEX_CONST = 2;
 
 // Defaults: Const: 0, Signed: 1, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_DOUBLE = 0b010;

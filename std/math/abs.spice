@@ -1,15 +1,15 @@
-f<double> abs(double input) {
+public f<double> abs(double input) {
     return input < 0 ? -input : input;
 }
 
-f<int> abs(int input) {
+public f<int> abs(int input) {
     return input < 0 ? -input : input;
 }
 
-f<short> abs(short input) {
+public f<short> abs(short input) {
     return input < 0 ? -input : input;
 }
 
-f<long> abs(long input) {
+public f<long> abs(long input) {
     return input < 0 ? -input : input;
 }

@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @printf(i8*, ...)
 
 ; Function Attrs: nounwind
-define i32 @"ack(int,int)"(i32 %0, i32 %1) #0 {
+define internal i32 @"ack(int,int)"(i32 %0, i32 %1) #0 {
 entry:
   %m = alloca i32, align 4
   %n = alloca i32, align 4

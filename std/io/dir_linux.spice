@@ -1,24 +1,24 @@
 //import "std/os/os" as os;
 
 // File permission modes
-const int MODE_ALL_RWX   = 511;   // Decimal for octal: 0000777
-const int MODE_ALL_RW    = 438;   // Decimal for octal: 0000666
-const int MODE_ALL_R     = 292;   // Decimal for octal: 0000444
+public const int MODE_ALL_RWX   = 511;   // Decimal for octal: 0000777
+public const int MODE_ALL_RW    = 438;   // Decimal for octal: 0000666
+public const int MODE_ALL_R     = 292;   // Decimal for octal: 0000444
 
-const int MODE_OWNER_RWX = 448;   // Decimal for octal: 0000700
-const int MODE_OWNER_R   = 256;   // Decimal for octal: 0000400
-const int MODE_OWNER_W   = 128;   // Decimal for octal: 0000200
-const int MODE_OWNER_X   = 64;    // Decimal for octal: 0000100
+public const int MODE_OWNER_RWX = 448;   // Decimal for octal: 0000700
+public const int MODE_OWNER_R   = 256;   // Decimal for octal: 0000400
+public const int MODE_OWNER_W   = 128;   // Decimal for octal: 0000200
+public const int MODE_OWNER_X   = 64;    // Decimal for octal: 0000100
 
-const int MODE_GROUP_RWX = 56;    // Decimal for octal: 0000070
-const int MODE_GROUP_R   = 32;    // Decimal for octal: 0000040
-const int MODE_GROUP_W   = 16;    // Decimal for octal: 0000020
-const int MODE_GROUP_X   = 8;     // Decimal for octal: 0000010
+public const int MODE_GROUP_RWX = 56;    // Decimal for octal: 0000070
+public const int MODE_GROUP_R   = 32;    // Decimal for octal: 0000040
+public const int MODE_GROUP_W   = 16;    // Decimal for octal: 0000020
+public const int MODE_GROUP_X   = 8;     // Decimal for octal: 0000010
 
-const int MODE_OTHER_RWX = 7;     // Decimal for octal: 0000007
-const int MODE_OTHER_R   = 4;     // Decimal for octal: 0000004
-const int MODE_OTHER_W   = 2;     // Decimal for octal: 0000002
-const int MODE_OTHER_X   = 1;     // Decimal for octal: 0000001
+public const int MODE_OTHER_RWX = 7;     // Decimal for octal: 0000007
+public const int MODE_OTHER_R   = 4;     // Decimal for octal: 0000004
+public const int MODE_OTHER_W   = 2;     // Decimal for octal: 0000002
+public const int MODE_OTHER_X   = 1;     // Decimal for octal: 0000001
 
 const int F_OK = 0; // File existence
 const int X_OK = 1; // Can execute
@@ -77,7 +77,7 @@ ext<DirEntry*> readdir(DirStream*);
  *
  * @return Result code of the create operation: 0 = successful, -1 = failed
  */
-f<int> mkDir(string path, int mode) {
+public f<int> mkDir(string path, int mode) {
     return mkdir(path, mode);
 }
 
@@ -93,7 +93,7 @@ f<int> mkDir(string path, int mode) {
  *
  * @return Result code of the create operation: 0 = successful, -1 = failed
  */
-f<int> mkDirs(string path, int mode) {
+public f<int> mkDirs(string path, int mode) {
     // ToDo: Implement
 
     /*char[] pathChars = (char[]) path;
@@ -108,7 +108,7 @@ f<int> mkDirs(string path, int mode) {
  *
  * @return Result code of the delete operation: 0 = successful, -1 = failed
  */
-f<int> rmDir(string path) {
+public f<int> rmDir(string path) {
     return rmdir(path);
 }
 
@@ -117,7 +117,7 @@ f<int> rmDir(string path) {
  *
  * @return Result code of the rename operation: 0 = successful, -1 = failed
  */
-f<int> renameDir(string oldPath, string newPath) {
+public f<int> renameDir(string oldPath, string newPath) {
     return rename(oldPath, newPath);
 }
 
@@ -126,7 +126,7 @@ f<int> renameDir(string oldPath, string newPath) {
  *
  * @return Existing or not
  */
-f<bool> dirExists(string path) {
+public f<bool> dirExists(string path) {
     // Check if there exists something, a file or a dir
     if access(path, F_OK) == 0 {
         // Check if it is a dir
@@ -140,7 +140,7 @@ f<bool> dirExists(string path) {
 /**
  * Lists all files/subdirectories at a given path.
  */
-p listDir(string path) {
+public p listDir(string path) {
     // Open the directory stream
     DirStream* dirStream = opendir(path);
 

@@ -15,17 +15,17 @@ type SockAddrIn struct {
     InAddr sinAddr
 }
 
-type Socket struct {
+public type Socket struct {
     int sockFd // Actual socket
     int connFd // Current connection
     short errorCode
 }
 
-const short ERROR_SOCKET = -1s;
-const short ERROR_BIND = -2s;
-const short ERROR_LISTEN = -3s;
-const short ERROR_ACCEPT = -4s;
-const short ERROR_CONNECT = -5s;
+public const short ERROR_SOCKET = -1s;
+public const short ERROR_BIND = -2s;
+public const short ERROR_LISTEN = -3s;
+public const short ERROR_ACCEPT = -4s;
+public const short ERROR_CONNECT = -5s;
 
 ext<int> socket(int, int, int);
 ext<int> bind(int, SockAddrIn*, int);
@@ -45,7 +45,7 @@ ext<int> connect(int, SockAddrIn*, int);
  *
  * @return Connection file descriptor
  */
-f<int> Socket.acceptConnection() {
+public f<int> Socket.acceptConnection() {
     SockAddrIn cliAddr = SockAddrIn {};
     this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
     if this.connFd == -1 {
@@ -55,20 +55,20 @@ f<int> Socket.acceptConnection() {
     return this.connFd;
 }
 
-f<long> Socket.write(string message) {
+public f<long> Socket.write(string message) {
     //if message.empty() { return 0; } ToDo: Comment out when the empty method on string type is implemented
     //return write(this.connFd, content, message.length() * 8); // ToDo: Comment out when the length method on string type is implemented
     return 0l;
 }
 
-f<long> Socket.write(byte[] content) {
+public f<long> Socket.write(byte[] content) {
     if sizeof(content) == 0 { return 0l; }
     long size = (long) (sizeof(content) * sizeof(content[0]));
     printf("Write size: %d\n", size);
     return write(this.connFd, content, size);
 }
 
-f<long> Socket.read(byte* ptr, long size) {
+public f<long> Socket.read(byte* ptr, long size) {
     return read(this.connFd, ptr, size);
 }
 
@@ -77,12 +77,12 @@ f<long> Socket.read(byte* ptr, long size) {
  *
  * @return Error code for closing the socket
  */
-f<int> Socket.close() {
+public f<int> Socket.close() {
     return close(this.sockFd);
 }
 
 // Tmp function until bug #95 is fixed
-f<int> closeSocket(int fd) {
+public f<int> closeSocket(int fd) {
     return close(fd);
 }
 
@@ -93,7 +93,7 @@ f<int> closeSocket(int fd) {
  *
  * @return Socket file descriptor
  */
-f<int> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
+public f<int> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
     Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
 
     // Cancel on failure
@@ -129,7 +129,7 @@ f<int> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
  *
  * @return Socket file descriptor
  */
-f<int> openClientSocket(string host, unsigned short port) {
+public f<int> openClientSocket(string host, unsigned short port) {
     Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
 
     // Cancel on failure

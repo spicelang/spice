@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @printf(i8*, ...)
 
 ; Function Attrs: nounwind
-define i32 @"fib(int)"(i32 %0) #0 {
+define internal i32 @"fib(int)"(i32 %0) #0 {
 entry:
   %n = alloca i32, align 4
   %result = alloca i32, align 4

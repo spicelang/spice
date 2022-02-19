@@ -3,7 +3,6 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-@MODE_ALL_RWX = dso_local local_unnamed_addr constant i32 511
 @0 = private unnamed_addr constant [11 x i8] c"./test-dir\00", align 1
 @1 = private unnamed_addr constant [6 x i8] c"Done.\00", align 1
 @str = private unnamed_addr constant [17 x i8] c"Creating dir ...\00", align 1

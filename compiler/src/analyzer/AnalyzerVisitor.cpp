@@ -152,9 +152,11 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
         for (auto& specifier : ctx->declSpecifiers()->declSpecifier()) {
             if (specifier->PUBLIC()) {
                 functionSymbolSpecifiers.setPublic(true);
+            } else if (specifier->INLINE()) {
+                functionSymbolSpecifiers.setPublic(false);
             } else {
                 throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                                    "Cannot use the specifier " + specifier->toString() + " on a function definition");
+                                    "Cannot use the " + specifier->getText() + " specifier on a function definition");
             }
         }
     }
@@ -231,9 +233,11 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
         for (auto& specifier : ctx->declSpecifiers()->declSpecifier()) {
             if (specifier->PUBLIC()) {
                 procedureSymbolSpecifiers.setPublic(true);
+            } else if (specifier->INLINE()) {
+                procedureSymbolSpecifiers.setPublic(false);
             } else {
                 throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                                    "Cannot use the specifier " + specifier->toString() + " on a procedure definition");
+                                    "Cannot use the " + specifier->getText() + " specifier on a procedure definition");
             }
         }
     }
@@ -309,7 +313,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
                 structSymbolSpecifiers.setPublic(true);
             } else {
                 throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                                    "Cannot use the specifier " + specifier->toString() + " on a struct definition");
+                                    "Cannot use the " + specifier->getText() + " specifier on a struct definition");
             }
         }
     }
@@ -338,7 +342,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext* ctx
                     fieldTypeSpecifiers.setPublic(true);
                 } else {
                     throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                                        "Cannot use the specifier " + specifier->toString() + " on a struct field definition");
+                                        "Cannot use the " + specifier->getText() + " specifier on a struct field definition");
                 }
             }
         }
@@ -400,7 +404,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
                 symbolTypeSpecifiers.setPublic(true);
             } else {
                 throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                                    "Cannot use the specifier " + specifier->toString() + " on a global variable definition");
+                                    "Cannot use the " + specifier->getText() + " specifier on a global variable definition");
             }
         }
     }
@@ -600,7 +604,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
                 symbolTypeSpecifiers.setSigned(false);
             } else {
                 throw SemanticError(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                                    "Cannot use the specifier " + specifier->toString() + " on a local variable declaration");
+                                    "Cannot use the " + specifier->getText() + " specifier on a local variable declaration");
             }
         }
     }
@@ -1208,6 +1212,12 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             assert(functionEntry != nullptr);
             functionEntry->setUsed(); // Set the function to used
 
+            // Check if the function entry has sufficient visibility
+            if (functionParentScope->isImported() && !functionEntry->getSpecifiers().isPublic())
+                throw SemanticError(*token->getSymbol(), INSUFFICIENT_VISIBILITY,
+                                    "Cannot access function/procedure '" + currentVarName +
+                                    "' due to its private visibility");
+
             // Add function call to the signature queue of the current scope
             currentScope->pushSignature(signature);
 
@@ -1256,22 +1266,22 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* c
 
         // Check if this is a reserved keyword
         if (std::find(RESERVED_KEYWORDS.begin(), RESERVED_KEYWORDS.end(), currentVarName) != RESERVED_KEYWORDS.end())
-            throw SemanticError(*ctx->start, RESERVED_KEYWORD, "'' is a reserved keyword for future"
-                                    " development of the language. Please use another identifier instead");
+            throw SemanticError(*ctx->start, RESERVED_KEYWORD, "'" + currentVarName +
+                "' is a reserved keyword for future development of the language. Please use another identifier instead");
 
         // Load symbol table entry
         SymbolTable* accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
         assert(accessScope != nullptr);
         SymbolTableEntry* entry = currentEntry = accessScope->lookup(currentVarName);
 
-        // Check if the entry is public if it is imported
-        if (accessScope->isImported() && !entry->getSpecifiers().isPublic())
-            throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
-                                " Cannot access '" + currentVarName + "' due to its private visibility");
-
         // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
         // The existence of the variable is checked in the visitPostfixUnaryExpr method.
         if (!entry) return SymbolType(TY_INVALID);
+
+        // Check if the entry is public if it is imported
+        if (accessScope->isImported() && !entry->getSpecifiers().isPublic())
+            throw SemanticError(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
+                                "Cannot access '" + currentVarName + "' due to its private visibility");
 
         // Set symbol to used
         entry->setUsed();

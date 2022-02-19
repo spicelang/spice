@@ -1,6 +1,6 @@
 import "source1" as src1;
 
 f<int> main() {
-    int result = src1.testFunc();
-    printf("Result: %d\n", result);
+    int res = src1.testFunc();
+    printf("Result: %d\n", res);
 }

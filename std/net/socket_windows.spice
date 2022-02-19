@@ -3,7 +3,7 @@ ext<int> socket(int, int, int);
 const int TCP = 0;
 const int UDP = 1;
 
-type WebSocketData struct {
+public type WebSocketData struct {
     int wVersion
     int wHighVersion
     unsigned short iMaxSockets
@@ -14,7 +14,7 @@ type WebSocketData struct {
     // To be extended
 }
 
-f<int> openServerSocket() {
+public f<int> openServerSocket() {
 
     return 0;
 }

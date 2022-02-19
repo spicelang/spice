@@ -1,38 +1,38 @@
-const int SIZE = 8;
-const byte MIN_VALUE = 0;
-const byte MAX_VALUE = 255;
+public const int SIZE = 8;
+public const byte MIN_VALUE = 0;
+public const byte MAX_VALUE = 255;
 
 // Converts a byte to a double
-f<double> toDouble(byte input) {
+public f<double> toDouble(byte input) {
     return 0.0;
 }
 
 // Converts a byte to an int
-f<int> toInt(byte input) {
+public f<int> toInt(byte input) {
     return (int) input;
 }
 
 // Converts a byte to a short
-f<short> toShort(byte input) {
+public f<short> toShort(byte input) {
     return (short) input;
 }
 
 // Converts a byte to a long
-f<long> toLong(byte input) {
+public f<long> toLong(byte input) {
     return (long) input;
 }
 
 // Converts a byte to a char
-f<char> toChar(byte input) {
+public f<char> toChar(byte input) {
     return (char) input;
 }
 
 // Converts a byte to a string
-f<string> toString(byte input) {
+public f<string> toString(byte input) {
     return "0";
 }
 
 // Converts a byte to a bool
-f<bool> toBool(byte input) {
+public f<bool> toBool(byte input) {
     return input == 1;
 }

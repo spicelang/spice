@@ -1,39 +1,39 @@
-const int SIZE = 16;
-const short MIN_VALUE = -32768;
-const short MAX_VALUE = 32767;
+public const int SIZE = 16;
+public const short MIN_VALUE = -32768;
+public const short MAX_VALUE = 32767;
 
 // Converts a short to a double
-f<double> toDouble(short input) {
+public f<double> toDouble(short input) {
     return 0.0 + input;
 }
 
 // Converts a short to an int
-f<int> toInt(short input) {
+public f<int> toInt(short input) {
     return (int) input;
 }
 
 // Converts a short to a long
-f<long> toLong(short input) {
+public f<long> toLong(short input) {
     return (long) input;
 }
 
 // Converts a short to a byte
-f<byte> toByte(short input) {
+public f<byte> toByte(short input) {
     return (byte) input;
 }
 
 // Converts a short to a char
-f<char> toChar(short input) {
+public f<char> toChar(short input) {
     return (char) input;
 }
 
 // Converts a short to a string
-f<string> toString(short input) {
+public f<string> toString(short input) {
     // ToDo: Implement (See https://github.com/golang/go/blob/master/src/strconv/itoa.go)
     return "";
 }
 
 // Converts a v to a boolean
-f<bool> toBool(v input) {
+public f<bool> toBool(v input) {
     return input >= 1;
 }
