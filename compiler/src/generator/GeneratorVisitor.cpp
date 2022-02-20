@@ -520,7 +520,7 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext* ct
 }
 
 antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) {
-    std::string varName = ctx->IDENTIFIER()->toString();
+    std::string varName = currentVarName = ctx->IDENTIFIER()->toString();
 
     // Get symbol table entry and the symbol specifiers
     SymbolTableEntry* symbolTableEntry = currentScope->lookup(varName);
@@ -1802,14 +1802,17 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                 itemConstants.push_back(currentConstValue);
             }
 
+            llvm::Type* itemType;
             if (arrayType == nullptr) {
-                llvm::Type* itemType = itemValuePointers[0]->getType()->getPointerElementType();
+                itemType = itemValuePointers[0]->getType()->getPointerElementType();
                 arrayType = llvm::ArrayType::get(itemType, arraySize);
+            } else {
+                itemType = arrayType->getArrayElementType();
             }
 
             // Decide if the array can be defined globally
             llvm::Value* arrayAddress;
-            if (allParamsHardcoded) { // All params hardcoded => array can be defined globally
+            if (!itemType->isStructTy() && allParamsHardcoded) { // All params hardcoded => array can be defined globally
                 // Create hardcoded array
                 llvm::Constant* constArray = llvm::ConstantArray::get((llvm::ArrayType*) arrayType, itemConstants);
                 // Create global variable
@@ -1978,6 +1981,7 @@ antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeConte
     if (ctx->TYPE_STRING()) return SymbolType(TY_STRING);
     if (ctx->TYPE_BOOL()) return SymbolType(TY_BOOL);
     if (ctx->TYPE_DYN()) { // Data type is type inferred
+        assert(!currentVarName.empty());
         SymbolTableEntry* symbolTableEntry = currentScope->lookup(currentVarName);
         assert(symbolTableEntry != nullptr);
         return symbolTableEntry->getType();
