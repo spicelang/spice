@@ -50,6 +50,7 @@ public:
     bool isArrayOf(SymbolSuperType superType);
     bool is(SymbolSuperType superType);
     bool is(SymbolSuperType superType, const std::string& subType);
+    bool isPrimitive();
     bool isBaseType(SymbolSuperType superType);
     bool isOneOf(const std::vector<SymbolSuperType>& superTypes);
     SymbolSuperType getSuperType();

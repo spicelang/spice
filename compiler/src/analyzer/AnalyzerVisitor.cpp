@@ -384,6 +384,11 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
         throw SemanticError(*ctx->dataType()->start, GLOBAL_OF_TYPE_DYN,
                             "Global variables must have an explicit data type");
 
+    // Check if we would need to insert instructions in the global scope
+    if (!symbolType.isPrimitive())
+        throw SemanticError(*ctx->dataType()->start, GLOBAL_OF_INVALID_TYPE,
+                            "Spice does not allow global variables of this type");
+
     // Create symbol specifiers
     SymbolSpecifiers symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
     if (ctx->declSpecifiers()) {
