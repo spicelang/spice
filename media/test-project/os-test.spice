@@ -25,7 +25,7 @@ f<int> main() {
     a.destructor();
 }*/
 
-/*f<int> makePi() {
+f<int> makePi() {
     // Initialize variables
     int q = 1;
     int r = 0;
@@ -34,7 +34,7 @@ f<int> main() {
     int m = 3;
     int x = 3;
     // Loop
-    int[1000] output = {};
+    //int[1000] output = {};
     int outputCounter = 0;
     for int i = 0; i < 1000; i++ {
         if (4 * q + r - t < m * t) {
@@ -60,26 +60,4 @@ f<int> main() {
 
 f<int> main() {
     makePi();
-}*/
-
-type Rule struct {
-    bool condBit1
-    bool condBit2
-    bool condBit3
-    bool resultBit
-}
-
-f<int> main() {
-    const dyn ruleSet = {
-        Rule { false, false, false, false },
-        Rule { false, false, true, true },
-        Rule { false, true, false, true },
-        Rule { false, true, true, true },
-        Rule { true, false, false, false },
-        Rule { true, false, true, true },
-        Rule { true, true, false, true },
-        Rule { true, true, true, false }
-    };
-
-
 }
