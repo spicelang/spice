@@ -445,6 +445,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
     currentScope = currentScope->createChildBlock(scopeId);
 
     // Check type of the array
+    expectedType = SymbolType(TY_DYN);
     SymbolType arrayType = visit(head->assignExpr()).as<SymbolType>();
     if (!arrayType.isArray() && !arrayType.is(TY_STRING))
         throw SemanticError(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
@@ -572,7 +573,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
                             "The variable '" + variableName + "' was declared more than once");
 
     // Get the type of the symbol
-    SymbolType symbolType = lhsType = visit(ctx->dataType()).as<SymbolType>();
+    SymbolType symbolType = expectedType = visit(ctx->dataType()).as<SymbolType>();
 
     // Visit the right side
     SymbolState initialState = DECLARED;
@@ -685,45 +686,44 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
     SymbolTableEntry* returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
-    lhsType = returnVariable->getType();
+    if (returnVariable) { // Return variable => function
+        expectedType = returnVariable->getType();
 
-    // Check if there is a value attached to the return statement
-    SymbolType returnType;
-    if (ctx->assignExpr()) {
-        // Procedure returns may not have a value
-        if (returnVariable == nullptr)
-            throw SemanticError(*ctx->assignExpr()->start, RETURN_WITH_VALUE_IN_PROCEDURE,
-                                "Return statements in procedures may not have a value attached");
+        // Check if there is a value attached to the return statement
+        if (ctx->assignExpr()) {
+            // Visit the value
+            SymbolType returnType = visit(ctx->assignExpr()).as<SymbolType>();
 
-        // Visit the value
-        returnType = visit(ctx->assignExpr()).as<SymbolType>();
+            // Check data type of return statement
+            if (returnVariable->getType().is(TY_DYN)) {
+                // Set explicit return type to the return variable
+                returnVariable->updateType(returnType, false);
+            } else {
+                // Check if return type matches with function definition
+                if (returnType != returnVariable->getType())
+                    throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
+                                        "Passed wrong data type to return statement. Expected " +
+                                        returnVariable->getType().getName(false) + " but got " +
+                                        returnType.getName(false));
+            }
 
-        // Check data type of return statement
-        if (returnVariable->getType().is(TY_DYN)) {
-            // Set explicit return type to the return variable
-            returnVariable->updateType(returnType, false);
-        } else {
-            // Check if return type matches with function definition
-            if (returnType != returnVariable->getType())
-                throw SemanticError(*ctx->assignExpr()->start, OPERATOR_WRONG_DATA_TYPE,
-                                    "Passed wrong data type to return statement. Expected " +
-                                    returnVariable->getType().getName(false) + " but got " +
-                                    returnType.getName(false));
+            // Set the return variable to initialized
+            returnVariable->updateState(INITIALIZED, *ctx->start);
         }
 
-        // Set the return variable to initialized
-        returnVariable->updateState(INITIALIZED, *ctx->start);
-    } else if (returnVariable == nullptr) {
-        return SymbolType(TY_BOOL);
+        // Check if result variable is initialized
+        if (returnVariable->getState() != INITIALIZED)
+            throw SemanticError(*ctx->start, RETURN_WITHOUT_VALUE_RESULT,
+                                "Return without value, but result variable is not initialized yet");
+        returnVariable->setUsed();
+
+        return returnVariable->getType();
     }
-
-    // Check if result variable is initialized
-    if (returnVariable->getState() != INITIALIZED)
-        throw SemanticError(*ctx->start, RETURN_WITHOUT_VALUE_RESULT,
-                            "Return without value, but result variable is not initialized yet");
-    returnVariable->setUsed();
-
-    return returnVariable->getType();
+    // No return variable => procedure
+    if (ctx->assignExpr())
+        throw SemanticError(*ctx->assignExpr()->start, RETURN_WITH_VALUE_IN_PROCEDURE,
+                            "Return statements in procedures may not have a value attached");
+    return SymbolType(TY_DYN);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext* ctx) {
@@ -1389,8 +1389,8 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
     if (ctx->LBRACE()) { // Array initialization
         // Check if all values have the same type
-        assert(lhsType.isArray());
-        SymbolType expectedItemType = lhsType.getContainedTy();
+        assert(expectedType.isArray() || expectedType.is(TY_DYN));
+        SymbolType expectedItemType = expectedType.isArray() ? expectedType.getContainedTy() : expectedType;
         unsigned int actualSize = 0;
         if (ctx->paramLst()) {
             for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
@@ -1404,6 +1404,9 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                 }
                 actualSize++;
             }
+        } else if (expectedType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
+            throw SemanticError(*ctx->LBRACE()->getSymbol(), UNEXPECTED_DYN_TYPE_SA,
+                                "Not enough information to perform type inference");
         }
         return expectedItemType.toArray(actualSize);
     }

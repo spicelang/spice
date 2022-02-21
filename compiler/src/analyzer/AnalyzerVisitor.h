@@ -87,7 +87,7 @@ private:
     int nestedLoopCounter = 0;
     std::string currentVarName;
     SymbolTableEntry* currentEntry = nullptr;
-    SymbolType lhsType = SymbolType(TY_DYN);
+    SymbolType expectedType = SymbolType(TY_DYN);
 
     // Private methods
     SymbolType initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope,
