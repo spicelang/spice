@@ -421,18 +421,20 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
+    auto head = ctx->forHead();
+
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit loop variable declaration in new scope
-    visit(ctx->declStmt());
+    visit(head->declStmt());
     // Visit condition in new scope
-    SymbolType conditionType = visit(ctx->assignExpr()[0]).as<SymbolType>();
+    SymbolType conditionType = visit(head->assignExpr()[0]).as<SymbolType>();
     if (!conditionType.is(TY_BOOL))
-        throw SemanticError(*ctx->assignExpr()[0]->start, CONDITION_MUST_BE_BOOL,
+        throw SemanticError(*head->assignExpr()[0]->start, CONDITION_MUST_BE_BOOL,
                             "For loop condition must be of type bool");
     // Visit incrementer in new scope
-    visit(ctx->assignExpr()[1]);
+    visit(head->assignExpr()[1]);
     // Visit statement list in new scope
     nestedLoopCounter++;
     visit(ctx->stmtLst());
