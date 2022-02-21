@@ -1497,8 +1497,8 @@ antlrcpp::Any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContex
     return SymbolType(TY_DYN);
 }
 
-SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope,
-                                          const std::string& oldStructName, const std::string& newStructName) {
+SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope, const std::string& oldStructName,
+                                          const std::string& newStructName) {
     // Check if struct was declared
     SymbolTableEntry* structSymbol = sourceScope->lookup(oldStructName);
     if (!structSymbol)

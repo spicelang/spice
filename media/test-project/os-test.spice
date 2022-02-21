@@ -24,3 +24,9 @@ f<int> main() {
     printf("String: %s\n", a.value);
     a.destructor();
 }*/
+
+import "socket" as socket;
+
+f<int> main() {
+    socket.Socket s = socket.openServerSocket(8080s);
+}

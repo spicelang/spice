@@ -1,0 +1,8 @@
+// Inspired by: https://youtu.be/hmMtQe_mYr0
+
+f<int> main() {
+    unsigned long dx = 32183114504l;
+    while dx > 0 {
+        printf("%c", (char) (8245928625469605920l >> (((dx >>= 3l) & 7l) << 3l) & 255l));
+    }
+}
