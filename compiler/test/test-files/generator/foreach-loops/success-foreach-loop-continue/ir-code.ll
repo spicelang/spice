@@ -100,38 +100,37 @@ if.then:                                          ; preds = %foreach.loop
 
 foreach.loop2:                                    ; preds = %foreach.inc, %if.then
   %47 = load i64, i64* %l, align 8
-  %48 = trunc i64 %47 to i32
-  %49 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @1, i32 0, i32 0), i32 %48)
+  %48 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @1, i32 0, i32 0), i64 %47)
   br label %foreach.inc4
 
 foreach.inc:                                      ; No predecessors!
   %idx3 = load i32, i32* %idx1, align 4
   %idx.inc = add i32 %idx3, 1
   store i32 %idx.inc, i32* %idx1, align 4
-  %50 = getelementptr inbounds [2 x i64], [2 x i64]* @l, i32 0, i32 %idx.inc
-  %51 = load i64, i64* %50, align 8
-  store i64 %51, i64* %l, align 8
+  %49 = getelementptr inbounds [2 x i64], [2 x i64]* @l, i32 0, i32 %idx.inc
+  %50 = load i64, i64* %49, align 8
+  store i64 %50, i64* %l, align 8
   br label %foreach.loop2
 
 foreach.end:                                      ; No predecessors!
   br label %if.end
 
 if.end:                                           ; preds = %foreach.end, %foreach.loop
-  %52 = load i32, i32* %idx, align 4
-  %53 = icmp slt i32 %52, 4
-  br i1 %53, label %foreach.inc4, label %foreach.end7
+  %51 = load i32, i32* %idx, align 4
+  %52 = icmp slt i32 %51, 4
+  br i1 %52, label %foreach.inc4, label %foreach.end7
 
 foreach.inc4:                                     ; preds = %if.end, %foreach.loop2
   %idx5 = load i32, i32* %idx, align 4
   %idx.inc6 = add i32 %idx5, 1
   store i32 %idx.inc6, i32* %idx, align 4
-  %54 = getelementptr inbounds [5 x i16], [5 x i16]* %shortArray, i32 0, i32 %idx.inc6
-  %55 = load i16, i16* %54, align 2
-  store i16 %55, i16* %s, align 2
+  %53 = getelementptr inbounds [5 x i16], [5 x i16]* %shortArray, i32 0, i32 %idx.inc6
+  %54 = load i16, i16* %53, align 2
+  store i16 %54, i16* %s, align 2
   br label %foreach.loop
 
 foreach.end7:                                     ; preds = %if.end
-  %56 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @2, i32 0, i32 0))
-  %57 = load i32, i32* %result, align 4
-  ret i32 %57
+  %55 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @2, i32 0, i32 0))
+  %56 = load i32, i32* %result, align 4
+  ret i32 %56
 }

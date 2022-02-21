@@ -1,36 +1,44 @@
-f<int> makePi() {
-    // Initialize variables
-    int q = 1;
-    int r = 0;
-    int t = 1;
-    int k = 1;
-    int m = 3;
-    int x = 3;
-    // Loop
-    //int[1000] output = {};
-    int outputCounter = 0;
-    for int i = 0; i < 1000; i++ {
-        if (4 * q + r - t < m * t) {
-            //output[outputCounter] = m;
-            outputCounter++;
-            q = 10 * q;
-            r = 10 * (r - m * t);
-            t = t;
-            k = k;
-            m = (10 * (3 * q + r)) / t - 10 * m;
-            x = x;
-        } else {
-            q = q * k;
-            r = (2 * q + r) * x;
-            t = t * x;
-            k = k + 1;
-            m = ( q * (7 * k + 2) + r * x) / (t * x);
-            x = x + 2;
-        }
-    }
-    return 3;
-}
+// Algorithm taken from: https://stackoverflow.com/a/54967370/14945975
+// Please note: With iterations > 20 the numbers get huge and do not fit in a long
 
 f<int> main() {
-    makePi();
+    long q = 1l;
+    long q_new;
+    long r = 0l;
+    long r_new;
+    long t = 1l;
+    long t_new;
+    long k = 1l;
+    long k_new;
+    long m = 3l;
+    long m_new;
+    long x = 3l;
+    long x_new;
+
+    int iterations = 20; // Change here
+    int printedDigits = 0;
+
+    for int i = 0; i < iterations; i++ {
+        if 4l * q + r - t < m * t {
+            printf("%d", m);
+            if printedDigits == 0 { printf("."); }
+            printedDigits++;
+            q_new = 10l * q;
+            r_new = 10l * (r - m * t);
+            m = (10l * (3l * q + r)) / t - 10l * m;
+            q = q_new;
+            r = r_new;
+        } else {
+            q_new = q * k;
+            r_new = (2l * q + r) * x;
+            t_new = t * x;
+            k_new = k + 1l;
+            m = (q * (7l * k + 2l) + r * x) / (t * x);
+            x += 2l;
+            q = q_new;
+            r = r_new;
+            t = t_new;
+            k = k_new;
+        }
+    }
 }

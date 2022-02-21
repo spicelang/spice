@@ -835,10 +835,9 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
     llvm::Type* varType = lhsType = visit(ctx->dataType()).as<llvm::Type*>();
 
     // Get variable entry
-    SymbolTableEntry* entry = currentScope->lookup(currentVarName);
+    SymbolTableEntry* entry = currentScope->lookup(lhsVarName);
     assert(entry != nullptr);
-    assert(!currentVarName.empty()); // Empty var names cause problems
-    llvm::Value* memAddress = insertAlloca(varType, currentVarName);
+    llvm::Value* memAddress = insertAlloca(varType, lhsVarName);
     if (ctx->assignExpr()) {
         // Visit right side
         llvm::Value* rhsPtr = visit(ctx->assignExpr()).as<llvm::Value*>();
@@ -859,8 +858,6 @@ antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* 
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
-    if (blockAlreadyTerminated) return nullptr;
-
     SymbolTableEntry* returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
 
     // Check if a value is attached to the return statement
@@ -945,7 +942,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
 
         // Cast all integer types to 32 bit
         if (argVal->getType()->isIntegerTy(1) || argVal->getType()->isIntegerTy(8) ||
-            argVal->getType()->isIntegerTy(16) || argVal->getType()->isIntegerTy(64))
+            argVal->getType()->isIntegerTy(16))
             argVal = builder->CreateZExtOrTrunc(argVal, llvm::Type::getInt32Ty(*context));
 
         printfArgs.push_back(argVal);
@@ -1855,7 +1852,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
         // Empty array: '{}'
         assert(arrayType != nullptr);
-        assert(!currentVarName.empty()); // Empty var names cause problems
+        //assert(!currentVarName.empty()); // Empty var names cause problems
         return insertAlloca(arrayType, currentVarName);
     }
 

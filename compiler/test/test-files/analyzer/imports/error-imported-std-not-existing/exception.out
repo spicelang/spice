@@ -1,1 +1,1 @@
-Semantic error at 1:8: Imported source file not existing: The source file 'std/non-existing/foo.spice' was not found in standard library
+Semantic error at 1:8: Imported source file not existing: The source file 'std/non-existing/foo.spice' was not found in the standard library

@@ -11,12 +11,20 @@ folding_end_marker    \= (\})
 
 styles [] {
 
-   .comment : style {
+   .comment_single : style {
       color                 = green
       italic                = true
-      ace_scope             = comment
-      textmate_scope        = comment
-      pygments_scope        = Comment
+      ace_scope             = comment.documentation
+      textmate_scope        = comment.documentation
+      pygments_scope        = Comment.Single
+   }
+   
+   .comment_multiline : style {
+      color                 = green
+      italic                = true
+      ace_scope             = comment.block.documentation
+      textmate_scope        = comment.block.documentation
+      pygments_scope        = Comment.Multiline
    }
    
    .keyword : style {
@@ -49,16 +57,16 @@ styles [] {
    
    .constant : style {
       color                 = purple
-      ace_scope             = storage.type
-      textmate_scope        = storage.type
-      pygments_scope        = Keyword.Type
+      ace_scope             = keyword.other.unit
+      textmate_scope        = keyword.other.unit
+      pygments_scope        = Keyword.Constant
    }
    
    .type : style {
       color                 = light_green
       ace_scope             = storage.type
       textmate_scope        = storage.type
-      pygments_scope        = Keyword.Constant
+      pygments_scope        = Keyword.Type
    }
    
    .numeric : style {
@@ -120,87 +128,45 @@ contexts [] {
 
    main : context {
    
-      : inline_push {
-         regex          \= (\")
-         styles []       = .text;
-         : pop {
-            regex       \= (\")
-            styles []    = .text;
-         }
-         : pattern {
-            regex    \= ((?:\\u[0-9a-f]{4})|(?:\\["\\/bfnrt]))
-            styles [] = .escape_char;
-         }
-         : pattern { // Matches everything until the " char
-            regex    \= (.*(?=\"))
-            styles [] = .text;
-         }
-      }
-      
-      : inline_push {
-         regex          \= (')
-         styles []       = .text;
-         : pop {
-            regex       \= (')
-            styles []    = .text;
-         }
-         : pattern {
-            regex    \= ((?:\\u[0-9a-f]{4})|(?:\\["\\/bfnrt]))
-            styles [] = .escape_char;
-         }
-         : pattern { // Matches everything which includes two or more chars until the ' char
-            regex    \= (.{2,}(?='))
-            styles [] = .illegal;
-         }
-         : pattern { // Matches a single char
-            regex    \= (.)
-            styles [] = .text;
-         }
-      }
-      
-      : pattern {
+      : pattern { // Single-lined comment
          regex          \= (//.*)
-         styles []       = .comment;
+         styles []       = .comment_single;
       }
       
-      : inline_push {
-         regex          \= (/\*)
-         styles []       = .comment;
-         default_style   = .comment
-         : pop {
-            regex       \= (\*/)
-            styles []    = .comment;
-         }
-      }
+      : include "comment_multiline";
+      
+      : include "string_literal";
+      
+      : include "char_literal";
    
-      : pattern {
+      : pattern { // Keywords
          regex          \= (\b(if|else|for|foreach|while|break|continue|return|ext)\b)
          styles []       = .keyword;
       }
       
-      : pattern {
+      : pattern { // Namespace keywords
          regex          \= (\b(import|as)\b)
          styles []       = .keyword_namespace;
       }
       
-      : pattern {
+      : pattern { // Declaration keywords and symbol specifiers
          regex          \= (\b(f|p|type|struct|const|signed|unsigned|inline|public)\b)
          styles []       = .keyword_declaration;
       }
       
-      : pattern {
+      : pattern { // Builtins
          regex          \= (\b(printf|sizeof)\b)
          styles []       = .keyword_builtin;
       }
       
-      : pattern {
+      : pattern { // Constants
          regex          \= (\b(true|false|nil)\b)
          styles []       = .constant;
       }
       
       : include "type";
       
-      : pattern {
+      : pattern { // Identifiers
          regex          \= ([a-zA-Z][0-9a-zA-Z_]*)
          styles []       = .variable;
       }
@@ -244,10 +210,23 @@ contexts [] {
          regex          \= ([^\s])
          styles []       = .illegal;
       }
-      
+   }
+   
+   comment_multiline : context {
+      description        = multiline comment
+      : inline_push {
+         regex          \= (/\*)
+         styles []       = .comment_multiline;
+         default_style   = .comment_multiline
+         : pop {
+            regex       \= (\*/)
+            styles []    = .comment_multiline;
+         }
+      }
    }
    
    parantheses : context {
+      description        = parantheses
       : inline_push {
          regex          \= (\()
          styles []       = .punctuation;
@@ -273,6 +252,7 @@ contexts [] {
    }
    
    curly_braces : context {
+      description        = curly braces
       : inline_push {
          regex          \= (\{)
          styles []       = .punctuation;
@@ -294,6 +274,56 @@ contexts [] {
             styles []    = .punctuation;
          }
          : include "integer";
+      }
+   }
+   
+   string_literal : context {
+      description        = string literal
+      : inline_push {
+         regex          \= (\")
+         styles []       = .text;
+         : pop {
+            regex       \= (\")
+            styles []    = .text;
+         }
+         
+         : include "escape_char";
+         
+         : pattern { // Matches everything until the " char
+            regex    \= ([^\"]*)
+            styles [] = .text;
+         }
+      }
+   }
+   
+   char_literal : context {
+      description        = char literal
+      : inline_push {
+         regex          \= (')
+         styles []       = .text;
+         : pop {
+            regex       \= (')
+            styles []    = .text;
+         }
+         
+         : include "escape_char";
+         
+         : pattern { // Matches everything which includes two or more chars until the ' char
+            regex    \= ([^']{2,})
+            styles [] = .illegal;
+         }
+         
+         : pattern { // Matches a single char
+            regex    \= ([^'])
+            styles [] = .text;
+         }
+      }
+   }
+   
+   escape_char : context {
+      : pattern {
+         regex          \= ((?:\\u[0-9a-f]{4})|(?:\\["\\/bfnrt]))
+         styles []       = .escape_char;
       }
    }
    

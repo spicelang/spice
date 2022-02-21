@@ -35,7 +35,7 @@ foreach.loop:                                     ; preds = %foreach.inc4, %entr
   br i1 %.not, label %if.end, label %if.then
 
 if.then:                                          ; preds = %foreach.loop
-  %3 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([9 x i8], [9 x i8]* @1, i64 0, i64 0), i32 1)
+  %3 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([9 x i8], [9 x i8]* @1, i64 0, i64 0), i64 1)
   br label %foreach.inc4
 
 if.end:                                           ; preds = %foreach.loop
