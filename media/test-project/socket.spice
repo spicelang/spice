@@ -1,0 +1,8 @@
+public type Socket struct {
+    int sock // Actual socket
+    short errorCode
+}
+
+public f<Socket> openServerSocket(unsigned short port) {
+    return Socket{ 2, 0s };
+}

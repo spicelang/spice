@@ -15,5 +15,5 @@ public:
     void clear();
     SymbolTable* getCurrentScope();
 private:
-    std::vector<std::tuple<std::string, SymbolTable*>> fragments;
+    std::vector<std::pair<std::string, SymbolTable*>> fragments;
 };

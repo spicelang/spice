@@ -17,7 +17,7 @@ SymbolType SymbolType::toPointer() {
         throw SemanticError(DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
     TypeChain newTypeChain = typeChain;
-    newTypeChain.push(std::make_tuple(TY_PTR, ""));
+    newTypeChain.push(std::make_pair(TY_PTR, ""));
     return SymbolType(newTypeChain);
 }
 
@@ -32,7 +32,7 @@ SymbolType SymbolType::toArray(unsigned int size) {
         throw SemanticError(DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
     TypeChain newTypeChain = typeChain;
-    newTypeChain.push(std::make_tuple(TY_ARRAY, std::to_string(size)));
+    newTypeChain.push(std::make_pair(TY_ARRAY, std::to_string(size)));
     return SymbolType(newTypeChain);
 }
 

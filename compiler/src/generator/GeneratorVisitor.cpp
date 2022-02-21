@@ -139,7 +139,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Verify module to detect IR code bugs
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
+    //if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
 
     return result;
 }
@@ -208,7 +208,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         // Verify function
         std::string output;
         llvm::raw_string_ostream oss(output);
-        if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
+        //if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
         // Add function to function list
         functions.push_back(fct);
@@ -1085,10 +1085,9 @@ antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext
 antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) {
     if (ctx->logicalAndExpr().size() > 1) {
         // Prepare for short-circuiting
-        std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->logicalAndExpr().size()];
+        std::pair<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->logicalAndExpr().size()];
         llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "lor.end");
         llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
-        parentFunction->getBasicBlockList().push_back(bEnd);
 
         // Visit the first condition
         llvm::Value* lhsPtr = visit(ctx->logicalAndExpr()[0]).as<llvm::Value*>();
@@ -1117,10 +1116,11 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
         }
 
         // Get the result with the phi node
+        parentFunction->getBasicBlockList().push_back(bEnd);
         moveInsertPointToBlock(bEnd);
         llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->logicalAndExpr().size(), "lor_phi");
-        for (const auto& tuple : incomingBlocks)
-            phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
+        for (const auto& incomingBlock : incomingBlocks)
+            phi->addIncoming(std::get<0>(incomingBlock), std::get<1>(incomingBlock));
 
         // Store the result
         llvm::Value* resultPtr = insertAlloca(phi->getType());
@@ -1133,10 +1133,9 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
 antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext* ctx) {
     if (ctx->bitwiseOrExpr().size() > 1) {
         // Prepare for short-circuiting
-        std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->bitwiseOrExpr().size()];
+        std::pair<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->bitwiseOrExpr().size()];
         llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "land.end");
         llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
-        parentFunction->getBasicBlockList().push_back(bEnd);
 
         // Visit the first condition
         llvm::Value* lhsPtr = visit(ctx->bitwiseOrExpr()[0]).as<llvm::Value*>();
@@ -1165,10 +1164,11 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
         }
 
         // Get the result with the phi node
+        parentFunction->getBasicBlockList().push_back(bEnd);
         moveInsertPointToBlock(bEnd);
         llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->bitwiseOrExpr().size(), "land_phi");
-        for (const auto& tuple : incomingBlocks)
-            phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
+        for (const auto& incomingBlock : incomingBlocks)
+            phi->addIncoming(std::get<0>(incomingBlock), std::get<1>(incomingBlock));
 
         // Store the result
         llvm::Value* resultPtr = insertAlloca(phi->getType());
