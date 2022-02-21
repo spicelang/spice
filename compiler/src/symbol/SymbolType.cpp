@@ -138,6 +138,15 @@ bool SymbolType::is(SymbolSuperType superType, const std::string& subType) {
 }
 
 /**
+ * Check if the current type is one of the primitive types
+ *
+ * @return Primitive or not
+ */
+bool SymbolType::isPrimitive() {
+    return isOneOf({ TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL });
+}
+
+/**
  * Check if the base type of the current type chain is of a certain super type
  *
  * @param superType Super type to check for

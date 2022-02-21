@@ -57,6 +57,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Multiple declarations of a struct with the same name";
         case GLOBAL_OF_TYPE_DYN:
             return "Global of type dyn";
+        case GLOBAL_OF_INVALID_TYPE:
+            return "Global of invalid type";
         case FUNCTION_WITHOUT_RETURN_STMT:
             return "Missing return statement";
         case OPERATOR_WRONG_DATA_TYPE:
