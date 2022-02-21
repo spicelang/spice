@@ -17,7 +17,8 @@
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
-    explicit GeneratorVisitor(SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
+    explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context, const std::shared_ptr<llvm::IRBuilder<>>& builder,
+                              SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
                               const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
                               bool debugOutput, int optLevel, bool requiresMainFct);
 
@@ -79,7 +80,7 @@ private:
     bool debugOutput;
     int optLevel;
     bool requiresMainFct = true;
-    std::unique_ptr<llvm::LLVMContext> context;
+    std::shared_ptr<llvm::LLVMContext> context;
     std::shared_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<llvm::Module> module;
     std::vector<llvm::Function*> functions;

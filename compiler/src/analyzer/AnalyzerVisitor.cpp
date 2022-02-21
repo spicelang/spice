@@ -11,10 +11,14 @@
 #include "util/CompilerWarning.h"
 #include <exception/SemanticError.h>
 
-AnalyzerVisitor::AnalyzerVisitor(const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
+AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
+                                 const std::shared_ptr<llvm::IRBuilder<>>& builder,
+                                 const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
                                  const std::string& targetOs, const std::string& outputPath, bool debugOutput, int optLevel,
                                  bool requiresMainFct, bool isStdFile) {
     // Save parameters
+    this->context = context,
+    this->builder = builder;
     this->mainSourceFile = sourceFile;
     this->outputPath = outputPath;
     this->debugOutput = debugOutput;
@@ -675,9 +679,9 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     }
 
     // Kick off the compilation of the imported source file
-    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetArch, targetVendor, targetOs,
-                                                                   outputPath, debugOutput, optLevel, false,
-                                                                   foundInStd);
+    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(context, builder, filePath, targetArch, targetVendor,
+                                                                   targetOs, outputPath, debugOutput, optLevel,
+                                                                   false, foundInStd);
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();

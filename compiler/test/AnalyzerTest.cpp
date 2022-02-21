@@ -76,8 +76,14 @@ void executeTest(const AnalyzerTestCase& testCase) {
         parser.addErrorListener(&parserErrorHandler);
         antlr4::tree::ParseTree* tree = parser.entry();
 
+        // Prepare global LLVM assets
+        std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
+        std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
+
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
+                context,
+                builder,
                 sourceFile,
                 "",
                 "",

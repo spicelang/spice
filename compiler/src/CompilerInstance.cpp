@@ -13,6 +13,8 @@
 /**
  * Compiles a single source file to an object
  *
+ * @param context LLVM context which holds global LLVM core data
+ * @param builder LLVM IR builder for generating IR with the LLVM API
  * @param sourceFile Full path to a file (absolute or relative)
  * @param targetArch Target architecture: e.g.: x86_64
  * @param targetVendor Target vendor: e.g.: w64
@@ -26,6 +28,8 @@
  * @return Symbol table of this program part
  */
 SymbolTable* CompilerInstance::CompileSourceFile(
+        const std::shared_ptr<llvm::LLVMContext>& context,
+        const std::shared_ptr<llvm::IRBuilder<>>& builder,
         const std::string& sourceFile,
         const std::string& targetArch,
         const std::string& targetVendor,
@@ -60,6 +64,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     // Execute syntactical analysis
     SymbolTable* symbolTable;
     AnalyzerVisitor analyzer = AnalyzerVisitor(
+            context,
+            builder,
             sourceFile,
             targetArch,
             targetVendor,
@@ -82,6 +88,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
 
     // Execute generator
     GeneratorVisitor generator = GeneratorVisitor(
+            context,
+            builder,
             symbolTable,
             fileName,
             targetArch,

@@ -26,10 +26,14 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 #include <llvm/IR/GlobalValue.h>
 
-GeneratorVisitor::GeneratorVisitor(SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
+GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
+                                   const std::shared_ptr<llvm::IRBuilder<>>& builder,
+                                   SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
                                    const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
                                    bool debugOutput, int optLevel, bool requiresMainFct) {
     // Save parameters
+    this->context = context;
+    this->builder = builder;
     this->currentScope = symbolTable;
     this->sourceFile = sourceFile;
     this->outputPath = outputPath;
@@ -47,8 +51,6 @@ GeneratorVisitor::GeneratorVisitor(SymbolTable* symbolTable, const std::string& 
 
 void GeneratorVisitor::init() {
     // Create LLVM base components
-    context = std::make_unique<llvm::LLVMContext>();
-    builder = std::make_shared<llvm::IRBuilder<>>(*context);
     module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile), *context);
     conversionsManager = std::make_unique<OpRuleConversionsManager>(builder);
 

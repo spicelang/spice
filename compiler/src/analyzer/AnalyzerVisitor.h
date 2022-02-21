@@ -10,6 +10,7 @@
 
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
+#include <llvm/IR/IRBuilder.h>
 
 const static std::string MAIN_FUNCTION_NAME = "main";
 const static std::string RETURN_VARIABLE_NAME = "result";
@@ -21,7 +22,9 @@ const std::vector<std::string> RESERVED_KEYWORDS = { "new", "switch", "case" };
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
-    explicit AnalyzerVisitor(const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
+    explicit AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
+                             const std::shared_ptr<llvm::IRBuilder<>>& builder,
+                             const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
                              const std::string& targetOs, const std::string& outputPath, bool debugOutput, int optLevel,
                              bool requiresMainFct, bool stdFile);
 
@@ -70,6 +73,8 @@ public:
 
 private:
     // Members
+    std::shared_ptr<llvm::LLVMContext> context;
+    std::shared_ptr<llvm::IRBuilder<>> builder;
     std::string mainSourceFile;
     std::string targetArch;
     std::string targetVendor;
