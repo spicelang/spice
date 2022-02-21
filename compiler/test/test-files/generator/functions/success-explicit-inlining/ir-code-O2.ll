@@ -11,7 +11,7 @@ declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_a
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
 entry:
-  %0 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @0, i64 0, i64 0), i32 12)
+  %0 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @0, i64 0, i64 0), i64 12)
   ret i32 0
 }
 

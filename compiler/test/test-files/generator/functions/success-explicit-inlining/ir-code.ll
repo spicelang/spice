@@ -25,10 +25,9 @@ entry:
   %1 = call i64 @"getInlinedValue()"()
   store i64 %1, i64* %0, align 8
   %2 = load i64, i64* %0, align 8
-  %3 = trunc i64 %2 to i32
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @0, i32 0, i32 0), i32 %3)
-  %5 = load i32, i32* %result, align 4
-  ret i32 %5
+  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @0, i32 0, i32 0), i64 %2)
+  %4 = load i32, i32* %result, align 4
+  ret i32 %4
 }
 
 attributes #0 = { alwaysinline nounwind }

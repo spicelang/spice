@@ -3,291 +3,308 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
+@0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+@1 = private unnamed_addr constant [2 x i8] c".\00", align 1
+
 declare i32 @printf(i8*, ...)
-
-; Function Attrs: nounwind
-define internal i32 @"makePi()"() #0 {
-entry:
-  %result = alloca i32, align 4
-  %q = alloca i32, align 4
-  %0 = alloca i32, align 4
-  %r = alloca i32, align 4
-  %1 = alloca i32, align 4
-  %t = alloca i32, align 4
-  %2 = alloca i32, align 4
-  %k = alloca i32, align 4
-  %3 = alloca i32, align 4
-  %m = alloca i32, align 4
-  %4 = alloca i32, align 4
-  %x = alloca i32, align 4
-  %5 = alloca i32, align 4
-  %outputCounter = alloca i32, align 4
-  %6 = alloca i32, align 4
-  %i = alloca i32, align 4
-  %7 = alloca i32, align 4
-  %8 = alloca i32, align 4
-  %9 = alloca i1, align 1
-  %10 = alloca i32, align 4
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
-  %13 = alloca i32, align 4
-  %14 = alloca i1, align 1
-  %15 = alloca i32, align 4
-  %16 = alloca i32, align 4
-  %17 = alloca i32, align 4
-  %18 = alloca i32, align 4
-  %19 = alloca i32, align 4
-  %20 = alloca i32, align 4
-  %21 = alloca i32, align 4
-  %22 = alloca i32, align 4
-  %23 = alloca i32, align 4
-  %24 = alloca i32, align 4
-  %25 = alloca i32, align 4
-  %26 = alloca i32, align 4
-  %27 = alloca i32, align 4
-  %28 = alloca i32, align 4
-  %29 = alloca i32, align 4
-  %30 = alloca i32, align 4
-  %31 = alloca i32, align 4
-  %32 = alloca i32, align 4
-  %33 = alloca i32, align 4
-  %34 = alloca i32, align 4
-  %35 = alloca i32, align 4
-  %36 = alloca i32, align 4
-  %37 = alloca i32, align 4
-  %38 = alloca i32, align 4
-  %39 = alloca i32, align 4
-  %40 = alloca i32, align 4
-  %41 = alloca i32, align 4
-  %42 = alloca i32, align 4
-  %43 = alloca i32, align 4
-  %44 = alloca i32, align 4
-  %45 = alloca i32, align 4
-  %46 = alloca i32, align 4
-  %47 = alloca i32, align 4
-  %48 = alloca i32, align 4
-  %49 = alloca i32, align 4
-  store i32 1, i32* %0, align 4
-  %50 = load i32, i32* %0, align 4
-  store i32 %50, i32* %q, align 4
-  store i32 0, i32* %1, align 4
-  %51 = load i32, i32* %1, align 4
-  store i32 %51, i32* %r, align 4
-  store i32 1, i32* %2, align 4
-  %52 = load i32, i32* %2, align 4
-  store i32 %52, i32* %t, align 4
-  store i32 1, i32* %3, align 4
-  %53 = load i32, i32* %3, align 4
-  store i32 %53, i32* %k, align 4
-  store i32 3, i32* %4, align 4
-  %54 = load i32, i32* %4, align 4
-  store i32 %54, i32* %m, align 4
-  store i32 3, i32* %5, align 4
-  %55 = load i32, i32* %5, align 4
-  store i32 %55, i32* %x, align 4
-  store i32 0, i32* %6, align 4
-  %56 = load i32, i32* %6, align 4
-  store i32 %56, i32* %outputCounter, align 4
-  store i32 0, i32* %7, align 4
-  %57 = load i32, i32* %7, align 4
-  store i32 %57, i32* %i, align 4
-  br label %for.cond
-
-for.cond:                                         ; preds = %for.post, %entry
-  store i32 1000, i32* %8, align 4
-  %58 = load i32, i32* %i, align 4
-  %59 = load i32, i32* %8, align 4
-  %60 = icmp slt i32 %58, %59
-  store i1 %60, i1* %9, align 1
-  %61 = load i1, i1* %9, align 1
-  br i1 %61, label %for, label %for.end
-
-for:                                              ; preds = %for.cond
-  store i32 4, i32* %10, align 4
-  %62 = load i32, i32* %10, align 4
-  %63 = load i32, i32* %q, align 4
-  %64 = mul i32 %62, %63
-  store i32 %64, i32* %11, align 4
-  %65 = load i32, i32* %11, align 4
-  %66 = load i32, i32* %r, align 4
-  %67 = add i32 %65, %66
-  %68 = load i32, i32* %t, align 4
-  %69 = sub i32 %67, %68
-  store i32 %69, i32* %12, align 4
-  %70 = load i32, i32* %m, align 4
-  %71 = load i32, i32* %t, align 4
-  %72 = mul i32 %70, %71
-  store i32 %72, i32* %13, align 4
-  %73 = load i32, i32* %12, align 4
-  %74 = load i32, i32* %13, align 4
-  %75 = icmp slt i32 %73, %74
-  store i1 %75, i1* %14, align 1
-  %76 = load i1, i1* %14, align 1
-  br i1 %76, label %if.then, label %if.else
-
-if.then:                                          ; preds = %for
-  %77 = load i32, i32* %outputCounter, align 4
-  %78 = add i32 %77, 1
-  store i32 %78, i32* %outputCounter, align 4
-  store i32 10, i32* %15, align 4
-  %79 = load i32, i32* %15, align 4
-  %80 = load i32, i32* %q, align 4
-  %81 = mul i32 %79, %80
-  store i32 %81, i32* %16, align 4
-  %82 = load i32, i32* %16, align 4
-  store i32 %82, i32* %q, align 4
-  store i32 10, i32* %17, align 4
-  %83 = load i32, i32* %17, align 4
-  %84 = load i32, i32* %r, align 4
-  %85 = load i32, i32* %m, align 4
-  %86 = load i32, i32* %t, align 4
-  %87 = mul i32 %85, %86
-  store i32 %87, i32* %18, align 4
-  %88 = load i32, i32* %18, align 4
-  %89 = sub i32 %84, %88
-  store i32 %89, i32* %19, align 4
-  %90 = load i32, i32* %19, align 4
-  %91 = mul i32 %83, %90
-  store i32 %91, i32* %20, align 4
-  %92 = load i32, i32* %20, align 4
-  store i32 %92, i32* %r, align 4
-  %93 = load i32, i32* %t, align 4
-  store i32 %93, i32* %t, align 4
-  %94 = load i32, i32* %k, align 4
-  store i32 %94, i32* %k, align 4
-  store i32 10, i32* %21, align 4
-  %95 = load i32, i32* %21, align 4
-  store i32 3, i32* %22, align 4
-  %96 = load i32, i32* %22, align 4
-  %97 = load i32, i32* %q, align 4
-  %98 = mul i32 %96, %97
-  store i32 %98, i32* %23, align 4
-  %99 = load i32, i32* %23, align 4
-  %100 = load i32, i32* %r, align 4
-  %101 = add i32 %99, %100
-  store i32 %101, i32* %24, align 4
-  %102 = load i32, i32* %24, align 4
-  %103 = mul i32 %95, %102
-  store i32 %103, i32* %25, align 4
-  %104 = load i32, i32* %25, align 4
-  %105 = load i32, i32* %t, align 4
-  %106 = sdiv i32 %104, %105
-  store i32 %106, i32* %26, align 4
-  %107 = load i32, i32* %26, align 4
-  store i32 10, i32* %27, align 4
-  %108 = load i32, i32* %27, align 4
-  %109 = load i32, i32* %m, align 4
-  %110 = mul i32 %108, %109
-  store i32 %110, i32* %28, align 4
-  %111 = load i32, i32* %28, align 4
-  %112 = sub i32 %107, %111
-  store i32 %112, i32* %29, align 4
-  %113 = load i32, i32* %29, align 4
-  store i32 %113, i32* %m, align 4
-  %114 = load i32, i32* %x, align 4
-  store i32 %114, i32* %x, align 4
-  br label %if.end
-
-if.else:                                          ; preds = %for
-  %115 = load i32, i32* %q, align 4
-  %116 = load i32, i32* %k, align 4
-  %117 = mul i32 %115, %116
-  store i32 %117, i32* %30, align 4
-  %118 = load i32, i32* %30, align 4
-  store i32 %118, i32* %q, align 4
-  store i32 2, i32* %31, align 4
-  %119 = load i32, i32* %31, align 4
-  %120 = load i32, i32* %q, align 4
-  %121 = mul i32 %119, %120
-  store i32 %121, i32* %32, align 4
-  %122 = load i32, i32* %32, align 4
-  %123 = load i32, i32* %r, align 4
-  %124 = add i32 %122, %123
-  store i32 %124, i32* %33, align 4
-  %125 = load i32, i32* %33, align 4
-  %126 = load i32, i32* %x, align 4
-  %127 = mul i32 %125, %126
-  store i32 %127, i32* %34, align 4
-  %128 = load i32, i32* %34, align 4
-  store i32 %128, i32* %r, align 4
-  %129 = load i32, i32* %t, align 4
-  %130 = load i32, i32* %x, align 4
-  %131 = mul i32 %129, %130
-  store i32 %131, i32* %35, align 4
-  %132 = load i32, i32* %35, align 4
-  store i32 %132, i32* %t, align 4
-  %133 = load i32, i32* %k, align 4
-  store i32 1, i32* %36, align 4
-  %134 = load i32, i32* %36, align 4
-  %135 = add i32 %133, %134
-  store i32 %135, i32* %37, align 4
-  %136 = load i32, i32* %37, align 4
-  store i32 %136, i32* %k, align 4
-  %137 = load i32, i32* %q, align 4
-  store i32 7, i32* %38, align 4
-  %138 = load i32, i32* %38, align 4
-  %139 = load i32, i32* %k, align 4
-  %140 = mul i32 %138, %139
-  store i32 %140, i32* %39, align 4
-  %141 = load i32, i32* %39, align 4
-  store i32 2, i32* %40, align 4
-  %142 = load i32, i32* %40, align 4
-  %143 = add i32 %141, %142
-  store i32 %143, i32* %41, align 4
-  %144 = load i32, i32* %41, align 4
-  %145 = mul i32 %137, %144
-  store i32 %145, i32* %42, align 4
-  %146 = load i32, i32* %42, align 4
-  %147 = load i32, i32* %r, align 4
-  %148 = load i32, i32* %x, align 4
-  %149 = mul i32 %147, %148
-  store i32 %149, i32* %43, align 4
-  %150 = load i32, i32* %43, align 4
-  %151 = add i32 %146, %150
-  store i32 %151, i32* %44, align 4
-  %152 = load i32, i32* %44, align 4
-  %153 = load i32, i32* %t, align 4
-  %154 = load i32, i32* %x, align 4
-  %155 = mul i32 %153, %154
-  store i32 %155, i32* %45, align 4
-  %156 = load i32, i32* %45, align 4
-  %157 = sdiv i32 %152, %156
-  store i32 %157, i32* %46, align 4
-  %158 = load i32, i32* %46, align 4
-  store i32 %158, i32* %m, align 4
-  %159 = load i32, i32* %x, align 4
-  store i32 2, i32* %47, align 4
-  %160 = load i32, i32* %47, align 4
-  %161 = add i32 %159, %160
-  store i32 %161, i32* %48, align 4
-  %162 = load i32, i32* %48, align 4
-  store i32 %162, i32* %x, align 4
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  br label %for.post
-
-for.post:                                         ; preds = %if.end
-  %163 = load i32, i32* %i, align 4
-  %164 = add i32 %163, 1
-  store i32 %164, i32* %i, align 4
-  br label %for.cond
-
-for.end:                                          ; preds = %for.cond
-  store i32 3, i32* %49, align 4
-  %165 = load i32, i32* %49, align 4
-  ret i32 %165
-}
 
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
-  %0 = alloca i32, align 4
+  %q = alloca i64, align 8
+  %0 = alloca i64, align 8
+  %q_new = alloca i64, align 8
+  %r = alloca i64, align 8
+  %1 = alloca i64, align 8
+  %r_new = alloca i64, align 8
+  %t = alloca i64, align 8
+  %2 = alloca i64, align 8
+  %t_new = alloca i64, align 8
+  %k = alloca i64, align 8
+  %3 = alloca i64, align 8
+  %k_new = alloca i64, align 8
+  %m = alloca i64, align 8
+  %4 = alloca i64, align 8
+  %m_new = alloca i64, align 8
+  %x = alloca i64, align 8
+  %5 = alloca i64, align 8
+  %x_new = alloca i64, align 8
+  %iterations = alloca i32, align 4
+  %6 = alloca i32, align 4
+  %printedDigits = alloca i32, align 4
+  %7 = alloca i32, align 4
+  %i = alloca i32, align 4
+  %8 = alloca i32, align 4
+  %9 = alloca i1, align 1
+  %10 = alloca i64, align 8
+  %11 = alloca i64, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i64, align 8
+  %14 = alloca i1, align 1
+  %15 = alloca i32, align 4
+  %16 = alloca i1, align 1
+  %17 = alloca i64, align 8
+  %18 = alloca i64, align 8
+  %19 = alloca i64, align 8
+  %20 = alloca i64, align 8
+  %21 = alloca i64, align 8
+  %22 = alloca i64, align 8
+  %23 = alloca i64, align 8
+  %24 = alloca i64, align 8
+  %25 = alloca i64, align 8
+  %26 = alloca i64, align 8
+  %27 = alloca i64, align 8
+  %28 = alloca i64, align 8
+  %29 = alloca i64, align 8
+  %30 = alloca i64, align 8
+  %31 = alloca i64, align 8
+  %32 = alloca i64, align 8
+  %33 = alloca i64, align 8
+  %34 = alloca i64, align 8
+  %35 = alloca i64, align 8
+  %36 = alloca i64, align 8
+  %37 = alloca i64, align 8
+  %38 = alloca i64, align 8
+  %39 = alloca i64, align 8
+  %40 = alloca i64, align 8
+  %41 = alloca i64, align 8
+  %42 = alloca i64, align 8
+  %43 = alloca i64, align 8
+  %44 = alloca i64, align 8
+  %45 = alloca i64, align 8
+  %46 = alloca i64, align 8
+  %47 = alloca i64, align 8
+  %48 = alloca i64, align 8
+  %49 = alloca i64, align 8
   store i32 0, i32* %result, align 4
-  %1 = call i32 @"makePi()"()
-  store i32 %1, i32* %0, align 4
-  %2 = load i32, i32* %result, align 4
-  ret i32 %2
-}
+  store i64 1, i64* %0, align 8
+  %50 = load i64, i64* %0, align 8
+  store i64 %50, i64* %q, align 8
+  store i64 0, i64* %1, align 8
+  %51 = load i64, i64* %1, align 8
+  store i64 %51, i64* %r, align 8
+  store i64 1, i64* %2, align 8
+  %52 = load i64, i64* %2, align 8
+  store i64 %52, i64* %t, align 8
+  store i64 1, i64* %3, align 8
+  %53 = load i64, i64* %3, align 8
+  store i64 %53, i64* %k, align 8
+  store i64 3, i64* %4, align 8
+  %54 = load i64, i64* %4, align 8
+  store i64 %54, i64* %m, align 8
+  store i64 3, i64* %5, align 8
+  %55 = load i64, i64* %5, align 8
+  store i64 %55, i64* %x, align 8
+  store i32 20, i32* %6, align 4
+  %56 = load i32, i32* %6, align 4
+  store i32 %56, i32* %iterations, align 4
+  store i32 0, i32* %7, align 4
+  %57 = load i32, i32* %7, align 4
+  store i32 %57, i32* %printedDigits, align 4
+  store i32 0, i32* %8, align 4
+  %58 = load i32, i32* %8, align 4
+  store i32 %58, i32* %i, align 4
+  br label %for.cond
 
-attributes #0 = { nounwind }
+for.cond:                                         ; preds = %for.post, %entry
+  %59 = load i32, i32* %i, align 4
+  %60 = load i32, i32* %iterations, align 4
+  %61 = icmp slt i32 %59, %60
+  store i1 %61, i1* %9, align 1
+  %62 = load i1, i1* %9, align 1
+  br i1 %62, label %for, label %for.end
+
+for:                                              ; preds = %for.cond
+  store i64 4, i64* %10, align 8
+  %63 = load i64, i64* %10, align 8
+  %64 = load i64, i64* %q, align 8
+  %65 = mul i64 %63, %64
+  store i64 %65, i64* %11, align 8
+  %66 = load i64, i64* %11, align 8
+  %67 = load i64, i64* %r, align 8
+  %68 = add i64 %66, %67
+  %69 = load i64, i64* %t, align 8
+  %70 = sub i64 %68, %69
+  store i64 %70, i64* %12, align 8
+  %71 = load i64, i64* %m, align 8
+  %72 = load i64, i64* %t, align 8
+  %73 = mul i64 %71, %72
+  store i64 %73, i64* %13, align 8
+  %74 = load i64, i64* %12, align 8
+  %75 = load i64, i64* %13, align 8
+  %76 = icmp slt i64 %74, %75
+  store i1 %76, i1* %14, align 1
+  %77 = load i1, i1* %14, align 1
+  br i1 %77, label %if.then, label %if.else
+
+if.then:                                          ; preds = %for
+  %78 = load i64, i64* %m, align 8
+  %79 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @0, i32 0, i32 0), i64 %78)
+  store i32 0, i32* %15, align 4
+  %80 = load i32, i32* %printedDigits, align 4
+  %81 = load i32, i32* %15, align 4
+  %82 = icmp eq i32 %80, %81
+  store i1 %82, i1* %16, align 1
+  %83 = load i1, i1* %16, align 1
+  br i1 %83, label %if.then1, label %if.end
+
+if.then1:                                         ; preds = %if.then
+  %84 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0))
+  br label %if.end
+
+if.end:                                           ; preds = %if.then1, %if.then
+  %85 = load i32, i32* %printedDigits, align 4
+  %86 = add i32 %85, 1
+  store i32 %86, i32* %printedDigits, align 4
+  store i64 10, i64* %17, align 8
+  %87 = load i64, i64* %17, align 8
+  %88 = load i64, i64* %q, align 8
+  %89 = mul i64 %87, %88
+  store i64 %89, i64* %18, align 8
+  %90 = load i64, i64* %18, align 8
+  store i64 %90, i64* %q_new, align 8
+  store i64 10, i64* %19, align 8
+  %91 = load i64, i64* %19, align 8
+  %92 = load i64, i64* %r, align 8
+  %93 = load i64, i64* %m, align 8
+  %94 = load i64, i64* %t, align 8
+  %95 = mul i64 %93, %94
+  store i64 %95, i64* %20, align 8
+  %96 = load i64, i64* %20, align 8
+  %97 = sub i64 %92, %96
+  store i64 %97, i64* %21, align 8
+  %98 = load i64, i64* %21, align 8
+  %99 = mul i64 %91, %98
+  store i64 %99, i64* %22, align 8
+  %100 = load i64, i64* %22, align 8
+  store i64 %100, i64* %r_new, align 8
+  store i64 10, i64* %23, align 8
+  %101 = load i64, i64* %23, align 8
+  store i64 3, i64* %24, align 8
+  %102 = load i64, i64* %24, align 8
+  %103 = load i64, i64* %q, align 8
+  %104 = mul i64 %102, %103
+  store i64 %104, i64* %25, align 8
+  %105 = load i64, i64* %25, align 8
+  %106 = load i64, i64* %r, align 8
+  %107 = add i64 %105, %106
+  store i64 %107, i64* %26, align 8
+  %108 = load i64, i64* %26, align 8
+  %109 = mul i64 %101, %108
+  store i64 %109, i64* %27, align 8
+  %110 = load i64, i64* %27, align 8
+  %111 = load i64, i64* %t, align 8
+  %112 = sdiv i64 %110, %111
+  store i64 %112, i64* %28, align 8
+  %113 = load i64, i64* %28, align 8
+  store i64 10, i64* %29, align 8
+  %114 = load i64, i64* %29, align 8
+  %115 = load i64, i64* %m, align 8
+  %116 = mul i64 %114, %115
+  store i64 %116, i64* %30, align 8
+  %117 = load i64, i64* %30, align 8
+  %118 = sub i64 %113, %117
+  store i64 %118, i64* %31, align 8
+  %119 = load i64, i64* %31, align 8
+  store i64 %119, i64* %m, align 8
+  %120 = load i64, i64* %q_new, align 8
+  store i64 %120, i64* %q, align 8
+  %121 = load i64, i64* %r_new, align 8
+  store i64 %121, i64* %r, align 8
+  br label %if.end2
+
+if.else:                                          ; preds = %for
+  %122 = load i64, i64* %q, align 8
+  %123 = load i64, i64* %k, align 8
+  %124 = mul i64 %122, %123
+  store i64 %124, i64* %32, align 8
+  %125 = load i64, i64* %32, align 8
+  store i64 %125, i64* %q_new, align 8
+  store i64 2, i64* %33, align 8
+  %126 = load i64, i64* %33, align 8
+  %127 = load i64, i64* %q, align 8
+  %128 = mul i64 %126, %127
+  store i64 %128, i64* %34, align 8
+  %129 = load i64, i64* %34, align 8
+  %130 = load i64, i64* %r, align 8
+  %131 = add i64 %129, %130
+  store i64 %131, i64* %35, align 8
+  %132 = load i64, i64* %35, align 8
+  %133 = load i64, i64* %x, align 8
+  %134 = mul i64 %132, %133
+  store i64 %134, i64* %36, align 8
+  %135 = load i64, i64* %36, align 8
+  store i64 %135, i64* %r_new, align 8
+  %136 = load i64, i64* %t, align 8
+  %137 = load i64, i64* %x, align 8
+  %138 = mul i64 %136, %137
+  store i64 %138, i64* %37, align 8
+  %139 = load i64, i64* %37, align 8
+  store i64 %139, i64* %t_new, align 8
+  %140 = load i64, i64* %k, align 8
+  store i64 1, i64* %38, align 8
+  %141 = load i64, i64* %38, align 8
+  %142 = add i64 %140, %141
+  store i64 %142, i64* %39, align 8
+  %143 = load i64, i64* %39, align 8
+  store i64 %143, i64* %k_new, align 8
+  %144 = load i64, i64* %q, align 8
+  store i64 7, i64* %40, align 8
+  %145 = load i64, i64* %40, align 8
+  %146 = load i64, i64* %k, align 8
+  %147 = mul i64 %145, %146
+  store i64 %147, i64* %41, align 8
+  %148 = load i64, i64* %41, align 8
+  store i64 2, i64* %42, align 8
+  %149 = load i64, i64* %42, align 8
+  %150 = add i64 %148, %149
+  store i64 %150, i64* %43, align 8
+  %151 = load i64, i64* %43, align 8
+  %152 = mul i64 %144, %151
+  store i64 %152, i64* %44, align 8
+  %153 = load i64, i64* %44, align 8
+  %154 = load i64, i64* %r, align 8
+  %155 = load i64, i64* %x, align 8
+  %156 = mul i64 %154, %155
+  store i64 %156, i64* %45, align 8
+  %157 = load i64, i64* %45, align 8
+  %158 = add i64 %153, %157
+  store i64 %158, i64* %46, align 8
+  %159 = load i64, i64* %46, align 8
+  %160 = load i64, i64* %t, align 8
+  %161 = load i64, i64* %x, align 8
+  %162 = mul i64 %160, %161
+  store i64 %162, i64* %47, align 8
+  %163 = load i64, i64* %47, align 8
+  %164 = sdiv i64 %159, %163
+  store i64 %164, i64* %48, align 8
+  %165 = load i64, i64* %48, align 8
+  store i64 %165, i64* %m, align 8
+  store i64 2, i64* %49, align 8
+  %166 = load i64, i64* %49, align 8
+  %167 = load i64, i64* %x, align 8
+  %168 = add i64 %167, %166
+  store i64 %168, i64* %x, align 8
+  %169 = load i64, i64* %q_new, align 8
+  store i64 %169, i64* %q, align 8
+  %170 = load i64, i64* %r_new, align 8
+  store i64 %170, i64* %r, align 8
+  %171 = load i64, i64* %t_new, align 8
+  store i64 %171, i64* %t, align 8
+  %172 = load i64, i64* %k_new, align 8
+  store i64 %172, i64* %k, align 8
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.else, %if.end
+  br label %for.post
+
+for.post:                                         ; preds = %if.end2
+  %173 = load i32, i32* %i, align 4
+  %174 = add i32 %173, 1
+  store i32 %174, i32* %i, align 4
+  br label %for.cond
+
+for.end:                                          ; preds = %for.cond
+  %175 = load i32, i32* %result, align 4
+  ret i32 %175
+}

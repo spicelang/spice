@@ -24,6 +24,8 @@ Within the template string you can use the `\n` control character to achieve a l
 | `%o`        | `int`, `short`, `long`      | Unsigned octal                                | 610          |
 | `%x`        | `int`, `short`, `long`      | Unsigned hexadecimal integer                  | 7fa          |
 | `%X`        | `int`, `short`, `long`      | Unsigned hexadecimal integer (uppercase)      | 7FA          |
+| `%lld`      | `int`, `short`, `long`      | Signed decimal long integer                   | 7235         |
+| `%llu`      | `int`, `short`, `long`      | Unsigned decimal long integer                 | 392          |
 | `%a`        | `double`                    | Hexadecimal floating point (lowercase)        | -0xc.90fep-2 |
 | `%A`        | `double`                    | Hexadecimal floating point (uppercase)        | -0XC.90FEP-2 |
 | `%f`        | `double`                    | Decimal floating point (lowercase)            | 392.65       |

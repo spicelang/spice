@@ -789,6 +789,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
             }
             case 'd':
             case 'i':
+            case 'l':
             case 'o':
             case 'u':
             case 'x':

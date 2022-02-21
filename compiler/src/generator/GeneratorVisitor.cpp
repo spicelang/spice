@@ -858,8 +858,6 @@ antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext* 
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* ctx) {
-    if (blockAlreadyTerminated) return nullptr;
-
     SymbolTableEntry* returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
 
     // Check if a value is attached to the return statement
@@ -944,7 +942,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
 
         // Cast all integer types to 32 bit
         if (argVal->getType()->isIntegerTy(1) || argVal->getType()->isIntegerTy(8) ||
-            argVal->getType()->isIntegerTy(16) || argVal->getType()->isIntegerTy(64))
+            argVal->getType()->isIntegerTy(16))
             argVal = builder->CreateZExtOrTrunc(argVal, llvm::Type::getInt32Ty(*context));
 
         printfArgs.push_back(argVal);

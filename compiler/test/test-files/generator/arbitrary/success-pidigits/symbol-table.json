@@ -1,22 +1,6 @@
 {
   "children": [
     {
-      "children": [],
-      "symbols": [
-        {
-          "isGlobal": false,
-          "name": "result",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    },
-    {
       "children": [
         {
           "children": [
@@ -25,7 +9,12 @@
               "symbols": []
             },
             {
-              "children": [],
+              "children": [
+                {
+                  "children": [],
+                  "symbols": []
+                }
+              ],
               "symbols": []
             }
           ],
@@ -47,30 +36,63 @@
       "symbols": [
         {
           "isGlobal": false,
-          "name": "k",
-          "orderIndex": 4,
+          "name": "iterations",
+          "orderIndex": 13,
           "specifiers": {
             "const": false,
             "signed": true
           },
           "state": "initialized",
           "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "k",
+          "orderIndex": 7,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "long"
+        },
+        {
+          "isGlobal": false,
+          "name": "k_new",
+          "orderIndex": 8,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "long"
         },
         {
           "isGlobal": false,
           "name": "m",
-          "orderIndex": 5,
+          "orderIndex": 9,
           "specifiers": {
             "const": false,
             "signed": true
           },
           "state": "initialized",
-          "type": "int"
+          "type": "long"
         },
         {
           "isGlobal": false,
-          "name": "outputCounter",
-          "orderIndex": 7,
+          "name": "m_new",
+          "orderIndex": 10,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "declared",
+          "type": "long"
+        },
+        {
+          "isGlobal": false,
+          "name": "printedDigits",
+          "orderIndex": 14,
           "specifiers": {
             "const": false,
             "signed": true
@@ -87,18 +109,40 @@
             "signed": true
           },
           "state": "initialized",
-          "type": "int"
+          "type": "long"
         },
         {
           "isGlobal": false,
-          "name": "r",
+          "name": "q_new",
           "orderIndex": 2,
           "specifiers": {
             "const": false,
             "signed": true
           },
           "state": "initialized",
-          "type": "int"
+          "type": "long"
+        },
+        {
+          "isGlobal": false,
+          "name": "r",
+          "orderIndex": 3,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "long"
+        },
+        {
+          "isGlobal": false,
+          "name": "r_new",
+          "orderIndex": 4,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "long"
         },
         {
           "isGlobal": false,
@@ -114,24 +158,46 @@
         {
           "isGlobal": false,
           "name": "t",
-          "orderIndex": 3,
+          "orderIndex": 5,
           "specifiers": {
             "const": false,
             "signed": true
           },
           "state": "initialized",
-          "type": "int"
+          "type": "long"
         },
         {
           "isGlobal": false,
-          "name": "x",
+          "name": "t_new",
           "orderIndex": 6,
           "specifiers": {
             "const": false,
             "signed": true
           },
           "state": "initialized",
-          "type": "int"
+          "type": "long"
+        },
+        {
+          "isGlobal": false,
+          "name": "x",
+          "orderIndex": 11,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "long"
+        },
+        {
+          "isGlobal": false,
+          "name": "x_new",
+          "orderIndex": 12,
+          "specifiers": {
+            "const": false,
+            "signed": true
+          },
+          "state": "declared",
+          "type": "long"
         }
       ]
     }
@@ -140,17 +206,6 @@
     {
       "isGlobal": true,
       "name": "main()",
-      "orderIndex": 1,
-      "specifiers": {
-        "const": true,
-        "signed": false
-      },
-      "state": "initialized",
-      "type": "function"
-    },
-    {
-      "isGlobal": true,
-      "name": "makePi()",
       "orderIndex": 0,
       "specifiers": {
         "const": true,
