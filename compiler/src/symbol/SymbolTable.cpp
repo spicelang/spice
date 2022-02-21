@@ -149,6 +149,15 @@ SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
 }
 
 /**
+ * Returns all symbols of that particular sub-table
+ *
+ * @return Map of names and the corresponding symbol table entries
+ */
+std::map<std::string, SymbolTableEntry>& SymbolTable::getSymbols() {
+    return symbols;
+}
+
+/**
  * Returns the number of symbols in the table, which are no functions, procedures or import
  *
  * @return Number of fields

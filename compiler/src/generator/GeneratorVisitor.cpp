@@ -2162,9 +2162,12 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 }*/
 
 void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
+    // Check if the imported struct symbol exists
     SymbolTableEntry* newStructSymbol = currentScope->lookup(newStructName);
     assert(newStructSymbol != nullptr);
-    if (newStructSymbol->getState() == DECLARED) { // Only initialize if it was not initialized yet
+
+    if (newStructSymbol->getState() == DECLARED) { // Only generate LLVM type if it was not generated yet
+        // Check if the symbol table for the imported struct is present
         SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
         assert(structTable != nullptr);
 
@@ -2172,24 +2175,20 @@ void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std
         std::vector<llvm::Type*> memberTypes;
         for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
             SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
-            if (fieldType.is(TY_STRUCT)) {
+            if (fieldType.isBaseType(TY_STRUCT)) {
                 std::string structName = fieldType.getSubType();
                 initExtStruct(structName, scopePrefix + "." + structName);
-                fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
-            } else if (fieldType.isPointerOf(TY_STRUCT)) {
-                std::string structName = fieldType.getContainedTy().getSubType();
-                initExtStruct(structName, scopePrefix + "." + structName);
-                fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
-                fieldType = fieldType.toPointer();
+                fieldType.replaceSubType(scopePrefix + "." + structName);
             }
-            // ToDo: Support double, triple, etc. pointers
             memberTypes.push_back(getTypeForSymbolType(fieldType));
         }
 
-        // Create global struct
+        // Create LLVM struct type
         llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
-        newStructSymbol->updateLLVMType(structType);
+
+        // Set the imported struct symbol to INITIALIZED to not generate the LLVM type again and set the LLVM type to the symbol
         newStructSymbol->updateState(INITIALIZED, newStructSymbol->getDefinitionToken());
+        newStructSymbol->updateLLVMType(structType);
     }
 }
 

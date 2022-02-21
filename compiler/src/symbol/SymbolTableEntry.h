@@ -38,9 +38,9 @@ public:
     const antlr4::Token& getDefinitionToken();
     llvm::Type* getLLVMType();
     llvm::Value* getAddress();
-    unsigned int getOrderIndex() const;
-    bool isLocal() const;
-    bool isUsed() const;
+    [[nodiscard]] unsigned int getOrderIndex() const;
+    [[nodiscard]] bool isLocal() const;
+    [[nodiscard]] bool isUsed() const;
     void updateState(SymbolState newState, const antlr4::Token& token);
     void updateType(SymbolType newType, bool force);
     void updateLLVMType(llvm::Type* newType);

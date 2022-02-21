@@ -39,6 +39,8 @@ public:
     SymbolTable* getParent();
     SymbolTable* getChild(const std::string& tableName);
 
+    std::map<std::string, SymbolTableEntry>& getSymbols();
+
     unsigned int getFieldCount();
 
     void insertFunctionDeclaration(const std::string& functionName, const std::vector<SymbolType>& argTypes);
@@ -57,7 +59,7 @@ public:
     nlohmann::ordered_json toJSON();
 
     void setImported();
-    bool isImported() const;
+    [[nodiscard]] bool isImported() const;
 
 private:
     // Members
