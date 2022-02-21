@@ -80,7 +80,7 @@ private:
     int optLevel;
     bool requiresMainFct = true;
     std::unique_ptr<llvm::LLVMContext> context;
-    std::unique_ptr<llvm::IRBuilder<>> builder;
+    std::shared_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<llvm::Module> module;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope;

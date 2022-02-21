@@ -48,9 +48,9 @@ GeneratorVisitor::GeneratorVisitor(SymbolTable* symbolTable, const std::string& 
 void GeneratorVisitor::init() {
     // Create LLVM base components
     context = std::make_unique<llvm::LLVMContext>();
-    builder = std::make_unique<llvm::IRBuilder<>>(*context);
+    builder = std::make_shared<llvm::IRBuilder<>>(*context);
     module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile), *context);
-    conversionsManager = std::make_unique<OpRuleConversionsManager>(builder.get());
+    conversionsManager = std::make_unique<OpRuleConversionsManager>(builder);
 
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();

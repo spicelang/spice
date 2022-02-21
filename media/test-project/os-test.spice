@@ -25,8 +25,8 @@ f<int> main() {
     a.destructor();
 }*/
 
-/*import "socket" as socket;
+import "socket" as socket;
 
 f<int> main() {
     socket.Socket s = socket.openServerSocket(8080s);
-}*/
+}
