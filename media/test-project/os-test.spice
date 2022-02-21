@@ -81,7 +81,7 @@ f<int> main() {
     }
 }*/
 
-/*f<int> main() {
+f<int> main() {
     int i = 0;
     int r = 0;
     int j = 0;
@@ -94,8 +94,4 @@ f<int> main() {
         }
         break;
     }
-}*/
-
-f<int> main() {
-    bool i = true || (7 >= 8 && 9 >= 10);
 }

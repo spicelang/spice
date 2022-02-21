@@ -139,7 +139,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Verify module to detect IR code bugs
     std::string output;
     llvm::raw_string_ostream oss(output);
-    //if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
+    if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
 
     return result;
 }
@@ -208,7 +208,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         // Verify function
         std::string output;
         llvm::raw_string_ostream oss(output);
-        //if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
+        if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
 
         // Add function to function list
         functions.push_back(fct);
@@ -1108,6 +1108,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
             llvm::Value* rhsPtr = visit(ctx->logicalAndExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             std::get<0>(incomingBlocks[i]) = rhs;
+            std::get<1>(incomingBlocks[i]) = builder->GetInsertBlock();
             if (i < ctx->logicalAndExpr().size() -1) {
                 createCondBr(rhs, bEnd, std::get<1>(incomingBlocks[i + 1]));
             } else {
@@ -1156,6 +1157,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
             llvm::Value* rhsPtr = visit(ctx->bitwiseOrExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             std::get<0>(incomingBlocks[i]) = rhs;
+            std::get<1>(incomingBlocks[i]) = builder->GetInsertBlock();
             if (i < ctx->bitwiseOrExpr().size() -1) {
                 createCondBr(rhs, std::get<1>(incomingBlocks[i + 1]), bEnd);
             } else {
