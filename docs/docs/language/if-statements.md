@@ -23,4 +23,4 @@ if (otherCondition ? counter : 5) != 1 {
 }
 ```
 
-This peace of code is a bit pointless but you can see, that you can also have more complex conditions in there.
+This piece of code is a bit pointless but you can see, that you can also have more complex conditions in there.
