@@ -55,7 +55,7 @@ public:
 
     void printCompilerWarnings();
 
-    nlohmann::ordered_json toJSON();
+    nlohmann::json toJSON();
 
     void setImported();
     [[nodiscard]] bool isImported() const;

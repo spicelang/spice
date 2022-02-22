@@ -95,6 +95,6 @@ private:
     SymbolType expectedType = SymbolType(TY_DYN);
 
     // Private methods
-    SymbolType initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope, const std::string& externalStructName,
-                             const std::string& newStructName);
+    SymbolType initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope, const std::string& structScopePrefix,
+                             const std::string& structName);
 };

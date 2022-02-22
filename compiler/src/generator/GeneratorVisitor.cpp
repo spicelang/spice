@@ -1517,9 +1517,8 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                         // not have to check for nested structs in pointers here.
                         if (accessScope->isImported() && returnSymbolType.is(TY_STRUCT)) {
                             // If the return type is an imported struct, initialize it first
-                            std::string newStructSubType = accessScopePrefix + "." + returnSymbolType.getSubType();
-                            initExtStruct(returnSymbolType.getSubType(), newStructSubType);
-                            returnSymbolType = SymbolType(TY_STRUCT, newStructSubType);
+                            returnSymbolType = SymbolType(TY_STRUCT,
+                                                          accessScopePrefix + "." + returnSymbolType.getSubType());
                         }
                         llvm::Type* returnType = getTypeForSymbolType(returnSymbolType);
                         if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
@@ -1757,7 +1756,6 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         }
 
         // Check if the struct is defined
-        if (structScope->isImported()) initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
         SymbolTableEntry* structSymbol = currentScope->lookup(structName);
         assert(structSymbol != nullptr);
         llvm::Type* structType = structSymbol->getLLVMType();
@@ -2165,37 +2163,6 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 
     return defaultValue;
 }*/
-
-void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
-    // Check if the imported struct symbol exists
-    /*SymbolTableEntry* newStructSymbol = currentScope->lookup(newStructName);
-    assert(newStructSymbol != nullptr);
-
-    if (newStructSymbol->getState() == DECLARED) { // Only generate LLVM type if it was not generated yet
-        // Check if the symbol table for the imported struct is present
-        SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
-        assert(structTable != nullptr);
-
-        // Get field types
-        std::vector<llvm::Type*> memberTypes;
-        for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
-            SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
-            if (fieldType.isBaseType(TY_STRUCT)) {
-                std::string structName = fieldType.getSubType();
-                initExtStruct(structName, scopePrefix + "." + structName);
-                fieldType.replaceSubType(scopePrefix + "." + structName);
-            }
-            memberTypes.push_back(getTypeForSymbolType(fieldType));
-        }
-
-        // Create LLVM struct type
-        llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
-
-        // Set the imported struct symbol to INITIALIZED to not generate the LLVM type again and set the LLVM type to the symbol
-        newStructSymbol->updateState(INITIALIZED, newStructSymbol->getDefinitionToken());
-        newStructSymbol->updateLLVMType(structType);
-    }*/
-}
 
 bool GeneratorVisitor::compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs) {
     if (lhs->getTypeID() != rhs->getTypeID()) return false;

@@ -113,7 +113,6 @@ private:
     llvm::Value* insertAlloca(llvm::Type* llvmType, const std::string& varName = "", llvm::Value* arraySize = nullptr);
     llvm::Type* getTypeForSymbolType(SymbolType symbolType);
     //llvm::Value* getDefaultValueForType(SymbolType symbolType);
-    void initExtStruct(const std::string& oldStructName, const std::string& newStructName);
     bool compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs);
     llvm::Value* doImplicitCast(llvm::Value* lhs, llvm::Type* rhs);
     [[nodiscard]] llvm::PassBuilder::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;

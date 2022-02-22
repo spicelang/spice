@@ -311,6 +311,7 @@ void SymbolTable::printCompilerWarnings() {
  *
  * Example:
  * {
+ *   "name": "<SymbolTableName>"
  *   "symbols": [
  *     ... (SymbolTableEntry)
  *   ],
@@ -321,18 +322,21 @@ void SymbolTable::printCompilerWarnings() {
  *
  * @return Symbol table if form of a string
  */
-nlohmann::ordered_json SymbolTable::toJSON() {
+nlohmann::json SymbolTable::toJSON() {
     // Collect all symbols
     std::vector<nlohmann::json> jsonSymbols;
     jsonSymbols.reserve(symbols.size());
     for (auto& symbol : symbols)
-        jsonSymbols.push_back(symbol.second.toJSON());
+        jsonSymbols.emplace_back(symbol.second.toJSON());
 
     // Collect all children
     std::vector<nlohmann::json> jsonChildren;
     jsonChildren.reserve(symbols.size());
-    for (auto& child : children)
-        jsonChildren.push_back(child.second.toJSON());
+    for (auto& child : children) {
+        nlohmann::json c = child.second.toJSON();
+        c["name"] = child.first; // Inject symbol table name into JSON object
+        jsonChildren.emplace_back(c);
+    }
 
     // Generate json
     nlohmann::json result;
