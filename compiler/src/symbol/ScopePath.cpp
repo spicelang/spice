@@ -28,3 +28,17 @@ SymbolTable* ScopePath::getCurrentScope() {
     if (fragments.empty()) return nullptr;
     return std::get<1>(fragments.back());
 }
+
+/**
+ * Retrieve the fully qualified name of a scope, e.g.: a.b.C
+ *
+ * @return Scope name
+ */
+std::string ScopePath::getScopeName() {
+    std::string fqn;
+    for (int i = 0; i < fragments.size(); i++) {
+        if (i > 0) fqn += ".";
+        fqn += fragments[i].first;
+    }
+    return fqn;
+}

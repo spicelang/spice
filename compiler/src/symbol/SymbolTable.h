@@ -25,13 +25,12 @@ public:
     explicit SymbolTable(SymbolTable* parent, bool inMainSourceFile) : parent(parent), inMainSourceFile(inMainSourceFile) {};
 
     // Public methods
-    void insert(const std::string&, SymbolType, SymbolSpecifiers, SymbolState, const antlr4::Token&, bool);
+    void insert(const std::string&, const SymbolType&, SymbolSpecifiers, SymbolState, const antlr4::Token&, bool);
 
     SymbolTableEntry* lookup(const std::string& symbolName);
     SymbolTableEntry* lookupByIndexInCurrentScope(unsigned int);
     SymbolTable* lookupTable(const std::string& tableName);
     SymbolTable* lookupTableWithSignature(const std::string& signature);
-
     SymbolTable* createChildBlock(const std::string& tableName);
     void mountChildBlock(const std::string& tableName, SymbolTable* symbolTable);
     void renameChildBlock(const std::string& oldName, const std::string& newName);

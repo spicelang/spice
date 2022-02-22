@@ -3,6 +3,7 @@
 #include "symbol/SymbolTable.h"
 
 #include <stdexcept>
+#include <utility>
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <util/CompilerWarning.h>
@@ -16,14 +17,14 @@
  * @param isConstant Enabled if the symbol is a constant
  * @param isParameter Enabled if the symbol is a function/procedure parameter
  */
-void SymbolTable::insert(const std::string& name, SymbolType type, SymbolSpecifiers specifiers, SymbolState state,
+void SymbolTable::insert(const std::string& name, const SymbolType& type, SymbolSpecifiers specifiers, SymbolState state,
                          const antlr4::Token& token, bool isParameter) {
     bool isGlobal = getParent() == nullptr;
     unsigned int orderIndex = symbols.size();
     // Insert into symbols map
     symbols.insert({
         name,
-        SymbolTableEntry(name, std::move(type), specifiers, state, token, orderIndex, isGlobal)
+        SymbolTableEntry(name, type, specifiers, state, token, orderIndex, isGlobal)
     });
     // If the symbol is a parameter, add it to the parameters list
     if (isParameter) paramNames.push_back(name);
