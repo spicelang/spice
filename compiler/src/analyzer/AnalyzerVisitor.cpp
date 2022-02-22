@@ -1527,6 +1527,10 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTabl
     // Get the associated symbolTable of the external struct symbol
     SymbolTable* externalStructTable = sourceScope->lookupTable("struct:" + structName);
 
+    // Get root scope or current source file
+    SymbolTable* rootScope = currentScope;
+    while (rootScope->getParent()) rootScope = rootScope->getParent();
+
     // Initialize potential structs for field types
     for (auto& symbol : externalStructTable->getSymbols()) {
         if (symbol.second.getType().isBaseType(TY_STRUCT)) {
@@ -1536,12 +1540,12 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTabl
             // Re-map type of field to the imported struct
             SymbolType newNestedStructType = symbol.second.getType().replaceSubType(structScopePrefix + nestedStructName);
             symbol.second.updateType(newNestedStructType, true);
+            // Set LLVM type of nested struct to the field
+            SymbolTableEntry* nestedStructEntry = rootScope->lookup(structScopePrefix + nestedStructName);
+            assert(nestedStructEntry != nullptr);
+            symbol.second.updateLLVMType(nestedStructEntry->getLLVMType());
         }
     }
-
-    // Get root scope or current source file
-    SymbolTable* rootScope = currentScope;
-    while (rootScope->getParent()) rootScope = rootScope->getParent();
 
     // Copy struct symbol and struct table to the root scope of the current source file
     SymbolType newStructTy = SymbolType(TY_STRUCT, newStructName);
@@ -1549,7 +1553,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTabl
     // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
     rootScope->insert(newStructName, newStructTy, SymbolSpecifiers(newStructTy),
                       DECLARED, externalStructSymbol->getDefinitionToken(), false);
-    newStructSymbol= rootScope->lookup(newStructName);
+    newStructSymbol = rootScope->lookup(newStructName);
     newStructSymbol->updateLLVMType(externalStructSymbol->getLLVMType());
     newStructSymbol->setUsed();
 

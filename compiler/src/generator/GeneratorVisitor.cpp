@@ -847,8 +847,6 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
         // Visit right side
         llvm::Value* rhsPtr = visit(ctx->assignExpr()).as<llvm::Value*>();
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-        llvm::Type* lhsTy = memAddress->getType()->getPointerElementType();
-        llvm::Type* rhsTy = rhs->getType();
         builder->CreateStore(rhs, memAddress);
     }
     entry->updateAddress(memAddress);
