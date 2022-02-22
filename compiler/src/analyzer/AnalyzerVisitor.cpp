@@ -1519,8 +1519,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTabl
     // Check if external struct is declared
     SymbolTableEntry* externalStructSymbol = sourceScope->lookup(externalStructName);
     if (!externalStructSymbol)
-        throw SemanticError(token, REFERENCED_UNDEFINED_STRUCT,
-                            "Could not find external struct '" + newStructName + "'");
+        throw SemanticError(token, REFERENCED_UNDEFINED_STRUCT, "Could not find struct '" + newStructName + "'");
     externalStructSymbol->setUsed();
 
     // Get the associated symbolTable of the external struct symbol
