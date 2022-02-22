@@ -11,5 +11,8 @@ for int i = 1; i <= 10; i++ {
 }
 ```
 
+!!! note "Optional parentheses"
+    As with the if statement, foreach loop and while loop, the parantheses around the head of the `for` loop are optional.
+
 !!! tip "Usage of loop alternatives"
     For loops should only be used when it is foreseeable how often a block of code will run. If this is not the case, we recommend using the [while loop](../while-loops) instead.

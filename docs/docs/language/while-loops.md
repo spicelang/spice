@@ -14,7 +14,10 @@ while counter < 20 {
 }
 ```
 
-If you would want to achieve an intentional endless loop, you would write something like this:
+!!! note "Optional parentheses"
+    As with the if statement, for loop and foreach loop, the parantheses around the head of the `while` loop are optional.
+
+If you would want to intentionally achieve an endless loop, you would write something like this:
 ```spice
 while true {
 	printf("This is gonna run forever ...");
