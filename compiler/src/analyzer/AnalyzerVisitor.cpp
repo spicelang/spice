@@ -1543,7 +1543,9 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTabl
     // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
     rootScope->insert(newStructName, newStructTy, SymbolSpecifiers(newStructTy),
                       DECLARED, externalStructSymbol->getDefinitionToken(), false);
-    rootScope->lookup(newStructName)->setUsed();
+    newStructSymbol= rootScope->lookup(newStructName);
+    newStructSymbol->updateLLVMType(externalStructSymbol->getLLVMType());
+    newStructSymbol->setUsed();
 
     // Mount the external struct table to the new position in the root scope of the current source file
     externalStructTable->setImported();

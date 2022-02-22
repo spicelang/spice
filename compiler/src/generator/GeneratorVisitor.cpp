@@ -847,6 +847,8 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx)
         // Visit right side
         llvm::Value* rhsPtr = visit(ctx->assignExpr()).as<llvm::Value*>();
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
+        llvm::Type* lhsTy = memAddress->getType()->getPointerElementType();
+        llvm::Type* rhsTy = rhs->getType();
         builder->CreateStore(rhs, memAddress);
     }
     entry->updateAddress(memAddress);
@@ -1480,6 +1482,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 // Check if the function is a method and retrieve the function name based on that
                 bool isMethod = currentThisValue != nullptr;
                 std::string functionName = isMethod ? scopePrefix + "." + currentVarName : currentVarName;
+                std::string accessScopePrefix = scopePath.getScopeName();
 
                 // Get function by signature
                 FunctionSignature signature = currentScope->popSignature();
@@ -1514,8 +1517,9 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                         // not have to check for nested structs in pointers here.
                         if (accessScope->isImported() && returnSymbolType.is(TY_STRUCT)) {
                             // If the return type is an imported struct, initialize it first
-                            initExtStruct(returnSymbolType.getSubType(), scopePrefix + "." + returnSymbolType.getSubType());
-                            returnSymbolType = SymbolType(TY_STRUCT, scopePrefix + "." + returnSymbolType.getSubType());
+                            std::string newStructSubType = accessScopePrefix + "." + returnSymbolType.getSubType();
+                            initExtStruct(returnSymbolType.getSubType(), newStructSubType);
+                            returnSymbolType = SymbolType(TY_STRUCT, newStructSubType);
                         }
                         llvm::Type* returnType = getTypeForSymbolType(returnSymbolType);
                         if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
@@ -1594,6 +1598,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 lhsPtr = insertAlloca(lhs->getType());
             } else if (symbolType == SpiceParser::DOT) { // Consider member access
                 tokenCounter++; // Consume dot
+                scopePrefix += ".";
                 auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
                 lhsPtr = visit(postfixUnary).as<llvm::Value*>();
                 lhs = nullptr;
@@ -2163,7 +2168,7 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 
 void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
     // Check if the imported struct symbol exists
-    SymbolTableEntry* newStructSymbol = currentScope->lookup(newStructName);
+    /*SymbolTableEntry* newStructSymbol = currentScope->lookup(newStructName);
     assert(newStructSymbol != nullptr);
 
     if (newStructSymbol->getState() == DECLARED) { // Only generate LLVM type if it was not generated yet
@@ -2189,7 +2194,7 @@ void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std
         // Set the imported struct symbol to INITIALIZED to not generate the LLVM type again and set the LLVM type to the symbol
         newStructSymbol->updateState(INITIALIZED, newStructSymbol->getDefinitionToken());
         newStructSymbol->updateLLVMType(structType);
-    }
+    }*/
 }
 
 bool GeneratorVisitor::compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs) {
