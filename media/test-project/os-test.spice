@@ -29,6 +29,6 @@ import "socket" as socket;
 
 f<int> main() {
     socket.Socket s = socket.openServerSocket(8080s);
-    socket.NestedSocket n = s.nested;
+    //socket.NestedSocket n = s.nested;
     //printf("%s", n.testString);
 }

@@ -2,6 +2,7 @@
   "children": [
     {
       "children": [],
+      "name": "calledFunction(int,bool)",
       "symbols": [
         {
           "isGlobal": false,
@@ -40,6 +41,7 @@
     },
     {
       "children": [],
+      "name": "calledFunction(string)",
       "symbols": [
         {
           "isGlobal": false,
@@ -67,6 +69,7 @@
     },
     {
       "children": [],
+      "name": "main()",
       "symbols": [
         {
           "isGlobal": false,

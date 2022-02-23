@@ -6,18 +6,22 @@
           "children": [
             {
               "children": [],
+              "name": "else:31:10",
               "symbols": []
             },
             {
               "children": [
                 {
                   "children": [],
+                  "name": "if:24:12",
                   "symbols": []
                 }
               ],
+              "name": "if:22:8",
               "symbols": []
             }
           ],
+          "name": "for:21:4",
           "symbols": [
             {
               "isGlobal": false,
@@ -33,6 +37,7 @@
           ]
         }
       ],
+      "name": "main()",
       "symbols": [
         {
           "isGlobal": false,

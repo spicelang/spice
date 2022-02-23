@@ -42,14 +42,14 @@ class SymbolSpecifiers {
 public:
     explicit SymbolSpecifiers(SymbolType symbolType);
     void setConst(bool value);
-    bool isConst() const;
+    [[nodiscard]] bool isConst() const;
     void setSigned(bool value);
-    bool isSigned() const;
+    [[nodiscard]] bool isSigned() const;
     void setPublic(bool value);
-    bool isPublic() const;
+    [[nodiscard]] bool isPublic() const;
 private:
     unsigned short specifierValue = 0;
     void setBit(unsigned short index);
     void clearBit(unsigned short index);
-    bool getBit(unsigned short index) const;
+    [[nodiscard]] bool getBit(unsigned short index) const;
 };

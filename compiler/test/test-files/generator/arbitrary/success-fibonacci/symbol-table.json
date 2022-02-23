@@ -4,9 +4,11 @@
       "children": [
         {
           "children": [],
+          "name": "if:2:4",
           "symbols": []
         }
       ],
+      "name": "fib(int)",
       "symbols": [
         {
           "isGlobal": false,
@@ -34,6 +36,7 @@
     },
     {
       "children": [],
+      "name": "main()",
       "symbols": [
         {
           "isGlobal": false,

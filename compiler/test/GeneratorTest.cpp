@@ -195,8 +195,13 @@ void executeTest(const GeneratorTestCase& testCase) {
             // Emit the object file
             generator.emit(); // Emit object file for specified platform
 
+            std::string objectFiles = "source.spice.o";
+            std::string addObjFile = testCase.testPath + "/add-obj.txt";
+            if (TestUtil::fileExists(addObjFile))
+                objectFiles += " " + TestUtil::getFileContent(addObjFile);
+
             // Link
-            TestUtil::exec("gcc -no-pie -o source source.spice.o");
+            TestUtil::exec("gcc -no-pie -o source " + objectFiles);
 
             // Execute the program and get the output
             std::string actualOutput = TestUtil::exec(TestUtil::getDefaultExecutableName());

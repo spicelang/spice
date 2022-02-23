@@ -2097,9 +2097,7 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 
     // Consider pointer/array hierarchy
     while (!pointerArrayList.empty()) {
-        if (pointerArrayList.top().first == TY_PTR) { // Pointer
-            llvmBaseType = llvmBaseType->getPointerTo();
-        } else if (pointerArrayList.top().second == 0) { // If size is 0, use the pointer type
+        if (pointerArrayList.top().first == TY_PTR || pointerArrayList.top().second == 0) { // Pointer
             llvmBaseType = llvmBaseType->getPointerTo();
         } else { // Otherwise, use the array type with a fixed size
             llvmBaseType = llvm::ArrayType::get(llvmBaseType, pointerArrayList.top().second);

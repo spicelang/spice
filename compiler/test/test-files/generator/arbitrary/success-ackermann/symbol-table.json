@@ -4,13 +4,16 @@
       "children": [
         {
           "children": [],
+          "name": "if:2:4",
           "symbols": []
         },
         {
           "children": [],
+          "name": "if:3:4",
           "symbols": []
         }
       ],
+      "name": "ack(int,int)",
       "symbols": [
         {
           "isGlobal": false,
@@ -49,6 +52,7 @@
     },
     {
       "children": [],
+      "name": "main()",
       "symbols": [
         {
           "isGlobal": false,

@@ -69,8 +69,6 @@ private:
     std::map<std::string, std::vector<SymbolType>> procedureDeclarations;
     std::vector<std::string> paramNames;
     std::queue<FunctionSignature> functionSignatures;
-    llvm::BasicBlock* continueBlock = nullptr;
-    llvm::BasicBlock* breakBlock = nullptr;
     bool inMainSourceFile;
     bool imported = false;
 };

@@ -4,7 +4,6 @@
 
 #include <stdexcept>
 
-#include <symbol/SymbolType.h>
 #include <exception/IRError.h>
 
 llvm::Value* OpRuleConversionsManager::getPlusEqualInst(llvm::Value* lhs, llvm::Value* rhs) {

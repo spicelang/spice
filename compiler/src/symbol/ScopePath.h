@@ -10,7 +10,7 @@
 
 class ScopePath {
 public:
-    explicit ScopePath() {};
+    explicit ScopePath() = default;
     void pushFragment(const std::string& fragment, SymbolTable* symbolTable);
     void clear();
     SymbolTable* getCurrentScope();

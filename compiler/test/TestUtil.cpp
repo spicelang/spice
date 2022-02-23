@@ -23,8 +23,8 @@ std::vector<std::string> TestUtil::getSubdirs(const std::string& basePath) {
     std::vector<std::string> subdirs;
     DIR* dir;
     struct dirent* ent;
-    if ((dir = opendir(basePath.c_str())) != NULL) {
-        while ((ent = readdir(dir)) != NULL) {
+    if ((dir = opendir(basePath.c_str())) != nullptr) {
+        while ((ent = readdir(dir)) != nullptr) {
             if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
                 subdirs.emplace_back(ent->d_name);
         }
@@ -68,7 +68,7 @@ std::string TestUtil::toCamelCase(std::string input) {
     for (auto it = input.begin(); it != input.end(); it++) {
         if (*it == '-' || *it == '_') {
             it = input.erase(it);
-            *it = toupper(*it);
+            *it = (char) toupper(*it);
         }
     }
     return input;
@@ -86,7 +86,7 @@ std::string TestUtil::exec(const std::string& cmd) {
     char buffer[128];
     std::string result;
     while (!feof(pipe.get())) {
-        if (fgets(buffer, 128, pipe.get()) != NULL)
+        if (fgets(buffer, 128, pipe.get()) != nullptr)
             result += buffer;
     }
     return result;
