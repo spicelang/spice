@@ -28,6 +28,7 @@ public:
     void insert(const std::string&, const SymbolType&, SymbolSpecifiers, SymbolState, const antlr4::Token&, bool);
 
     SymbolTableEntry* lookup(const std::string& symbolName);
+    SymbolTableEntry* lookupStrict(const std::string& symbolName);
     SymbolTableEntry* lookupByIndexInCurrentScope(unsigned int);
     SymbolTable* lookupTable(const std::string& tableName);
     SymbolTable* lookupTableWithSignature(const std::string& signature);
