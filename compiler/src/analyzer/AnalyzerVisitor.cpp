@@ -11,10 +11,14 @@
 #include "util/CompilerWarning.h"
 #include <exception/SemanticError.h>
 
-AnalyzerVisitor::AnalyzerVisitor(const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
+AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
+                                 const std::shared_ptr<llvm::IRBuilder<>>& builder,
+                                 const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
                                  const std::string& targetOs, const std::string& outputPath, bool debugOutput, int optLevel,
                                  bool requiresMainFct, bool isStdFile) {
     // Save parameters
+    this->context = context,
+    this->builder = builder;
     this->mainSourceFile = sourceFile;
     this->outputPath = outputPath;
     this->debugOutput = debugOutput;
@@ -421,18 +425,20 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
+    auto head = ctx->forHead();
+
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
     // Visit loop variable declaration in new scope
-    visit(ctx->declStmt());
+    visit(head->declStmt());
     // Visit condition in new scope
-    SymbolType conditionType = visit(ctx->assignExpr()[0]).as<SymbolType>();
+    SymbolType conditionType = visit(head->assignExpr()[0]).as<SymbolType>();
     if (!conditionType.is(TY_BOOL))
-        throw SemanticError(*ctx->assignExpr()[0]->start, CONDITION_MUST_BE_BOOL,
+        throw SemanticError(*head->assignExpr()[0]->start, CONDITION_MUST_BE_BOOL,
                             "For loop condition must be of type bool");
     // Visit incrementer in new scope
-    visit(ctx->assignExpr()[1]);
+    visit(head->assignExpr()[1]);
     // Visit statement list in new scope
     nestedLoopCounter++;
     visit(ctx->stmtLst());
@@ -673,9 +679,9 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     }
 
     // Kick off the compilation of the imported source file
-    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(filePath, targetArch, targetVendor, targetOs,
-                                                                   outputPath, debugOutput, optLevel, false,
-                                                                   foundInStd);
+    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(context, builder, filePath, targetArch, targetVendor,
+                                                                   targetOs, outputPath, debugOutput, optLevel,
+                                                                   false, foundInStd);
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();
@@ -1187,6 +1193,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         } else if (tokenType == SpiceParser::LPAREN) { // Consider function call
             tokenCounter++; // Consume LPAREN
             std::string functionName = currentVarName;
+            std::string accessScopePrefix = scopePath.getScopeName();
 
             // Save the scope path to restore it after visiting the params
             ScopePath scopePathBackup = scopePath;
@@ -1240,8 +1247,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
                 // Structs from outside the module require more initialization
                 if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported())
                     return initExtStruct(*ctx->start, scopePath.getCurrentScope(),
-                                         returnType.getSubType(),
-                                         scopePrefix + "." + returnType.getSubType());
+                                         accessScopePrefix + ".", returnType.getSubType());
                 lhs = returnType;
             } else {
                 lhs = SymbolType(TY_BOOL);
@@ -1326,48 +1332,49 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
 
     if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
         // Retrieve fully qualified struct name and the scope where to search it
-        std::string fullyQualifiedStructName;
+        std::string accessScopePrefix;
+        std::string structName;
         SymbolTable* structScope = currentScope;
         for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
-            std::string iden = ctx->IDENTIFIER()[i]->toString();
-            fullyQualifiedStructName += fullyQualifiedStructName.empty() ? iden : "." + iden;
+            structName = ctx->IDENTIFIER()[i]->toString();
             if (i < ctx->IDENTIFIER().size() -1) {
-                SymbolTableEntry* entry = structScope->lookup(iden);
+                accessScopePrefix += structName + ".";
+                SymbolTableEntry* entry = structScope->lookup(structName);
                 if (!entry)
                     throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                                        "Struct '" + fullyQualifiedStructName + "' was used before defined");
+                                        "Struct '" + accessScopePrefix + structName + "' was used before defined");
                 // Check the type of the symbol table entry
                 if (entry->getType().is(TY_IMPORT)) {
-                    structScope = structScope->lookupTable(iden);
+                    structScope = structScope->lookupTable(structName);
                 } else if (entry->getType().is(TY_STRUCT)) {
-                    structScope = structScope->lookupTable("struct:" + iden);
+                    structScope = structScope->lookupTable("struct:" + structName);
                 } else {
                     throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                                        "The variable '" + iden + "' is of type " + entry->getType().getName(false) +
-                                        ". Expected struct or import");
+                                        "The variable '" + structName + "' is of type " +
+                                        entry->getType().getName(false) + ". Expected struct or import");
                 }
             }
         }
 
         // Check if a symbol is existing with that fully qualified name
-        SymbolTableEntry* structSymbol = currentScope->lookup(fullyQualifiedStructName);
+        SymbolTableEntry* structSymbol = currentScope->lookup(accessScopePrefix + structName);
         if (!structSymbol) { // Not found
             // Trigger an external struct initialization which loads the struct from another source file and modifies the
             // symbol table accordingly
             initExtStruct(*ctx->IDENTIFIER()[0]->getSymbol(), structScope,
-                          ctx->IDENTIFIER().back()->toString(), fullyQualifiedStructName);
+                          accessScopePrefix, ctx->IDENTIFIER().back()->toString());
             // Reload the struct symbol
-            structSymbol = currentScope->lookup(fullyQualifiedStructName);
+            structSymbol = currentScope->lookup(accessScopePrefix + structName);
         }
 
         // Check if the symbol is of the expected struct type
-        if (!structSymbol->getType().is(TY_STRUCT, fullyQualifiedStructName))
+        if (!structSymbol->getType().is(TY_STRUCT, accessScopePrefix + structName))
             throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                                "Struct '" + fullyQualifiedStructName + "' was used before defined");
+                                "Struct '" + accessScopePrefix + structName + "' was used before defined");
         structSymbol->setUsed();
 
         // Check if the number of fields matches
-        SymbolTable* structTable = currentScope->lookupTable("struct:" + fullyQualifiedStructName);
+        SymbolTable* structTable = currentScope->lookupTable("struct:" + accessScopePrefix + structName);
         if (ctx->paramLst()) { // Check if any fields are passed. Empty braces are also allowed
             if (structTable->getFieldCount() != ctx->paramLst()->assignExpr().size())
                 throw SemanticError(*ctx->paramLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
@@ -1381,11 +1388,11 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                 // Get expected type
                 SymbolTableEntry* expectedField = structTable->lookupByIndexInCurrentScope(i);
                 assert(expectedField != nullptr);
-                SymbolType expectedType = expectedField->getType();
+                SymbolType expectedFieldType = expectedField->getType();
                 // Check if type matches declaration
-                if (actualType != expectedType)
+                if (actualType != expectedFieldType)
                     throw SemanticError(*ternary->start, FIELD_TYPE_NOT_MATCHING,
-                                        "Expected type " + expectedType.getName(false) + " for the field '" +
+                                        "Expected type " + expectedFieldType.getName(false) + " for the field '" +
                                         expectedField->getName() + "', but got " + actualType.getName(false));
             }
         }
@@ -1469,25 +1476,30 @@ antlrcpp::Any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContex
     if (ctx->TYPE_STRING()) return SymbolType(TY_STRING);
     if (ctx->TYPE_BOOL()) return SymbolType(TY_BOOL);
     if (!ctx->IDENTIFIER().empty()) { // Struct type
-        // Get type name in format: a.b.c
-        std::string structName = ctx->IDENTIFIER()[0]->toString();
-        for (unsigned int i = 1; i < ctx->IDENTIFIER().size(); i++) structName += "." + ctx->IDENTIFIER()[i]->toString();
+        SymbolTable* accessScope = scopePath.getCurrentScope();
+        if (accessScope == nullptr) accessScope = currentScope;
+        // Get type name in format: a.b.c and retrieve the scope in parallel
+        std::string accessScopePrefix;
+        std::string structName;
+        bool structIsImported = false;
+        for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
+            structName = ctx->IDENTIFIER()[i]->toString();
+            if (i < ctx->IDENTIFIER().size() -1) accessScopePrefix += structName + ".";
+            SymbolTableEntry* symbolEntry = accessScope->lookup(structName);
+            if (!symbolEntry)
+                throw SemanticError(*ctx->IDENTIFIER()[0]->getSymbol(), UNKNOWN_DATATYPE,
+                                    "Unknown datatype '" + structName + "'");
 
-        if (scopePath.getCurrentScope()) { // Within function call
-            if (scopePath.getCurrentScope()->isImported()) { // Function call to imported function
-                return initExtStruct(*ctx->start, scopePath.getCurrentScope(),
-                                     ctx->IDENTIFIER()[0]->toString(), structName);
-            } else { // Function call to local function
-                // Check if struct was declared
-                SymbolTableEntry* structSymbol = scopePath.getCurrentScope()->lookup(structName);
-                if (!structSymbol)
-                    throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-                structSymbol->setUsed();
-                return SymbolType(TY_STRUCT, structName);
-            }
-        } else { // Not within function call
+            std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : "struct:" + structName;
+            accessScope = accessScope->lookupTable(tableName);
+            if (accessScope->isImported()) structIsImported = true;
+        }
+
+        if (structIsImported) { // Imported struct
+            return initExtStruct(*ctx->start, accessScope, accessScopePrefix, structName);
+        } else { // Struct in same source file
             // Check if struct was declared
-            SymbolTableEntry* structSymbol = currentScope->lookup(structName);
+            SymbolTableEntry* structSymbol = accessScope->lookup(structName);
             if (!structSymbol)
                 throw SemanticError(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
             structSymbol->setUsed();
@@ -1498,40 +1510,56 @@ antlrcpp::Any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContex
 }
 
 SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token& token, SymbolTable* sourceScope,
-                                          const std::string& oldStructName, const std::string& newStructName) {
-    // Check if struct was declared
-    SymbolTableEntry* structSymbol = sourceScope->lookup(oldStructName);
-    if (!structSymbol)
-        throw SemanticError(token, REFERENCED_UNDEFINED_STRUCT,
-                            "Struct '" + newStructName + "' was used before defined");
-    structSymbol->setUsed();
-    SymbolTable* structTable = sourceScope->lookupTable("struct:" + oldStructName);
+                                          const std::string& structScopePrefix, const std::string& structName) {
+    // Get external struct name
+    std::string newStructName = structScopePrefix + structName;
 
-    // Initialize potential structs for field types
-    for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
-        SymbolType fieldTy = structTable->lookupByIndexInCurrentScope(i)->getType();
-        if (fieldTy.is(TY_STRUCT)) {
-            std::string structName = fieldTy.getSubType();
-            initExtStruct(token, sourceScope, structName, scopePrefix + "." + structName);
-        } else if (fieldTy.isPointerOf(TY_STRUCT)) {
-            std::string structName = fieldTy.getContainedTy().getSubType();
-            initExtStruct(token, sourceScope, structName, scopePrefix + "." + structName);
-        }
-    }
+    // Check if the struct is imported already
+    SymbolTableEntry* newStructSymbol = sourceScope->lookup(structScopePrefix + structName);
+    if (newStructSymbol) return newStructSymbol->getType();
 
-    // Update symbol type in the sub-table
-    structTable->updateSymbolTypes(structSymbol->getType(), SymbolType(TY_STRUCT, newStructName));
+    // Check if external struct is declared
+    SymbolTableEntry* externalStructSymbol = sourceScope->lookup(structName);
+    if (!externalStructSymbol)
+        throw SemanticError(token, REFERENCED_UNDEFINED_STRUCT, "Could not find struct '" + newStructName + "'");
+    externalStructSymbol->setUsed();
 
-    // Get root scope
+    // Get the associated symbolTable of the external struct symbol
+    SymbolTable* externalStructTable = sourceScope->lookupTable("struct:" + structName);
+
+    // Get root scope or current source file
     SymbolTable* rootScope = currentScope;
     while (rootScope->getParent()) rootScope = rootScope->getParent();
 
+    // Initialize potential structs for field types
+    for (auto& symbol : externalStructTable->getSymbols()) {
+        if (symbol.second.getType().isBaseType(TY_STRUCT)) {
+            std::string nestedStructName = symbol.second.getType().getBaseType().getSubType();
+            // Initialize nested struct
+            initExtStruct(token, sourceScope, structScopePrefix,  nestedStructName);
+            // Re-map type of field to the imported struct
+            SymbolType newNestedStructType = symbol.second.getType().replaceSubType(structScopePrefix + nestedStructName);
+            symbol.second.updateType(newNestedStructType, true);
+            // Set LLVM type of nested struct to the field
+            SymbolTableEntry* nestedStructEntry = rootScope->lookup(structScopePrefix + nestedStructName);
+            assert(nestedStructEntry != nullptr);
+            symbol.second.updateLLVMType(nestedStructEntry->getLLVMType());
+        }
+    }
+
     // Copy struct symbol and struct table to the root scope of the current source file
     SymbolType newStructTy = SymbolType(TY_STRUCT, newStructName);
-    rootScope->insert(newStructName, newStructTy, SymbolSpecifiers(newStructTy), DECLARED,
-                      structSymbol->getDefinitionToken(), false);
-    rootScope->lookup(newStructName)->setUsed();
-    rootScope->mountChildBlock("struct:" + newStructName, structTable);
-    rootScope->lookupTable("struct:" + newStructName)->setImported();
+
+    // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
+    rootScope->insert(newStructName, newStructTy, SymbolSpecifiers(newStructTy),
+                      DECLARED, externalStructSymbol->getDefinitionToken(), false);
+    newStructSymbol = rootScope->lookup(newStructName);
+    newStructSymbol->updateLLVMType(externalStructSymbol->getLLVMType());
+    newStructSymbol->setUsed();
+
+    // Mount the external struct table to the new position in the root scope of the current source file
+    externalStructTable->setImported();
+    rootScope->mountChildBlock("struct:" + newStructName, externalStructTable);
+
     return newStructTy;
 }

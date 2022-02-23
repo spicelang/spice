@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <sys/types.h>
 #include <sys/stat.h>
 
 /**
@@ -24,13 +23,12 @@ bool FileUtil::fileExists(const std::string& filePath) {
  * @return Existence of the dir
  */
 bool FileUtil::dirExists(const std::string& dirPath) {
-    struct stat info;
+    struct stat info{};
     if (stat(dirPath.c_str(), &info) != 0)
         return false;
-    else if( info.st_mode & S_IFDIR )  // S_ISDIR() doesn't exist on my windows 
+    else if(info.st_mode & S_IFDIR)  // S_ISDIR() doesn't exist on my windows
         return true;
     return false;
-    //return is_directory(std::filesystem::status(dirPath));
 }
 
 /**

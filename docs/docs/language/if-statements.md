@@ -14,6 +14,9 @@ if counter <= 10 {
 ```
 The block between the curly braces only gets executed when the variable `counter` is less or equal 10, otherwise it is going to be ignored.
 
+!!! note "Optional parentheses"
+    As with the for, foreach and while loops, the parantheses around the head of the `if` statement are optional.
+
 Let's take a look at a more complex condition:
 ```spice
 dyn counter = 1;
@@ -23,4 +26,4 @@ if (otherCondition ? counter : 5) != 1 {
 }
 ```
 
-This peace of code is a bit pointless but you can see, that you can also have more complex conditions in there.
+This piece of code is a bit pointless but you can see, that you can also have more complex conditions in there.

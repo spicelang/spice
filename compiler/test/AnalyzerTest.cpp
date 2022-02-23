@@ -76,8 +76,14 @@ void executeTest(const AnalyzerTestCase& testCase) {
         parser.addErrorListener(&parserErrorHandler);
         antlr4::tree::ParseTree* tree = parser.entry();
 
+        // Prepare global LLVM assets
+        std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
+        std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
+
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
+                context,
+                builder,
                 sourceFile,
                 "",
                 "",
@@ -104,8 +110,13 @@ void executeTest(const AnalyzerTestCase& testCase) {
         // Check if the symbol table matches the expected output
         std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
         if (TestUtil::fileExists(symbolTableFileName)) {
-            std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
-            EXPECT_EQ(expectedSymbolTable, symbolTable->toJSON().dump(2));
+            if (TestUtil::isUpdateRefsEnabled()) {
+                // Update ref
+                TestUtil::setFileContent(symbolTableFileName, symbolTable->toJSON().dump(2)); // GCOV_EXCL_LINE
+            } else {
+                std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
+                EXPECT_EQ(expectedSymbolTable, symbolTable->toJSON().dump(2));
+            }
         }
 
         SUCCEED();

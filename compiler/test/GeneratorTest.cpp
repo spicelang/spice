@@ -79,8 +79,14 @@ void executeTest(const GeneratorTestCase& testCase) {
         parser.addErrorListener(&parserErrorHandler);
         antlr4::tree::ParseTree* tree = parser.entry();
 
+        // Prepare global LLVM assets
+        std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
+        std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
+
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
+                context,
+                builder,
                 sourceFile,
                 "",
                 "",
@@ -133,6 +139,8 @@ void executeTest(const GeneratorTestCase& testCase) {
 
         // Execute generator
         GeneratorVisitor generator = GeneratorVisitor(
+                context,
+                builder,
                 symbolTable,
                 sourceFile,
                 "",
@@ -187,8 +195,13 @@ void executeTest(const GeneratorTestCase& testCase) {
             // Emit the object file
             generator.emit(); // Emit object file for specified platform
 
+            std::string objectFiles = "source.spice.o";
+            std::string addObjFile = testCase.testPath + "/add-obj.txt";
+            if (TestUtil::fileExists(addObjFile))
+                objectFiles += " " + TestUtil::getFileContent(addObjFile);
+
             // Link
-            TestUtil::exec("gcc -no-pie -o source source.spice.o");
+            TestUtil::exec("gcc -no-pie -o source " + objectFiles);
 
             // Execute the program and get the output
             std::string actualOutput = TestUtil::exec(TestUtil::getDefaultExecutableName());

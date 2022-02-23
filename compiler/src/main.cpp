@@ -8,6 +8,8 @@
 #include <exception/SemanticError.h>
 #include <exception/IRError.h>
 
+#include <llvm/IR/IRBuilder.h>
+
 /**
  * Entry point to the Spice compiler
  *
@@ -41,8 +43,24 @@ int main(int argc, char** argv) { // Call ./spicec filePath targetArch targetVen
      * function again.
      */
     try {
-        CompilerInstance::CompileSourceFile(mainSourceFile, targetArch, targetVendor, targetOs, objectDir, debugOutput,
-                                            optLevel, true, false);
+        // Prepare global LLVM assets
+        std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
+        std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
+
+        // Compile main source file
+        CompilerInstance::CompileSourceFile(
+                context,
+                builder,
+                mainSourceFile,
+                targetArch,
+                targetVendor,
+                targetOs,
+                objectDir,
+                debugOutput,
+                optLevel,
+                true,
+                false
+        );
     } catch (SemanticError& e) {
         std::cout << e.what() << std::endl;
         std::exit(1); // Exit with result code other than 0

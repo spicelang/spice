@@ -3,6 +3,7 @@
 #include "symbol/SymbolTable.h"
 
 #include <stdexcept>
+#include <utility>
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <util/CompilerWarning.h>
@@ -16,14 +17,14 @@
  * @param isConstant Enabled if the symbol is a constant
  * @param isParameter Enabled if the symbol is a function/procedure parameter
  */
-void SymbolTable::insert(const std::string& name, SymbolType type, SymbolSpecifiers specifiers, SymbolState state,
+void SymbolTable::insert(const std::string& name, const SymbolType& type, SymbolSpecifiers specifiers, SymbolState state,
                          const antlr4::Token& token, bool isParameter) {
     bool isGlobal = getParent() == nullptr;
     unsigned int orderIndex = symbols.size();
     // Insert into symbols map
     symbols.insert({
         name,
-        SymbolTableEntry(name, std::move(type), specifiers, state, token, orderIndex, isGlobal)
+        SymbolTableEntry(name, type, specifiers, state, token, orderIndex, isGlobal)
     });
     // If the symbol is a parameter, add it to the parameters list
     if (isParameter) paramNames.push_back(name);
@@ -146,6 +147,15 @@ SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
     if (children.empty()) return nullptr;
     if (children.find(scopeId) == children.end()) return nullptr;
     return &children.at(scopeId);
+}
+
+/**
+ * Returns all symbols of that particular sub-table
+ *
+ * @return Map of names and the corresponding symbol table entries
+ */
+std::map<std::string, SymbolTableEntry>& SymbolTable::getSymbols() {
+    return symbols;
 }
 
 /**
@@ -301,6 +311,7 @@ void SymbolTable::printCompilerWarnings() {
  *
  * Example:
  * {
+ *   "name": "<SymbolTableName>"
  *   "symbols": [
  *     ... (SymbolTableEntry)
  *   ],
@@ -311,18 +322,21 @@ void SymbolTable::printCompilerWarnings() {
  *
  * @return Symbol table if form of a string
  */
-nlohmann::ordered_json SymbolTable::toJSON() {
+nlohmann::json SymbolTable::toJSON() {
     // Collect all symbols
     std::vector<nlohmann::json> jsonSymbols;
     jsonSymbols.reserve(symbols.size());
     for (auto& symbol : symbols)
-        jsonSymbols.push_back(symbol.second.toJSON());
+        jsonSymbols.emplace_back(symbol.second.toJSON());
 
     // Collect all children
     std::vector<nlohmann::json> jsonChildren;
     jsonChildren.reserve(symbols.size());
-    for (auto& child : children)
-        jsonChildren.push_back(child.second.toJSON());
+    for (auto& child : children) {
+        nlohmann::json c = child.second.toJSON();
+        c["name"] = child.first; // Inject symbol table name into JSON object
+        jsonChildren.emplace_back(c);
+    }
 
     // Generate json
     nlohmann::json result;

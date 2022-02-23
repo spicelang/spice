@@ -10,10 +10,11 @@
 
 class ScopePath {
 public:
-    explicit ScopePath() {};
+    explicit ScopePath() = default;
     void pushFragment(const std::string& fragment, SymbolTable* symbolTable);
     void clear();
     SymbolTable* getCurrentScope();
+    std::string getScopeName();
 private:
-    std::vector<std::tuple<std::string, SymbolTable*>> fragments;
+    std::vector<std::pair<std::string, SymbolTable*>> fragments;
 };

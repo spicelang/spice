@@ -26,10 +26,14 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 #include <llvm/IR/GlobalValue.h>
 
-GeneratorVisitor::GeneratorVisitor(SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
+GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
+                                   const std::shared_ptr<llvm::IRBuilder<>>& builder,
+                                   SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
                                    const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
                                    bool debugOutput, int optLevel, bool requiresMainFct) {
     // Save parameters
+    this->context = context;
+    this->builder = builder;
     this->currentScope = symbolTable;
     this->sourceFile = sourceFile;
     this->outputPath = outputPath;
@@ -47,10 +51,8 @@ GeneratorVisitor::GeneratorVisitor(SymbolTable* symbolTable, const std::string& 
 
 void GeneratorVisitor::init() {
     // Create LLVM base components
-    context = std::make_unique<llvm::LLVMContext>();
-    builder = std::make_unique<llvm::IRBuilder<>>(*context);
     module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile), *context);
-    conversionsManager = std::make_unique<OpRuleConversionsManager>(builder.get());
+    conversionsManager = std::make_unique<OpRuleConversionsManager>(builder);
 
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();
@@ -553,7 +555,7 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
-    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
+    auto head = ctx->forHead();
 
     // Create blocks
     llvm::BasicBlock* bCond = llvm::BasicBlock::Create(*context, "for.cond");
@@ -569,14 +571,17 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     continueBlocks.push(bPost);
 
     // Execute pre-loop stmts
-    visit(ctx->declStmt());
+    visit(head->declStmt());
     // Jump into condition block
     createBr(bCond);
+
+    // Get parent function
+    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
 
     // Fill condition block
     parentFct->getBasicBlockList().push_back(bCond);
     moveInsertPointToBlock(bCond);
-    llvm::Value* condValuePtr = visit(ctx->assignExpr()[0]).as<llvm::Value*>();
+    llvm::Value* condValuePtr = visit(head->assignExpr()[0]).as<llvm::Value*>();
     llvm::Value* condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
     // Jump to loop body or to loop end
     createCondBr(condValue, bLoop, bEnd);
@@ -593,7 +598,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     parentFct->getBasicBlockList().push_back(bPost);
     moveInsertPointToBlock(bPost);
     // Run post-loop actions
-    visit(ctx->assignExpr()[1]);
+    visit(head->assignExpr()[1]);
     // Jump into condition block
     createBr(bCond);
 
@@ -1085,10 +1090,9 @@ antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext
 antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) {
     if (ctx->logicalAndExpr().size() > 1) {
         // Prepare for short-circuiting
-        std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->logicalAndExpr().size()];
+        std::pair<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->logicalAndExpr().size()];
         llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "lor.end");
         llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
-        parentFunction->getBasicBlockList().push_back(bEnd);
 
         // Visit the first condition
         llvm::Value* lhsPtr = visit(ctx->logicalAndExpr()[0]).as<llvm::Value*>();
@@ -1109,6 +1113,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
             llvm::Value* rhsPtr = visit(ctx->logicalAndExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             std::get<0>(incomingBlocks[i]) = rhs;
+            std::get<1>(incomingBlocks[i]) = builder->GetInsertBlock();
             if (i < ctx->logicalAndExpr().size() -1) {
                 createCondBr(rhs, bEnd, std::get<1>(incomingBlocks[i + 1]));
             } else {
@@ -1117,10 +1122,11 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
         }
 
         // Get the result with the phi node
+        parentFunction->getBasicBlockList().push_back(bEnd);
         moveInsertPointToBlock(bEnd);
         llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->logicalAndExpr().size(), "lor_phi");
-        for (const auto& tuple : incomingBlocks)
-            phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
+        for (const auto& incomingBlock : incomingBlocks)
+            phi->addIncoming(std::get<0>(incomingBlock), std::get<1>(incomingBlock));
 
         // Store the result
         llvm::Value* resultPtr = insertAlloca(phi->getType());
@@ -1133,10 +1139,9 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
 antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext* ctx) {
     if (ctx->bitwiseOrExpr().size() > 1) {
         // Prepare for short-circuiting
-        std::tuple<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->bitwiseOrExpr().size()];
+        std::pair<llvm::Value*, llvm::BasicBlock*> incomingBlocks[ctx->bitwiseOrExpr().size()];
         llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "land.end");
         llvm::Function* parentFunction = builder->GetInsertBlock()->getParent();
-        parentFunction->getBasicBlockList().push_back(bEnd);
 
         // Visit the first condition
         llvm::Value* lhsPtr = visit(ctx->bitwiseOrExpr()[0]).as<llvm::Value*>();
@@ -1157,6 +1162,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
             llvm::Value* rhsPtr = visit(ctx->bitwiseOrExpr()[i]).as<llvm::Value*>();
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
             std::get<0>(incomingBlocks[i]) = rhs;
+            std::get<1>(incomingBlocks[i]) = builder->GetInsertBlock();
             if (i < ctx->bitwiseOrExpr().size() -1) {
                 createCondBr(rhs, std::get<1>(incomingBlocks[i + 1]), bEnd);
             } else {
@@ -1165,10 +1171,11 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
         }
 
         // Get the result with the phi node
+        parentFunction->getBasicBlockList().push_back(bEnd);
         moveInsertPointToBlock(bEnd);
         llvm::PHINode* phi = builder->CreatePHI(lhs->getType(), ctx->bitwiseOrExpr().size(), "land_phi");
-        for (const auto& tuple : incomingBlocks)
-            phi->addIncoming(std::get<0>(tuple), std::get<1>(tuple));
+        for (const auto& incomingBlock : incomingBlocks)
+            phi->addIncoming(std::get<0>(incomingBlock), std::get<1>(incomingBlock));
 
         // Store the result
         llvm::Value* resultPtr = insertAlloca(phi->getType());
@@ -1473,6 +1480,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 // Check if the function is a method and retrieve the function name based on that
                 bool isMethod = currentThisValue != nullptr;
                 std::string functionName = isMethod ? scopePrefix + "." + currentVarName : currentVarName;
+                std::string accessScopePrefix = scopePath.getScopeName();
 
                 // Get function by signature
                 FunctionSignature signature = currentScope->popSignature();
@@ -1507,8 +1515,8 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                         // not have to check for nested structs in pointers here.
                         if (accessScope->isImported() && returnSymbolType.is(TY_STRUCT)) {
                             // If the return type is an imported struct, initialize it first
-                            initExtStruct(returnSymbolType.getSubType(), scopePrefix + "." + returnSymbolType.getSubType());
-                            returnSymbolType = SymbolType(TY_STRUCT, scopePrefix + "." + returnSymbolType.getSubType());
+                            returnSymbolType = SymbolType(TY_STRUCT,
+                                                          accessScopePrefix + "." + returnSymbolType.getSubType());
                         }
                         llvm::Type* returnType = getTypeForSymbolType(returnSymbolType);
                         if (!returnType) throw std::runtime_error("Internal compiler error: Could not find return type of function call");
@@ -1587,6 +1595,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 lhsPtr = insertAlloca(lhs->getType());
             } else if (symbolType == SpiceParser::DOT) { // Consider member access
                 tokenCounter++; // Consume dot
+                scopePrefix += ".";
                 auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
                 lhsPtr = visit(postfixUnary).as<llvm::Value*>();
                 lhs = nullptr;
@@ -1745,7 +1754,6 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
         }
 
         // Check if the struct is defined
-        if (structScope->isImported()) initExtStruct(ctx->IDENTIFIER().back()->toString(), structName);
         SymbolTableEntry* structSymbol = currentScope->lookup(structName);
         assert(structSymbol != nullptr);
         llvm::Type* structType = structSymbol->getLLVMType();
@@ -2089,9 +2097,7 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 
     // Consider pointer/array hierarchy
     while (!pointerArrayList.empty()) {
-        if (pointerArrayList.top().first == TY_PTR) { // Pointer
-            llvmBaseType = llvmBaseType->getPointerTo();
-        } else if (pointerArrayList.top().second == 0) { // If size is 0, use the pointer type
+        if (pointerArrayList.top().first == TY_PTR || pointerArrayList.top().second == 0) { // Pointer
             llvmBaseType = llvmBaseType->getPointerTo();
         } else { // Otherwise, use the array type with a fixed size
             llvmBaseType = llvm::ArrayType::get(llvmBaseType, pointerArrayList.top().second);
@@ -2153,38 +2159,6 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 
     return defaultValue;
 }*/
-
-void GeneratorVisitor::initExtStruct(const std::string& oldStructName, const std::string& newStructName) {
-    SymbolTableEntry* newStructSymbol = currentScope->lookup(newStructName);
-    assert(newStructSymbol != nullptr);
-    if (newStructSymbol->getState() == DECLARED) { // Only initialize if it was not initialized yet
-        SymbolTable* structTable = currentScope->lookupTable("struct:" + newStructName);
-        assert(structTable != nullptr);
-
-        // Get field types
-        std::vector<llvm::Type*> memberTypes;
-        for (unsigned int i = 0; i < structTable->getFieldCount(); i++) {
-            SymbolType fieldType = structTable->lookupByIndexInCurrentScope(i)->getType();
-            if (fieldType.is(TY_STRUCT)) {
-                std::string structName = fieldType.getSubType();
-                initExtStruct(structName, scopePrefix + "." + structName);
-                fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
-            } else if (fieldType.isPointerOf(TY_STRUCT)) {
-                std::string structName = fieldType.getContainedTy().getSubType();
-                initExtStruct(structName, scopePrefix + "." + structName);
-                fieldType = SymbolType(TY_STRUCT, scopePrefix + "." + structName);
-                fieldType = fieldType.toPointer();
-            }
-            // ToDo: Support double, triple, etc. pointers
-            memberTypes.push_back(getTypeForSymbolType(fieldType));
-        }
-
-        // Create global struct
-        llvm::StructType* structType = llvm::StructType::create(*context, memberTypes, newStructName);
-        newStructSymbol->updateLLVMType(structType);
-        newStructSymbol->updateState(INITIALIZED, newStructSymbol->getDefinitionToken());
-    }
-}
 
 bool GeneratorVisitor::compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs) {
     if (lhs->getTypeID() != rhs->getTypeID()) return false;

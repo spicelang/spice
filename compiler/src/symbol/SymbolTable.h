@@ -25,19 +25,20 @@ public:
     explicit SymbolTable(SymbolTable* parent, bool inMainSourceFile) : parent(parent), inMainSourceFile(inMainSourceFile) {};
 
     // Public methods
-    void insert(const std::string&, SymbolType, SymbolSpecifiers, SymbolState, const antlr4::Token&, bool);
+    void insert(const std::string&, const SymbolType&, SymbolSpecifiers, SymbolState, const antlr4::Token&, bool);
 
     SymbolTableEntry* lookup(const std::string& symbolName);
     SymbolTableEntry* lookupByIndexInCurrentScope(unsigned int);
     SymbolTable* lookupTable(const std::string& tableName);
     SymbolTable* lookupTableWithSignature(const std::string& signature);
-
     SymbolTable* createChildBlock(const std::string& tableName);
     void mountChildBlock(const std::string& tableName, SymbolTable* symbolTable);
     void renameChildBlock(const std::string& oldName, const std::string& newName);
 
     SymbolTable* getParent();
     SymbolTable* getChild(const std::string& tableName);
+
+    std::map<std::string, SymbolTableEntry>& getSymbols();
 
     unsigned int getFieldCount();
 
@@ -54,10 +55,10 @@ public:
 
     void printCompilerWarnings();
 
-    nlohmann::ordered_json toJSON();
+    nlohmann::json toJSON();
 
     void setImported();
-    bool isImported() const;
+    [[nodiscard]] bool isImported() const;
 
 private:
     // Members
@@ -68,8 +69,6 @@ private:
     std::map<std::string, std::vector<SymbolType>> procedureDeclarations;
     std::vector<std::string> paramNames;
     std::queue<FunctionSignature> functionSignatures;
-    llvm::BasicBlock* continueBlock = nullptr;
-    llvm::BasicBlock* breakBlock = nullptr;
     bool inMainSourceFile;
     bool imported = false;
 };

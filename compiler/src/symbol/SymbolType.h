@@ -2,8 +2,6 @@
 
 #pragma once
 
-//#include <utility>
-//#include <algorithm>
 #include <string>
 #include <vector>
 #include <stack>
@@ -28,14 +26,14 @@ enum SymbolSuperType {
     TY_IMPORT
 };
 
-typedef std::tuple<SymbolSuperType, std::string> TypeChainElement;
+typedef std::pair<SymbolSuperType, std::string> TypeChainElement;
 typedef std::stack<TypeChainElement> TypeChain;
 
 class SymbolType {
 public:
     // Constructors
-    explicit SymbolType(SymbolSuperType superType) : typeChain({ std::make_tuple(superType, "") }) {}
-    SymbolType(SymbolSuperType superType, const std::string& subType) : typeChain({ std::make_tuple(superType, subType) }) {}
+    explicit SymbolType(SymbolSuperType superType) : typeChain({ std::make_pair(superType, "") }) {}
+    SymbolType(SymbolSuperType superType, const std::string& subType) : typeChain({ std::make_pair(superType, subType) }) {}
     explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
     SymbolType() = default;
 

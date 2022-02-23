@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include <llvm/IR/Value.h>
 #include <llvm/IR/IRBuilder.h>
 
@@ -19,7 +21,7 @@ enum PrimitiveType {
 
 class OpRuleConversionsManager {
 public:
-    explicit OpRuleConversionsManager(llvm::IRBuilder<>* builder) : builder(builder) {}
+    explicit OpRuleConversionsManager(std::shared_ptr<llvm::IRBuilder<>> builder) : builder(std::move(builder)) {}
 
     // Public methods
     llvm::Value* getPlusEqualInst(llvm::Value* lhs, llvm::Value* rhs);
@@ -58,7 +60,7 @@ public:
     llvm::Value* getCastInst(llvm::Type*, llvm::Value* lhs);
 private:
     // Members
-    llvm::IRBuilder<>* builder;
+    std::shared_ptr<llvm::IRBuilder<>> builder;
 
     // Private methods
     static PrimitiveType getPrimitiveTypeFromLLVMType(llvm::Type* llvmType);

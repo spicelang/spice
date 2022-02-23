@@ -17,7 +17,8 @@
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
-    explicit GeneratorVisitor(SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
+    explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context, const std::shared_ptr<llvm::IRBuilder<>>& builder,
+                              SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
                               const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
                               bool debugOutput, int optLevel, bool requiresMainFct);
 
@@ -79,8 +80,8 @@ private:
     bool debugOutput;
     int optLevel;
     bool requiresMainFct = true;
-    std::unique_ptr<llvm::LLVMContext> context;
-    std::unique_ptr<llvm::IRBuilder<>> builder;
+    std::shared_ptr<llvm::LLVMContext> context;
+    std::shared_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<llvm::Module> module;
     std::vector<llvm::Function*> functions;
     SymbolTable* currentScope;
@@ -112,7 +113,6 @@ private:
     llvm::Value* insertAlloca(llvm::Type* llvmType, const std::string& varName = "", llvm::Value* arraySize = nullptr);
     llvm::Type* getTypeForSymbolType(SymbolType symbolType);
     //llvm::Value* getDefaultValueForType(SymbolType symbolType);
-    void initExtStruct(const std::string& oldStructName, const std::string& newStructName);
     bool compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs);
     llvm::Value* doImplicitCast(llvm::Value* lhs, llvm::Type* rhs);
     [[nodiscard]] llvm::PassBuilder::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;

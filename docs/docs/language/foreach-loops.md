@@ -17,7 +17,7 @@ foreach (const int item : myIntArray) {
 ```
 
 !!! note "Optional parentheses"
-    As with the if statement and while loop, the parantheses around the head of the `foreach` loop are optional.
+    As with the if statement, for loop and while loop, the parantheses around the head of the `foreach` loop are optional.
 
 ### Indexed
 As soon as you need to access the index of the array item as well, you can use the indexed 
