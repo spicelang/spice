@@ -74,7 +74,9 @@ void GeneratorVisitor::init() {
     llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
     targetMachine = target->createTargetMachine(tripletString, "generic", "", opt, rm);
 
-    module->setDataLayout(targetMachine->createDataLayout());
+    llvm::DataLayout layout = targetMachine->createDataLayout();
+    dataLayout = &layout;
+    module->setDataLayout(layout);
 }
 
 void GeneratorVisitor::optimize() {
@@ -961,8 +963,16 @@ antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* 
     llvm::Value* value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
     llvm::Type* valueTy = value->getType();
 
+    // Unpack pointer types
+    while(valueTy->isPointerTy()) valueTy = valueTy->getPointerElementType();
+
     // Calculate size at compile-time
-    unsigned int size = valueTy->isArrayTy() ? valueTy->getArrayNumElements() : valueTy->getScalarSizeInBits();
+    unsigned int size = valueTy->getScalarSizeInBits();
+    if (valueTy->isArrayTy()) {
+        size = valueTy->getArrayNumElements();
+    } else if (valueTy->isStructTy()) {
+        size = valueTy->getStructNumElements();
+    }
     llvm::Value* resultPtr = insertAlloca(builder->getInt32Ty());
     builder->CreateStore(builder->getInt32(size), resultPtr);
 

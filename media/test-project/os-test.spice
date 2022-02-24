@@ -25,10 +25,24 @@ f<int> main() {
     a.destructor();
 }*/
 
-import "socket" as socket;
+/*import "socket" as socket;
 
 f<int> main() {
     socket.Socket s = socket.openServerSocket(8080s);
     //socket.NestedSocket n = s.nested;
     //printf("%s", n.testString);
+}*/
+
+type TestStruct struct {
+    string test
+    int test1
+}
+
+f<int> TestStruct.compute() {
+    string test = "Test";
+    return this.test1;
+}
+
+f<int> main() {
+    printf("%d", TestStruct{ "sdf", 12 }.compute());
 }

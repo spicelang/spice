@@ -579,7 +579,7 @@ antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext*
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) {
     std::string variableName = ctx->IDENTIFIER()->toString();
     // Check if symbol already exists in the symbol table
-    if (currentScope->lookup(variableName))
+    if (currentScope->lookupStrict(variableName))
         throw SemanticError(*ctx->start, VARIABLE_DECLARED_TWICE,
                             "The variable '" + variableName + "' was declared more than once");
 

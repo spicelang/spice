@@ -10,7 +10,7 @@ Printf works the same as the `printf` function in C and is designed for printing
 ### Signature
 `void printf(string template, ...args)`
 
-`template`: Template string, which can contain placeholders for values, passed as args to the `printf` builtin.
+`template`: Template string, which can contain placeholders for values, passed as args to the `printf` builtin. <br>
 `args`: Arbitrary number of arguments of any type. The particular type and the order of the types have to match the placeholders of the template string.
 
 Within the template string you can use the `\n` control character to achieve a line break. This works on Linux and Windows the same way.
@@ -40,7 +40,7 @@ Within the template string you can use the `\n` control character to achieve a l
 
 ### Usage example
 ```spice
-printf("Here is a string: %s.\nAnd here is a double: %f");
+printf("Here is a string: %s.\nAnd here is a double: %f", "Demo", 1.123);
 ```
 
 ## The `sizeof` builtin
@@ -49,7 +49,9 @@ Sizeof returns the internal size of a variable or a constant in bits. To get the
 ### Signature
 `int sizeof(any variable)`
 
-`variable`: Variable or constant of any type. Pointers are also possible.
+`variable`: Variable or constant of any type.
+
+If the variable is a pointer type, the size of the contained type is being returned. If the variable is of type array or struct, `sizeof` will return the number of array elements or struct fields respectively.
 
 ### Usage example
 ```spice
@@ -58,5 +60,7 @@ sizeof(12); // 32
 string[9] stringArray = {};
 sizeof(stringArray); // 9
 
-sizeof(&stringArray); // System dependant, usually 8
+sizeof("Hello World!"); // 8 (Strings are Char pointers internally and the size of a char is 8)
+
+sizeof(&stringArray); // 9
 ```

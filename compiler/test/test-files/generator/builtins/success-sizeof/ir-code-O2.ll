@@ -13,6 +13,8 @@ target triple = "x86_64-w64-windows-gnu"
 @7 = private unnamed_addr constant [18 x i8] c"Size of bool: %d\0A\00", align 1
 @8 = private unnamed_addr constant [19 x i8] c"Size of int[]: %d\0A\00", align 1
 @anonymous.0 = local_unnamed_addr constant [7 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7]
+@9 = private unnamed_addr constant [18 x i8] c"Size of int*: %d\0A\00", align 1
+@10 = private unnamed_addr constant [29 x i8] c"Size of struct instance: %d\0A\00", align 1
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
@@ -26,9 +28,11 @@ entry:
   %3 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @3, i64 0, i64 0), i32 64)
   %4 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @4, i64 0, i64 0), i32 8)
   %5 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @5, i64 0, i64 0), i32 8)
-  %6 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @6, i64 0, i64 0), i32 0)
+  %6 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @6, i64 0, i64 0), i32 8)
   %7 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @7, i64 0, i64 0), i32 1)
   %8 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @8, i64 0, i64 0), i32 7)
+  %9 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @9, i64 0, i64 0), i32 32)
+  %10 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([29 x i8], [29 x i8]* @10, i64 0, i64 0), i32 3)
   ret i32 0
 }
 

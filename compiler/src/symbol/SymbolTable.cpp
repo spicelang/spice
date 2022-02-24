@@ -47,6 +47,19 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
 }
 
 /**
+ * Check if a symbol exists in the current scope and return it if possible
+ *
+ * @param name Name of the desired symbol
+ * @return Desired symbol / nullptr if the symbol was not found
+ */
+SymbolTableEntry* SymbolTable::lookupStrict(const std::string& name) {
+    // If not available in the current scope, return nullptr
+    if (symbols.find(name) == symbols.end()) return nullptr;
+    // Otherwise, return the entry
+    return &symbols.at(name);
+}
+
+/**
  * Check if an order index exists in the current or any parent scope and returns it if possible.
  * Warning: Unlike the `lookup` method, this one doesn't consider the parent scopes
  *
