@@ -33,7 +33,6 @@ f<int> main() {
     //printf("%s", n.testString);
 }*/
 
-
 type TestStruct struct {
     string test
     int test1
