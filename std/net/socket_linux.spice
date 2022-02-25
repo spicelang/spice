@@ -16,9 +16,9 @@ type SockAddrIn struct {
 }
 
 public type Socket struct {
-    int sockFd // Actual socket
-    int connFd // Current connection
-    short errorCode
+    unsigned long sockFd // Actual socket
+    unsigned long connFd // Current connection
+    public short errorCode
 }
 
 public const short ERROR_SOCKET = -1s;
@@ -45,10 +45,10 @@ ext<int> connect(int, SockAddrIn*, int);
  *
  * @return Connection file descriptor
  */
-public f<int> Socket.acceptConnection() {
+public f<long> Socket.acceptConnection() {
     SockAddrIn cliAddr = SockAddrIn {};
-    this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
-    if this.connFd == -1 {
+    this.connFd = (long) accept((int) this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
+    if this.connFd == -1l {
         //result.errorCode = ERROR_ACCEPT;
         return -1;
     }
@@ -78,7 +78,7 @@ public f<long> Socket.read(byte* ptr, long size) {
  * @return Error code for closing the socket
  */
 public f<int> Socket.close() {
-    return close(this.sockFd);
+    return close((int) this.sockFd);
 }
 
 // Tmp function until bug #95 is fixed
@@ -93,33 +93,33 @@ public f<int> closeSocket(int fd) {
  *
  * @return Socket file descriptor
  */
-public f<int> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
-    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
+public f<Socket> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
+    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0l, 0s };
 
     // Cancel on failure
-    if s.sockFd == -1 {
+    if s.sockFd == -1l {
         s.errorCode = ERROR_SOCKET;
-        return -1;
+        return s;
     }
 
     InAddr inAddr = InAddr { htonl(INADDR_ANY) };
     SockAddrIn servAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
 
-    int bindResult = bind(s.sockFd, &servAddr, 16 /* hardcoded sizeof(servaddr) */);
+    int bindResult = bind((int) s.sockFd, &servAddr, 16 /* hardcoded sizeof(servaddr) */);
     if bindResult != 0 {
         s.errorCode = ERROR_BIND;
-        return bindResult;
+        return s;
     }
 
-    int listenResult = listen(s.sockFd, maxWaitingConnections);
+    int listenResult = listen((int) s.sockFd, maxWaitingConnections);
     if listenResult != 0 {
         s.errorCode = ERROR_LISTEN;
-        return listenResult;
+        return s;
     }
 
     s.acceptConnection();
 
-    return s.sockFd;
+    return s;
 }
 
 /**
@@ -129,22 +129,22 @@ public f<int> openServerSocket(unsigned short port, int maxWaitingConnections = 
  *
  * @return Socket file descriptor
  */
-public f<int> openClientSocket(string host, unsigned short port) {
-    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
+public f<long> openClientSocket(string host, unsigned short port) {
+    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0l, 0s };
 
     // Cancel on failure
-    if s.sockFd == -1 {
+    if s.sockFd == -1l {
         s.errorCode = ERROR_SOCKET;
-        return -1;
+        return -1l;
     }
 
     InAddr inAddr = InAddr { inet_addr(host) };
     SockAddrIn cliAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
 
-    int connectResult = connect(s.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
+    int connectResult = connect((int) s.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
     if connectResult != 0 {
         s.errorCode = ERROR_CONNECT;
-        return -1;
+        return -1l;
     }
 
     return s.sockFd;
