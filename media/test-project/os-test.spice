@@ -30,6 +30,5 @@ import "std/net/socket" as socket;
 f<int> main() {
     socket.Socket s = socket.openServerSocket(8080s, 2);
     printf("Error code: %d", s.errorCode);
-
-    //s.close();
+    s.close();
 }

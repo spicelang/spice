@@ -250,8 +250,8 @@ void SymbolTable::updateSymbolTypes(const SymbolType& oldType, const SymbolType&
         if (currentType == oldType) {
             std::reverse(ptrArrayList.begin(), ptrArrayList.end());
             SymbolType currentNewType = newType;
-            for (auto& superType : ptrArrayList) {
-                if (superType == TY_PTR)
+            for (auto it = ptrArrayList.rbegin(); it != ptrArrayList.rend(); ++it) {
+                if (*it == TY_PTR)
                     currentNewType = currentNewType.toPointer();
                 else
                     currentNewType = currentNewType.toArray();

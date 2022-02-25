@@ -81,11 +81,6 @@ public f<int> Socket.close() {
     return close((int) this.sockFd);
 }
 
-// Tmp function until bug #95 is fixed
-public f<int> closeSocket(int fd) {
-    return close(fd);
-}
-
 /**
  * Opens a TCP server socket and exposes it to the given port.
  * You can specify the maximum number of waiting client connections by passing an integer for maxWaitingConnections.

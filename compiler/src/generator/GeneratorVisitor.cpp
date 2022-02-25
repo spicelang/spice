@@ -1489,7 +1489,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 
                 // Check if the function is a method and retrieve the function name based on that
                 bool isMethod = currentThisValue != nullptr;
-                std::string functionName = isMethod ? scopePrefix + "." + currentVarName : currentVarName;
+                std::string functionName = isMethod ? scopePrefix : currentVarName;
                 std::string accessScopePrefix = scopePath.getScopeName();
 
                 // Get function by signature
@@ -2097,7 +2097,9 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
             break;
         }
         case TY_STRUCT: {
-            llvmBaseType = currentScope->lookup(symbolType.getSubType())->getLLVMType();
+            SymbolTableEntry* structSymbol = currentScope->lookup(symbolType.getSubType());
+            assert(structSymbol != nullptr);
+            llvmBaseType = structSymbol->getLLVMType();
             assert(llvmBaseType != nullptr);
             break;
         }
