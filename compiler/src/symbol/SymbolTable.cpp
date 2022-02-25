@@ -231,6 +231,7 @@ std::vector<SymbolType> SymbolTable::getProcedureDeclaration(const std::string& 
 
 /**
  * Changes a specific type to another in the whole sub-table
+ * ToDo: Currently unused. Maybe remove in the future
  *
  * @param oldType Old symbol type
  * @param newType Replacement type
@@ -257,6 +258,12 @@ void SymbolTable::updateSymbolTypes(const SymbolType& oldType, const SymbolType&
                     currentNewType = currentNewType.toArray();
             }
             symbol.updateType(currentNewType, true);
+        }
+    }
+    // Update function declarations
+    for (auto& [functionSignature, types] : functionDeclarations) {
+        for (auto& i : types) {
+            if (i == oldType) i = newType;
         }
     }
     // Visit all child tables
