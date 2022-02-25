@@ -1489,7 +1489,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 
                 // Check if the function is a method and retrieve the function name based on that
                 bool isMethod = currentThisValue != nullptr;
-                std::string functionName = isMethod ? scopePrefix + "." + currentVarName : currentVarName;
+                std::string functionName = isMethod ? scopePrefix : currentVarName;
                 std::string accessScopePrefix = scopePath.getScopeName();
 
                 // Get function by signature
@@ -1611,10 +1611,18 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 lhs = nullptr;
             } else if (symbolType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
                 assert(lhs != nullptr);
-                lhs = conversionsManager->getPostfixPlusPlusInst(lhs);
+                // Save the new value to the old pointer
+                llvm::Value* newLhsValue = conversionsManager->getPostfixPlusPlusInst(lhs);
+                builder->CreateStore(newLhsValue, lhsPtr);
+                // Allocate new space and continue working with the new memory slot
+                lhsPtr = insertAlloca(lhs->getType());
             } else if (symbolType == SpiceParser::MINUS_MINUS) { // Consider -- operator
                 assert(lhs != nullptr);
-                lhs = conversionsManager->getPostfixMinusMinusInst(lhs);
+                // Save the new value to the old pointer
+                llvm::Value* newLhsValue = conversionsManager->getPostfixMinusMinusInst(lhs);
+                builder->CreateStore(newLhsValue, lhsPtr);
+                // Allocate new space and continue working with the new memory slot
+                lhsPtr = insertAlloca(lhs->getType());
             }
             tokenCounter++;
         }
@@ -2097,7 +2105,9 @@ llvm::Type* GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
             break;
         }
         case TY_STRUCT: {
-            llvmBaseType = currentScope->lookup(symbolType.getSubType())->getLLVMType();
+            SymbolTableEntry* structSymbol = currentScope->lookup(symbolType.getSubType());
+            assert(structSymbol != nullptr);
+            llvmBaseType = structSymbol->getLLVMType();
             assert(llvmBaseType != nullptr);
             break;
         }

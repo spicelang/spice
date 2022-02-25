@@ -1257,7 +1257,7 @@ llvm::Value* OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value* lhs) {
             return builder->CreateAdd(lhs, builder->getInt64(1));
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++"); // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value* lhs) {
@@ -1272,7 +1272,7 @@ llvm::Value* OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value* lhs)
             return builder->CreateSub(lhs, builder->getInt64(1));
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: --"); // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPrefixNotInst(llvm::Value* lhs) {
@@ -1311,7 +1311,7 @@ llvm::Value* OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value* lhs) 
             return builder->CreateAdd(lhs, builder->getInt64(1));
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++"); // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value* lhs) {
@@ -1326,7 +1326,7 @@ llvm::Value* OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value* lhs
             return builder->CreateSub(lhs, builder->getInt64(1));
         default: break;
     }
-    throw std::runtime_error("Internal compiler error: Operator fallthrough: --"); // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
 llvm::Value* OpRuleConversionsManager::getCastInst(llvm::Type* lhsTy, llvm::Value* rhs) {

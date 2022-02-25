@@ -29,6 +29,7 @@
               "orderIndex": 0,
               "specifiers": {
                 "const": false,
+                "public": false,
                 "signed": true
               },
               "state": "initialized",
@@ -45,6 +46,7 @@
           "orderIndex": 13,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -56,6 +58,7 @@
           "orderIndex": 7,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -67,6 +70,7 @@
           "orderIndex": 8,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -78,6 +82,7 @@
           "orderIndex": 9,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -89,6 +94,7 @@
           "orderIndex": 10,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "declared",
@@ -100,6 +106,7 @@
           "orderIndex": 14,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -111,6 +118,7 @@
           "orderIndex": 1,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -122,6 +130,7 @@
           "orderIndex": 2,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -133,6 +142,7 @@
           "orderIndex": 3,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -144,6 +154,7 @@
           "orderIndex": 4,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -155,6 +166,7 @@
           "orderIndex": 0,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -166,6 +178,7 @@
           "orderIndex": 5,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -177,6 +190,7 @@
           "orderIndex": 6,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -188,6 +202,7 @@
           "orderIndex": 11,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "initialized",
@@ -199,6 +214,7 @@
           "orderIndex": 12,
           "specifiers": {
             "const": false,
+            "public": false,
             "signed": true
           },
           "state": "declared",
@@ -214,6 +230,7 @@
       "orderIndex": 0,
       "specifiers": {
         "const": true,
+        "public": false,
         "signed": false
       },
       "state": "initialized",

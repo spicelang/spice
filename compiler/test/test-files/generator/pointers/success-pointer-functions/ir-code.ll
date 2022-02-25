@@ -17,13 +17,15 @@ declare i32 @printf(i8*, ...)
 define internal void @"birthday(struct(Person)*)"(%Person* %0) #0 {
 entry:
   %person = alloca %Person*, align 8
+  %1 = alloca i32, align 4
   store %Person* %0, %Person** %person, align 8
-  %1 = load %Person*, %Person** %person, align 8
   %2 = load %Person*, %Person** %person, align 8
-  %3 = getelementptr inbounds %Person, %Person* %2, i32 0, i32 2
-  %4 = load i32, i32* %3, align 4
-  %5 = add i32 %4, 1
-  store i32 %5, i32* %3, align 4
+  %3 = load %Person*, %Person** %person, align 8
+  %4 = getelementptr inbounds %Person, %Person* %3, i32 0, i32 2
+  %5 = load i32, i32* %4, align 4
+  %6 = add i32 %5, 1
+  store i32 %6, i32* %4, align 4
+  store i32 %5, i32* %1, align 4
   ret void
 }
 

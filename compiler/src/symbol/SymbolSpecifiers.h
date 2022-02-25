@@ -4,6 +4,8 @@
 
 #include <symbol/SymbolType.h>
 
+#include "../../lib/json/json.hpp"
+
 // Bit indices from right to left
 const unsigned short BIT_INDEX_PUBLIC = 0;
 const unsigned short BIT_INDEX_SIGNED = 1;
@@ -47,6 +49,7 @@ public:
     [[nodiscard]] bool isSigned() const;
     void setPublic(bool value);
     [[nodiscard]] bool isPublic() const;
+    [[nodiscard]] nlohmann::ordered_json toJSON() const;
 private:
     unsigned short specifierValue = 0;
     void setBit(unsigned short index);

@@ -1,20 +1,119 @@
-ext<int> socket(int, int, int);
+// linker: -lws2_32
 
-const int TCP = 0;
-const int UDP = 1;
+const int AF_INET = 2;
+const int SOCK_STREAM = 1;
+const int SOCK_DGRAM = 2;
+const int IPPROTO_IP = 0;
+const int IPPROTO_UDP = 17;
+const int INADDR_ANY = 0;
 
-public type WebSocketData struct {
-    int wVersion
-    int wHighVersion
+const unsigned short REQUESTED_WSA_VERSION = 514s;
+
+public type WSAData struct {
+    unsigned short wVersion
+    unsigned short wHighVersion
     unsigned short iMaxSockets
     unsigned short iMaxUdpDg
     char* lpVendorInfo
-    char[257] szDescription;
-    char[129] szSystemStatus;
-    // To be extended
+    char[257] szDescription
+    char[129] szSystemStatus
 }
 
-public f<int> openServerSocket() {
+type InAddr struct {
+    unsigned int addr
+}
 
-    return 0;
+type SockAddrIn struct {
+    unsigned short sinFamily
+    unsigned short sinPort
+    InAddr sinAddr
+}
+
+public type Socket struct {
+    unsigned long sockFd // Actual socket
+    unsigned long connFd // Current connection
+    public short errorCode
+}
+
+public const short ERROR_SOCKET = -1s;
+public const short ERROR_BIND = -2s;
+public const short ERROR_LISTEN = -3s;
+public const short ERROR_ACCEPT = -4s;
+public const short ERROR_CONNECT = -5s;
+
+ext<int> WSAStartup(short, WSAData*);
+ext<long> socket(int, int, int);
+ext<int> bind(long, SockAddrIn*, int);
+ext<int> listen(long, int);
+ext<long> accept(long, SockAddrIn*, int);
+ext<int> close(long);
+ext<int> htonl(int);     // Fairly simple to re-implement in Spice
+ext<short> htons(short); // Fairly simple to re-implement in Spice
+
+/**
+ * Accept an incoming connection to the socket and save the connection file desceiptor
+ * to the socket object.
+ *
+ * @return Connection file descriptor
+ */
+public f<long> Socket.acceptConnection() {
+    SockAddrIn cliAddr = SockAddrIn{};
+    this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
+    if this.connFd == -1l {
+        //result.errorCode = ERROR_ACCEPT;
+        return -1l;
+    }
+    return this.connFd;
+}
+
+/**
+ * Closes the socket. This method should always be called by the user before exiting the program.
+ *
+ * @return Error code for closing the socket
+ */
+public f<int> Socket.close() {
+    return close(this.sockFd);
+}
+
+/**
+ * Opens a TCP server socket and exposes it to the given port.
+ * You can specify the maximum number of waiting client connections by passing an integer for maxWaitingConnections.
+ * The default value there is 5.
+ *
+ * @return Socket file descriptor
+ */
+public f<Socket> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
+    Socket s = Socket{};
+    WSAData wsaData = WSAData{};
+    if WSAStartup(REQUESTED_WSA_VERSION, &wsaData) != 0 {
+        s.errorCode = ERROR_SOCKET;
+        return s;
+    }
+
+    s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0l, 0s };
+
+    // Cancel on failure
+    if s.sockFd == -1l {
+        s.errorCode = ERROR_SOCKET;
+        return s;
+    }
+
+    InAddr inAddr = InAddr { htonl(INADDR_ANY) };
+    SockAddrIn servAddr = SockAddrIn { (short) AF_INET, htons(port), inAddr };
+
+    int bindResult = bind(s.sockFd, &servAddr, 16 /* hardcoded sizeof(servaddr) */);
+    if bindResult != 0 {
+        s.errorCode = ERROR_BIND;
+        return s;
+    }
+
+    int listenResult = listen(s.sockFd, maxWaitingConnections);
+    if listenResult != 0 {
+        s.errorCode = ERROR_LISTEN;
+        return s;
+    }
+
+    s.acceptConnection();
+
+    return s;
 }
