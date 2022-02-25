@@ -4,7 +4,7 @@ builds:
     main: ./spice.go
     goos:
       - linux
-      #- windows
+      - windows
     goarch:
       - amd64
       #- arm

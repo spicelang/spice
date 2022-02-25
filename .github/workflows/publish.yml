@@ -45,24 +45,35 @@ jobs:
               #dockcross: 20220128-2dcae35,
               cmake_params:
             }
-          #- {
-          #    arch: windows-static-x86,
-          #    dockcross: 20210804-76ae808,
-          #    cmake_params: -DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0
-          #  }
-          #- {
-          #    arch: windows-static-x64,
-          #    dockcross: 20210805-77da067,
-          #    cmake_params: -DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0
-          #  }
+          - {
+              arch: windows-static-x86,
+              dockcross: 20210701-56e20c5,
+              #dockcross: 20220224-bfdbf76,
+              #dockcross: 20210804-76ae808,
+              #cmake_params: "-DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0"
+              cmake_params: "-DHAVE_STEADY_CLOCK=\"0\""
+            }
+          - {
+              arch: windows-static-x64,
+              dockcross: 20220224-bfdbf76,
+              #dockcross: 20210701-56e20c5,
+              #cmake_params: "-DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0"
+              cmake_params: "-DHAVE_STEADY_CLOCK=\"0\""
+            }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Setup builder
+      - name: Setup builders
         run: |
           docker run --rm dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} > ./dockcross
           chmod +x dockcross
+
+      - name: Install native LLVM
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: 13.0.1
+          directory: llvm-native
 
       - name: Cache LLVM
         id: cache-llvm
@@ -75,15 +86,16 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: git clone --depth 1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project.git llvm
 
+      - name: Test
+        run: which llvm-tblgen
+
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: | #-DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON
-          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" ${{ matrix.config.cmake_params }} -Wno-dev -Wattributes
+        run: ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O2" ${{ matrix.config.cmake_params }} -DLLVM_TABLEGEN=./llvm-native/bin/llvm-tblgen -Wno-dev -Wattributes
       
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
-          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} bash -c 'cd ./llvm/build && cmake --build .'
+        run: ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} bash -c 'cd ./llvm/build && cmake --build .'
 
       - name: Download Libs
         run: |
@@ -167,7 +179,9 @@ jobs:
 
       - name: Rename compiler binaries & allow execution
         working-directory: bin
-        run: | # mv spicec-windows-static-x86 spicec-windows-386 \n mv spicec-windows-static-x64 spicec-windows-amd64
+        run: |
+          mv spicec-windows-static-x86 spicec-windows-386
+          mv spicec-windows-static-x64 spicec-windows-amd64
           mv spicec-linux-x86 spicec-linux-386
           mv spicec-linux-x64 spicec-linux-amd64
           chmod -R +x ./
