@@ -1611,10 +1611,18 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
                 lhs = nullptr;
             } else if (symbolType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
                 assert(lhs != nullptr);
-                lhs = conversionsManager->getPostfixPlusPlusInst(lhs);
+                // Save the new value to the old pointer
+                llvm::Value* newLhsValue = conversionsManager->getPostfixPlusPlusInst(lhs);
+                builder->CreateStore(newLhsValue, lhsPtr);
+                // Allocate new space and continue working with the new memory slot
+                lhsPtr = insertAlloca(lhs->getType());
             } else if (symbolType == SpiceParser::MINUS_MINUS) { // Consider -- operator
                 assert(lhs != nullptr);
-                lhs = conversionsManager->getPostfixMinusMinusInst(lhs);
+                // Save the new value to the old pointer
+                llvm::Value* newLhsValue = conversionsManager->getPostfixMinusMinusInst(lhs);
+                builder->CreateStore(newLhsValue, lhsPtr);
+                // Allocate new space and continue working with the new memory slot
+                lhsPtr = insertAlloca(lhs->getType());
             }
             tokenCounter++;
         }
