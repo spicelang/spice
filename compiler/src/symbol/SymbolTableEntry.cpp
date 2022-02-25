@@ -170,7 +170,7 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() {
     result["type"] = type.getName(true);
     result["orderIndex"] = orderIndex;
     result["state"] = state == INITIALIZED ? "initialized" : "declared";
-    result["specifiers"] = { { "const", specifiers.isConst() }, { "signed", specifiers.isSigned() } };
+    result["specifiers"] = specifiers.toJSON();
     result["isGlobal"] = isGlobal;
     return result;
 }
