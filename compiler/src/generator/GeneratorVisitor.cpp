@@ -74,9 +74,7 @@ void GeneratorVisitor::init() {
     llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
     targetMachine = target->createTargetMachine(tripletString, "generic", "", opt, rm);
 
-    llvm::DataLayout layout = targetMachine->createDataLayout();
-    dataLayout = &layout;
-    module->setDataLayout(layout);
+    module->setDataLayout(targetMachine->createDataLayout());
 }
 
 void GeneratorVisitor::optimize() {

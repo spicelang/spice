@@ -76,7 +76,6 @@ private:
     std::string sourceFile;
     llvm::Triple targetTriple;
     llvm::TargetMachine* targetMachine{};
-    llvm::DataLayout* dataLayout = nullptr;
     std::string outputPath;
     bool debugOutput;
     int optLevel;

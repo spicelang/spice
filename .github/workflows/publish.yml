@@ -12,7 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Uninstall potential other versions of LLVM
+        run: sudo apt-get purge llvm-12 clang-12 llvm-11 clang-11 llvm-10 clang-10
+
+      - name: Setup latest GCC
+        run: |
+          sudo apt install gcc-11 g++-11
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11
 
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
@@ -22,7 +30,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-13-0-1-${{ matrix.config.arch }}
+          key: llvm-13-0-1-linux
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -51,7 +59,7 @@ jobs:
       
       - name: Configure & compile project
         env:
-          LLVM_DIR: /work/llvm/build/lib/cmake/llvm
+          LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
         run: |
           mkdir ./bin
           cd ./bin
@@ -75,7 +83,14 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      #- name: Setup latest GCC
+      #  shell: pwsh
+      #  run: |
+      #    choco upgrade mingw
+      #    $path = where.exe mingw32-make.exe | Get-Item
+      #    Copy-Item -Path $path -Destination (Join-Path $path.Directory 'make.exe')
 
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
@@ -84,8 +99,8 @@ jobs:
         id: cache-llvm
         uses: actions/cache@v2
         with:
-          path: /home/runner/work/spice/spice/llvm
-          key: llvm-13-0-1-windows-static-x64
+          path: D:/a/spice/spice/llvm
+          key: llvm-13-0-1-windows
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -110,11 +125,11 @@ jobs:
           cd ./compiler/lib
           git clone --branch 4.9.3 --depth 1 https://github.com/antlr/antlr4.git
           mkdir json
-          curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
+          curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" -o json/json.hpp
       
       - name: Configure & compile project
         env:
-          LLVM_DIR: /work/llvm/build/lib/cmake/llvm
+          LLVM_DIR: D:/a/spice/spice/llvm/build/lib/cmake/llvm
         run: |
           mkdir ./bin
           cd ./bin
@@ -139,7 +154,7 @@ jobs:
       DOCKER_CLI_EXPERIMENTAL: enabled
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -254,61 +269,60 @@ jobs:
 #        run: |
 #          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.apk"
 
-#  build-win-installers:
-#    name: Build installers
-#    needs: build-cli
-#    runs-on: windows-latest
-#    strategy:
-#      matrix:
-#        config:
-#          - {
-#              arch: amd64,
-#              label: x64
-#            }
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-#
-#      - name: Get version name
-#        id: get_version
-#        uses: battila7/get-version-action@v2
-#
-#      - name: Download executables
-#        id: download_exe
-#        shell: bash
-#        run: | # Remove the last command as soon as this is implemented: https://github.com/goreleaser/goreleaser/issues/1638
-#          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_${{ matrix.config.arch }}*.zip'
-#          printf "::set-output name=zip::%s\n" *.zip
-#          unzip -o *.zip && rm -v *.zip
-#          cp ./bin/spicec-windows-${{ matrix.config.arch }}/spicec.exe ./spicec.exe
-#        env:
-#          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-#
-#      - name: Install GoMSI
-#        run: choco install -y go-msi
-#
-#      - name: Prepare PATH
-#        shell: bash
-#        run: |
-#          echo "$WIX\\bin" >> $GITHUB_PATH
-#          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
-#
-#      - name: Build MSI
-#        shell: bash
-#        id: build_msi
-#        env:
-#          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
-#        run: |
-#          mkdir -p build
-#          msi="$(basename "$ZIP_FILE" ".zip").msi"
-#          printf "::set-output name=msi::%s\n" "$msi"
-#          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version ${{ steps.get_version.outputs.version }}
-#          printf "::set-output name=msi::%s\n" *.msi
-#
-#      - name: Upload MSI
-#        uses: svenstaro/upload-release-action@v2
-#        with:
-#          repo_token: ${{ secrets.GITHUB_TOKEN }}
-#          file: ${{ steps.build_msi.outputs.msi }}
-#          asset_name: spice_${{ matrix.config.label }}_setup.msi
-#          tag: ${{ github.ref }}
+  build-win-installers:
+    name: Build installers
+    needs: build-cli
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config:
+          - {
+              arch: amd64,
+              label: x64
+            }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install GoMSI
+        run: choco install -y go-msi
+
+      - name: Get version name
+        id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Download executables
+        id: download_exe
+        shell: bash
+        run: |
+          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_${{ matrix.config.arch }}*.zip'
+          printf "::set-output name=zip::%s\n" *.zip
+          unzip -o *.zip && rm -v *.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare PATH
+        shell: bash
+        run: |
+          echo "$WIX\\bin" >> $GITHUB_PATH
+          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
+
+      - name: Build MSI
+        shell: bash
+        id: build_msi
+        env:
+          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
+        run: |
+          mkdir -p build
+          msi="$(basename "$ZIP_FILE" ".zip").msi"
+          printf "::set-output name=msi::%s\n" "$msi"
+          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version ${{ steps.get_version.outputs.version }}
+          printf "::set-output name=msi::%s\n" *.msi
+
+      - name: Upload MSI
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ steps.build_msi.outputs.msi }}
+          asset_name: spice_${{ matrix.config.label }}_setup.msi
+          tag: ${{ github.ref }}
