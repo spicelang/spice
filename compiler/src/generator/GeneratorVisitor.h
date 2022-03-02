@@ -115,5 +115,5 @@ private:
     //llvm::Value* getDefaultValueForType(SymbolType symbolType);
     bool compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs);
     llvm::Value* doImplicitCast(llvm::Value* lhs, llvm::Type* rhs);
-    [[nodiscard]] llvm::PassBuilder::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
+    [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

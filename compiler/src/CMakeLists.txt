@@ -1,9 +1,4 @@
-set(BINARY ${CMAKE_PROJECT_NAME})
-
-# Antlr
-find_package(ANTLR REQUIRED)
-antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/grammar/Spice.g4 VISITOR)
-
+# Sources to compile
 set(SOURCES
         main.cpp
         CompilerInstance.cpp
@@ -45,12 +40,17 @@ set(SOURCES
         util/CompilerWarning.cpp
         util/CompilerWarning.h)
 
-add_executable(${BINARY}_run ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+# Find ANTLR
+find_package(ANTLR REQUIRED)
+antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/grammar/Spice.g4 VISITOR)
 
-# Include Antlr components
-include_directories(${ANTLR4CPP_INCLUDE_DIRS})
+# Include Antlr runtime and the generated components like Lexer and Parser
 include_directories(${ANTLR_Spice_OUTPUT_DIR})
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
 
-target_link_libraries(${BINARY}_run antlr4_static ${LLVM_LIBS})
-add_library(${BINARY}_lib STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+# Add executable target: Spice_run
+add_executable(${CMAKE_PROJECT_NAME}_run ${ANTLR_Spice_CXX_OUTPUTS} ${SOURCES})
+target_link_libraries(${CMAKE_PROJECT_NAME}_run antlr4_static ${LLVM_LIBS})
+
+# Add library target: Spice_lib
+add_library(${CMAKE_PROJECT_NAME}_lib STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})

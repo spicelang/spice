@@ -17,20 +17,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [1.16.x, 1.17.x]
-        os: [ubuntu-latest, windows-latest]
+        go-version:
+          - 1.17.x
+#          - 1.18.x
+        os:
+          - ubuntu-latest
+          - windows-latest
     defaults:
       run:
         working-directory: ./cli
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Install Go
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
-
-      - name: Checkout code
-        uses: actions/checkout@v2
 
       - name: Prepare environment
         run: |
@@ -51,7 +55,7 @@ jobs:
 
       - name: Install GoSec
         shell: bash
-        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/v2.9.6/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.9.6
+        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/v2.10.0/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.10.0
 
       - name: Run security scan
         run: gosec -exclude=G204 ./...

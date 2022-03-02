@@ -30,11 +30,11 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-13-0-1-linux
+          key: llvm-14-0-0-rc2-linux
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project.git llvm
+        run: git clone --depth 1 --branch llvmorg-14.0.0-rc2 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -85,13 +85,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      #- name: Setup latest GCC
-      #  shell: pwsh
-      #  run: |
-      #    choco upgrade mingw
-      #    $path = where.exe mingw32-make.exe | Get-Item
-      #    Copy-Item -Path $path -Destination (Join-Path $path.Directory 'make.exe')
-
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
 
@@ -100,11 +93,11 @@ jobs:
         uses: actions/cache@v2
         with:
           path: D:/a/spice/spice/llvm
-          key: llvm-13-0-1-windows
+          key: llvm-14-0-0-rc2-windows
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project.git llvm
+        run: git clone --depth 1 --branch llvmorg-14.0.0-rc2 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -127,6 +120,13 @@ jobs:
           mkdir json
           curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" -o json/json.hpp
       
+      - name: Setup latest GCC
+        shell: pwsh
+        run: |
+          choco upgrade mingw
+          $path = where.exe mingw32-make.exe | Get-Item
+          Copy-Item -Path $path -Destination (Join-Path $path.Directory 'make.exe')
+
       - name: Configure & compile project
         env:
           LLVM_DIR: D:/a/spice/spice/llvm/build/lib/cmake/llvm
