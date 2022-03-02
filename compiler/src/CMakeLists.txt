@@ -48,9 +48,9 @@ antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/grammar/Spice.g4 VISITOR)
 include_directories(${ANTLR_Spice_OUTPUT_DIR})
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
 
+# Add library target: Spice_lib
+add_library(${CMAKE_PROJECT_NAME}_lib STATIC ${ANTLR_Spice_CXX_OUTPUTS} ${SOURCES})
+
 # Add executable target: Spice_run
 add_executable(${CMAKE_PROJECT_NAME}_run ${ANTLR_Spice_CXX_OUTPUTS} ${SOURCES})
 target_link_libraries(${CMAKE_PROJECT_NAME}_run antlr4_static ${LLVM_LIBS})
-
-# Add library target: Spice_lib
-add_library(${CMAKE_PROJECT_NAME}_lib STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
