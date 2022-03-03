@@ -1260,8 +1260,14 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             lhs = visit(postfixUnary).as<SymbolType>();
         } else if (tokenType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
             lhs = OpRuleManager::getPostfixPlusPlusResultType(*ctx->atomicExpr()->start, lhs);
+
+            // Update state in symbol table
+            if (currentEntry != nullptr) currentEntry->updateState(INITIALIZED, *token->getSymbol());
         } else if (tokenType == SpiceParser::MINUS_MINUS) { // Consider -- operator
             lhs = OpRuleManager::getPostfixMinusMinusResultType(*ctx->atomicExpr()->start, lhs);
+
+            // Update state in symbol table
+            if (currentEntry != nullptr) currentEntry->updateState(INITIALIZED, *token->getSymbol());
         }
         tokenCounter++; // Consume token
     }

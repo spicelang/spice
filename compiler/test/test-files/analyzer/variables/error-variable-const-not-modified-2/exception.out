@@ -1,0 +1,1 @@
+Semantic error at 3:13: Cannot re-assign constant variable: Not re-assignable variable 'constVar'

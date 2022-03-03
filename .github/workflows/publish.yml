@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TERM: xterm-256color
-      
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -22,7 +22,7 @@ jobs:
 
       - name: Setup latest GCC and build dependencies
         run: |
-          sudo apt install gcc-11 g++-11 ncurses-dev libncurses5-dev libncursesw5-dev libc6
+          sudo apt install gcc-11 g++-11 ncurses-dev libncurses-dev libncurses5-dev libncursesw5-dev libc6
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11
 
       - name: Setup Ninja
@@ -60,26 +60,26 @@ jobs:
           mkdir json
           curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
       
-      - name: Configure & compile project
-        env:
-          LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
-        run: |
-          mkdir ./bin
-          cd ./bin
-          cmake -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
-          cmake --build . --target Spice_run
-
-      - name: Process build output
-        working-directory: bin
-        run: |
-          mv ./src/Spice_run spicec
-          chmod +x spicec
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: spicec-linux-x64
-          path: ./bin/spicec**
+#      - name: Configure & compile project
+#        env:
+#          LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
+#        run: |
+#          mkdir ./bin
+#          cd ./bin
+#          cmake -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
+#          cmake --build . --target Spice_run
+#
+#      - name: Process build output
+#        working-directory: bin
+#        run: |
+#          mv ./src/Spice_run spicec
+#          chmod +x spicec
+#
+#      - name: Upload artifact
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: spicec-linux-x64
+#          path: ./bin/spicec**
 
   build-compiler-windows:
     name: Build compiler binaries - Windows
@@ -121,6 +121,11 @@ jobs:
         run: |
           cd ./llvm/build
           cmake --build .
+
+      - name: Test
+        if: always()
+        run: |
+          cat ./llvm/build/CMakeFiles/CMakeError.log
 
       - name: Download Libs
         run: |

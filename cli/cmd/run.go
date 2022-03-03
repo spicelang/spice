@@ -84,7 +84,7 @@ func Run(c *cli.Context) error {
 	}
 
 	// Compile program and emit executable file to tmp dir
-	err := buildFromSourceFile(sourceFile, "", "", "", buildPath, debugOutput, optLevel)
+	err := buildFromSourceFile(sourceFile, "", "", "", buildPath, debugOutput, optLevel, false)
 	if err != nil {
 		util.Error("Building source file failed", true)
 		return err

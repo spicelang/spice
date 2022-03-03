@@ -9,7 +9,7 @@ set(LLVM_DIR $ENV{LLVM_DIR})
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_EXE_LINKER_FLAGS "-static")
 
-# Set debug compile flags for emitting coverage information
+# Coverage
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fprofile-arcs -ftest-coverage ${CMAKE_CXX_FLAGS_DEBUG}")
 
 # Find ANTLR
@@ -44,12 +44,11 @@ llvm_map_components_to_libnames(LLVM_LIBS aarch64asmparser aarch64codegen aarch6
         riscvdisassembler riscvinfo runtimedyld scalaropts selectiondag sparcasmparser sparccodegen sparcdesc
         sparcdisassembler sparcinfo support symbolize systemzasmparser systemzcodegen systemzdesc
         systemzdisassembler systemzinfo tablegen target textapi transformutils vectorize veasmparser vecodegen vedesc
-        vedisassembler veinfo
-        webassemblyasmparser webassemblycodegen webassemblydesc webassemblydisassembler webassemblyinfo webassemblyutils
-        windowsmanifest x86asmparser x86codegen x86desc x86disassembler x86info xcorecodegen xcoredesc
-        xcoredisassembler xcoreinfo xray)
+        vedisassembler veinfo webassemblyasmparser webassemblycodegen webassemblydesc webassemblydisassembler
+        webassemblyinfo webassemblyutils windowsmanifest x86asmparser x86codegen x86desc x86disassembler x86info
+        xcorecodegen xcoredesc xcoredisassembler xcoreinfo xray)
 
-# Link coverage configurations
+# Coverage
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage.bat ${CMAKE_CURRENT_BINARY_DIR}/coverage.bat SYMBOLIC)
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage.sh ${CMAKE_CURRENT_BINARY_DIR}/coverage.sh SYMBOLIC)
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/gcovr.cfg ${CMAKE_CURRENT_BINARY_DIR}/gcovr.cfg SYMBOLIC)
@@ -59,4 +58,5 @@ include_directories(src)
 add_subdirectory(src)
 
 # Include test module
+enable_testing()
 add_subdirectory(test)
