@@ -22,7 +22,7 @@ jobs:
 
       - name: Setup latest GCC and build dependencies
         run: |
-          sudo apt install gcc-11 g++-11 ncurses-dev ncurses-bin libncurses-dev libncurses5-dev libncursesw5-dev libc6
+          sudo apt install gcc-11 g++-11
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-11 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
 
       - name: Setup Ninja
@@ -64,6 +64,7 @@ jobs:
       - name: Build Test target
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
+          SPICE_LINK_STATIC: OFF
         run: |
           mkdir ./compiler/bin
           cd ./compiler/bin

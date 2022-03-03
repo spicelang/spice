@@ -4,10 +4,13 @@ project(Spice)
 # Set constants
 set(CMAKE_CXX_STANDARD 20)
 set(LLVM_DIR $ENV{LLVM_DIR})
+set(SPICE_LINK_STATIC $ENV{SPICE_LINK_STATIC})
 
 # Link statically
-set(BUILD_SHARED_LIBS OFF)
-set(CMAKE_EXE_LINKER_FLAGS "-static")
+if (SPICE_LINK_STATIC)
+    set(BUILD_SHARED_LIBS OFF)
+    set(CMAKE_EXE_LINKER_FLAGS "-static")
+endif()
 
 # Coverage
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fprofile-arcs -ftest-coverage ${CMAKE_CXX_FLAGS_DEBUG}")
