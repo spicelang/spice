@@ -1,0 +1,10 @@
+Get dependencies for ELF Linux executable:
+	readelf -d <executable>
+
+Get dependencies for Windows executable:
+	Visual Studio > Tools > Command Line > Developer Command Prompt
+	dumpbin /dependents <executable>
+
+
+
+/usr/lib/x86_64-linux-gnu/libtinfo.so

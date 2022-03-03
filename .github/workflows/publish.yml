@@ -297,18 +297,25 @@ jobs:
       - name: Download executables
         id: download_exe
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_${{ matrix.config.arch }}*.zip'
           printf "::set-output name=zip::%s\n" *.zip
           unzip -o *.zip && rm -v *.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          dir
 
       - name: Prepare PATH
         shell: bash
         run: |
           echo "$WIX\\bin" >> $GITHUB_PATH
           echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
+
+      - name: Copy DLLs to source dir
+        shell: bash
+        env:
+          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
+        run: cp ./compiler/dll/* ./
 
       - name: Build MSI
         shell: bash
