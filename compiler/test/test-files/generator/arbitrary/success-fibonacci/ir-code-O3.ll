@@ -29,7 +29,7 @@ if.end:                                           ; preds = %entry, %if.end
   %3 = tail call fastcc i32 @"fib(int)"(i32 %2)
   %4 = add nsw i32 %.tr12, -2
   %5 = add i32 %3, %accumulator.tr11
-  %6 = icmp slt i32 %.tr12, 5
+  %6 = icmp ult i32 %.tr12, 5
   br i1 %6, label %common.ret.loopexit, label %if.end
 }
 

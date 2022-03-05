@@ -7,83 +7,48 @@ on:
       - '*'
 
 jobs:
-  build-compiler:
-    name: Build compiler binaries
+  build-compiler-linux:
+    name: Build compiler binaries - Linux
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        config:
-          #- {
-          #    arch: linux-arm64,
-          #    dockcross: 20210805-77da067,
-          #    cmake_params:
-          #  }
-          #- {
-          #    arch: linux-armv5,
-          #    dockcross: 20210805-77da067,
-          #    cmake_params:
-          #  }
-          #- {
-          #    arch: linux-armv6,
-          #    dockcross: 20210805-77da067,
-          #    cmake_params:
-          #  }
-          #- {
-          #    arch: linux-armv7,
-          #    dockcross: 20210805-77da067,
-          #    cmake_params:
-          #  }
-          - {
-              arch: linux-x86,
-              dockcross: 20210805-77da067,
-              #dockcross: 20220128-2dcae35,
-              cmake_params:
-            }
-          - {
-              arch: linux-x64,
-              dockcross: 20210805-77da067,
-              #dockcross: 20220128-2dcae35,
-              cmake_params:
-            }
-          #- {
-          #    arch: windows-static-x86,
-          #    dockcross: 20210804-76ae808,
-          #    cmake_params: -DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0
-          #  }
-          #- {
-          #    arch: windows-static-x64,
-          #    dockcross: 20210805-77da067,
-          #    cmake_params: -DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0
-          #  }
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Setup builder
+      - name: Uninstall potential other versions of LLVM
+        run: sudo apt-get purge llvm-12 clang-12 llvm-11 clang-11 llvm-10 clang-10
+
+      - name: Setup latest GCC and build dependencies
         run: |
-          docker run --rm dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} > ./dockcross
-          chmod +x dockcross
+          sudo apt install gcc-11 g++-11
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-11 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
+
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
 
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-13-0-1-${{ matrix.config.arch }}
+          key: llvm-14-0-0-rc2-linux-x64
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project.git llvm
+        run: git clone --depth 1 --branch llvmorg-14.0.0-rc2 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: | #-DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON
-          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} cmake -B./llvm/build -H./llvm/llvm -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" ${{ matrix.config.cmake_params }} -Wno-dev -Wattributes
+        run: |
+          mkdir ./llvm/build
+          cd ./llvm/build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
       
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} bash -c 'cd ./llvm/build && cmake --build .'
+          cd ./llvm/build
+          cmake --build .
 
       - name: Download Libs
         run: |
@@ -94,37 +59,105 @@ jobs:
           curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
       
       - name: Configure & compile project
+        env:
+          LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
+          SPICE_LINK_STATIC: OFF
         run: |
-          mkdir bin
-          ./dockcross --image dockcross/${{ matrix.config.arch }}:${{ matrix.config.dockcross }} -a "-e LLVM_DIR=/work/llvm/build/lib/cmake/llvm" bash -c "sudo mkdir -p /usr/share/man/man1 && sudo apt-get update -y && sudo apt-get install --ignore-missing --no-install-recommends --yes libc6-i386 openjdk-11-jre uuid-dev && cd ./bin && cmake -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler && cmake --build ."
+          mkdir ./bin
+          cd ./bin
+          cmake -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
+          cmake --build . --target Spice_run
 
-      - name: Process build output - Linux
-        if: ${{ startsWith(matrix.config.arch, 'linux') }}
+      - name: Process build output
         working-directory: bin
         run: |
           mv ./src/Spice_run spicec
           chmod +x spicec
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: spicec-linux-x64
+          path: ./bin/spicec**
+
+  build-compiler-windows:
+    name: Build compiler binaries - Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: D:/a/spice/spice/llvm
+          key: llvm-14-0-0-rc2-windows-x64
+
+      - name: Clone LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: git clone --depth 1 --branch llvmorg-14.0.0-rc2 https://github.com/llvm/llvm-project.git llvm
+
+      - name: Setup LLVM - Configure
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          mkdir ./llvm/build
+          cd ./llvm/build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
+      
+      - name: Setup LLVM - Build
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          cd ./llvm/build
+          cmake --build .
+
+      - name: Download Libs
+        run: |
+          mkdir -p ./compiler/lib
+          cd ./compiler/lib
+          git clone --branch 4.9.3 --depth 1 https://github.com/antlr/antlr4.git
+          mkdir json
+          curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" -o json/json.hpp
+
+      - name: Setup latest GCC
+        shell: pwsh
+        run: |
+          choco upgrade mingw
+          $path = where.exe mingw32-make.exe | Get-Item
+          Copy-Item -Path $path -Destination (Join-Path $path.Directory 'make.exe')
+
+      - name: Configure & compile project
+        env:
+          LLVM_DIR: D:/a/spice/spice/llvm/build/lib/cmake/llvm
+          SPICE_LINK_STATIC: ON
+        run: |
+          mkdir ./bin
+          cd ./bin
+          cmake -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
+          cmake --build . --target Spice_run
           
-      - name: Process build output - Windows
-        if: ${{ startsWith(matrix.config.arch, 'windows') }}
+      - name: Process build output
         working-directory: bin
         run: mv ./src/Spice_run.exe spicec.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: spicec-${{ matrix.config.arch }}
+          name: spicec-windows-static-x64
           path: ./bin/spicec**
 
   build-cli:
     name: Build CLI binaries
-    needs: build-compiler
+    needs: [build-compiler-linux, build-compiler-windows]
     runs-on: ubuntu-latest
     env:
       DOCKER_CLI_EXPERIMENTAL: enabled
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -167,8 +200,8 @@ jobs:
 
       - name: Rename compiler binaries & allow execution
         working-directory: bin
-        run: | # mv spicec-windows-static-x86 spicec-windows-386 \n mv spicec-windows-static-x64 spicec-windows-amd64
-          mv spicec-linux-x86 spicec-linux-386
+        run: |
+          mv spicec-windows-static-x64 spicec-windows-amd64
           mv spicec-linux-x64 spicec-linux-amd64
           chmod -R +x ./
 
@@ -198,11 +231,8 @@ jobs:
       matrix:
         arch:
           - amd64
-          - 386
+          #- 386
           #- arm64
-          #- armv5
-          #- armv6
-          #- armv7
     steps:
       - name: Get version name
         id: get_version
@@ -242,63 +272,67 @@ jobs:
 #        run: |
 #          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.apk"
 
-#  build-win-installers:
-#    name: Build installers
-#    needs: build-cli
-#    runs-on: windows-latest
-#    strategy:
-#      matrix:
-#        config:
-#          - {
-#              arch: amd64, label: x64
-#            }
-#          - {
-#              arch: 386, label: x86
-#            }
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-#
-#      - name: Get version name
-#        id: get_version
-#        uses: battila7/get-version-action@v2
-#
-#      - name: Download executables
-#        id: download_exe
-#        shell: bash
-#        run: | # Remove the last command as soon as this is implemented: https://github.com/goreleaser/goreleaser/issues/1638
-#          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_${{ matrix.config.arch }}*.zip'
-#          printf "::set-output name=zip::%s\n" *.zip
-#          unzip -o *.zip && rm -v *.zip
-#          cp ./bin/spicec-windows-${{ matrix.config.arch }}/spicec.exe ./spicec.exe
-#        env:
-#          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-#
-#      - name: Install GoMSI
-#        run: choco install -y go-msi
-#
-#      - name: Prepare PATH
-#        shell: bash
-#        run: |
-#          echo "$WIX\\bin" >> $GITHUB_PATH
-#          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
-#
-#      - name: Build MSI
-#        shell: bash
-#        id: build_msi
-#        env:
-#          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
-#        run: |
-#          mkdir -p build
-#          msi="$(basename "$ZIP_FILE" ".zip").msi"
-#          printf "::set-output name=msi::%s\n" "$msi"
-#          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version ${{ steps.get_version.outputs.version }}
-#          printf "::set-output name=msi::%s\n" *.msi
-#
-#      - name: Upload MSI
-#        uses: svenstaro/upload-release-action@v2
-#        with:
-#          repo_token: ${{ secrets.GITHUB_TOKEN }}
-#          file: ${{ steps.build_msi.outputs.msi }}
-#          asset_name: spice_${{ matrix.config.label }}_setup.msi
-#          tag: ${{ github.ref }}
+  build-win-installers:
+    name: Build installers
+    needs: build-cli
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config:
+          - {
+              arch: amd64,
+              label: x64
+            }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install GoMSI
+        run: choco install -y go-msi
+
+      - name: Get version name
+        id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Download executables
+        id: download_exe
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_${{ matrix.config.arch }}*.zip'
+          printf "::set-output name=zip::%s\n" *.zip
+          unzip -o *.zip && rm -v *.zip
+          dir
+
+      - name: Prepare PATH
+        shell: bash
+        run: |
+          echo "$WIX\\bin" >> $GITHUB_PATH
+          echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
+
+      - name: Copy DLLs to source dir
+        shell: bash
+        env:
+          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
+        run: cp ./compiler/dll/* ./
+
+      - name: Build MSI
+        shell: bash
+        id: build_msi
+        env:
+          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
+        run: |
+          mkdir -p build
+          msi="$(basename "$ZIP_FILE" ".zip").msi"
+          printf "::set-output name=msi::%s\n" "$msi"
+          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version ${{ steps.get_version.outputs.version }}
+          printf "::set-output name=msi::%s\n" *.msi
+
+      - name: Upload MSI
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ steps.build_msi.outputs.msi }}
+          asset_name: spice_${{ matrix.config.label }}_setup.msi
+          tag: ${{ github.ref }}

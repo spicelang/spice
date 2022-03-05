@@ -80,6 +80,7 @@ nav:
     - language/procedures.md
     - language/functions.md
     - language/modules.md
+    - language/declaration-modifiers.md
     - language/arrays.md
     - language/pointers.md
     - language/structs.md

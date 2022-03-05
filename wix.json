@@ -6,11 +6,12 @@
         "guid": "064e9d15-7d0f-4800-869d-d097c2be9bd4",
         "items": [
             "spice.exe",
-            "spicec.exe"
+            "spicec.exe",
+            "zlib1__.dll"
         ]
     },
     "directories": [
-        "[%USERPROFILE]\\spice\\bin"
+        "std"
     ],
     "env": {
         "guid": "27bebd64-9bda-4b0f-b7ca-5bfc26b06cdb",
@@ -25,10 +26,11 @@
             },
             {
                 "name": "SPICE_STD_DIR",
-                "value": "[INSTALLDIR]\\std",
+                "value": "[INSTALLDIR]std",
                 "permanent": "yes",
                 "system": "no",
-                "action": "set"
+                "action": "set",
+                "part": "all"
             }
         ]
     },

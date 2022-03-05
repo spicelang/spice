@@ -18,7 +18,12 @@ jobs:
         
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Setup latest GCC and build dependencies
+        run: |
+          sudo apt install gcc-11 g++-11
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-11 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
 
       - name: Setup Ninja
         run: sudo apt-get install ninja-build
@@ -26,7 +31,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.10'
+          python-version: 3.x
 
       - name: Setup Gcovr
         run: sudo pip install gcovr
@@ -36,13 +41,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-13-0-1
+          key: llvm-14-0-0-rc2
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
-          git clone --depth 1 --branch llvmorg-13.0.1 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-14.0.0-rc2 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
@@ -59,6 +64,7 @@ jobs:
       - name: Build Test target
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
+          SPICE_LINK_STATIC: OFF
         run: |
           mkdir ./compiler/bin
           cd ./compiler/bin

@@ -18,7 +18,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/FileSystem.h>
-#include <llvm/Support/TargetRegistry.h>
+#include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/IR/PassManager.h>
@@ -74,9 +74,7 @@ void GeneratorVisitor::init() {
     llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
     targetMachine = target->createTargetMachine(tripletString, "generic", "", opt, rm);
 
-    llvm::DataLayout layout = targetMachine->createDataLayout();
-    dataLayout = &layout;
-    module->setDataLayout(layout);
+    module->setDataLayout(targetMachine->createDataLayout());
 }
 
 void GeneratorVisitor::optimize() {
@@ -99,7 +97,7 @@ void GeneratorVisitor::optimize() {
     passBuilder.crossRegisterProxies(loopAnalysisMgr, functionAnalysisMgr, cgsccAnalysisMgr, moduleAnalysisMgr);
 
     // Run passes
-    llvm::PassBuilder::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
+    llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
     llvm::ModulePassManager modulePassMgr = passBuilder.buildPerModuleDefaultPipeline(llvmOptLevel);
     modulePassMgr.addPass(llvm::AlwaysInlinerPass());
     modulePassMgr.run(*module, moduleAnalysisMgr);
@@ -2215,11 +2213,11 @@ llvm::Value* GeneratorVisitor::doImplicitCast(llvm::Value* srcValue, llvm::Type*
     return srcValue;
 }
 
-llvm::PassBuilder::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {
+llvm::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {
     switch (optLevel) { // Get LLVM opt level from Spice opt level
-        case 1: return llvm::PassBuilder::OptimizationLevel::O1;
-        case 2: return llvm::PassBuilder::OptimizationLevel::O2;
-        case 3: return llvm::PassBuilder::OptimizationLevel::O3;
-        default: case 0: return llvm::PassBuilder::OptimizationLevel::O0;
+        case 1: return llvm::OptimizationLevel::O1;
+        case 2: return llvm::OptimizationLevel::O2;
+        case 3: return llvm::OptimizationLevel::O3;
+        default: case 0: return llvm::OptimizationLevel::O0;
     }
 }

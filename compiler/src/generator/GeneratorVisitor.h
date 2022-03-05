@@ -76,7 +76,6 @@ private:
     std::string sourceFile;
     llvm::Triple targetTriple;
     llvm::TargetMachine* targetMachine{};
-    llvm::DataLayout* dataLayout = nullptr;
     std::string outputPath;
     bool debugOutput;
     int optLevel;
@@ -116,5 +115,5 @@ private:
     //llvm::Value* getDefaultValueForType(SymbolType symbolType);
     bool compareLLVMTypes(llvm::Type* lhs, llvm::Type* rhs);
     llvm::Value* doImplicitCast(llvm::Value* lhs, llvm::Type* rhs);
-    [[nodiscard]] llvm::PassBuilder::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
+    [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };
