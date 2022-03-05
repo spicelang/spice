@@ -64,7 +64,7 @@ jobs:
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DSPICE_LINK_STATIC=OFF -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
           cmake --build . --target Spice_run
 
       - name: Process build output
@@ -86,6 +86,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Setup latest GCC
+        shell: pwsh
+        run: |
+          choco uninstall mingw --all-versions
+          Remove-Item -Recurse -Force C:/Strawberry
+          echo "Uninstalling done."
+          Invoke-WebRequest http://chillibits.com/files/gh/mingw64_11_2_0.zip -OutFile mingw64.zip
+          echo "Downloading done."
+          7z x mingw64.zip -oC:\mingw64
+          echo "Unpacking done."
+          Copy-Item -Path C:\mingw64\mingw64\bin\mingw32-make.exe -Destination C:\mingw64\mingw64\bin\make.exe
+          echo "All done."
+
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
 
@@ -94,7 +107,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: D:/a/spice/spice/llvm
-          key: llvm-14-0-0-rc2-windows-x64
+          key: llvm-14-0-0-rc2-win-x64
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -103,6 +116,9 @@ jobs:
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
+          setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          echo "Adding MinGW to path done."
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
@@ -121,20 +137,13 @@ jobs:
           mkdir json
           curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" -o json/json.hpp
 
-      - name: Setup latest GCC
-        shell: pwsh
-        run: |
-          choco upgrade mingw
-          $path = where.exe mingw32-make.exe | Get-Item
-          Copy-Item -Path $path -Destination (Join-Path $path.Directory 'make.exe')
-
       - name: Configure & compile project
         env:
           LLVM_DIR: D:/a/spice/spice/llvm/build/lib/cmake/llvm
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DSPICE_LINK_STATIC=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
           cmake --build . --target Spice_run
           
       - name: Process build output
