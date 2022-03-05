@@ -61,11 +61,10 @@ jobs:
       - name: Configure & compile project
         env:
           LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
-          SPICE_LINK_STATIC: OFF
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
+          cmake -GNinja -DSPICE_LINK_STATIC=OFF -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
           cmake --build . --target Spice_run
 
       - name: Process build output
@@ -132,11 +131,10 @@ jobs:
       - name: Configure & compile project
         env:
           LLVM_DIR: D:/a/spice/spice/llvm/build/lib/cmake/llvm
-          SPICE_LINK_STATIC: ON
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
+          cmake -GNinja -DSPICE_LINK_STATIC=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
           cmake --build . --target Spice_run
           
       - name: Process build output

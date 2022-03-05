@@ -4,7 +4,9 @@ project(Spice)
 # Set constants
 set(CMAKE_CXX_STANDARD 20)
 set(LLVM_DIR $ENV{LLVM_DIR})
-set(SPICE_LINK_STATIC $ENV{SPICE_LINK_STATIC})
+
+# Get options
+option(SPICE_LINK_STATIC "Link the compiler executable statically" OFF)
 
 # Link statically
 if (SPICE_LINK_STATIC)

@@ -64,11 +64,10 @@ jobs:
       - name: Build Test target
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
-          SPICE_LINK_STATIC: OFF
         run: |
           mkdir ./compiler/bin
           cd ./compiler/bin
-          cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DSPICE_LINK_STATIC=OFF -GNinja -Wattributes ..
           cmake --build . --target Spice_test
 
       - name: Run Test target
