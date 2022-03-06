@@ -90,6 +90,7 @@ jobs:
         shell: pwsh
         run: |
           choco uninstall mingw --all-versions
+          choco uninstall llvm --all-versions
           Remove-Item -Recurse -Force C:/Strawberry
           echo "Uninstalling done."
           Invoke-WebRequest http://chillibits.com/files/gh/mingw64_11_2_0.zip -OutFile mingw64.zip
@@ -141,6 +142,9 @@ jobs:
         env:
           LLVM_DIR: D:/a/spice/spice/llvm/build/lib/cmake/llvm
         run: |
+          setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          echo "Adding MinGW to path done."
           mkdir ./bin
           cd ./bin
           cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
@@ -215,7 +219,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
-          version: v1.5.0
+          version: v1.6.0
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
