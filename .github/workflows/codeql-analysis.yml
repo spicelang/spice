@@ -14,7 +14,12 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Setup latest GCC and build dependencies
+        run: |
+          sudo apt install gcc-11 g++-11
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-11 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
 
       - name: Setup Ninja
         run: sudo apt-get install ninja-build
@@ -35,7 +40,7 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
-          git clone --depth 1 --branch llvmorg-14-0-0-rc2 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-14.0.0-rc2 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
@@ -55,15 +60,8 @@ jobs:
         run: |
           mkdir ./compiler/bin
           cd ./compiler/bin
-          cmake -DCMAKE_BUILD_TYPE=Release -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DSPICE_LINK_STATIC=OFF -GNinja -Wattributes ..
           cmake --build . --target Spice_test
-
-      - name: Run Test target
-        env:
-          SPICE_STD_DIR: /home/runner/work/spice/spice/std
-        run: |
-          cd ./compiler/bin/test
-          ./Spice_test "false"
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1

@@ -43,7 +43,7 @@ set(SOURCES
         util/CompilerWarning.cpp
         util/CompilerWarning.h)
 
-add_executable(${CMAKE_PROJECT_NAME}_run ${ANTLR_Spice_CXX_OUTPUTS} ${SOURCES})
+add_executable(${CMAKE_PROJECT_NAME}_run ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Include Antlr components
 include_directories(${ANTLR_Spice_OUTPUT_DIR})
