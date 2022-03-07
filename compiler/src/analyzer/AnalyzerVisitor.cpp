@@ -434,6 +434,17 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
     return nullptr;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx) {
+    // Check if tid evaluates to an integer
+    if (ctx->assignExpr()) {
+        SymbolType tidType = visit(ctx->assignExpr()).as<SymbolType>();
+        if (!tidType.is(TY_INT))
+            throw err->get(*ctx->assignExpr()->start, TID_INVALID,
+                           "This expression does not evaluate to integer");
+    }
+    return SymbolType(TY_BOOL);
+}
+
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     auto head = ctx->forHead();
 

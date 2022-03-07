@@ -561,6 +561,12 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
     return nullptr;
 }
 
+antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx) {
+    //return SpiceBaseVisitor::visitThreadDef(ctx);
+
+    return nullptr;
+}
+
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     auto head = ctx->forHead();
 

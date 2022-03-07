@@ -25,11 +25,18 @@ f<int> main() {
     a.destructor();
 }*/
 
-import "std/net/socket" as socket;
+/*import "std/net/socket" as socket;
 
 f<int> main() {
     socket.Socket s = socket.openServerSocket(8080s, 2);
     printf("Error code: %d", s.errorCode);
-    if "test" {}
     //s.close();
+}*/
+
+f<int> main() {
+    printf("Starting one thread ...");
+    thread {
+        printf("Hello from the thread");
+    }
+    printf("Hello from original");
 }
