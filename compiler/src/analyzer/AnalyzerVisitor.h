@@ -8,6 +8,7 @@
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
 #include <exception/ErrorFactory.h>
+#include <analyzer/OpRuleManager.h>
 
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
@@ -77,6 +78,7 @@ private:
     // Members
     std::shared_ptr<llvm::LLVMContext> context;
     std::shared_ptr<llvm::IRBuilder<>> builder;
+    std::unique_ptr<OpRuleManager> opRuleManager;
     std::string mainSourceFile;
     std::string targetArch;
     std::string targetVendor;

@@ -41,7 +41,7 @@ public:
     [[nodiscard]] unsigned int getOrderIndex() const;
     [[nodiscard]] bool isLocal() const;
     [[nodiscard]] bool isUsed() const;
-    void updateState(SymbolState newState, const antlr4::Token& token);
+    void updateState(SymbolState newState, ErrorFactory* errorFactory, const antlr4::Token& token);
     void updateType(SymbolType newType, bool force);
     void updateLLVMType(llvm::Type* newType);
     void updateAddress(llvm::Value* newAddress);

@@ -59,7 +59,7 @@ GeneratorVisitor::~GeneratorVisitor() {
 void GeneratorVisitor::init() {
     // Create LLVM base components
     module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile), *context);
-    conversionsManager = std::make_unique<OpRuleConversionsManager>(builder);
+    conversionsManager = std::make_unique<OpRuleConversionsManager>(builder, err);
 
     // Initialize LLVM
     llvm::InitializeAllTargetInfos();
@@ -264,7 +264,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
         assert(thisEntry != nullptr);
         llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(thisEntry->getType().toPointer());
+        symbolTypes.push_back(thisEntry->getType().toPointer(err, *ctx->start));
     }
     // Parameters
     if (ctx->paramLstDef()) {
@@ -383,7 +383,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
         assert(thisEntry != nullptr);
         llvm::Type* paramType = thisEntry->getLLVMType()->getPointerTo();
         paramTypes.push_back(paramType);
-        symbolTypes.push_back(thisEntry->getType().toPointer());
+        symbolTypes.push_back(thisEntry->getType().toPointer(err, *ctx->start));
     }
     // Parameters
     if (ctx->paramLstDef()) {
@@ -1028,7 +1028,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
 
             // Decide what to do, based on the operator
             if (ctx->assignOp()->PLUS_EQUAL()) {
-                rhs = conversionsManager->getPlusEqualInst(lhs, rhs);
+                rhs = conversionsManager->getPlusEqualInst(lhs, rhs, *ctx->assignOp()->PLUS_EQUAL()->getSymbol());
             } else if (ctx->assignOp()->MINUS_EQUAL()) {
                 rhs = conversionsManager->getMinusEqualInst(lhs, rhs);
             } else if (ctx->assignOp()->MUL_EQUAL()) {
@@ -1257,12 +1257,12 @@ antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprConte
         llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
         if (ctx->EQUAL()) { // Equality expr is: relationalExpr EQUAL relationalExpr
-            llvm::Value* result = conversionsManager->getEqualInst(lhs, rhs);
+            llvm::Value* result = conversionsManager->getEqualInst(lhs, rhs, *ctx->EQUAL()->getSymbol());
             llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
         } else if (ctx->NOT_EQUAL()) { // Equality expr is: relationalExpr NOT_EQUAL relationalExpr
-            llvm::Value* result = conversionsManager->getNotEqualInst(lhs, rhs);
+            llvm::Value* result = conversionsManager->getNotEqualInst(lhs, rhs, *ctx->NOT_EQUAL()->getSymbol());
             llvm::Value* resultPtr = insertAlloca(result->getType());
             builder->CreateStore(result, resultPtr);
             return resultPtr;
@@ -1338,7 +1338,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
             if (op->getSymbol()->getType() == SpiceParser::PLUS)
-                lhs = conversionsManager->getPlusInst(lhs, rhs);
+                lhs = conversionsManager->getPlusInst(lhs, rhs, *op->getSymbol());
             else if (op->getSymbol()->getType() == SpiceParser::MINUS)
                 lhs = conversionsManager->getMinusInst(lhs, rhs);
 
@@ -1364,7 +1364,7 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
             llvm::Value* rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
             if (op->getSymbol()->getType() == SpiceParser::MUL)
-                lhs = conversionsManager->getMulInst(lhs, rhs);
+                lhs = conversionsManager->getMulInst(lhs, rhs, *op->getSymbol());
             else if (op->getSymbol()->getType() == SpiceParser::DIV)
                 lhs = conversionsManager->getDivInst(lhs, rhs);
             else if (op->getSymbol()->getType() == SpiceParser::REM)
@@ -1762,16 +1762,16 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
             if (i < ctx->IDENTIFIER().size() -1) {
                 SymbolTableEntry* entry = structScope->lookup(iden);
                 if (!entry)
-                    throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                    throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                                         "Struct '" + structName + "' was used before defined");
                 if (entry->getType().is(TY_IMPORT)) {
                     structScope = structScope->lookupTable(iden);
                 } else if (entry->getType().is(TY_STRUCT)) {
                     structScope = structScope->lookupTable("struct:" + iden);
                 } else {
-                    throw SemanticError(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                                        "The variable '" + iden + "' is of type " + entry->getType().getName(false) +
-                                        ". Expected struct or import");
+                    throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                                        "The variable '" + iden + "' is of type " +
+                                        entry->getType().getName(false) + ". Expected struct or import");
                 }
             }
         }
@@ -1977,7 +1977,7 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
     while (tokenCounter < ctx->children.size()) {
         auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
         if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
-            currentSymbolType = currentSymbolType.toPointer();
+            currentSymbolType = currentSymbolType.toPointer(err, *token->getSymbol());
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
             tokenCounter++; // Consume LBRACKET
             token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
@@ -1986,7 +1986,7 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
                 size = std::stoi(token->toString());
                 tokenCounter++; // Consume INTEGER
             }
-            currentSymbolType = currentSymbolType.toArray(size);
+            currentSymbolType = currentSymbolType.toArray(err, *token->getSymbol(), size);
         }
         tokenCounter++;
     }

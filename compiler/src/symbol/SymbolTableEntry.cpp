@@ -101,10 +101,9 @@ bool  SymbolTableEntry::isUsed() const {
  * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
  * @param newState New state of the current symbol
  */
-void SymbolTableEntry::updateState(SymbolState newState, const antlr4::Token& token) {
+void SymbolTableEntry::updateState(SymbolState newState, ErrorFactory* err, const antlr4::Token& token) {
     if (state == INITIALIZED && specifiers.isConst())
-        throw SemanticError(token, REASSIGN_CONST_VARIABLE,
-                            "Not re-assignable variable '" + name + "'");
+        throw err->get(token, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
     if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                               // GCOV_EXCL_LINE
         throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
     state = newState;

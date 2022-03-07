@@ -7,6 +7,8 @@
 #include <llvm/IR/Value.h>
 #include <llvm/IR/IRBuilder.h>
 
+#include <exception/ErrorFactory.h>
+
 enum PrimitiveType {
     P_TY_DOUBLE,
     P_TY_INT,
@@ -21,10 +23,11 @@ enum PrimitiveType {
 
 class OpRuleConversionsManager {
 public:
-    explicit OpRuleConversionsManager(std::shared_ptr<llvm::IRBuilder<>> builder) : builder(std::move(builder)) {}
+    explicit OpRuleConversionsManager(std::shared_ptr<llvm::IRBuilder<>> builder, ErrorFactory* errorFactory) :
+        builder(std::move(builder)), err(errorFactory) {}
 
     // Public methods
-    llvm::Value* getPlusEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getPlusEqualInst(llvm::Value* lhs, llvm::Value* rhs, const antlr4::Token& token);
     llvm::Value* getMinusEqualInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getMulEqualInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getDivEqualInst(llvm::Value* lhs, llvm::Value* rhs);
@@ -37,17 +40,17 @@ public:
     llvm::Value* getBitwiseAndInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getBitwiseOrInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getBitwiseXorInst(llvm::Value* lhs, llvm::Value* rhs);
-    llvm::Value* getEqualInst(llvm::Value* lhs, llvm::Value* rhs);
-    llvm::Value* getNotEqualInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getEqualInst(llvm::Value* lhs, llvm::Value* rhs, const antlr4::Token& token);
+    llvm::Value* getNotEqualInst(llvm::Value* lhs, llvm::Value* rhs, const antlr4::Token& token);
     llvm::Value* getLessInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getGreaterInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getLessEqualInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getGreaterEqualInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getShiftLeftInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getShiftRightInst(llvm::Value* lhs, llvm::Value* rhs);
-    llvm::Value* getPlusInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getPlusInst(llvm::Value* lhs, llvm::Value* rhs, const antlr4::Token& token);
     llvm::Value* getMinusInst(llvm::Value* lhs, llvm::Value* rhs);
-    llvm::Value* getMulInst(llvm::Value* lhs, llvm::Value* rhs);
+    llvm::Value* getMulInst(llvm::Value* lhs, llvm::Value* rhs, const antlr4::Token& token);
     llvm::Value* getDivInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getRemInst(llvm::Value* lhs, llvm::Value* rhs);
     llvm::Value* getPrefixMinusInst(llvm::Value* lhs);
@@ -60,6 +63,7 @@ public:
     llvm::Value* getCastInst(llvm::Type*, llvm::Value* lhs);
 private:
     // Members
+    ErrorFactory* err;
     std::shared_ptr<llvm::IRBuilder<>> builder;
 
     // Private methods

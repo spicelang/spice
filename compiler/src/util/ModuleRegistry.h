@@ -3,18 +3,24 @@
 #include <string>
 #include <vector>
 
+#include <exception/ErrorFactory.h>
+
 /**
  * Class to remember source files, which have already been imported. This is required to detect circular dependencies
  */
 class ModuleRegistry {
 public:
-    static ModuleRegistry* getInstance();
+    // Constructors
+    static ModuleRegistry* getInstance(ErrorFactory* errorFactory);
 
     // Public methods
-    void addModule(const std::string& moduleName);
+    void addModule(const antlr4::Token& token, const std::string& moduleName);
 private:
+    // Private constructors
     explicit ModuleRegistry() = default;
 
+    // Members
     static ModuleRegistry* instance;
+    ErrorFactory* err;
     std::vector<std::string> modulePaths;
 };

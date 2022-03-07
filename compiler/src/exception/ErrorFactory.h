@@ -17,6 +17,7 @@ public:
     // Public methods
     SemanticError get(const antlr4::Token& token, SemanticErrorType type, const std::string& message);
     IRError get(const antlr4::Token& token, IRErrorType type, const std::string& message);
+    IRError get(IRErrorType type, const std::string& message);
 private:
     // Members
     std::string fileName;

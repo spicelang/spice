@@ -40,6 +40,9 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& conte
 
     // Create error factory for this specific file
     this->err = new ErrorFactory(sourceFile);
+    
+    // Create OpRuleManager
+    opRuleManager = std::make_unique<OpRuleManager>(err);
 }
 
 AnalyzerVisitor::~AnalyzerVisitor() {
@@ -134,7 +137,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext*
     if (isMethod) {
         std::string structName = ctx->IDENTIFIER().front()->toString();
         SymbolTableEntry* structEntry = currentScope->lookup(structName);
-        SymbolType thisType = structEntry->getType().toPointer();
+        SymbolType thisType = structEntry->getType().toPointer(err, *ctx->start);
         SymbolSpecifiers thisTypeSpecifiers = SymbolSpecifiers(thisType);
         thisTypeSpecifiers.setConst(true);
         currentScope->insert(THIS_VARIABLE_NAME, thisType, thisTypeSpecifiers, INITIALIZED, *ctx->start, false);
@@ -222,7 +225,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     if (isMethod) {
         std::string structName = ctx->IDENTIFIER().front()->toString();
         SymbolTableEntry* structEntry = currentScope->lookup(structName);
-        SymbolType thisSymbolType = structEntry->getType().toPointer();
+        SymbolType thisSymbolType = structEntry->getType().toPointer(err, *ctx->start);
         SymbolSpecifiers thisSymbolSpecifiers = SymbolSpecifiers(thisSymbolType);
         thisSymbolSpecifiers.setConst(true);
         currentScope->insert(THIS_VARIABLE_NAME, thisSymbolType, thisSymbolSpecifiers, INITIALIZED, *ctx->start, false);
@@ -477,7 +480,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
         // Set declared variable to initialized, because we increment it internally in the loop
         if (!head->declStmt().front()->assignExpr()) {
             std::string varName = head->declStmt().front()->IDENTIFIER()->toString();
-            currentScope->lookup(varName)->updateState(INITIALIZED,
+            currentScope->lookup(varName)->updateState(INITIALIZED, err,
                                                        *head->declStmt().front()->IDENTIFIER()->getSymbol());
         }
 
@@ -507,7 +510,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext*
                                 "Foreach loop item type does not match array type. Expected " +
                                 arrayType.getName(false) + ", provided " + itemType.getName(false));
     }
-    itemVarSymbol->updateState(INITIALIZED, *head->declStmt().back()->IDENTIFIER()->getSymbol());
+    itemVarSymbol->updateState(INITIALIZED, err, *head->declStmt().back()->IDENTIFIER()->getSymbol());
 
     // Visit statement list in new scope
     nestedLoopCounter++;
@@ -598,7 +601,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
     if (ctx->assignExpr()) {
         SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
         // Check if type has to be inferred or both types are fixed
-        symbolType = symbolType.is(TY_DYN) ? rhsTy : OpRuleManager::getAssignResultType(*ctx->start,symbolType,
+        symbolType = symbolType.is(TY_DYN) ? rhsTy : opRuleManager->getAssignResultType(*ctx->start,symbolType,
                                                                                         rhsTy, true);
         initialState = INITIALIZED;
 
@@ -609,7 +612,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext* ctx) 
     }
 
     if (parameterMode && symbolType.isArray()) // Change array type to pointer type for function/procedure parameters
-        symbolType = symbolType.getContainedTy().toPointer();
+        symbolType = symbolType.getContainedTy().toPointer(err, *ctx->dataType()->start);
 
     // Build symbol specifiers
     SymbolSpecifiers symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
@@ -670,8 +673,8 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     } else { // Include own source file
         // Check in module registry if the file can be imported
         std::string sourceFileDir = FileUtil::getFileDir(mainSourceFile);
-        ModuleRegistry* registry = ModuleRegistry::getInstance();
-        registry->addModule(sourceFileDir + "/" + importPath);
+        ModuleRegistry* registry = ModuleRegistry::getInstance(err);
+        registry->addModule(*ctx->STRING_LITERAL()->getSymbol(), sourceFileDir + "/" + importPath);
         // Import file
         if (FileUtil::fileExists(sourceFileDir + "/" + importPath + ".spice")) {
             filePath = sourceFileDir + "/" + importPath + ".spice";
@@ -726,7 +729,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext* c
             }
 
             // Set the return variable to initialized
-            returnVariable->updateState(INITIALIZED, *ctx->start);
+            returnVariable->updateState(INITIALIZED, err, *ctx->start);
         }
 
         // Check if result variable is initialized
@@ -884,27 +887,27 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
 
         // Take a look at the operator
         if (ctx->assignOp()->ASSIGN()) {
-            rhsTy = OpRuleManager::getAssignResultType(*ctx->start, lhsTy, rhsTy, false);
+            rhsTy = opRuleManager->getAssignResultType(*ctx->start, lhsTy, rhsTy, false);
         } else if (ctx->assignOp()->PLUS_EQUAL()) {
-            rhsTy = OpRuleManager::getPlusEqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getPlusEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->MINUS_EQUAL()) {
-            rhsTy = OpRuleManager::getMinusEqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getMinusEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->MUL_EQUAL()) {
-            rhsTy = OpRuleManager::getMulEqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getMulEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->DIV_EQUAL()) {
-            rhsTy = OpRuleManager::getDivEqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getDivEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->REM_EQUAL()) {
-            rhsTy = OpRuleManager::getRemEqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getRemEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->SHL_EQUAL()) {
-            rhsTy = OpRuleManager::getSHLEqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getSHLEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->SHR_EQUAL()) {
-            rhsTy = OpRuleManager::getSHREqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getSHREqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->AND_EQUAL()) {
-            rhsTy = OpRuleManager::getAndEqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getAndEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->OR_EQUAL()) {
-            rhsTy = OpRuleManager::getOrEqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getOrEqualResultType(*ctx->start, lhsTy, rhsTy);
         } else if (ctx->assignOp()->XOR_EQUAL()) {
-            rhsTy = OpRuleManager::getXorEqualResultType(*ctx->start, lhsTy, rhsTy);
+            rhsTy = opRuleManager->getXorEqualResultType(*ctx->start, lhsTy, rhsTy);
         }
 
         if (!variableName.empty()) { // Variable is involved on the left side
@@ -918,7 +921,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
 
             // Update state in symbol table
             if (!currentEntry->getType().isOneOf({ TY_FUNCTION, TY_PROCEDURE }))
-                currentEntry->updateState(INITIALIZED, *ctx->prefixUnaryExpr()->start);
+                currentEntry->updateState(INITIALIZED, err, *ctx->prefixUnaryExpr()->start);
 
             // Print compiler warning if the rhs size exceeds the lhs size
             if (lhsTy.isArray() && rhsTy.getArraySize() > lhsTy.getArraySize())
@@ -959,7 +962,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
         SymbolType lhsTy = visit(ctx->logicalAndExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->logicalAndExpr()[i]).as<SymbolType>();
-            lhsTy = OpRuleManager::getLogicalOrResultType(*ctx->start, lhsTy, rhsTy);
+            lhsTy = opRuleManager->getLogicalOrResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }
@@ -972,7 +975,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
         SymbolType lhsTy = visit(ctx->bitwiseOrExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->bitwiseOrExpr()[i]).as<SymbolType>();
-            lhsTy = OpRuleManager::getLogicalAndResultType(*ctx->start, lhsTy, rhsTy);
+            lhsTy = opRuleManager->getLogicalAndResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }
@@ -985,7 +988,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
         SymbolType lhsTy = visit(ctx->bitwiseXorExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->bitwiseXorExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->bitwiseXorExpr()[i]).as<SymbolType>();
-            lhsTy = OpRuleManager::getBitwiseOrResultType(*ctx->start, lhsTy, rhsTy);
+            lhsTy = opRuleManager->getBitwiseOrResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }
@@ -998,7 +1001,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprCo
         SymbolType lhsTy = visit(ctx->bitwiseAndExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->bitwiseAndExpr()[i]).as<SymbolType>();
-            lhsTy = OpRuleManager::getBitwiseXorResultType(*ctx->start, lhsTy, rhsTy);
+            lhsTy = opRuleManager->getBitwiseXorResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }
@@ -1011,7 +1014,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
         SymbolType lhsTy = visit(ctx->equalityExpr()[0]).as<SymbolType>();
         for (int i = 1; i < ctx->equalityExpr().size(); i++) {
             SymbolType rhsTy = visit(ctx->equalityExpr()[i]).as<SymbolType>();
-            lhsTy = OpRuleManager::getBitwiseAndResultType(*ctx->start, lhsTy, rhsTy);
+            lhsTy = opRuleManager->getBitwiseAndResultType(*ctx->start, lhsTy, rhsTy);
         }
         return lhsTy;
     }
@@ -1025,9 +1028,9 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
         SymbolType rhsTy = visit(ctx->relationalExpr()[1]).as<SymbolType>();
 
         if (ctx->EQUAL()) // Operator was equal
-            return OpRuleManager::getEqualResultType(*ctx->start, lhsTy, rhsTy);
+            return opRuleManager->getEqualResultType(*ctx->start, lhsTy, rhsTy);
         else if (ctx->NOT_EQUAL()) // Operator was not equal
-            return OpRuleManager::getNotEqualResultType(*ctx->start, lhsTy, rhsTy);
+            return opRuleManager->getNotEqualResultType(*ctx->start, lhsTy, rhsTy);
     }
     return visit(ctx->relationalExpr()[0]);
 }
@@ -1039,13 +1042,13 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
         SymbolType rhsTy = visit(ctx->shiftExpr()[1]).as<SymbolType>();
 
         if (ctx->LESS()) // Operator was less
-            return OpRuleManager::getLessResultType(*ctx->start, lhsTy, rhsTy);
+            return opRuleManager->getLessResultType(*ctx->start, lhsTy, rhsTy);
         else if (ctx->GREATER()) // Operator was greater
-            return OpRuleManager::getGreaterResultType(*ctx->start, lhsTy, rhsTy);
+            return opRuleManager->getGreaterResultType(*ctx->start, lhsTy, rhsTy);
         else if (ctx->LESS_EQUAL()) // Operator was less equal
-            return OpRuleManager::getLessEqualResultType(*ctx->start, lhsTy, rhsTy);
+            return opRuleManager->getLessEqualResultType(*ctx->start, lhsTy, rhsTy);
         else if (ctx->GREATER_EQUAL()) // Operator was greater equal
-            return OpRuleManager::getGreaterEqualResultType(*ctx->start, lhsTy, rhsTy);
+            return opRuleManager->getGreaterEqualResultType(*ctx->start, lhsTy, rhsTy);
     }
     return visit(ctx->shiftExpr()[0]);
 }
@@ -1057,9 +1060,9 @@ antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext* ctx
         SymbolType rhsTy = visit(ctx->additiveExpr()[1]).as<SymbolType>();
 
         if (ctx->SHL()) // Operator was shl
-            return OpRuleManager::getShiftLeftResultType(*ctx->start, lhsTy, rhsTy);
+            return opRuleManager->getShiftLeftResultType(*ctx->start, lhsTy, rhsTy);
         else if (ctx->SHR()) // Operator was shr
-            return OpRuleManager::getShiftRightResultType(*ctx->start, lhsTy, rhsTy);
+            return opRuleManager->getShiftRightResultType(*ctx->start, lhsTy, rhsTy);
     }
     return visit(ctx->additiveExpr()[0]);
 }
@@ -1077,9 +1080,9 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
             SymbolType nextType = visit(next).as<SymbolType>();
 
             if (tokenType == SpiceParser::PLUS) { // Operator was plus
-                OpRuleManager::getPlusResultType(*next->start, currentType, nextType);
+                opRuleManager->getPlusResultType(*next->start, currentType, nextType);
             } else if (tokenType == SpiceParser::MINUS) { // Operator was minus
-                OpRuleManager::getMinusResultType(*next->start, currentType, nextType);
+                opRuleManager->getMinusResultType(*next->start, currentType, nextType);
             }
 
             operatorIndex += 2;
@@ -1102,11 +1105,11 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
             SymbolType nextType = visit(next).as<SymbolType>();
 
             if (tokenType == SpiceParser::MUL) { // Operator is mul
-                OpRuleManager::getMulResultType(*next->start, currentType, nextType);
+                opRuleManager->getMulResultType(*next->start, currentType, nextType);
             } else if (tokenType == SpiceParser::DIV) { // Operator is div
-                OpRuleManager::getDivResultType(*next->start, currentType, nextType);
+                opRuleManager->getDivResultType(*next->start, currentType, nextType);
             } else if (tokenType == SpiceParser::REM) { // Operator is rem
-                OpRuleManager::getRemResultType(*next->start, currentType, nextType);
+                opRuleManager->getRemResultType(*next->start, currentType, nextType);
             }
 
             operatorIndex += 2;
@@ -1121,7 +1124,7 @@ antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext* ctx) 
 
     if (ctx->LPAREN()) { // Cast is applied
         SymbolType dstType = visit(ctx->dataType()).as<SymbolType>();
-        return OpRuleManager::getCastResultType(*ctx->start, dstType, rhs.as<SymbolType>());
+        return opRuleManager->getCastResultType(*ctx->start, dstType, rhs.as<SymbolType>());
     }
 
     return rhs;
@@ -1134,22 +1137,22 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
     while (tokenCounter < ctx->children.size() -1) {
         auto* token = dynamic_cast<SpiceParser::PrefixUnaryOpContext*>(ctx->children[tokenCounter]);
         if (token->MINUS()) { // Consider - operator
-            lhs = OpRuleManager::getPrefixMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = opRuleManager->getPrefixMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
         } else if (token->PLUS_PLUS()) { // Consider ++ operator
-            lhs = OpRuleManager::getPrefixPlusPlusResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = opRuleManager->getPrefixPlusPlusResultType(*ctx->postfixUnaryExpr()->start, lhs);
         } else if (token->MINUS_MINUS()) { // Consider -- operator
-            lhs = OpRuleManager::getPrefixMinusMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = opRuleManager->getPrefixMinusMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
         } else if (token->NOT()) { // Consider ! operator
-            lhs = OpRuleManager::getPrefixNotResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = opRuleManager->getPrefixNotResultType(*ctx->postfixUnaryExpr()->start, lhs);
         } else if (token->BITWISE_NOT()) { // Consider ~ operator
-            lhs = OpRuleManager::getPrefixBitwiseNotResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = opRuleManager->getPrefixBitwiseNotResultType(*ctx->postfixUnaryExpr()->start, lhs);
         } else if (token->MUL()) { // Consider * operator
-            lhs = OpRuleManager::getPrefixMulResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = opRuleManager->getPrefixMulResultType(*ctx->postfixUnaryExpr()->start, lhs);
         } else if (token->BITWISE_AND()) { // Consider & operator
-            lhs = OpRuleManager::getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = opRuleManager->getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
         } else if (token->LOGICAL_AND()) { // Consider doubled & operator
-            lhs = OpRuleManager::getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
-            lhs = OpRuleManager::getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = opRuleManager->getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
+            lhs = opRuleManager->getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
         }
         tokenCounter++;
     }
@@ -1211,7 +1214,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             if (paramLst != nullptr) {
                 for (auto& param : paramLst->assignExpr()) {
                     SymbolType paramType = visit(param).as<SymbolType>();
-                    if (paramType.isArray()) paramType = paramType.getContainedTy().toPointer();
+                    if (paramType.isArray()) paramType = paramType.getContainedTy().toPointer(err, *param->start);
                     paramTypes.push_back(paramType);
                 }
             }
@@ -1266,15 +1269,15 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
             auto* postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext*>(ctx->children[tokenCounter]);
             lhs = visit(postfixUnary).as<SymbolType>();
         } else if (tokenType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
-            lhs = OpRuleManager::getPostfixPlusPlusResultType(*ctx->atomicExpr()->start, lhs);
+            lhs = opRuleManager->getPostfixPlusPlusResultType(*ctx->atomicExpr()->start, lhs);
 
             // Update state in symbol table
-            if (currentEntry != nullptr) currentEntry->updateState(INITIALIZED, *token->getSymbol());
+            if (currentEntry != nullptr) currentEntry->updateState(INITIALIZED, err, *token->getSymbol());
         } else if (tokenType == SpiceParser::MINUS_MINUS) { // Consider -- operator
-            lhs = OpRuleManager::getPostfixMinusMinusResultType(*ctx->atomicExpr()->start, lhs);
+            lhs = opRuleManager->getPostfixMinusMinusResultType(*ctx->atomicExpr()->start, lhs);
 
             // Update state in symbol table
-            if (currentEntry != nullptr) currentEntry->updateState(INITIALIZED, *token->getSymbol());
+            if (currentEntry != nullptr) currentEntry->updateState(INITIALIZED, err, *token->getSymbol());
         }
         tokenCounter++; // Consume token
     }
@@ -1434,7 +1437,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext* ctx) {
             throw err->get(*ctx->LBRACE()->getSymbol(), UNEXPECTED_DYN_TYPE_SA,
                                 "Not enough information to perform type inference");
         }
-        return expectedItemType.toArray(actualSize);
+        return expectedItemType.toArray(err, *ctx->LBRACE()->getSymbol(), actualSize);
     }
 
     return nullptr;
@@ -1457,7 +1460,7 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
     while (tokenCounter < ctx->children.size()) {
         auto* token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
         if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
-            type = type.toPointer();
+            type = type.toPointer(err, *ctx->start);
         } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
             tokenCounter++; // Consume LBRACKET
             token = dynamic_cast<antlr4::tree::TerminalNode*>(ctx->children[tokenCounter]);
@@ -1466,12 +1469,11 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext* ctx) 
                 int signedSize = std::stoi(token->toString());
                 // Check if size >1
                 if (signedSize <= 1)
-                    throw err->get(*token->getSymbol(), ARRAY_SIZE_INVALID,
-                                        "The size of an array must be > 1");
+                    throw err->get(*token->getSymbol(), ARRAY_SIZE_INVALID, "The size of an array must be > 1");
                 size = signedSize;
                 tokenCounter++; // Consume INTEGER
             }
-            type = type.toArray(size);
+            type = type.toArray(err, *ctx->start, size);
         }
         tokenCounter++;
     }

@@ -9,3 +9,7 @@ SemanticError ErrorFactory::get(const antlr4::Token& token, SemanticErrorType ty
 IRError ErrorFactory::get(const antlr4::Token& token, IRErrorType type, const std::string& message) {
     return IRError(fileName, token, type, message);
 }
+
+IRError ErrorFactory::get(IRErrorType type, const std::string& message) {
+    return IRError(fileName, type, message);
+}

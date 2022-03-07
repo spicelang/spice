@@ -236,7 +236,8 @@ std::vector<SymbolType> SymbolTable::getProcedureDeclaration(const std::string& 
  * @param oldType Old symbol type
  * @param newType Replacement type
  */
-void SymbolTable::updateSymbolTypes(const SymbolType& oldType, const SymbolType& newType) {
+void SymbolTable::updateSymbolTypes(ErrorFactory* err, const antlr4::Token& token,
+                                    const SymbolType& oldType, const SymbolType& newType) {
     // Update types in the symbol list
     for (auto& [key, symbol] : symbols) {
         SymbolType currentType = symbol.getType();
@@ -253,9 +254,9 @@ void SymbolTable::updateSymbolTypes(const SymbolType& oldType, const SymbolType&
             SymbolType currentNewType = newType;
             for (auto it = ptrArrayList.rbegin(); it != ptrArrayList.rend(); ++it) {
                 if (*it == TY_PTR)
-                    currentNewType = currentNewType.toPointer();
+                    currentNewType = currentNewType.toPointer(err, token);
                 else
-                    currentNewType = currentNewType.toArray();
+                    currentNewType = currentNewType.toArray(err, token);
             }
             symbol.updateType(currentNewType, true);
         }
@@ -268,7 +269,7 @@ void SymbolTable::updateSymbolTypes(const SymbolType& oldType, const SymbolType&
     }
     // Visit all child tables
     for (auto& [key, child] : children)
-        child.updateSymbolTypes(oldType, newType);
+        child.updateSymbolTypes(err, token, oldType, newType);
 }
 
 /**
