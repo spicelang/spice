@@ -1,1 +1,1 @@
-Semantic error at 8:29: Referenced undefined variable: Variable 'f3' was referenced before declared
+Semantic error in ./test-files/analyzer/structs/error-referenced-undefined-struct-field/source.spice at 8:29: Referenced undefined variable: Variable 'f3' was referenced before declared

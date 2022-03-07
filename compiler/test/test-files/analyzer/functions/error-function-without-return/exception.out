@@ -1,1 +1,1 @@
-Semantic error at 1:1: Missing return statement: Function without return statement
+Semantic error in ./test-files/analyzer/functions/error-function-without-return/source.spice at 1:1: Missing return statement: Function without return statement

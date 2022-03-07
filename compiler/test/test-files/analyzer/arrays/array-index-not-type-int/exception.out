@@ -1,1 +1,1 @@
-Semantic error at 3:30: Array index not of type int: Array index must be of type int
+Semantic error in ./test-files/analyzer/arrays/array-index-not-type-int/source.spice at 3:30: Array index not of type int: Array index must be of type int

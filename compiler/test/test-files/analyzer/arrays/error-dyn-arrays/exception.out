@@ -1,1 +1,1 @@
-Semantic error - Dyn arrays not allowed: Just use the dyn type without '[]' instead
+Semantic error in ./test-files/analyzer/arrays/error-dyn-arrays/source.spice at 2:5: Dyn arrays not allowed: Just use the dyn type without '[]' instead

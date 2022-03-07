@@ -1,1 +1,1 @@
-Semantic error at 7:20: Referenced undefined struct: Could not find struct 'TestStructTypo'
+Semantic error in ./test-files/analyzer/structs/error-referenced-undefined-struct/source.spice at 7:20: Referenced undefined struct: Could not find struct 'TestStructTypo'

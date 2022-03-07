@@ -1,1 +1,1 @@
-Semantic error at 4:9: Return without initialization of result variable: Return without value, but result variable is not initialized yet
+Semantic error in ./test-files/analyzer/functions/error-return-without-value-result/source.spice at 4:9: Return without initialization of result variable: Return without value, but result variable is not initialized yet

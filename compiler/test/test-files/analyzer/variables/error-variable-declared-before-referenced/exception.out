@@ -1,1 +1,1 @@
-Semantic error at 2:26: Referenced undefined variable: Variable 'test' was referenced before declared
+Semantic error in ./test-files/analyzer/variables/error-variable-declared-before-referenced/source.spice at 2:26: Referenced undefined variable: Variable 'test' was referenced before declared

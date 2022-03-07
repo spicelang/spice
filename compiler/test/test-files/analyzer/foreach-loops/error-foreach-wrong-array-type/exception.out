@@ -1,1 +1,1 @@
-Semantic error at 3:13: Wrong data type for operator: Can only apply foreach loop on an array type. You provided bool
+Semantic error in ./test-files/analyzer/foreach-loops/error-foreach-wrong-array-type/source.spice at 3:13: Wrong data type for operator: Can only apply foreach loop on an array type. You provided bool

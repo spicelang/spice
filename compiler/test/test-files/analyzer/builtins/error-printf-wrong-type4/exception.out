@@ -1,1 +1,1 @@
-Semantic error at 5:18: Types of printf call not matching: Template string expects pointer, but got struct(NotAPointer)
+Semantic error in ./test-files/analyzer/builtins/error-printf-wrong-type4/source.spice at 5:18: Types of printf call not matching: Template string expects pointer, but got struct(NotAPointer)

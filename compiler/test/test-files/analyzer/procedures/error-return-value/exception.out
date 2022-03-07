@@ -1,1 +1,1 @@
-Semantic error at 3:12: Return with value in procedure: Return statements in procedures may not have a value attached
+Semantic error in ./test-files/analyzer/procedures/error-return-value/source.spice at 3:12: Return with value in procedure: Return statements in procedures may not have a value attached

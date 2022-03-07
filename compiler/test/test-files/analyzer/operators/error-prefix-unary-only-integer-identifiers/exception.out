@@ -1,1 +1,1 @@
-Semantic error at 2:7: Wrong data type for operator: Cannot apply '--' operator on type string
+Semantic error in ./test-files/analyzer/operators/error-prefix-unary-only-integer-identifiers/source.spice at 2:7: Wrong data type for operator: Cannot apply '--' operator on type string

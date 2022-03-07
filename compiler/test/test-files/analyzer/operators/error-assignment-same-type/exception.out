@@ -1,1 +1,1 @@
-Semantic error at 2:5: Wrong data type for operator: Cannot apply '=' operator on types int and string
+Semantic error in ./test-files/analyzer/operators/error-assignment-same-type/source.spice at 2:5: Wrong data type for operator: Cannot apply '=' operator on types int and string

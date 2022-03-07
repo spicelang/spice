@@ -1,1 +1,1 @@
-Semantic error at 1:26: Unexpected dyn type: Dyn data type is not allowed as param type for external functions
+Semantic error in ./test-files/analyzer/functions/error-ext-dyn-param/source.spice at 1:26: Unexpected dyn type: Dyn data type is not allowed as param type for external functions

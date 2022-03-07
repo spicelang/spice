@@ -1,1 +1,1 @@
-Semantic error at 3:18: Invalid number of continue calls: Continue count must be >= 1, you provided 0
+Semantic error in ./test-files/analyzer/loop-control-insts/error-continue-count-invalid/source.spice at 3:18: Invalid number of continue calls: Continue count must be >= 1, you provided 0
