@@ -1030,7 +1030,7 @@ antlrcpp::Any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtConte
 antlrcpp::Any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) {
     if (ctx->printfCall()) return visit(ctx->printfCall());
     if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
-    throw std::runtime_error("Internal compiler error: Could not find builtin function");
+    throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
 antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* ctx) {

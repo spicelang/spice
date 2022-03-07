@@ -249,6 +249,7 @@ class GeneratorOperatorTests : public ::testing::TestWithParam<GeneratorTestCase
 class GeneratorPointerTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorProcedureTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorStructTests : public ::testing::TestWithParam<GeneratorTestCase> {};
+class GeneratorThreadTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorVariableTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorWhileLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 
@@ -311,6 +312,10 @@ TEST_P(GeneratorProcedureTests, ProcedureTests) {
 }
 
 TEST_P(GeneratorStructTests, StructTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(GeneratorThreadTests, TheadTests) {
     executeTest(GetParam());
 }
 
@@ -427,13 +432,19 @@ INSTANTIATE_TEST_SUITE_P(
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorVariableTests,
-        GeneratorVariableTests,
+        GeneratorThreadTests,
+        GeneratorThreadTests,
         ::testing::ValuesIn(generatorSuites[15]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        GeneratorVariableTests,
+        GeneratorVariableTests,
+        ::testing::ValuesIn(generatorSuites[16]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         GeneratorWhileLoopTests,
         GeneratorWhileLoopTests,
-        ::testing::ValuesIn(generatorSuites[16]),
+        ::testing::ValuesIn(generatorSuites[17]),
         NameResolver());
