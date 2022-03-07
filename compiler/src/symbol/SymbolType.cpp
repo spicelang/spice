@@ -11,10 +11,10 @@
  *
  * @return Pointer type of the current type
  */
-SymbolType SymbolType::toPointer() {
+SymbolType SymbolType::toPointer(ErrorFactory* err, const antlr4::Token& token) {
     // Do not allow pointers of dyn
     if (std::get<0>(typeChain.top()) == TY_DYN)
-        throw SemanticError(DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
+        throw err->get(token, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
     TypeChain newTypeChain = typeChain;
     newTypeChain.push(std::make_pair(TY_PTR, ""));
@@ -26,10 +26,10 @@ SymbolType SymbolType::toPointer() {
  *
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(unsigned int size) {
+SymbolType SymbolType::toArray(ErrorFactory* err, const antlr4::Token& token, unsigned int size) {
     // Do not allow arrays of dyn
     if (std::get<0>(typeChain.top()) == TY_DYN)
-        throw SemanticError(DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
+        throw err->get(token, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
     TypeChain newTypeChain = typeChain;
     newTypeChain.push(std::make_pair(TY_ARRAY, std::to_string(size)));

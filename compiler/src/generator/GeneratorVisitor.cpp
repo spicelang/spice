@@ -47,6 +47,13 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& con
     } else {
         targetTriple = llvm::Triple(targetArch, targetVendor, targetOs);
     }
+
+    // Create error factory for this specific file
+    this->err = new ErrorFactory(sourceFile);
+}
+
+GeneratorVisitor::~GeneratorVisitor() {
+    delete this->err;
 }
 
 void GeneratorVisitor::init() {
@@ -68,7 +75,7 @@ void GeneratorVisitor::init() {
     // Search after selected target
     std::string error;
     const llvm::Target* target = llvm::TargetRegistry::lookupTarget(tripletString, error);
-    if (!target) throw IRError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error);
+    if (!target) throw err->get(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error);
 
     llvm::TargetOptions opt;
     llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
@@ -110,11 +117,11 @@ void GeneratorVisitor::emit() {
     // Open file output stream
     std::error_code errorCode;
     llvm::raw_fd_ostream dest(outputPath, errorCode, llvm::sys::fs::OF_None);
-    if (errorCode) throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + outputPath + "' could not be opened");
+    if (errorCode) throw err->get(CANT_OPEN_OUTPUT_FILE, "File '" + outputPath + "' could not be opened");
 
     llvm::legacy::PassManager passManager;
     if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CGFT_ObjectFile))
-        throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type");
+        throw err->get(WRONG_TYPE, "Target machine can't emit a file of this type");
 
     // Emit object file
     passManager.run(*module);
@@ -141,7 +148,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
     // Verify module to detect IR code bugs
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyModule(*module, &oss)) throw IRError(*ctx->start, INVALID_MODULE, oss.str());
+    if (llvm::verifyModule(*module, &oss)) throw err->get(*ctx->start, INVALID_MODULE, oss.str());
 
     return result;
 }
@@ -210,7 +217,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
         // Verify function
         std::string output;
         llvm::raw_string_ostream oss(output);
-        if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
+        if (llvm::verifyFunction(*fct, &oss)) throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
 
         // Add function to function list
         functions.push_back(fct);
@@ -328,7 +335,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Verify function
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*fct, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
+    if (llvm::verifyFunction(*fct, &oss)) throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(fct);
@@ -437,7 +444,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Verify procedure
     std::string output;
     llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*proc, &oss)) throw IRError(*ctx->start, INVALID_FUNCTION, oss.str());
+    if (llvm::verifyFunction(*proc, &oss)) throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
 
     // Add function to function list
     functions.push_back(proc);
@@ -943,7 +950,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
             argVal = builder->CreateLoad(argValPtr->getType()->getPointerElementType(), argValPtr);
         }
 
-        if (argVal == nullptr) throw IRError(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
+        if (argVal == nullptr) throw err->get(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
 
         // Cast all integer types to 32 bit
         if (argVal->getType()->isIntegerTy(1) || argVal->getType()->isIntegerTy(8) ||
@@ -1988,7 +1995,7 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext* ctx)
     llvm::Type* type = getTypeForSymbolType(currentSymbolType);
     // Throw an error if something went wrong.
     // This should technically never occur because of the semantic analysis
-    if (!type) throw IRError(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, "Dyn was other");
+    if (!type) throw err->get(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, "Dyn was other");
     return type;
 }
 

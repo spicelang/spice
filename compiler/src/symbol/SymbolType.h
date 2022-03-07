@@ -7,6 +7,8 @@
 #include <stack>
 #include <tuple>
 
+#include <exception/ErrorFactory.h>
+
 enum SymbolSuperType {
     TY_INVALID,
     TY_DOUBLE,
@@ -38,8 +40,8 @@ public:
     SymbolType() = default;
 
     // Public methods
-    SymbolType toPointer();
-    SymbolType toArray(unsigned int size = 0);
+    SymbolType toPointer(ErrorFactory* err, const antlr4::Token& token);
+    SymbolType toArray(ErrorFactory* err, const antlr4::Token& token, unsigned int size = 0);
     SymbolType getContainedTy();
     SymbolType replaceSubType(const std::string& newSubType);
     bool isPointer();

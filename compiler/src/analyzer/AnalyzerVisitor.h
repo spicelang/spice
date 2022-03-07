@@ -7,6 +7,7 @@
 #include <symbol/SymbolTable.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
+#include <exception/ErrorFactory.h>
 
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
@@ -27,6 +28,7 @@ public:
                              const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
                              const std::string& targetOs, const std::string& outputPath, bool debugOutput, int optLevel,
                              bool requiresMainFct, bool stdFile);
+    ~AnalyzerVisitor() override;
 
     // Public methods
     antlrcpp::Any visitEntry(SpiceParser::EntryContext* ctx) override;
@@ -80,6 +82,7 @@ private:
     std::string targetVendor;
     std::string targetOs;
     std::string outputPath;
+    ErrorFactory* err;
     bool debugOutput;
     int optLevel;
     bool requiresMainFct = true;

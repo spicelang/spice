@@ -26,8 +26,8 @@ enum IRErrorType {
 class IRError : public std::exception {
 public:
     // Constructors
-    explicit IRError(const antlr4::Token& token, IRErrorType errorType, const std::string& messageSuffix);
-    explicit IRError(IRErrorType errorType, const std::string& messageSuffix);
+    explicit IRError(const std::string& fileName, const antlr4::Token& token, IRErrorType errorType, const std::string& messageSuffix);
+    explicit IRError(const std::string& fileName, IRErrorType errorType, const std::string& messageSuffix);
 
     // Public methods
     [[nodiscard]] const char* what() const noexcept override;

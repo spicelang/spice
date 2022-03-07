@@ -619,6 +619,10 @@ public:
     static SymbolType getPostfixMinusMinusResultType(const antlr4::Token& token, const SymbolType& lhs);
     static SymbolType getCastResultType(const antlr4::Token& token, SymbolType lhs, SymbolType);
 private:
+    // Members
+    static ErrorFactory* err;
+
+    // Private methods
     static SymbolType validateBinaryOperation(const antlr4::Token& token, const std::vector<BinaryOpRule>& opRules,
                                               const std::string& opName, const SymbolType& lhs, const SymbolType& rhs);
     static SymbolType validateUnaryOperation(const antlr4::Token& token, const std::vector<UnaryOpRule>& opRules,
