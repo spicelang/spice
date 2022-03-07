@@ -1,1 +1,1 @@
-Semantic error at 7:26: Invalid number of continue calls: We can only continue 2 time(s) here
+Semantic error in ./test-files/analyzer/loop-control-insts/error-continue-count-not-too-high/source.spice at 7:26: Invalid number of continue calls: We can only continue 2 time(s) here

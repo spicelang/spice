@@ -1,1 +1,1 @@
-Semantic error at 2:18: Types of printf call not matching: Template string expects int, byte or bool, but got double
+Semantic error in ./test-files/analyzer/builtins/error-printf-wrong-type1/source.spice at 2:18: Types of printf call not matching: Template string expects int, byte or bool, but got double

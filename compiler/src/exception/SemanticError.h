@@ -53,8 +53,7 @@ enum SemanticErrorType {
 class SemanticError : public std::exception {
 public:
     // Constructors
-    explicit SemanticError(const antlr4::Token& token, SemanticErrorType type, const std::string& message);
-    explicit SemanticError(SemanticErrorType type, const std::string& message);
+    explicit SemanticError(const std::string& fileName, const antlr4::Token& token, SemanticErrorType type, const std::string& message);
 
     // Public methods
     [[nodiscard]] const char* what() const noexcept override;

@@ -1,1 +1,1 @@
-Semantic error at 3:13: Array index not of type int: Index in foreach loop must be of type int. You provided double
+Semantic error in ./test-files/analyzer/foreach-loops/error-foreach-wrong-index-type/source.spice at 3:13: Array index not of type int: Index in foreach loop must be of type int. You provided double

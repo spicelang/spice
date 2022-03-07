@@ -24,6 +24,8 @@ set(SOURCES
         symbol/ScopePath.h
         symbol/SymbolSpecifiers.cpp
         symbol/SymbolSpecifiers.h
+        exception/ErrorFactory.cpp
+        exception/ErrorFactory.h
         exception/SemanticError.cpp
         exception/SemanticError.h
         exception/IRError.cpp

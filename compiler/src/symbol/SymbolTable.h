@@ -49,7 +49,7 @@ public:
     void insertProcedureDeclaration(const std::string& procedureName, const std::vector<SymbolType>& argTypes);
     std::vector<SymbolType> getProcedureDeclaration(const std::string& procedureName);
 
-    void updateSymbolTypes(const SymbolType& oldType, const SymbolType& newType);
+    void updateSymbolTypes(ErrorFactory* err, const antlr4::Token& token, const SymbolType& oldType, const SymbolType& newType);
 
     void pushSignature(const FunctionSignature& signature);
     FunctionSignature popSignature();

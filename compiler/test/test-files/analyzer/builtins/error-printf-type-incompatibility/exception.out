@@ -1,1 +1,1 @@
-Semantic error at 6:36: Types of printf call not matching: Template string expects char, but got string
+Semantic error in ./test-files/analyzer/builtins/error-printf-type-incompatibility/source.spice at 6:36: Types of printf call not matching: Template string expects char, but got string

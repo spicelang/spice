@@ -21,6 +21,7 @@ public:
                               SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
                               const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
                               bool debugOutput, int optLevel, bool requiresMainFct);
+    ~GeneratorVisitor() override;
 
     // Public methods
     void init();
@@ -88,6 +89,7 @@ private:
     std::string scopePrefix;
     SymbolType currentSymbolType;
     ScopePath scopePath;
+    ErrorFactory* err;
     bool blockAlreadyTerminated = false;
     llvm::Value* currentThisValue = nullptr;
     llvm::BasicBlock* allocaInsertBlock = nullptr;

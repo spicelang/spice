@@ -13,9 +13,9 @@ ModuleRegistry* ModuleRegistry::instance = nullptr;
  *
  * @param modulePath Path to a source file / module
  */
-void ModuleRegistry::addModule(const std::string& modulePath) {
+void ModuleRegistry::addModule(const antlr4::Token& token, const std::string& modulePath) {
     if (std::find(modulePaths.begin(), modulePaths.end(), modulePath) != modulePaths.end())
-        throw SemanticError(CIRCULAR_DEPENDENCY, "'" + modulePath + ".spice'");
+        throw err->get(token, CIRCULAR_DEPENDENCY, "'" + modulePath + ".spice'");
     modulePaths.push_back(modulePath);
 }
 
@@ -24,7 +24,8 @@ void ModuleRegistry::addModule(const std::string& modulePath) {
  *
  * @return Instance of the module registry
  */
-ModuleRegistry* ModuleRegistry::getInstance() {
+ModuleRegistry* ModuleRegistry::getInstance(ErrorFactory* errorFactory) {
     if (!instance) instance = new ModuleRegistry();
+    instance->err = errorFactory;
     return instance;
 }

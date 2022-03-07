@@ -1,1 +1,1 @@
-Semantic error at 2:5: Printf arg number not matching template string: The placeholder string contains less placeholders that arguments were passed
+Semantic error in ./test-files/analyzer/builtins/error-printf-too-many-args/source.spice at 2:5: Printf arg number not matching template string: The placeholder string contains less placeholders that arguments were passed

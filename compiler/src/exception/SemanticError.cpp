@@ -9,19 +9,9 @@
  * @param type Type of the error
  * @param message Error message suffix
  */
-SemanticError::SemanticError(const antlr4::Token& token, SemanticErrorType type, const std::string& message) {
+SemanticError::SemanticError(const std::string& fileName, const antlr4::Token& token, SemanticErrorType type, const std::string& message) {
     auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
-    errorMessage = "Semantic error at " + codeLoc + ": " + getMessagePrefix(type) + ": " + message;
-}
-
-/**
- * Constructor: Used in case that the exact code position where the error occurred is unknown
- *
- * @param type Type of the error
- * @param message Error message suffix
- */
-SemanticError::SemanticError(SemanticErrorType type, const std::string& message) {
-    errorMessage = "Semantic error - " + getMessagePrefix(type) + ": " + message;
+    errorMessage = "Semantic error in " + fileName + " at " + codeLoc + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

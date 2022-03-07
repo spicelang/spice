@@ -159,13 +159,13 @@ SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const antlr4::Token& tok
 
 SymbolType OpRuleManager::getPrefixMulResultType(const antlr4::Token& token, SymbolType lhs) {
     if (!lhs.isPointer())
-        throw SemanticError(token, OPERATOR_WRONG_DATA_TYPE,
+        throw err->get(token, OPERATOR_WRONG_DATA_TYPE,
                             "Cannot apply de-referencing operator on type " + lhs.getName(true));
     return lhs.getContainedTy();
 }
 
 SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const antlr4::Token& token, SymbolType lhs) {
-    return lhs.toPointer();
+    return lhs.toPointer(err, token);
 }
 
 SymbolType OpRuleManager::getPostfixPlusPlusResultType(const antlr4::Token& token, const SymbolType& lhs) {
@@ -205,11 +205,11 @@ SymbolType OpRuleManager::validateUnaryOperation(const antlr4::Token& token, con
 
 SemanticError OpRuleManager::printErrorMessageBinary(const antlr4::Token& token, const std::string& operatorName,
                                                      SymbolType lhs, SymbolType rhs) {
-    return SemanticError(token, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + operatorName +
+    return err->get(token, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + operatorName +
                         "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true));
 }
 
 SemanticError OpRuleManager::printErrorMessageUnary(const antlr4::Token& token, const std::string& operatorName, SymbolType lhs) {
-    return SemanticError(token, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + operatorName +
+    return err->get(token, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + operatorName +
                         "' operator on type " + lhs.getName(true));
 }

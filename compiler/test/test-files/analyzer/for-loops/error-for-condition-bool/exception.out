@@ -1,1 +1,1 @@
-Semantic error at 2:20: Condition must be bool: For loop condition must be of type bool
+Semantic error in ./test-files/analyzer/for-loops/error-for-condition-bool/source.spice at 2:20: Condition must be bool: For loop condition must be of type bool

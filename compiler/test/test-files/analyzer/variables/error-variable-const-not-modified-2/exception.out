@@ -1,1 +1,1 @@
-Semantic error at 3:13: Cannot re-assign constant variable: Not re-assignable variable 'constVar'
+Semantic error in ./test-files/analyzer/variables/error-variable-const-not-modified-2/source.spice at 3:13: Cannot re-assign constant variable: Not re-assignable variable 'constVar'

@@ -1,1 +1,1 @@
-Semantic error at 12:19: Referenced undefined function: Function/Procedure 'getInt()' could not be found
+Semantic error in ./test-files/analyzer/methods/error-method-not-existing/source.spice at 12:19: Referenced undefined function: Function/Procedure 'getInt()' could not be found
