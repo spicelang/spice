@@ -6,7 +6,7 @@
 
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
-#include <util/CompilerWarning.h>
+#include <util/ThreadFactory.h>
 #include <exception/IRError.h>
 
 #include <analyzer/AnalyzerVisitor.h>
@@ -562,7 +562,44 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx) {
-    //return SpiceBaseVisitor::visitThreadDef(ctx);
+    // Visit assign statement to get tid
+    llvm::Value* tidPtr = visit(ctx->assignExpr()).as<llvm::Value*>();
+    llvm::Value* tid = builder->CreateLoad(tidPtr->getType()->getPointerElementType(), tidPtr);
+
+    // Insert condition to check if the tid is -1
+    // Create blocks
+    llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "thread.if.then");
+    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "thread.if.end");
+
+    // Check if condition is fulfilled
+    llvm::Value* value = builder->getInt32(-1);
+    llvm::Value* condition = builder->CreateICmpEQ(tid, value);
+    createCondBr(condition, bThen, bEnd);
+
+    // Fill then block
+    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
+    parentFct->getBasicBlockList().push_back(bThen);
+    moveInsertPointToBlock(bThen);
+    // Generate IR generating for creating an anonymous tid
+    tid = builder->getInt32(ThreadFactory::getInstance()->getNextThreadId());
+    builder->CreateStore(tid, tidPtr);
+    createBr(bEnd);
+
+    // Fill end block
+    parentFct->getBasicBlockList().push_back(bEnd);
+    moveInsertPointToBlock(bEnd);
+
+    // Change scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+    assert(currentScope != nullptr);
+
+    // Visit nested statements
+    visit(ctx->stmtLst());
+
+    // Change scope back
+    currentScope = currentScope->getParent();
+    assert(currentScope != nullptr);
 
     return nullptr;
 }

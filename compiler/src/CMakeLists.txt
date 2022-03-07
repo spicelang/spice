@@ -38,6 +38,8 @@ set(SOURCES
         util/ScopeIdUtil.h
         util/ModuleRegistry.cpp
         util/ModuleRegistry.h
+        util/ThreadFactory.cpp
+        util/ThreadFactory.h
         util/FunctionSignature.cpp
         util/FunctionSignature.h
         util/FileUtil.cpp
