@@ -39,6 +39,11 @@ var InstallCliFlags = []cli.Flag{
 		Aliases: []string{"o"},
 		Usage:   "Path to the location where the output executable should go",
 	},
+	&cli.BoolFlag{
+		Name:    "pthreads",
+		Aliases: []string{"p", "t"},
+		Usage:   "Compiled program makes use of the Posix Threads (pthreads) library",
+	},
 }
 
 // ---------------------------------------------------------------- Public functions ---------------------------------------------------------------
@@ -48,6 +53,7 @@ func Install(c *cli.Context) error {
 	// Extract flags
 	sourceFile := c.Args().Get(0)
 	debugOutput := c.Bool("debug-output")
+	pThreads := c.Bool("pthreads")
 	optLevel := 2
 	if c.Bool("opt-0") {
 		optLevel = 0
@@ -67,5 +73,5 @@ func Install(c *cli.Context) error {
 	installPath := util.SourceFileToInstallPath(sourceFile)
 
 	// Build executable to the install path
-	return buildFromSourceFile(sourceFile, "", "", "", installPath, debugOutput, optLevel, false)
+	return buildFromSourceFile(sourceFile, "", "", "", installPath, optLevel, debugOutput, false, pThreads)
 }
