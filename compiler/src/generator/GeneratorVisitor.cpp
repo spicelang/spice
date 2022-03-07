@@ -594,8 +594,67 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     currentScope = currentScope->getChild(scopeId);
     assert(currentScope != nullptr);
 
-    // Visit nested statements
+    // Create threaded function
+    llvm::Type* voidPtrTy = builder->getInt8PtrTy();
+    llvm::FunctionType* threadFctTy = llvm::FunctionType::get(voidPtrTy, { voidPtrTy }, false);
+    llvm::Function* threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage, "", module.get());
+
+    // Create entry block for thread function
+    llvm::BasicBlock* allocaInsertBlockBackup = allocaInsertBlock;
+    llvm::Instruction* allocaInsertInstBackup = allocaInsertInst;
+    llvm::BasicBlock* bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+    allocaInsertInst = nullptr;
+    threadFct->getBasicBlockList().push_back(bEntry);
+    moveInsertPointToBlock(bEntry);
+
+    // Insert instructions into thread function
     visit(ctx->stmtLst());
+
+    // Insert return statement and verify function
+    llvm::Value* voidPtrNull = llvm::Constant::getNullValue(llvm::Type::getInt8Ty(*context)->getPointerTo());
+    builder->CreateRet(voidPtrNull);
+    llvm::verifyFunction(*threadFct);
+
+    // Change back to the original basic block
+    moveInsertPointToBlock(bEnd);
+
+    // Restore alloca insert block and inst
+    allocaInsertBlock = allocaInsertBlockBackup;
+    allocaInsertInst = allocaInsertInstBackup;
+
+    // Create pthread instance
+    llvm::Type* pthreadTy = builder->getInt8Ty();
+    llvm::Value* pthread = insertAlloca(pthreadTy);
+
+    // Get function pthread_create
+    llvm::Function* ptCreateFct = module->getFunction("pthread_create");
+    if (!ptCreateFct) { // Declare function if not done already
+        llvm::ArrayRef<llvm::Type*> paramTypes = { pthreadTy->getPointerTo(), voidPtrTy, threadFctTy->getPointerTo(), voidPtrTy };
+        llvm::FunctionType* ptCreateFctTy = llvm::FunctionType::get(builder->getInt32Ty(), paramTypes, false);
+        module->getOrInsertFunction("pthread_create", ptCreateFctTy);
+        ptCreateFct = module->getFunction("pthread_create");
+    }
+    assert(ptCreateFct != nullptr);
+
+    // Create arg struct instance
+    llvm::StructType* argStructTy = llvm::StructType::get(*context, { /* ToDo: Extend */ }, false);
+    llvm::Value* argStruct = insertAlloca(argStructTy);
+    /*for (int i = 0; i < asyncExpr.freeVars.size(); i++) { ToDo: Extend
+        llvm::Value* argValue = builder->CreateLoad(varEnv[asyncExpr.freeVars[i]]);
+        llvm::Value* field = builder->CreateStructGEP(argStructTy, argStruct, i);
+        builder->CreateStore(argValue, field);
+    }*/
+
+    // Build args for call to pthread_create
+    llvm::Value* args[4] = {
+            pthread,
+            voidPtrNull,
+            threadFct,
+            builder->CreatePointerCast(argStruct, voidPtrTy)
+    };
+
+    // Create call to pthread_create
+    builder->CreateCall(ptCreateFct, args);
 
     // Change scope back
     currentScope = currentScope->getParent();

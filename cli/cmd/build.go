@@ -59,6 +59,11 @@ var BuildCliFlags = []cli.Flag{
 		Aliases: []string{"s"},
 		Usage:   "Produce portable executable by linking it statically",
 	},
+	&cli.BoolFlag{
+		Name:    "pthreads",
+		Aliases: []string{"p", "t"},
+		Usage:   "Compiled program makes use of the Posix Threads (pthreads) library",
+	},
 	&cli.PathFlag{
 		Name:    "output",
 		Aliases: []string{"o"},
@@ -78,6 +83,7 @@ func Build(c *cli.Context) error {
 	outputFile := c.Path("output")
 	debugOutput := c.Bool("debug-output")
 	linkStatic := c.Bool("link-static")
+	pThreads := c.Bool("pthreads")
 	optLevel := 2
 	if c.Bool("opt-0") {
 		optLevel = 0
@@ -87,16 +93,15 @@ func Build(c *cli.Context) error {
 		optLevel = 3
 	}
 
-	return buildFromSourceFile(sourceFile, targetArch, targetVendor, targetOs, outputFile, debugOutput, optLevel, linkStatic)
+	return buildFromSourceFile(sourceFile, targetArch, targetVendor, targetOs, outputFile, optLevel, debugOutput, linkStatic, pThreads)
 }
 
 // ---------------------------------------------------------------- Private functions --------------------------------------------------------------
 
 func buildFromSourceFile(
 	sourceFile, targetArch, targetVendor, targetOs, outputFile string,
-	debugOutput bool,
 	optLevel int,
-	linkStatic bool,
+	debugOutput, linkStatic, pThreads bool,
 ) error {
 	sourceFileName := filepath.Base(sourceFile)
 	sourceFileNameWithoutExt := strings.TrimSuffix(sourceFileName, filepath.Ext(sourceFileName))
@@ -130,7 +135,7 @@ func buildFromSourceFile(
 
 	// Link all object files together
 	objectFiles := util.GetObjectFileTree(objectDir)
-	internal.Link(objectFiles, outputFile, linkStatic)
+	internal.Link(objectFiles, outputFile, linkStatic, pThreads)
 
 	// Clear object files
 	for _, objectFile := range objectFiles {
