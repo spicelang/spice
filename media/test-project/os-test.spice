@@ -33,9 +33,11 @@ f<int> main() {
     //s.close();
 }*/
 
+import "std/os/threading" as t;
+
 f<int> main() {
     printf("Starting one thread ...");
-    thread {
+    thread t.ANONYMOUS {
         printf("Hello from the thread");
     }
     printf("Hello from original");

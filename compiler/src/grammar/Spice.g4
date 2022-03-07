@@ -10,7 +10,7 @@ procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef?
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
 structDef: declSpecifiers? TYPE IDENTIFIER STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
-threadDef: THREAD assignExpr? LBRACE stmtLst RBRACE;
+threadDef: THREAD assignExpr LBRACE stmtLst RBRACE;
 forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
 forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;

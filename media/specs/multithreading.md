@@ -6,7 +6,20 @@
 This enables the programmer to execute the code in the thread block in another thread in parallel to the current one. The block immediately returns after launching the new thread and continues executing the code after the thread block.
 
 ```spice
-thread {
+thread 0 {
+    printf("Thread Id: %d", tid);
+    // Do something
+}
+```
+
+There later will be a constant in the stdlib which will hold the `0` and can be used like this:
+
+```spice
+import "std/os/threading" as t;
+
+// ...
+
+thread t.ANONYMOUS {
     printf("Thread Id: %d", tid);
     // Do something
 }
