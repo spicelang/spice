@@ -16,11 +16,11 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   %0 = alloca i32, align 4
-  %1 = alloca i8, align 1
-  %2 = alloca {}, align 8
+  %1 = alloca { i32 }, align 8
+  %2 = alloca i8, align 1
   %3 = alloca i32, align 4
-  %4 = alloca i8, align 1
-  %5 = alloca {}, align 8
+  %4 = alloca { i32 }, align 8
+  %5 = alloca i8, align 1
   %6 = alloca i32, align 4
   %7 = alloca i32, align 4
   %8 = alloca i32, align 4
@@ -40,43 +40,51 @@ thread.if.then:                                   ; preds = %entry
   br label %thread.if.end
 
 thread.if.end:                                    ; preds = %thread.if.then, %entry
-  %15 = bitcast {}* %2 to i8*
-  %16 = call i32 @pthread_create(i8* %1, i8* null, i8* (i8*)* @4, i8* %15)
+  %15 = load i32, i32* %0, align 4
+  %16 = getelementptr inbounds { i32 }, { i32 }* %1, i32 0, i32 0
+  store i32 %15, i32* %16, align 4
+  %17 = bitcast { i32 }* %1 to i8*
+  %18 = call i32 @pthread_create(i8* %2, i8* null, i8* (i8*)* @4, i8* %17)
   store i32 1, i32* %3, align 4
-  %17 = load i32, i32* %3, align 4
-  %18 = mul i32 %17, -1
-  store i32 %18, i32* %3, align 4
   %19 = load i32, i32* %3, align 4
-  %20 = icmp eq i32 %19, -1
-  br i1 %20, label %thread.if.then1, label %thread.if.end2
+  %20 = mul i32 %19, -1
+  store i32 %20, i32* %3, align 4
+  %21 = load i32, i32* %3, align 4
+  %22 = icmp eq i32 %21, -1
+  br i1 %22, label %thread.if.then1, label %thread.if.end2
 
 thread.if.then1:                                  ; preds = %thread.if.end
   store i32 -2, i32* %3, align 4
   br label %thread.if.end2
 
 thread.if.end2:                                   ; preds = %thread.if.then1, %thread.if.end
-  %21 = bitcast {}* %5 to i8*
-  %22 = call i32 @pthread_create(i8* %4, i8* null, i8* (i8*)* @5, i8* %21)
+  %23 = load i32, i32* %3, align 4
+  %24 = getelementptr inbounds { i32 }, { i32 }* %4, i32 0, i32 0
+  store i32 %23, i32* %24, align 4
+  %25 = bitcast { i32 }* %4 to i8*
+  %26 = call i32 @pthread_create(i8* %5, i8* null, i8* (i8*)* @5, i8* %25)
   store i32 1000, i32* %6, align 4
-  %23 = load i32, i32* %6, align 4
+  %27 = load i32, i32* %6, align 4
   store i32 1000, i32* %7, align 4
-  %24 = load i32, i32* %7, align 4
-  %25 = mul i32 %23, %24
-  store i32 %25, i32* %8, align 4
-  %26 = load i32, i32* %8, align 4
-  %27 = call i32 @usleep(i32 %26)
-  store i32 %27, i32* %9, align 4
-  %28 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
-  %29 = load i32, i32* %result, align 4
-  ret i32 %29
+  %28 = load i32, i32* %7, align 4
+  %29 = mul i32 %27, %28
+  store i32 %29, i32* %8, align 4
+  %30 = load i32, i32* %8, align 4
+  %31 = call i32 @usleep(i32 %30)
+  store i32 %31, i32* %9, align 4
+  %32 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
+  %33 = load i32, i32* %result, align 4
+  ret i32 %33
 }
 
 define internal i8* @4(i8* %0) {
 entry:
+  %tid = alloca i8*, align 8
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
+  store i8* %0, i8** %tid, align 8
   store i32 500, i32* %1, align 4
   %5 = load i32, i32* %1, align 4
   store i32 1000, i32* %2, align 4
@@ -94,10 +102,12 @@ declare i32 @pthread_create(i8*, i8*, i8* (i8*)*, i8*)
 
 define internal i8* @5(i8* %0) {
 entry:
+  %tid = alloca i8*, align 8
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
+  store i8* %0, i8** %tid, align 8
   store i32 200, i32* %1, align 4
   %5 = load i32, i32* %1, align 4
   store i32 1000, i32* %2, align 4
