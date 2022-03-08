@@ -591,8 +591,8 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
 
     // Create arg struct instance
     std::vector<std::string> argStructFieldNames = { THREADS_TID_VARIABLE_NAME };
-    llvm::ArrayRef<llvm::Type*> argStructFieldTypes = { llvm::Type::getInt32Ty(*context) /* tid */ };
-    llvm::ArrayRef<llvm::Value*> argStructFieldValues = { tidPtr };
+    std::vector<llvm::Type*> argStructFieldTypes = { llvm::Type::getInt32Ty(*context) /* tid */ };
+    std::vector<llvm::Value*> argStructFieldValues = { tidPtr };
     llvm::StructType* argStructTy = llvm::StructType::get(*context, argStructFieldTypes, false);
     llvm::Value* argStruct = insertAlloca(argStructTy);
     for (int i = 0; i < argStructFieldValues.size(); i++) {
@@ -663,7 +663,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     // Get function pthread_create
     llvm::Function* ptCreateFct = module->getFunction("pthread_create");
     if (!ptCreateFct) { // Declare function if not done already
-        llvm::ArrayRef<llvm::Type*> paramTypes = { pthreadTy->getPointerTo(), voidPtrTy, threadFctTy->getPointerTo(), voidPtrTy };
+        std::vector<llvm::Type*> paramTypes = { pthreadTy->getPointerTo(), voidPtrTy, threadFctTy->getPointerTo(), voidPtrTy };
         llvm::FunctionType* ptCreateFctTy = llvm::FunctionType::get(builder->getInt32Ty(), paramTypes, false);
         module->getOrInsertFunction("pthread_create", ptCreateFctTy);
         ptCreateFct = module->getFunction("pthread_create");
