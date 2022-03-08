@@ -604,7 +604,8 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     // Create threaded function
     llvm::Type* voidPtrTy = builder->getInt8PtrTy();
     llvm::FunctionType* threadFctTy = llvm::FunctionType::get(voidPtrTy, { voidPtrTy }, false);
-    llvm::Function* threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage, "", module.get());
+    llvm::Function* threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage,
+                                                       "thread", module.get());
 
     // Create entry block for thread function
     llvm::BasicBlock* allocaInsertBlockBackup = allocaInsertBlock;
