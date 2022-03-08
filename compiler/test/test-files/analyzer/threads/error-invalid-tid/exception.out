@@ -1,0 +1,1 @@
+Semantic error in ./test-files/analyzer/threads/error-invalid-tid/source.spice at 2:12: Invalid thread id: This expression does not evaluate to integer

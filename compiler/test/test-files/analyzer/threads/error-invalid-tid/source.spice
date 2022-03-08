@@ -1,0 +1,5 @@
+f<int> main() {
+    thread "non-integer" {
+        printf("This is a test");
+    }
+}

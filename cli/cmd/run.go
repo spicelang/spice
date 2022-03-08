@@ -53,6 +53,7 @@ func Run(c *cli.Context) error {
 	// Extract flags
 	sourceFile := c.Args().Get(0)
 	debugOutput := c.Bool("debug-output")
+	pThreads := c.Bool("pthreads")
 	optLevel := 2
 	if c.Bool("opt-0") {
 		optLevel = 0
@@ -84,7 +85,7 @@ func Run(c *cli.Context) error {
 	}
 
 	// Compile program and emit executable file to tmp dir
-	err := buildFromSourceFile(sourceFile, "", "", "", buildPath, debugOutput, optLevel, false)
+	err := buildFromSourceFile(sourceFile, "", "", "", buildPath, optLevel, debugOutput, false, pThreads)
 	if err != nil {
 		util.Error("Building source file failed", true)
 		return err

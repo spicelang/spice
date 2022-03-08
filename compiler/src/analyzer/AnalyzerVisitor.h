@@ -39,6 +39,7 @@ public:
     antlrcpp::Any visitExtDecl(SpiceParser::ExtDeclContext* ctx) override;
     antlrcpp::Any visitStructDef(SpiceParser::StructDefContext* ctx) override;
     antlrcpp::Any visitGlobalVarDef(SpiceParser::GlobalVarDefContext* ctx) override;
+    antlrcpp::Any visitThreadDef(SpiceParser::ThreadDefContext* ctx) override;
     antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext* ctx) override;
     antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext* ctx) override;
     antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext* ctx) override;

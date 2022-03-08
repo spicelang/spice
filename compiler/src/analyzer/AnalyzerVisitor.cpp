@@ -434,25 +434,49 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
     return nullptr;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx) {
+    // Check if tid evaluates to an integer
+    SymbolType tidType = visit(ctx->assignExpr()).as<SymbolType>();
+    if (!tidType.is(TY_INT))
+        throw err->get(*ctx->assignExpr()->start, TID_INVALID, "This expression does not evaluate to integer");
+
+    // Create a new scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->createChildBlock(scopeId);
+
+    // Visit statement list in new scope
+    visit(ctx->stmtLst());
+
+    // Return to old scope
+    currentScope = currentScope->getParent();
+
+    return SymbolType(TY_BOOL);
+}
+
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
     auto head = ctx->forHead();
 
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
+
     // Visit loop variable declaration in new scope
     visit(head->declStmt());
+
     // Visit condition in new scope
     SymbolType conditionType = visit(head->assignExpr()[0]).as<SymbolType>();
     if (!conditionType.is(TY_BOOL))
         throw err->get(*head->assignExpr()[0]->start, CONDITION_MUST_BE_BOOL,
                             "For loop condition must be of type bool");
+
     // Visit incrementer in new scope
     visit(head->assignExpr()[1]);
+
     // Visit statement list in new scope
     nestedLoopCounter++;
     visit(ctx->stmtLst());
     nestedLoopCounter--;
+
     // Return to old scope
     currentScope = currentScope->getParent();
     return SymbolType(TY_BOOL);
@@ -527,17 +551,21 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext* ctx
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
+
     // Visit condition
     SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
     if (!conditionType.is(TY_BOOL))
         throw err->get(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL,
                             "While loop condition must be of type bool");
+
     // Visit statement list in new scope
     nestedLoopCounter++;
     visit(ctx->stmtLst());
     nestedLoopCounter--;
+
     // Return to old scope
     currentScope = currentScope->getParent();
+
     return SymbolType(TY_BOOL);
 }
 
@@ -545,17 +573,22 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext* ctx) {
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
+
     // Visit condition
     SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
     if (!conditionType.is(TY_BOOL))
         throw err->get(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL,
                             "If condition must be of type bool");
+
     // Visit statement list in new scope
     visit(ctx->stmtLst());
+
     // Return to old scope
     currentScope = currentScope->getParent();
+
     // Visit else statement if it exists
     if (ctx->elseStmt()) visit(ctx->elseStmt());
+
     return SymbolType(TY_BOOL);
 }
 
@@ -566,8 +599,10 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext* ctx) 
         // Create a new scope
         std::string scopeId = ScopeIdUtil::getScopeId(ctx);
         currentScope = currentScope->createChildBlock(scopeId);
+
         // Visit statement list in new scope
         visit(ctx->stmtLst());
+
         // Return to old scope
         currentScope = currentScope->getParent();
     }

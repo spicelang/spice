@@ -25,11 +25,29 @@ f<int> main() {
     a.destructor();
 }*/
 
-import "std/net/socket" as socket;
+/*import "std/net/socket" as socket;
 
 f<int> main() {
     socket.Socket s = socket.openServerSocket(8080s, 2);
     printf("Error code: %d", s.errorCode);
-    if "test" {}
     //s.close();
+}*/
+
+
+
+//import "std/os/threading" as t;
+import "std/time/delay" as delay;
+
+f<int> main() {
+    printf("Starting one thread ...\n");
+    thread -1 {
+        delay.delay(500);
+        printf("Hello from the thread 1\n");
+    }
+    thread -1 {
+        delay.delay(200);
+        printf("Hello from the thread 2\n");
+    }
+    delay.delay(1000);
+    printf("Hello from original\n");
 }

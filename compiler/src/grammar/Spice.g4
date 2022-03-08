@@ -10,6 +10,7 @@ procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef?
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
 structDef: declSpecifiers? TYPE IDENTIFIER STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
+threadDef: THREAD assignExpr LBRACE stmtLst RBRACE;
 forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
 forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
@@ -19,7 +20,7 @@ ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
 elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt)*;
+stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | threadDef)*;
 field: declSpecifiers? dataType IDENTIFIER;
 typeLst: dataType (COMMA dataType)* ELLIPSIS?;
 paramLstDef: declStmt (COMMA declStmt)*;
@@ -95,6 +96,7 @@ RETURN: 'return';
 AS: 'as';
 STRUCT: 'struct';
 TYPE: 'type';
+THREAD: 'thread';
 //NEW: 'new';
 NIL: 'nil';
 MAIN: 'main';

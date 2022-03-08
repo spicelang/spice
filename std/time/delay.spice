@@ -1,0 +1,8 @@
+ext<int> usleep(int);
+
+/**
+ * Suspends the execution for the given number of milliseconds
+ */
+public p delay(int millis) {
+    usleep(millis * 1000);
+}

@@ -101,6 +101,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Specifier at illegal context";
         case INSUFFICIENT_VISIBILITY:
             return "Insufficient symbol visibility";
+        case TID_INVALID:
+            return "Invalid thread id";
         case RESERVED_KEYWORD:
             return "Reserved keyword used as identifier";
         case COMING_SOON_SA:

@@ -47,6 +47,16 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::StructDefContext* ctx) {
 }
 
 /**
+ * Get scope id for the ThreadDef AST node
+ *
+ * @return Scope id
+ */
+std::string ScopeIdUtil::getScopeId(SpiceParser::ThreadDefContext* ctx) {
+    auto symbol = ctx->THREAD()->getSymbol();
+    return "thread:" + std::to_string(symbol->getLine()) + ":" + std::to_string(symbol->getCharPositionInLine());
+}
+
+/**
  * Get scope id for the ForLoop AST node
  *
  * @return Scope id

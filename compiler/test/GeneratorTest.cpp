@@ -200,8 +200,13 @@ void executeTest(const GeneratorTestCase& testCase) {
             if (TestUtil::fileExists(addObjFile))
                 objectFiles += " " + TestUtil::getFileContent(addObjFile);
 
+            std::string linkerFlagsFile = testCase.testPath + "/linker-flags.txt";
+            std::string linkerFlags;
+            if (TestUtil::fileExists(linkerFlagsFile))
+                linkerFlags = TestUtil::getFileContent(linkerFlagsFile);
+
             // Link
-            TestUtil::exec("gcc -no-pie -o source " + objectFiles);
+            TestUtil::exec("gcc -no-pie " + linkerFlags + " -o source " + objectFiles);
 
             // Execute the program and get the output
             std::string actualOutput = TestUtil::exec(TestUtil::getDefaultExecutableName());
@@ -249,6 +254,7 @@ class GeneratorOperatorTests : public ::testing::TestWithParam<GeneratorTestCase
 class GeneratorPointerTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorProcedureTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorStructTests : public ::testing::TestWithParam<GeneratorTestCase> {};
+class GeneratorThreadTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorVariableTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorWhileLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 
@@ -311,6 +317,10 @@ TEST_P(GeneratorProcedureTests, ProcedureTests) {
 }
 
 TEST_P(GeneratorStructTests, StructTests) {
+    executeTest(GetParam());
+}
+
+TEST_P(GeneratorThreadTests, TheadTests) {
     executeTest(GetParam());
 }
 
@@ -427,13 +437,19 @@ INSTANTIATE_TEST_SUITE_P(
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
-        GeneratorVariableTests,
-        GeneratorVariableTests,
+        GeneratorThreadTests,
+        GeneratorThreadTests,
         ::testing::ValuesIn(generatorSuites[15]),
+        NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(
+        GeneratorVariableTests,
+        GeneratorVariableTests,
+        ::testing::ValuesIn(generatorSuites[16]),
         NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(
         GeneratorWhileLoopTests,
         GeneratorWhileLoopTests,
-        ::testing::ValuesIn(generatorSuites[16]),
+        ::testing::ValuesIn(generatorSuites[17]),
         NameResolver());

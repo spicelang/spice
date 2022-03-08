@@ -59,7 +59,7 @@ func Compile(sourceFile, targetArch, targetVendor, targetOs, objectDir string, d
 }
 
 // Link bundles the object files which were created by the compiler to an output executable
-func Link(sourceFiles []string, outputFile string, linkStatic bool) {
+func Link(sourceFiles []string, outputFile string, linkStatic, pThreads bool) {
 	// Search for gcc
 	gccPath := "gcc"
 	if !CommandExists(gccPath) {
@@ -71,6 +71,9 @@ func Link(sourceFiles []string, outputFile string, linkStatic bool) {
 	args := []string{"-no-pie", "-o", outputFile}
 	if linkStatic {
 		args = append(args, "-static-libgcc")
+	}
+	if pThreads {
+		args = append(args, "-pthread")
 	}
 	args = append(args, sourceFiles...)
 
