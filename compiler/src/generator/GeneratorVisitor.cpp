@@ -305,7 +305,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Store function params
     unsigned int declStmtCount = ctx->paramLstDef() ? ctx->paramLstDef()->declStmt().size() : 0;
     for (auto& param : fct->args()) {
-        unsigned paramNo = param.getArgNo();
+        unsigned int paramNo = param.getArgNo();
         std::string paramName = paramNames[paramNo];
         llvm::Type* paramType = fct->getFunctionType()->getParamType(paramNo);
         llvm::Value* memAddress = insertAlloca(paramType, paramName);
@@ -424,7 +424,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 
     // Store procedure params
     for (auto& param : proc->args()) {
-        unsigned paramNo = param.getArgNo();
+        unsigned int paramNo = param.getArgNo();
         std::string paramName = paramNames[paramNo];
         llvm::Type* paramType = proc->getFunctionType()->getParamType(paramNo);
         llvm::Value* memAddress = insertAlloca(paramType, paramName);
@@ -591,12 +591,12 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
 
     // Create arg struct instance
     std::vector<std::string> argStructFieldNames = { THREADS_TID_VARIABLE_NAME };
-    std::vector<llvm::Type*> argStructFieldTypes = { llvm::Type::getInt32Ty(*context) /* tid */ };
-    std::vector<llvm::Value*> argStructFieldValues = { tidPtr };
+    std::vector<llvm::Type*> argStructFieldTypes = { llvm::Type::getInt32Ty(*context) };
+    std::vector<llvm::Value*> argStructFieldPointers = { tidPtr };
     llvm::StructType* argStructTy = llvm::StructType::get(*context, argStructFieldTypes, false);
     llvm::Value* argStruct = insertAlloca(argStructTy);
-    for (int i = 0; i < argStructFieldValues.size(); i++) {
-        llvm::Value* argValue = builder->CreateLoad(argStructFieldTypes[i], argStructFieldValues[i]);
+    for (int i = 0; i < argStructFieldPointers.size(); i++) {
+        llvm::Value* argValue = builder->CreateLoad(argStructFieldTypes[i], argStructFieldPointers[i]);
         llvm::Value* field = builder->CreateStructGEP(argStructTy, argStruct, i);
         builder->CreateStore(argValue, field);
     }
@@ -621,16 +621,15 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     assert(currentScope != nullptr);
 
     // Store function params
-    for (auto& param : threadFct->args()) {
-        unsigned argNo = param.getArgNo();
-        std::string argName = argStructFieldNames[argNo];
-        llvm::Type* argType = threadFct->getFunctionType()->getParamType(argNo);
-        llvm::Value* memAddress = insertAlloca(argType, argName);
+    llvm::Value* recArgStructPtr = builder->CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
+    for (int i = 0; i < argStructFieldTypes.size(); i++) {
+        std::string argName = argStructFieldNames[i];
+        llvm::Type* argType = argStructFieldTypes[i];
+        llvm::Value* memAddress = builder->CreateStructGEP(argStructTy, recArgStructPtr, i);
         SymbolTableEntry* paramEntry = currentScope->lookup(argName);
         assert(paramEntry != nullptr);
         paramEntry->updateAddress(memAddress);
         paramEntry->updateLLVMType(argType);
-        builder->CreateStore(&param, memAddress);
     }
 
     // Insert instructions into thread function
