@@ -200,8 +200,13 @@ void executeTest(const GeneratorTestCase& testCase) {
             if (TestUtil::fileExists(addObjFile))
                 objectFiles += " " + TestUtil::getFileContent(addObjFile);
 
+            std::string linkerFlagsFile = testCase.testPath + "/linker-flags.txt";
+            std::string linkerFlags;
+            if (TestUtil::fileExists(linkerFlagsFile))
+                linkerFlags = TestUtil::getFileContent(linkerFlagsFile);
+
             // Link
-            TestUtil::exec("gcc -no-pie -o source " + objectFiles);
+            TestUtil::exec("gcc -no-pie " + linkerFlags + " -o source " + objectFiles);
 
             // Execute the program and get the output
             std::string actualOutput = TestUtil::exec(TestUtil::getDefaultExecutableName());
