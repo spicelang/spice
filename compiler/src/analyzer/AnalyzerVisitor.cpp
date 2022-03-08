@@ -444,6 +444,13 @@ antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
 
+    // Create tid variable in the new scope
+    SymbolType type = SymbolType(TY_INT);
+    SymbolSpecifiers specifiers = SymbolSpecifiers(type);
+    specifiers.setConst(true);
+    currentScope->insert(THREADS_TID_VARIABLE_NAME, type, specifiers, INITIALIZED, *ctx->start, false);
+    currentScope->lookup(THREADS_TID_VARIABLE_NAME)->setUsed(); // Set used straight away
+
     // Visit statement list in new scope
     visit(ctx->stmtLst());
 

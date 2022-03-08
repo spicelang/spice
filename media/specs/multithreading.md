@@ -27,6 +27,8 @@ thread t.ANONYMOUS {
 
 Within the thread block, the variable `tid` can be used to obtain the so-called thread id (in the following called `tid`). This is the id, which Spice assigned to the anonymous thread. To set this id manually, numbered threads can be used as described below.
 
+> Using a magic value for `tid` seems the best solution for now. Providing a builtin e.g. `int getThreadId()` could be called from another function or another module which would produce wrong values with the current architecture.
+
 ### Push work to a (new) numbered thread
 Same as above, but it pushes the work to the thread with the tid `3`. If the thread with this id does not exist, Spice will create and run it  automatically straight away. If the thread was already created, Spice will simply append the given work to the end of the execution queue of this thread.
 
