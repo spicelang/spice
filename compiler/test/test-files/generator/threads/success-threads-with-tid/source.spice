@@ -1,0 +1,13 @@
+ext<int> usleep(int);
+
+f<int> main() {
+    printf("Starting threads ...\n");
+    for int i = 0; i < 10; i++ {
+        thread i {
+            usleep(200 * 1000);
+            printf("Hello from the thread %d\n", tid);
+        }
+    }
+    usleep(1000 * 1000);
+    printf("Hello from original\n");
+}
