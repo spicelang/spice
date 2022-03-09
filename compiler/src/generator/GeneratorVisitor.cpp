@@ -559,24 +559,38 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx) {
-    // Create arg struct instance
-    std::vector<std::string> argStructFieldNames;
-    std::vector<llvm::Type*> argStructFieldTypes;
-    std::vector<llvm::Value*> argStructFieldPointers;
-    llvm::StructType* argStructTy = llvm::StructType::get(*context, argStructFieldTypes, false);
-    llvm::Value* argStruct = insertAlloca(argStructTy);
-    for (int i = 0; i < argStructFieldPointers.size(); i++) {
-        llvm::Value* argValue = builder->CreateLoad(argStructFieldTypes[i], argStructFieldPointers[i]);
-        llvm::Value* field = builder->CreateStructGEP(argStructTy, argStruct, i);
-        builder->CreateStore(argValue, field);
-    }
-
     // Create threaded function
-    std::string fctSuffix = std::to_string(ThreadFactory::getInstance()->getNextFunctionSuffix());
+    std::string threadedFctName = "_thread" + std::to_string(ThreadFactory::getInstance()->getNextFunctionSuffix());
     llvm::Type* voidPtrTy = builder->getInt8PtrTy();
     llvm::FunctionType* threadFctTy = llvm::FunctionType::get(voidPtrTy, { voidPtrTy }, false);
     llvm::Function* threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage,
-                                                       "_thread" + fctSuffix, module.get());
+                                                       threadedFctName, module.get());
+
+    // Change scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->getChild(scopeId);
+    assert(currentScope != nullptr);
+
+    // Collect arg names, types and addresses from captures of the nested scope
+    std::vector<std::string> argStructFieldNames;
+    std::vector<llvm::Type*> argStructFieldTypes;
+    std::vector<llvm::Value*> argStructFieldPointers;
+    for (auto& capture : currentScope->getCaptures()) {
+        assert(capture.second.getEntry() != nullptr);
+        argStructFieldNames.push_back(capture.first);
+        argStructFieldTypes.push_back(capture.second.getEntry()->getLLVMType()->getPointerTo());
+        argStructFieldPointers.push_back(capture.second.getEntry()->getAddress());
+    }
+
+    // Create arg struct instance
+    llvm::StructType* argStructTy = llvm::StructType::get(*context, argStructFieldTypes, false);
+    llvm::Value* argStruct = insertAlloca(argStructTy);
+
+    // Fill the struct with the argument values
+    for (int i = 0; i < argStructFieldNames.size(); i++) {
+        llvm::Value* fieldAddress = builder->CreateStructGEP(argStructTy, argStruct, i);
+        builder->CreateStore(argStructFieldPointers[i], fieldAddress);
+    }
 
     // Get current basic block to return to later
     llvm::BasicBlock* bOriginal = builder->GetInsertBlock();
@@ -589,21 +603,15 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     threadFct->getBasicBlockList().push_back(bEntry);
     moveInsertPointToBlock(bEntry);
 
-    // Change scope
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
-    assert(currentScope != nullptr);
-
     // Store function params
     llvm::Value* recArgStructPtr = builder->CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
-    for (int i = 0; i < argStructFieldTypes.size(); i++) {
+    unsigned int i = 0;
+    for (auto& capture : currentScope->getCaptures()) {
         std::string argName = argStructFieldNames[i];
-        llvm::Type* argType = argStructFieldTypes[i];
         llvm::Value* memAddress = builder->CreateStructGEP(argStructTy, recArgStructPtr, i);
-        SymbolTableEntry* paramEntry = currentScope->lookup(argName);
-        assert(paramEntry != nullptr);
-        paramEntry->updateAddress(memAddress);
-        paramEntry->updateLLVMType(argType);
+        memAddress = builder->CreateLoad(memAddress->getType()->getPointerElementType(), memAddress);
+        capture.second.getEntry()->updateAddress(memAddress);
+        i++;
     }
 
     // Insert instructions into thread function

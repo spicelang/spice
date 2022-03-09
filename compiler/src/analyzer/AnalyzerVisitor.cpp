@@ -438,6 +438,7 @@ antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
+    currentScope->setRequiresCapturing(); // Requires capturing because the LLVM IR will end up in a separate function
 
     // Visit statement list in new scope
     visit(ctx->stmtLst());

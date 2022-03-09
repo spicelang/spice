@@ -18,6 +18,8 @@ set(SOURCES
         symbol/SymbolTable.h
         symbol/SymbolTableEntry.cpp
         symbol/SymbolTableEntry.h
+        symbol/Capture.cpp
+        symbol/Capture.h
         symbol/SymbolType.cpp
         symbol/SymbolType.h
         symbol/ScopePath.cpp
