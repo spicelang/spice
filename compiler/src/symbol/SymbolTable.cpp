@@ -47,8 +47,10 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
     }
 
     // Check if this scope requires capturing and capture the variable if appropriate
-    if (requiresCapturing && !entry->getType().isOneOf({ TY_IMPORT, TY_FUNCTION, TY_PROCEDURE }))
-        captures.insert({ name, Capture(name, entry) });
+    if (requiresCapturing && captures.find(name) == captures.end() &&
+        !entry->getType().isOneOf({ TY_IMPORT, TY_FUNCTION, TY_PROCEDURE })) {
+        captures.insert({ name, Capture(entry) });
+    }
 
     return entry;
 }
@@ -60,10 +62,10 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
  * @return Desired symbol / nullptr if the symbol was not found
  */
 SymbolTableEntry* SymbolTable::lookupStrict(const std::string& name) {
-    // If available in the current scope, return it
-    if (symbols.find(name) != symbols.end()) return &symbols.at(name);
-    // Otherwise, return a nullptr
-    return nullptr;
+    // If not available in the current scope, return nullptr
+    if (symbols.find(name) == symbols.end()) return nullptr;
+    // Otherwise, return the symbol
+    return &symbols.at(name);
 }
 
 /**

@@ -40,11 +40,11 @@ import "std/os/system" as sys;
 
 f<int> main() {
     printf("Starting threads ...\n");
-    for int i = 1; i <= sys.getCPUCoreCount() / 2; i++ {
+    //int coreCount = sys.getCPUCoreCount() / 2;
+    for int i = 1; i <= 7; i++ {
         printf("Starting thread %d ...\n", i);
         thread {
-            delay.delay(100 * i);
-            printf("Hello from the thread %d\n", tid());
+            printf("Tid: %d, i: %d\n", tid(), i);
         }
     }
     delay.delay(3000);

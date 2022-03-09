@@ -9,15 +9,13 @@
 class Capture {
 public:
     // Constructors
-    explicit Capture(std::string name, SymbolTableEntry* capturedEntry): name(std::move(name)), capturedEntry(capturedEntry) {};
+    explicit Capture(SymbolTableEntry* entry): capturedEntry(entry) {};
 
     // Public methods
     SymbolTableEntry* getEntry();
-    void setAddress(llvm::Value*);
     nlohmann::ordered_json toJSON();
+
 private:
     // Members
-    std::string name;
     SymbolTableEntry* capturedEntry;
-    llvm::Value* captureAddress = nullptr;
 };

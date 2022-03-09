@@ -33,18 +33,20 @@ public:
     // Public methods
     std::string getName();
     SymbolType getType();
+    void updateType(SymbolType newType, bool force);
     SymbolSpecifiers getSpecifiers();
     SymbolState getState();
+    void updateState(SymbolState newState, ErrorFactory* errorFactory, const antlr4::Token& token);
     const antlr4::Token& getDefinitionToken();
     llvm::Type* getLLVMType();
-    llvm::Value* getAddress();
+    void updateLLVMType(llvm::Type* newType);
+    virtual llvm::Value* getAddress();
+    void updateAddress(llvm::Value* address);
+    void pushAddress(llvm::Value* address);
+    void popAddress();
     [[nodiscard]] unsigned int getOrderIndex() const;
     [[nodiscard]] bool isLocal() const;
     [[nodiscard]] bool isUsed() const;
-    void updateState(SymbolState newState, ErrorFactory* errorFactory, const antlr4::Token& token);
-    void updateType(SymbolType newType, bool force);
-    void updateLLVMType(llvm::Type* newType);
-    void updateAddress(llvm::Value* newAddress);
     void setUsed();
     nlohmann::ordered_json toJSON();
 
@@ -56,7 +58,7 @@ private:
     llvm::Type* llvmType = nullptr;
     SymbolState state;
     const antlr4::Token& definitionToken;
-    llvm::Value* memAddress = nullptr;
+    std::stack<llvm::Value*> memAddress;
     unsigned int orderIndex;
     const bool isGlobal;
     bool used = false;

@@ -23,6 +23,17 @@ SymbolType SymbolTableEntry::getType() {
 }
 
 /**
+ * Update the type of a symbol. This is used for substantiate types in the process of type inference
+ *
+ * @param newType New type of the current symbol
+ */
+void SymbolTableEntry::updateType(SymbolType newType, bool force) {
+    if (!force && type != SymbolType(TY_DYN))                                      // GCOV_EXCL_LINE
+        throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn"); // GCOV_EXCL_LINE
+    type = std::move(newType);
+}
+
+/**
  * Retrieve the symbol specifiers of the current symbol
  *
  * @return Symbol Specifiers of the current symbol
@@ -38,6 +49,21 @@ SymbolSpecifiers SymbolTableEntry::getSpecifiers() {
  */
 SymbolState SymbolTableEntry::getState() {
     return state;
+}
+
+/**
+ * Update the state of the current symbol
+ *
+ * @throws SemanticError When trying to re-assign a constant variable
+ * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
+ * @param newState New state of the current symbol
+ */
+void SymbolTableEntry::updateState(SymbolState newState, ErrorFactory* err, const antlr4::Token& token) {
+    if (state == INITIALIZED && specifiers.isConst())
+        throw err->get(token, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
+    if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                               // GCOV_EXCL_LINE
+        throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
+    state = newState;
 }
 
 /**
@@ -59,12 +85,47 @@ llvm::Type* SymbolTableEntry::getLLVMType() {
 }
 
 /**
+ * Update the LLVM type of a symbol
+ *
+ * @param newType New LLVM type
+ */
+void SymbolTableEntry::updateLLVMType(llvm::Type* newType) {
+    llvmType = newType;
+}
+
+/**
  * Retrieve the address of the assigned value
  *
- * @return
+ * @return Address of the value in memory
  */
 llvm::Value* SymbolTableEntry::getAddress() {
-    return memAddress;
+    return memAddress.empty() ? nullptr : memAddress.top();
+}
+
+/**
+ * Update the address of a symbol. This is used to save the allocated address where the symbol lives.
+ *
+ * @param address Address of the symbol in memory
+ */
+void SymbolTableEntry::updateAddress(llvm::Value* address) {
+    if (!memAddress.empty()) memAddress.pop();
+    memAddress.push(address);
+}
+
+/**
+ * Pushes an address onto the stack. Can be called when entering a nested function to ensure that a valid address is given
+ *
+ * @param address Address of the symbol in memory
+ */
+void SymbolTableEntry::pushAddress(llvm::Value* address) {
+    memAddress.push(address);
+}
+
+/**
+ * Pop an address from the stack. Can be called when leaving a nested function
+ */
+void SymbolTableEntry::popAddress() {
+    memAddress.pop();
 }
 
 /**
@@ -92,50 +153,6 @@ bool SymbolTableEntry::isLocal() const {
  */
 bool  SymbolTableEntry::isUsed() const {
     return used;
-}
-
-/**
- * Update the state of the current symbol
- *
- * @throws SemanticError When trying to re-assign a constant variable
- * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
- * @param newState New state of the current symbol
- */
-void SymbolTableEntry::updateState(SymbolState newState, ErrorFactory* err, const antlr4::Token& token) {
-    if (state == INITIALIZED && specifiers.isConst())
-        throw err->get(token, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
-    if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                               // GCOV_EXCL_LINE
-        throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
-    state = newState;
-}
-
-/**
- * Update the type of a symbol. This is used for substantiate types in the process of type inference
- *
- * @param newType New type of the current symbol
- */
-void SymbolTableEntry::updateType(SymbolType newType, bool force) {
-    if (!force && type != SymbolType(TY_DYN))                                      // GCOV_EXCL_LINE
-        throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn"); // GCOV_EXCL_LINE
-    type = std::move(newType);
-}
-
-/**
- * Update the LLVM type of a symbol
- *
- * @param newType New LLVM type
- */
-void SymbolTableEntry::updateLLVMType(llvm::Type* newType) {
-    llvmType = newType;
-}
-
-/**
- * Update the value of a symbol. This is used to save the allocated address where the symbol lives
- *
- * @param address Address of the value in memory
- */
-void SymbolTableEntry::updateAddress(llvm::Value* address) {
-    memAddress = address;
 }
 
 /**

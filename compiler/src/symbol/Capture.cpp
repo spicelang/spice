@@ -3,21 +3,12 @@
 #include "Capture.h"
 
 /**
- * Retrieve captured symbol table entry.
+ * Retrieve the captured symbol table entry
  *
- * @return Symbol table entry
+ * @return Captured entry
  */
 SymbolTableEntry* Capture::getEntry() {
     return capturedEntry;
-}
-
-/**
- * Retrieve capture address. This is the address which is available in the nested function.
- *
- * @param address Memory address
- */
-void Capture::setAddress(llvm::Value* address) {
-    captureAddress = address;
 }
 
 /**
@@ -31,7 +22,5 @@ void Capture::setAddress(llvm::Value* address) {
  * @return Capture as a JSON object
  */
 nlohmann::ordered_json Capture::toJSON() {
-    nlohmann::json result;
-    result["name"] = name;
-    return result;
+    return capturedEntry->toJSON();
 }

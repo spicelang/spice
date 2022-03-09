@@ -576,7 +576,6 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     std::vector<llvm::Type*> argStructFieldTypes;
     std::vector<llvm::Value*> argStructFieldPointers;
     for (auto& capture : currentScope->getCaptures()) {
-        assert(capture.second.getEntry() != nullptr);
         argStructFieldNames.push_back(capture.first);
         argStructFieldTypes.push_back(capture.second.getEntry()->getLLVMType()->getPointerTo());
         argStructFieldPointers.push_back(capture.second.getEntry()->getAddress());
@@ -610,12 +609,17 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
         std::string argName = argStructFieldNames[i];
         llvm::Value* memAddress = builder->CreateStructGEP(argStructTy, recArgStructPtr, i);
         memAddress = builder->CreateLoad(memAddress->getType()->getPointerElementType(), memAddress);
-        capture.second.getEntry()->updateAddress(memAddress);
+        // Push address to each capture to ensure that the address is valid and known to the inner function
+        capture.second.getEntry()->pushAddress(memAddress);
         i++;
     }
 
     // Insert instructions into thread function
     visit(ctx->stmtLst());
+
+    // Pop address from each capture to ensure that the address is valid and known to the outer function
+    for (auto& capture : currentScope->getCaptures())
+        capture.second.getEntry()->popAddress();
 
     // Change scope back
     currentScope = currentScope->getParent();
