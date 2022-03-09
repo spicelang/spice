@@ -5,9 +5,8 @@ f<int> main() {
     for int i = 1; i <= 8; i++ { // Start 8 threads
         printf("Starting thread %d ...\n", i);
         thread {
-            // ToDo: Make usleep depending on i to get a reproducible test case. We need to support captures for that
-            usleep(200 * 1000);
-            //printf("Hello from the thread %d\n", tid());
+            usleep(100 * i * 1000);
+            printf("Hello from the thread %d\n", tid());
         }
     }
     usleep(1000 * 1000);

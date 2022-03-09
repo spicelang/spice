@@ -43,10 +43,10 @@ f<int> main() {
     for int i = 1; i <= sys.getCPUCoreCount() / 2; i++ {
         printf("Starting thread %d ...\n", i);
         thread {
-            delay.delay(200);
+            delay.delay(100 * i);
             printf("Hello from the thread %d\n", tid());
         }
     }
-    delay.delay(1000);
+    delay.delay(3000);
     printf("Hello from original\n");
 }
