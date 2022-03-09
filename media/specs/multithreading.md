@@ -6,7 +6,7 @@
 This enables the programmer to execute portions of code in another thread that runs in parallel to the original one. The block immediately returns after launching the new thread and continues executing the code after the thread block.
 
 ```spice
-thread -1 {
+thread {
     printf("Thread Id: %d", tid);
     // Do something
 }

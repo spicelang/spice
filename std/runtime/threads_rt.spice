@@ -1,4 +1,0 @@
-ext<int> pthread_create(short*, short*); // short* means the same as void* in LLVM
-
-pthread_t
-pthread_attr_t

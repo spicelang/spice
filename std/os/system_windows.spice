@@ -1,0 +1,65 @@
+// Constants
+const int PROCESSOR_ARCHITECTURE_AMD64 = 9;
+const int PROCESSOR_ARCHITECTURE_ARM = 5;
+const int PROCESSOR_ARCHITECTURE_ARM64 = 12;
+const int PROCESSOR_ARCHITECTURE_IA64 = 6;
+const int PROCESSOR_ARCHITECTURE_INTEL = 0;
+const int PROCESSOR_ARCHITECTURE_UNKNOWN = 65536;
+
+// Structs
+type SystemInfo struct {
+    unsigned short wProcessorArchitecture
+    unsigned short wReserved
+    unsigned int dwPageSize
+    short* lpMinimumApplicationAddress
+    short* lpMaximumApplicationAddress
+    short* dwActiveProcessorMask
+    unsigned int dwNumberOfProcessors
+    int dwProcessorType
+    int dwAllocationGranularity
+    int wProcessorLevel
+    int wProcessorRevision
+}
+
+// External functions
+ext GetSystemInfo(SystemInfo*);
+
+/**
+ * Returns the number of CPU cores of the host system.
+ * 
+ * return Number of cores
+ */
+public f<int> getCPUCoreCount() {
+    SystemInfo info = SystemInfo{};
+    GetSystemInfo(&info);
+    return info.dwNumberOfProcessors;
+}
+
+/**
+ * Returns the name of the host CPU architecture.
+ *
+ * Possible return values:
+ * - "amd64"
+ * - "arm"
+ * - "arm64"
+ * - "ia64"
+ * - "intel"
+ * 
+ * return Architecture name
+ */
+public f<string> getArchName() {
+    SystemInfo info = SystemInfo{};
+    GetSystemInfo(&info);
+    if (info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+        return "amd64";
+    } else if (info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM) {
+        return "arm";
+    } else if (info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64) {
+        return "arm64";
+    } else if (info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64) {
+        return "ia64";
+    } else if (info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL) {
+        return "intel";
+    }
+    return "unknown";
+}
