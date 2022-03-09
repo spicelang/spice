@@ -11,9 +11,9 @@ type SystemInfo struct {
     unsigned short wProcessorArchitecture
     unsigned short wReserved
     unsigned int dwPageSize
-    short* lpMinimumApplicationAddress
-    short* lpMaximumApplicationAddress
-    short* dwActiveProcessorMask
+    long* lpMinimumApplicationAddress
+    long* lpMaximumApplicationAddress
+    int* dwActiveProcessorMask
     unsigned int dwNumberOfProcessors
     int dwProcessorType
     int dwAllocationGranularity
