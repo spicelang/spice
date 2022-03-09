@@ -6,13 +6,17 @@
 This enables the programmer to execute portions of code in another thread that runs in parallel to the original one. The block immediately returns after launching the new thread and continues executing the code after the thread block.
 
 ```spice
+import "std/os/thread" as t;
+
+// ...
+
 thread {
-    printf("Thread Id: %d", tid);
+    printf("Thread Id: %d", tid());
     // Do something
 }
 ```
 
-Within the thread block, the builtin function `getThreadId()` can be used to obtain the so-called thread id (in the following called `tid`). This is the id, which Spice assigned to the anonymous thread.
+Within the thread block, the builtin function `tid()` can be used to obtain the so-called thread id (in the following called `tid`). This is the id, which Spice assigned to the anonymous thread.
 
 ### Waiting for a thread to terminate
 To wait for another thread to end its execution, the builtin `wait(int)` can be used. The program will suspend the execution when calling `wait` until the thread with the given tid has terminated.
@@ -46,8 +50,10 @@ thread 2 {
 ```
 
 ### Thread pools (long way off, not finalized, may change)
-To support thread pools in Spice, a std module called `std/os/threading` is planned. <br>
+To support thread pools in Spice, a std module called `std/os/threadpool` is planned. <br>
 We probably need Spice support for function pointers to realize thread pools efficiently. Furthermore, it would be useful to have the `Queue` data structure to manage the tasks to execute. And for realizing Queues, we probably first need to support generics.
+
+Idea: https://stackoverflow.com/questions/18627817/is-there-any-method-other-than-pthread-create-to-assign-work-to-the-same-thread
 
 This std module could contain a struct called `ThreadPool`:
 

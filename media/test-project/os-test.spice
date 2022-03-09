@@ -35,21 +35,18 @@ f<int> main() {
 
 
 
-//import "std/os/threading" as t;
-//import "std/time/delay" as delay;
+import "std/time/delay" as delay;
 import "std/os/system" as sys;
 
 f<int> main() {
-    printf("Core count: %d\n", sys.getCPUCoreCount());
-    printf("Arch: %s\n", sys.getArchName());
-    /*printf("Starting threads ...\n");
-    for int i = 0; i < 10; i++ {
-        printf("I: %d\n", i);
-        thread i {
+    printf("Starting threads ...\n");
+    for int i = 1; i <= sys.getCPUCoreCount() / 2; i++ {
+        printf("Starting thread %d ...\n", i);
+        thread {
             delay.delay(200);
-            printf("Hello from the thread %d\n", tid);
+            printf("Hello from the thread %d\n", tid());
         }
     }
     delay.delay(1000);
-    printf("Hello from original\n");*/
+    printf("Hello from original\n");
 }

@@ -559,37 +559,10 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
 }
 
 antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx) {
-    // Visit assign statement to get tid
-    llvm::Value* tidPtr = visit(ctx->assignExpr()).as<llvm::Value*>();
-    llvm::Value* tid = builder->CreateLoad(tidPtr->getType()->getPointerElementType(), tidPtr);
-
-    // Insert condition to check if the tid is -1
-    // Create blocks
-    llvm::BasicBlock* bThen = llvm::BasicBlock::Create(*context, "thread.if.then");
-    llvm::BasicBlock* bEnd = llvm::BasicBlock::Create(*context, "thread.if.end");
-
-    // Check if condition is fulfilled
-    llvm::Value* value = builder->getInt32(-1);
-    llvm::Value* condition = builder->CreateICmpEQ(tid, value);
-    createCondBr(condition, bThen, bEnd);
-
-    // Fill then block
-    llvm::Function* parentFct = builder->GetInsertBlock()->getParent();
-    parentFct->getBasicBlockList().push_back(bThen);
-    moveInsertPointToBlock(bThen);
-    // Generate IR generating for creating an anonymous tid
-    tid = builder->getInt32(ThreadFactory::getInstance()->getNextThreadId());
-    builder->CreateStore(tid, tidPtr);
-    createBr(bEnd);
-
-    // Fill end block
-    parentFct->getBasicBlockList().push_back(bEnd);
-    moveInsertPointToBlock(bEnd);
-
     // Create arg struct instance
-    std::vector<std::string> argStructFieldNames = { THREADS_TID_VARIABLE_NAME };
-    std::vector<llvm::Type*> argStructFieldTypes = { llvm::Type::getInt32Ty(*context) };
-    std::vector<llvm::Value*> argStructFieldPointers = { tidPtr };
+    std::vector<std::string> argStructFieldNames;
+    std::vector<llvm::Type*> argStructFieldTypes;
+    std::vector<llvm::Value*> argStructFieldPointers;
     llvm::StructType* argStructTy = llvm::StructType::get(*context, argStructFieldTypes, false);
     llvm::Value* argStruct = insertAlloca(argStructTy);
     for (int i = 0; i < argStructFieldPointers.size(); i++) {
@@ -605,6 +578,9 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     llvm::Function* threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage,
                                                        "_thread" + fctSuffix, module.get());
 
+    // Get current basic block to return to later
+    llvm::BasicBlock* bOriginal = builder->GetInsertBlock();
+
     // Create entry block for thread function
     llvm::BasicBlock* allocaInsertBlockBackup = allocaInsertBlock;
     llvm::Instruction* allocaInsertInstBackup = allocaInsertInst;
@@ -619,7 +595,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     assert(currentScope != nullptr);
 
     // Store function params
-    /*llvm::Value* recArgStructPtr = builder->CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
+    llvm::Value* recArgStructPtr = builder->CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
     for (int i = 0; i < argStructFieldTypes.size(); i++) {
         std::string argName = argStructFieldNames[i];
         llvm::Type* argType = argStructFieldTypes[i];
@@ -631,7 +607,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     }
 
     // Insert instructions into thread function
-    visit(ctx->stmtLst());*/
+    visit(ctx->stmtLst());
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -647,7 +623,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     if (llvm::verifyFunction(*threadFct, &oss)) throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
 
     // Change back to the original basic block
-    moveInsertPointToBlock(bEnd);
+    moveInsertPointToBlock(bOriginal);
 
     // Restore alloca insert block and inst
     allocaInsertBlock = allocaInsertBlockBackup;
@@ -1048,17 +1024,19 @@ antlrcpp::Any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtConte
 antlrcpp::Any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) {
     if (ctx->printfCall()) return visit(ctx->printfCall());
     if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
+    if (ctx->tidCall()) return visit(ctx->tidCall());
     throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
 antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* ctx) {
     // Declare if not declared already
-    llvm::Function* printf = module->getFunction(PRINTF_FUNCTION_NAME);
-    if (!printf) {
+    std::string printfFctName = "printf";
+    llvm::Function* printfFct = module->getFunction(printfFctName);
+    if (!printfFct) {
         llvm::FunctionType* printfFctTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
                                                                   llvm::Type::getInt8PtrTy(*context), true);
-        module->getOrInsertFunction(PRINTF_FUNCTION_NAME, printfFctTy);
-        printf = module->getFunction(PRINTF_FUNCTION_NAME);
+        module->getOrInsertFunction(printfFctName, printfFctTy);
+        printfFct = module->getFunction(printfFctName);
     }
 
     std::vector<llvm::Value*> printfArgs;
@@ -1088,7 +1066,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
 
         printfArgs.push_back(argVal);
     }
-    return (llvm::Value*) builder->CreateCall(printf, printfArgs);
+    return (llvm::Value*) builder->CreateCall(printfFct, printfArgs);
 }
 
 antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* ctx) {
@@ -1111,6 +1089,29 @@ antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* 
     builder->CreateStore(builder->getInt32(size), resultPtr);
 
     // Return address to where the size is saved
+    return resultPtr;
+}
+
+antlrcpp::Any GeneratorVisitor::visitTidCall(SpiceParser::TidCallContext* ctx) {
+    // Declare if not declared already
+    std::string psFctName = "pthread_self";
+    llvm::Function* psFct = module->getFunction(psFctName);
+    if (!psFct) {
+        llvm::FunctionType* psFctTy = llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*context),
+                                                              {}, true);
+        module->getOrInsertFunction(psFctName, psFctTy);
+        psFct = module->getFunction(psFctName);
+    }
+
+    // Create call to function
+    llvm::Value* result = builder->CreateCall(psFct);
+    result = builder->CreatePtrToInt(result, builder->getInt64Ty());
+
+    // Store the result
+    llvm::Value* resultPtr = insertAlloca(result->getType());
+    builder->CreateStore(result, resultPtr);
+
+    // Return address to where the tid is saved
     return resultPtr;
 }
 

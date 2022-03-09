@@ -18,10 +18,7 @@ const static std::string MAIN_FUNCTION_NAME = "main";
 const static std::string RETURN_VARIABLE_NAME = "result";
 const static std::string THIS_VARIABLE_NAME = "this";
 const static std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
-const static std::string THREADS_TID_VARIABLE_NAME = "tid";
 const static std::string UNUSED_VARIABLE_NAME = "_";
-const static std::string PRINTF_FUNCTION_NAME = "printf";
-const static std::string SIZEOF_FUNCTION_NAME = "sizeof";
 const std::vector<std::string> RESERVED_KEYWORDS = { "new", "switch", "case" };
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
@@ -57,6 +54,7 @@ public:
     antlrcpp::Any visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) override;
     antlrcpp::Any visitPrintfCall(SpiceParser::PrintfCallContext* ctx) override;
     antlrcpp::Any visitSizeOfCall(SpiceParser::SizeOfCallContext* ctx) override;
+    antlrcpp::Any visitTidCall(SpiceParser::TidCallContext* ctx) override;
     antlrcpp::Any visitAssignExpr(SpiceParser::AssignExprContext* ctx) override;
     antlrcpp::Any visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) override;
     antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) override;

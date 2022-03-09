@@ -10,7 +10,7 @@ procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef?
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
 structDef: declSpecifiers? TYPE IDENTIFIER STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
-threadDef: THREAD assignExpr LBRACE stmtLst RBRACE;
+threadDef: THREAD LBRACE stmtLst RBRACE;
 forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
 forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
@@ -35,9 +35,10 @@ breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
 
 // Builtin functions
-builtinCall: printfCall | sizeOfCall;
+builtinCall: printfCall | sizeOfCall | tidCall;
 printfCall: PRINTF LPAREN STRING_LITERAL (COMMA assignExpr)* RPAREN;
 sizeOfCall: SIZEOF LPAREN assignExpr RPAREN;
+tidCall: TID LPAREN RPAREN;
 
 // Expression loop
 assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr;
@@ -102,6 +103,7 @@ NIL: 'nil';
 MAIN: 'main';
 PRINTF: 'printf';
 SIZEOF: 'sizeof';
+TID: 'tid';
 EXT: 'ext';
 DLL: 'dll';
 TRUE: 'true';
