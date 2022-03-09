@@ -6,9 +6,6 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
-
-; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
 entry:
   br label %for
@@ -82,6 +79,9 @@ for.post:                                         ; preds = %if.end, %if.else
 for.end:                                          ; preds = %for.post
   ret i32 0
 }
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #0

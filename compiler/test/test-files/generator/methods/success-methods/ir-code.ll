@@ -9,8 +9,6 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
 @2 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 ; Function Attrs: nounwind
 define internal i8* @"getContent()"(%Letter* %0) #0 {
 entry:
@@ -68,5 +66,7 @@ entry:
   %14 = load i32, i32* %result, align 4
   ret i32 %14
 }
+
+declare i32 @printf(i8*, ...)
 
 attributes #0 = { nounwind }

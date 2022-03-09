@@ -25,7 +25,8 @@ public:
     explicit SymbolTable(SymbolTable* parent, bool inMainSourceFile) : parent(parent), inMainSourceFile(inMainSourceFile) {};
 
     // Public methods
-    void insert(const std::string&, const SymbolType&, SymbolSpecifiers, SymbolState, const antlr4::Token&, bool);
+    void insert(const std::string& name, const SymbolType& type, SymbolSpecifiers specifiers, SymbolState state,
+                const antlr4::Token& token, bool isParameter);
 
     SymbolTableEntry* lookup(const std::string& symbolName);
     SymbolTableEntry* lookupStrict(const std::string& symbolName);

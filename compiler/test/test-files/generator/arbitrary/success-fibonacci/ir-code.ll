@@ -5,8 +5,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [20 x i8] c"Fibonacci of %d: %d\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 ; Function Attrs: nounwind
 define internal i32 @"fib(int)"(i32 %0) #0 {
 entry:
@@ -80,5 +78,7 @@ entry:
   %8 = load i32, i32* %result, align 4
   ret i32 %8
 }
+
+declare i32 @printf(i8*, ...)
 
 attributes #0 = { nounwind }

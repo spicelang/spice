@@ -2,11 +2,11 @@ ext<int> usleep(int);
 
 f<int> main() {
     printf("Starting one thread ...\n");
-    thread -1 {
+    thread {
         usleep(500 * 1000);
         printf("Hello from the thread 1\n");
     }
-    thread -1 {
+    thread {
         usleep(200 * 1000);
         printf("Hello from the thread 2\n");
     }

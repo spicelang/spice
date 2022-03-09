@@ -23,3 +23,12 @@ ThreadFactory* ThreadFactory::getInstance() {
 int ThreadFactory::getNextThreadId() {
     return nextThreadId--;
 }
+
+/**
+ * Retrieve the next free function suffix
+ *
+ * @return Free function suffix
+ */
+int ThreadFactory::getNextFunctionSuffix() {
+    return nextFctSuffix++;
+}

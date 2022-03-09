@@ -1,0 +1,11 @@
+// External functions
+ext<long> get_nprocs();
+
+/**
+ * Returns the number of CPU cores of the host system.
+ * 
+ * return Number of cores
+ */
+public f<long> getCPUCoreCount() {
+    return get_nprocs();
+}

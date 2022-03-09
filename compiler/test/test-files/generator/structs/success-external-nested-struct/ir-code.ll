@@ -8,8 +8,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [11 x i8] c"Socket: %d\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
@@ -32,3 +30,5 @@ entry:
 }
 
 declare %Socket @"openServerSocket(short)"(i16)
+
+declare i32 @printf(i8*, ...)

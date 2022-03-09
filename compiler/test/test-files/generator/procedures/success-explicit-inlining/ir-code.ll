@@ -7,8 +7,6 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [14 x i8] c"Before value\0A\00", align 1
 @2 = private unnamed_addr constant [13 x i8] c"After value\0A\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 ; Function Attrs: alwaysinline nounwind
 define internal void @"printAValue()"() #0 {
 entry:
@@ -18,6 +16,8 @@ entry:
   %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @0, i32 0, i32 0), i32 %1)
   ret void
 }
+
+declare i32 @printf(i8*, ...)
 
 define i32 @main() {
 entry:

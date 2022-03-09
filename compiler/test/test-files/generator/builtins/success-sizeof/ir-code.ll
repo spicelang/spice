@@ -20,8 +20,6 @@ target triple = "x86_64-w64-windows-gnu"
 @11 = private unnamed_addr constant [29 x i8] c"Size of struct instance: %d\0A\00", align 1
 @12 = private unnamed_addr constant [15 x i8] c"This is a test\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
@@ -150,3 +148,5 @@ entry:
   %81 = load i32, i32* %result, align 4
   ret i32 %81
 }
+
+declare i32 @printf(i8*, ...)

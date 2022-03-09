@@ -6,13 +6,13 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
-
-; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
 entry:
   %0 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([13 x i8], [13 x i8]* @0, i64 0, i64 0))
   ret i32 0
 }
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }

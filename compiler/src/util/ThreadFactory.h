@@ -12,6 +12,7 @@ public:
 
     // Public methods
     int getNextThreadId();
+    int getNextFunctionSuffix();
 private:
     // Private constructors
     explicit ThreadFactory() = default;
@@ -19,4 +20,5 @@ private:
     // Members
     static ThreadFactory* instance;
     int nextThreadId = -1;
+    int nextFctSuffix = 0;
 };

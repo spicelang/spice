@@ -5,8 +5,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [16 x i8] c"Input was false\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 ; Function Attrs: nounwind
 define internal void @"executeAction(bool)"(i1 %0) #0 {
 entry:
@@ -22,6 +20,8 @@ if.end:                                           ; preds = %entry
   %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0))
   ret void
 }
+
+declare i32 @printf(i8*, ...)
 
 define i32 @main() {
 entry:

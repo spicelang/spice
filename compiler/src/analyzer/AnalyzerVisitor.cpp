@@ -435,11 +435,6 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
 }
 
 antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx) {
-    // Check if tid evaluates to an integer
-    SymbolType tidType = visit(ctx->assignExpr()).as<SymbolType>();
-    if (!tidType.is(TY_INT))
-        throw err->get(*ctx->assignExpr()->start, TID_INVALID, "This expression does not evaluate to integer");
-
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -817,6 +812,7 @@ antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContex
 antlrcpp::Any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) {
     if (ctx->printfCall()) return visit(ctx->printfCall());
     if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
+    if (ctx->tidCall()) return visit(ctx->tidCall());
     throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
@@ -900,6 +896,11 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* c
 antlrcpp::Any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* ctx) {
     // Nothing to check here. Sizeof builtin can handle any type
     return SymbolType(TY_INT);
+}
+
+antlrcpp::Any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext* ctx) {
+    // Nothing to check here. Tid builtin has no arguments
+    return SymbolType(TY_LONG);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {

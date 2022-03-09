@@ -54,6 +54,7 @@ public:
     antlrcpp::Any visitBuiltinCall(SpiceParser::BuiltinCallContext* ctx) override;
     antlrcpp::Any visitPrintfCall(SpiceParser::PrintfCallContext* ctx) override;
     antlrcpp::Any visitSizeOfCall(SpiceParser::SizeOfCallContext* ctx) override;
+    antlrcpp::Any visitTidCall(SpiceParser::TidCallContext* ctx) override;
     antlrcpp::Any visitAssignExpr(SpiceParser::AssignExprContext* ctx) override;
     antlrcpp::Any visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) override;
     antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext* ctx) override;

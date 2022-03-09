@@ -6,8 +6,6 @@ target triple = "x86_64-w64-windows-gnu"
 @intArray = constant [2 x i32] [i32 1, i32 2]
 @0 = private unnamed_addr constant [17 x i8] c"intArray[1]: %d\0A\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
@@ -29,3 +27,5 @@ entry:
   %9 = load i32, i32* %result, align 4
   ret i32 %9
 }
+
+declare i32 @printf(i8*, ...)

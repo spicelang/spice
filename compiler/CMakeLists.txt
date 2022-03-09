@@ -26,6 +26,9 @@ else()
     message(STATUS "Spice: Coverage reports disabled.")
 endif()
 
+# Set release flags
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -O2")
+
 # Find ANTLR
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
 add_definitions(-DANTLR4CPP_STATIC)

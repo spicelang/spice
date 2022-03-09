@@ -7,8 +7,6 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [19 x i8] c"Inner loop run %d\0A\00", align 1
 @2 = private unnamed_addr constant [5 x i8] c"End.\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
@@ -108,3 +106,5 @@ for.end6:                                         ; preds = %for.cond
   %39 = load i32, i32* %result, align 4
   ret i32 %39
 }
+
+declare i32 @printf(i8*, ...)
