@@ -6,8 +6,6 @@ target triple = "x86_64-w64-windows-gnu"
 @intArray = constant [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9]
 @0 = private unnamed_addr constant [23 x i8] c"Item for index %d, %d\0A\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
@@ -68,3 +66,5 @@ foreach.end:                                      ; preds = %foreach.loop
   %24 = load i32, i32* %result, align 4
   ret i32 %24
 }
+
+declare i32 @printf(i8*, ...)

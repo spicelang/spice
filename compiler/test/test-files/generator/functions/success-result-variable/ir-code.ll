@@ -5,8 +5,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [15 x i8] c"The age is: %d\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 ; Function Attrs: nounwind
 define internal i32 @"getAge()"() #0 {
 entry:
@@ -65,5 +63,7 @@ entry:
   %5 = load i32, i32* %result, align 4
   ret i32 %5
 }
+
+declare i32 @printf(i8*, ...)
 
 attributes #0 = { nounwind }

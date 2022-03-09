@@ -5,8 +5,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [22 x i8] c"Outer: %f, inner: %d\0A\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
@@ -90,3 +88,5 @@ while.end3:                                       ; preds = %while2, %while.cond
   %36 = load i32, i32* %result, align 4
   ret i32 %36
 }
+
+declare i32 @printf(i8*, ...)

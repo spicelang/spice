@@ -12,25 +12,19 @@ declare i32 @usleep(i32) local_unnamed_addr
 
 define i32 @main() local_unnamed_addr {
 entry:
-  %0 = alloca { i32 }, align 8
+  %0 = alloca {}, align 8
   %1 = alloca i8, align 1
-  %2 = alloca { i32 }, align 8
-  %3 = alloca i8, align 1
+  %2 = alloca i8, align 1
   %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @str, i64 0, i64 0))
-  %4 = getelementptr inbounds { i32 }, { i32 }* %0, i64 0, i32 0
-  store i32 -1, i32* %4, align 8
-  %5 = bitcast { i32 }* %0 to i8*
-  %6 = call i32 @pthread_create(i8* nonnull %1, i8* null, i8* (i8*)* nonnull @0, i8* nonnull %5)
-  %7 = getelementptr inbounds { i32 }, { i32 }* %2, i64 0, i32 0
-  store i32 -2, i32* %7, align 8
-  %8 = bitcast { i32 }* %2 to i8*
-  %9 = call i32 @pthread_create(i8* nonnull %3, i8* null, i8* (i8*)* nonnull @1, i8* nonnull %8)
-  %10 = call i32 @usleep(i32 1000000)
-  %puts12 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
+  %3 = bitcast {}* %0 to i8*
+  %4 = call i32 @pthread_create(i8* nonnull %1, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %3)
+  %5 = call i32 @pthread_create(i8* nonnull %2, i8* null, i8* (i8*)* nonnull @_thread1, i8* nonnull %3)
+  %6 = call i32 @usleep(i32 1000000)
+  %puts3 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
   ret i32 0
 }
 
-define internal noalias i8* @0(i8* nocapture readnone %0) {
+define internal noalias i8* @_thread0(i8* nocapture readnone %0) {
 entry:
   %1 = tail call i32 @usleep(i32 500000)
   %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @str.2, i64 0, i64 0))
@@ -39,7 +33,7 @@ entry:
 
 declare i32 @pthread_create(i8*, i8*, i8* (i8*)*, i8*) local_unnamed_addr
 
-define internal noalias i8* @1(i8* nocapture readnone %0) {
+define internal noalias i8* @_thread1(i8* nocapture readnone %0) {
 entry:
   %1 = tail call i32 @usleep(i32 200000)
   %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @str.3, i64 0, i64 0))

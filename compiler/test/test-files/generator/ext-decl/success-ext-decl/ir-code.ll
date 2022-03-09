@@ -10,8 +10,6 @@ target triple = "x86_64-w64-windows-gnu"
 @3 = private unnamed_addr constant [11 x i8] c"./test-dir\00", align 1
 @4 = private unnamed_addr constant [6 x i8] c"Done.\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 declare i32 @mkdir(i8*, i32)
 
 declare i32 @rmdir(i8*)
@@ -41,3 +39,5 @@ entry:
   %12 = load i32, i32* %result, align 4
   ret i32 %12
 }
+
+declare i32 @printf(i8*, ...)

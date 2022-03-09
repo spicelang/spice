@@ -9,8 +9,6 @@ target triple = "x86_64-w64-windows-gnu"
 @3 = private unnamed_addr constant [19 x i8] c"Restored value: %s\00", align 1
 @4 = private unnamed_addr constant [28 x i8] c"Restored value address: %p\0A\00", align 1
 
-declare i32 @printf(i8*, ...)
-
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
@@ -57,3 +55,5 @@ entry:
   %23 = load i32, i32* %result, align 4
   ret i32 %23
 }
+
+declare i32 @printf(i8*, ...)
