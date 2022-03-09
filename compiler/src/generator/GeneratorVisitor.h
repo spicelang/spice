@@ -109,7 +109,6 @@ private:
     std::vector<llvm::Value*> structAccessIndices;
 
     // Private methods
-    void initializeExternalFunctions();
     void moveInsertPointToBlock(llvm::BasicBlock* block);
     void createBr(llvm::BasicBlock* targetBlock);
     void createCondBr(llvm::Value* condition, llvm::BasicBlock* trueBlock, llvm::BasicBlock* falseBlock);

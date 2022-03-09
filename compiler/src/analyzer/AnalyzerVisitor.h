@@ -20,6 +20,8 @@ const static std::string THIS_VARIABLE_NAME = "this";
 const static std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
 const static std::string THREADS_TID_VARIABLE_NAME = "tid";
 const static std::string UNUSED_VARIABLE_NAME = "_";
+const static std::string PRINTF_FUNCTION_NAME = "printf";
+const static std::string SIZEOF_FUNCTION_NAME = "sizeof";
 const std::vector<std::string> RESERVED_KEYWORDS = { "new", "switch", "case" };
 
 class AnalyzerVisitor : public SpiceBaseVisitor {

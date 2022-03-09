@@ -140,9 +140,6 @@ std::string GeneratorVisitor::getIRString() {
 }
 
 antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext* ctx) {
-    // Generate code for external functions
-    initializeExternalFunctions();
-
     antlrcpp::Any result = SpiceBaseVisitor::visitEntry(ctx);
 
     // Verify module to detect IR code bugs
@@ -602,10 +599,11 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     }
 
     // Create threaded function
+    std::string fctSuffix = std::to_string(ThreadFactory::getInstance()->getNextFunctionSuffix());
     llvm::Type* voidPtrTy = builder->getInt8PtrTy();
     llvm::FunctionType* threadFctTy = llvm::FunctionType::get(voidPtrTy, { voidPtrTy }, false);
     llvm::Function* threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage,
-                                                       "thread", module.get());
+                                                       "_thread" + fctSuffix, module.get());
 
     // Create entry block for thread function
     llvm::BasicBlock* allocaInsertBlockBackup = allocaInsertBlock;
@@ -621,7 +619,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     assert(currentScope != nullptr);
 
     // Store function params
-    llvm::Value* recArgStructPtr = builder->CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
+    /*llvm::Value* recArgStructPtr = builder->CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
     for (int i = 0; i < argStructFieldTypes.size(); i++) {
         std::string argName = argStructFieldNames[i];
         llvm::Type* argType = argStructFieldTypes[i];
@@ -633,7 +631,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     }
 
     // Insert instructions into thread function
-    visit(ctx->stmtLst());
+    visit(ctx->stmtLst());*/
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -1054,13 +1052,22 @@ antlrcpp::Any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext
 }
 
 antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* ctx) {
-    llvm::Function* printf = module->getFunction("printf");
+    // Declare if not declared already
+    llvm::Function* printf = module->getFunction(PRINTF_FUNCTION_NAME);
+    if (!printf) {
+        llvm::FunctionType* printfFctTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
+                                                                  llvm::Type::getInt8PtrTy(*context), true);
+        module->getOrInsertFunction(PRINTF_FUNCTION_NAME, printfFctTy);
+        printf = module->getFunction(PRINTF_FUNCTION_NAME);
+    }
+
     std::vector<llvm::Value*> printfArgs;
     std::string stringTemplate = ctx->STRING_LITERAL()->toString();
     stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\n"), "\n");
     stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
     printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
     for (auto& arg : ctx->assignExpr()) {
+        // Visit argument
         llvm::Value* argValPtr = visit(arg).as<llvm::Value*>();
 
         llvm::Value* argVal;
@@ -2144,13 +2151,6 @@ antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeConte
         return SymbolType(TY_STRUCT, typeName);
     }
     throw std::runtime_error("Internal compiler error: Base datatype generator fall-through");
-}
-
-void GeneratorVisitor::initializeExternalFunctions() {
-    // printf function
-    llvm::FunctionType* fctTy = llvm::FunctionType::get(llvm::Type::getInt32Ty(*context),
-                                                        llvm::Type::getInt8PtrTy(*context), true);
-    module->getOrInsertFunction("printf", fctTy);
 }
 
 void GeneratorVisitor::createBr(llvm::BasicBlock* targetBlock) {
