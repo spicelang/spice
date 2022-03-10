@@ -21,6 +21,6 @@ private:
 
     // Members
     static ModuleRegistry* instance;
-    ErrorFactory* err;
+    ErrorFactory* err = nullptr;
     std::vector<std::string> modulePaths;
 };
