@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [22 x i8] c"Starting threads ...\0A\00", align 1
 @1 = private unnamed_addr constant [24 x i8] c"Starting thread %d ...\0A\00", align 1
-@2 = private unnamed_addr constant [26 x i8] c"Hello from the thread %d\0A\00", align 1
+@2 = private unnamed_addr constant [23 x i8] c"Hello from the thread\0A\00", align 1
 @3 = private unnamed_addr constant [21 x i8] c"Hello from original\0A\00", align 1
 
 declare i32 @usleep(i32)
@@ -82,26 +82,19 @@ entry:
   %5 = alloca i32, align 4
   %6 = alloca i32, align 4
   %7 = alloca i32, align 4
-  %8 = alloca i64, align 8
   store i32 100, i32* %4, align 4
-  %9 = load i32, i32* %4, align 4
-  %10 = load i32, i32* %3, align 4
-  %11 = mul i32 %9, %10
+  %8 = load i32, i32* %4, align 4
+  %9 = load i32, i32* %3, align 4
+  %10 = mul i32 %8, %9
   store i32 1000, i32* %5, align 4
-  %12 = load i32, i32* %5, align 4
-  %13 = mul i32 %11, %12
-  store i32 %13, i32* %6, align 4
-  %14 = load i32, i32* %6, align 4
-  %15 = call i32 @usleep(i32 %14)
-  store i32 %15, i32* %7, align 4
-  %16 = call i8* (...) @pthread_self()
-  %17 = ptrtoint i8* %16 to i64
-  store i64 %17, i64* %8, align 8
-  %18 = load i64, i64* %8, align 8
-  %19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([26 x i8], [26 x i8]* @2, i32 0, i32 0), i64 %18)
+  %11 = load i32, i32* %5, align 4
+  %12 = mul i32 %10, %11
+  store i32 %12, i32* %6, align 4
+  %13 = load i32, i32* %6, align 4
+  %14 = call i32 @usleep(i32 %13)
+  store i32 %14, i32* %7, align 4
+  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @2, i32 0, i32 0))
   ret i8* null
 }
-
-declare i8* @pthread_self(...)
 
 declare i32 @pthread_create(i16*, i8*, i8* (i8*)*, i8*)

@@ -6,7 +6,7 @@ f<int> main() {
         printf("Starting thread %d ...\n", i);
         thread {
             usleep(100 * i * 1000);
-            printf("Hello from the thread %d\n", tid());
+            printf("Hello from the thread\n");
         }
     }
     usleep(1000 * 1000);

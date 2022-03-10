@@ -4,9 +4,9 @@ target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [24 x i8] c"Starting thread %d ...\0A\00", align 1
-@1 = private unnamed_addr constant [26 x i8] c"Hello from the thread %d\0A\00", align 1
 @str = private unnamed_addr constant [21 x i8] c"Starting threads ...\00", align 1
 @str.1 = private unnamed_addr constant [20 x i8] c"Hello from original\00", align 1
+@str.2 = private unnamed_addr constant [22 x i8] c"Hello from the thread\00", align 1
 
 declare i32 @usleep(i32) local_unnamed_addr
 
@@ -48,13 +48,9 @@ entry:
   %3 = load i32, i32* %2, align 4
   %4 = mul i32 %3, 100000
   %5 = tail call i32 @usleep(i32 %4)
-  %6 = tail call i8* (...) @pthread_self()
-  %7 = ptrtoint i8* %6 to i64
-  %8 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([26 x i8], [26 x i8]* @1, i64 0, i64 0), i64 %7)
+  %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @str.2, i64 0, i64 0))
   ret i8* null
 }
-
-declare i8* @pthread_self(...) local_unnamed_addr
 
 declare i32 @pthread_create(i16*, i8*, i8* (i8*)*, i8*) local_unnamed_addr
 
