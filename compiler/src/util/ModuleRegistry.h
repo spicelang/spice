@@ -12,6 +12,7 @@ class ModuleRegistry {
 public:
     // Constructors
     static ModuleRegistry* getInstance(ErrorFactory* errorFactory);
+    static void dropInstance();
 
     // Public methods
     void addModule(const antlr4::Token& token, const std::string& moduleName);

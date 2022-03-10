@@ -9,6 +9,7 @@ class ThreadFactory {
 public:
     // Constructors
     static ThreadFactory* getInstance();
+    static void dropInstance();
 
     // Public methods
     int getNextFunctionSuffix();

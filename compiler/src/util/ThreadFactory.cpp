@@ -16,6 +16,13 @@ ThreadFactory* ThreadFactory::getInstance() {
 }
 
 /**
+ * Drops an instance of the thread factory
+ */
+void ThreadFactory::dropInstance() {
+    instance = nullptr;
+}
+
+/**
  * Retrieve the next free function suffix
  *
  * @return Free function suffix

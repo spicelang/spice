@@ -10,10 +10,12 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
-#include "generator/GeneratorVisitor.h"
-#include "exception/AntlrThrowingErrorListener.h"
-#include "exception/LexerParserError.h"
-#include "exception/SemanticError.h"
+#include <generator/GeneratorVisitor.h>
+#include <util/ModuleRegistry.h>
+#include <util/ThreadFactory.h>
+#include <exception/AntlrThrowingErrorListener.h>
+#include <exception/LexerParserError.h>
+#include <exception/SemanticError.h>
 
 #include "TestUtil.h"
 
@@ -153,6 +155,12 @@ void executeTest(const GeneratorTestCase& testCase) {
         );
         generator.init(); // Initialize code generation
         generator.visit(tree); // Generate IR code
+
+        // Drop the module registry instance
+        ModuleRegistry::dropInstance();
+
+        // Drop the module registry instance
+        ThreadFactory::dropInstance();
 
         // Check if the ir code matches the expected output
         std::string irCodeFileName = testCase.testPath + "/ir-code.ll";

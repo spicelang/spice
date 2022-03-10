@@ -10,9 +10,10 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
-#include "exception/AntlrThrowingErrorListener.h"
-#include "exception/LexerParserError.h"
-#include "exception/SemanticError.h"
+#include <util/ModuleRegistry.h>
+#include <exception/AntlrThrowingErrorListener.h>
+#include <exception/LexerParserError.h>
+#include <exception/SemanticError.h>
 
 #include "TestUtil.h"
 
@@ -95,6 +96,9 @@ void executeTest(const AnalyzerTestCase& testCase) {
                 false
         );
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
+
+        // Drop the module registry instance
+        ModuleRegistry::dropInstance();
 
         // Fail if an error was expected
         if (TestUtil::fileExists(testCase.testPath + "/exception.out"))
