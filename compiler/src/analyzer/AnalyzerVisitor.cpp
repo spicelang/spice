@@ -727,7 +727,8 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();
     SymbolType symbolType = SymbolType(TY_IMPORT);
-    currentScope->insert(importIden, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
+    currentScope->insert(importIden, symbolType, SymbolSpecifiers(symbolType), INITIALIZED,
+                         *ctx->start, false);
 
     // Mount symbol table of the imported source file into the current scope
     nestedTable->setImported();

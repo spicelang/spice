@@ -1,0 +1,109 @@
+{
+  "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [
+            {
+              "captures": [
+                {
+                  "isGlobal": false,
+                  "name": "i",
+                  "orderIndex": 0,
+                  "specifiers": {
+                    "const": false,
+                    "public": false,
+                    "signed": true
+                  },
+                  "state": "initialized",
+                  "type": "int"
+                }
+              ],
+              "children": [],
+              "name": "thread:7:8",
+              "symbols": []
+            }
+          ],
+          "name": "for:5:4",
+          "symbols": [
+            {
+              "isGlobal": false,
+              "name": "i",
+              "orderIndex": 0,
+              "specifiers": {
+                "const": false,
+                "public": false,
+                "signed": true
+              },
+              "state": "initialized",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "name": "main()",
+      "symbols": [
+        {
+          "isGlobal": false,
+          "name": "result",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "usleep(int)",
+      "symbols": [
+        {
+          "isGlobal": false,
+          "name": "result",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "declared",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "symbols": [
+    {
+      "isGlobal": true,
+      "name": "main()",
+      "orderIndex": 1,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    },
+    {
+      "isGlobal": true,
+      "name": "usleep(int)",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    }
+  ]
+}

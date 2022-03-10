@@ -11,7 +11,6 @@ public:
     static ThreadFactory* getInstance();
 
     // Public methods
-    int getNextThreadId();
     int getNextFunctionSuffix();
 private:
     // Private constructors
@@ -19,6 +18,5 @@ private:
 
     // Members
     static ThreadFactory* instance;
-    int nextThreadId = -1;
     int nextFctSuffix = 0;
 };

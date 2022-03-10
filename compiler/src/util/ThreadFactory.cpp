@@ -16,15 +16,6 @@ ThreadFactory* ThreadFactory::getInstance() {
 }
 
 /**
- * Retrieve the next free thread id
- *
- * @return Free tid
- */
-int ThreadFactory::getNextThreadId() {
-    return nextThreadId--;
-}
-
-/**
  * Retrieve the next free function suffix
  *
  * @return Free function suffix
