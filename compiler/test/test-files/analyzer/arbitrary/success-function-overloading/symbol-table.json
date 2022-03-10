@@ -1,6 +1,8 @@
 {
+  "captures": [],
   "children": [
     {
+      "captures": [],
       "children": [],
       "name": "calledFunction(int,bool)",
       "symbols": [
@@ -43,6 +45,7 @@
       ]
     },
     {
+      "captures": [],
       "children": [],
       "name": "calledFunction(string)",
       "symbols": [
@@ -73,6 +76,7 @@
       ]
     },
     {
+      "captures": [],
       "children": [],
       "name": "main()",
       "symbols": [

@@ -14,28 +14,28 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   %0 = alloca {}, align 8
-  %1 = alloca i8, align 1
-  %2 = alloca {}, align 8
-  %3 = alloca i8, align 1
+  %1 = alloca {}, align 8
+  %2 = alloca i32, align 4
+  %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
-  %6 = alloca i32, align 4
-  %7 = alloca i32, align 4
   store i32 0, i32* %result, align 4
-  %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @0, i32 0, i32 0))
-  %9 = bitcast {}* %0 to i8*
-  %10 = call i32 @pthread_create(i8* %1, i8* null, i8* (i8*)* @_thread0, i8* %9)
-  %11 = bitcast {}* %2 to i8*
-  %12 = call i32 @pthread_create(i8* %3, i8* null, i8* (i8*)* @_thread1, i8* %11)
-  store i32 1000, i32* %4, align 4
-  %13 = load i32, i32* %4, align 4
-  store i32 1000, i32* %5, align 4
-  %14 = load i32, i32* %5, align 4
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @0, i32 0, i32 0))
+  %7 = alloca i16, align 2
+  %8 = bitcast {}* %0 to i8*
+  %9 = call i32 @pthread_create(i16* %7, i8* null, i8* (i8*)* @_thread0, i8* %8)
+  %10 = alloca i16, align 2
+  %11 = bitcast {}* %1 to i8*
+  %12 = call i32 @pthread_create(i16* %10, i8* null, i8* (i8*)* @_thread1, i8* %11)
+  store i32 1000, i32* %2, align 4
+  %13 = load i32, i32* %2, align 4
+  store i32 1000, i32* %3, align 4
+  %14 = load i32, i32* %3, align 4
   %15 = mul i32 %13, %14
-  store i32 %15, i32* %6, align 4
-  %16 = load i32, i32* %6, align 4
+  store i32 %15, i32* %4, align 4
+  %16 = load i32, i32* %4, align 4
   %17 = call i32 @usleep(i32 %16)
-  store i32 %17, i32* %7, align 4
+  store i32 %17, i32* %5, align 4
   %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
   %19 = load i32, i32* %result, align 4
   ret i32 %19
@@ -63,7 +63,7 @@ entry:
   ret i8* null
 }
 
-declare i32 @pthread_create(i8*, i8*, i8* (i8*)*, i8*)
+declare i32 @pthread_create(i16*, i8*, i8* (i8*)*, i8*)
 
 define internal i8* @_thread1(i8* %0) {
 entry:

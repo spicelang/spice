@@ -40,10 +40,12 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
     // Check if the symbol exists in the current scope. If yes, take it
     SymbolTableEntry* entry = lookupStrict(name);
     if (!entry) { // Symbol was not found in the current scope
-        // If there is no parent, the symbol does not exist at all
+        // We reached the root scope, the symbol does not exist at all
         if (parent == nullptr) return nullptr;
         // If there is a parent scope, continue the search there
         entry = parent->lookup(name);
+        // Symbol was also not found in all the parent scopes, return nullptr
+        if (!entry) return nullptr;
     }
 
     // Check if this scope requires capturing and capture the variable if appropriate
