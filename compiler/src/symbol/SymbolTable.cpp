@@ -37,13 +37,24 @@ void SymbolTable::insert(const std::string& name, const SymbolType& type, Symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
 SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
-    // If not available in the current scope, search in the parent scope
-    if (symbols.find(name) == symbols.end()) {
+    // Check if the symbol exists in the current scope. If yes, take it
+    SymbolTableEntry* entry = lookupStrict(name);
+    if (!entry) { // Symbol was not found in the current scope
+        // We reached the root scope, the symbol does not exist at all
         if (parent == nullptr) return nullptr;
-        return parent->lookup(name);
+        // If there is a parent scope, continue the search there
+        entry = parent->lookup(name);
+        // Symbol was also not found in all the parent scopes, return nullptr
+        if (!entry) return nullptr;
     }
-    // Otherwise, return the entry
-    return &symbols.at(name);
+
+    // Check if this scope requires capturing and capture the variable if appropriate
+    if (requiresCapturing && captures.find(name) == captures.end() &&
+        !entry->getType().isOneOf({ TY_IMPORT, TY_FUNCTION, TY_PROCEDURE })) {
+        captures.insert({ name, Capture(entry) });
+    }
+
+    return entry;
 }
 
 /**
@@ -55,7 +66,7 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
 SymbolTableEntry* SymbolTable::lookupStrict(const std::string& name) {
     // If not available in the current scope, return nullptr
     if (symbols.find(name) == symbols.end()) return nullptr;
-    // Otherwise, return the entry
+    // Otherwise, return the symbol
     return &symbols.at(name);
 }
 
@@ -163,12 +174,21 @@ SymbolTable* SymbolTable::getChild(const std::string& scopeId) {
 }
 
 /**
- * Returns all symbols of that particular sub-table
+ * Returns all symbols of this particular sub-table
  *
  * @return Map of names and the corresponding symbol table entries
  */
 std::map<std::string, SymbolTableEntry>& SymbolTable::getSymbols() {
     return symbols;
+}
+
+/**
+ * Returns all captures of this particular sub-table
+ *
+ * @return Map of names and the corresponding capture
+ */
+std::map<std::string, Capture>& SymbolTable::getCaptures() {
+    return captures;
 }
 
 /**
@@ -350,6 +370,12 @@ nlohmann::json SymbolTable::toJSON() {
     for (auto& symbol : symbols)
         jsonSymbols.emplace_back(symbol.second.toJSON());
 
+    // Collect all captures
+    std::vector<nlohmann::json> jsonCaptures;
+    jsonCaptures.reserve(captures.size());
+    for (auto& capture : captures)
+        jsonCaptures.emplace_back(capture.second.toJSON());
+
     // Collect all children
     std::vector<nlohmann::json> jsonChildren;
     jsonChildren.reserve(symbols.size());
@@ -362,6 +388,7 @@ nlohmann::json SymbolTable::toJSON() {
     // Generate json
     nlohmann::json result;
     result["symbols"] = jsonSymbols;
+    result["captures"] = jsonCaptures;
     result["children"] = jsonChildren;
     return result;
 }
@@ -380,4 +407,20 @@ void SymbolTable::setImported() {
  */
 bool SymbolTable::isImported() const {
     return imported;
+}
+
+/**
+ * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
+ */
+void SymbolTable::setRequiresCapturing() {
+    requiresCapturing = true;
+}
+
+/**
+ * Checks if this scope requires capturing of variables that live outside that scope
+ *
+ * @return Requires capturing / not requires capturing
+ */
+bool SymbolTable::isCapturingRequired() const {
+    return requiresCapturing;
 }

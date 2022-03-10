@@ -8,6 +8,7 @@
 #include <queue>
 
 #include <symbol/SymbolTableEntry.h>
+#include <symbol/Capture.h>
 #include <symbol/SymbolType.h>
 #include <util/FunctionSignature.h>
 
@@ -41,6 +42,7 @@ public:
     SymbolTable* getChild(const std::string& tableName);
 
     std::map<std::string, SymbolTableEntry>& getSymbols();
+    std::map<std::string, Capture>& getCaptures();
 
     unsigned int getFieldCount();
 
@@ -62,15 +64,20 @@ public:
     void setImported();
     [[nodiscard]] bool isImported() const;
 
+    void setRequiresCapturing();
+    [[nodiscard]] bool isCapturingRequired() const;
+
 private:
     // Members
     SymbolTable* parent;
     std::map<std::string, SymbolTable> children;
     std::map<std::string, SymbolTableEntry> symbols;
+    std::map<std::string, Capture> captures;
     std::map<std::string, std::vector<SymbolType>> functionDeclarations;
     std::map<std::string, std::vector<SymbolType>> procedureDeclarations;
     std::vector<std::string> paramNames;
     std::queue<FunctionSignature> functionSignatures;
     bool inMainSourceFile;
     bool imported = false;
+    bool requiresCapturing = false;
 };

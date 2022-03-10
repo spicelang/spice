@@ -1,17 +1,23 @@
 {
+  "captures": [],
   "children": [
     {
+      "captures": [],
       "children": [
         {
+          "captures": [],
           "children": [
             {
+              "captures": [],
               "children": [],
               "name": "else:31:10",
               "symbols": []
             },
             {
+              "captures": [],
               "children": [
                 {
+                  "captures": [],
                   "children": [],
                   "name": "if:24:12",
                   "symbols": []

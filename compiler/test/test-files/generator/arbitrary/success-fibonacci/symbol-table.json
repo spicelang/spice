@@ -1,8 +1,11 @@
 {
+  "captures": [],
   "children": [
     {
+      "captures": [],
       "children": [
         {
+          "captures": [],
           "children": [],
           "name": "if:2:4",
           "symbols": []
@@ -37,6 +40,7 @@
       ]
     },
     {
+      "captures": [],
       "children": [],
       "name": "main()",
       "symbols": [
