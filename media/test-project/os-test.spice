@@ -46,7 +46,8 @@ f<int> main() {
         thread {
             printf("Tid: %d, i: %d\n", tid(), i);
         }
+        delay.delay(10);
     }
-    delay.delay(3000);
+    delay.delay(1000);
     printf("Hello from original\n");
 }

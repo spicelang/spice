@@ -642,8 +642,8 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     allocaInsertInst = allocaInsertInstBackup;
 
     // Create pthread instance
-    llvm::Type* pthreadTy = builder->getInt8Ty();
-    llvm::Value* pthread = insertAlloca(pthreadTy);
+    llvm::Type* pthreadTy = builder->getInt16Ty(); // Allow 65536 threads at max
+    llvm::Value* pthread = builder->CreateAlloca(pthreadTy); // Caution: Do not replace with insertAlloca() due to thread safety!
 
     // Get function pthread_create
     llvm::Function* ptCreateFct = module->getFunction("pthread_create");
@@ -1841,7 +1841,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext* 
         } else {
             // For the case that in the current scope there is a variable with the same name, but it is initialized later, so the
             // symbol above in the hierarchy is meant to be used.
-            while (entry && !entry->getAddress() && !entry->getType().is(TY_IMPORT))
+            while (entry && !memAddress && !entry->getType().is(TY_IMPORT))
                 entry = accessScope->getParent()->lookup(currentVarName);
 
             if (!entry) return (llvm::Value*) nullptr;
