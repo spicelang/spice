@@ -35,10 +35,11 @@ breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
 
 // Builtin functions
-builtinCall: printfCall | sizeOfCall | tidCall;
+builtinCall: printfCall | sizeOfCall | tidCall |joinCall;
 printfCall: PRINTF LPAREN STRING_LITERAL (COMMA assignExpr)* RPAREN;
 sizeOfCall: SIZEOF LPAREN assignExpr RPAREN;
 tidCall: TID LPAREN RPAREN;
+joinCall: JOIN LPAREN assignExpr (COMMA assignExpr)* RPAREN;
 
 // Expression loop
 assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr | threadDef;
@@ -104,6 +105,7 @@ MAIN: 'main';
 PRINTF: 'printf';
 SIZEOF: 'sizeof';
 TID: 'tid';
+JOIN: 'join';
 EXT: 'ext';
 DLL: 'dll';
 TRUE: 'true';

@@ -39,7 +39,7 @@ f<int> main() {
     int t2;
 
     t1 = thread {
-        //wait(t2);
+        join(t2);
         printf("Thread 1");
     };
 

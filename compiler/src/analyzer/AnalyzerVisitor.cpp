@@ -817,6 +817,7 @@ antlrcpp::Any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext*
     if (ctx->printfCall()) return visit(ctx->printfCall());
     if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
     if (ctx->tidCall()) return visit(ctx->tidCall());
+    if (ctx->joinCall()) return visit(ctx->joinCall());
     throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
@@ -904,7 +905,16 @@ antlrcpp::Any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* c
 
 antlrcpp::Any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext* ctx) {
     // Nothing to check here. Tid builtin has no arguments
-    return SymbolType(TY_LONG);
+    return SymbolType(TY_INT);
+}
+
+antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext* ctx) {
+    for (auto& assignExpr : ctx->assignExpr()) {
+
+    }
+
+    // Return the number of threads that were joined
+    return SymbolType(TY_INT);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {

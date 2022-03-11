@@ -1038,6 +1038,7 @@ antlrcpp::Any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext
     if (ctx->printfCall()) return visit(ctx->printfCall());
     if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
     if (ctx->tidCall()) return visit(ctx->tidCall());
+    if (ctx->joinCall()) return visit(ctx->joinCall());
     throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
@@ -1111,20 +1112,52 @@ antlrcpp::Any GeneratorVisitor::visitTidCall(SpiceParser::TidCallContext* ctx) {
     llvm::Function* psFct = module->getFunction(psFctName);
     if (!psFct) {
         llvm::FunctionType* psFctTy = llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*context),
-                                                              {}, true);
+                                                              {}, false);
         module->getOrInsertFunction(psFctName, psFctTy);
         psFct = module->getFunction(psFctName);
     }
 
     // Create call to function
     llvm::Value* result = builder->CreateCall(psFct);
-    result = builder->CreatePtrToInt(result, builder->getInt64Ty());
+    result = builder->CreatePtrToInt(result, builder->getInt32Ty());
 
     // Store the result
     llvm::Value* resultPtr = insertAlloca(result->getType());
     builder->CreateStore(result, resultPtr);
 
     // Return address to where the tid is saved
+    return resultPtr;
+}
+
+antlrcpp::Any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext* ctx) {
+    // Declare if not declared already
+    std::string psFctName = "pthread_join";
+    llvm::Function* psFct = module->getFunction(psFctName);
+    if (!psFct) {
+        llvm::FunctionType* psFctTy = llvm::FunctionType::get(builder->getInt32Ty(), {
+            builder->getInt8PtrTy(),
+            builder->getInt8PtrTy()->getPointerTo()
+        }, false);
+        module->getOrInsertFunction(psFctName, psFctTy);
+        psFct = module->getFunction(psFctName);
+    }
+
+    unsigned int joinCount = 0;
+    for (auto& assignExpr : ctx->assignExpr()) {
+        // Get thread id that has to be joined
+        llvm::Value* threadIdPtr = visit(assignExpr).as<llvm::Value*>();
+        llvm::Value* threadId = builder->CreateLoad(threadIdPtr->getType()->getPointerElementType(), threadIdPtr);
+
+        // Create call to pthread_join
+        // ToDo
+
+        joinCount++;
+    }
+
+    // Return the number of threads that were joined
+    llvm::Value* result = builder->getInt32(joinCount);
+    llvm::Value* resultPtr = insertAlloca(result->getType());
+    builder->CreateStore(result, resultPtr);
     return resultPtr;
 }
 
