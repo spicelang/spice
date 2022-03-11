@@ -447,7 +447,7 @@ antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx
     // Return to old scope
     currentScope = currentScope->getParent();
 
-    return SymbolType(TY_BOOL);
+    return SymbolType(TY_INT);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -970,10 +970,14 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
         }
 
         return rhsTy;
+    } else if (ctx->ternaryExpr()) {
+        return visit(ctx->ternaryExpr());
+    } else if (ctx->threadDef()) {
+        return visit(ctx->threadDef());
     }
 
-    // This is a fallthrough case, just visit the ternary expression
-    return visit(ctx->ternaryExpr());
+    // This is a fallthrough case -> throw an error
+    throw std::runtime_error("Internal compiler error: Assign stmt fall-through"); // GCOV_EXCL_LINE
 }
 
 antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {

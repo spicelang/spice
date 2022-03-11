@@ -642,7 +642,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     allocaInsertInst = allocaInsertInstBackup;
 
     // Create pthread instance
-    llvm::Type* pthreadTy = builder->getInt16Ty(); // Allow 65536 threads at max
+    llvm::Type* pthreadTy = builder->getInt32Ty(); // Allow 4294967296 threads at max
     llvm::Value* pthread = builder->CreateAlloca(pthreadTy); // Caution: Do not replace with insertAlloca() due to thread safety!
 
     // Get function pthread_create
@@ -666,7 +666,8 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     // Create call to pthread_create
     builder->CreateCall(ptCreateFct, args);
 
-    return nullptr;
+    // Return the thread id ptr
+    return pthread;
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -1193,11 +1194,18 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
             builder->CreateStore(rhs, lhsPtr);
         }
         return lhsPtr;
+    } else if (ctx->ternaryExpr()) {
+        antlrcpp::Any rhs = visit(ctx->ternaryExpr());
+        lhsType = nullptr; // Reset lhs type
+        return rhs;
+    } else if (ctx->threadDef()) {
+        antlrcpp::Any rhs = visit(ctx->threadDef());
+        lhsType = nullptr; // Reset lhs type
+        return rhs;
     }
 
-    antlrcpp::Any rhs = visit(ctx->ternaryExpr());
-    lhsType = nullptr; // Reset lhs type
-    return rhs;
+    // This is a fallthrough case -> throw an error
+    throw std::runtime_error("Internal compiler error: Assign stmt fall-through"); // GCOV_EXCL_LINE
 }
 
 antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {

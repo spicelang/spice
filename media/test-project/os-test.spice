@@ -34,20 +34,16 @@ f<int> main() {
 }*/
 
 
-
-import "std/time/delay" as delay;
-import "std/os/system" as sys;
-
 f<int> main() {
-    printf("Starting threads ...\n");
-    int coreCount = sys.getCPUCoreCount() / 2;
-    for int i = 1; i <= coreCount; i++ {
-        printf("Starting thread %d ...\n", i);
-        thread {
-            printf("Tid: %d, i: %d\n", tid(), i);
-        }
-        delay.delay(10);
-    }
-    delay.delay(1000);
-    printf("Hello from original\n");
+    int t1;
+    int t2;
+
+    t1 = thread {
+        //wait(t2);
+        printf("Thread 1");
+    };
+
+    t2 = thread {
+        printf("Thread 2");
+    };
 }

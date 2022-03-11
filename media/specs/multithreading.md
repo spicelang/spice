@@ -28,11 +28,11 @@ int t2;
 t1 = thread {
     wait(t2);
     printf("Thread 1");
-}
+};
 
 t2 = thread {
     printf("Thread 2");
-}
+};
 ```
 
 ### Communication between threads
@@ -44,12 +44,12 @@ pipe<int> intPipe;
 int t1 = thread {
     int yieldValue = 12345;
     yield(intPipe, yieldValue);
-}
+};
 
 int t2 = thread 2 {
     int receivedValue = pick(intPipe);
     printf("Received value: %d", receivedValue); // Output: 12345
-}
+};
 ```
 
 ### Thread pools (long way off, not finalized, may change)

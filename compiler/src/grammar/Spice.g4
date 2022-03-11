@@ -41,7 +41,7 @@ sizeOfCall: SIZEOF LPAREN assignExpr RPAREN;
 tidCall: TID LPAREN RPAREN;
 
 // Expression loop
-assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr;
+assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr | threadDef;
 ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr COLON logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
