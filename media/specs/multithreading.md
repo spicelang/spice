@@ -22,12 +22,15 @@ Within the thread block, the builtin function `tid()` can be used to obtain the 
 To wait for another thread to end its execution, the builtin `wait(int)` can be used. The program will suspend the execution when calling `wait` until the thread with the given tid has terminated.
 
 ```spice
-thread 1 {
-    wait(2);
+int t1;
+int t2;
+
+t1 = thread {
+    wait(t2);
     printf("Thread 1");
 }
 
-thread 2 {
+t2 = thread {
     printf("Thread 2");
 }
 ```
@@ -38,12 +41,12 @@ For the communication between threads, there is a feature, called `Pipes`. A pip
 ```spice
 pipe<int> intPipe;
 
-thread 1 {
+int t1 = thread {
     int yieldValue = 12345;
     yield(intPipe, yieldValue);
 }
 
-thread 2 {
+int t2 = thread 2 {
     int receivedValue = pick(intPipe);
     printf("Received value: %d", receivedValue); // Output: 12345
 }
