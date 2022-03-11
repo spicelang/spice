@@ -46,7 +46,7 @@ for:                                              ; preds = %for.cond
   store i32* %i, i32** %17, align 8
   %18 = alloca i16, align 2
   %19 = bitcast { i32* }* %3 to i8*
-  %20 = call i32 @pthread_create(i16* %18, i8* null, i8* (i8*)* @_thread2, i8* %19)
+  %20 = call i32 @pthread_create(i16* %18, i8* null, i8* (i8*)* @_thread0, i8* %19)
   br label %for.post
 
 for.post:                                         ; preds = %for
@@ -73,7 +73,7 @@ for.end:                                          ; preds = %for.cond
 
 declare i32 @printf(i8*, ...)
 
-define internal i8* @_thread2(i8* %0) {
+define internal i8* @_thread0(i8* %0) {
 entry:
   %1 = bitcast i8* %0 to { i32* }*
   %2 = getelementptr inbounds { i32* }, { i32* }* %1, i32 0, i32 0

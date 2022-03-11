@@ -25,7 +25,7 @@ for:                                              ; preds = %entry, %for
   %3 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i32 %storemerge6)
   store i32* %i, i32** %1, align 8
   %4 = alloca i16, align 2
-  %5 = call i32 @pthread_create(i16* nonnull %4, i8* null, i8* (i8*)* nonnull @_thread2, i8* nonnull %2)
+  %5 = call i32 @pthread_create(i16* nonnull %4, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %2)
   %6 = load i32, i32* %i, align 4
   %7 = add i32 %6, 1
   store i32 %7, i32* %i, align 4
@@ -41,7 +41,7 @@ for.end:                                          ; preds = %for
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
 
-define internal noalias i8* @_thread2(i8* nocapture readonly %0) {
+define internal noalias i8* @_thread0(i8* nocapture readonly %0) {
 entry:
   %1 = bitcast i8* %0 to i32**
   %2 = load i32*, i32** %1, align 8

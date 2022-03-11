@@ -7,17 +7,9 @@
  */
 class ThreadFactory {
 public:
-    // Constructors
-    static ThreadFactory* getInstance();
-    static void dropInstance();
-
     // Public methods
     int getNextFunctionSuffix();
 private:
-    // Private constructors
-    explicit ThreadFactory() = default;
-
     // Members
-    static ThreadFactory* instance;
     int nextFctSuffix = 0;
 };

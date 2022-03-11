@@ -11,8 +11,6 @@
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <generator/GeneratorVisitor.h>
-#include <util/ModuleRegistry.h>
-#include <util/ThreadFactory.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
@@ -85,10 +83,16 @@ void executeTest(const GeneratorTestCase& testCase) {
         std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
         std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
 
+        // Prepare instance of module registry and thread factory, which have to exist exactly once per executable
+        ModuleRegistry moduleRegistry = ModuleRegistry();
+        ThreadFactory threadFactory = ThreadFactory();
+
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
                 context,
                 builder,
+                &moduleRegistry,
+                &threadFactory,
                 sourceFile,
                 "",
                 "",
@@ -143,6 +147,7 @@ void executeTest(const GeneratorTestCase& testCase) {
         GeneratorVisitor generator = GeneratorVisitor(
                 context,
                 builder,
+                &threadFactory,
                 symbolTable,
                 sourceFile,
                 "",
@@ -155,12 +160,6 @@ void executeTest(const GeneratorTestCase& testCase) {
         );
         generator.init(); // Initialize code generation
         generator.visit(tree); // Generate IR code
-
-        // Drop the module registry instance
-        ModuleRegistry::dropInstance();
-
-        // Drop the module registry instance
-        ThreadFactory::dropInstance();
 
         // Check if the ir code matches the expected output
         std::string irCodeFileName = testCase.testPath + "/ir-code.ll";

@@ -7,6 +7,8 @@
 #include <symbol/SymbolTable.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
+#include <util/ModuleRegistry.h>
+#include <util/ThreadFactory.h>
 #include <exception/ErrorFactory.h>
 #include <analyzer/OpRuleManager.h>
 
@@ -24,11 +26,10 @@ const std::vector<std::string> RESERVED_KEYWORDS = { "new", "switch", "case" };
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
-    explicit AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
-                             const std::shared_ptr<llvm::IRBuilder<>>& builder,
-                             const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
-                             const std::string& targetOs, const std::string& outputPath, bool debugOutput, int optLevel,
-                             bool requiresMainFct, bool stdFile);
+    explicit AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context, const std::shared_ptr<llvm::IRBuilder<>>& builder,
+                             ModuleRegistry* moduleRegistry, ThreadFactory* threadFactory, const std::string& sourceFile,
+                             const std::string& targetArch, const std::string& targetVendor, const std::string& targetOs,
+                             const std::string& outputPath, bool debugOutput, int optLevel, bool requiresMainFct, bool stdFile);
     ~AnalyzerVisitor() override;
 
     // Public methods
@@ -87,6 +88,8 @@ private:
     std::string targetOs;
     std::string outputPath;
     ErrorFactory* err;
+    ModuleRegistry* moduleRegistry;
+    ThreadFactory* threadFactory;
     bool debugOutput;
     int optLevel;
     bool requiresMainFct = true;

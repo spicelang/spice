@@ -5,8 +5,6 @@
 #include <SpiceLexer.h>
 #include <SpiceParser.h>
 
-#include <analyzer/AnalyzerVisitor.h>
-#include <generator/GeneratorVisitor.h>
 #include <util/FileUtil.h>
 #include <exception/AntlrThrowingErrorListener.h>
 
@@ -15,6 +13,8 @@
  *
  * @param context LLVM context which holds global LLVM core data
  * @param builder LLVM IR builder for generating IR with the LLVM API
+ * @param moduleRegistry Module Registry, to manage project-wide module information
+ * @param threadFactory Thread Factory, used for generating project-wide thread information
  * @param sourceFile Full path to a file (absolute or relative)
  * @param targetArch Target architecture: e.g.: x86_64
  * @param targetVendor Target vendor: e.g.: w64
@@ -30,6 +30,8 @@
 SymbolTable* CompilerInstance::CompileSourceFile(
         const std::shared_ptr<llvm::LLVMContext>& context,
         const std::shared_ptr<llvm::IRBuilder<>>& builder,
+        ModuleRegistry* moduleRegistry,
+        ThreadFactory* threadFactory,
         const std::string& sourceFile,
         const std::string& targetArch,
         const std::string& targetVendor,
@@ -66,6 +68,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     AnalyzerVisitor analyzer = AnalyzerVisitor(
             context,
             builder,
+            moduleRegistry,
+            threadFactory,
             sourceFile,
             targetArch,
             targetVendor,
@@ -90,6 +94,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     GeneratorVisitor generator = GeneratorVisitor(
             context,
             builder,
+            threadFactory,
             symbolTable,
             fileName,
             targetArch,

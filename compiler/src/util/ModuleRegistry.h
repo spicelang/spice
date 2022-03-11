@@ -10,18 +10,9 @@
  */
 class ModuleRegistry {
 public:
-    // Constructors
-    static ModuleRegistry* getInstance(ErrorFactory* errorFactory);
-    static void dropInstance();
-
     // Public methods
-    void addModule(const antlr4::Token& token, const std::string& moduleName);
+    void addModule(ErrorFactory* errorFactory, const antlr4::Token& token, const std::string& moduleName);
 private:
-    // Private constructors
-    explicit ModuleRegistry() = default;
-
     // Members
-    static ModuleRegistry* instance;
-    ErrorFactory* err = nullptr;
     std::vector<std::string> modulePaths;
 };
