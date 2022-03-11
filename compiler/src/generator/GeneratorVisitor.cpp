@@ -6,7 +6,6 @@
 
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
-#include <util/ThreadFactory.h>
 #include <exception/IRError.h>
 
 #include <analyzer/AnalyzerVisitor.h>
@@ -27,13 +26,14 @@
 #include <llvm/IR/GlobalValue.h>
 
 GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
-                                   const std::shared_ptr<llvm::IRBuilder<>>& builder,
+                                   const std::shared_ptr<llvm::IRBuilder<>>& builder, ThreadFactory* threadFactory,
                                    SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
                                    const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
                                    bool debugOutput, int optLevel, bool requiresMainFct) {
     // Save parameters
     this->context = context;
     this->builder = builder;
+    this->threadFactory = threadFactory;
     this->currentScope = symbolTable;
     this->sourceFile = sourceFile;
     this->outputPath = outputPath;
@@ -560,7 +560,7 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
 
 antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx) {
     // Create threaded function
-    std::string threadedFctName = "_thread" + std::to_string(ThreadFactory::getInstance()->getNextFunctionSuffix());
+    std::string threadedFctName = "_thread" + std::to_string(threadFactory->getNextFunctionSuffix());
     llvm::Type* voidPtrTy = builder->getInt8PtrTy();
     llvm::FunctionType* threadFctTy = llvm::FunctionType::get(voidPtrTy, { voidPtrTy }, false);
     llvm::Function* threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage,

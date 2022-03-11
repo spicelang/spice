@@ -7,6 +7,7 @@
 #include <generator/OpRuleConversionsManager.h>
 #include <symbol/SymbolTable.h>
 #include <symbol/ScopePath.h>
+#include <util/ThreadFactory.h>
 
 #include <SpiceBaseVisitor.h>
 
@@ -18,9 +19,9 @@ class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
     explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context, const std::shared_ptr<llvm::IRBuilder<>>& builder,
-                              SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
-                              const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
-                              bool debugOutput, int optLevel, bool requiresMainFct);
+                              ThreadFactory* threadFactory, SymbolTable* symbolTable, const std::string& sourceFile,
+                              const std::string& targetArch, const std::string& targetVendor, const std::string& targetOs,
+                              const std::string& outputPath, bool debugOutput, int optLevel, bool requiresMainFct);
     ~GeneratorVisitor() override;
 
     // Public methods
@@ -91,6 +92,7 @@ private:
     std::string scopePrefix;
     SymbolType currentSymbolType;
     ScopePath scopePath;
+    ThreadFactory* threadFactory;
     ErrorFactory* err;
     bool blockAlreadyTerminated = false;
     llvm::Value* currentThisValue = nullptr;

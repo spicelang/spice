@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include <stack>
-#include <tuple>
 
 #include <exception/ErrorFactory.h>
 

@@ -5,20 +5,21 @@
 #include <CompilerInstance.h>
 #include <analyzer/OpRuleManager.h>
 #include <symbol/SymbolSpecifiers.h>
-#include <util/ModuleRegistry.h>
 #include <util/ScopeIdUtil.h>
 #include <util/FileUtil.h>
 #include "util/CompilerWarning.h"
 #include <exception/SemanticError.h>
 
 AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
-                                 const std::shared_ptr<llvm::IRBuilder<>>& builder,
-                                 const std::string& sourceFile, const std::string& targetArch, const std::string& targetVendor,
-                                 const std::string& targetOs, const std::string& outputPath, bool debugOutput, int optLevel,
-                                 bool requiresMainFct, bool isStdFile) {
+                                 const std::shared_ptr<llvm::IRBuilder<>>& builder, ModuleRegistry* moduleRegistry,
+                                 ThreadFactory* threadFactory, const std::string& sourceFile, const std::string& targetArch,
+                                 const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
+                                 bool debugOutput, int optLevel, bool requiresMainFct, bool isStdFile) {
     // Save parameters
     this->context = context,
     this->builder = builder;
+    this->moduleRegistry = moduleRegistry;
+    this->threadFactory = threadFactory;
     this->mainSourceFile = sourceFile;
     this->outputPath = outputPath;
     this->debugOutput = debugOutput;
@@ -704,8 +705,8 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     } else { // Include own source file
         // Check in module registry if the file can be imported
         std::string sourceFileDir = FileUtil::getFileDir(mainSourceFile);
-        ModuleRegistry* registry = ModuleRegistry::getInstance(err);
-        registry->addModule(*ctx->STRING_LITERAL()->getSymbol(), sourceFileDir + "/" + importPath);
+        moduleRegistry->addModule(err, *ctx->STRING_LITERAL()->getSymbol(),
+                                  sourceFileDir + "/" + importPath);
         // Import file
         if (FileUtil::fileExists(sourceFileDir + "/" + importPath + ".spice")) {
             filePath = sourceFileDir + "/" + importPath + ".spice";
@@ -720,14 +721,16 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     }
 
     // Kick off the compilation of the imported source file
-    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(context, builder, filePath, targetArch, targetVendor,
-                                                                   targetOs, outputPath, debugOutput, optLevel,
-                                                                   false, foundInStd);
+    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(context, builder, moduleRegistry, threadFactory,
+                                                                   filePath, targetArch, targetVendor, targetOs,
+                                                                   outputPath, debugOutput, optLevel, false,
+                                                                   foundInStd);
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();
     SymbolType symbolType = SymbolType(TY_IMPORT);
-    currentScope->insert(importIden, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
+    currentScope->insert(importIden, symbolType, SymbolSpecifiers(symbolType), INITIALIZED,
+                         *ctx->start, false);
 
     // Mount symbol table of the imported source file into the current scope
     nestedTable->setImported();

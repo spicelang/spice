@@ -10,9 +10,9 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
-#include "exception/AntlrThrowingErrorListener.h"
-#include "exception/LexerParserError.h"
-#include "exception/SemanticError.h"
+#include <exception/AntlrThrowingErrorListener.h>
+#include <exception/LexerParserError.h>
+#include <exception/SemanticError.h>
 
 #include "TestUtil.h"
 
@@ -80,10 +80,16 @@ void executeTest(const AnalyzerTestCase& testCase) {
         std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
         std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
 
+        // Prepare instance of module registry and thread factory, which have to exist exactly once per executable
+        ModuleRegistry moduleRegistry = ModuleRegistry();
+        ThreadFactory threadFactory = ThreadFactory();
+
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
                 context,
                 builder,
+                &moduleRegistry,
+                &threadFactory,
                 sourceFile,
                 "",
                 "",

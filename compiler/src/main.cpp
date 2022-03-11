@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 
+#include <util/ThreadFactory.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
 #include <exception/IRError.h>
@@ -47,10 +48,16 @@ int main(int argc, char** argv) { // Call ./spicec filePath targetArch targetVen
         std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
         std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
 
+        // Prepare instance of module registry and thread factory, which have to exist exactly once per executable
+        ModuleRegistry moduleRegistry = ModuleRegistry();
+        ThreadFactory threadFactory = ThreadFactory();
+
         // Compile main source file
         CompilerInstance::CompileSourceFile(
                 context,
                 builder,
+                &moduleRegistry,
+                &threadFactory,
                 mainSourceFile,
                 targetArch,
                 targetVendor,

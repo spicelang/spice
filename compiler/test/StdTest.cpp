@@ -84,10 +84,16 @@ void executeTest(const StdTestCase& testCase) {
         std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
         std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
 
+        // Prepare instance of module registry and thread factory, which have to exist exactly once per executable
+        ModuleRegistry moduleRegistry = ModuleRegistry();
+        ThreadFactory threadFactory = ThreadFactory();
+
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(
                 context,
                 builder,
+                &moduleRegistry,
+                &threadFactory,
                 sourceFile,
                 "",
                 "",
@@ -142,6 +148,7 @@ void executeTest(const StdTestCase& testCase) {
         GeneratorVisitor generator = GeneratorVisitor(
                 context,
                 builder,
+                &threadFactory,
                 symbolTable,
                 sourceFile,
                 "",
