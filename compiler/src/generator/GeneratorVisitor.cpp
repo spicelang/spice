@@ -1146,12 +1146,12 @@ antlrcpp::Any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext* ctx)
     for (auto& assignExpr : ctx->assignExpr()) {
         // Get thread id that has to be joined
         llvm::Value* threadIdPtr = visit(assignExpr).as<llvm::Value*>();
-        //llvm::Value* threadId = builder->CreateLoad(threadIdPtr->getType()->getPointerElementType(), threadIdPtr);
+        llvm::Value* threadId = builder->CreateLoad(threadIdPtr->getType()->getPointerElementType(), threadIdPtr);
+        threadIdPtr = builder->CreateIntToPtr(threadId, builder->getInt8PtrTy());
 
         // Create call to pthread_join
         llvm::Value* voidPtrPtrNull = llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(*context)->getPointerTo());
-        llvm::Value* castedThreadId = builder->CreatePointerCast(threadIdPtr, builder->getInt8PtrTy());
-        builder->CreateCall(pjFct, { castedThreadId, voidPtrPtrNull });
+        builder->CreateCall(pjFct, { threadIdPtr, voidPtrPtrNull });
 
         joinCount++;
     }

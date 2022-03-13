@@ -42,26 +42,22 @@ f<int> main() {
     int t3;
 
     t1 = thread {
-        delay.delay(100);
         printf("Thread 1: %d, %d\n", tid(), t1);
         //join(t2);
-        delay.delay(300);
         printf("Thread 1 finished\n");
     };
 
     t2 = thread {
-        delay.delay(100);
         printf("Thread 2: %d, %d\n", tid(), t2);
         printf("tid(t1): %d\n", t1);
         printf("tid(t3): %d\n", t3);
-        join(t1);
+        printf("Join result: %d\n", join(t1));
+        printf("Join result: %d\n", join(t3));
         printf("Thread 2 finished\n");
     };
 
     t3 = thread {
-        delay.delay(100);
         printf("Thread 3: %d, %d\n", tid(), t3);
-        delay.delay(200);
         printf("Thread 3 finished\n");
     };
 
