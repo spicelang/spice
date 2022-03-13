@@ -1131,25 +1131,27 @@ antlrcpp::Any GeneratorVisitor::visitTidCall(SpiceParser::TidCallContext* ctx) {
 
 antlrcpp::Any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext* ctx) {
     // Declare if not declared already
-    std::string psFctName = "pthread_join";
-    llvm::Function* psFct = module->getFunction(psFctName);
-    if (!psFct) {
-        llvm::FunctionType* psFctTy = llvm::FunctionType::get(builder->getInt32Ty(), {
+    std::string pjFctName = "pthread_join";
+    llvm::Function* pjFct = module->getFunction(pjFctName);
+    if (!pjFct) {
+        llvm::FunctionType* pjFctTy = llvm::FunctionType::get(builder->getInt32Ty(), {
             builder->getInt8PtrTy(),
             builder->getInt8PtrTy()->getPointerTo()
         }, false);
-        module->getOrInsertFunction(psFctName, psFctTy);
-        psFct = module->getFunction(psFctName);
+        module->getOrInsertFunction(pjFctName, pjFctTy);
+        pjFct = module->getFunction(pjFctName);
     }
 
     unsigned int joinCount = 0;
     for (auto& assignExpr : ctx->assignExpr()) {
         // Get thread id that has to be joined
         llvm::Value* threadIdPtr = visit(assignExpr).as<llvm::Value*>();
-        llvm::Value* threadId = builder->CreateLoad(threadIdPtr->getType()->getPointerElementType(), threadIdPtr);
+        //llvm::Value* threadId = builder->CreateLoad(threadIdPtr->getType()->getPointerElementType(), threadIdPtr);
 
         // Create call to pthread_join
-        // ToDo
+        llvm::Value* voidPtrPtrNull = llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(*context)->getPointerTo());
+        llvm::Value* castedThreadId = builder->CreatePointerCast(threadIdPtr, builder->getInt8PtrTy());
+        builder->CreateCall(pjFct, { castedThreadId, voidPtrPtrNull });
 
         joinCount++;
     }

@@ -103,6 +103,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
             return "Insufficient symbol visibility";
         case TID_INVALID:
             return "Invalid thread id";
+        case JOIN_ARG_MUST_BE_TID:
+            return "Argument of join builtin must be a tid";
         case RESERVED_KEYWORD:
             return "Reserved keyword used as identifier";
         case COMING_SOON_SA:
