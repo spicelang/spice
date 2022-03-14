@@ -19,12 +19,12 @@ thread {
 Within the thread block, the builtin function `tid()` can be used to obtain the so-called thread id (in the following called `tid`). This is the id, which Spice assigned to the anonymous thread.
 
 ### Waiting for a thread to terminate
-To wait for another thread to end its execution, the builtin `join(int)` can be used. The program will suspend the execution when calling `join` until the thread with the given tid has terminated.
+To wait for another thread to end its execution, the builtin `join(byte*)` can be used. The program will suspend the execution when calling `join` until the thread with the given tid has terminated.
 
 ```spice
-int t1;
-int t2;
-int t3;
+byte* t1;
+byte* t2;
+byte* t3;
 
 t1 = thread {
     join(t2, t3);
@@ -46,12 +46,12 @@ For the communication between threads, there is a feature, called `Pipes`. A pip
 ```spice
 pipe<int> intPipe;
 
-int t1 = thread {
+byte* t1 = thread {
     int yieldValue = 12345;
     yield(intPipe, yieldValue);
 };
 
-int t2 = thread 2 {
+byte* t2 = thread 2 {
     int receivedValue = pick(intPipe);
     printf("Received value: %d", receivedValue); // Output: 12345
 };

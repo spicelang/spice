@@ -642,7 +642,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     allocaInsertInst = allocaInsertInstBackup;
 
     // Create pthread instance
-    llvm::Type* pthreadTy = builder->getInt32Ty(); // Allow 4294967296 threads at max
+    llvm::Type* pthreadTy = builder->getInt8PtrTy();
     llvm::Value* pthread = builder->CreateAlloca(pthreadTy); // Caution: Do not replace with insertAlloca() due to thread safety!
 
     // Get function pthread_create
@@ -655,18 +655,16 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     }
     assert(ptCreateFct != nullptr);
 
-    // Build args for call to pthread_create
+    // Create call to pthread_create
     llvm::Value* args[4] = {
             pthread,
             voidPtrNull,
             threadFct,
             builder->CreatePointerCast(argStruct, voidPtrTy)
     };
-
-    // Create call to pthread_create
     builder->CreateCall(ptCreateFct, args);
 
-    // Return the thread id ptr
+    // Return the thread id as i8**
     return pthread;
 }
 
@@ -1147,11 +1145,11 @@ antlrcpp::Any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext* ctx)
         // Get thread id that has to be joined
         llvm::Value* threadIdPtr = visit(assignExpr).as<llvm::Value*>();
         llvm::Value* threadId = builder->CreateLoad(threadIdPtr->getType()->getPointerElementType(), threadIdPtr);
-        threadIdPtr = builder->CreateIntToPtr(threadId, builder->getInt8PtrTy());
+        //threadIdPtr = builder->CreateIntToPtr(threadId, builder->getInt8PtrTy());
 
         // Create call to pthread_join
         llvm::Value* voidPtrPtrNull = llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(*context)->getPointerTo());
-        builder->CreateCall(pjFct, { threadIdPtr, voidPtrPtrNull });
+        builder->CreateCall(pjFct, { threadId, voidPtrPtrNull });
 
         joinCount++;
     }

@@ -70,12 +70,12 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Debug -DSPICE_LINK_STATIC=OFF -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
           cmake --build . --target Spice_test
 
-#      - name: Run Test target
-#        env:
-#          SPICE_STD_DIR: /home/runner/work/spice/spice/std
-#        run: |
-#          cd ./compiler/bin/test
-#          ./Spice_test "false"
+      - name: Run Test target
+        env:
+          SPICE_STD_DIR: /home/runner/work/spice/spice/std
+        run: |
+          cd ./compiler/bin/test
+          ./Spice_test "false"
 
       - name: Generate coverage report
         run: |

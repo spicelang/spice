@@ -447,7 +447,7 @@ antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx
     // Return to old scope
     currentScope = currentScope->getParent();
 
-    return SymbolType(TY_INT);
+    return SymbolType(TY_BYTE).toPointer(err, *ctx->start);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -911,9 +911,9 @@ antlrcpp::Any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext* ctx) {
 antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext* ctx) {
     for (auto& assignExpr : ctx->assignExpr()) {
          SymbolType argSymbolType = visit(assignExpr).as<SymbolType>();
-         if (!argSymbolType.is(TY_INT))
+         if (!argSymbolType.isPointerOf(TY_BYTE))
              throw err->get(*assignExpr->start, JOIN_ARG_MUST_BE_TID,
-                            "You have to pass a thread id (integer) to to join builtin");
+                            "You have to pass a thread id (byte*) to to join builtin");
     }
 
     // Return the number of threads that were joined

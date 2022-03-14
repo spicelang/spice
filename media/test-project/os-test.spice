@@ -37,26 +37,26 @@ f<int> main() {
 ext<int> usleep(int);
 
 f<int> main() {
-    int t1;
-    int t2;
-    int t3;
+    byte* t1;
+    byte* t2;
+    byte* t3;
 
     t1 = thread {
-        printf("Thread 1 started: %d\n", t1);
-        usleep(3000 * 1000);
+        printf("Thread 1 started: %p\n", t1);
+        usleep(2000 * 1000);
         printf("Thread 1 finished\n");
     };
 
     t2 = thread {
         printf("Thread 2 started\n");
-        printf("Tid 1: %d\n", t1);
-        join(t1);
+        printf("Tid 1: %p\n", t1);
+        join(t1, t3);
         printf("Thread 2 finished\n");
     };
 
     t3 = thread {
         printf("Thread 3 started\n");
-        usleep(2000 * 1000);
+        usleep(3000 * 1000);
         printf("Thread 3 finished\n");
     };
 

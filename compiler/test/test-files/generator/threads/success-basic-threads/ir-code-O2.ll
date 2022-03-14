@@ -14,11 +14,11 @@ define i32 @main() local_unnamed_addr {
 entry:
   %0 = alloca {}, align 8
   %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @str, i64 0, i64 0))
-  %1 = alloca i32, align 4
+  %1 = alloca i8*, align 8
   %2 = bitcast {}* %0 to i8*
-  %3 = call i32 @pthread_create(i32* nonnull %1, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %2)
-  %4 = alloca i32, align 4
-  %5 = call i32 @pthread_create(i32* nonnull %4, i8* null, i8* (i8*)* nonnull @_thread1, i8* nonnull %2)
+  %3 = call i32 @pthread_create(i8** nonnull %1, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %2)
+  %4 = alloca i8*, align 8
+  %5 = call i32 @pthread_create(i8** nonnull %4, i8* null, i8* (i8*)* nonnull @_thread1, i8* nonnull %2)
   %6 = call i32 @usleep(i32 1000000)
   %puts3 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
   ret i32 0
@@ -31,7 +31,7 @@ entry:
   ret i8* null
 }
 
-declare i32 @pthread_create(i32*, i8*, i8* (i8*)*, i8*) local_unnamed_addr
+declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*) local_unnamed_addr
 
 define internal noalias i8* @_thread1(i8* nocapture readnone %0) {
 entry:

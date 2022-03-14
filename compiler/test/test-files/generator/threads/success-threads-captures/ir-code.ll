@@ -44,9 +44,9 @@ for:                                              ; preds = %for.cond
   %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %15)
   %17 = getelementptr inbounds { i32* }, { i32* }* %3, i32 0, i32 0
   store i32* %i, i32** %17, align 8
-  %18 = alloca i32, align 4
+  %18 = alloca i8*, align 8
   %19 = bitcast { i32* }* %3 to i8*
-  %20 = call i32 @pthread_create(i32* %18, i8* null, i8* (i8*)* @_thread0, i8* %19)
+  %20 = call i32 @pthread_create(i8** %18, i8* null, i8* (i8*)* @_thread0, i8* %19)
   br label %for.post
 
 for.post:                                         ; preds = %for
@@ -97,4 +97,4 @@ entry:
   ret i8* null
 }
 
-declare i32 @pthread_create(i32*, i8*, i8* (i8*)*, i8*)
+declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*)

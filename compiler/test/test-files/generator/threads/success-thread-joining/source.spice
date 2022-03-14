@@ -1,9 +1,9 @@
 ext<int> usleep(int);
 
 f<int> main() {
-    int t1;
-    int t2;
-    int t3;
+    byte* t1;
+    byte* t2;
+    byte* t3;
 
     t1 = thread {
         usleep(300 * 1000);

@@ -1,6 +1,4 @@
-Thread 1
-Thread 2
-Thread 3
 Thread 3 finished
-Thread 2 finished
 Thread 1 finished
+Thread 2 finished
+Program finished
