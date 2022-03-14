@@ -1,1 +1,1 @@
-Parser error at line 2:11 extraneous input '"non-integer"' expecting '{'
+Parser error at line 2:11 no viable alternative at input 'thread"non-integer"'
