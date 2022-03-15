@@ -46,20 +46,7 @@
           "captures": [],
           "children": [
             {
-              "captures": [
-                {
-                  "isGlobal": false,
-                  "name": "i",
-                  "orderIndex": 0,
-                  "specifiers": {
-                    "const": false,
-                    "public": false,
-                    "signed": true
-                  },
-                  "state": "initialized",
-                  "type": "int"
-                }
-              ],
+              "captures": [],
               "children": [],
               "name": "thread:10:21",
               "symbols": [
@@ -131,7 +118,7 @@
             "signed": false
           },
           "state": "initialized",
-          "type": "byte*[10]"
+          "type": "byte*[8]"
         }
       ]
     }

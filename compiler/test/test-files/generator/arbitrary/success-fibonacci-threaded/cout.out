@@ -1,10 +1,10 @@
-Thread 10 returned with result: 1836311903
-Thread 10 returned with result: 1836311903
-Thread 10 returned with result: 1836311903
-Thread 10 returned with result: 1836311903
-Thread 10 returned with result: 1836311903
-Thread 10 returned with result: 1836311903
-Thread 10 returned with result: 1836311903
-Thread 10 returned with result: 1836311903
-Thread 10 returned with result: 1836311903
-Thread 10 returned with result: 1836311903
+Started all threads. Waiting for results ...
+Thread returned with result: 1836311903
+Thread returned with result: 1836311903
+Thread returned with result: 1836311903
+Thread returned with result: 1836311903
+Thread returned with result: 1836311903
+Thread returned with result: 1836311903
+Thread returned with result: 1836311903
+Thread returned with result: 1836311903
+Program finished
