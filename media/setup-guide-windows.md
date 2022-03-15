@@ -1,4 +1,4 @@
-# Windows Setup Guide
+# Setup Guide for Windows
 
 - Download and install MinGW64 from [here](https://winlibs.com/)
 - Build LLVM with the included GCC version

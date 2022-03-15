@@ -19,7 +19,7 @@ thread {
 Within the thread block, the builtin function `tid()` can be used to obtain the so-called thread id (in the following called `tid`). This is the id, which Spice assigned to the anonymous thread.
 
 ### Waiting for a thread to terminate
-To wait for another thread to end its execution, the builtin `join(byte*)` can be used. The program will suspend the execution when calling `join` until the thread with the given tid has terminated.
+To wait for another thread to end its execution, the builtin `join(byte*...)` can be used. The program will suspend the execution when calling `join` until the thread with the given tid has terminated.
 
 ```spice
 byte* t1;
