@@ -909,11 +909,12 @@ antlrcpp::Any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext* ctx) {
 }
 
 antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext* ctx) {
+    SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(err, *ctx->start);
     for (auto& assignExpr : ctx->assignExpr()) {
          SymbolType argSymbolType = visit(assignExpr).as<SymbolType>();
-         if (!argSymbolType.isPointerOf(TY_BYTE))
+         if (argSymbolType == bytePtr && argSymbolType.isArrayOf(bytePtr))
              throw err->get(*assignExpr->start, JOIN_ARG_MUST_BE_TID,
-                            "You have to pass a thread id (byte*) to to join builtin");
+                            "You have to pass a thread id (byte*) or a array of thread ids (byte*[]) to to join builtin");
     }
 
     // Return the number of threads that were joined

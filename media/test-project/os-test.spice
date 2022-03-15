@@ -41,16 +41,17 @@ f<int> fib(int n) {
 }
 
 f<int> main() {
-    int threadCount = 16;
-    byte*[16] threads = {};
+    int threadCount = 8;
+    byte*[8] threads = {};
     for int i = 0; i < threadCount; i++ {
         threads[i] = thread {
             int result = fib(46);
             printf("Thread %d returned with result: %d\n", tid(), result);
         };
     }
+    printf("Started all threads. Waiting for results ...\n");
 
-    delay.delay(10000);
+    join(threads);
 
-    //join(threads);
+    printf("Program finished");
 }
