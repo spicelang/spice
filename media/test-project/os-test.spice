@@ -33,33 +33,24 @@ f<int> main() {
     //s.close();
 }*/
 
+import "std/time/delay" as delay;
 
-ext<int> usleep(int);
+f<int> fib(int n) {
+    if n <= 2 { return 1; }
+    return fib(n - 1) + fib(n - 2);
+}
 
 f<int> main() {
-    byte* t1;
-    byte* t2;
-    byte* t3;
+    int threadCount = 16;
+    byte*[16] threads = {};
+    for int i = 0; i < threadCount; i++ {
+        threads[i] = thread {
+            int result = fib(46);
+            printf("Thread %d returned with result: %d\n", tid(), result);
+        };
+    }
 
-    t1 = thread {
-        printf("Thread 1 started: %p\n", t1);
-        usleep(2000 * 1000);
-        printf("Thread 1 finished\n");
-    };
+    delay.delay(10000);
 
-    t2 = thread {
-        printf("Thread 2 started\n");
-        printf("Tid 1: %p\n", t1);
-        join(t1, t3);
-        printf("Thread 2 finished\n");
-    };
-
-    t3 = thread {
-        printf("Thread 3 started\n");
-        usleep(3000 * 1000);
-        printf("Thread 3 finished\n");
-    };
-
-    join(t1, t2, t3);
-    printf("Program finished\n");
+    //join(threads);
 }
