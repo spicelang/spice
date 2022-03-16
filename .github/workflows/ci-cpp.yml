@@ -28,11 +28,6 @@ jobs:
       - name: Setup Ninja
         run: sudo apt-get install ninja-build
 
-      - name: Test
-        run: |
-          gcc -pthread ./media/thread-test.c a
-          ./a
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
