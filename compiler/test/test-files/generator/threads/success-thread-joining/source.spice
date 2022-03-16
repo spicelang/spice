@@ -1,0 +1,25 @@
+ext<int> usleep(int);
+
+f<int> main() {
+    byte* t1;
+    byte* t2;
+    byte* t3;
+
+    t1 = thread {
+        usleep(300 * 1000);
+        printf("Thread 1 finished\n");
+    };
+
+    t2 = thread {
+        join(t1, t3);
+        printf("Thread 2 finished\n");
+    };
+
+    t3 = thread {
+        usleep(200 * 1000);
+        printf("Thread 3 finished\n");
+    };
+
+    join(t1, t2, t3);
+    printf("Program finished\n");
+}

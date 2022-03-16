@@ -21,12 +21,12 @@ entry:
   %5 = alloca i32, align 4
   store i32 0, i32* %result, align 4
   %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @0, i32 0, i32 0))
-  %7 = alloca i16, align 2
+  %7 = alloca i8*, align 8
   %8 = bitcast {}* %0 to i8*
-  %9 = call i32 @pthread_create(i16* %7, i8* null, i8* (i8*)* @_thread0, i8* %8)
-  %10 = alloca i16, align 2
+  %9 = call i32 @pthread_create(i8** %7, i8* null, i8* (i8*)* @_thread0, i8* %8)
+  %10 = alloca i8*, align 8
   %11 = bitcast {}* %1 to i8*
-  %12 = call i32 @pthread_create(i16* %10, i8* null, i8* (i8*)* @_thread1, i8* %11)
+  %12 = call i32 @pthread_create(i8** %10, i8* null, i8* (i8*)* @_thread1, i8* %11)
   store i32 1000, i32* %2, align 4
   %13 = load i32, i32* %2, align 4
   store i32 1000, i32* %3, align 4
@@ -63,7 +63,7 @@ entry:
   ret i8* null
 }
 
-declare i32 @pthread_create(i16*, i8*, i8* (i8*)*, i8*)
+declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*)
 
 define internal i8* @_thread1(i8* %0) {
 entry:

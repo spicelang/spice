@@ -55,6 +55,10 @@ void executeTest(const StdTestCase& testCase) {
     // Check if disabled
     std::string disabledFile = testCase.testPath + "/disabled";
     if (TestUtil::fileExists(disabledFile)) GTEST_SKIP();
+#ifdef SPICE_IS_GH_ACTIONS
+    std::string disabledGHFile = testCase.testPath + "/disabled-gh-actions";
+    if (TestUtil::fileExists(disabledGHFile)) GTEST_SKIP();
+#endif
 
     // Read source file
     std::string sourceFile = testCase.testPath + "/source.spice";

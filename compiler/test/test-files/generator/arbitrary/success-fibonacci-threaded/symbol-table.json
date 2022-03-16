@@ -1,0 +1,152 @@
+{
+  "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "if:2:4",
+          "symbols": []
+        }
+      ],
+      "name": "fib(int)",
+      "symbols": [
+        {
+          "isGlobal": false,
+          "name": "n",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "declared",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "result",
+          "orderIndex": 1,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [
+            {
+              "captures": [],
+              "children": [],
+              "name": "thread:10:21",
+              "symbols": [
+                {
+                  "isGlobal": false,
+                  "name": "result",
+                  "orderIndex": 0,
+                  "specifiers": {
+                    "const": false,
+                    "public": false,
+                    "signed": true
+                  },
+                  "state": "initialized",
+                  "type": "int"
+                }
+              ]
+            }
+          ],
+          "name": "for:9:4",
+          "symbols": [
+            {
+              "isGlobal": false,
+              "name": "i",
+              "orderIndex": 0,
+              "specifiers": {
+                "const": false,
+                "public": false,
+                "signed": true
+              },
+              "state": "initialized",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "name": "main()",
+      "symbols": [
+        {
+          "isGlobal": false,
+          "name": "result",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "threadCount",
+          "orderIndex": 1,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "name": "threads",
+          "orderIndex": 2,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": false
+          },
+          "state": "initialized",
+          "type": "byte*[8]"
+        }
+      ]
+    }
+  ],
+  "symbols": [
+    {
+      "isGlobal": true,
+      "name": "fib(int)",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    },
+    {
+      "isGlobal": true,
+      "name": "main()",
+      "orderIndex": 1,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    }
+  ]
+}

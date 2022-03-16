@@ -642,7 +642,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     allocaInsertInst = allocaInsertInstBackup;
 
     // Create pthread instance
-    llvm::Type* pthreadTy = builder->getInt16Ty(); // Allow 65536 threads at max
+    llvm::Type* pthreadTy = builder->getInt8PtrTy();
     llvm::Value* pthread = builder->CreateAlloca(pthreadTy); // Caution: Do not replace with insertAlloca() due to thread safety!
 
     // Get function pthread_create
@@ -655,18 +655,17 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ct
     }
     assert(ptCreateFct != nullptr);
 
-    // Build args for call to pthread_create
+    // Create call to pthread_create
     llvm::Value* args[4] = {
             pthread,
             voidPtrNull,
             threadFct,
             builder->CreatePointerCast(argStruct, voidPtrTy)
     };
-
-    // Create call to pthread_create
     builder->CreateCall(ptCreateFct, args);
 
-    return nullptr;
+    // Return the thread id as i8**
+    return pthread;
 }
 
 antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -783,8 +782,8 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     llvm::Value* maxIndex = builder->getInt32(value->getType()->getArrayNumElements() - 1);
     // Load the first item into item variable
     llvm::Value* index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
-    llvm::Value* itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr,
-                                                      { builder->getInt32(0), index });
+    llvm::Value* indices[2] = { builder->getInt32(0), index };
+    llvm::Value* itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, indices);
     llvm::Value* newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
@@ -812,8 +811,8 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
     index = builder->CreateAdd(index, builder->getInt32(1), "idx.inc");
     builder->CreateStore(index, indexVariablePtr);
     // Load new item into item variable
-    itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr,
-                                         { builder->getInt32(0), index });
+    indices[1] = index;
+    itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, indices);
     newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
     builder->CreateStore(newItemValue, itemVariablePtr);
     createBr(bLoop);
@@ -1037,6 +1036,7 @@ antlrcpp::Any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext
     if (ctx->printfCall()) return visit(ctx->printfCall());
     if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
     if (ctx->tidCall()) return visit(ctx->tidCall());
+    if (ctx->joinCall()) return visit(ctx->joinCall());
     throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
@@ -1062,7 +1062,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext* 
 
         llvm::Value* argVal;
         if (argValPtr->getType()->getPointerElementType()->isArrayTy()) { // Convert array type to pointer type
-            std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
+            llvm::Value* indices[2] = { builder->getInt32(0), builder->getInt32(0) };
             llvm::Type* targetType = argValPtr->getType()->getPointerElementType();
             argVal = builder->CreateInBoundsGEP(targetType, argValPtr, indices);
         } else {
@@ -1110,20 +1110,71 @@ antlrcpp::Any GeneratorVisitor::visitTidCall(SpiceParser::TidCallContext* ctx) {
     llvm::Function* psFct = module->getFunction(psFctName);
     if (!psFct) {
         llvm::FunctionType* psFctTy = llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*context),
-                                                              {}, true);
+                                                              {}, false);
         module->getOrInsertFunction(psFctName, psFctTy);
         psFct = module->getFunction(psFctName);
     }
 
     // Create call to function
     llvm::Value* result = builder->CreateCall(psFct);
-    result = builder->CreatePtrToInt(result, builder->getInt64Ty());
+    result = builder->CreatePtrToInt(result, builder->getInt32Ty());
 
     // Store the result
     llvm::Value* resultPtr = insertAlloca(result->getType());
     builder->CreateStore(result, resultPtr);
 
     // Return address to where the tid is saved
+    return resultPtr;
+}
+
+antlrcpp::Any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext* ctx) {
+    // Declare if not declared already
+    std::string pjFctName = "pthread_join";
+    llvm::Function* pjFct = module->getFunction(pjFctName);
+    if (!pjFct) {
+        llvm::FunctionType* pjFctTy = llvm::FunctionType::get(builder->getInt32Ty(), {
+            builder->getInt8PtrTy(),
+            builder->getInt8PtrTy()->getPointerTo()
+        }, false);
+        module->getOrInsertFunction(pjFctName, pjFctTy);
+        pjFct = module->getFunction(pjFctName);
+    }
+
+    unsigned int joinCount = 0;
+    for (auto& assignExpr : ctx->assignExpr()) {
+        // Check if it is an id or an array of ids
+        llvm::Value* threadIdPtr = visit(assignExpr).as<llvm::Value*>();
+        assert(threadIdPtr != nullptr && threadIdPtr->getType()->isPointerTy());
+        llvm::Type* threadIdPtrTy = threadIdPtr->getType()->getPointerElementType();
+        if (threadIdPtr->getType()->getPointerElementType()->isArrayTy()) { // Array of ids
+            for (int i = 0; i < threadIdPtrTy->getArrayNumElements(); i++) {
+                // Get thread id that has to be joined
+                llvm::Value* indices[2] = { builder->getInt32(0), builder->getInt32(i) };
+                llvm::Value* threadIdAddr = builder->CreateGEP(threadIdPtrTy, threadIdPtr, indices);
+                llvm::Value* threadId = builder->CreateLoad(threadIdAddr->getType()->getPointerElementType(), threadIdAddr);
+
+                // Create call to pthread_join
+                llvm::Value* voidPtrPtrNull = llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(*context)->getPointerTo());
+                builder->CreateCall(pjFct, { threadId, voidPtrPtrNull });
+
+                joinCount++;
+            }
+        } else { // Single id
+            // Get thread id that has to be joined
+            llvm::Value* threadId = builder->CreateLoad(threadIdPtrTy, threadIdPtr);
+
+            // Create call to pthread_join
+            llvm::Value* voidPtrPtrNull = llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(*context)->getPointerTo());
+            builder->CreateCall(pjFct, { threadId, voidPtrPtrNull });
+
+            joinCount++;
+        }
+    }
+
+    // Return the number of threads that were joined
+    llvm::Value* result = builder->getInt32(joinCount);
+    llvm::Value* resultPtr = insertAlloca(result->getType());
+    builder->CreateStore(result, resultPtr);
     return resultPtr;
 }
 
@@ -1193,11 +1244,18 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
             builder->CreateStore(rhs, lhsPtr);
         }
         return lhsPtr;
+    } else if (ctx->ternaryExpr()) {
+        antlrcpp::Any rhs = visit(ctx->ternaryExpr());
+        lhsType = nullptr; // Reset lhs type
+        return rhs;
+    } else if (ctx->threadDef()) {
+        antlrcpp::Any rhs = visit(ctx->threadDef());
+        lhsType = nullptr; // Reset lhs type
+        return rhs;
     }
 
-    antlrcpp::Any rhs = visit(ctx->ternaryExpr());
-    lhsType = nullptr; // Reset lhs type
-    return rhs;
+    // This is a fallthrough case -> throw an error
+    throw std::runtime_error("Internal compiler error: Assign stmt fall-through"); // GCOV_EXCL_LINE
 }
 
 antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {
@@ -1618,13 +1676,11 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 
                 // Get array item
                 if (lhsPtr->getType()->getPointerElementType()->isArrayTy()) {
-                    std::vector<llvm::Value*> indices = { builder->getInt32(0), indexValue };
+                    llvm::Value* indices[2] = { builder->getInt32(0), indexValue };
                     lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, indices);
                 } else {
                     if (lhs == nullptr) lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-
-                    std::vector<llvm::Value*> indices = { indexValue };
-                    lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indices);
+                    lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indexValue);
                 }
 
                 currentVarName = arrayName; // Restore current var name
@@ -2009,7 +2065,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext* ctx) {
                     llvm::Value* itemValuePtr = itemValuePointers[valueIndex];
                     llvm::Value* itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
                     // Calculate item address
-                    std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(valueIndex) };
+                    llvm::Value* indices[2] = { builder->getInt32(0), builder->getInt32(valueIndex) };
                     llvm::Value* itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
                     // Store value to item address
                     builder->CreateStore(itemValue, itemAddress);
@@ -2338,7 +2394,7 @@ llvm::Value* GeneratorVisitor::doImplicitCast(llvm::Value* srcValue, llvm::Type*
     }
     // GEP or bit-cast
     if (dstType->isPointerTy() && srcValue->getType()->getPointerElementType()->isArrayTy()) {
-        std::vector<llvm::Value*> indices = { builder->getInt32(0), builder->getInt32(0) };
+        llvm::Value* indices[2] = { builder->getInt32(0), builder->getInt32(0) };
         llvm::Type* actualArgType = srcValue->getType()->getPointerElementType();
         srcValue = builder->CreateInBoundsGEP(actualArgType, srcValue, indices);
     } else {

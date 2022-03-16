@@ -33,21 +33,21 @@ f<int> main() {
     //s.close();
 }*/
 
-
-
-import "std/time/delay" as delay;
-import "std/os/system" as sys;
+f<int> fib(int n) {
+    if n <= 2 { return 1; }
+    return fib(n - 1) + fib(n - 2);
+}
 
 f<int> main() {
-    printf("Starting threads ...\n");
-    int coreCount = sys.getCPUCoreCount() / 2;
-    for int i = 1; i <= coreCount; i++ {
-        printf("Starting thread %d ...\n", i);
-        thread {
-            printf("Tid: %d, i: %d\n", tid(), i);
-        }
-        delay.delay(10);
+    int threadCount = 8;
+    byte*[8] threads = {};
+    for int i = 0; i < threadCount; i++ {
+        threads[i] = thread {
+            int result = fib(46);
+            printf("Thread %d returned with result: %d\n", tid(), result);
+        };
     }
-    delay.delay(1000);
-    printf("Hello from original\n");
+    printf("Started all threads. Waiting for results ...\n");
+    join(threads);
+    printf("Program finished\n");
 }

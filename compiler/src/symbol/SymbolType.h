@@ -47,6 +47,7 @@ public:
     bool isPointerOf(SymbolSuperType superType);
     bool isArray();
     bool isArrayOf(SymbolSuperType superType);
+    bool isArrayOf(const SymbolType& symbolType);
     bool is(SymbolSuperType superType);
     bool is(SymbolSuperType superType, const std::string& subType);
     bool isPrimitive();

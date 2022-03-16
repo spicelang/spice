@@ -46,12 +46,12 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name) {
         entry = parent->lookup(name);
         // Symbol was also not found in all the parent scopes, return nullptr
         if (!entry) return nullptr;
-    }
 
-    // Check if this scope requires capturing and capture the variable if appropriate
-    if (requiresCapturing && captures.find(name) == captures.end() &&
-        !entry->getType().isOneOf({ TY_IMPORT, TY_FUNCTION, TY_PROCEDURE })) {
-        captures.insert({ name, Capture(entry) });
+        // Check if this scope requires capturing and capture the variable if appropriate
+        if (requiresCapturing && captures.find(name) == captures.end() &&
+            !entry->getType().isOneOf({ TY_IMPORT, TY_FUNCTION, TY_PROCEDURE })) {
+            captures.insert({ name, Capture(entry) });
+        }
     }
 
     return entry;

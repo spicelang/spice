@@ -106,13 +106,24 @@ bool SymbolType::isArray() {
 }
 
 /**
- * Check if the current type is a array of a certain super type
+ * Check if the current type is an array of a certain super type
  *
  * @param elementSuperType Super type to check for
- * @return Array or not
+ * @return Array of super type or not
  */
 bool SymbolType::isArrayOf(SymbolSuperType elementSuperType) {
     if (isArray()) return getContainedTy().is(elementSuperType);
+    return false;
+}
+
+/**
+ * Check if the current type is an array of the given type. Array size is ignored.
+ *
+ * @param otherSymbolType Symbol type
+ * @return Array of contained symbol type or not
+ */
+bool SymbolType::isArrayOf(const SymbolType& otherSymbolType) {
+    if (isArray()) return getContainedTy() == otherSymbolType;
     return false;
 }
 

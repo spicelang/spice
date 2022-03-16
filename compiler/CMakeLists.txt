@@ -5,26 +5,8 @@ project(Spice)
 set(CMAKE_CXX_STANDARD 20)
 set(LLVM_DIR $ENV{LLVM_DIR})
 
-# Get options
-option(SPICE_LINK_STATIC "Link the compiler executable statically" OFF)
-option(SPICE_RUN_COVERAGE "Generate coverage reports for Spice source files" OFF)
-
-# Link statically
-if (SPICE_LINK_STATIC)
-    message(STATUS "Spice: Static linking for Spice is enabled.")
-    set(BUILD_SHARED_LIBS OFF)
-    set(CMAKE_EXE_LINKER_FLAGS "-static")
-else()
-    message(STATUS "Spice: Static linking for Spice is disabled.")
-endif()
-
-# Coverage
-if (SPICE_RUN_COVERAGE)
-    message(STATUS "Spice: Coverage reports enabled.")
-    SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 --coverage -fprofile-arcs -ftest-coverage ${CMAKE_CXX_FLAGS_DEBUG}")
-else()
-    message(STATUS "Spice: Coverage reports disabled.")
-endif()
+# Include cli options parsing
+include(Options.cmake)
 
 # Set release flags
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -O2")

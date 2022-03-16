@@ -447,7 +447,7 @@ antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx
     // Return to old scope
     currentScope = currentScope->getParent();
 
-    return SymbolType(TY_BOOL);
+    return SymbolType(TY_BYTE).toPointer(err, *ctx->start);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext* ctx) {
@@ -817,6 +817,7 @@ antlrcpp::Any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext*
     if (ctx->printfCall()) return visit(ctx->printfCall());
     if (ctx->sizeOfCall()) return visit(ctx->sizeOfCall());
     if (ctx->tidCall()) return visit(ctx->tidCall());
+    if (ctx->joinCall()) return visit(ctx->joinCall());
     throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
@@ -904,7 +905,20 @@ antlrcpp::Any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext* c
 
 antlrcpp::Any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext* ctx) {
     // Nothing to check here. Tid builtin has no arguments
-    return SymbolType(TY_LONG);
+    return SymbolType(TY_INT);
+}
+
+antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext* ctx) {
+    SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(err, *ctx->start);
+    for (auto& assignExpr : ctx->assignExpr()) {
+         SymbolType argSymbolType = visit(assignExpr).as<SymbolType>();
+         if (argSymbolType == bytePtr && argSymbolType.isArrayOf(bytePtr))
+             throw err->get(*assignExpr->start, JOIN_ARG_MUST_BE_TID,
+                            "You have to pass a thread id (byte*) or a array of thread ids (byte*[]) to to join builtin");
+    }
+
+    // Return the number of threads that were joined
+    return SymbolType(TY_INT);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* ctx) {
@@ -970,10 +984,14 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext* c
         }
 
         return rhsTy;
+    } else if (ctx->ternaryExpr()) {
+        return visit(ctx->ternaryExpr());
+    } else if (ctx->threadDef()) {
+        return visit(ctx->threadDef());
     }
 
-    // This is a fallthrough case, just visit the ternary expression
-    return visit(ctx->ternaryExpr());
+    // This is a fallthrough case -> throw an error
+    throw std::runtime_error("Internal compiler error: Assign stmt fall-through"); // GCOV_EXCL_LINE
 }
 
 antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext* ctx) {

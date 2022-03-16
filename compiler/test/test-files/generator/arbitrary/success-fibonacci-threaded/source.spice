@@ -1,0 +1,18 @@
+f<int> fib(int n) {
+    if n <= 2 { return 1; }
+    return fib(n - 1) + fib(n - 2);
+}
+
+f<int> main() {
+    int threadCount = 8;
+    byte*[8] threads = {};
+    for int i = 0; i < threadCount; i++ {
+        threads[i] = thread {
+            int result = fib(46);
+            printf("Thread returned with result: %d\n", result);
+        };
+    }
+    printf("Started all threads. Waiting for results ...\n");
+    join(threads);
+    printf("Program finished");
+}

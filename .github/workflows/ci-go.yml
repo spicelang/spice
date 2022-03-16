@@ -39,16 +39,13 @@ jobs:
       - name: Prepare environment
         run: |
           go version
-          go get -u golang.org/x/lint/golint
           go mod vendor
           
       - name: Run build
         run: go build -x
 
-      - name: Run vet & lint
-        run: |
-          go vet .
-          golint .
+      - name: Run vet
+        run: go vet .
           
       - name: Run tests
         run: go test ./...
