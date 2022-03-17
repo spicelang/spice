@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 
+#include <cli/CliInterface.h>
 #include <util/ThreadFactory.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
@@ -11,38 +12,16 @@
 
 #include <llvm/IR/IRBuilder.h>
 
+#include "../lib/cli11/CLI11.hpp"
+
 /**
- * Entry point to the Spice compiler
- *
- * @param argc Argument count
- * @param argv Argument vector
- * @return Return code
+ * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
+ * function again.
  */
-int main(int argc, char** argv) { // Call ./spicec filePath targetArch targetVendor targetOs outputDir debugOutput optimizerLevel
-    // Parse cli args
-    std::vector<std::string> args;
-    for (size_t i = 1; i < argc; i++)
-        args.emplace_back(argv[i]);
-
-    if (args.size() < 7)
-        throw std::runtime_error("Call: ./spicec filePath targetArch targetVendor targetOs outputDir debugOutput optimizerLevel");
-
-    // Extract args from cli
-    std::string mainSourceFile = args[0];
-    std::string targetArch = args[1];
-    std::string targetVendor = args[2];
-    std::string targetOs = args[3];
-    std::string objectDir = args[4];
-    bool debugOutput = args[5] == "true";
-    int optLevel = std::stoi(args[6]);
-
+void compileProject(CliOptions* options) {
     // Add relative prefix to filename
-    if (mainSourceFile.find("/\\") != std::string::npos) mainSourceFile = "./" + mainSourceFile;
+    if (options->mainSourceFile.find("/\\") != std::string::npos) options->mainSourceFile = "./" + options->mainSourceFile;
 
-    /*
-     * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
-     * function again.
-     */
     try {
         // Prepare global LLVM assets
         std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
@@ -53,21 +32,8 @@ int main(int argc, char** argv) { // Call ./spicec filePath targetArch targetVen
         ThreadFactory threadFactory = ThreadFactory();
 
         // Compile main source file
-        CompilerInstance::CompileSourceFile(
-                context,
-                builder,
-                &moduleRegistry,
-                &threadFactory,
-                mainSourceFile,
-                targetArch,
-                targetVendor,
-                targetOs,
-                objectDir,
-                debugOutput,
-                optLevel,
-                true,
-                false
-        );
+        CompilerInstance::CompileSourceFile(context, builder, &moduleRegistry, &threadFactory, options,
+                                            options->mainSourceFile, true, false);
     } catch (SemanticError& e) {
         std::cout << e.what() << std::endl;
         std::exit(1); // Exit with result code other than 0
@@ -78,5 +44,24 @@ int main(int argc, char** argv) { // Call ./spicec filePath targetArch targetVen
         std::cout << e.what() << std::endl;
         std::exit(1); // Exit with result code other than 0
     }
+}
+
+/**
+ * Entry point to the Spice compiler
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Return code
+ */
+int main(int argc, char** argv) {
+    // Initialize command line parser
+    CliInterface cli{};
+    cli.createInterface();
+
+    // Parser cli arguments
+    CLI11_PARSE(cli.getApp(), argc, argv)
+
+    compileProject(cli.getOptions());
+
     return 0;
 }

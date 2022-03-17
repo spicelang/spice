@@ -15,13 +15,8 @@
  * @param builder LLVM IR builder for generating IR with the LLVM API
  * @param moduleRegistry Module Registry, to manage project-wide module information
  * @param threadFactory Thread Factory, used for generating project-wide thread information
+ * @param options Cli options that were passed to the executable
  * @param sourceFile Full path to a file (absolute or relative)
- * @param targetArch Target architecture: e.g.: x86_64
- * @param targetVendor Target vendor: e.g.: w64
- * @param targetOs Target OS: e.g.: windows
- * @param objectDir Full path to an output file (absolute or relative)
- * @param debugOutput Set to true to show compiler debug output
- * @param optLevel Number in range 1-3 to control optimization level
  * @param requiresMainFct true = main source file, false = not main source file
  * @param stdFile true = std source file, false = not std source file
  *
@@ -32,13 +27,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         const std::shared_ptr<llvm::IRBuilder<>>& builder,
         ModuleRegistry* moduleRegistry,
         ThreadFactory* threadFactory,
+        CliOptions* options,
         const std::string& sourceFile,
-        const std::string& targetArch,
-        const std::string& targetVendor,
-        const std::string& targetOs,
-        const std::string& objectDir,
-        bool debugOutput,
-        int optLevel,
         bool requiresMainFct,
         bool stdFile
 ) {
@@ -70,18 +60,13 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             builder,
             moduleRegistry,
             threadFactory,
+            options,
             sourceFile,
-            targetArch,
-            targetVendor,
-            targetOs,
-            objectDir,
-            debugOutput,
-            optLevel,
             requiresMainFct,
             stdFile
     );
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
-    if (debugOutput) { // GCOV_EXCL_START
+    if (options->printDebugOutput) { // GCOV_EXCL_START
         // Print symbol table
         std::cout << std::endl << "Symbol table of file " << sourceFile << ":" << std::endl << std::endl;
         std::cout << symbolTable->toJSON().dump(2) << std::endl;
@@ -96,26 +81,21 @@ SymbolTable* CompilerInstance::CompileSourceFile(
             builder,
             threadFactory,
             symbolTable,
+            options,
             fileName,
-            targetArch,
-            targetVendor,
-            targetOs,
-            objectDir + "/" + fileName + ".o",
-            debugOutput,
-            optLevel,
             requiresMainFct
     );
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
-    if (debugOutput) { // GCOV_EXCL_START
+    if (options->printDebugOutput) { // GCOV_EXCL_START
         // Dump unoptimized IR code
         std::cout  << std::endl << "IR code:" << std::endl;
         generator.dumpIR();
     } // GCOV_EXCL_STOP
 
-    if (optLevel >= 1 && optLevel <= 3) {
+    if (options->optLevel >= 1 && options->optLevel <= 3) {
         generator.optimize(); // Optimize IR code
-        if (debugOutput) { // GCOV_EXCL_START
+        if (options->printDebugOutput) { // GCOV_EXCL_START
             // Dump optimized IR code
             std::cout  << std::endl << "Optimized IR code:" << std::endl;
             generator.dumpIR();

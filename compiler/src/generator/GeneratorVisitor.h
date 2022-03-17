@@ -5,6 +5,7 @@
 #include <regex>
 
 #include <generator/OpRuleConversionsManager.h>
+#include <cli/CliInterface.h>
 #include <symbol/SymbolTable.h>
 #include <symbol/ScopePath.h>
 #include <util/ThreadFactory.h>
@@ -19,9 +20,8 @@ class GeneratorVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
     explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context, const std::shared_ptr<llvm::IRBuilder<>>& builder,
-                              ThreadFactory* threadFactory, SymbolTable* symbolTable, const std::string& sourceFile,
-                              const std::string& targetArch, const std::string& targetVendor, const std::string& targetOs,
-                              const std::string& outputPath, bool debugOutput, int optLevel, bool requiresMainFct);
+                              ThreadFactory* threadFactory, SymbolTable* symbolTable, CliOptions* options,
+                              const std::string& sourceFile, bool requiresMainFct);
     ~GeneratorVisitor() override;
 
     // Public methods
@@ -81,9 +81,7 @@ private:
     std::string sourceFile;
     llvm::Triple targetTriple;
     llvm::TargetMachine* targetMachine{};
-    std::string outputPath;
-    bool debugOutput;
-    int optLevel;
+    CliOptions* cliOptions;
     bool requiresMainFct = true;
     std::shared_ptr<llvm::LLVMContext> context;
     std::shared_ptr<llvm::IRBuilder<>> builder;

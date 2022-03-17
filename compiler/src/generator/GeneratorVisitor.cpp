@@ -27,26 +27,23 @@
 
 GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
                                    const std::shared_ptr<llvm::IRBuilder<>>& builder, ThreadFactory* threadFactory,
-                                   SymbolTable* symbolTable, const std::string& sourceFile, const std::string& targetArch,
-                                   const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
-                                   bool debugOutput, int optLevel, bool requiresMainFct) {
+                                   SymbolTable* symbolTable, CliOptions* options,
+                                   const std::string& sourceFile, bool requiresMainFct) {
     // Save parameters
     this->context = context;
     this->builder = builder;
     this->threadFactory = threadFactory;
     this->currentScope = symbolTable;
     this->sourceFile = sourceFile;
-    this->outputPath = outputPath;
-    this->debugOutput = debugOutput;
-    this->optLevel = optLevel;
     this->requiresMainFct = requiresMainFct;
 
     // Get target triple
-    if (targetArch.empty()) {
+    if (options->targetTriple.empty()) {
         targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
     } else {
-        targetTriple = llvm::Triple(targetArch, targetVendor, targetOs);
+        targetTriple = llvm::Triple(options->targetArch, options->targetVendor, options->targetOs);
     }
+    cliOptions = options;
 
     // Create error factory for this specific file
     this->err = new ErrorFactory(sourceFile);
@@ -85,7 +82,8 @@ void GeneratorVisitor::init() {
 }
 
 void GeneratorVisitor::optimize() {
-    if (debugOutput) std::cout << "\nOptimizing on level " + std::to_string(optLevel) << " ..." << std::endl;
+    if (cliOptions->printDebugOutput)
+        std::cout << "\nOptimizing on level " + std::to_string(cliOptions->optLevel) << " ..." << std::endl;
 
     llvm::LoopAnalysisManager loopAnalysisMgr;
     llvm::FunctionAnalysisManager functionAnalysisMgr;
@@ -111,13 +109,14 @@ void GeneratorVisitor::optimize() {
 }
 
 void GeneratorVisitor::emit() {
-    if (debugOutput)
-        std::cout << "\nEmitting executable for triplet '" << targetTriple.getTriple() << "' to path: " << outputPath << std::endl;
+    if (cliOptions->printDebugOutput)
+        std::cout << "\nEmitting executable for triplet '" << targetTriple.getTriple()
+            << "' to path: " << cliOptions->outputDir << std::endl;
 
     // Open file output stream
     std::error_code errorCode;
-    llvm::raw_fd_ostream dest(outputPath, errorCode, llvm::sys::fs::OF_None);
-    if (errorCode) throw err->get(CANT_OPEN_OUTPUT_FILE, "File '" + outputPath + "' could not be opened");
+    llvm::raw_fd_ostream dest(cliOptions->outputDir, errorCode, llvm::sys::fs::OF_None);
+    if (errorCode) throw err->get(CANT_OPEN_OUTPUT_FILE, "File '" + cliOptions->outputDir + "' could not be opened");
 
     llvm::legacy::PassManager passManager;
     if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CGFT_ObjectFile))
@@ -2412,10 +2411,12 @@ llvm::Value* GeneratorVisitor::doImplicitCast(llvm::Value* srcValue, llvm::Type*
 }
 
 llvm::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {
-    switch (optLevel) { // Get LLVM opt level from Spice opt level
+    switch (cliOptions->optLevel) { // Get LLVM opt level from Spice opt level
         case 1: return llvm::OptimizationLevel::O1;
         case 2: return llvm::OptimizationLevel::O2;
         case 3: return llvm::OptimizationLevel::O3;
-        default: case 0: return llvm::OptimizationLevel::O0;
+        case 4: return llvm::OptimizationLevel::Os;
+        case 5: return llvm::OptimizationLevel::Oz;
+        default: return llvm::OptimizationLevel::O0;
     }
 }

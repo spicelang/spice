@@ -6,6 +6,8 @@ set(SOURCES
         main.cpp
         CompilerInstance.cpp
         CompilerInstance.h
+        cli/CliInterface.cpp
+        cli/CliInterface.h
         analyzer/AnalyzerVisitor.cpp
         analyzer/AnalyzerVisitor.h
         analyzer/OpRuleManager.cpp

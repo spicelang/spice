@@ -4,6 +4,7 @@
 
 #include <SpiceBaseVisitor.h>
 
+#include <cli/CliInterface.h>
 #include <symbol/SymbolTable.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
@@ -27,9 +28,8 @@ class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
     // Constructors
     explicit AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context, const std::shared_ptr<llvm::IRBuilder<>>& builder,
-                             ModuleRegistry* moduleRegistry, ThreadFactory* threadFactory, const std::string& sourceFile,
-                             const std::string& targetArch, const std::string& targetVendor, const std::string& targetOs,
-                             const std::string& outputPath, bool debugOutput, int optLevel, bool requiresMainFct, bool stdFile);
+                             ModuleRegistry* moduleRegistry, ThreadFactory* threadFactory, CliOptions* options,
+                             const std::string& sourceFile, bool requiresMainFct, bool stdFile);
     ~AnalyzerVisitor() override;
 
     // Public methods
@@ -83,16 +83,11 @@ private:
     std::shared_ptr<llvm::LLVMContext> context;
     std::shared_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<OpRuleManager> opRuleManager;
-    std::string mainSourceFile;
-    std::string targetArch;
-    std::string targetVendor;
-    std::string targetOs;
-    std::string outputPath;
     ErrorFactory* err;
     ModuleRegistry* moduleRegistry;
     ThreadFactory* threadFactory;
-    bool debugOutput;
-    int optLevel;
+    CliOptions* cliOptions;
+    std::string sourceFile;
     bool requiresMainFct = true;
     bool hasMainFunction = false;
     bool isStdFile = false;

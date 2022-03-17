@@ -12,32 +12,25 @@
 
 AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
                                  const std::shared_ptr<llvm::IRBuilder<>>& builder, ModuleRegistry* moduleRegistry,
-                                 ThreadFactory* threadFactory, const std::string& sourceFile, const std::string& targetArch,
-                                 const std::string& targetVendor, const std::string& targetOs, const std::string& outputPath,
-                                 bool debugOutput, int optLevel, bool requiresMainFct, bool isStdFile) {
+                                 ThreadFactory* threadFactory, CliOptions* options, const std::string& sourceFile,
+                                 bool requiresMainFct, bool isStdFile) {
     // Save parameters
     this->context = context,
     this->builder = builder;
     this->moduleRegistry = moduleRegistry;
     this->threadFactory = threadFactory;
-    this->mainSourceFile = sourceFile;
-    this->outputPath = outputPath;
-    this->debugOutput = debugOutput;
-    this->optLevel = optLevel;
+    this->sourceFile = sourceFile;
     this->requiresMainFct = requiresMainFct;
     this->isStdFile = isStdFile;
 
     // Use default target triple if empty
-    if (targetArch.empty()) {
+    if (options->targetTriple.empty()) {
         llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-        this->targetArch = targetTriple.getArchName();
-        this->targetVendor = targetTriple.getVendorName();
-        this->targetOs = targetTriple.getOSName();
-    } else {
-        this->targetArch = targetArch;
-        this->targetVendor = targetVendor;
-        this->targetOs = targetOs;
+        options->targetArch = targetTriple.getArchName();
+        options->targetVendor = targetTriple.getVendorName();
+        options->targetOs = targetTriple.getOSName();
     }
+    this->cliOptions = options;
 
     // Create error factory for this specific file
     this->err = new ErrorFactory(sourceFile);
@@ -694,26 +687,26 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
         // Check if source file exists
         if (FileUtil::fileExists(stdPath + sourceFileIden + ".spice")) {
             filePath = stdPath + sourceFileIden + ".spice";
-        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + targetOs + ".spice")) {
-            filePath = stdPath + sourceFileIden + "_" + targetOs + ".spice";
-        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice")) {
-            filePath = stdPath + sourceFileIden + "_" + targetOs + "_" + targetArch + ".spice";
+        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + cliOptions->targetOs + ".spice")) {
+            filePath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + ".spice";
+        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice")) {
+            filePath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
         } else {
             throw err->get(*ctx->STRING_LITERAL()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
                                 "The source file '" + importPath + ".spice' was not found in the standard library");
         }
     } else { // Include own source file
         // Check in module registry if the file can be imported
-        std::string sourceFileDir = FileUtil::getFileDir(mainSourceFile);
+        std::string sourceFileDir = FileUtil::getFileDir(sourceFile);
         moduleRegistry->addModule(err, *ctx->STRING_LITERAL()->getSymbol(),
                                   sourceFileDir + "/" + importPath);
         // Import file
         if (FileUtil::fileExists(sourceFileDir + "/" + importPath + ".spice")) {
             filePath = sourceFileDir + "/" + importPath + ".spice";
-        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + targetOs + ".spice")) {
-            filePath = sourceFileDir + "/" + importPath + "_" + targetOs + ".spice";
-        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice")) {
-            filePath = sourceFileDir + "/" + importPath + "_" + targetOs + "_" + targetArch + ".spice";
+        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + ".spice")) {
+            filePath = sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + ".spice";
+        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice")) {
+            filePath = sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
         } else {
             throw err->get(*ctx->STRING_LITERAL()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
                                 "The source file '" + importPath + ".spice' does not exist");
@@ -722,8 +715,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
 
     // Kick off the compilation of the imported source file
     SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(context, builder, moduleRegistry, threadFactory,
-                                                                   filePath, targetArch, targetVendor, targetOs,
-                                                                   outputPath, debugOutput, optLevel, false,
+                                                                   cliOptions,filePath, false,
                                                                    foundInStd);
 
     // Create symbol of type TYPE_IMPORT in the current scope

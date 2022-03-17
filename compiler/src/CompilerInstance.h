@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include <cli/CliInterface.h>
 #include <symbol/SymbolTable.h>
 #include <analyzer/AnalyzerVisitor.h>
 #include <generator/GeneratorVisitor.h>
@@ -17,8 +18,6 @@ class CompilerInstance {
 public:
     static SymbolTable* CompileSourceFile(const std::shared_ptr<llvm::LLVMContext>& context,
                                           const std::shared_ptr<llvm::IRBuilder<>>& builder, ModuleRegistry* moduleRegistry,
-                                          ThreadFactory* threadFactory, const std::string& sourceFile,
-                                          const std::string& targetArch, const std::string& targetVendor,
-                                          const std::string& targetOs, const std::string& objectDir, bool debugOutput,
-                                          int optLevel, bool requiresMainFct, bool stdFile);
+                                          ThreadFactory* threadFactory, CliOptions* options, const std::string& sourceFile,
+                                          bool requiresMainFct, bool stdFile);
 };
