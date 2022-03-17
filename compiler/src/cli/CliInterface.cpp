@@ -3,6 +3,12 @@
 #include "CliInterface.h"
 
 void CliInterface::createInterface() {
+    // Add global options
+    app.add_flag_callback("--version,-v", [&]() {
+
+    }, "Prints the Spice version you are using");
+
+    // Create sub-commands
     addBuildSubcommand();
     addRunSubcommand();
     addInstallSubcommand();

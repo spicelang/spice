@@ -21,7 +21,7 @@ public:
     // Constructors
     explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context, const std::shared_ptr<llvm::IRBuilder<>>& builder,
                               ThreadFactory* threadFactory, SymbolTable* symbolTable, CliOptions* options,
-                              const std::string& sourceFile, bool requiresMainFct);
+                              const std::string& sourceFile, const std::string& objectFile, bool requiresMainFct);
     ~GeneratorVisitor() override;
 
     // Public methods
@@ -79,6 +79,7 @@ private:
     // Members
     std::unique_ptr<OpRuleConversionsManager> conversionsManager;
     std::string sourceFile;
+    std::string objectFile;
     llvm::Triple targetTriple;
     llvm::TargetMachine* targetMachine{};
     CliOptions* cliOptions;

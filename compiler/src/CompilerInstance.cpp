@@ -55,16 +55,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
 
     // Execute syntactical analysis
     SymbolTable* symbolTable;
-    AnalyzerVisitor analyzer = AnalyzerVisitor(
-            context,
-            builder,
-            moduleRegistry,
-            threadFactory,
-            options,
-            sourceFile,
-            requiresMainFct,
-            stdFile
-    );
+    AnalyzerVisitor analyzer = AnalyzerVisitor(context, builder, moduleRegistry, threadFactory, options,
+            sourceFile, requiresMainFct, stdFile);
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
     if (options->printDebugOutput) { // GCOV_EXCL_START
         // Print symbol table
@@ -76,15 +68,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
     std::string fileName = FileUtil::getFileName(sourceFile);
 
     // Execute generator
-    GeneratorVisitor generator = GeneratorVisitor(
-            context,
-            builder,
-            threadFactory,
-            symbolTable,
-            options,
-            fileName,
-            requiresMainFct
-    );
+    GeneratorVisitor generator = GeneratorVisitor(context, builder, threadFactory, symbolTable, options, fileName,
+                                                  options->outputDir + "/" + fileName + ".o", requiresMainFct);
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
     if (options->printDebugOutput) { // GCOV_EXCL_START

@@ -88,22 +88,21 @@ void executeTest(const AnalyzerTestCase& testCase) {
         ModuleRegistry moduleRegistry = ModuleRegistry();
         ThreadFactory threadFactory = ThreadFactory();
 
-        // Execute semantic analysis
-        AnalyzerVisitor analyzer = AnalyzerVisitor(
-                context,
-                builder,
-                &moduleRegistry,
-                &threadFactory,
+        // Create instance of cli options
+        CliOptions options = {
                 sourceFile,
+                "",
                 "",
                 "",
                 "",
                 ".",
                 false,
-                0,
-                true,
-                false
-        );
+                0
+        };
+
+        // Execute semantic analysis
+        AnalyzerVisitor analyzer = AnalyzerVisitor(context, builder, &moduleRegistry, &threadFactory,
+                                                   &options, sourceFile, true, false);
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected

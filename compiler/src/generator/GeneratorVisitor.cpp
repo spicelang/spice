@@ -28,13 +28,14 @@
 GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
                                    const std::shared_ptr<llvm::IRBuilder<>>& builder, ThreadFactory* threadFactory,
                                    SymbolTable* symbolTable, CliOptions* options,
-                                   const std::string& sourceFile, bool requiresMainFct) {
+                                   const std::string& sourceFile, const std::string& objectFile, bool requiresMainFct) {
     // Save parameters
     this->context = context;
     this->builder = builder;
     this->threadFactory = threadFactory;
     this->currentScope = symbolTable;
     this->sourceFile = sourceFile;
+    this->objectFile = objectFile;
     this->requiresMainFct = requiresMainFct;
 
     // Get target triple
@@ -111,12 +112,12 @@ void GeneratorVisitor::optimize() {
 void GeneratorVisitor::emit() {
     if (cliOptions->printDebugOutput)
         std::cout << "\nEmitting executable for triplet '" << targetTriple.getTriple()
-            << "' to path: " << cliOptions->outputDir << std::endl;
+            << "' to path: " << objectFile << std::endl;
 
     // Open file output stream
     std::error_code errorCode;
-    llvm::raw_fd_ostream dest(cliOptions->outputDir, errorCode, llvm::sys::fs::OF_None);
-    if (errorCode) throw err->get(CANT_OPEN_OUTPUT_FILE, "File '" + cliOptions->outputDir + "' could not be opened");
+    llvm::raw_fd_ostream dest(objectFile, errorCode, llvm::sys::fs::OF_None);
+    if (errorCode) throw err->get(CANT_OPEN_OUTPUT_FILE, "File '" + objectFile + "' could not be opened");
 
     llvm::legacy::PassManager passManager;
     if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CGFT_ObjectFile))

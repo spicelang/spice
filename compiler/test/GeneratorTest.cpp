@@ -91,22 +91,21 @@ void executeTest(const GeneratorTestCase& testCase) {
         ModuleRegistry moduleRegistry = ModuleRegistry();
         ThreadFactory threadFactory = ThreadFactory();
 
-        // Execute semantic analysis
-        AnalyzerVisitor analyzer = AnalyzerVisitor(
-                context,
-                builder,
-                &moduleRegistry,
-                &threadFactory,
+        // Create instance of cli options
+        CliOptions options = {
                 sourceFile,
+                "",
                 "",
                 "",
                 "",
                 ".",
                 false,
-                0,
-                true,
-                false
-        );
+                0
+        };
+
+        // Execute semantic analysis
+        AnalyzerVisitor analyzer = AnalyzerVisitor(context,builder, &moduleRegistry, &threadFactory,
+                                                   &options,sourceFile, true, false);
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected
@@ -130,38 +129,35 @@ void executeTest(const GeneratorTestCase& testCase) {
         std::string irCodeO1FileName = testCase.testPath + "/ir-code-O1.ll";
         std::string irCodeO2FileName = testCase.testPath + "/ir-code-O2.ll";
         std::string irCodeO3FileName = testCase.testPath + "/ir-code-O3.ll";
+        std::string irCodeOsFileName = testCase.testPath + "/ir-code-Os.ll";
+        std::string irCodeOzFileName = testCase.testPath + "/ir-code-Oz.ll";
         std::string irCodeOptFileName;
         std::string expectedOptIR;
-        int expectedOptLevel = 0;
         if (TestUtil::fileExists(irCodeO1FileName)) {
-            expectedOptLevel = 1;
+            options.optLevel = 1;
             irCodeOptFileName = irCodeO1FileName;
             expectedOptIR = TestUtil::getFileContent(irCodeO1FileName);
         } else if (TestUtil::fileExists(irCodeO2FileName)) {
-            expectedOptLevel = 2;
+            options.optLevel = 2;
             irCodeOptFileName = irCodeO2FileName;
             expectedOptIR = TestUtil::getFileContent(irCodeO2FileName);
         } else if (TestUtil::fileExists(irCodeO3FileName)) {
-            expectedOptLevel = 3;
+            options.optLevel = 3;
             irCodeOptFileName = irCodeO3FileName;
             expectedOptIR = TestUtil::getFileContent(irCodeO3FileName);
+        } else if (TestUtil::fileExists(irCodeOsFileName)) {
+            options.optLevel = 4;
+            irCodeOptFileName = irCodeOsFileName;
+            expectedOptIR = TestUtil::getFileContent(irCodeOsFileName);
+        } else if (TestUtil::fileExists(irCodeOzFileName)) {
+            options.optLevel = 5;
+            irCodeOptFileName = irCodeOzFileName;
+            expectedOptIR = TestUtil::getFileContent(irCodeOzFileName);
         }
 
         // Execute generator
-        GeneratorVisitor generator = GeneratorVisitor(
-                context,
-                builder,
-                &threadFactory,
-                symbolTable,
-                sourceFile,
-                "",
-                "",
-                "",
-                "./source.spice.o",
-                false,
-                expectedOptLevel,
-                true
-        );
+        GeneratorVisitor generator = GeneratorVisitor(context,builder, &threadFactory, symbolTable, &options,
+                                                      sourceFile, "./source.spice.o", true);
         generator.init(); // Initialize code generation
         generator.visit(tree); // Generate IR code
 
@@ -184,7 +180,7 @@ void executeTest(const GeneratorTestCase& testCase) {
         }
 
         // Check if the optimized ir code matches the expected output
-        if (expectedOptLevel > 0) {
+        if (options.optLevel > 0) {
             generator.optimize();
             std::string actualOptimizedIR = generator.getIRString();
             if (TestUtil::isUpdateRefsEnabled()) {
