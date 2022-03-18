@@ -29,9 +29,9 @@ void CliInterface::createInterface() {
         if (cliOptions.outputPath.empty()) cliOptions.outputPath = ".";
         if (cliOptions.outputPath == "." || cliOptions.outputPath == "..") {
 #ifdef OS_WINDOWS
-            cliOptions.outputPath = cliOptions.mainSourceFile + ".exe";
+            cliOptions.outputPath = cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6) + ".exe";
 #else
-            cliOptions.outputPath = cliOptions.mainSourceFile;
+            cliOptions.outputPath = cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6);
 #endif
         }
 

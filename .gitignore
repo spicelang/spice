@@ -14,3 +14,8 @@ gen/*
 
 # CLion
 .idea/*
+
+# Spice build outputs
+media/test-project/*
+!media/test-project/*.*
+media/test-project/*.exe
