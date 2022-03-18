@@ -6,7 +6,6 @@ cmake-build-release/*
 
 # Third party libs
 lib/*
-!lib/cli11
 gen/*
 
 # CLion

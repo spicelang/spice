@@ -78,7 +78,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         generator.dumpIR();
     } // GCOV_EXCL_STOP
 
-    if (options->optLevel >= 1 && options->optLevel <= 3) {
+    if (options->optLevel >= 1 && options->optLevel <= 5) {
         generator.optimize(); // Optimize IR code
         if (options->printDebugOutput) { // GCOV_EXCL_START
             // Dump optimized IR code
