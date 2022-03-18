@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <exception/ErrorFactory.h>
+
 #include "../../lib/cli11/CLI11.hpp"
 
 struct CliOptions {
@@ -19,7 +21,8 @@ class CliInterface {
 public:
     // Public methods
     void createInterface();
-    CLI::App& getApp();
+    int parse(int argc, char** argv);
+    void validate();
     CliOptions* getOptions();
 private:
     // Private methods
@@ -31,4 +34,5 @@ private:
     // Members
     CLI::App app = CLI::App{"Spice Programming Language", "Spice"};
     CliOptions cliOptions = CliOptions{};
+    ErrorFactory err = ErrorFactory();
 };

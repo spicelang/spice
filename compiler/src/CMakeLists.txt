@@ -30,6 +30,8 @@ set(SOURCES
         symbol/SymbolSpecifiers.h
         exception/ErrorFactory.cpp
         exception/ErrorFactory.h
+        exception/CliError.cpp
+        exception/CliError.h
         exception/SemanticError.cpp
         exception/SemanticError.h
         exception/IRError.cpp

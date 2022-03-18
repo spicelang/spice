@@ -17,6 +17,8 @@
 /**
  * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
  * function again.
+ *
+ * @param options Command line options
  */
 void compileProject(CliOptions* options) {
     // Add relative prefix to filename
@@ -57,10 +59,10 @@ int main(int argc, char** argv) {
     // Initialize command line parser
     CliInterface cli{};
     cli.createInterface();
+    cli.parse(argc, argv);
+    cli.validate();
 
-    // Parser cli arguments
-    CLI11_PARSE(cli.getApp(), argc, argv)
-
+    // Kick off the compiling process
     compileProject(cli.getOptions());
 
     return 0;
