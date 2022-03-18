@@ -24,4 +24,4 @@ You can apply following options to the `build` command:
 | `-d`    | `--debug-output` | Print compiler output for debugging.                                                                            |
 | `-t`    | `--target`       | Target triple for the emitted executable (for cross-compiling). <br> Format: `<arch><sub>-<vendor>-<sys>-<abi>` |
 | `-o`    | `--output`       | Set path for executable output.                                                                                 |
-| `-O<x>` | -                | Set optimization level. Valid options are `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz`                              |
+| `-O<x>` | -                | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz`                            |

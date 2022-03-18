@@ -24,6 +24,7 @@ public:
     int parse(int argc, char** argv);
     void validate();
     CliOptions* getOptions();
+    bool shouldCompile();
 private:
     // Private methods
     void addBuildSubcommand();
@@ -35,4 +36,5 @@ private:
     CLI::App app = CLI::App{"Spice Programming Language", "Spice"};
     CliOptions cliOptions = CliOptions{};
     ErrorFactory err = ErrorFactory();
+    bool compile = true;
 };

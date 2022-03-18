@@ -23,4 +23,4 @@ You can apply following options to the `install` command:
 | ------- | ---------------- | ---------------------------------------------------------------------------------- |
 | `-d`    | `--debug-output` | Print compiler output for debugging.                                               |
 | `-o`    | `--output`       | Set path for executable output.                                                    |
-| `-O<x>` | -                | Set optimization level. Valid options are `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz` |
+| `-O<x>` | -                | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz`                            |

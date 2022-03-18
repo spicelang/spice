@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     cli.validate();
 
     // Kick off the compiling process
-    compileProject(cli.getOptions());
+    if (cli.shouldCompile()) compileProject(cli.getOptions());
 
     return 0;
 }

@@ -37,7 +37,7 @@ void CliInterface::validate() {
 void CliInterface::addBuildSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
-            "build",
+            "build|b",
             "Builds your Spice program and emits an executable"
     );
 
@@ -84,7 +84,7 @@ void CliInterface::addBuildSubcommand() {
 void CliInterface::addRunSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
-            "run",
+            "run|r",
             "Builds your Spice program and runs it immediately"
     );
 
@@ -105,7 +105,7 @@ void CliInterface::addRunSubcommand() {
 void CliInterface::addInstallSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
-            "install",
+            "install|i",
             "Builds your Spice program and installs it to a directory in the PATH variable"
     );
 
@@ -126,7 +126,7 @@ void CliInterface::addInstallSubcommand() {
 void CliInterface::addUninstallSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
-            "uninstall",
+            "uninstall|u",
             "Builds your Spice program and runs it immediately"
     );
 
@@ -141,4 +141,8 @@ CliOptions* CliInterface::getOptions() {
 int CliInterface::parse(int argc, char** argv) {
     CLI11_PARSE(app, argc, argv)
     return 0;
+}
+
+bool CliInterface::shouldCompile() {
+    return compile;
 }
