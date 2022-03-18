@@ -52,8 +52,8 @@ jobs:
 
       - name: Download Libs
         run: |
-          mkdir -p ./compiler/lib
-          cd ./compiler/lib
+          mkdir -p ./lib
+          cd ./lib
           git clone --branch 4.9.3 --depth 1 https://github.com/antlr/antlr4.git
           mkdir json
           curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
@@ -66,7 +66,7 @@ jobs:
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
           cmake --build . --target Spice_run
 
       - name: Process build output
@@ -134,8 +134,8 @@ jobs:
 
       - name: Download Libs
         run: |
-          mkdir -p ./compiler/lib
-          cd ./compiler/lib
+          mkdir -p ./lib
+          cd ./lib
           git clone --branch 4.9.3 --depth 1 https://github.com/antlr/antlr4.git
           mkdir json
           curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" -o json/json.hpp
@@ -151,7 +151,7 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ../compiler
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
           cmake --build . --target Spice_run
           
       - name: Process build output
@@ -330,7 +330,7 @@ jobs:
         shell: bash
         env:
           ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
-        run: cp ./compiler/dll/* ./
+        run: cp ./dll/* ./
 
       - name: Build MSI
         shell: bash

@@ -2,3 +2,15 @@
 bin/*
 spice.exe
 spice
+
+build/*
+coverage/*
+cmake-build-debug/*
+cmake-build-release/*
+
+# Third party libs
+lib/*
+gen/*
+
+# CLion
+.idea/*

@@ -48,8 +48,8 @@ jobs:
 
       - name: Download Libs
         run: |
-          mkdir ./compiler/lib
-          cd ./compiler/lib
+          mkdir ./lib
+          cd ./lib
           git clone --depth 1 --branch 4.9.3 https://github.com/antlr/antlr4.git
           mkdir json
           curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
@@ -60,8 +60,8 @@ jobs:
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
         run: |
-          mkdir ./compiler/bin
-          cd ./compiler/bin
+          mkdir ./bin
+          cd ./bin
           cmake -DCMAKE_BUILD_TYPE=Release -DSPICE_LINK_STATIC=OFF -GNinja -Wattributes ..
           cmake --build . --target Spice_test
 

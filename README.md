@@ -26,7 +26,7 @@ If you like Spice, please consider a GitHub star! ⭐
 Please visit the documentation at [spicelang.com](https://www.spicelang.com).
 
 ## Grammar
-The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTLR grammar configuration file.
+The Spice grammar can be found [here](./src/grammar/Spice.g4) as a ANTLR grammar configuration file.
 
 ## Available target platforms
 ### Target architecture
