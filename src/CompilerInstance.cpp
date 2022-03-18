@@ -16,6 +16,7 @@
  * @param moduleRegistry Module Registry, to manage project-wide module information
  * @param threadFactory Thread Factory, used for generating project-wide thread information
  * @param options Cli options that were passed to the executable
+ * @param linker Linker interface
  * @param sourceFile Full path to a file (absolute or relative)
  * @param requiresMainFct true = main source file, false = not main source file
  * @param stdFile true = std source file, false = not std source file
@@ -28,6 +29,7 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         ModuleRegistry* moduleRegistry,
         ThreadFactory* threadFactory,
         CliOptions* options,
+        LinkerInterface* linker,
         const std::string& sourceFile,
         bool requiresMainFct,
         bool stdFile
@@ -55,8 +57,8 @@ SymbolTable* CompilerInstance::CompileSourceFile(
 
     // Execute syntactical analysis
     SymbolTable* symbolTable;
-    AnalyzerVisitor analyzer = AnalyzerVisitor(context, builder, moduleRegistry, threadFactory, options,
-            sourceFile, requiresMainFct, stdFile);
+    AnalyzerVisitor analyzer = AnalyzerVisitor(context, builder, moduleRegistry, threadFactory, options, linker,
+                                               sourceFile, requiresMainFct, stdFile);
     symbolTable = analyzer.visit(tree).as<SymbolTable*>(); // Check for semantic errors
     if (options->printDebugOutput) { // GCOV_EXCL_START
         // Print symbol table
@@ -66,15 +68,16 @@ SymbolTable* CompilerInstance::CompileSourceFile(
 
     // Get file name from file path
     std::string fileName = FileUtil::getFileName(sourceFile);
+    std::string objectFlePath = options->outputDir + "/" + fileName + ".o";
 
     // Execute generator
     GeneratorVisitor generator = GeneratorVisitor(context, builder, threadFactory, symbolTable, options, fileName,
-                                                  options->outputDir + "/" + fileName + ".o", requiresMainFct);
+                                                  objectFlePath, requiresMainFct);
     generator.init(); // Initialize code generation
     generator.visit(tree); // Generate IR code
     if (options->printDebugOutput) { // GCOV_EXCL_START
         // Dump unoptimized IR code
-        std::cout  << std::endl << "IR code:" << std::endl;
+        std::cout << std::endl << "IR code:" << std::endl;
         generator.dumpIR();
     } // GCOV_EXCL_STOP
 
@@ -82,12 +85,16 @@ SymbolTable* CompilerInstance::CompileSourceFile(
         generator.optimize(); // Optimize IR code
         if (options->printDebugOutput) { // GCOV_EXCL_START
             // Dump optimized IR code
-            std::cout  << std::endl << "Optimized IR code:" << std::endl;
+            std::cout << std::endl << "Optimized IR code:" << std::endl;
             generator.dumpIR();
         } // GCOV_EXCL_STOP
     }
 
-    generator.emit(); // Emit object file for specified platform
+    // Emit object file for specified platform
+    generator.emit();
+
+    // Add object file to the linker interface
+    if (linker) linker->addObjectFilePath(objectFlePath);
 
     return symbolTable;
 }

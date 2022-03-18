@@ -97,13 +97,14 @@ void executeTest(const AnalyzerTestCase& testCase) {
                 "",
                 "",
                 ".",
+                ".",
                 false,
                 0
         };
 
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(context, builder, &moduleRegistry, &threadFactory,
-                                                   &options, sourceFile, true, false);
+                                                   &options, nullptr, sourceFile, true, false);
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected

@@ -12,13 +12,14 @@
 
 AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context,
                                  const std::shared_ptr<llvm::IRBuilder<>>& builder, ModuleRegistry* moduleRegistry,
-                                 ThreadFactory* threadFactory, CliOptions* options, const std::string& sourceFile,
-                                 bool requiresMainFct, bool isStdFile) {
+                                 ThreadFactory* threadFactory, CliOptions* options, LinkerInterface* linker,
+                                 const std::string& sourceFile, bool requiresMainFct, bool isStdFile) {
     // Save parameters
     this->context = context,
     this->builder = builder;
     this->moduleRegistry = moduleRegistry;
     this->threadFactory = threadFactory;
+    this->linker = linker;
     this->sourceFile = sourceFile;
     this->requiresMainFct = requiresMainFct;
     this->isStdFile = isStdFile;
@@ -685,12 +686,16 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
                                 "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
         }
         // Check if source file exists
-        if (FileUtil::fileExists(stdPath + sourceFileIden + ".spice")) {
-            filePath = stdPath + sourceFileIden + ".spice";
-        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + cliOptions->targetOs + ".spice")) {
-            filePath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + ".spice";
-        } else if (FileUtil::fileExists(stdPath + sourceFileIden + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice")) {
-            filePath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
+        std::string defaultPath = stdPath + sourceFileIden + ".spice";
+        std::string osPath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + ".spice";
+        std::string osArchPath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
+
+        if (FileUtil::fileExists(defaultPath)) {
+            filePath = defaultPath;
+        } else if (FileUtil::fileExists(osPath)) {
+            filePath = osPath;
+        } else if (FileUtil::fileExists(osArchPath)) {
+            filePath = osArchPath;
         } else {
             throw err->get(*ctx->STRING_LITERAL()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
                                 "The source file '" + importPath + ".spice' was not found in the standard library");
@@ -701,12 +706,16 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
         moduleRegistry->addModule(err, *ctx->STRING_LITERAL()->getSymbol(),
                                   sourceFileDir + "/" + importPath);
         // Import file
-        if (FileUtil::fileExists(sourceFileDir + "/" + importPath + ".spice")) {
-            filePath = sourceFileDir + "/" + importPath + ".spice";
-        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + ".spice")) {
-            filePath = sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + ".spice";
-        } else if (FileUtil::fileExists(sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice")) {
-            filePath = sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
+        std::string defaultPath = sourceFileDir + "/" + importPath + ".spice";
+        std::string osPath = sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + ".spice";
+        std::string osArchPath = sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
+
+        if (FileUtil::fileExists(defaultPath)) {
+            filePath = defaultPath;
+        } else if (FileUtil::fileExists(osPath)) {
+            filePath = osPath;
+        } else if (FileUtil::fileExists(osArchPath)) {
+            filePath = osArchPath;
         } else {
             throw err->get(*ctx->STRING_LITERAL()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
                                 "The source file '" + importPath + ".spice' does not exist");
@@ -714,9 +723,17 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext* c
     }
 
     // Kick off the compilation of the imported source file
-    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(context, builder, moduleRegistry, threadFactory,
-                                                                   cliOptions,filePath, false,
-                                                                   foundInStd);
+    SymbolTable* nestedTable = CompilerInstance::CompileSourceFile(
+            context,
+            builder,
+            moduleRegistry,
+            threadFactory,
+            cliOptions,
+            linker,
+            filePath,
+            false,
+            foundInStd
+    );
 
     // Create symbol of type TYPE_IMPORT in the current scope
     std::string importIden = ctx->IDENTIFIER()->toString();

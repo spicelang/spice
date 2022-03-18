@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <memory>
+#include <filesystem>
 
 /**
  * Checks if a certain file exists on the file system
@@ -30,6 +31,16 @@ bool FileUtil::dirExists(const std::string& dirPath) {
     else if(info.st_mode & S_IFDIR)  // S_ISDIR() doesn't exist on my windows
         return true;
     return false;
+}
+
+/**
+ * Creates a directories at the specified path (recursively)
+ *
+ * @param dirPath Path to the dir
+ * @return Successful or not
+ */
+bool FileUtil::createDirs(const std::string& dirPath) {
+    return std::filesystem::create_directories(dirPath);
 }
 
 /**
@@ -68,4 +79,12 @@ std::string FileUtil::exec(const std::string& cmd) {
             result += buffer;
     }
     return result;
+}
+
+char FileUtil::getDirSeparator() {
+#ifdef _WIN32
+    return '\\';
+#else
+    return '/';
+#endif
 }

@@ -104,13 +104,17 @@ void executeTest(const StdTestCase& testCase) {
                 "",
                 "",
                 ".",
+                ".",
                 false,
                 0
         };
 
+        // Create linker interface
+        LinkerInterface linker = LinkerInterface(&err, &options);
+
         // Execute semantic analysis
         AnalyzerVisitor analyzer = AnalyzerVisitor(context, builder, &moduleRegistry, &threadFactory,
-                                                   &options, sourceFile, true, false);
+                                                   &options, &linker, sourceFile, true, false);
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected
@@ -208,14 +212,8 @@ void executeTest(const StdTestCase& testCase) {
             generator.emit(); // Emit object file for specified platform
 
             // Prepare linker
-            LinkerInterface linker = LinkerInterface(&err, &options);
             linker.setOutputPath(TestUtil::getDefaultExecutableName()); // Add output path
             linker.addObjectFilePath("source.spice.o"); // Add default object file
-            std::string addObjFile = testCase.testPath + "/add-obj.txt";
-            if (FileUtil::fileExists(addObjFile)) {
-                for (auto& objFile : TestUtil::getFileContentLinesVector(addObjFile))
-                    linker.addObjectFilePath(objFile);
-            }
 
             std::string linkerFlagsFile = testCase.testPath + "/linker-flags.txt";
             std::string linkerFlags;

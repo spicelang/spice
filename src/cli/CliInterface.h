@@ -2,6 +2,12 @@
 
 #pragma once
 
+#ifdef __unix__
+    #define OS_UNIX
+#elif defined(_WIN32) || defined(WIN32)
+    #define OS_WINDOWS
+#endif
+
 #include <exception/ErrorFactory.h>
 
 #include "../../lib/cli11/CLI11.hpp"
@@ -16,6 +22,7 @@ struct CliOptions {
     std::string targetVendor;
     std::string targetOs;
     std::string outputDir;
+    std::string outputPath;
     bool printDebugOutput;
     int optLevel; // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
 };

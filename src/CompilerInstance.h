@@ -8,6 +8,7 @@
 #include <symbol/SymbolTable.h>
 #include <analyzer/AnalyzerVisitor.h>
 #include <generator/GeneratorVisitor.h>
+#include <linker/LinkerInterface.h>
 
 #include <llvm/IR/IRBuilder.h>
 
@@ -18,6 +19,6 @@ class CompilerInstance {
 public:
     static SymbolTable* CompileSourceFile(const std::shared_ptr<llvm::LLVMContext>& context,
                                           const std::shared_ptr<llvm::IRBuilder<>>& builder, ModuleRegistry* moduleRegistry,
-                                          ThreadFactory* threadFactory, CliOptions* options, const std::string& sourceFile,
-                                          bool requiresMainFct, bool stdFile);
+                                          ThreadFactory* threadFactory, CliOptions* options, LinkerInterface* linker,
+                                          const std::string& sourceFile, bool requiresMainFct, bool stdFile);
 };

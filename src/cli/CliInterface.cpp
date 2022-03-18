@@ -2,17 +2,19 @@
 
 #include "CliInterface.h"
 
+#include <util/FileUtil.h>
+
 void CliInterface::createInterface() {
     // Allow positional args
     app.allow_windows_style_options();
     app.allow_extras();
+    app.footer("(c) Marc Auberer 2021-2022");
 
-    // Add global options
-    app.add_flag_callback("--version,-v", [&]() {
-        std::cout << "Spice version " << SPICE_VERSION << std::endl;
-        std::cout << "built by: " << SPICE_BUILT_BY << std::endl << std::endl;
-        std::cout << "(c) Marc Auberer 2021-2022" << std::endl;
-    }, "Prints the Spice version you are using");
+    // Add version flag
+    std::string versionName = std::string(SPICE_VERSION);
+    std::string builtBy = std::string(SPICE_BUILT_BY);
+    std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2022";
+    app.set_version_flag("--version|-v", versionString);
 
     // Create sub-commands
     addBuildSubcommand();
@@ -20,8 +22,35 @@ void CliInterface::createInterface() {
     addInstallSubcommand();
     addUninstallSubcommand();
 
-    // Add footer
-    app.footer("(c) Marc Auberer 2021-2022");
+    app.callback([&]() {
+        if (!compile) return;
+
+        // Ensure that both, the output path and the output dir have valid values
+        if (cliOptions.outputPath.empty()) cliOptions.outputPath = ".";
+        if (cliOptions.outputPath == "." || cliOptions.outputPath == "..") {
+#ifdef OS_WINDOWS
+            cliOptions.outputPath = cliOptions.mainSourceFile + ".exe";
+#else
+            cliOptions.outputPath = cliOptions.mainSourceFile;
+#endif
+        }
+
+        // Add relative prefix to filename
+        if (cliOptions.mainSourceFile.find("/\\") != std::string::npos)
+            cliOptions.mainSourceFile = "./" + cliOptions.mainSourceFile;
+
+        // Set outputDir to <system-tmp-dir>/spice-output
+        char separator = FileUtil::getDirSeparator();
+        uint64_t millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        cliOptions.outputDir = std::filesystem::temp_directory_path().string();
+        if (cliOptions.outputDir.back() != '/' && cliOptions.outputDir.back() != '\\') cliOptions.outputDir += separator;
+        cliOptions.outputDir += "spice-output";
+        cliOptions.outputDir += separator;
+        cliOptions.outputDir += std::to_string(millis);
+
+        // Create the output dir if it does not exist already
+        if (!FileUtil::dirExists(cliOptions.outputDir)) FileUtil::createDirs(cliOptions.outputDir);
+    });
 }
 
 /**
@@ -31,6 +60,8 @@ void CliInterface::createInterface() {
  */
 void CliInterface::validate() const {
     // Check if source file is present
+    if (!FileUtil::fileExists(cliOptions.mainSourceFile))
+        throw err.get(SOURCE_FILE_MISSING, "The stated main source file does not exist");
 
     // Check if all three of --target-arch, --target-vendor and --target-os are provided or none of them
     if (!((cliOptions.targetArch.empty() && cliOptions.targetVendor.empty() && cliOptions.targetOs.empty()) ||
@@ -57,7 +88,7 @@ void CliInterface::addBuildSubcommand() {
     });
 
     // --debug-output
-    subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput);
+    subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
 
     // --target-triple
     std::function<void(const std::string&)> targetTripleCallback = [&](const std::string& triple) {
@@ -71,11 +102,11 @@ void CliInterface::addBuildSubcommand() {
         cliOptions.targetOs = triple.substr(secondIndex +1, thirdIndex - secondIndex);
     };
     subCmd->add_option_function("--target,--target-triple,--target-triplet,-t", targetTripleCallback,
-            "Target triple for the emitted executable (for cross-compiling)");
+                                "Target triple for the emitted executable (for cross-compiling)");
 
     // --target-arch
     subCmd->add_option("--target-arch", cliOptions.targetArch,
-                                "Target arch for emitted executable (for cross-compiling)");
+                       "Target arch for emitted executable (for cross-compiling)");
 
     // --target-vendor
     subCmd->add_option("--target-vendor", cliOptions.targetVendor,
@@ -86,7 +117,7 @@ void CliInterface::addBuildSubcommand() {
                        "Target os for emitted executable (for cross-compiling)");
 
     // --output
-    subCmd->add_option<const std::string>("--output,-o", cliOptions.outputDir);
+    subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
 
     // -O0, -O1, ...
     subCmd->add_flag("-O0{0},-O1{1},-O2{2},-O3{3},-Os{4},-Oz{5}", cliOptions.optLevel,
@@ -112,10 +143,10 @@ void CliInterface::addRunSubcommand() {
     });
 
     // --debug-output
-    subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput);
+    subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
 
     // --output
-    subCmd->add_option<const std::string>("--output,-o", cliOptions.outputDir);
+    subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
 
     // -O0, -O1, ...
     subCmd->add_flag("-O0{0},-O1{1},-O2{2},-O3{3},-Os{4},-Oz{5}", cliOptions.optLevel,
@@ -141,10 +172,10 @@ void CliInterface::addInstallSubcommand() {
     });
 
     // --debug-output
-    subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput);
+    subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
 
     // --output
-    subCmd->add_option<const std::string>("--output,-o", cliOptions.outputDir);
+    subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
 
     // -O0, -O1, ...
     subCmd->add_flag("-O0{0},-O1{1},-O2{2},-O3{3},-Os{4},-Oz{5}", cliOptions.optLevel,

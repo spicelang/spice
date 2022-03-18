@@ -12,6 +12,7 @@
 #include <util/ThreadFactory.h>
 #include <exception/ErrorFactory.h>
 #include <analyzer/OpRuleManager.h>
+#include <linker/LinkerInterface.h>
 
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
@@ -29,7 +30,7 @@ public:
     // Constructors
     explicit AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& context, const std::shared_ptr<llvm::IRBuilder<>>& builder,
                              ModuleRegistry* moduleRegistry, ThreadFactory* threadFactory, CliOptions* options,
-                             const std::string& sourceFile, bool requiresMainFct, bool stdFile);
+                             LinkerInterface* linker, const std::string& sourceFile, bool requiresMainFct, bool stdFile);
     ~AnalyzerVisitor() override;
 
     // Public methods
@@ -83,10 +84,11 @@ private:
     std::shared_ptr<llvm::LLVMContext> context;
     std::shared_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<OpRuleManager> opRuleManager;
-    const ErrorFactory* err;
+    ErrorFactory* err;
     ModuleRegistry* moduleRegistry;
     ThreadFactory* threadFactory;
     CliOptions* cliOptions;
+    LinkerInterface* linker;
     std::string sourceFile;
     bool requiresMainFct = true;
     bool hasMainFunction = false;
