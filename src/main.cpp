@@ -65,5 +65,5 @@ int main(int argc, char** argv) {
     // Kick off the compiling process
     if (cli.shouldCompile()) compileProject(cli.getOptions());
 
-    return 0;
+    return EXIT_SUCCESS;
 }

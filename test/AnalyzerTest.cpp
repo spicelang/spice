@@ -10,6 +10,7 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
+#include <util/FileUtil.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
@@ -50,7 +51,7 @@ std::vector<AnalyzerTestSuite> detectAnalyzerTestSuites(const std::string& testF
 void executeTest(const AnalyzerTestCase& testCase) {
     // Check if disabled
     std::string disabledFile = testCase.testPath + "/disabled";
-    if (TestUtil::fileExists(disabledFile)) GTEST_SKIP();
+    if (FileUtil::fileExists(disabledFile)) GTEST_SKIP();
 #ifdef SPICE_IS_GH_ACTIONS
     std::string disabledGHFile = testCase.testPath + "/disabled-gh-actions";
     if (TestUtil::fileExists(disabledGHFile)) GTEST_SKIP();
@@ -106,7 +107,7 @@ void executeTest(const AnalyzerTestCase& testCase) {
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected
-        if (TestUtil::fileExists(testCase.testPath + "/exception.out"))
+        if (FileUtil::fileExists(testCase.testPath + "/exception.out"))
             FAIL() << "Expected error, but got no error";  // GCOV_EXCL_LINE
 
         // Check if the AST matches the expected output
@@ -118,7 +119,7 @@ void executeTest(const AnalyzerTestCase& testCase) {
 
         // Check if the symbol table matches the expected output
         std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
-        if (TestUtil::fileExists(symbolTableFileName)) {
+        if (FileUtil::fileExists(symbolTableFileName)) {
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
                 TestUtil::setFileContent(symbolTableFileName, symbolTable->toJSON().dump(2)); // GCOV_EXCL_LINE
@@ -132,7 +133,7 @@ void executeTest(const AnalyzerTestCase& testCase) {
     } catch (LexerParserError& error) {
         // Check if the exception message matches the expected output
         std::string exceptionFile = testCase.testPath + "/exception.out";
-        if (TestUtil::fileExists(exceptionFile)) {
+        if (FileUtil::fileExists(exceptionFile)) {
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
                 TestUtil::setFileContent(exceptionFile, error.what()); // GCOV_EXCL_LINE
@@ -146,7 +147,7 @@ void executeTest(const AnalyzerTestCase& testCase) {
     } catch (SemanticError& error) {
         // Check if the exception message matches the expected output
         std::string exceptionFile = testCase.testPath + "/exception.out";
-        if (TestUtil::fileExists(exceptionFile)) {
+        if (FileUtil::fileExists(exceptionFile)) {
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
                 TestUtil::setFileContent(exceptionFile, error.what()); // GCOV_EXCL_LINE

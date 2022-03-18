@@ -13,4 +13,5 @@ public:
     static bool dirExists(const std::string& dirPath);
     static std::string getFileName(const std::string& filePath);
     static std::string getFileDir(const std::string& filePath);
+    static std::string exec(const std::string& cmd);
 };

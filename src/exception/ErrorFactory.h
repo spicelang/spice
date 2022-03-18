@@ -8,6 +8,7 @@
 #include <exception/SemanticError.h>
 #include <exception/IRError.h>
 #include <exception/CliError.h>
+#include <exception/LinkerError.h>
 
 #include "Token.h"
 
@@ -22,6 +23,7 @@ public:
     [[nodiscard]] IRError get(const antlr4::Token& token, IRErrorType type, const std::string& message) const;
     [[nodiscard]] IRError get(IRErrorType type, const std::string& message) const;
     [[nodiscard]] CliError get(CliErrorType type, const std::string& message) const;
+    [[nodiscard]] LinkerError get(LinkerErrorType type, const std::string& message) const;
 private:
     // Members
     const std::string fileName;

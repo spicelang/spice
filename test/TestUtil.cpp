@@ -5,13 +5,8 @@
 #include <fstream>
 #include <dirent.h>
 #include <sstream>
-#include <memory>
 #include <cstring> // Required by builds on Linux
 #include <stdexcept>
-
-bool TestUtil::fileExists(const std::string& filePath) {
-    return std::ifstream(filePath.c_str()).good();
-}
 
 /**
  * Get subdirectories of the given path
@@ -48,6 +43,22 @@ std::string TestUtil::getFileContent(const std::string& filePath) {
 }
 
 /**
+ * Retrieve the contents of a file as a vector of line strings. Empty lines are omitted
+ *
+ * @param filePath File path
+ * @return Vector of strings which are the lines of the file
+ */
+std::vector<std::string> TestUtil::getFileContentLinesVector(const std::string& filePath) {
+    std::vector<std::string> lines;
+    std::ifstream inputFileStream;
+    inputFileStream.open(filePath);
+    for(std::string line; std::getline(inputFileStream, line);) {
+        if (!line.empty()) lines.push_back(line);
+    }
+    return lines;
+}
+
+/**
  * Write a string to a certain file. The string will replace the original contents of the file
  *
  * @param filePath File path
@@ -75,31 +86,13 @@ std::string TestUtil::toCamelCase(std::string input) {
 }
 
 /**
- * Execute external command. Used to execute compiled binaries
- *
- * @param cmd Command to execute
- * @return Output of the command as a string
- */
-std::string TestUtil::exec(const std::string& cmd) {
-    std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-    if (!pipe) throw std::runtime_error("Failed to execute command: " + cmd);
-    char buffer[128];
-    std::string result;
-    while (!feof(pipe.get())) {
-        if (fgets(buffer, 128, pipe.get()) != nullptr)
-            result += buffer;
-    }
-    return result;
-}
-
-/**
  * Get default executable name of the compiled binary
  *
  * @return Name of the executable including the file extension
  */
 std::string TestUtil::getDefaultExecutableName() {
     std::string executableName = "./source";
-#ifdef OS_Windows
+#ifdef OS_WINDOWS
     executableName = ".\\source.exe";
 #endif
     return executableName;

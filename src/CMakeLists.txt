@@ -16,6 +16,8 @@ set(SOURCES
         generator/GeneratorVisitor.h
         generator/OpRuleConversionsManager.cpp
         generator/OpRuleConversionsManager.h
+        linker/LinkerInterface.cpp
+        linker/LinkerInterface.h
         symbol/SymbolTable.cpp
         symbol/SymbolTable.h
         symbol/SymbolTableEntry.cpp
@@ -36,6 +38,8 @@ set(SOURCES
         exception/SemanticError.h
         exception/IRError.cpp
         exception/IRError.h
+        exception/LinkerError.cpp
+        exception/LinkerError.h
         exception/LexerParserError.cpp
         exception/LexerParserError.h
         exception/AntlrThrowingErrorListener.cpp

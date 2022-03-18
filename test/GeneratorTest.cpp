@@ -11,9 +11,11 @@
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <generator/GeneratorVisitor.h>
+#include <linker/LinkerInterface.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
+#include <util/FileUtil.h>
 
 #include "TestUtil.h"
 
@@ -53,7 +55,7 @@ std::vector<GeneratorTestSuite> detectGeneratorTestSuites(const std::string& tes
 void executeTest(const GeneratorTestCase& testCase) {
     // Check if disabled
     std::string disabledFile = testCase.testPath + "/disabled";
-    if (TestUtil::fileExists(disabledFile)) GTEST_SKIP();
+    if (FileUtil::fileExists(disabledFile)) GTEST_SKIP();
 #ifdef SPICE_IS_GH_ACTIONS
     std::string disabledGHFile = testCase.testPath + "/disabled-gh-actions";
     if (TestUtil::fileExists(disabledGHFile)) GTEST_SKIP();
@@ -87,6 +89,9 @@ void executeTest(const GeneratorTestCase& testCase) {
         std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
         std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
 
+        // Create instance of error factory
+        ErrorFactory err{};
+
         // Prepare instance of module registry and thread factory, which have to exist exactly once per executable
         ModuleRegistry moduleRegistry = ModuleRegistry();
         ThreadFactory threadFactory = ThreadFactory();
@@ -109,12 +114,12 @@ void executeTest(const GeneratorTestCase& testCase) {
         SymbolTable* symbolTable = analyzer.visit(tree).as<SymbolTable*>();
 
         // Fail if an error was expected
-        if (TestUtil::fileExists(testCase.testPath + "/exception.out")) // GCOV_EXCL_LINE
+        if (FileUtil::fileExists(testCase.testPath + "/exception.out")) // GCOV_EXCL_LINE
             FAIL() << "Expected error, but got no error";                      // GCOV_EXCL_LINE
 
         // Check if the symbol table matches the expected output
         std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
-        if (TestUtil::fileExists(symbolTableFileName)) {
+        if (FileUtil::fileExists(symbolTableFileName)) {
             std::string actualSymbolTable = symbolTable->toJSON().dump(2);
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
@@ -133,23 +138,23 @@ void executeTest(const GeneratorTestCase& testCase) {
         std::string irCodeOzFileName = testCase.testPath + "/ir-code-Oz.ll";
         std::string irCodeOptFileName;
         std::string expectedOptIR;
-        if (TestUtil::fileExists(irCodeO1FileName)) {
+        if (FileUtil::fileExists(irCodeO1FileName)) {
             options.optLevel = 1;
             irCodeOptFileName = irCodeO1FileName;
             expectedOptIR = TestUtil::getFileContent(irCodeO1FileName);
-        } else if (TestUtil::fileExists(irCodeO2FileName)) {
+        } else if (FileUtil::fileExists(irCodeO2FileName)) {
             options.optLevel = 2;
             irCodeOptFileName = irCodeO2FileName;
             expectedOptIR = TestUtil::getFileContent(irCodeO2FileName);
-        } else if (TestUtil::fileExists(irCodeO3FileName)) {
+        } else if (FileUtil::fileExists(irCodeO3FileName)) {
             options.optLevel = 3;
             irCodeOptFileName = irCodeO3FileName;
             expectedOptIR = TestUtil::getFileContent(irCodeO3FileName);
-        } else if (TestUtil::fileExists(irCodeOsFileName)) {
+        } else if (FileUtil::fileExists(irCodeOsFileName)) {
             options.optLevel = 4;
             irCodeOptFileName = irCodeOsFileName;
             expectedOptIR = TestUtil::getFileContent(irCodeOsFileName);
-        } else if (TestUtil::fileExists(irCodeOzFileName)) {
+        } else if (FileUtil::fileExists(irCodeOzFileName)) {
             options.optLevel = 5;
             irCodeOptFileName = irCodeOzFileName;
             expectedOptIR = TestUtil::getFileContent(irCodeOzFileName);
@@ -163,7 +168,7 @@ void executeTest(const GeneratorTestCase& testCase) {
 
         // Check if the ir code matches the expected output
         std::string irCodeFileName = testCase.testPath + "/ir-code.ll";
-        if (TestUtil::fileExists(irCodeFileName)) {
+        if (FileUtil::fileExists(irCodeFileName)) {
             std::string actualIR = generator.getIRString();
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
@@ -198,25 +203,32 @@ void executeTest(const GeneratorTestCase& testCase) {
 
         // Check if the execution output matches the expected output
         std::string outputFileName = testCase.testPath + "/cout.out";
-        if (TestUtil::fileExists(outputFileName)) {
+        if (FileUtil::fileExists(outputFileName)) {
             // Emit the object file
             generator.emit(); // Emit object file for specified platform
 
-            std::string objectFiles = "source.spice.o";
+            // Prepare linker
+            LinkerInterface linker = LinkerInterface(&err, &options);
+            linker.setOutputPath(TestUtil::getDefaultExecutableName()); // Add output path
+            linker.addObjectFilePath("source.spice.o"); // Add default object file
             std::string addObjFile = testCase.testPath + "/add-obj.txt";
-            if (TestUtil::fileExists(addObjFile))
-                objectFiles += " " + TestUtil::getFileContent(addObjFile);
+            if (FileUtil::fileExists(addObjFile)) {
+                for (auto& objFile : TestUtil::getFileContentLinesVector(addObjFile))
+                    linker.addObjectFilePath(objFile);
+            }
 
             std::string linkerFlagsFile = testCase.testPath + "/linker-flags.txt";
             std::string linkerFlags;
-            if (TestUtil::fileExists(linkerFlagsFile))
-                linkerFlags = TestUtil::getFileContent(linkerFlagsFile);
+            if (FileUtil::fileExists(linkerFlagsFile)) {
+                for (auto& linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
+                    linker.addLinkerFlag(linkerFlag);
+            }
 
-            // Link
-            TestUtil::exec("gcc -no-pie " + linkerFlags + " -o source " + objectFiles);
+            // Run linker
+            linker.link();
 
             // Execute the program and get the output
-            std::string actualOutput = TestUtil::exec(TestUtil::getDefaultExecutableName());
+            std::string actualOutput = FileUtil::exec(TestUtil::getDefaultExecutableName());
 
             if (TestUtil::isUpdateRefsEnabled()) {
                 // Update ref
@@ -235,7 +247,7 @@ void executeTest(const GeneratorTestCase& testCase) {
     } catch (SemanticError& error) {
         // Check if the exception message matches the expected output
         std::string exceptionFile = testCase.testPath + "/exception.out";
-        if (TestUtil::fileExists(exceptionFile)) {
+        if (FileUtil::fileExists(exceptionFile)) {
             std::string expectedException = TestUtil::getFileContent(exceptionFile);
             EXPECT_EQ(std::string(error.what()), expectedException);
         } else {

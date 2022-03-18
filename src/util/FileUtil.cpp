@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
+#include <memory>
 
 /**
  * Checks if a certain file exists on the file system
@@ -49,4 +50,22 @@ std::string FileUtil::getFileName(const std::string& filePath) {
  */
 std::string FileUtil::getFileDir(const std::string& filePath) {
     return filePath.substr(0, filePath.find_last_of("/\\"));
+}
+
+/**
+ * Execute external command. Used to execute compiled binaries
+ *
+ * @param cmd Command to execute
+ * @return Output of the command as a string
+ */
+std::string FileUtil::exec(const std::string& cmd) {
+    std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+    if (!pipe) throw std::runtime_error("Failed to execute command: " + cmd);
+    char buffer[128];
+    std::string result;
+    while (!feof(pipe.get())) {
+        if (fgets(buffer, 128, pipe.get()) != nullptr)
+            result += buffer;
+    }
+    return result;
 }
