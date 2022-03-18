@@ -62,18 +62,6 @@ void LinkerInterface::addLinkerFlag(const std::string& flag) {
 }
 
 /**
- * Fill the linker flag list with a string, containing one or more linker flags, separated with spaces
- *
- * @param flags String with linker flags
- */
-/*void LinkerInterface::setLinkerFlags(const std::string& flags) {
-    size_t startIndex = 0;
-    while((startIndex = flags.find(' ', startIndex)) != -1) {
-        linkerFlags.push_back(flags.substr(startIndex, flags.find(' ', startIndex +1)));
-    }
-}*/
-
-/**
  * Set the output file path for the output executable
  *
  * @param path Output file path
