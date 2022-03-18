@@ -9,7 +9,9 @@ void CliInterface::createInterface() {
 
     // Add global options
     app.add_flag_callback("--version,-v", [&]() {
-
+        std::cout << "Spice version " << SPICE_VERSION << std::endl;
+        std::cout << "built by: " << SPICE_BUILT_BY << std::endl << std::endl;
+        std::cout << "(c) Marc Auberer 2021-2022" << std::endl;
     }, "Prints the Spice version you are using");
 
     // Create sub-commands
@@ -17,6 +19,9 @@ void CliInterface::createInterface() {
     addRunSubcommand();
     addInstallSubcommand();
     addUninstallSubcommand();
+
+    // Add footer
+    app.footer("(c) Marc Auberer 2021-2022");
 }
 
 /**
