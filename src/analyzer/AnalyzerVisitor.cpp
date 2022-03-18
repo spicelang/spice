@@ -34,7 +34,7 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext>& conte
 
     // Create error factory for this specific file
     this->err = new ErrorFactory(sourceFile);
-    
+
     // Create OpRuleManager
     opRuleManager = std::make_unique<OpRuleManager>(err);
 }
@@ -432,7 +432,7 @@ antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext* ctx
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
-    currentScope->setRequiresCapturing(); // Requires capturing because the LLVM IR will end up in a separate function
+    currentScope->setCapturingRequired(); // Requires capturing because the LLVM IR will end up in a separate function
 
     // Visit statement list in new scope
     visit(ctx->stmtLst());

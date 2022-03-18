@@ -157,7 +157,7 @@ void SymbolTable::renameChildBlock(const std::string& oldName, const std::string
  *
  * @return Pointer to the parent symbol table
  */
-SymbolTable* SymbolTable::getParent() {
+SymbolTable* SymbolTable::getParent() const {
     return parent;
 }
 
@@ -196,7 +196,7 @@ std::map<std::string, Capture>& SymbolTable::getCaptures() {
  *
  * @return Number of fields
  */
-unsigned int SymbolTable::getFieldCount() {
+unsigned int SymbolTable::getFieldCount() const {
     unsigned int count = 0;
     for (auto& [key, symbol] : symbols) {
         if (!symbol.getType().isOneOf({ TY_FUNCTION, TY_PROCEDURE, TY_IMPORT }))
@@ -222,7 +222,7 @@ void SymbolTable::insertFunctionDeclaration(const std::string& signature, const 
  * @param signature Signature of the desired function declaration
  * @return List of parameter types of the desired function declaration
  */
-std::vector<SymbolType> SymbolTable::getFunctionDeclaration(const std::string& signature) {
+std::vector<SymbolType> SymbolTable::getFunctionDeclaration(const std::string& signature) const {
     if (functionDeclarations.find(signature) == functionDeclarations.end()) return {};
     return functionDeclarations.at(signature);
 }
@@ -244,7 +244,7 @@ void SymbolTable::insertProcedureDeclaration(const std::string& signature, const
  * @param signature Signature of the desired procedure declaration
  * @return List of parameter types of the desired procedure declaration
  */
-std::vector<SymbolType> SymbolTable::getProcedureDeclaration(const std::string& signature) {
+std::vector<SymbolType> SymbolTable::getProcedureDeclaration(const std::string& signature) const {
     if (procedureDeclarations.find(signature) == procedureDeclarations.end()) return {};
     return procedureDeclarations.at(signature);
 }
@@ -363,7 +363,7 @@ void SymbolTable::printCompilerWarnings() {
  *
  * @return Symbol table if form of a string
  */
-nlohmann::json SymbolTable::toJSON() {
+nlohmann::json SymbolTable::toJSON() const {
     // Collect all symbols
     std::vector<nlohmann::json> jsonSymbols;
     jsonSymbols.reserve(symbols.size());
@@ -412,15 +412,6 @@ bool SymbolTable::isImported() const {
 /**
  * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
  */
-void SymbolTable::setRequiresCapturing() {
+void SymbolTable::setCapturingRequired() {
     requiresCapturing = true;
-}
-
-/**
- * Checks if this scope requires capturing of variables that live outside that scope
- *
- * @return Requires capturing / not requires capturing
- */
-bool SymbolTable::isCapturingRequired() const {
-    return requiresCapturing;
 }

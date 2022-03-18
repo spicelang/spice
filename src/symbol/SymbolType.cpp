@@ -41,7 +41,7 @@ SymbolType SymbolType::toArray(ErrorFactory* err, const antlr4::Token& token, un
  *
  * @return Base type
  */
-SymbolType SymbolType::getContainedTy() {
+SymbolType SymbolType::getContainedTy() const {
     if (typeChain.empty())                                                                            // GCOV_EXCL_LINE
         throw std::runtime_error("Internal compiler error: Cannot get contained type of empty type"); // GCOV_EXCL_LINE
     if (std::get<0>(typeChain.top()) == TY_STRING) return SymbolType(TY_CHAR);
@@ -81,7 +81,7 @@ SymbolType SymbolType::replaceSubType(const std::string& newSubType) {
  *
  * @return Pointer or not
  */
-bool SymbolType::isPointer() {
+bool SymbolType::isPointer() const {
     return getSuperType() == TY_PTR;
 }
 
@@ -91,7 +91,7 @@ bool SymbolType::isPointer() {
  * @param elementSuperType Super type to check for
  * @return Pointer or not
  */
-bool SymbolType::isPointerOf(SymbolSuperType elementSuperType) {
+bool SymbolType::isPointerOf(SymbolSuperType elementSuperType) const {
     if (isPointer()) return getContainedTy().is(elementSuperType);
     return false;
 }
@@ -101,7 +101,7 @@ bool SymbolType::isPointerOf(SymbolSuperType elementSuperType) {
  *
  * @return Array or not
  */
-bool SymbolType::isArray() {
+bool SymbolType::isArray() const {
     return getSuperType() == TY_ARRAY;
 }
 
@@ -111,7 +111,7 @@ bool SymbolType::isArray() {
  * @param elementSuperType Super type to check for
  * @return Array of super type or not
  */
-bool SymbolType::isArrayOf(SymbolSuperType elementSuperType) {
+bool SymbolType::isArrayOf(SymbolSuperType elementSuperType) const {
     if (isArray()) return getContainedTy().is(elementSuperType);
     return false;
 }
@@ -122,7 +122,7 @@ bool SymbolType::isArrayOf(SymbolSuperType elementSuperType) {
  * @param otherSymbolType Symbol type
  * @return Array of contained symbol type or not
  */
-bool SymbolType::isArrayOf(const SymbolType& otherSymbolType) {
+bool SymbolType::isArrayOf(const SymbolType& otherSymbolType) const {
     if (isArray()) return getContainedTy() == otherSymbolType;
     return false;
 }
@@ -133,7 +133,7 @@ bool SymbolType::isArrayOf(const SymbolType& otherSymbolType) {
  * @param superType Super type to check for
  * @return Applicable or not
  */
-bool SymbolType::is(SymbolSuperType superType) {
+bool SymbolType::is(SymbolSuperType superType) const {
     return getSuperType() == superType;
 }
 
@@ -144,7 +144,7 @@ bool SymbolType::is(SymbolSuperType superType) {
  * @param subType Sub type to check for
  * @return Applicable or not
  */
-bool SymbolType::is(SymbolSuperType superType, const std::string& subType) {
+bool SymbolType::is(SymbolSuperType superType, const std::string& subType) const {
     return getSuperType() == superType && getSubType() == subType;
 }
 
@@ -153,7 +153,7 @@ bool SymbolType::is(SymbolSuperType superType, const std::string& subType) {
  *
  * @return Primitive or not
  */
-bool SymbolType::isPrimitive() {
+bool SymbolType::isPrimitive() const {
     return isOneOf({ TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL });
 }
 
@@ -163,7 +163,7 @@ bool SymbolType::isPrimitive() {
  * @param superType Super type to check for
  * @return Applicable or not
  */
-bool SymbolType::isBaseType(SymbolSuperType superType) {
+bool SymbolType::isBaseType(SymbolSuperType superType) const {
     // Copy the stack to not destroy the present one
     TypeChain chainCopy = typeChain;
     // Unwrap the chain until the base type can be retrieved
@@ -178,7 +178,7 @@ bool SymbolType::isBaseType(SymbolSuperType superType) {
  * @param superTypes Vector of super types
  * @return Applicable or not
  */
-bool SymbolType::isOneOf(const std::vector<SymbolSuperType>& superTypes) {
+bool SymbolType::isOneOf(const std::vector<SymbolSuperType>& superTypes) const {
     SymbolSuperType superType = getSuperType();
     return std::any_of(superTypes.begin(), superTypes.end(), [&superType](int type) {
         return type == superType;
@@ -190,7 +190,7 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType>& superTypes) {
  *
  * @return Super type
  */
-SymbolSuperType SymbolType::getSuperType() {
+SymbolSuperType SymbolType::getSuperType() const {
     return std::get<0>(typeChain.top());
 }
 
@@ -199,7 +199,7 @@ SymbolSuperType SymbolType::getSuperType() {
  *
  * @return Sub type
  */
-std::string SymbolType::getSubType() {
+std::string SymbolType::getSubType() const {
     return std::get<1>(typeChain.top());
 }
 
@@ -208,7 +208,7 @@ std::string SymbolType::getSubType() {
  *
  * @return Base type
  */
-SymbolType SymbolType::getBaseType() {
+SymbolType SymbolType::getBaseType() const {
     // Copy the stack to not destroy the present one
     TypeChain chainCopy = typeChain;
     // Unwrap the chain until the base type can be retrieved
@@ -239,7 +239,7 @@ std::string SymbolType::getName(bool withSize) const {
  *
  * @return Size
  */
-unsigned int SymbolType::getArraySize() {
+unsigned int SymbolType::getArraySize() const {
     if (std::get<0>(typeChain.top()) != TY_ARRAY)                                             // GCOV_EXCL_LINE
         throw std::runtime_error("Internal compiler error: Cannot get size of non-array type");  // GCOV_EXCL_LINE
 
@@ -261,7 +261,7 @@ bool operator!=(const SymbolType& lhs, const SymbolType& rhs) {
  * @param withSize Include size in string
  * @return Type chain element name
  */
-std::string SymbolType::getNameFromChainElement(const TypeChainElement& chainElement, bool withSize) {
+std::string SymbolType::getNameFromChainElement(const TypeChainElement& chainElement, bool withSize) const {
     switch (std::get<0>(chainElement)) {
         case TY_PTR: return "*";
         case TY_ARRAY: return !withSize || std::get<1>(chainElement) == "0" ? "[]" : "[" + std::get<1>(chainElement) + "]";

@@ -38,19 +38,19 @@ public:
     void mountChildBlock(const std::string& tableName, SymbolTable* symbolTable);
     void renameChildBlock(const std::string& oldName, const std::string& newName);
 
-    SymbolTable* getParent();
+    [[nodiscard]] SymbolTable* getParent() const;
     SymbolTable* getChild(const std::string& tableName);
 
     std::map<std::string, SymbolTableEntry>& getSymbols();
     std::map<std::string, Capture>& getCaptures();
 
-    unsigned int getFieldCount();
+    [[nodiscard]] unsigned int getFieldCount() const;
 
     void insertFunctionDeclaration(const std::string& functionName, const std::vector<SymbolType>& argTypes);
-    std::vector<SymbolType> getFunctionDeclaration(const std::string& functionName);
+    [[nodiscard]] std::vector<SymbolType> getFunctionDeclaration(const std::string& functionName) const;
 
     void insertProcedureDeclaration(const std::string& procedureName, const std::vector<SymbolType>& argTypes);
-    std::vector<SymbolType> getProcedureDeclaration(const std::string& procedureName);
+    [[nodiscard]] std::vector<SymbolType> getProcedureDeclaration(const std::string& procedureName) const;
 
     void updateSymbolTypes(ErrorFactory* err, const antlr4::Token& token, const SymbolType& oldType, const SymbolType& newType);
 
@@ -59,13 +59,12 @@ public:
 
     void printCompilerWarnings();
 
-    nlohmann::json toJSON();
+    [[nodiscard]] nlohmann::json toJSON() const;
 
     void setImported();
     [[nodiscard]] bool isImported() const;
 
-    void setRequiresCapturing();
-    [[nodiscard]] bool isCapturingRequired() const;
+    void setCapturingRequired();
 
 private:
     // Members

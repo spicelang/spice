@@ -41,23 +41,23 @@ public:
     // Public methods
     SymbolType toPointer(ErrorFactory* err, const antlr4::Token& token);
     SymbolType toArray(ErrorFactory* err, const antlr4::Token& token, unsigned int size = 0);
-    SymbolType getContainedTy();
+    [[nodiscard]] SymbolType getContainedTy() const;
     SymbolType replaceSubType(const std::string& newSubType);
-    bool isPointer();
-    bool isPointerOf(SymbolSuperType superType);
-    bool isArray();
-    bool isArrayOf(SymbolSuperType superType);
-    bool isArrayOf(const SymbolType& symbolType);
-    bool is(SymbolSuperType superType);
-    bool is(SymbolSuperType superType, const std::string& subType);
-    bool isPrimitive();
-    bool isBaseType(SymbolSuperType superType);
-    bool isOneOf(const std::vector<SymbolSuperType>& superTypes);
-    SymbolSuperType getSuperType();
-    std::string getSubType();
-    SymbolType getBaseType();
+    [[nodiscard]] bool isPointer() const;
+    [[nodiscard]] bool isPointerOf(SymbolSuperType superType) const;
+    [[nodiscard]] bool isArray() const;
+    [[nodiscard]] bool isArrayOf(SymbolSuperType superType) const;
+    [[nodiscard]] bool isArrayOf(const SymbolType& symbolType) const;
+    [[nodiscard]] bool is(SymbolSuperType superType) const;
+    [[nodiscard]] bool is(SymbolSuperType superType, const std::string& subType) const;
+    [[nodiscard]] bool isPrimitive() const;
+    [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
+    [[nodiscard]] bool isOneOf(const std::vector<SymbolSuperType>& superTypes) const;
+    [[nodiscard]] SymbolSuperType getSuperType() const;
+    [[nodiscard]] std::string getSubType() const;
+    [[nodiscard]] SymbolType getBaseType() const;
     [[nodiscard]] std::string getName(bool withSize) const;
-    unsigned int getArraySize();
+    [[nodiscard]] unsigned int getArraySize() const;
     friend bool operator== (const SymbolType& lhs, const SymbolType& rhs);
     friend bool operator!= (const SymbolType& lhs, const SymbolType& rhs);
 private:
@@ -65,5 +65,5 @@ private:
     TypeChain typeChain;
 
     // Private methods
-    static std::string getNameFromChainElement(const TypeChainElement& chainElement, bool withSize);
+    [[nodiscard]] std::string getNameFromChainElement(const TypeChainElement& chainElement, bool withSize) const;
 };

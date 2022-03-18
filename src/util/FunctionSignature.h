@@ -19,7 +19,7 @@ public:
             functionName(functionName), paramTypes(std::move(paramTypes)) {}
 
     // Public methods
-    std::string toString();
+    [[nodiscard]] std::string toString() const;
     [[nodiscard]] std::string getFunctionName() const;
     [[nodiscard]] std::vector<SymbolType> getParamTypes() const;
 

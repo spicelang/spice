@@ -7,7 +7,7 @@
  *
  * @return Captured entry
  */
-SymbolTableEntry* Capture::getEntry() {
+SymbolTableEntry* Capture::getEntry() const {
     return capturedEntry;
 }
 
@@ -21,6 +21,6 @@ SymbolTableEntry* Capture::getEntry() {
  *
  * @return Capture as a JSON object
  */
-nlohmann::ordered_json Capture::toJSON() {
+nlohmann::ordered_json Capture::toJSON() const {
     return capturedEntry->toJSON();
 }

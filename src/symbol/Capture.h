@@ -12,8 +12,8 @@ public:
     explicit Capture(SymbolTableEntry* entry): capturedEntry(entry) {};
 
     // Public methods
-    SymbolTableEntry* getEntry();
-    nlohmann::ordered_json toJSON();
+    [[nodiscard]] SymbolTableEntry* getEntry() const;
+    [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
 private:
     // Members

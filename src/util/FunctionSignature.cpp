@@ -7,7 +7,7 @@
  *
  * @return Signature of the function/procedure in form of a string
  */
-std::string FunctionSignature::toString() {
+std::string FunctionSignature::toString() const {
     std::string params;
     if (!paramTypes.empty()) {
         for (auto& param : paramTypes)

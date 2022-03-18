@@ -9,7 +9,7 @@
  *
  * @return Name of the curren symbol
  */
-std::string SymbolTableEntry::getName() {
+std::string SymbolTableEntry::getName() const {
     return name;
 }
 
@@ -18,7 +18,7 @@ std::string SymbolTableEntry::getName() {
  *
  * @return Type of the current symbol
  */
-SymbolType SymbolTableEntry::getType() {
+SymbolType SymbolTableEntry::getType() const {
     return type;
 }
 
@@ -38,7 +38,7 @@ void SymbolTableEntry::updateType(SymbolType newType, bool force) {
  *
  * @return Symbol Specifiers of the current symbol
  */
-SymbolSpecifiers SymbolTableEntry::getSpecifiers() {
+SymbolSpecifiers SymbolTableEntry::getSpecifiers() const {
     return specifiers;
 }
 
@@ -47,7 +47,7 @@ SymbolSpecifiers SymbolTableEntry::getSpecifiers() {
  *
  * @return State of the current symbol
  */
-SymbolState SymbolTableEntry::getState() {
+SymbolState SymbolTableEntry::getState() const {
     return state;
 }
 
@@ -71,7 +71,7 @@ void SymbolTableEntry::updateState(SymbolState newState, ErrorFactory* err, cons
  *
  * @return Definition token
  */
-const antlr4::Token& SymbolTableEntry::getDefinitionToken() {
+const antlr4::Token& SymbolTableEntry::getDefinitionToken() const {
     return definitionToken;
 }
 
@@ -80,7 +80,7 @@ const antlr4::Token& SymbolTableEntry::getDefinitionToken() {
  *
  * @return LLVM type of the current symbol
  */
-llvm::Type* SymbolTableEntry::getLLVMType() {
+llvm::Type* SymbolTableEntry::getLLVMType() const {
     return llvmType;
 }
 
@@ -98,7 +98,7 @@ void SymbolTableEntry::updateLLVMType(llvm::Type* newType) {
  *
  * @return Address of the value in memory
  */
-llvm::Value* SymbolTableEntry::getAddress() {
+llvm::Value* SymbolTableEntry::getAddress() const {
     return memAddress.empty() ? nullptr : memAddress.top();
 }
 
@@ -180,7 +180,7 @@ void SymbolTableEntry::setUsed() {
  *
  * @return Symbol table entry as a JSON object
  */
-nlohmann::ordered_json SymbolTableEntry::toJSON() {
+nlohmann::ordered_json SymbolTableEntry::toJSON() const {
     nlohmann::json result;
     result["name"] = name;
     result["type"] = type.getName(true);
