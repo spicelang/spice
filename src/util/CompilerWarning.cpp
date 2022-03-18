@@ -17,7 +17,7 @@ CompilerWarning::CompilerWarning(const antlr4::Token& token, CompilerWarningType
 /**
  * Print the compiler warning to the standard error output
  */
-void CompilerWarning::print() {
+void CompilerWarning::print() const {
     if (!warningMessage.empty())
         std::cout << warningMessage << std::endl;
 }
@@ -28,7 +28,7 @@ void CompilerWarning::print() {
  * @param type Type of the warning
  * @return Prefix string for the warning type
  */
-std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
+std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) const {
     switch (type) {
         case UNUSED_FUNCTION:
             return "Unused function";

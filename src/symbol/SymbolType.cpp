@@ -223,7 +223,7 @@ SymbolType SymbolType::getBaseType() {
  * @param withSize Include the array size for sized types
  * @return Symbol type name
  */
-std::string SymbolType::getName(bool withSize) {
+std::string SymbolType::getName(bool withSize) const {
     std::string name;
     TypeChain chain = typeChain;
     for (int i = 0; i < typeChain.size(); i++) {

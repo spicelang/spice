@@ -29,7 +29,7 @@ void CliInterface::createInterface() {
  *
  * @throws InvalidCliOptionsException if there were an invalid combination of cli options provided
  */
-void CliInterface::validate() {
+void CliInterface::validate() const {
     // Check if source file is present
 
     // Check if all three of --target-arch, --target-vendor and --target-os are provided or none of them
@@ -40,6 +40,9 @@ void CliInterface::validate() {
     }
 }
 
+/**
+ * Add build subcommand to cli interface
+ */
 void CliInterface::addBuildSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
@@ -93,6 +96,9 @@ void CliInterface::addBuildSubcommand() {
     subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");
 }
 
+/**
+ * Add run subcommand to cli interface
+ */
 void CliInterface::addRunSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
@@ -119,6 +125,9 @@ void CliInterface::addRunSubcommand() {
     subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");
 }
 
+/**
+ * Add install subcommand to cli interface
+ */
 void CliInterface::addInstallSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
@@ -145,6 +154,9 @@ void CliInterface::addInstallSubcommand() {
     subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");
 }
 
+/**
+ * Add uninstall subcommand to cli interface
+ */
 void CliInterface::addUninstallSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
@@ -158,15 +170,28 @@ void CliInterface::addUninstallSubcommand() {
     subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");
 }
 
+/**
+ * Get cli option struct
+ */
 CliOptions* CliInterface::getOptions() {
     return &cliOptions;
 }
 
-int CliInterface::parse(int argc, char** argv) {
-    CLI11_PARSE(app, argc, argv)
-    return 0;
+/**
+ * Checks if compiling is necessary
+ */
+const bool& CliInterface::shouldCompile() const {
+    return compile;
 }
 
-bool CliInterface::shouldCompile() {
-    return compile;
+/**
+ * Start the parsing process
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Return code
+ */
+int CliInterface::parse(int argc, char** argv){
+    CLI11_PARSE(app, argc, argv)
+    return 0;
 }

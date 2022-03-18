@@ -18,7 +18,7 @@ enum CliErrorType {
 class CliError : public std::exception {
 public:
     // Constructors
-    explicit CliError(CliErrorType type, const std::string& message);
+    explicit CliError(const CliErrorType& type, const std::string& message);
 
     // Public methods
     [[nodiscard]] const char* what() const noexcept override;
@@ -27,5 +27,5 @@ private:
     // Members
     std::string errorMessage;
 
-    static std::string getMessagePrefix(CliErrorType errorType);
+    [[nodiscard]] std::string getMessagePrefix(CliErrorType errorType) const;
 };

@@ -22,7 +22,7 @@ std::string FunctionSignature::toString() {
  *
  * @return Function name
  */
-std::string FunctionSignature::getFunctionName() {
+std::string FunctionSignature::getFunctionName() const {
     return functionName;
 }
 
@@ -31,6 +31,6 @@ std::string FunctionSignature::getFunctionName() {
  *
  * @return Param types as vector
  */
-std::vector<SymbolType> FunctionSignature::getParamTypes() {
+std::vector<SymbolType> FunctionSignature::getParamTypes() const {
     return paramTypes;
 }

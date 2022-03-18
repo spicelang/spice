@@ -25,10 +25,10 @@ public:
     // Constructors
     explicit CompilerWarning(const antlr4::Token& token, CompilerWarningType type, const std::string& message);
 
-    void print();
+    void print() const;
 private:
     // Members
     std::string warningMessage{};
 
-    static std::string getMessagePrefix(CompilerWarningType warningType);
+    [[nodiscard]] std::string getMessagePrefix(CompilerWarningType warningType) const;
 };

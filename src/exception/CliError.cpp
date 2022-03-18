@@ -7,7 +7,7 @@
  * @param type Type of the error
  * @param message Error message suffix
  */
-CliError::CliError(CliErrorType type, const std::string& message) {
+CliError::CliError(const CliErrorType& type, const std::string& message) {
     errorMessage = "CLI error: " + getMessagePrefix(type) + ": " + message;
 }
 
@@ -26,7 +26,7 @@ const char* CliError::what() const noexcept {
  * @param type Type of the error
  * @return Prefix string for the error type
  */
-std::string CliError::getMessagePrefix(CliErrorType type) {
+std::string CliError::getMessagePrefix(CliErrorType type) const {
     switch (type) {
         case INCOMPLETE_TARGET_TRIPLE:
             return "Incomplete target triple";

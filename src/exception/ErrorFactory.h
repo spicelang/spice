@@ -18,11 +18,11 @@ public:
     explicit ErrorFactory(std::string fileName) : fileName(std::move(fileName)) {};
 
     // Public methods
-    SemanticError get(const antlr4::Token& token, SemanticErrorType type, const std::string& message);
-    IRError get(const antlr4::Token& token, IRErrorType type, const std::string& message);
-    IRError get(IRErrorType type, const std::string& message);
-    CliError get(CliErrorType type, const std::string& message);
+    [[nodiscard]] SemanticError get(const antlr4::Token& token, SemanticErrorType type, const std::string& message) const;
+    [[nodiscard]] IRError get(const antlr4::Token& token, IRErrorType type, const std::string& message) const;
+    [[nodiscard]] IRError get(IRErrorType type, const std::string& message) const;
+    [[nodiscard]] CliError get(CliErrorType type, const std::string& message) const;
 private:
     // Members
-    std::string fileName;
+    const std::string fileName;
 };

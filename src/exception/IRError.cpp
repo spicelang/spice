@@ -9,7 +9,7 @@
  * @param type Type of the error
  * @param message Error message suffix
  */
-IRError::IRError(const std::string& fileName, const antlr4::Token& token, IRErrorType type, const std::string& message) {
+IRError::IRError(const std::string& fileName, const antlr4::Token& token, const IRErrorType& type, const std::string& message) {
     auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
     errorMessage = "Internal compiler error in " + fileName + " at " + codeLoc + " - " + getMessagePrefix(type) + ": " + message;
 }
@@ -20,7 +20,7 @@ IRError::IRError(const std::string& fileName, const antlr4::Token& token, IRErro
  * @param type Type of the error
  * @param message Error message suffix
  */
-IRError::IRError(const std::string& fileName, IRErrorType type, const std::string& message) {
+IRError::IRError(const std::string& fileName, const IRErrorType& type, const std::string& message) {
     errorMessage = "Internal compiler error in " + fileName + " - " + getMessagePrefix(type) + ": " + message;
 }
 
@@ -39,7 +39,7 @@ const char* IRError::what() const noexcept {
  * @param type Type of the error
  * @return Prefix string for the error type
  */
-std::string IRError::getMessagePrefix(IRErrorType type) {
+std::string IRError::getMessagePrefix(IRErrorType type) const {
     switch (type) {
         case TARGET_NOT_AVAILABLE:
             return "Selected target not available";

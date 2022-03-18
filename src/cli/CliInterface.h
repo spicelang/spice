@@ -6,6 +6,9 @@
 
 #include "../../lib/cli11/CLI11.hpp"
 
+/**
+ * Representation of the various cli options
+ */
 struct CliOptions {
     std::string mainSourceFile;
     std::string targetTriple;
@@ -17,14 +20,17 @@ struct CliOptions {
     int optLevel; // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
 };
 
+/**
+ * Helper class to setup the cli interface and command line parser
+ */
 class CliInterface {
 public:
     // Public methods
     void createInterface();
     int parse(int argc, char** argv);
-    void validate();
+    void validate() const;
     CliOptions* getOptions();
-    bool shouldCompile();
+    [[nodiscard]] const bool& shouldCompile() const;
 private:
     // Private methods
     void addBuildSubcommand();
@@ -35,6 +41,6 @@ private:
     // Members
     CLI::App app = CLI::App{"Spice Programming Language", "Spice"};
     CliOptions cliOptions = CliOptions{};
-    ErrorFactory err = ErrorFactory();
+    const ErrorFactory err = ErrorFactory();
     bool compile = false;
 };

@@ -66,7 +66,7 @@ jobs:
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DSPICE_BUILT_BY="gh-actions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
           cmake --build . --target Spice_run
 
       - name: Process build output
@@ -151,7 +151,7 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DSPICE_BUILT_BY="gh-actions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
           cmake --build . --target Spice_run
           
       - name: Process build output

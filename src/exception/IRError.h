@@ -26,8 +26,10 @@ enum IRErrorType {
 class IRError : public std::exception {
 public:
     // Constructors
-    explicit IRError(const std::string& fileName, const antlr4::Token& token, IRErrorType errorType, const std::string& messageSuffix);
-    explicit IRError(const std::string& fileName, IRErrorType errorType, const std::string& messageSuffix);
+    explicit IRError(const std::string& fileName, const antlr4::Token& token,
+                     const IRErrorType& errorType, const std::string& messageSuffix);
+    explicit IRError(const std::string& fileName, const IRErrorType& errorType,
+                     const std::string& messageSuffix);
 
     // Public methods
     [[nodiscard]] const char* what() const noexcept override;
@@ -36,5 +38,6 @@ private:
     // Members
     std::string errorMessage;
 
-    static std::string getMessagePrefix(IRErrorType errorType);
+    // Private methods
+    [[nodiscard]] std::string getMessagePrefix(IRErrorType errorType) const;
 };

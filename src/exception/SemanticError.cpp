@@ -9,7 +9,8 @@
  * @param type Type of the error
  * @param message Error message suffix
  */
-SemanticError::SemanticError(const std::string& fileName, const antlr4::Token& token, SemanticErrorType type, const std::string& message) {
+SemanticError::SemanticError(const std::string& fileName, const antlr4::Token& token,
+                             const SemanticErrorType& type, const std::string& message) {
     auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
     errorMessage = "Semantic error in " + fileName + " at " + codeLoc + ": " + getMessagePrefix(type) + ": " + message;
 }
@@ -29,7 +30,7 @@ const char* SemanticError::what() const noexcept {
  * @param type Type of the error
  * @return Prefix string for the error type
  */
-std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
+std::string SemanticError::getMessagePrefix(SemanticErrorType type) const {
     switch (type) {
         case REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE:
             return "Referenced undefined function";

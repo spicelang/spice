@@ -15,14 +15,13 @@ class FunctionSignature {
 public:
     // Constructors
     explicit FunctionSignature(std::string& functionName) : functionName(functionName) {}
-    FunctionSignature(std::string& functionName, std::vector<SymbolType> paramTypes) :
-            functionName(functionName),
-            paramTypes(std::move(paramTypes)) {}
+    FunctionSignature(std::string& functionName, std::vector<SymbolType>  paramTypes) :
+            functionName(functionName), paramTypes(std::move(paramTypes)) {}
 
     // Public methods
     std::string toString();
-    std::string getFunctionName();
-    std::vector<SymbolType> getParamTypes();
+    [[nodiscard]] std::string getFunctionName() const;
+    [[nodiscard]] std::vector<SymbolType> getParamTypes() const;
 
 private:
     // Members
