@@ -1,4 +1,4 @@
-FROM alpine:3.15.0
+FROM alpine:3.15.1
 WORKDIR /spice/out
 
 ENV TERM="xterm-256color"
