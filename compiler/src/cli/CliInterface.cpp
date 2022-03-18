@@ -4,6 +4,7 @@
 
 void CliInterface::createInterface() {
     // Allow positional args
+    app.allow_windows_style_options();
     app.allow_extras();
 
     // Add global options
@@ -37,9 +38,15 @@ void CliInterface::validate() {
 void CliInterface::addBuildSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
-            "build|b",
+            "build",
             "Builds your Spice program and emits an executable"
     );
+    subCmd->alias("b");
+    subCmd->ignore_case();
+    subCmd->configurable();
+    subCmd->callback([&]() {
+        compile = true; // Requires the source file to be compiled
+    });
 
     // --debug-output
     subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput);
@@ -84,9 +91,14 @@ void CliInterface::addBuildSubcommand() {
 void CliInterface::addRunSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
-            "run|r",
+            "run",
             "Builds your Spice program and runs it immediately"
     );
+    subCmd->alias("r");
+    subCmd->ignore_case();
+    subCmd->callback([&]() {
+        compile = true; // Requires the source file to be compiled
+    });
 
     // --debug-output
     subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput);
@@ -105,9 +117,14 @@ void CliInterface::addRunSubcommand() {
 void CliInterface::addInstallSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
-            "install|i",
+            "install",
             "Builds your Spice program and installs it to a directory in the PATH variable"
     );
+    subCmd->alias("i");
+    subCmd->ignore_case();
+    subCmd->callback([&]() {
+        compile = true; // Requires the source file to be compiled
+    });
 
     // --debug-output
     subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput);
@@ -126,9 +143,11 @@ void CliInterface::addInstallSubcommand() {
 void CliInterface::addUninstallSubcommand() {
     // Create sub-command itself
     CLI::App* subCmd = app.add_subcommand(
-            "uninstall|u",
+            "uninstall",
             "Builds your Spice program and runs it immediately"
     );
+    subCmd->alias("u");
+    subCmd->ignore_case();
 
     // Source file
     subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");

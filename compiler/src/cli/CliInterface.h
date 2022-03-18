@@ -36,5 +36,5 @@ private:
     CLI::App app = CLI::App{"Spice Programming Language", "Spice"};
     CliOptions cliOptions = CliOptions{};
     ErrorFactory err = ErrorFactory();
-    bool compile = true;
+    bool compile = false;
 };
