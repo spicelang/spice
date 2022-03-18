@@ -14,7 +14,7 @@ void CliInterface::createInterface() {
     std::string versionName = std::string(SPICE_VERSION);
     std::string builtBy = std::string(SPICE_BUILT_BY);
     std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2022";
-    app.set_version_flag("--version|-v", versionString);
+    app.set_version_flag("--version,-v", versionString);
 
     // Create sub-commands
     addBuildSubcommand();
@@ -22,7 +22,7 @@ void CliInterface::createInterface() {
     addInstallSubcommand();
     addUninstallSubcommand();
 
-    app.callback([&]() {
+    app.final_callback([&]() {
         if (!compile) return;
 
         // Ensure that both, the output path and the output dir have valid values

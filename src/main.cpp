@@ -68,10 +68,10 @@ int main(int argc, char** argv) {
     CliInterface cli{};
     cli.createInterface();
     cli.parse(argc, argv);
-    cli.validate();
-
-    // Kick off the compiling process
-    if (cli.shouldCompile()) compileProject(cli.getOptions());
+    if (cli.shouldCompile()) {
+        cli.validate(); // Check if all required fields are present
+        compileProject(cli.getOptions()); // Kick off the compiling process
+    }
 
     return EXIT_SUCCESS;
 }
