@@ -75,7 +75,7 @@ void CliInterface::addBuildSubcommand() {
 
     // -O0, -O1, ...
     subCmd->add_flag("-O0{0},-O1{1},-O2{2},-O3{3},-Os{4},-Oz{5}", cliOptions.optLevel,
-                     "Set the optimization level");
+                     "Set the optimization level. -Os and -Oz are optimization modes for executable size.");
 
     // Source file
     subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");
@@ -90,23 +90,48 @@ void CliInterface::addRunSubcommand() {
 
     // --debug-output
     subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput);
+
+    // --output
+    subCmd->add_option<const std::string>("--output,-o", cliOptions.outputDir);
+
+    // -O0, -O1, ...
+    subCmd->add_flag("-O0{0},-O1{1},-O2{2},-O3{3},-Os{4},-Oz{5}", cliOptions.optLevel,
+                     "Set the optimization level. -Os and -Oz are optimization modes for executable size.");
+
+    // Source file
+    subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");
 }
 
 void CliInterface::addInstallSubcommand() {
     // Create sub-command itself
-    CLI::App* cmdInstall = app.add_subcommand(
+    CLI::App* subCmd = app.add_subcommand(
             "install",
             "Builds your Spice program and installs it to a directory in the PATH variable"
     );
 
+    // --debug-output
+    subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput);
+
+    // --output
+    subCmd->add_option<const std::string>("--output,-o", cliOptions.outputDir);
+
+    // -O0, -O1, ...
+    subCmd->add_flag("-O0{0},-O1{1},-O2{2},-O3{3},-Os{4},-Oz{5}", cliOptions.optLevel,
+                     "Set the optimization level. -Os and -Oz are optimization modes for executable size.");
+
+    // Source file
+    subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");
 }
 
 void CliInterface::addUninstallSubcommand() {
     // Create sub-command itself
-    CLI::App* cmdUninstall = app.add_subcommand(
+    CLI::App* subCmd = app.add_subcommand(
             "uninstall",
             "Builds your Spice program and runs it immediately"
     );
+
+    // Source file
+    subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");
 }
 
 CliOptions* CliInterface::getOptions() {
