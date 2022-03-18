@@ -180,7 +180,7 @@ CliOptions* CliInterface::getOptions() {
 /**
  * Checks if compiling is necessary
  */
-const bool& CliInterface::shouldCompile() const {
+bool CliInterface::shouldCompile() const {
     return compile;
 }
 

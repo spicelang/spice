@@ -24,7 +24,7 @@ void ScopePath::clear() {
  *
  * @return Pointer to the symbol table, representing the current access scope
  */
-SymbolTable* ScopePath::getCurrentScope() {
+SymbolTable* ScopePath::getCurrentScope() const {
     if (fragments.empty()) return nullptr;
     return std::get<1>(fragments.back());
 }
@@ -34,7 +34,7 @@ SymbolTable* ScopePath::getCurrentScope() {
  *
  * @return Scope name
  */
-std::string ScopePath::getScopeName() {
+std::string ScopePath::getScopeName() const {
     std::string fqn;
     for (int i = 0; i < fragments.size(); i++) {
         if (i > 0) fqn += ".";

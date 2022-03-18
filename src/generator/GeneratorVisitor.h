@@ -93,7 +93,7 @@ private:
     SymbolType currentSymbolType;
     ScopePath scopePath;
     ThreadFactory* threadFactory;
-    ErrorFactory* err;
+    const ErrorFactory* err;
     bool blockAlreadyTerminated = false;
     llvm::Value* currentThisValue = nullptr;
     llvm::BasicBlock* allocaInsertBlock = nullptr;

@@ -83,7 +83,7 @@ private:
     std::shared_ptr<llvm::LLVMContext> context;
     std::shared_ptr<llvm::IRBuilder<>> builder;
     std::unique_ptr<OpRuleManager> opRuleManager;
-    ErrorFactory* err;
+    const ErrorFactory* err;
     ModuleRegistry* moduleRegistry;
     ThreadFactory* threadFactory;
     CliOptions* cliOptions;

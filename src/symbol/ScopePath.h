@@ -13,8 +13,8 @@ public:
     explicit ScopePath() = default;
     void pushFragment(const std::string& fragment, SymbolTable* symbolTable);
     void clear();
-    SymbolTable* getCurrentScope();
-    std::string getScopeName();
+    [[nodiscard]] SymbolTable* getCurrentScope() const;
+    [[nodiscard]] std::string getScopeName() const;
 private:
     std::vector<std::pair<std::string, SymbolTable*>> fragments;
 };

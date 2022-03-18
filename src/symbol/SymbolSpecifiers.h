@@ -42,7 +42,7 @@ const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b101;
 
 class SymbolSpecifiers {
 public:
-    explicit SymbolSpecifiers(SymbolType symbolType);
+    explicit SymbolSpecifiers(const SymbolType& symbolType);
     void setConst(bool value);
     [[nodiscard]] bool isConst() const;
     void setSigned(bool value);

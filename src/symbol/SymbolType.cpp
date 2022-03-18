@@ -11,7 +11,7 @@
  *
  * @return Pointer type of the current type
  */
-SymbolType SymbolType::toPointer(ErrorFactory* err, const antlr4::Token& token) {
+SymbolType SymbolType::toPointer(const ErrorFactory* err, const antlr4::Token& token) {
     // Do not allow pointers of dyn
     if (std::get<0>(typeChain.top()) == TY_DYN)
         throw err->get(token, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
@@ -26,7 +26,7 @@ SymbolType SymbolType::toPointer(ErrorFactory* err, const antlr4::Token& token) 
  *
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(ErrorFactory* err, const antlr4::Token& token, unsigned int size) {
+SymbolType SymbolType::toArray(const ErrorFactory* err, const antlr4::Token& token, unsigned int size) {
     // Do not allow arrays of dyn
     if (std::get<0>(typeChain.top()) == TY_DYN)
         throw err->get(token, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");

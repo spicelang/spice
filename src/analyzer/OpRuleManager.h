@@ -579,7 +579,7 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
 class OpRuleManager {
 public:
     // Constructors
-    explicit OpRuleManager(ErrorFactory* errorFactory) : err(errorFactory) {}
+    explicit OpRuleManager(const ErrorFactory* errorFactory) : err(errorFactory) {}
 
     // Public methods
     SymbolType getAssignResultType(const antlr4::Token& token, SymbolType lhs, SymbolType rhs, bool declStmt);
@@ -623,7 +623,7 @@ public:
     SymbolType getCastResultType(const antlr4::Token& token, SymbolType lhs, SymbolType);
 private:
     // Members
-    ErrorFactory* err;
+    const ErrorFactory* err;
 
     // Private methods
     SymbolType validateBinaryOperation(const antlr4::Token& token, const std::vector<BinaryOpRule>& opRules,

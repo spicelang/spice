@@ -11,9 +11,9 @@ enum Mode {
 
 class AntlrThrowingErrorListener : public antlr4::BaseErrorListener {
 public:
-    explicit AntlrThrowingErrorListener(const Mode& mode): mode(mode) {}; // GCOV_EXCL_LINE
-    void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token * offendingSymbol, size_t line,
+    explicit AntlrThrowingErrorListener(Mode mode): mode(mode) {}; // GCOV_EXCL_LINE
+    void syntaxError(antlr4::Recognizer* recognizer, antlr4::Token* offendingSymbol, size_t line,
                              size_t charPositionInLine, const std::string &msg, std::exception_ptr e) override;
 private:
-    const Mode& mode;
+    Mode mode;
 };

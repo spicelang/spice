@@ -39,8 +39,8 @@ public:
     SymbolType() = default;
 
     // Public methods
-    SymbolType toPointer(ErrorFactory* err, const antlr4::Token& token);
-    SymbolType toArray(ErrorFactory* err, const antlr4::Token& token, unsigned int size = 0);
+    SymbolType toPointer(const ErrorFactory* err, const antlr4::Token& token);
+    SymbolType toArray(const ErrorFactory* err, const antlr4::Token& token, unsigned int size = 0);
     [[nodiscard]] SymbolType getContainedTy() const;
     SymbolType replaceSubType(const std::string& newSubType);
     [[nodiscard]] bool isPointer() const;

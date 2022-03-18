@@ -36,7 +36,7 @@ public:
     void updateType(SymbolType newType, bool force);
     [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
     [[nodiscard]] SymbolState getState() const;
-    void updateState(SymbolState newState, ErrorFactory* errorFactory, const antlr4::Token& token);
+    void updateState(SymbolState newState, const ErrorFactory* errorFactory, const antlr4::Token& token);
     [[nodiscard]] const antlr4::Token& getDefinitionToken() const;
     [[nodiscard]] llvm::Type* getLLVMType() const;
     void updateLLVMType(llvm::Type* newType);

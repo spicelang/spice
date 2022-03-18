@@ -4,7 +4,7 @@
 
 #include <stdexcept>
 
-SymbolSpecifiers::SymbolSpecifiers(SymbolType type) {
+SymbolSpecifiers::SymbolSpecifiers(const SymbolType& type) {
     switch (type.getSuperType()) {
         case TY_DOUBLE:
             specifierValue = SPECIFIER_DEFAULTS_DOUBLE;

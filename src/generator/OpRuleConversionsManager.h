@@ -23,7 +23,7 @@ enum PrimitiveType {
 
 class OpRuleConversionsManager {
 public:
-    explicit OpRuleConversionsManager(std::shared_ptr<llvm::IRBuilder<>> builder, ErrorFactory* errorFactory) :
+    explicit OpRuleConversionsManager(std::shared_ptr<llvm::IRBuilder<>> builder, const ErrorFactory* errorFactory) :
         builder(std::move(builder)), err(errorFactory) {}
 
     // Public methods
@@ -63,7 +63,7 @@ public:
     llvm::Value* getCastInst(llvm::Type*, llvm::Value* lhs);
 private:
     // Members
-    ErrorFactory* err;
+    const ErrorFactory* err;
     std::shared_ptr<llvm::IRBuilder<>> builder;
 
     // Private methods

@@ -30,7 +30,7 @@ public:
     int parse(int argc, char** argv);
     void validate() const;
     CliOptions* getOptions();
-    [[nodiscard]] const bool& shouldCompile() const;
+    [[nodiscard]] bool shouldCompile() const;
 private:
     // Private methods
     void addBuildSubcommand();
