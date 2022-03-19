@@ -43,7 +43,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
-      
+
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
@@ -59,14 +59,14 @@ jobs:
           curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
           mkdir cli11
           curl -SsL "https://github.com/spicelang/CLI11/releases/download/v2.1.2-spice/CLI11.hpp" --output cli11/CLI11.hpp
-      
+
       - name: Configure & compile project
         env:
           LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DSPICE_BUILT_BY="gh-actions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
           cmake --build . --target Spice_run
 
       - name: Process build output
@@ -125,7 +125,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
-      
+
       - name: Setup LLVM - Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
@@ -151,9 +151,9 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DSPICE_BUILT_BY="gh-actions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
           cmake --build . --target Spice_run
-          
+
       - name: Process build output
         working-directory: bin
         run: mv ./src/Spice_run.exe spice.exe
@@ -178,7 +178,7 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
@@ -274,11 +274,11 @@ jobs:
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-bionic/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-xenial/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-trusty/"
-      
+
       - name: Deploy to CentOS repo
         run: |
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --upload-file ./spice_${{ matrix.arch }}.rpm ${{ secrets.NEXUS_URL }}/centos/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.rpm
-      
+
       - name: Deploy to Fedora repo
         run: |
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --upload-file ./spice_${{ matrix.arch }}.rpm ${{ secrets.NEXUS_URL }}/fedora/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.rpm

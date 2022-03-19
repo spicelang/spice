@@ -1,14 +1,11 @@
 project_name: spice
 builds:
-  - main: ./.github/media/dummy.go
+  - skip: true
     goos:
       - linux
       - windows
     goarch:
       - amd64
-    hooks:
-      post:
-        - rm {{ .Path }}
 dockers:
   - image_templates:
       - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64

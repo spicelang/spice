@@ -1,10 +1,10 @@
 # Spice version
-set(SPICE_VERSION "dev" CACHE STRING "Spice build version" FORCE)
+set(SPICE_VERSION "dev" CACHE STRING "Spice build version")
 add_definitions(-DSPICE_VERSION="${SPICE_VERSION}")
 message(STATUS "Spice: Build version is set to '${SPICE_VERSION}'")
 
 # Spice built by
-set(SPICE_BUILT_BY "$ENV{USERNAME}" CACHE STRING "Spice built by person" FORCE)
+set(SPICE_BUILT_BY "$ENV{USERNAME}" CACHE STRING "Spice built by person")
 add_definitions(-DSPICE_BUILT_BY="${SPICE_BUILT_BY}")
 message(STATUS "Spice: Built by is set to '${SPICE_BUILT_BY}'")
 
