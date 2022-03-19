@@ -18,11 +18,11 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/Host.h>
 
-const static std::string MAIN_FUNCTION_NAME = "main";
-const static std::string RETURN_VARIABLE_NAME = "result";
-const static std::string THIS_VARIABLE_NAME = "this";
-const static std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
-const static std::string UNUSED_VARIABLE_NAME = "_";
+const std::string MAIN_FUNCTION_NAME = "main";
+const std::string RETURN_VARIABLE_NAME = "result";
+const std::string THIS_VARIABLE_NAME = "this";
+const std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
+const std::string UNUSED_VARIABLE_NAME = "_";
 const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case"};
 
 class AnalyzerVisitor : public SpiceBaseVisitor {

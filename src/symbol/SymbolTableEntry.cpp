@@ -51,8 +51,10 @@ SymbolState SymbolTableEntry::getState() const { return state; }
  * @param newState New state of the current symbol
  */
 void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const antlr4::Token &token) {
+  // Check if this is a constant variable and is already initialized
   if (state == INITIALIZED && specifiers.isConst())
     throw err->get(token, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
+  // Check if the type is known at time of initialization
   if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                  // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
   state = newState;

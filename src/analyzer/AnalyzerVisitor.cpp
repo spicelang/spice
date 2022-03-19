@@ -132,7 +132,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     std::string structName = ctx->IDENTIFIER().front()->toString();
     SymbolTableEntry *structEntry = currentScope->lookup(structName);
     SymbolType thisType = structEntry->getType().toPointer(err, *ctx->start);
-    SymbolSpecifiers thisTypeSpecifiers = SymbolSpecifiers(thisType);
+    auto thisTypeSpecifiers = SymbolSpecifiers(thisType);
     thisTypeSpecifiers.setConst(true);
     currentScope->insert(THIS_VARIABLE_NAME, thisType, thisTypeSpecifiers, INITIALIZED, *ctx->start, false);
   }
@@ -154,7 +154,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   if (currentScope->lookup(signature.toString()))
     throw err->get(*ctx->start, FUNCTION_DECLARED_TWICE, "Function '" + signature.toString() + "' is declared twice");
   SymbolType symbolType = SymbolType(TY_FUNCTION);
-  SymbolSpecifiers functionSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  auto functionSymbolSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
     for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->PUBLIC()) {
@@ -219,7 +219,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     std::string structName = ctx->IDENTIFIER().front()->toString();
     SymbolTableEntry *structEntry = currentScope->lookup(structName);
     SymbolType thisSymbolType = structEntry->getType().toPointer(err, *ctx->start);
-    SymbolSpecifiers thisSymbolSpecifiers = SymbolSpecifiers(thisSymbolType);
+    auto thisSymbolSpecifiers = SymbolSpecifiers(thisSymbolType);
     thisSymbolSpecifiers.setConst(true);
     currentScope->insert(THIS_VARIABLE_NAME, thisSymbolType, thisSymbolSpecifiers, INITIALIZED, *ctx->start, false);
   }
@@ -234,7 +234,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   if (currentScope->lookup(signature.toString()))
     throw err->get(*ctx->start, PROCEDURE_DECLARED_TWICE, "Procedure '" + signature.toString() + "' is declared twice");
   SymbolType symbolType = SymbolType(TY_PROCEDURE);
-  SymbolSpecifiers procedureSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  auto procedureSymbolSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
     for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->PUBLIC()) {
@@ -312,7 +312,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
     throw err->get(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate struct '" + structName + "'");
   // Create a new table entry for the struct
   SymbolType symbolType = SymbolType(TY_STRUCT, structName);
-  SymbolSpecifiers structSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
     for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->PUBLIC()) {
@@ -333,7 +333,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
     SymbolType fieldType = visit(field->dataType()).as<SymbolType>();
 
     // Build symbol specifiers
-    SymbolSpecifiers fieldTypeSpecifiers = SymbolSpecifiers(symbolType);
+    auto fieldTypeSpecifiers = SymbolSpecifiers(symbolType);
     if (field->declSpecifiers()) {
       for (auto &specifier : field->declSpecifiers()->declSpecifier()) {
         if (specifier->CONST()) {
@@ -394,7 +394,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
     throw err->get(*ctx->dataType()->start, GLOBAL_OF_INVALID_TYPE, "Spice does not allow global variables of this type");
 
   // Create symbol specifiers
-  SymbolSpecifiers symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
+  auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
     for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->CONST()) {
@@ -489,7 +489,9 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext 
     // Set declared variable to initialized, because we increment it internally in the loop
     if (!head->declStmt().front()->assignExpr()) {
       std::string varName = head->declStmt().front()->IDENTIFIER()->toString();
-      currentScope->lookup(varName)->updateState(INITIALIZED, err, *head->declStmt().front()->IDENTIFIER()->getSymbol());
+      SymbolTableEntry *entry = currentScope->lookup(varName);
+      assert(entry != nullptr);
+      entry->updateState(INITIALIZED, err, *head->declStmt().front()->IDENTIFIER()->getSymbol());
     }
 
     // Check if index type is int
@@ -499,7 +501,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext 
   } else {
     // Declare the variable with the default index variable name
     SymbolType symbolType = SymbolType(TY_INT);
-    SymbolSpecifiers symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
+    auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
     symbolTypeSpecifiers.setConst(true);
     currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, symbolType, symbolTypeSpecifiers, INITIALIZED, *ctx->start, false);
   }
@@ -630,7 +632,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
     symbolType = symbolType.getContainedTy().toPointer(err, *ctx->dataType()->start);
 
   // Build symbol specifiers
-  SymbolSpecifiers symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
+  auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
     for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->CONST()) {

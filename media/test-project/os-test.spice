@@ -44,6 +44,7 @@ f<int> main() {
     for int i = 0; i < threadCount; i++ {
         threads[i] = thread {
             int result = fib(46);
+            printf("Thread count: %d\n", threadCount);
             printf("Thread %d returned with result: %d\n", tid(), result);
         };
     }

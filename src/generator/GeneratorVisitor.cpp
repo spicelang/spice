@@ -724,7 +724,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   assert(currentScope != nullptr);
 
   // Return true as result for the loop
-  return (llvm::Value *)builder->getTrue();
+  return static_cast<llvm::Value *>(builder->getTrue());
 }
 
 antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
@@ -825,7 +825,7 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
   assert(currentScope != nullptr);
 
   // Return true as result for the loop
-  return (llvm::Value *)builder->getTrue();
+  return static_cast<llvm::Value *>(builder->getTrue());
 }
 
 antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
@@ -870,7 +870,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ct
   assert(currentScope != nullptr);
 
   // Return true as result for the loop
-  return (llvm::Value *)builder->getTrue();
+  return static_cast<llvm::Value *>(builder->getTrue());
 }
 
 antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
@@ -1082,7 +1082,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *
 
     printfArgs.push_back(argVal);
   }
-  return (llvm::Value *)builder->CreateCall(printfFct, printfArgs);
+  return static_cast<llvm::Value *>(builder->CreateCall(printfFct, printfArgs));
 }
 
 antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
@@ -1857,7 +1857,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *
     SymbolTableEntry *entry = accessScope->lookup(currentVarName);
 
     if (!entry)
-      return (llvm::Value *)nullptr;
+      return static_cast<llvm::Value *>(nullptr);
 
     llvm::Value *memAddress = entry->getAddress();
     if (entry->getType().isBaseType(TY_STRUCT)) { // If base type is a struct
@@ -1909,7 +1909,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *
         entry = accessScope->getParent()->lookup(currentVarName);
 
       if (!entry)
-        return (llvm::Value *)nullptr;
+        return static_cast<llvm::Value *>(nullptr);
     }
 
     // Retrieve scope for the new scope path fragment
@@ -2282,7 +2282,7 @@ llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::str
     // Restore old basic block
     builder->SetInsertPoint(currentBlock);
   }
-  return (llvm::Value *)allocaInsertInst;
+  return static_cast<llvm::Value *>(allocaInsertInst);
 }
 
 llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
