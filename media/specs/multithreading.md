@@ -15,7 +15,8 @@
 - [ ] 11. Add tests for the feature
 - [ ] 12. Implement variable volatility
 - [ ] 13. Add support for pipes (paused due to the work on generics)
-- [ ] 14. Add `yield` and `pick` builtins
+- [ ] 14. Add `yield` and `pick` builtin
+- [ ] 15. Add documentation
 
 ## Syntax
 

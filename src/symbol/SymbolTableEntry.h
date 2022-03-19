@@ -26,9 +26,9 @@ class SymbolTableEntry {
 public:
     // Constructors
     SymbolTableEntry(std::string name, SymbolType type, SymbolSpecifiers specifiers, SymbolState state,
-                     const antlr4::Token& token, unsigned int orderIndex, const bool isGlobal) :
+                     const antlr4::Token& token, unsigned int orderIndex, const bool global) :
             name(std::move(name)), type(std::move(type)), specifiers(specifiers), state(state), definitionToken(token),
-            orderIndex(orderIndex), isGlobal(isGlobal) {};
+            orderIndex(orderIndex), global(global) {};
 
     // Public methods
     [[nodiscard]] std::string getName() const;
@@ -45,7 +45,9 @@ public:
     void pushAddress(llvm::Value* address);
     void popAddress();
     [[nodiscard]] unsigned int getOrderIndex() const;
-    [[nodiscard]] bool isLocal() const;
+    [[nodiscard]] bool isGlobal() const;
+    [[nodiscard]] bool isVolatile() const;
+    void setVolatile(bool volatility = true);
     [[nodiscard]] bool isUsed() const;
     void setUsed();
     [[nodiscard]] nlohmann::ordered_json toJSON() const;
@@ -60,6 +62,7 @@ private:
     const antlr4::Token& definitionToken;
     std::stack<llvm::Value*> memAddress;
     unsigned int orderIndex;
-    const bool isGlobal;
+    const bool global;
+    bool volatility;
     bool used = false;
 };

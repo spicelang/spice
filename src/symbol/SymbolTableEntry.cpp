@@ -140,10 +140,28 @@ unsigned int SymbolTableEntry::getOrderIndex() const {
 /**
  * Returns if the symbol is in a local scope or in the global scope
  *
- * @return isLocal
+ * @return Global or not
  */
-bool SymbolTableEntry::isLocal() const {
-    return !isGlobal;
+bool SymbolTableEntry::isGlobal() const {
+    return global;
+}
+
+/**
+ * Returns if the symbol needs to be volatile
+ *
+ * @return Volatile or not
+ */
+bool SymbolTableEntry::isVolatile() const {
+    return volatility;
+}
+
+/**
+ * Set the volatility of the symbol
+ *
+ * @param volatility Volatile or not
+ */
+void SymbolTableEntry::setVolatile(bool vol) {
+    volatility = vol;
 }
 
 /**
@@ -187,6 +205,6 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() const {
     result["orderIndex"] = orderIndex;
     result["state"] = state == INITIALIZED ? "initialized" : "declared";
     result["specifiers"] = specifiers.toJSON();
-    result["isGlobal"] = isGlobal;
+    result["isGlobal"] = global;
     return result;
 }

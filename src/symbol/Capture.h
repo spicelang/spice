@@ -6,6 +6,11 @@
 
 #include "SymbolTableEntry.h"
 
+enum CaptureMode {
+    READ_ONLY,
+    READ_WRITE
+};
+
 class Capture {
 public:
     // Constructors
@@ -13,9 +18,12 @@ public:
 
     // Public methods
     [[nodiscard]] SymbolTableEntry* getEntry() const;
+    [[nodiscard]] CaptureMode getCaptureMode() const;
+    void setCaptureMode(CaptureMode captureMode);
     [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
 private:
     // Members
     SymbolTableEntry* capturedEntry;
+    CaptureMode mode = READ_ONLY;
 };

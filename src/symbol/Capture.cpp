@@ -12,6 +12,27 @@ SymbolTableEntry* Capture::getEntry() const {
 }
 
 /**
+ * Retrieve the mode of this capture
+ *
+ * @return Capture mode (READ_ONLY or READ_WRITE)
+ */
+CaptureMode Capture::getCaptureMode() const {
+    return mode;
+}
+
+/**
+ * Set the mode of this capture.
+ * Possible values are READ_ONLY and READ_WRITE
+ *
+ * @param captureMode Capture mode
+ */
+void Capture::setCaptureMode(CaptureMode captureMode) {
+    mode = captureMode;
+    // Set the captured symbol table entry to volatile if appropriate
+    capturedEntry->setVolatile(captureMode == READ_WRITE);
+}
+
+/**
  * Stringify the current capture to a human-readable form. Used to dump whole symbol tables with their contents.
  *
  * Example:

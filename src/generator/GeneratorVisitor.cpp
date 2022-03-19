@@ -1213,10 +1213,10 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext* 
 
             // Get value of left side
             llvm::Value* lhs;
-            if (variableEntry->isLocal()) {
-                lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-            } else {
+            if (variableEntry->isGlobal()) {
                 lhs = module->getNamedGlobal(lhsVarName);
+            } else {
+                lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
             }
 
             // Decide what to do, based on the operator
