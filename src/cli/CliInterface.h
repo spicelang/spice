@@ -38,6 +38,8 @@ public:
     void validate() const;
     CliOptions* getOptions();
     [[nodiscard]] bool shouldCompile() const;
+    [[nodiscard]] bool shouldRun() const;
+    void runBinary() const;
 private:
     // Private methods
     void addBuildSubcommand();
@@ -51,4 +53,5 @@ private:
     const ErrorFactory err = ErrorFactory();
     bool compile = false;
     bool install = false;
+    bool run = false;
 };

@@ -61,6 +61,12 @@ void CliInterface::createInterface() {
         cliOptions.outputDir += separator;
         cliOptions.outputDir += std::to_string(millis);
 
+        // Set output path to output dir if running is enabled
+        if (run) {
+            cliOptions.outputPath = cliOptions.outputDir + FileUtil::getDirSeparator() +
+                FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
+        }
+
         // Create the output dir if it does not exist already
         if (!FileUtil::dirExists(cliOptions.outputDir)) FileUtil::createDirs(cliOptions.outputDir);
     });
@@ -152,7 +158,7 @@ void CliInterface::addRunSubcommand() {
     subCmd->alias("r");
     subCmd->ignore_case();
     subCmd->callback([&]() {
-        compile = true; // Requires the source file to be compiled
+        compile = run = true; // Requires the source file to be compiled
     });
 
     // --debug-output
@@ -230,6 +236,8 @@ void CliInterface::addUninstallSubcommand() {
 
 /**
  * Get cli option struct
+ *
+ * @return Cli options
  */
 CliOptions* CliInterface::getOptions() {
     return &cliOptions;
@@ -237,9 +245,20 @@ CliOptions* CliInterface::getOptions() {
 
 /**
  * Checks if compiling is necessary
+ *
+ * @return Compile or not
  */
 bool CliInterface::shouldCompile() const {
     return compile;
+}
+
+/**
+ * Checks if running is necessary
+ *
+ * @return Run or not
+ */
+bool CliInterface::shouldRun() const {
+    return run;
 }
 
 /**
@@ -252,4 +271,15 @@ bool CliInterface::shouldCompile() const {
 int CliInterface::parse(int argc, char** argv){
     CLI11_PARSE(app, argc, argv)
     return 0;
+}
+
+/**
+ * Executes the built executable
+ */
+void CliInterface::runBinary() const {
+    // Print status message
+    if (cliOptions.printDebugOutput) std::cout << std::endl << "Running executable ..." << std::endl;
+
+    // Run executable
+    std::system(cliOptions.outputPath.c_str());
 }

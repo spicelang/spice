@@ -71,6 +71,7 @@ int main(int argc, char** argv) {
     if (cli.shouldCompile()) {
         cli.validate(); // Check if all required fields are present
         compileProject(cli.getOptions()); // Kick off the compiling process
+        if (cli.shouldRun()) cli.runBinary(); // Run executable if appropriate
     }
 
     return EXIT_SUCCESS;
