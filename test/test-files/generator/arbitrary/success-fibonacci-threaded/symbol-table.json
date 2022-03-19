@@ -15,6 +15,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "n",
           "orderIndex": 0,
           "specifiers": {
@@ -27,6 +28,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": true,
           "name": "result",
           "orderIndex": 1,
           "specifiers": {
@@ -52,6 +54,7 @@
               "symbols": [
                 {
                   "isGlobal": false,
+                  "isVolatile": false,
                   "name": "result",
                   "orderIndex": 0,
                   "specifiers": {
@@ -69,6 +72,7 @@
           "symbols": [
             {
               "isGlobal": false,
+              "isVolatile": false,
               "name": "i",
               "orderIndex": 0,
               "specifiers": {
@@ -86,6 +90,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": true,
           "name": "result",
           "orderIndex": 0,
           "specifiers": {
@@ -98,6 +103,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "threadCount",
           "orderIndex": 1,
           "specifiers": {
@@ -110,6 +116,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "threads",
           "orderIndex": 2,
           "specifiers": {
@@ -126,6 +133,7 @@
   "symbols": [
     {
       "isGlobal": true,
+      "isVolatile": false,
       "name": "fib(int)",
       "orderIndex": 0,
       "specifiers": {
@@ -138,6 +146,7 @@
     },
     {
       "isGlobal": true,
+      "isVolatile": true,
       "name": "main()",
       "orderIndex": 1,
       "specifiers": {

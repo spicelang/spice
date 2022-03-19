@@ -31,6 +31,7 @@
           "symbols": [
             {
               "isGlobal": false,
+              "isVolatile": false,
               "name": "i",
               "orderIndex": 0,
               "specifiers": {
@@ -48,6 +49,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "iterations",
           "orderIndex": 13,
           "specifiers": {
@@ -60,6 +62,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "k",
           "orderIndex": 7,
           "specifiers": {
@@ -72,6 +75,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "k_new",
           "orderIndex": 8,
           "specifiers": {
@@ -84,6 +88,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "m",
           "orderIndex": 9,
           "specifiers": {
@@ -96,6 +101,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "m_new",
           "orderIndex": 10,
           "specifiers": {
@@ -108,6 +114,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "printedDigits",
           "orderIndex": 14,
           "specifiers": {
@@ -120,6 +127,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "q",
           "orderIndex": 1,
           "specifiers": {
@@ -132,6 +140,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "q_new",
           "orderIndex": 2,
           "specifiers": {
@@ -144,6 +153,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "r",
           "orderIndex": 3,
           "specifiers": {
@@ -156,6 +166,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "r_new",
           "orderIndex": 4,
           "specifiers": {
@@ -168,6 +179,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": true,
           "name": "result",
           "orderIndex": 0,
           "specifiers": {
@@ -180,6 +192,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "t",
           "orderIndex": 5,
           "specifiers": {
@@ -192,6 +205,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "t_new",
           "orderIndex": 6,
           "specifiers": {
@@ -204,6 +218,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "x",
           "orderIndex": 11,
           "specifiers": {
@@ -216,6 +231,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "x_new",
           "orderIndex": 12,
           "specifiers": {
@@ -232,6 +248,7 @@
   "symbols": [
     {
       "isGlobal": true,
+      "isVolatile": true,
       "name": "main()",
       "orderIndex": 0,
       "specifiers": {

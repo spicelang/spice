@@ -8,6 +8,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "mandatoryParam",
           "orderIndex": 0,
           "specifiers": {
@@ -20,6 +21,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "optionalParam",
           "orderIndex": 1,
           "specifiers": {
@@ -32,6 +34,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": true,
           "name": "result",
           "orderIndex": 2,
           "specifiers": {
@@ -51,6 +54,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": true,
           "name": "result",
           "orderIndex": 1,
           "specifiers": {
@@ -63,6 +67,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "testString",
           "orderIndex": 0,
           "specifiers": {
@@ -82,6 +87,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "res",
           "orderIndex": 1,
           "specifiers": {
@@ -94,6 +100,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": true,
           "name": "result",
           "orderIndex": 0,
           "specifiers": {
@@ -110,6 +117,7 @@
   "symbols": [
     {
       "isGlobal": true,
+      "isVolatile": false,
       "name": "calledFunction(int,bool)",
       "orderIndex": 0,
       "specifiers": {
@@ -122,6 +130,7 @@
     },
     {
       "isGlobal": true,
+      "isVolatile": false,
       "name": "calledFunction(string)",
       "orderIndex": 1,
       "specifiers": {
@@ -134,6 +143,7 @@
     },
     {
       "isGlobal": true,
+      "isVolatile": true,
       "name": "main()",
       "orderIndex": 2,
       "specifiers": {
