@@ -15,6 +15,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Get version name
+        id: get_version
+        uses: battila7/get-version-action@v2
+
       - name: Uninstall potential other versions of LLVM
         run: sudo apt-get purge llvm-12 clang-12 llvm-11 clang-11 llvm-10 clang-10
 
@@ -66,7 +70,7 @@ jobs:
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${{ steps.get_version.outputs.version }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
           cmake --build . --target Spice_run
 
       - name: Process build output
@@ -88,6 +92,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Get version name
+        id: get_version
+        uses: battila7/get-version-action@v2
+
       - name: Setup latest GCC
         shell: pwsh
         run: |
@@ -95,7 +103,7 @@ jobs:
           choco uninstall llvm --all-versions
           Remove-Item -Recurse -Force C:/Strawberry
           echo "Uninstalling done."
-          Invoke-WebRequest http://chillibits.com/files/gh/mingw64_11_2_0.zip -OutFile mingw64.zip
+          Invoke-WebRequest https://chillibits.com/files/gh/mingw64_11_2_0.zip -OutFile mingw64.zip
           echo "Downloading done."
           7z x mingw64.zip -oC:\mingw64
           echo "Unpacking done."
@@ -151,7 +159,7 @@ jobs:
           echo "Adding MinGW to path done."
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${GITHUB_REF#refs/tags/}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${{ steps.get_version.outputs.version }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
           cmake --build . --target Spice_run
 
       - name: Process build output
@@ -164,8 +172,8 @@ jobs:
           name: spice-windows-static-x64
           path: ./bin/spice**
 
-  build-cli:
-    name: Build CLI binaries
+  build-artifacts:
+    name: Build artifacts
     needs: [build-compiler-linux, build-compiler-windows]
     runs-on: ubuntu-latest
     env:
@@ -239,7 +247,7 @@ jobs:
 
   deploy-nexus:
     name: Deploy to Nexus
-    needs: build-cli
+    needs: build-artifacts
     runs-on: ubuntu-latest
     if: contains(github.ref, 'rc') == false
     strategy:
@@ -288,8 +296,8 @@ jobs:
 #          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.apk"
 
   build-win-installers:
-    name: Build installers
-    needs: build-cli
+    name: Build Winddows installers
+    needs: build-artifacts
     runs-on: windows-latest
     strategy:
       matrix:
