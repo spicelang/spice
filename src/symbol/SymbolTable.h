@@ -32,6 +32,8 @@ public:
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
   SymbolTableEntry *lookupByIndexInCurrentScope(unsigned int);
+  Capture *lookupCapture(const std::string &symbolName);
+  Capture *lookupCaptureStrict(const std::string &symbolName);
   SymbolTable *lookupTable(const std::string &tableName);
   SymbolTable *lookupTableWithSignature(const std::string &signature);
   SymbolTable *createChildBlock(const std::string &tableName);

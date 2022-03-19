@@ -87,6 +87,39 @@ SymbolTableEntry *SymbolTable::lookupByIndexInCurrentScope(unsigned int orderInd
 }
 
 /**
+ * Check if a capture exists in the current or any parent scope scope and return it if possible
+ *
+ * @param symbolName Name of the desired captured symbol
+ * @return Capture / nullptr if the capture was not found
+ */
+Capture *SymbolTable::lookupCapture(const std::string &name) {
+  // Check if the capture exists in the current scope. If yes, take it
+  Capture *capture = lookupCaptureStrict(name);
+  if (capture)
+    return capture;
+
+  // We reached the root scope, the symbol does not exist at all
+  if (parent == nullptr)
+    return nullptr;
+
+  return parent->lookupCapture(name);
+}
+
+/**
+ * Check if a capture exists in the current scope and return it if possible
+ *
+ * @param symbolName Name of the desired captured symbol
+ * @return Capture / nullptr if the capture was not found
+ */
+Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
+  // If not available in the current scope, return nullptr
+  if (captures.find(name) == captures.end())
+    return nullptr;
+  // Otherwise, return the capture
+  return &captures.at(name);
+}
+
+/**
  * Search for a symbol table by its name, where a function is defined. Used for function calls to function/procedures
  * which were linked in from other modules
  *

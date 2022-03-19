@@ -957,7 +957,7 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx)
     // Visit right side
     llvm::Value *rhsPtr = visit(ctx->assignExpr()).as<llvm::Value *>();
     llvm::Value *rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-    builder->CreateStore(rhs, memAddress);
+    builder->CreateStore(rhs, memAddress, entry->isVolatile());
   }
   entry->updateAddress(memAddress);
   entry->updateLLVMType(varType);
@@ -1243,7 +1243,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *
       } else if (ctx->assignOp()->XOR_EQUAL()) {
         rhs = conversionsManager->getXorEqualInst(lhs, rhs);
       }
-      builder->CreateStore(rhs, lhsPtr);
+      builder->CreateStore(rhs, lhsPtr, variableEntry->isVolatile());
     }
     return lhsPtr;
   } else if (ctx->ternaryExpr()) {
@@ -1604,6 +1604,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
     // Load the value
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
 
+    bool isVolatile = false;
     unsigned int tokenCounter = 0;
     while (tokenCounter < ctx->children.size() - 1) {
       auto *token = dynamic_cast<SpiceParser::PrefixUnaryOpContext *>(ctx->children[tokenCounter]);
@@ -1613,8 +1614,18 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
         lhs = conversionsManager->getPrefixMinusInst(lhs);
       } else if (token->PLUS_PLUS()) { // Consider ++ operator
         lhs = conversionsManager->getPrefixPlusPlusInst(lhs);
+
+        // Store the new value volatile
+        SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
+        if (!isVolatile && lhsVarEntry && lhsVarEntry->isVolatile())
+          isVolatile = true;
       } else if (token->MINUS_MINUS()) { // Consider -- operator
         lhs = conversionsManager->getPrefixMinusMinusInst(lhs);
+
+        // Store the new value volatile
+        SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
+        if (!isVolatile && lhsVarEntry && lhsVarEntry->isVolatile())
+          isVolatile = true;
       } else if (token->NOT()) { // Consider ! operator
         lhs = conversionsManager->getPrefixNotInst(lhs);
       } else if (token->BITWISE_NOT()) { // Consider ~ operator
@@ -1642,7 +1653,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
     }
 
     // Store the value back again
-    builder->CreateStore(lhs, lhsPtr);
+    builder->CreateStore(lhs, lhsPtr, isVolatile);
   }
 
   return lhsPtr;
@@ -1820,16 +1831,20 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
         lhs = nullptr;
       } else if (symbolType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
         assert(lhs != nullptr);
+        // Get the lhs variable entry
+        SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         // Save the new value to the old pointer
         llvm::Value *newLhsValue = conversionsManager->getPostfixPlusPlusInst(lhs);
-        builder->CreateStore(newLhsValue, lhsPtr);
+        builder->CreateStore(newLhsValue, lhsPtr, lhsVarEntry && lhsVarEntry->isVolatile());
         // Allocate new space and continue working with the new memory slot
         lhsPtr = insertAlloca(lhs->getType());
       } else if (symbolType == SpiceParser::MINUS_MINUS) { // Consider -- operator
         assert(lhs != nullptr);
+        // Get the lhs variable entry
+        SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         // Save the new value to the old pointer
         llvm::Value *newLhsValue = conversionsManager->getPostfixMinusMinusInst(lhs);
-        builder->CreateStore(newLhsValue, lhsPtr);
+        builder->CreateStore(newLhsValue, lhsPtr, lhsVarEntry && lhsVarEntry->isVolatile());
         // Allocate new space and continue working with the new memory slot
         lhsPtr = insertAlloca(lhs->getType());
       }

@@ -971,6 +971,11 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *c
       if (!currentEntry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}))
         currentEntry->updateState(INITIALIZED, err, *ctx->prefixUnaryExpr()->start);
 
+      // In case the lhs variable is captured, notify the capture about the write access
+      Capture *lhsCapture = currentScope->lookupCapture(variableName);
+      if (lhsCapture)
+        lhsCapture->setCaptureMode(READ_WRITE);
+
       // Print compiler warning if the rhs size exceeds the lhs size
       if (lhsTy.isArray() && rhsTy.getArraySize() > lhsTy.getArraySize())
         CompilerWarning(*ctx->assignExpr()->start, ARRAY_TOO_MANY_VALUES,
@@ -1192,8 +1197,26 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
       lhs = opRuleManager->getPrefixMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
     } else if (token->PLUS_PLUS()) { // Consider ++ operator
       lhs = opRuleManager->getPrefixPlusPlusResultType(*ctx->postfixUnaryExpr()->start, lhs);
+
+      // Update state in symbol table
+      if (currentEntry != nullptr)
+        currentEntry->updateState(INITIALIZED, err, *token->start);
+
+      // In case the lhs is captured, notify the capture about the write access
+      Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
+      if (lhsCapture)
+        lhsCapture->setCaptureMode(READ_WRITE);
     } else if (token->MINUS_MINUS()) { // Consider -- operator
       lhs = opRuleManager->getPrefixMinusMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
+
+      // Update state in symbol table
+      if (currentEntry != nullptr)
+        currentEntry->updateState(INITIALIZED, err, *token->start);
+
+      // In case the lhs is captured, notify the capture about the write access
+      Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
+      if (lhsCapture)
+        lhsCapture->setCaptureMode(READ_WRITE);
     } else if (token->NOT()) { // Consider ! operator
       lhs = opRuleManager->getPrefixNotResultType(*ctx->postfixUnaryExpr()->start, lhs);
     } else if (token->BITWISE_NOT()) { // Consider ~ operator
@@ -1325,12 +1348,22 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
       // Update state in symbol table
       if (currentEntry != nullptr)
         currentEntry->updateState(INITIALIZED, err, *token->getSymbol());
+
+      // In case the lhs is captured, notify the capture about the write access
+      Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
+      if (lhsCapture)
+        lhsCapture->setCaptureMode(READ_WRITE);
     } else if (tokenType == SpiceParser::MINUS_MINUS) { // Consider -- operator
       lhs = opRuleManager->getPostfixMinusMinusResultType(*ctx->atomicExpr()->start, lhs);
 
       // Update state in symbol table
       if (currentEntry != nullptr)
         currentEntry->updateState(INITIALIZED, err, *token->getSymbol());
+
+      // In case the lhs is captured, notify the capture about the write access
+      Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
+      if (lhsCapture)
+        lhsCapture->setCaptureMode(READ_WRITE);
     }
     tokenCounter++; // Consume token
   }

@@ -164,7 +164,8 @@ void SymbolTableEntry::setUsed() { used = true; }
  *     "const": true,
  *     "signed": false
  *   ],
- *   "isGlobal": false
+ *   "isGlobal": false,
+ *   "isVolatile": false
  * }
  *
  * @return Symbol table entry as a JSON object
@@ -177,5 +178,6 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   result["state"] = state == INITIALIZED ? "initialized" : "declared";
   result["specifiers"] = specifiers.toJSON();
   result["isGlobal"] = global;
+  result["isVolatile"] = volatility;
   return result;
 }
