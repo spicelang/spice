@@ -296,7 +296,7 @@ jobs:
 #          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.apk"
 
   build-win-installers:
-    name: Build Winddows installers
+    name: Build Windows installers
     needs: build-artifacts
     runs-on: windows-latest
     strategy:
@@ -338,7 +338,7 @@ jobs:
         shell: bash
         env:
           ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
-        run: cp ./compiler/third-party/zlib1__.dll ./
+        run: cp ./src/thirdparty/zlib1__.dll ./
 
       - name: Build MSI
         shell: bash
