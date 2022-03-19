@@ -7,8 +7,8 @@
  * @param type Type of the error
  * @param message Error message suffix
  */
-CliError::CliError(const CliErrorType& type, const std::string& message) {
-    errorMessage = "CLI error: " + getMessagePrefix(type) + ": " + message;
+CliError::CliError(const CliErrorType &type, const std::string &message) {
+  errorMessage = "CLI error: " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -16,9 +16,7 @@ CliError::CliError(const CliErrorType& type, const std::string& message) {
  *
  * @return Error message in form of a char array
  */
-const char* CliError::what() const noexcept {
-    return errorMessage.c_str();
-}
+const char *CliError::what() const noexcept { return errorMessage.c_str(); }
 
 /**
  * Get the prefix of the error message for a particular error
@@ -27,15 +25,15 @@ const char* CliError::what() const noexcept {
  * @return Prefix string for the error type
  */
 std::string CliError::getMessagePrefix(CliErrorType type) const {
-    switch (type) {
-        case INCOMPLETE_TARGET_TRIPLE:
-            return "Incomplete target triple";
-        case INVALID_TARGET_TRIPLE:
-            return "Invalid target triple";
-        case SOURCE_FILE_MISSING:
-            return "Source file missing";
-        case COMING_SOON_CLI:
-            return "Coming soon";
-    }
-    return "Unknown error"; // GCOV_EXCL_LINE
+  switch (type) {
+  case INCOMPLETE_TARGET_TRIPLE:
+    return "Incomplete target triple";
+  case INVALID_TARGET_TRIPLE:
+    return "Invalid target triple";
+  case SOURCE_FILE_MISSING:
+    return "Source file missing";
+  case COMING_SOON_CLI:
+    return "Coming soon";
+  }
+  return "Unknown error"; // GCOV_EXCL_LINE
 }

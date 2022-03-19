@@ -5,7 +5,7 @@
 #include <string>
 
 enum LinkerErrorType {
-    LINKER_NOT_FOUND,
+  LINKER_NOT_FOUND,
 };
 
 /**
@@ -13,15 +13,15 @@ enum LinkerErrorType {
  */
 class LinkerError : public std::exception {
 public:
-    // Constructors
-    explicit LinkerError(const LinkerErrorType& type, const std::string& message);
+  // Constructors
+  explicit LinkerError(const LinkerErrorType &type, const std::string &message);
 
-    // Public methods
-    [[nodiscard]] const char* what() const noexcept override;
+  // Public methods
+  [[nodiscard]] const char *what() const noexcept override;
 
 private:
-    // Members
-    std::string errorMessage;
+  // Members
+  std::string errorMessage;
 
-    [[nodiscard]] std::string getMessagePrefix(LinkerErrorType errorType) const;
+  [[nodiscard]] std::string getMessagePrefix(LinkerErrorType errorType) const;
 };

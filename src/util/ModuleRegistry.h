@@ -10,9 +10,10 @@
  */
 class ModuleRegistry {
 public:
-    // Public methods
-    void addModule(const ErrorFactory* errorFactory, const antlr4::Token& token, const std::string& moduleName);
+  // Public methods
+  void addModule(const ErrorFactory *errorFactory, const antlr4::Token &token, const std::string &moduleName);
+
 private:
-    // Members
-    std::vector<std::string> modulePaths;
+  // Members
+  std::vector<std::string> modulePaths;
 };

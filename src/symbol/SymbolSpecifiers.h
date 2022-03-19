@@ -42,17 +42,18 @@ const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b101;
 
 class SymbolSpecifiers {
 public:
-    explicit SymbolSpecifiers(const SymbolType& symbolType);
-    void setConst(bool value);
-    [[nodiscard]] bool isConst() const;
-    void setSigned(bool value);
-    [[nodiscard]] bool isSigned() const;
-    void setPublic(bool value);
-    [[nodiscard]] bool isPublic() const;
-    [[nodiscard]] nlohmann::ordered_json toJSON() const;
+  explicit SymbolSpecifiers(const SymbolType &symbolType);
+  void setConst(bool value);
+  [[nodiscard]] bool isConst() const;
+  void setSigned(bool value);
+  [[nodiscard]] bool isSigned() const;
+  void setPublic(bool value);
+  [[nodiscard]] bool isPublic() const;
+  [[nodiscard]] nlohmann::ordered_json toJSON() const;
+
 private:
-    unsigned short specifierValue = 0;
-    void setBit(unsigned short index);
-    void clearBit(unsigned short index);
-    [[nodiscard]] bool getBit(unsigned short index) const;
+  unsigned short specifierValue = 0;
+  void setBit(unsigned short index);
+  void clearBit(unsigned short index);
+  [[nodiscard]] bool getBit(unsigned short index) const;
 };

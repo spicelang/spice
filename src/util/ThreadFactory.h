@@ -7,9 +7,10 @@
  */
 class ThreadFactory {
 public:
-    // Public methods
-    int getNextFunctionSuffix();
+  // Public methods
+  int getNextFunctionSuffix();
+
 private:
-    // Members
-    int nextFctSuffix = 0;
+  // Members
+  int nextFctSuffix = 0;
 };

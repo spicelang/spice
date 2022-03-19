@@ -4,54 +4,55 @@
 
 #include <stdexcept>
 
-SymbolSpecifiers::SymbolSpecifiers(const SymbolType& type) {
-    switch (type.getSuperType()) {
-        case TY_DOUBLE:
-            specifierValue = SPECIFIER_DEFAULTS_DOUBLE;
-            break;
-        case TY_INT:
-            specifierValue = SPECIFIER_DEFAULTS_INT;
-            break;
-        case TY_SHORT:
-            specifierValue = SPECIFIER_DEFAULTS_SHORT;
-            break;
-        case TY_LONG:
-            specifierValue = SPECIFIER_DEFAULTS_LONG;
-            break;
-        case TY_BYTE:
-            specifierValue = SPECIFIER_DEFAULTS_BYTE;
-            break;
-        case TY_CHAR:
-            specifierValue = SPECIFIER_DEFAULTS_CHAR;
-            break;
-        case TY_STRING:
-            specifierValue = SPECIFIER_DEFAULTS_STRING;
-            break;
-        case TY_BOOL:
-            specifierValue = SPECIFIER_DEFAULTS_BOOL;
-            break;
-        case TY_PTR:
-            specifierValue = SPECIFIER_DEFAULTS_PTR;
-            break;
-        case TY_ARRAY:
-            specifierValue = SPECIFIER_DEFAULTS_ARRAY;
-            break;
-        case TY_STRUCT:
-            specifierValue = SPECIFIER_DEFAULTS_STRUCT;
-            break;
-        case TY_FUNCTION:
-            specifierValue = SPECIFIER_DEFAULTS_FUNCTION;
-            break;
-        case TY_PROCEDURE:
-            specifierValue = SPECIFIER_DEFAULTS_PROCEDURE;
-            break;
-        case TY_IMPORT:
-            specifierValue = SPECIFIER_DEFAULTS_IMPORT;
-            break;
-        case TY_DYN: break;
-        default:                                                      // GCOV_EXCL_LINE
-            throw std::runtime_error("Symbol specifier fallthrough"); // GCOV_EXCL_LINE
-    }
+SymbolSpecifiers::SymbolSpecifiers(const SymbolType &type) {
+  switch (type.getSuperType()) {
+  case TY_DOUBLE:
+    specifierValue = SPECIFIER_DEFAULTS_DOUBLE;
+    break;
+  case TY_INT:
+    specifierValue = SPECIFIER_DEFAULTS_INT;
+    break;
+  case TY_SHORT:
+    specifierValue = SPECIFIER_DEFAULTS_SHORT;
+    break;
+  case TY_LONG:
+    specifierValue = SPECIFIER_DEFAULTS_LONG;
+    break;
+  case TY_BYTE:
+    specifierValue = SPECIFIER_DEFAULTS_BYTE;
+    break;
+  case TY_CHAR:
+    specifierValue = SPECIFIER_DEFAULTS_CHAR;
+    break;
+  case TY_STRING:
+    specifierValue = SPECIFIER_DEFAULTS_STRING;
+    break;
+  case TY_BOOL:
+    specifierValue = SPECIFIER_DEFAULTS_BOOL;
+    break;
+  case TY_PTR:
+    specifierValue = SPECIFIER_DEFAULTS_PTR;
+    break;
+  case TY_ARRAY:
+    specifierValue = SPECIFIER_DEFAULTS_ARRAY;
+    break;
+  case TY_STRUCT:
+    specifierValue = SPECIFIER_DEFAULTS_STRUCT;
+    break;
+  case TY_FUNCTION:
+    specifierValue = SPECIFIER_DEFAULTS_FUNCTION;
+    break;
+  case TY_PROCEDURE:
+    specifierValue = SPECIFIER_DEFAULTS_PROCEDURE;
+    break;
+  case TY_IMPORT:
+    specifierValue = SPECIFIER_DEFAULTS_IMPORT;
+    break;
+  case TY_DYN:
+    break;
+  default:                                                    // GCOV_EXCL_LINE
+    throw std::runtime_error("Symbol specifier fallthrough"); // GCOV_EXCL_LINE
+  }
 }
 
 /**
@@ -60,10 +61,10 @@ SymbolSpecifiers::SymbolSpecifiers(const SymbolType& type) {
  * @param value True or false
  */
 void SymbolSpecifiers::setConst(bool value) {
-    if (value)
-        setBit(BIT_INDEX_CONST);
-    else
-        clearBit(BIT_INDEX_CONST);
+  if (value)
+    setBit(BIT_INDEX_CONST);
+  else
+    clearBit(BIT_INDEX_CONST);
 }
 
 /**
@@ -71,9 +72,7 @@ void SymbolSpecifiers::setConst(bool value) {
  *
  * @return True or false
  */
-bool SymbolSpecifiers::isConst() const {
-    return getBit(BIT_INDEX_CONST);
-}
+bool SymbolSpecifiers::isConst() const { return getBit(BIT_INDEX_CONST); }
 
 /**
  * Set the signed flag
@@ -81,10 +80,10 @@ bool SymbolSpecifiers::isConst() const {
  * @param value True or false
  */
 void SymbolSpecifiers::setSigned(bool value) {
-    if (value)
-        setBit(BIT_INDEX_SIGNED);
-    else
-        clearBit(BIT_INDEX_SIGNED);
+  if (value)
+    setBit(BIT_INDEX_SIGNED);
+  else
+    clearBit(BIT_INDEX_SIGNED);
 }
 
 /**
@@ -92,9 +91,7 @@ void SymbolSpecifiers::setSigned(bool value) {
  *
  * @return True or false
  */
-bool SymbolSpecifiers::isSigned() const {
-    return getBit(BIT_INDEX_SIGNED);
-}
+bool SymbolSpecifiers::isSigned() const { return getBit(BIT_INDEX_SIGNED); }
 
 /**
  * Set the public flag
@@ -102,10 +99,10 @@ bool SymbolSpecifiers::isSigned() const {
  * @param value True or false
  */
 void SymbolSpecifiers::setPublic(bool value) {
-    if (value)
-        setBit(BIT_INDEX_PUBLIC);
-    else
-        clearBit(BIT_INDEX_PUBLIC);
+  if (value)
+    setBit(BIT_INDEX_PUBLIC);
+  else
+    clearBit(BIT_INDEX_PUBLIC);
 }
 
 /**
@@ -113,27 +110,21 @@ void SymbolSpecifiers::setPublic(bool value) {
  *
  * @return True or false
  */
-bool SymbolSpecifiers::isPublic() const {
-    return getBit(BIT_INDEX_PUBLIC);
-}
+bool SymbolSpecifiers::isPublic() const { return getBit(BIT_INDEX_PUBLIC); }
 
 /**
  * Set bit in specifier value
  *
  * @param index Index of the bit to set
  */
-void SymbolSpecifiers::setBit(unsigned short index) {
-    specifierValue |= (1 << index);
-}
+void SymbolSpecifiers::setBit(unsigned short index) { specifierValue |= (1 << index); }
 
 /**
  * Clear bit in specifier value
  *
  * @param index Index of the bit to clear
  */
-void SymbolSpecifiers::clearBit(unsigned short index) {
-    specifierValue &= ~(1 << index);
-}
+void SymbolSpecifiers::clearBit(unsigned short index) { specifierValue &= ~(1 << index); }
 
 /**
  * Get the bit at a specific index
@@ -141,9 +132,7 @@ void SymbolSpecifiers::clearBit(unsigned short index) {
  * @param index Index of the bit to get
  * @return True or false
  */
-bool SymbolSpecifiers::getBit(unsigned short index) const {
-    return ((specifierValue >> index) & 1) == 1;
-}
+bool SymbolSpecifiers::getBit(unsigned short index) const { return ((specifierValue >> index) & 1) == 1; }
 
 /**
  * Returns the JSON representation of the specifier collection
@@ -151,9 +140,9 @@ bool SymbolSpecifiers::getBit(unsigned short index) const {
  * @return Specifiers as JSON object
  */
 nlohmann::ordered_json SymbolSpecifiers::toJSON() const {
-    nlohmann::json result;
-    result["const"] = isConst();
-    result["signed"] = isSigned();
-    result["public"] = isPublic();
-    return result;
+  nlohmann::json result;
+  result["const"] = isConst();
+  result["signed"] = isSigned();
+  result["public"] = isPublic();
+  return result;
 }

@@ -2,27 +2,28 @@
 
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <cli/CliInterface.h>
 #include <exception/ErrorFactory.h>
 
 class LinkerInterface {
 public:
-    // Constructors
-    explicit LinkerInterface(const ErrorFactory* errorFactory, CliOptions* options): err(errorFactory), cliOptions(options) {};
+  // Constructors
+  explicit LinkerInterface(const ErrorFactory *errorFactory, CliOptions *options) : err(errorFactory), cliOptions(options){};
 
-    // Public methods
-    void link();
-    void addObjectFilePath(const std::string& objectFilePath);
-    void addLinkerFlag(const std::string& linkerFlag);
-    void setOutputPath(const std::string& outputPath);
+  // Public methods
+  void link();
+  void addObjectFilePath(const std::string &objectFilePath);
+  void addLinkerFlag(const std::string &linkerFlag);
+  void setOutputPath(const std::string &outputPath);
+
 private:
-    // Members
-    const ErrorFactory* err;
-    const CliOptions* cliOptions;
-    std::vector<std::string> objectFilePaths;
-    std::vector<std::string> linkerFlags = { "-no-pie" };
-    std::string outputPath;
+  // Members
+  const ErrorFactory *err;
+  const CliOptions *cliOptions;
+  std::vector<std::string> objectFilePaths;
+  std::vector<std::string> linkerFlags = {"-no-pie"};
+  std::string outputPath;
 };

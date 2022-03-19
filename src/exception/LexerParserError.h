@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <string>
 #include <exception>
+#include <string>
 #include <utility>
 
 /**
@@ -11,13 +11,13 @@
  */
 class LexerParserError : public std::exception {
 public:
-    // Constructors
-    explicit LexerParserError(std::string message): errorMessage(std::move(message)) {} // GCOV_EXCL_LINE
+  // Constructors
+  explicit LexerParserError(std::string message) : errorMessage(std::move(message)) {} // GCOV_EXCL_LINE
 
-    // Public methods
-    [[nodiscard]] const char* what() const noexcept override;
+  // Public methods
+  [[nodiscard]] const char *what() const noexcept override;
 
 private:
-    // Members
-    std::string errorMessage;
+  // Members
+  std::string errorMessage;
 };

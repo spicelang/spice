@@ -8,25 +8,24 @@
  * @param fragmentName Fragment name
  * @param symbolTable Associated symbol table
  */
-void ScopePath::pushFragment(const std::string& fragmentName, SymbolTable* symbolTable) {
-    fragments.emplace_back(fragmentName, symbolTable);
+void ScopePath::pushFragment(const std::string &fragmentName, SymbolTable *symbolTable) {
+  fragments.emplace_back(fragmentName, symbolTable);
 }
 
 /**
  * Clear the scope path
  */
-void ScopePath::clear() {
-    fragments.clear();
-}
+void ScopePath::clear() { fragments.clear(); }
 
 /**
  * Return the current access scope of the scope path
  *
  * @return Pointer to the symbol table, representing the current access scope
  */
-SymbolTable* ScopePath::getCurrentScope() const {
-    if (fragments.empty()) return nullptr;
-    return std::get<1>(fragments.back());
+SymbolTable *ScopePath::getCurrentScope() const {
+  if (fragments.empty())
+    return nullptr;
+  return std::get<1>(fragments.back());
 }
 
 /**
@@ -35,10 +34,11 @@ SymbolTable* ScopePath::getCurrentScope() const {
  * @return Scope name
  */
 std::string ScopePath::getScopeName() const {
-    std::string fqn;
-    for (int i = 0; i < fragments.size(); i++) {
-        if (i > 0) fqn += ".";
-        fqn += fragments[i].first;
-    }
-    return fqn;
+  std::string fqn;
+  for (int i = 0; i < fragments.size(); i++) {
+    if (i > 0)
+      fqn += ".";
+    fqn += fragments[i].first;
+  }
+  return fqn;
 }

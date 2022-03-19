@@ -7,18 +7,14 @@
  *
  * @return Captured entry
  */
-SymbolTableEntry* Capture::getEntry() const {
-    return capturedEntry;
-}
+SymbolTableEntry *Capture::getEntry() const { return capturedEntry; }
 
 /**
  * Retrieve the mode of this capture
  *
  * @return Capture mode (READ_ONLY or READ_WRITE)
  */
-CaptureMode Capture::getCaptureMode() const {
-    return mode;
-}
+CaptureMode Capture::getCaptureMode() const { return mode; }
 
 /**
  * Set the mode of this capture.
@@ -27,9 +23,9 @@ CaptureMode Capture::getCaptureMode() const {
  * @param captureMode Capture mode
  */
 void Capture::setCaptureMode(CaptureMode captureMode) {
-    mode = captureMode;
-    // Set the captured symbol table entry to volatile if appropriate
-    capturedEntry->setVolatile(captureMode == READ_WRITE);
+  mode = captureMode;
+  // Set the captured symbol table entry to volatile if appropriate
+  capturedEntry->setVolatile(captureMode == READ_WRITE);
 }
 
 /**
@@ -42,6 +38,4 @@ void Capture::setCaptureMode(CaptureMode captureMode) {
  *
  * @return Capture as a JSON object
  */
-nlohmann::ordered_json Capture::toJSON() const {
-    return capturedEntry->toJSON();
-}
+nlohmann::ordered_json Capture::toJSON() const { return capturedEntry->toJSON(); }
