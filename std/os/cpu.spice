@@ -1,0 +1,9 @@
+ext<int> sched_yield();
+
+/**
+ * Causes the calling thread to relinquish the CPU.
+ * The thread is moved to the end of the scheduling queue and the next thread gets to run.
+ */
+p yield() {
+    sched_yield();
+}

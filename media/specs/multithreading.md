@@ -1,5 +1,22 @@
 # Technical Specification for Multithreading in Spice
 
+## Implementation steps:
+
+- [x] 1. Support creating threads
+- [x] 2. Add tests for the feature
+- [x] 3. Support running those threads
+- [x] 4. Add tests for the feature
+- [x] 5. Support the `tid()` call
+- [x] 6. Add tests for the feature
+- [x] 7. Support thread joining
+- [x] 8. Add tests for the feature
+- [x] 9. Add arbitrary benchmark test (`generator/arbitrary/success-fibonacci-threaded` test case)
+- [ ] 10. Add mutexes and `sync` specifier
+- [ ] 11. Add tests for the feature
+- [ ] 12. Implement variable volatility
+- [ ] 13. Add support for pipes (paused due to the work on generics)
+- [ ] 14. Add `yield` and `pick` builtins
+
 ## Syntax
 
 ### Push work to a new anonymous thread
@@ -40,7 +57,36 @@ t3 = thread {
 };
 ```
 
-### Communication between threads
+### Captures
+Variables from outside the thread, that are used within a thread are called `captures`. For being thread-safe, we need to know whether it is only a reading capture or it also needs write access. If we write to a capture from within a thread, we need to mark the allocation of the variable as `volatile`.
+
+### Thread synchronization
+To really become thread-safe Spice needs support for Mutexes and synchronized functions/procedures/methods.
+
+Synchronizing functions/procedures/methods could be achieved by providing the specifier `sync`, which can be attached to them and mark them as synchronized. For each occurrence of the `sync` keyword could be an instance of `Mutex`, that will track the accessing theads. Mutexes could be realized with a `Mutex` struct in the runtime std lib for threading.
+
+A minimalistic implementation could look like this:
+
+```spice
+import "std/time/delay" as delay;
+
+type Mutex struct {
+	bool occupied
+}
+
+p Mutex.acquire() {
+	while this.occupied {
+		delay.delay(10);
+	}
+	this.occupied = true;
+}
+
+p Mutex.abandon() {
+	this.occupied = false;
+}
+```
+
+### Communication between threads (requires generics)
 For the communication between threads, there is a feature, called `Pipes`. A pipe is a wrapper around any type and can act like a temporary buffer queue for one or multiple (primitive or complex) values. Those values can be pushed by calling the builtin function `yield(pipe<any>, any)` and received by calling the `pick(pipe<any>)` builtin. If `pick` is called on a pipe and this pipe currently has no value present, the execution will pause until there is a new value for that pipe. 
 
 ```spice

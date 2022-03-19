@@ -1,0 +1,16 @@
+import "std/time/delay" as delay;
+
+type Mutex struct {
+	bool occupied
+}
+
+p Mutex.acquire() {
+	while this.occupied {
+		delay.delay(10);
+	}
+	this.occupied = true;
+}
+
+p Mutex.abandon() {
+	this.occupied = false;
+}
