@@ -1,11 +1,14 @@
 project_name: spice
 builds:
-  - skip: true
+  - main: ./.github/media/dummy.go
     goos:
       - linux
       - windows
     goarch:
       - amd64
+    hooks:
+      post:
+        - mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}
 dockers:
   - image_templates:
       - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
@@ -50,9 +53,6 @@ archives:
     files:
       - LICENSE
       - std
-      - src: bin/spice-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/**
-        dst: ./
-        strip_parent: true
     format_overrides:
       - goos: windows
         format: zip
@@ -74,8 +74,6 @@ nfpms:
     dependencies:
       - build-essential
     contents:
-      - src: bin/spice-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/*
-        dst: /usr/lib/spice/
       - src: std/*
         dst: /usr/lib/spice/std/
       - src: bash_autocomplete.sh
