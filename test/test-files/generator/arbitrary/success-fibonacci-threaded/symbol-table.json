@@ -28,7 +28,7 @@
         },
         {
           "isGlobal": false,
-          "isVolatile": true,
+          "isVolatile": false,
           "name": "result",
           "orderIndex": 1,
           "specifiers": {
@@ -90,7 +90,7 @@
       "symbols": [
         {
           "isGlobal": false,
-          "isVolatile": true,
+          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "specifiers": {
@@ -146,7 +146,7 @@
     },
     {
       "isGlobal": true,
-      "isVolatile": true,
+      "isVolatile": false,
       "name": "main()",
       "orderIndex": 1,
       "specifiers": {

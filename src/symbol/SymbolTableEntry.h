@@ -60,6 +60,6 @@ private:
   std::stack<llvm::Value *> memAddress;
   unsigned int orderIndex;
   const bool global;
-  bool volatility;
+  bool volatility = false;
   bool used = false;
 };
