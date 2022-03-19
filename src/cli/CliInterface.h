@@ -38,7 +38,6 @@ public:
     void validate() const;
     CliOptions* getOptions();
     [[nodiscard]] bool shouldCompile() const;
-    [[nodiscard]] bool shouldInstall() const;
 private:
     // Private methods
     void addBuildSubcommand();

@@ -28,20 +28,21 @@ void CliInterface::createInterface() {
 
         // If the binary should be installed, set the output path to the Spice bin directory
         if (install) {
-            cliOptions.outputPath = FileUtil::getSpiceBinDir();
-            FileUtil::createDirs(cliOptions.outputPath);
-            cliOptions.outputPath += FileUtil::getFileName(
-                    cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
+            std::string installPath = FileUtil::getSpiceBinDir();
+            FileUtil::createDirs(installPath);
+            installPath += FileUtil::getFileName(cliOptions.mainSourceFile
+                    .substr(0, cliOptions.mainSourceFile.length() - 6));
 #ifdef OS_WINDOWS
-            cliOptions.outputPath += ".exe";
+            installPath += ".exe";
 #endif
+            cliOptions.outputPath = installPath;
         }
 
         // Ensure that both, the output path and the output dir have valid values
         if (cliOptions.outputPath.empty()) cliOptions.outputPath = ".";
         if (cliOptions.outputPath == "." || cliOptions.outputPath == "..") {
-            cliOptions.outputPath = FileUtil::getFileName(
-                    cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
+            cliOptions.outputPath = FileUtil::getFileName(cliOptions.mainSourceFile
+                    .substr(0, cliOptions.mainSourceFile.length() - 6));
 #ifdef OS_WINDOWS
             cliOptions.outputPath += ".exe";
 #endif
@@ -209,7 +210,12 @@ void CliInterface::addUninstallSubcommand() {
     subCmd->alias("u");
     subCmd->ignore_case();
     subCmd->callback([&]() {
-        std::string installPath = FileUtil::getSpiceBinDir() + cliOptions.outputPath;
+        std::string installPath = FileUtil::getSpiceBinDir();
+        installPath += FileUtil::getFileName(cliOptions.mainSourceFile
+                                                     .substr(0, cliOptions.mainSourceFile.length() - 6));
+#ifdef OS_WINDOWS
+        installPath += ".exe";
+#endif
         if (!FileUtil::fileExists(installPath)) {
             CompilerWarning(UNINSTALL_FAILED, "The executable was not found at the expected location").print();
             return;
@@ -234,13 +240,6 @@ CliOptions* CliInterface::getOptions() {
  */
 bool CliInterface::shouldCompile() const {
     return compile;
-}
-
-/**
- * Checks if installing is necessary
- */
-bool CliInterface::shouldInstall() const {
-    return install;
 }
 
 /**
