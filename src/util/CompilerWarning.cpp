@@ -15,6 +15,16 @@ CompilerWarning::CompilerWarning(const antlr4::Token& token, CompilerWarningType
 }
 
 /**
+ * Constructor: Used in case the exact code position where the warning occurred is not known
+ *
+ * @param type Type of the warning
+ * @param message Warning message suffix
+ */
+CompilerWarning::CompilerWarning(CompilerWarningType type, const std::string& message) {
+    warningMessage = "Warning: " + getMessagePrefix(type) + ": " + message;
+}
+
+/**
  * Print the compiler warning to the standard error output
  */
 void CompilerWarning::print() const {
@@ -46,6 +56,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) const {
             return "Array index exceeds its size";
         case NEGATIVE_VALUE_TO_UNSIGNED_VAR:
             return "Negative value assigned to unsigned variable";
+        case UNINSTALL_FAILED:
+            return "Uninstall failed";
     }
     return "Unknown warning"; // GCOV_EXCL_LINE
 }

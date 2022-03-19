@@ -14,7 +14,8 @@ enum CompilerWarningType {
     UNUSED_VARIABLE,
     ARRAY_TOO_MANY_VALUES,
     INDEX_EXCEEDS_ARRAY_SIZE,
-    NEGATIVE_VALUE_TO_UNSIGNED_VAR
+    NEGATIVE_VALUE_TO_UNSIGNED_VAR,
+    UNINSTALL_FAILED
 };
 
 /**
@@ -24,6 +25,7 @@ class CompilerWarning {
 public:
     // Constructors
     explicit CompilerWarning(const antlr4::Token& token, CompilerWarningType type, const std::string& message);
+    explicit CompilerWarning(CompilerWarningType type, const std::string& message);
 
     void print() const;
 private:

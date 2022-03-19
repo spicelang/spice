@@ -22,8 +22,8 @@ void LinkerInterface::link() {
     cmd = "where " + std::string(LINKER_EXECUTABLE_NAME) + " > nul 2>&1";
 #endif
     if (std::system(cmd.c_str()))
-        throw err->get(LINKER_NOT_FOUND, "Please check if you have installed " + std::string(LINKER_EXECUTABLE_NAME) +
-            " and added it to the PATH variable");
+        throw err->get(LINKER_NOT_FOUND, "Please check if you have installed " +
+            std::string(LINKER_EXECUTABLE_NAME) + " and added it to the PATH variable");
 
     // Check if the output path was set
     if (outputPath.empty()) throw std::runtime_error("Internal compiler error: Output path for the linker was not set");
@@ -35,6 +35,9 @@ void LinkerInterface::link() {
     linkerCommand += " -o " + outputPath;
     for (auto& objectFilePath : objectFilePaths)
         linkerCommand += " " + objectFilePath;
+
+    // Print status message
+    if (cliOptions->printDebugOutput) std::cout << std::endl << "Emitting executable to path: " << outputPath << std::endl;
 
     // Call the linker
     std::string result = FileUtil::exec(linkerCommand);

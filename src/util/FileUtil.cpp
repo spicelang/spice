@@ -19,6 +19,15 @@ bool FileUtil::fileExists(const std::string& filePath) {
 }
 
 /**
+ * Deletes the file at the given location
+ *
+ * @param filePath Path to the file
+ */
+void FileUtil::deleteFile(const std::string& filePath) {
+    std::remove(filePath.c_str());
+}
+
+/**
  * Checks if a certain dir exists on the file system
  *
  * @param dirPath Path to the dir
@@ -81,10 +90,28 @@ std::string FileUtil::exec(const std::string& cmd) {
     return result;
 }
 
+/**
+ * Retrieve the directory separator for the current os
+ *
+ * @return Directory separator
+ */
 char FileUtil::getDirSeparator() {
 #ifdef _WIN32
     return '\\';
 #else
     return '/';
+#endif
+}
+
+/**
+ * Retrieve the dir, where output binaries should go when installing them
+ *
+ * @return Installation directory
+ */
+std::string FileUtil::getSpiceBinDir() {
+#ifdef _WIN32
+    return std::string(std::getenv("USERPROFILE")) + R"(\spice\bin\)";
+#else
+    return "/usr/local/bin/";
 #endif
 }

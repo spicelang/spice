@@ -16,15 +16,15 @@
  * Representation of the various cli options
  */
 struct CliOptions {
-    std::string mainSourceFile;
-    std::string targetTriple;
+    std::string mainSourceFile;  // e.g. main.spice
+    std::string targetTriple;    // In format: <arch><sub>-<vendor>-<sys>-<abi>
     std::string targetArch;
     std::string targetVendor;
     std::string targetOs;
-    std::string outputDir;
-    std::string outputPath;
+    std::string outputDir;       // Where the object files go. Should always be a temp directory
+    std::string outputPath;      // Where the output binary goes.
     bool printDebugOutput;
-    int optLevel; // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
+    int optLevel;                // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
 };
 
 /**
@@ -38,6 +38,7 @@ public:
     void validate() const;
     CliOptions* getOptions();
     [[nodiscard]] bool shouldCompile() const;
+    [[nodiscard]] bool shouldInstall() const;
 private:
     // Private methods
     void addBuildSubcommand();
@@ -50,4 +51,5 @@ private:
     CliOptions cliOptions = CliOptions{};
     const ErrorFactory err = ErrorFactory();
     bool compile = false;
+    bool install = false;
 };

@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "CliInterface.h"
+#include "util/CompilerWarning.h"
 
 #include <util/FileUtil.h>
 
@@ -25,13 +26,24 @@ void CliInterface::createInterface() {
     app.final_callback([&]() {
         if (!compile) return;
 
+        // If the binary should be installed, set the output path to the Spice bin directory
+        if (install) {
+            cliOptions.outputPath = FileUtil::getSpiceBinDir();
+            FileUtil::createDirs(cliOptions.outputPath);
+            cliOptions.outputPath += FileUtil::getFileName(
+                    cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
+#ifdef OS_WINDOWS
+            cliOptions.outputPath += ".exe";
+#endif
+        }
+
         // Ensure that both, the output path and the output dir have valid values
         if (cliOptions.outputPath.empty()) cliOptions.outputPath = ".";
         if (cliOptions.outputPath == "." || cliOptions.outputPath == "..") {
+            cliOptions.outputPath = FileUtil::getFileName(
+                    cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
 #ifdef OS_WINDOWS
-            cliOptions.outputPath = cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6) + ".exe";
-#else
-            cliOptions.outputPath = cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6);
+            cliOptions.outputPath += ".exe";
 #endif
         }
 
@@ -168,7 +180,7 @@ void CliInterface::addInstallSubcommand() {
     subCmd->alias("i");
     subCmd->ignore_case();
     subCmd->callback([&]() {
-        compile = true; // Requires the source file to be compiled
+        compile = install = true; // Requires the source file to be compiled
     });
 
     // --debug-output
@@ -196,6 +208,15 @@ void CliInterface::addUninstallSubcommand() {
     );
     subCmd->alias("u");
     subCmd->ignore_case();
+    subCmd->callback([&]() {
+        std::string installPath = FileUtil::getSpiceBinDir() + cliOptions.outputPath;
+        if (!FileUtil::fileExists(installPath)) {
+            CompilerWarning(UNINSTALL_FAILED, "The executable was not found at the expected location").print();
+            return;
+        }
+        FileUtil::deleteFile(installPath);
+        std::cout << "Successfully uninstalled." << std::endl;
+    });
 
     // Source file
     subCmd->add_option("<main-source-file>", cliOptions.mainSourceFile, "Main source file");
@@ -213,6 +234,13 @@ CliOptions* CliInterface::getOptions() {
  */
 bool CliInterface::shouldCompile() const {
     return compile;
+}
+
+/**
+ * Checks if installing is necessary
+ */
+bool CliInterface::shouldInstall() const {
+    return install;
 }
 
 /**

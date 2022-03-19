@@ -10,10 +10,12 @@
 class FileUtil {
 public:
     static bool fileExists(const std::string& filePath);
+    static void deleteFile(const std::string& filePath);
     static bool dirExists(const std::string& dirPath);
     static bool createDirs(const std::string& dirPath);
     static std::string getFileName(const std::string& filePath);
     static std::string getFileDir(const std::string& filePath);
     static std::string exec(const std::string& cmd);
     static char getDirSeparator();
+    static std::string getSpiceBinDir();
 };

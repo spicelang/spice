@@ -111,7 +111,7 @@ void GeneratorVisitor::optimize() {
 
 void GeneratorVisitor::emit() {
     if (cliOptions->printDebugOutput)
-        std::cout << "\nEmitting executable for triplet '" << targetTriple.getTriple()
+        std::cout << "\nEmitting object file for triplet '" << targetTriple.getTriple()
             << "' to path: " << objectFile << std::endl;
 
     // Open file output stream
