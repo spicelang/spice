@@ -1,0 +1,141 @@
+{
+  "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [
+            {
+              "captures": [
+                {
+                  "isGlobal": false,
+                  "isVolatile": true,
+                  "name": "capturedVariable",
+                  "orderIndex": 1,
+                  "specifiers": {
+                    "const": false,
+                    "public": false,
+                    "signed": true
+                  },
+                  "state": "initialized",
+                  "type": "int"
+                },
+                {
+                  "isGlobal": false,
+                  "isVolatile": false,
+                  "name": "i",
+                  "orderIndex": 0,
+                  "specifiers": {
+                    "const": false,
+                    "public": false,
+                    "signed": true
+                  },
+                  "state": "initialized",
+                  "type": "int"
+                }
+              ],
+              "children": [],
+              "name": "thread:8:8",
+              "symbols": []
+            }
+          ],
+          "name": "for:6:4",
+          "symbols": [
+            {
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "i",
+              "orderIndex": 0,
+              "specifiers": {
+                "const": false,
+                "public": false,
+                "signed": true
+              },
+              "state": "initialized",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "name": "main()",
+      "symbols": [
+        {
+          "isGlobal": false,
+          "isVolatile": true,
+          "name": "capturedVariable",
+          "orderIndex": 1,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "usleep(int)",
+      "symbols": [
+        {
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "declared",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "symbols": [
+    {
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main()",
+      "orderIndex": 1,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    },
+    {
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "usleep(int)",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    }
+  ]
+}
