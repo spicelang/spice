@@ -5,7 +5,6 @@
   <p align="center">
     <a target="_blank" href="https://github.com/spicelang/spice/releases/latest"><img src="https://img.shields.io/github/v/release/spicelang/spice?include_prereleases"></a>
     <a target="_blank" href="https://hub.docker.com/r/chillibits/spice"><img src="https://img.shields.io/docker/pulls/chillibits/spice"></a>
-    <a target="_blank" href="./.github/workflows/ci-go.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-go.yml/badge.svg"></a>
 	<a target="_blank" href="./.github/workflows/ci-cpp.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
 	<a target="_blank" href="./.github/workflows/codeql-analysis.yml"><img src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
     <a target="_blank" href="https://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
@@ -26,7 +25,7 @@ If you like Spice, please consider a GitHub star! ⭐
 Please visit the documentation at [spicelang.com](https://www.spicelang.com).
 
 ## Grammar
-The Spice grammar can be found [here](./compiler/src/grammar/Spice.g4) as a ANTLR grammar configuration file.
+The Spice grammar can be found [here](./src/grammar/Spice.g4) as a ANTLR grammar configuration file.
 
 ## Available target platforms
 ### Target architecture

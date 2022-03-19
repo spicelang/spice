@@ -11,6 +11,5 @@ RUN ln -sf /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
 
 COPY std/ /usr/lib/spice/std/
 COPY spice /usr/bin/spice
-COPY bin/spicec-${COMPILER_PATH}/ /usr/lib/spice/
 
 ENTRYPOINT [ "spice" ]

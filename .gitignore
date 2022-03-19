@@ -2,5 +2,20 @@
 bin/*
 spice.exe
 spice
-spicec.exe
-spicec
+
+build/*
+coverage/*
+cmake-build-debug/*
+cmake-build-release/*
+
+# Third party libs
+lib/*
+gen/*
+
+# CLion
+.idea/*
+
+# Spice build outputs
+media/test-project/*
+!media/test-project/*.*
+media/test-project/*.exe

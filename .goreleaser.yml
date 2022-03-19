@@ -1,24 +1,14 @@
 project_name: spice
 builds:
-  - dir: cli
-    main: ./spice.go
+  - main: ./.github/media/dummy.go
     goos:
       - linux
       - windows
     goarch:
       - amd64
-      #- arm
-      #- arm64
-      #- 386
-    #goarm:
-    #  - 5
-    #  - 6
-    #  - 7
-    env:
-      - CGO_ENABLED=0
-    mod_timestamp: '{{ .CommitTimestamp }}'
-    ldflags:
-      - -s -w -X main.version={{ .Version }} -X main.commit={{ .Commit }} -X main.date={{ .CommitDate }} -X main.builtBy=github-actions
+    hooks:
+      post:
+        - mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}
 dockers:
   - image_templates:
       - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
@@ -40,105 +30,29 @@ dockers:
       - --label=org.opencontainers.image.source={{.GitURL}}
       - --build-arg=COMPILER_PATH=linux-amd64
       - --platform=linux/amd64
-  #- image_templates:
-  #    - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
-  #    - ghcr.io/spicelang/spice:latest-i386
-  #    - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
-  #    - chillibits/spice:latest-i386
-  #  dockerfile: Dockerfile
-  #  skip_push: auto
-  #  use: buildx
-  #  goarch: 386
-  #  extra_files:
-  #    - bin
-  #    - std
-  #  build_flag_templates:
-  #    - --label=org.opencontainers.image.created={{.Date}}
-  #    - --label=org.opencontainers.image.name={{.ProjectName}}
-  #    - --label=org.opencontainers.image.revision={{.FullCommit}}
-  #    - --label=org.opencontainers.image.version={{.Version}}
-  #    - --label=org.opencontainers.image.source={{.GitURL}}
-  #    - --build-arg=COMPILER_PATH=linux-386
-  #    - --platform=linux/i386
-  #- image_templates:
-  #    - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
-  #    - ghcr.io/spicelang/spice:latest-arm32v7
-  #    - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
-  #    - chillibits/spice:latest-arm32v7
-  #  dockerfile: Dockerfile
-  #  skip_push: auto
-  #  use: buildx
-  #  goarch: arm
-  #  goarm: 7
-  #  extra_files:
-  #    - bin
-  #    - std
-  #  build_flag_templates:
-  #    - --label=org.opencontainers.image.created={{.Date}}
-  #    - --label=org.opencontainers.image.name={{.ProjectName}}
-  #    - --label=org.opencontainers.image.revision={{.FullCommit}}
-  #    - --label=org.opencontainers.image.version={{.Version}}
-  #    - --label=org.opencontainers.image.source={{.GitURL}}
-  #    - --build-arg=COMPILER_PATH=linux-armv7
-  #    - --platform=linux/arm/v7
-  #- image_templates:
-  #    - ghcr.io/spicelang/spice:{{ .Version }}-arm64v8
-  #    - ghcr.io/spicelang/spice:latest-arm64v8
-  #    - chillibits/spice:{{ .Version }}-arm64v8
-  #    - chillibits/spice:latest-arm64v8
-  #  dockerfile: Dockerfile
-  #  skip_push: auto
-  #  use: buildx
-  #  goarch: arm64
-  #  extra_files:
-  #    - bin
-  #    - std
-  #  build_flag_templates:
-  #    - --label=org.opencontainers.image.created={{.Date}}
-  #    - --label=org.opencontainers.image.name={{.ProjectName}}
-  #    - --label=org.opencontainers.image.revision={{.FullCommit}}
-  #    - --label=org.opencontainers.image.version={{.Version}}
-  #    - --label=org.opencontainers.image.source={{.GitURL}}
-  #    - --build-arg=COMPILER_PATH=linux-arm64
-  #    - --platform=linux/arm64/v8
 docker_manifests:
   - name_template: chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
     image_templates:
       - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
-      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
-      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
     skip_push: auto
   - name_template: chillibits/spice:latest
     image_templates:
       - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
-      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
-      #- chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
     skip_push: auto
 
   - name_template: ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
     image_templates:
       - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
-      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
-      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
     skip_push: auto
   - name_template: ghcr.io/spicelang/spice:latest
     image_templates:
       - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
-      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-i386
-      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm32v7
-      #- ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
     skip_push: auto
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     files:
       - LICENSE
       - std
-      - src: bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/**
-        dst: ./
-        strip_parent: true
     format_overrides:
       - goos: windows
         format: zip
@@ -160,8 +74,6 @@ nfpms:
     dependencies:
       - build-essential
     contents:
-      - src: bin/spicec-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}/*
-        dst: /usr/lib/spice/
       - src: std/*
         dst: /usr/lib/spice/std/
       - src: bash_autocomplete.sh
