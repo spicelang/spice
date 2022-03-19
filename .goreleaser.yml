@@ -76,8 +76,6 @@ nfpms:
     contents:
       - src: std/*
         dst: /usr/lib/spice/std/
-      - src: bash_autocomplete.sh
-        dst: /etc/bash_completion.d/spice
 release:
   name_template: v{{ .Tag }}
   prerelease: auto

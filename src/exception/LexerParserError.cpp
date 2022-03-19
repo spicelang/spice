@@ -7,6 +7,4 @@
  *
  * @return Error message in form of a char array
  */
-const char* LexerParserError::what() const noexcept {
-    return errorMessage.c_str();
-}
+const char *LexerParserError::what() const noexcept { return errorMessage.c_str(); }

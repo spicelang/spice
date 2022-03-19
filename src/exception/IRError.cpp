@@ -9,9 +9,9 @@
  * @param type Type of the error
  * @param message Error message suffix
  */
-IRError::IRError(const std::string& fileName, const antlr4::Token& token, const IRErrorType& type, const std::string& message) {
-    auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
-    errorMessage = "Internal compiler error in " + fileName + " at " + codeLoc + " - " + getMessagePrefix(type) + ": " + message;
+IRError::IRError(const std::string &fileName, const antlr4::Token &token, const IRErrorType &type, const std::string &message) {
+  auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
+  errorMessage = "Internal compiler error in " + fileName + " at " + codeLoc + " - " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -20,8 +20,8 @@ IRError::IRError(const std::string& fileName, const antlr4::Token& token, const 
  * @param type Type of the error
  * @param message Error message suffix
  */
-IRError::IRError(const std::string& fileName, const IRErrorType& type, const std::string& message) {
-    errorMessage = "Internal compiler error in " + fileName + " - " + getMessagePrefix(type) + ": " + message;
+IRError::IRError(const std::string &fileName, const IRErrorType &type, const std::string &message) {
+  errorMessage = "Internal compiler error in " + fileName + " - " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -29,9 +29,7 @@ IRError::IRError(const std::string& fileName, const IRErrorType& type, const std
  *
  * @return Error message in form of a char array
  */
-const char* IRError::what() const noexcept {
-    return errorMessage.c_str();
-}
+const char *IRError::what() const noexcept { return errorMessage.c_str(); }
 
 /**
  * Get the prefix of the error message for a particular error
@@ -40,27 +38,27 @@ const char* IRError::what() const noexcept {
  * @return Prefix string for the error type
  */
 std::string IRError::getMessagePrefix(IRErrorType type) const {
-    switch (type) {
-        case TARGET_NOT_AVAILABLE:
-            return "Selected target not available";
-        case CANT_OPEN_OUTPUT_FILE:
-            return "Could not open output file";
-        case WRONG_TYPE:
-            return "Wrong type of output file";
-        case BRANCH_NOT_FOUND:
-            return "Branch not found";
-        case UNEXPECTED_DYN_TYPE_IR:
-            return "Unexpected type of dyn. Symbol table incomplete";
-        case PRINTF_NULL_TYPE:
-            return "Printf has null type";
-        case VARIABLE_NOT_FOUND:
-            return "Variable not found";
-        case INVALID_FUNCTION:
-            return "Invalid function";
-        case INVALID_MODULE:
-            return "Invalid module";
-        case COMING_SOON_IR:
-            return "Coming soon";
-    }
-    return "Unknown error"; // GCOV_EXCL_LINE
+  switch (type) {
+  case TARGET_NOT_AVAILABLE:
+    return "Selected target not available";
+  case CANT_OPEN_OUTPUT_FILE:
+    return "Could not open output file";
+  case WRONG_TYPE:
+    return "Wrong type of output file";
+  case BRANCH_NOT_FOUND:
+    return "Branch not found";
+  case UNEXPECTED_DYN_TYPE_IR:
+    return "Unexpected type of dyn. Symbol table incomplete";
+  case PRINTF_NULL_TYPE:
+    return "Printf has null type";
+  case VARIABLE_NOT_FOUND:
+    return "Variable not found";
+  case INVALID_FUNCTION:
+    return "Invalid function";
+  case INVALID_MODULE:
+    return "Invalid module";
+  case COMING_SOON_IR:
+    return "Coming soon";
+  }
+  return "Unknown error"; // GCOV_EXCL_LINE
 }

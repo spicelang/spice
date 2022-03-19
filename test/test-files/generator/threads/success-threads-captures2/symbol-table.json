@@ -6,56 +6,26 @@
       "children": [
         {
           "captures": [],
-          "children": [],
-          "name": "if:2:4",
-          "symbols": []
-        }
-      ],
-      "name": "fib(int)",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "n",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "declared",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [
-        {
-          "captures": [],
           "children": [
             {
-              "captures": [],
-              "children": [],
-              "name": "thread:10:21",
-              "symbols": [
+              "captures": [
+                {
+                  "isGlobal": false,
+                  "isVolatile": true,
+                  "name": "capturedVariable",
+                  "orderIndex": 1,
+                  "specifiers": {
+                    "const": false,
+                    "public": false,
+                    "signed": true
+                  },
+                  "state": "initialized",
+                  "type": "int"
+                },
                 {
                   "isGlobal": false,
                   "isVolatile": false,
-                  "name": "result",
+                  "name": "i",
                   "orderIndex": 0,
                   "specifiers": {
                     "const": false,
@@ -65,10 +35,13 @@
                   "state": "initialized",
                   "type": "int"
                 }
-              ]
+              ],
+              "children": [],
+              "name": "thread:8:8",
+              "symbols": []
             }
           ],
-          "name": "for:9:4",
+          "name": "for:6:4",
           "symbols": [
             {
               "isGlobal": false,
@@ -90,21 +63,8 @@
       "symbols": [
         {
           "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "threadCount",
+          "isVolatile": true,
+          "name": "capturedVariable",
           "orderIndex": 1,
           "specifiers": {
             "const": false,
@@ -117,15 +77,35 @@
         {
           "isGlobal": false,
           "isVolatile": false,
-          "name": "threads",
-          "orderIndex": 2,
+          "name": "result",
+          "orderIndex": 0,
           "specifiers": {
             "const": false,
             "public": false,
-            "signed": false
+            "signed": true
           },
           "state": "initialized",
-          "type": "byte*[8]"
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "usleep(int)",
+      "symbols": [
+        {
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "declared",
+          "type": "int"
         }
       ]
     }
@@ -134,8 +114,8 @@
     {
       "isGlobal": true,
       "isVolatile": false,
-      "name": "fib(int)",
-      "orderIndex": 0,
+      "name": "main()",
+      "orderIndex": 1,
       "specifiers": {
         "const": true,
         "public": false,
@@ -147,8 +127,8 @@
     {
       "isGlobal": true,
       "isVolatile": false,
-      "name": "main()",
-      "orderIndex": 1,
+      "name": "usleep(int)",
+      "orderIndex": 0,
       "specifiers": {
         "const": true,
         "public": false,

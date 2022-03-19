@@ -7,77 +7,77 @@ include(ExternalProject)
 set(ANTLR4_ROOT ${CMAKE_CURRENT_BINARY_DIR}/antlr4_runtime/src/antlr4_runtime)
 set(ANTLR4_INCLUDE_DIRS ${ANTLR4_ROOT}/runtime/Cpp/runtime/src)
 set(ANTLR4_GIT_REPOSITORY https://github.com/antlr/antlr4.git)
-if(NOT DEFINED ANTLR4_TAG)
+if (NOT DEFINED ANTLR4_TAG)
     # Set to branch name to keep library updated at the cost of needing to rebuild after 'clean'
     # Set to commit hash to keep the build stable and does not need to rebuild after 'clean'
     set(ANTLR4_TAG 4.9.3)
-endif()
+endif ()
 
-if(${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
+if (${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
     set(ANTLR4_OUTPUT_DIR ${ANTLR4_ROOT}/runtime/Cpp/dist/$(Configuration))
-elseif(${CMAKE_GENERATOR} MATCHES "Xcode.*")
+elseif (${CMAKE_GENERATOR} MATCHES "Xcode.*")
     set(ANTLR4_OUTPUT_DIR ${ANTLR4_ROOT}/runtime/Cpp/dist/$(CONFIGURATION))
-else()
+else ()
     set(ANTLR4_OUTPUT_DIR ${ANTLR4_ROOT}/runtime/Cpp/dist)
-endif()
+endif ()
 
-if(MSVC)
+if (MSVC)
     set(ANTLR4_STATIC_LIBRARIES
             ${ANTLR4_OUTPUT_DIR}/antlr4-runtime-static.lib)
     set(ANTLR4_SHARED_LIBRARIES
             ${ANTLR4_OUTPUT_DIR}/antlr4-runtime.lib)
     set(ANTLR4_RUNTIME_LIBRARIES
             ${ANTLR4_OUTPUT_DIR}/antlr4-runtime.dll)
-else()
+else ()
     set(ANTLR4_STATIC_LIBRARIES
             ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.a)
-    if(MINGW)
+    if (MINGW)
         set(ANTLR4_SHARED_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.dll.a)
         set(ANTLR4_RUNTIME_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.dll)
-    elseif(CYGWIN)
+    elseif (CYGWIN)
         set(ANTLR4_SHARED_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.dll.a)
         set(ANTLR4_RUNTIME_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/cygantlr4-runtime-4.9.3.dll)
-    elseif(APPLE)
+    elseif (APPLE)
         set(ANTLR4_RUNTIME_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.dylib)
-    else()
+    else ()
         set(ANTLR4_RUNTIME_LIBRARIES
                 ${ANTLR4_OUTPUT_DIR}/libantlr4-runtime.so)
-    endif()
-endif()
+    endif ()
+endif ()
 
-if(${CMAKE_GENERATOR} MATCHES ".* Makefiles")
+if (${CMAKE_GENERATOR} MATCHES ".* Makefiles")
     # This avoids
     # 'warning: jobserver unavailable: using -j1. Add '+' to parent make rule.'
     set(ANTLR4_BUILD_COMMAND $(MAKE))
-elseif(${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
+elseif (${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
     set(ANTLR4_BUILD_COMMAND
             ${CMAKE_COMMAND}
             --build .
             --config $(Configuration)
             --target)
-elseif(${CMAKE_GENERATOR} MATCHES "Xcode.*")
+elseif (${CMAKE_GENERATOR} MATCHES "Xcode.*")
     set(ANTLR4_BUILD_COMMAND
             ${CMAKE_COMMAND}
             --build .
             --config $(CONFIGURATION)
             --target)
-else()
+else ()
     set(ANTLR4_BUILD_COMMAND
             ${CMAKE_COMMAND}
             --build .
             --target)
-endif()
+endif ()
 
-if(NOT DEFINED ANTLR4_WITH_STATIC_CRT)
+if (NOT DEFINED ANTLR4_WITH_STATIC_CRT)
     set(ANTLR4_WITH_STATIC_CRT ON)
-endif()
+endif ()
 
-if(ANTLR4_ZIP_REPOSITORY)
+if (ANTLR4_ZIP_REPOSITORY)
     ExternalProject_Add(
             antlr4_runtime
             PREFIX antlr4_runtime
@@ -94,7 +94,7 @@ if(ANTLR4_ZIP_REPOSITORY)
             # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
             INSTALL_COMMAND ""
             EXCLUDE_FROM_ALL 1)
-else()
+else ()
     ExternalProject_Add(
             antlr4_runtime
             PREFIX antlr4_runtime
@@ -112,14 +112,14 @@ else()
             # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
             INSTALL_COMMAND ""
             EXCLUDE_FROM_ALL 1)
-endif()
+endif ()
 
 # Separate build step as rarely people want both
 set(ANTLR4_BUILD_DIR ${ANTLR4_ROOT})
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0")
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0")
     # CMake 3.14 builds in above's SOURCE_SUBDIR when BUILD_IN_SOURCE is true
     set(ANTLR4_BUILD_DIR ${ANTLR4_ROOT}/runtime/Cpp)
-endif()
+endif ()
 
 ExternalProject_Add_Step(
         antlr4_runtime
@@ -154,7 +154,7 @@ add_library(antlr4_shared SHARED IMPORTED)
 add_dependencies(antlr4_shared antlr4_runtime-build_shared)
 set_target_properties(antlr4_shared PROPERTIES
         IMPORTED_LOCATION ${ANTLR4_RUNTIME_LIBRARIES})
-if(ANTLR4_SHARED_LIBRARIES)
+if (ANTLR4_SHARED_LIBRARIES)
     set_target_properties(antlr4_shared PROPERTIES
             IMPORTED_IMPLIB ${ANTLR4_SHARED_LIBRARIES})
-endif()
+endif ()

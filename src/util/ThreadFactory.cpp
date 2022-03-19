@@ -7,6 +7,4 @@
  *
  * @return Free function suffix
  */
-int ThreadFactory::getNextFunctionSuffix() {
-    return nextFctSuffix++;
-}
+int ThreadFactory::getNextFunctionSuffix() { return nextFctSuffix++; }

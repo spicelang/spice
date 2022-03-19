@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include <string>
 #include <exception>
+#include <string>
 
 enum CliErrorType {
-    INCOMPLETE_TARGET_TRIPLE,
-    INVALID_TARGET_TRIPLE,
-    SOURCE_FILE_MISSING,
-    COMING_SOON_CLI,
+  INCOMPLETE_TARGET_TRIPLE,
+  INVALID_TARGET_TRIPLE,
+  SOURCE_FILE_MISSING,
+  COMING_SOON_CLI,
 };
 
 /**
@@ -17,15 +17,15 @@ enum CliErrorType {
  */
 class CliError : public std::exception {
 public:
-    // Constructors
-    explicit CliError(const CliErrorType& type, const std::string& message);
+  // Constructors
+  explicit CliError(const CliErrorType &type, const std::string &message);
 
-    // Public methods
-    [[nodiscard]] const char* what() const noexcept override;
+  // Public methods
+  [[nodiscard]] const char *what() const noexcept override;
 
 private:
-    // Members
-    std::string errorMessage;
+  // Members
+  std::string errorMessage;
 
-    [[nodiscard]] std::string getMessagePrefix(CliErrorType errorType) const;
+  [[nodiscard]] std::string getMessagePrefix(CliErrorType errorType) const;
 };

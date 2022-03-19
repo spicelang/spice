@@ -15,6 +15,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "input",
           "orderIndex": 0,
           "specifiers": {
@@ -27,6 +28,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "result",
           "orderIndex": 1,
           "specifiers": {
@@ -46,6 +48,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "faculty",
           "orderIndex": 2,
           "specifiers": {
@@ -58,6 +61,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "input",
           "orderIndex": 1,
           "specifiers": {
@@ -70,6 +74,7 @@
         },
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "specifiers": {
@@ -86,6 +91,7 @@
   "symbols": [
     {
       "isGlobal": true,
+      "isVolatile": false,
       "name": "faculty(int)",
       "orderIndex": 0,
       "specifiers": {
@@ -98,6 +104,7 @@
     },
     {
       "isGlobal": true,
+      "isVolatile": false,
       "name": "main()",
       "orderIndex": 1,
       "specifiers": {

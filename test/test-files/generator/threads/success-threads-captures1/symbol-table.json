@@ -11,6 +11,7 @@
               "captures": [
                 {
                   "isGlobal": false,
+                  "isVolatile": false,
                   "name": "i",
                   "orderIndex": 0,
                   "specifiers": {
@@ -31,6 +32,7 @@
           "symbols": [
             {
               "isGlobal": false,
+              "isVolatile": false,
               "name": "i",
               "orderIndex": 0,
               "specifiers": {
@@ -48,6 +50,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "specifiers": {
@@ -67,6 +70,7 @@
       "symbols": [
         {
           "isGlobal": false,
+          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "specifiers": {
@@ -83,6 +87,7 @@
   "symbols": [
     {
       "isGlobal": true,
+      "isVolatile": false,
       "name": "main()",
       "orderIndex": 1,
       "specifiers": {
@@ -95,6 +100,7 @@
     },
     {
       "isGlobal": true,
+      "isVolatile": false,
       "name": "usleep(int)",
       "orderIndex": 0,
       "specifiers": {

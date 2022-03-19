@@ -9,18 +9,14 @@
  *
  * @return Name of the curren symbol
  */
-std::string SymbolTableEntry::getName() const {
-    return name;
-}
+std::string SymbolTableEntry::getName() const { return name; }
 
 /**
  * Retrieve the type of the current symbol
  *
  * @return Type of the current symbol
  */
-SymbolType SymbolTableEntry::getType() const {
-    return type;
-}
+SymbolType SymbolTableEntry::getType() const { return type; }
 
 /**
  * Update the type of a symbol. This is used for substantiate types in the process of type inference
@@ -28,9 +24,9 @@ SymbolType SymbolTableEntry::getType() const {
  * @param newType New type of the current symbol
  */
 void SymbolTableEntry::updateType(SymbolType newType, bool force) {
-    if (!force && type != SymbolType(TY_DYN))                                      // GCOV_EXCL_LINE
-        throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn"); // GCOV_EXCL_LINE
-    type = std::move(newType);
+  if (!force && type != SymbolType(TY_DYN))                                             // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn"); // GCOV_EXCL_LINE
+  type = std::move(newType);
 }
 
 /**
@@ -38,18 +34,14 @@ void SymbolTableEntry::updateType(SymbolType newType, bool force) {
  *
  * @return Symbol Specifiers of the current symbol
  */
-SymbolSpecifiers SymbolTableEntry::getSpecifiers() const {
-    return specifiers;
-}
+SymbolSpecifiers SymbolTableEntry::getSpecifiers() const { return specifiers; }
 
 /**
  * Retrieve the state of the current symbol
  *
  * @return State of the current symbol
  */
-SymbolState SymbolTableEntry::getState() const {
-    return state;
-}
+SymbolState SymbolTableEntry::getState() const { return state; }
 
 /**
  * Update the state of the current symbol
@@ -58,12 +50,14 @@ SymbolState SymbolTableEntry::getState() const {
  * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
  * @param newState New state of the current symbol
  */
-void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory* err, const antlr4::Token& token) {
-    if (state == INITIALIZED && specifiers.isConst())
-        throw err->get(token, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
-    if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                               // GCOV_EXCL_LINE
-        throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
-    state = newState;
+void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const antlr4::Token &token) {
+  // Check if this is a constant variable and is already initialized
+  if (state == INITIALIZED && specifiers.isConst())
+    throw err->get(token, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
+  // Check if the type is known at time of initialization
+  if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                  // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
+  state = newState;
 }
 
 /**
@@ -71,45 +65,38 @@ void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory* err
  *
  * @return Definition token
  */
-const antlr4::Token& SymbolTableEntry::getDefinitionToken() const {
-    return definitionToken;
-}
+const antlr4::Token &SymbolTableEntry::getDefinitionToken() const { return definitionToken; }
 
 /**
  * Retrieve the llvm type of the current symbol
  *
  * @return LLVM type of the current symbol
  */
-llvm::Type* SymbolTableEntry::getLLVMType() const {
-    return llvmType;
-}
+llvm::Type *SymbolTableEntry::getLLVMType() const { return llvmType; }
 
 /**
  * Update the LLVM type of a symbol
  *
  * @param newType New LLVM type
  */
-void SymbolTableEntry::updateLLVMType(llvm::Type* newType) {
-    llvmType = newType;
-}
+void SymbolTableEntry::updateLLVMType(llvm::Type *newType) { llvmType = newType; }
 
 /**
  * Retrieve the address of the assigned value
  *
  * @return Address of the value in memory
  */
-llvm::Value* SymbolTableEntry::getAddress() const {
-    return memAddress.empty() ? nullptr : memAddress.top();
-}
+llvm::Value *SymbolTableEntry::getAddress() const { return memAddress.empty() ? nullptr : memAddress.top(); }
 
 /**
  * Update the address of a symbol. This is used to save the allocated address where the symbol lives.
  *
  * @param address Address of the symbol in memory
  */
-void SymbolTableEntry::updateAddress(llvm::Value* address) {
-    if (!memAddress.empty()) memAddress.pop();
-    memAddress.push(address);
+void SymbolTableEntry::updateAddress(llvm::Value *address) {
+  if (!memAddress.empty())
+    memAddress.pop();
+  memAddress.push(address);
 }
 
 /**
@@ -117,50 +104,52 @@ void SymbolTableEntry::updateAddress(llvm::Value* address) {
  *
  * @param address Address of the symbol in memory
  */
-void SymbolTableEntry::pushAddress(llvm::Value* address) {
-    memAddress.push(address);
-}
+void SymbolTableEntry::pushAddress(llvm::Value *address) { memAddress.push(address); }
 
 /**
  * Pop an address from the stack. Can be called when leaving a nested function
  */
-void SymbolTableEntry::popAddress() {
-    memAddress.pop();
-}
+void SymbolTableEntry::popAddress() { memAddress.pop(); }
 
 /**
  * Retrieve the order index of the symbol table entry
  *
  * @return Order index
  */
-unsigned int SymbolTableEntry::getOrderIndex() const {
-    return orderIndex;
-}
+unsigned int SymbolTableEntry::getOrderIndex() const { return orderIndex; }
 
 /**
  * Returns if the symbol is in a local scope or in the global scope
  *
- * @return isLocal
+ * @return Global or not
  */
-bool SymbolTableEntry::isLocal() const {
-    return !isGlobal;
-}
+bool SymbolTableEntry::isGlobal() const { return global; }
+
+/**
+ * Returns if the symbol needs to be volatile
+ *
+ * @return Volatile or not
+ */
+bool SymbolTableEntry::isVolatile() const { return volatility; }
+
+/**
+ * Set the volatility of the symbol
+ *
+ * @param volatility Volatile or not
+ */
+void SymbolTableEntry::setVolatile(bool vol) { volatility = vol; }
 
 /**
  * Returns if the symbol is used somewhere
  *
  * @return isUsed
  */
-bool  SymbolTableEntry::isUsed() const {
-    return used;
-}
+bool SymbolTableEntry::isUsed() const { return used; }
 
 /**
  * Sets the state of the symbol to used
  */
-void SymbolTableEntry::setUsed() {
-    used = true;
-}
+void SymbolTableEntry::setUsed() { used = true; }
 
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.
@@ -175,18 +164,20 @@ void SymbolTableEntry::setUsed() {
  *     "const": true,
  *     "signed": false
  *   ],
- *   "isGlobal": false
+ *   "isGlobal": false,
+ *   "isVolatile": false
  * }
  *
  * @return Symbol table entry as a JSON object
  */
 nlohmann::ordered_json SymbolTableEntry::toJSON() const {
-    nlohmann::json result;
-    result["name"] = name;
-    result["type"] = type.getName(true);
-    result["orderIndex"] = orderIndex;
-    result["state"] = state == INITIALIZED ? "initialized" : "declared";
-    result["specifiers"] = specifiers.toJSON();
-    result["isGlobal"] = isGlobal;
-    return result;
+  nlohmann::json result;
+  result["name"] = name;
+  result["type"] = type.getName(true);
+  result["orderIndex"] = orderIndex;
+  result["state"] = state == INITIALIZED ? "initialized" : "declared";
+  result["specifiers"] = specifiers.toJSON();
+  result["isGlobal"] = global;
+  result["isVolatile"] = volatility;
+  return result;
 }
