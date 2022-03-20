@@ -31,6 +31,8 @@ void LinkerInterface::link() {
 
   // Build the linker command
   std::string linkerCommand = LINKER_EXECUTABLE_NAME;
+  if (threadFactory->isUsingThreads())
+    linkerCommand += " -pthread";
   for (auto &linkerFlag : linkerFlags)
     linkerCommand += " " + linkerFlag;
   linkerCommand += " -o " + outputPath;

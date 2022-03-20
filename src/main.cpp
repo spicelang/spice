@@ -31,11 +31,11 @@ void compileProject(CliOptions *options) {
     ModuleRegistry moduleRegistry = ModuleRegistry();
     ThreadFactory threadFactory = ThreadFactory();
 
-    // Create instance of error factory
+    // Create instance of error factory and thread factory
     ErrorFactory err{};
 
     // Prepare linker interface
-    LinkerInterface linker = LinkerInterface(&err, options);
+    LinkerInterface linker = LinkerInterface(&err, &threadFactory, options);
     linker.setOutputPath(options->outputPath);
 
     // Compile main source file
