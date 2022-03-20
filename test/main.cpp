@@ -12,14 +12,14 @@ bool updateRefs = false;
  * @return Return code
  */
 int main(int argc, char **argv) { // Call ./spicetest update-refs
-    // Parse cli args
-    std::vector<std::string> args;
-    for (size_t i = 1; i < argc; i++)
-        args.emplace_back(argv[i]);
+  // Parse cli args
+  std::vector<std::string> args;
+  for (size_t i = 1; i < argc; i++)
+    args.emplace_back(argv[i]);
 
-    // Extract cli args
-    updateRefs = !args.empty() && args[0] == "true";
+  // Extract cli args
+  updateRefs = !args.empty() && args[0] == "true";
 
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
