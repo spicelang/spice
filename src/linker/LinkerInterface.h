@@ -7,11 +7,13 @@
 
 #include <cli/CliInterface.h>
 #include <exception/ErrorFactory.h>
+#include <util/ThreadFactory.h>
 
 class LinkerInterface {
 public:
   // Constructors
-  explicit LinkerInterface(const ErrorFactory *errorFactory, CliOptions *options) : err(errorFactory), cliOptions(options){};
+  explicit LinkerInterface(const ErrorFactory *errorFactory, ThreadFactory *threadFactory, CliOptions *options)
+      : err(errorFactory), threadFactory(threadFactory), cliOptions(options){};
 
   // Public methods
   void link();
@@ -22,6 +24,7 @@ public:
 private:
   // Members
   const ErrorFactory *err;
+  const ThreadFactory *threadFactory;
   const CliOptions *cliOptions;
   std::vector<std::string> objectFilePaths;
   std::vector<std::string> linkerFlags = {"-no-pie"};

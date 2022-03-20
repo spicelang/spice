@@ -9,6 +9,7 @@ class ThreadFactory {
 public:
   // Public methods
   int getNextFunctionSuffix();
+  [[nodiscard]] bool isUsingThreads() const;
 
 private:
   // Members
