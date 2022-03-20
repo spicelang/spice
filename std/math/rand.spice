@@ -3,9 +3,11 @@ ext<int> rand();
 /**
  * Generates a random integer between min and max
  * Note: Both min and max are inclusive: [min, max]
+ * Note: If min > max, the function always returns max
  *
  * @return Random number
  */
 public f<int> randInt(int min, int max) {
+    if min > max { return max; }
     return rand() % (max - min + 1) + min;
 }
