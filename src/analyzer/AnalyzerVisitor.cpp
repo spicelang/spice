@@ -1380,6 +1380,7 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *c
     return visit(ctx->value());
   if (ctx->IDENTIFIER()) {
     currentVarName = ctx->IDENTIFIER()->toString();
+    std::string oldScopePrefix = scopePrefix;
     scopePrefix += currentVarName;
 
     // Check if this is a reserved keyword
@@ -1398,10 +1399,16 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *c
     if (!entry)
       return SymbolType(TY_INVALID);
 
-    // Check if the entry is public if it is imported
-    if (accessScope->isImported() && !entry->getSpecifiers().isPublic())
-      throw err->get(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
-                     "Cannot access '" + currentVarName + "' due to its private visibility");
+    if (accessScope->isImported()) {
+      // Check if the entry is public if it is imported
+      if (!entry->getSpecifiers().isPublic())
+        throw err->get(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
+                       "Cannot access '" + currentVarName + "' due to its private visibility");
+
+      // Check if the entry is an external global variable and needs to be imported
+      if (entry->isGlobal() && !entry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT}))
+        initExtGlobal(*ctx->IDENTIFIER()->getSymbol(), accessScope, oldScopePrefix, entry->getName());
+    }
 
     // Set symbol to used
     entry->setUsed();
@@ -1634,7 +1641,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   std::string newStructName = structScopePrefix + structName;
 
   // Check if the struct is imported already
-  SymbolTableEntry *newStructSymbol = sourceScope->lookup(structScopePrefix + structName);
+  SymbolTableEntry *newStructSymbol = sourceScope->lookup(newStructName);
   if (newStructSymbol)
     return newStructSymbol->getType();
 
@@ -1683,4 +1690,35 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   rootScope->mountChildBlock("struct:" + newStructName, externalStructTable);
 
   return newStructTy;
+}
+SymbolType AnalyzerVisitor::initExtGlobal(const antlr4::Token &token, SymbolTable *sourceScope,
+                                          const std::string &globalScopePrefix, const std::string &globalName) {
+  // Get external global var name
+  std::string newGlobalName = globalScopePrefix + globalName;
+
+  // Check if the global var is imported already
+  SymbolTableEntry *newGlobalSymbol = sourceScope->lookup(newGlobalName);
+  if (newGlobalSymbol)
+    return newGlobalSymbol->getType();
+
+  // Check if external global var is declared
+  SymbolTableEntry *externalGlobalSymbol = sourceScope->lookup(globalName);
+  if (!externalGlobalSymbol)
+    throw err->get(token, REFERENCED_UNDEFINED_STRUCT, "Could not find global variable '" + newGlobalName + "'");
+  externalGlobalSymbol->setUsed();
+  SymbolType globalTy = externalGlobalSymbol->getType();
+
+  // Get root scope or current source file
+  SymbolTable *rootScope = currentScope;
+  while (rootScope->getParent())
+    rootScope = rootScope->getParent();
+
+  // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
+  rootScope->insert(newGlobalName, globalTy, SymbolSpecifiers(globalTy), DECLARED, externalGlobalSymbol->getDefinitionToken(),
+                    false);
+  newGlobalSymbol = rootScope->lookup(newGlobalName);
+  newGlobalSymbol->updateLLVMType(externalGlobalSymbol->getLLVMType());
+  newGlobalSymbol->setUsed();
+
+  return globalTy;
 }

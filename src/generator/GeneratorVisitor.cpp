@@ -1874,6 +1874,10 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *
     if (!entry)
       return static_cast<llvm::Value *>(nullptr);
 
+    // Check if this an external global var
+    if (accessScope->isImported() && entry->isGlobal())
+      entry = initExtGlobal(currentVarName, scopePrefix);
+
     llvm::Value *memAddress = entry->getAddress();
     if (entry->getType().isBaseType(TY_STRUCT)) { // If base type is a struct
       if (structAccessIndices.empty()) {          // No struct was seen before
@@ -2418,6 +2422,19 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
 
     return defaultValue;
 }*/
+
+SymbolTableEntry *GeneratorVisitor::initExtGlobal(const std::string &globalName, const std::string &fqGlobalName) {
+  SymbolTableEntry *entry = currentScope->lookup(fqGlobalName);
+
+  // Check if the entry is already initialized
+  if (entry->getState() == INITIALIZED)
+    return entry;
+
+  llvm::Value *memAddress = module->getOrInsertGlobal(globalName, entry->getLLVMType());
+  entry->updateAddress(memAddress);
+
+  return entry;
+}
 
 bool GeneratorVisitor::compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs) {
   if (lhs->getTypeID() != rhs->getTypeID())
