@@ -1,0 +1,7 @@
+import "source1" as s1;
+
+double GLOBAL_VARIABLE = 14.4;
+
+f<int> main() {
+    printf("Global value: %f\n", GLOBAL_VARIABLE);
+}

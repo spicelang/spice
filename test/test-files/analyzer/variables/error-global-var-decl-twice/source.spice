@@ -1,9 +1,9 @@
- const unsigned int GLOBAL_INT = 12;
- string GLOBAL_VAR = "Test";
- double GLOBAL_VAR = 4.567;
+const unsigned int GLOBAL_INT = 12;
+string GLOBAL_VAR = "Test";
+double GLOBAL_VAR = 4.567;
 
- f<int> main() {
+f<int> main() {
     printf("Global int: %d\n", GLOBAL_INT);
     printf("Global string: %s\n", GLOBAL_VAR);
     printf("Global double: %f\n", GLOBAL_VAR);
- }
+}

@@ -94,6 +94,7 @@ private:
   bool hasMainFunction = false;
   bool isStdFile = false;
   SymbolTable *currentScope = nullptr;
+  SymbolTable *rootScope = nullptr;
   ScopePath scopePath;
   std::string scopePrefix;
   bool parameterMode = false;
@@ -105,4 +106,6 @@ private:
   // Private methods
   SymbolType initExtStruct(const antlr4::Token &token, SymbolTable *sourceScope, const std::string &structScopePrefix,
                            const std::string &structName);
+  SymbolType initExtGlobal(const antlr4::Token &token, SymbolTable *sourceScope, const std::string &globalScopePrefix,
+                           const std::string &globalName);
 };
