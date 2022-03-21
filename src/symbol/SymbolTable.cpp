@@ -87,6 +87,30 @@ SymbolTableEntry *SymbolTable::lookupByIndexInCurrentScope(unsigned int orderInd
 }
 
 /**
+ * Check if a global variable exists in any of the imported modules and return it if found
+ *
+ * @param globalName Name of the global variable
+ * @return Desired symbol / nullptr if the global was not found
+ */
+SymbolTableEntry *SymbolTable::lookupGlobalByName(const std::string &globalName, bool skipThisScope) {
+  // Search in the current scope
+  if (!skipThisScope) {
+    SymbolTableEntry *globalSymbol = lookupStrict(globalName);
+    if (globalSymbol)
+      return globalSymbol;
+  }
+  // Loop through all children to find the global var
+  for (auto &[scopeName, childScope] : children) {
+    if (childScope.isImported()) { // Only consider if it is an imported module scope
+      SymbolTableEntry *globalSymbol = childScope.lookupGlobalByName(globalName);
+      if (globalSymbol)
+        return globalSymbol;
+    }
+  }
+  return nullptr;
+}
+
+/**
  * Check if a capture exists in the current or any parent scope scope and return it if possible
  *
  * @param symbolName Name of the desired captured symbol

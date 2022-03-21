@@ -35,6 +35,8 @@ f<int> main() {
 
 import "std/os/os" as os;
 
+string OS_NAME = "windows";
+
 f<int> main() {
     printf("Os: %s", os.OS_NAME);
 }

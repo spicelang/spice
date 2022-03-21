@@ -94,6 +94,7 @@ private:
   bool hasMainFunction = false;
   bool isStdFile = false;
   SymbolTable *currentScope = nullptr;
+  SymbolTable *rootScope = nullptr;
   ScopePath scopePath;
   std::string scopePrefix;
   bool parameterMode = false;

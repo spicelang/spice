@@ -2430,6 +2430,7 @@ SymbolTableEntry *GeneratorVisitor::initExtGlobal(const std::string &globalName,
   if (entry->getState() == INITIALIZED)
     return entry;
 
+  // Declare the global also in the current module and update the address of the symbol accordingly
   llvm::Value *memAddress = module->getOrInsertGlobal(globalName, entry->getLLVMType());
   entry->updateAddress(memAddress);
 
