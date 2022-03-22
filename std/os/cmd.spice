@@ -1,6 +1,6 @@
 // Link external functions
 ext<int> getpid();
-ext<int> system(char*);
+ext<int> system(string);
 
 /**
  * Retrieve the process id of the current process.
@@ -16,7 +16,6 @@ public f<int> getPID() {
  *
  * @return Return code of the shell comand
  */
-public f<int> execCmd(string cmdStr) {
-    char* cmd = cmdStr;
+public f<int> execCmd(string cmd) {
     return system(cmd);
 }

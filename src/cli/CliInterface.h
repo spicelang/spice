@@ -36,6 +36,7 @@ public:
   void createInterface();
   int parse(int argc, char **argv);
   void validate() const;
+  void init();
   CliOptions *getOptions();
   [[nodiscard]] bool shouldCompile() const;
   [[nodiscard]] bool shouldRun() const;
@@ -50,7 +51,7 @@ private:
 
   // Members
   CLI::App app = CLI::App{"Spice Programming Language", "Spice"};
-  CliOptions cliOptions = CliOptions{};
+  CliOptions cliOptions{};
   const ErrorFactory err = ErrorFactory();
   bool compile = false;
   bool install = false;

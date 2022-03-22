@@ -34,26 +34,26 @@ cd spice
 #### Download third-party libraries
 There is a batch / sh script to help you with that. Use this command to run it:
 
-Linux: <br>
+**Linux:** <br>
 ```sh
 ./setup-libs.sh
 ```
 
-Windows: <br>
+**Windows:** <br>
 ```bat
 .\setup-libs.bat
 ```
 
 #### Build LLVM
-Spice needs the LLVM sources to compile successfully. Before you clone LLVM, you should navigate outside of the Spice repository.
+Spice needs the LLVM 14.0.0 sources to compile successfully. Before you clone LLVM, you should navigate outside of the Spice repository.
 
-Clone: <br>
+**Clone:** <br>
 ```sh
 git clone --depth 1 --branch llvmorg-14.0.0-rc4 https://github.com/llvm/llvm-project.git
 cd llvm-project
 ```
 
-Compile: <br>
+**Compile:** <br>
 ```sh
 mkdir build-release
 cd build-release
@@ -61,15 +61,20 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
 cmake --build .
 ```
 
+**Set env:** <br>
+```sh
+export LLVM_DIR=<your-llvm-root-dir>/build-release/lib/cmake/llvm
+```
+
 #### Build Spice
 To build Spice there is also a bat/sh file to help you with that. Use the following command to run it
 
-Linux: <br>
+**Linux:** <br>
 ```sh
 ./build.sh
 ```
 
-Windows: <br>
+**Windows:** <br>
 ```bat
 .\build.bat
 ```

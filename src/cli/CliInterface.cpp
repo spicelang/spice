@@ -5,6 +5,9 @@
 
 #include <util/FileUtil.h>
 
+#include <llvm/ADT/Triple.h>
+#include <llvm/Support/Host.h>
+
 void CliInterface::createInterface() {
   // Allow positional args
   app.allow_windows_style_options();
@@ -89,6 +92,28 @@ void CliInterface::validate() const {
 }
 
 /**
+ * Initialize the cli options based on the input of the user
+ */
+void CliInterface::init() {
+  // Propagate target information
+  if (cliOptions.targetTriple.empty() && cliOptions.targetArch.empty()) { // We have nothing -> obtain the host triplet
+    llvm::Triple triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+    cliOptions.targetTriple = triple.getTriple();
+    cliOptions.targetArch = triple.getArchName();
+    cliOptions.targetVendor = triple.getVendorName();
+    cliOptions.targetOs = triple.getOSName();
+  } else if (cliOptions.targetTriple.empty()) { // We have arch, vendor and os -> obtain triplet
+    llvm::Triple triple = llvm::Triple(cliOptions.targetArch, cliOptions.targetVendor, cliOptions.targetOs);
+    cliOptions.targetTriple = triple.getTriple();
+  } else { // Obtain arch, vendor and os by the triplet
+    llvm::Triple triple = llvm::Triple(cliOptions.targetTriple);
+    cliOptions.targetArch = triple.getArchName();
+    cliOptions.targetVendor = triple.getVendorName();
+    cliOptions.targetOs = triple.getOSName();
+  }
+}
+
+/**
  * Add build subcommand to cli interface
  */
 void CliInterface::addBuildSubcommand() {
@@ -105,18 +130,8 @@ void CliInterface::addBuildSubcommand() {
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
 
   // --target-triple
-  std::function<void(const std::string &)> targetTripleCallback = [&](const std::string &triple) {
-    cliOptions.targetTriple = triple;
-    // Get arch, vendor and os from target triple string
-    size_t firstIndex = triple.find('-', 0);
-    size_t secondIndex = triple.find('-', firstIndex + 1);
-    size_t thirdIndex = triple.find('-', secondIndex + 1);
-    cliOptions.targetArch = triple.substr(0, firstIndex);
-    cliOptions.targetVendor = triple.substr(firstIndex + 1, secondIndex - firstIndex);
-    cliOptions.targetOs = triple.substr(secondIndex + 1, thirdIndex - secondIndex);
-  };
-  subCmd->add_option_function<std::string>("--target,--target-triple,--target-triplet,-t", targetTripleCallback,
-                                           "Target triple for the emitted executable (for cross-compiling)");
+  subCmd->add_option<std::string>("--target,-t,--target-triple", cliOptions.targetTriple,
+                                  "Target triple for the emitted executable (for cross-compiling)");
 
   // --target-arch
   subCmd->add_option<std::string>("--target-arch", cliOptions.targetArch,
