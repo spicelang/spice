@@ -18,8 +18,8 @@ This is the home repo of the Spice programming language. Spice is a compiled lan
 
 If you like Spice, please consider a GitHub star! ⭐
 
-|:warning: | The compiler of the Spice language is still in alpha stages and under development. Please note that code may behave differently in the future or even break due to the volatility of the compiler. |
-|----------|:-------------------------------|
+|:warning: | The compiler of the Spice language is still in alpha stages and under development. Please note that code may behave differently in the future or even break due to the volatility of the compiler.  |
+|----------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
 ## Documentation
 Please visit the documentation at [spicelang.com](https://www.spicelang.com).
@@ -50,10 +50,13 @@ Spice needs the LLVM sources to compile successfully. Before you clone LLVM, you
 Clone: <br>
 ```sh
 git clone --depth 1 --branch llvmorg-14.0.0-rc4 https://github.com/llvm/llvm-project.git
+cd llvm-project
 ```
 
 Compile: <br>
 ```sh
+mkdir build-release
+cd build-release
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
 cmake --build .
 ```

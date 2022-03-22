@@ -13,7 +13,7 @@ jobs:
   build:
     name: C++ CI
     runs-on: ubuntu-latest
-        
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -25,11 +25,6 @@ jobs:
 
       - name: Setup Ninja
         run: sudo apt-get install ninja-build
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.x
 
       - name: Setup Gcovr
         run: sudo pip install gcovr
@@ -75,7 +70,7 @@ jobs:
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
           cd ./bin/test
-          ./Spice_test "false"
+          ./Spice_test false
 
       - name: Generate coverage report
         run: |
