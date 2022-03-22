@@ -685,8 +685,6 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *c
     std::string osPath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + ".spice";
     std::string osArchPath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
 
-    std::cout << "Import path: " << osPath << std::endl;
-
     if (FileUtil::fileExists(defaultPath)) {
       filePath = defaultPath;
     } else if (FileUtil::fileExists(osPath)) {

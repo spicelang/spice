@@ -10,6 +10,8 @@
 
 #include <exception/ErrorFactory.h>
 
+#include <utility>
+
 #include "../../lib/cli11/CLI11.hpp"
 
 /**
@@ -32,6 +34,10 @@ struct CliOptions {
  */
 class CliInterface {
 public:
+  // Constructors
+  explicit CliInterface() = default;
+  explicit CliInterface(CliOptions options) : cliOptions(std::move(options)) {}
+
   // Public methods
   void createInterface();
   int parse(int argc, char **argv);

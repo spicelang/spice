@@ -491,6 +491,17 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Valu
 llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
+
+  // Check if both values are of type pointer
+  if (lhsTy->isPointerTy() && rhsTy->isPointerTy())
+    return builder->CreateICmpNE(lhs, rhs);
+
+  // Check if one value is of type pointer and one is of type byte
+  if (lhsTy->isPointerTy() && rhsTy->isIntegerTy(32)) {
+    llvm::Value *lhsInt = builder->CreatePtrToInt(lhs, rhsTy);
+    return builder->CreateICmpNE(lhsInt, rhs);
+  }
+
   PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
   PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
