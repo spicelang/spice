@@ -42,7 +42,7 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   if (options->targetTriple.empty()) {
     targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
   } else {
-    targetTriple = llvm::Triple(options->targetArch, options->targetVendor, options->targetOs);
+    targetTriple = llvm::Triple(options->targetArch, options->targetVendor, options->targetOs); // GCOV_EXCL_LINE
   }
   cliOptions = options;
 
@@ -72,7 +72,7 @@ void GeneratorVisitor::init() {
   std::string error;
   const llvm::Target *target = llvm::TargetRegistry::lookupTarget(tripletString, error);
   if (!target)
-    throw err->get(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error);
+    throw err->get(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
 
   llvm::TargetOptions opt;
   llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
@@ -83,7 +83,7 @@ void GeneratorVisitor::init() {
 
 void GeneratorVisitor::optimize() {
   if (cliOptions->printDebugOutput)
-    std::cout << "\nOptimizing on level " + std::to_string(cliOptions->optLevel) << " ..." << std::endl;
+    std::cout << "\nOptimizing on level " + std::to_string(cliOptions->optLevel) << " ..." << std::endl; // GCOV_EXCL_LINE
 
   llvm::LoopAnalysisManager loopAnalysisMgr;
   llvm::FunctionAnalysisManager functionAnalysisMgr;
@@ -107,25 +107,27 @@ void GeneratorVisitor::optimize() {
 }
 
 void GeneratorVisitor::emit() {
+  // GCOV_EXCL_START
   if (cliOptions->printDebugOutput)
     std::cout << "\nEmitting object file for triplet '" << targetTriple.getTriple() << "' to path: " << objectFile << std::endl;
+  // GCOV_EXCL_STOP
 
   // Open file output stream
   std::error_code errorCode;
   llvm::raw_fd_ostream dest(objectFile, errorCode, llvm::sys::fs::OF_None);
   if (errorCode)
-    throw err->get(CANT_OPEN_OUTPUT_FILE, "File '" + objectFile + "' could not be opened");
+    throw err->get(CANT_OPEN_OUTPUT_FILE, "File '" + objectFile + "' could not be opened"); // GCOV_EXCL_LINE
 
   llvm::legacy::PassManager passManager;
   if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CGFT_ObjectFile))
-    throw err->get(WRONG_TYPE, "Target machine can't emit a file of this type");
+    throw err->get(WRONG_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
 
   // Emit object file
   passManager.run(*module);
   dest.flush();
 }
 
-void GeneratorVisitor::dumpIR() { module->print(llvm::outs(), nullptr); }
+void GeneratorVisitor::dumpIR() { module->print(llvm::outs(), nullptr); } // GCOV_EXCL_LINE
 
 std::string GeneratorVisitor::getIRString() {
   std::string output;
@@ -2045,7 +2047,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     // Get data type
     size_t actualItemCount = ctx->paramLst() ? ctx->paramLst()->assignExpr().size() : 0;
     size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
-    llvm::Type *arrayType = lhsType;
+    auto arrayType = static_cast<llvm::ArrayType *>(lhsType);
 
     // Fill items with the stated values
     if (ctx->paramLst()) {
@@ -2070,8 +2072,15 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
       // Decide if the array can be defined globally
       llvm::Value *arrayAddress;
       if (!itemType->isStructTy() && allParamsHardcoded) { // All params hardcoded => array can be defined globally
+        // Fill up the rest of the items
+        if (itemConstants.size() < arraySize) {
+          llvm::Constant *constantValue = getDefaultValueForType(itemType);
+          for (size_t i = itemConstants.size(); i < arraySize; i++)
+            itemConstants.push_back(constantValue);
+        }
+
         // Create hardcoded array
-        llvm::Constant *constArray = llvm::ConstantArray::get((llvm::ArrayType *)arrayType, itemConstants);
+        llvm::Constant *constArray = llvm::ConstantArray::get(arrayType, itemConstants);
         // Create global variable
         std::string globalVarName = lhsVarName;
         if (globalVarName.empty()) { // Get unused anonymous global var name
@@ -2126,7 +2135,7 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     double value = std::stod(ctx->DOUBLE()->toString());
     if (constNegate)
       value *= -1;
-    return (llvm::Constant *)llvm::ConstantFP::get(*context, llvm::APFloat(value));
+    return static_cast<llvm::Constant *>(llvm::ConstantFP::get(*context, llvm::APFloat(value)));
   }
 
   // Value is an integer constant
@@ -2136,9 +2145,9 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     if (constNegate)
       value *= -1;
     if (currentVarSigned) {
-      return (llvm::Constant *)llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value);
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value));
     } else {
-      return (llvm::Constant *)llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value);
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value));
     }
   }
 
@@ -2149,9 +2158,9 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     if (constNegate)
       value *= -1;
     if (currentVarSigned) {
-      return (llvm::Constant *)llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value);
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value));
     } else {
-      return (llvm::Constant *)llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value);
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value));
     }
   }
 
@@ -2162,9 +2171,9 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     if (constNegate)
       value = -value;
     if (currentVarSigned) {
-      return (llvm::Constant *)llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value);
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value));
     } else {
-      return (llvm::Constant *)llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value);
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value));
     }
   }
 
@@ -2173,9 +2182,9 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     currentSymbolType = SymbolType(TY_CHAR);
     char value = ctx->CHAR_LITERAL()->toString()[1];
     if (currentVarSigned) {
-      return (llvm::Constant *)llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value));
     } else {
-      return (llvm::Constant *)llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value);
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value));
     }
   }
 
@@ -2185,22 +2194,22 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
     std::string value = ctx->STRING_LITERAL()->toString();
     value = std::regex_replace(value, std::regex("\\\\n"), "\n");
     value = value.substr(1, value.size() - 2);
-    return (llvm::Constant *)builder->CreateGlobalStringPtr(value, "", 0, module.get());
+    return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
   }
 
   // Value is a boolean constant with value false
   if (ctx->FALSE()) {
     currentSymbolType = SymbolType(TY_BOOL);
-    return (llvm::Constant *)builder->getFalse();
+    return static_cast<llvm::Constant *>(builder->getFalse());
   }
 
   // Value is a boolean constant with value true
   if (ctx->TRUE()) {
     currentSymbolType = SymbolType(TY_BOOL);
-    return (llvm::Constant *)builder->getTrue();
+    return static_cast<llvm::Constant *>(builder->getTrue());
   }
 
-  throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through");
+  throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through"); // GCOV_EXCL_LINE
 }
 
 antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
@@ -2229,7 +2238,7 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx)
   // Throw an error if something went wrong.
   // This should technically never occur because of the semantic analysis
   if (!type)
-    throw err->get(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, "Dyn was other");
+    throw err->get(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, "Dyn was other"); // GCOV_EXCL_LINE
   return type;
 }
 
@@ -2371,57 +2380,35 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
   return llvmBaseType;
 }
 
-/*llvm::Value* GeneratorVisitor::getDefaultValueForType(SymbolType symbolType) {
-    // Unpack symbol type
-    std::stack<SymbolSuperType> ptrArrayStack;
-    while (symbolType.isPointer() || symbolType.isArray()) {
-        ptrArrayStack.push(symbolType.getSuperType());
-        symbolType = symbolType.getContainedTy();
-    }
+llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type) {
+  // Double
+  if (OpRuleConversionsManager::isDouble(type))
+    return llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
 
-    llvm::Value* defaultValue;
-    switch (symbolType.getSuperType()) {
-        case TY_DOUBLE:
-            defaultValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), 0);
-            break;
-        case TY_INT:
-            defaultValue = builder->getInt32(0);
-            break;
-        case TY_SHORT:
-            defaultValue = builder->getInt16(0);
-            break;
-        case TY_LONG:
-            defaultValue = builder->getInt64(0);
-            break;
-        case TY_BYTE: // fall-through
-        case TY_CHAR:
-            defaultValue = builder->getInt8(0);
-            break;
-        case TY_STRING:
-            defaultValue = builder->CreateGlobalStringPtr("", "", 0, module.get());
-            break;
-        case TY_BOOL:
-            defaultValue = builder->getInt1(false);
-            break;
-        case TY_STRUCT: {
-            llvm::Type* structType = getTypeForSymbolType(symbolType);
-            llvm::Value* structAddress = insertAlloca(structType, currentVarName);
+  // Int
+  if (OpRuleConversionsManager::isInt(type))
+    return builder->getInt32(0);
 
-            break;
-        }
-        default:
-            throw std::runtime_error("Internal compiler error. Cannot determine default value for type" +
-                symbolType.getName(true));
-    }
+  // Short
+  if (OpRuleConversionsManager::isShort(type))
+    return builder->getInt16(0);
 
-    // Pack value
-    while (!ptrArrayStack.empty()) {
+  // Long
+  if (OpRuleConversionsManager::isLong(type))
+    return builder->getInt64(0);
 
-        ptrArrayStack.pop();
-    }
+  // Byte or char
+  if (OpRuleConversionsManager::isByteOrChar(type))
+    return builder->getInt8(0);
 
-    return defaultValue;
-}*/
+  if (OpRuleConversionsManager::isString(type))
+    return builder->CreateGlobalStringPtr("", "", 0, module.get());
+
+  if (OpRuleConversionsManager::isBool(type))
+    return builder->getInt1(false);
+
+  throw std::runtime_error("Internal compiler error: Cannot determine default value for type"); // GCOV_EXCL_LINE
+}
 
 SymbolTableEntry *GeneratorVisitor::initExtGlobal(const std::string &globalName, const std::string &fqGlobalName) {
   SymbolTableEntry *entry = currentScope->lookup(fqGlobalName);

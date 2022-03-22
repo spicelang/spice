@@ -53,6 +53,13 @@ public:
   llvm::Value *getPostfixPlusPlusInst(llvm::Value *lhs);
   llvm::Value *getPostfixMinusMinusInst(llvm::Value *lhs);
   llvm::Value *getCastInst(llvm::Type *, llvm::Value *lhs);
+  static bool isDouble(llvm::Type *llvmType);
+  static bool isInt(llvm::Type *llvmType);
+  static bool isShort(llvm::Type *llvmType);
+  static bool isLong(llvm::Type *llvmType);
+  static bool isByteOrChar(llvm::Type *llvmType);
+  static bool isString(llvm::Type *llvmType);
+  static bool isBool(llvm::Type *llvmType);
 
 private:
   // Members
@@ -61,11 +68,4 @@ private:
 
   // Private methods
   static PrimitiveType getPrimitiveTypeFromLLVMType(llvm::Type *llvmType);
-  static bool isDouble(llvm::Type *llvmType);
-  static bool isInt(llvm::Type *llvmType);
-  static bool isShort(llvm::Type *llvmType);
-  static bool isLong(llvm::Type *llvmType);
-  static bool isByteOrChar(llvm::Type *llvmType);
-  static bool isString(llvm::Type *llvmType);
-  static bool isBool(llvm::Type *llvmType);
 };

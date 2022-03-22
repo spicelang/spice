@@ -1,8 +1,8 @@
 version: 2
 updates:
-  # CLI dependency updates
-  - package-ecosystem: gomod
-    directory: /cli
+  # Dockerfile
+  - package-ecosystem: docker
+    directory: /
     schedule:
       interval: daily
       time: "04:00"
@@ -14,8 +14,8 @@ updates:
     assignees:
       - spicelang/compiler-team
 
-  # Dockerfile
-  - package-ecosystem: docker
+  # Github Actions
+  - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: daily

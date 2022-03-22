@@ -117,7 +117,7 @@ private:
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "", llvm::Value *arraySize = nullptr);
   llvm::Type *getTypeForSymbolType(SymbolType symbolType);
-  // llvm::Value* getDefaultValueForType(SymbolType symbolType);
+  llvm::Constant *getDefaultValueForType(llvm::Type *type);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);
   llvm::Value *doImplicitCast(llvm::Value *lhs, llvm::Type *rhs);

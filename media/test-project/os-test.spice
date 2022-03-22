@@ -33,10 +33,9 @@ f<int> main() {
     //s.close();
 }*/
 
-import "std/os/os" as os;
-
-string OS_NAME = "windows";
-
 f<int> main() {
-    printf("Os: %s", os.OS_NAME);
+    string[5] welcomeMessage = { "Hello", "Spice", "programmers!" };
+    foreach int i, string word : welcomeMessage {
+        printf("Word no. %d: %s\n", i, word);
+    }
 }
