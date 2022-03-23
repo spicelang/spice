@@ -1,5 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
+// GCOV_EXCL_START
+
 #include "TestUtil.h"
 
 #include <cstring> // Required by builds on Linux
@@ -105,3 +107,5 @@ std::string TestUtil::getDefaultExecutableName() {
  * @return Enabled or not
  */
 bool TestUtil::isUpdateRefsEnabled() { return updateRefs; }
+
+// GCOV_EXCL_STOP

@@ -4,7 +4,7 @@
 
 SemanticError ErrorFactory::get(const antlr4::Token &token, SemanticErrorType type, const std::string &message) const {
   if (fileName.empty())
-    throw std::runtime_error("Internal compiler error: Calling get<SemanticError> without filename");
+    throw std::runtime_error("Internal compiler error: Calling get<SemanticError> without filename"); // GCOV_EXCL_LINE
   return SemanticError(fileName, token, type, message);
 }
 

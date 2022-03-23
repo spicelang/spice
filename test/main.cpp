@@ -1,5 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
+// GCOV_EXCL_START
+
 #include <gtest/gtest.h>
 
 bool updateRefs = false;
@@ -23,3 +25,5 @@ int main(int argc, char **argv) { // Call ./spicetest update-refs
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
+
+// GCOV_EXCL_STOP

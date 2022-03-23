@@ -12,20 +12,42 @@
 ## Syntax
 
 ### Generics with functions / procedures / methods
+
+#### Callee
 ```spice
-f<dyn<T>> max(dyn<T> a, dyn<T> b) {
+type T dyn;
+
+f<T> max(T a, T b) {
 	return b > a ? b : a;
 }
 ```
 
-### Generics with structs
+#### Caller
 ```spice
-type Vector<dyn<T>> struct {
-	T[]* arrayPtr
-	int size
-	T front;
-	T back;
+...
+int result = max<int>(1, 4);
+...
+```
+
+### Generics with structs
+
+#### Definition
+```spice
+type T dyn;
+
+type Vector<T> struct {
+	T* arrayPtr
+	long size
 }
+```
+
+#### Referencing
+```spice
+...
+Vector<int> v = Vector<int>{};
+// or
+dyn v = Vector<string>{};
+...
 ```
 
 ## Functionality

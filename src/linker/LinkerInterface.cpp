@@ -21,13 +21,13 @@ void LinkerInterface::link() {
 #ifdef OS_WINDOWS
   cmd = "where " + std::string(LINKER_EXECUTABLE_NAME) + " > nul 2>&1";
 #endif
-  if (std::system(cmd.c_str()))
+  if (std::system(cmd.c_str())) // GCOV_EXCL_START
     throw err->get(LINKER_NOT_FOUND, "Please check if you have installed " + std::string(LINKER_EXECUTABLE_NAME) +
-                                         " and added it to the PATH variable");
+                                         " and added it to the PATH variable"); // GCOV_EXCL_STOP
 
   // Check if the output path was set
   if (outputPath.empty())
-    throw std::runtime_error("Internal compiler error: Output path for the linker was not set");
+    throw std::runtime_error("Internal compiler error: Output path for the linker was not set"); // GCOV_EXCL_LINE
 
   // Build the linker command
   std::string linkerCommand = LINKER_EXECUTABLE_NAME;
@@ -41,14 +41,14 @@ void LinkerInterface::link() {
 
   // Print status message
   if (cliOptions->printDebugOutput)
-    std::cout << std::endl << "Emitting executable to path: " << outputPath << std::endl;
+    std::cout << std::endl << "Emitting executable to path: " << outputPath << std::endl; // GCOV_EXCL_LINE
 
   // Call the linker
   std::string result = FileUtil::exec(linkerCommand);
 
   // Print linker result if appropriate
   if (cliOptions->printDebugOutput && !result.empty())
-    std::cout << "Linking result: " << result << std::endl;
+    std::cout << "Linking result: " << result << std::endl; // GCOV_EXCL_LINE
 }
 
 /**

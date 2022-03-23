@@ -1,0 +1,149 @@
+// Constants
+const unsigned int INITIAL_ALLOC_COUNT = 5;
+const unsigned int RESIZE_FACTOR = 2;
+
+// Link external functions
+ext<char*> malloc(int);
+ext free(char*);
+ext<char*> memcpy(char*, char*, int);
+
+// Add generic type definition
+type T dyn;
+
+/**
+ * A queue in Spice is a commonly used data structure, which uses the FiFo (first in, first out) principle
+ */
+public type Queue<T> struct {
+    T* contents             // Pointer to the first data element
+    unsigned long capacity  // Allocated number of items
+    unsigned long size      // Current number of items
+    unsigned long idxFront  // Index for front access
+    unsigned long idxBack   // Index for back access
+}
+
+public p Queue.constructor() {
+    // Allocate space for the initial number of elements
+    this.contents = malloc(sizeof(T) * INITIAL_ALLOC_COUNT);
+    this.capacity = INITIAL_ALLOC_COUNT;
+    this.idxFront = 0l;
+    this.idxBack = 0l;
+}
+
+public p Queue.destructor() {
+    // Free all the memory
+    free(this.contents);
+}
+
+/**
+ * Add an item at the end of the queue
+ */
+public p Queue.push(T item) {
+    // Check if we need to re-allocate memory
+    if this.isFull() {
+        this.capacity *= RESIZE_FACTOR;
+        this.contents = malloc(sizeof(T) * this.capacity);
+    }
+
+    // Insert the element at the back
+    this.idxBack++;
+    this.contents[this.idxBack] = item;
+
+    // Increase size
+    this.size++;
+}
+
+/**
+ * Retrieve the first item and remove it
+ *
+ * @return First item
+ */
+public f<T> Queue.pop() {
+    T item = this.contents[this.idxFront];
+    this.idxFront++;
+    return item;
+}
+
+/**
+ * Retrieve the first item without removing it from the queue
+ *
+ * @return First item
+ */
+public f<T> Queue.front() {
+    // Return nil if the queue is empty
+    if this.isEmpty() { return nil<T>; }
+    // Otherwise, return item
+    return this.contents[this.idxFront];
+}
+
+/**
+ * Retrieve the last item without removing it from the queue
+ *
+ * @return Last item
+ */
+public f<T> Queue.back() {
+    // Return nil if the queue is empty
+    if this.isEmpty() { return nil<T>; }
+    // Otherwise, return item
+    return this.contents[this.idxBack];
+}
+
+/**
+ * Retrieve the current size of the queue
+ *
+ * @return Current size of the queue
+ */
+public f<unsigned long> Queue.size() {
+    return this.size;
+}
+
+/**
+ * Checks if the queue contains any items at the moment
+ *
+ * @return Empty or not empty
+ */
+public f<bool> Queue.isEmpty() {
+    return this.size == 0l;
+}
+
+/**
+ * Checks if the queue exhausts its capacity and needs to resize at the next call of push
+ *
+ * @return Full or not full
+ */
+public f<bool> Queue.isFull() {
+    return this.size == this.capacity;
+}
+
+/**
+ * Reserves `itemCount` items
+ */
+public p Queue.reserve(unsigned long itemCount) {
+    if itemCount > this.capacity {
+        resize(itemCount);
+    }
+}
+
+/**
+ * Frees allocated memory that is not used by the queue
+ */
+public p Queue.pack() {
+    // Return if no packing is required
+    if this.isFull() { return; }
+    // Pack the array
+    this.resize(this.size);
+}
+
+/**
+ * Re-allocates heap space for the queue contents
+ */
+p Queue.resize(unsigned long itemCount) {
+    // Allocate the new memory
+    T* newMemory = malloc(sizeof(T) * itemCount);
+    // Copy contents over
+    memcpy(newMemory, this.contents, sizeof(T) * this.capacity);
+    // Free the old memory
+    free(this.contents);
+    // Set new memory to contents array
+    this.contents = newMemory;
+    this.capacity = itemCount;
+}

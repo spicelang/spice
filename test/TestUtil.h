@@ -1,5 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
+// GCOV_EXCL_START
+
 #pragma once
 
 #ifdef __unix__
@@ -23,3 +25,5 @@ public:
   static std::string getDefaultExecutableName();
   static bool isUpdateRefsEnabled();
 };
+
+// GCOV_EXCL_STOP
