@@ -141,7 +141,6 @@ public f<bool> dirExists(string path) {
         if stat(path, &fs) != 0 {
             return false;
         }
-        printf("Mode: %d\n", fs.st_mtime);
         return ((int) fs.st_mode & IF_MT) == IF_DIR;
     }
     return false;
