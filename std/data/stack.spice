@@ -1,0 +1,105 @@
+// Constants
+const unsigned int INITIAL_ALLOC_COUNT = 5;
+const unsigned int RESIZE_FACTOR = 2;
+
+// Link external functions
+ext<char*> malloc(int);
+ext free(char*);
+ext<char*> memcpy(char*, char*, int);
+
+/**
+ * A stack in Spice is a commonly used data structure, which uses the FiLo (first in, last out) principle
+ */
+public type Stack<dyn T> struct {
+    T* contents             // Pointer to the first data element
+    unsigned long capacity  // Allocated number of items
+    unsigned long size      // Current number of items
+}
+
+public p Stack.constructor() {
+    // Allocate space for the initial number of elements
+    this.contents = malloc(sizeof(T) * INITIAL_ALLOC_COUNT);
+    this.capacity = INITIAL_ALLOC_COUNT;
+    this.idxFront = 0l;
+    this.idxBack = 0l;
+}
+
+/**
+ * Add an item to the stack
+ */
+public p Stack.push(T item) {
+    // Check if we need to re-allocate memory
+    if this.isFull() {
+        this.capacity *= RESIZE_FACTOR;
+        this.contents = malloc(sizeof(T) * this.capacity);
+    }
+
+    // Insert the element at the back
+    this.contents[this.size++] = item;
+}
+
+/**
+ * Retrieve item and remove it from the stack
+ */
+public p Stack.pop() {
+    // Check if we need to re-allocate memory
+    if this.isFull() {
+        this.capacity *= RESIZE_FACTOR;
+        this.contents = malloc(sizeof(T) * this.capacity);
+    }
+
+    // Insert the element at the back
+    this.contents[this.size++] = item;
+}
+
+/**
+ * Retrieve the current size of the queue
+ *
+ * @return Current size of the queue
+ */
+public f<unsigned long> Stack.size() {
+    return this.size;
+}
+
+/**
+ * Checks if the queue contains any items at the moment
+ *
+ * @return Empty or not empty
+ */
+public f<bool> Stack.isEmpty() {
+    return this.size == 0l;
+}
+
+/**
+ * Checks if the queue exhausts its capacity and needs to resize at the next call of push
+ *
+ * @return Full or not full
+ */
+public f<bool> Stack.isFull() {
+    return this.size == this.capacity;
+}
+
+/**
+ * Frees allocated memory that is not used by the queue
+ */
+public p Stack.pack() {
+    // Return if no packing is required
+    if this.isFull() { return; }
+    // Pack the array
+    this.resize(this.size);
+}
+
+/**
+ * Re-allocates heap space for the queue contents
+ */
+p Stack.resize(unsigned long itemCount) {
+    // Allocate the new memory
+    T* newMemory = malloc(sizeof(T) * itemCount);
+    // Copy contents over
+    memcpy(newMemory, this.contents, sizeof(T) * this.capacity);
+    // Free the old memory
+    free(this.contents);
+    // Set new memory to contents array
+    this.contents = newMemory;
+    this.capacity = itemCount;
+}
