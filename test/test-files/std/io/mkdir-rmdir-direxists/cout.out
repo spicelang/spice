@@ -1,0 +1,5 @@
+Existing before create: 0
+mkDir return code: 0
+Existing after create: 1
+rmDir return code: 0
+Existing after delete: 0

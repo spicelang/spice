@@ -80,7 +80,6 @@ private:
   std::unique_ptr<OpRuleConversionsManager> conversionsManager;
   std::string sourceFile;
   std::string objectFile;
-  llvm::Triple targetTriple;
   llvm::TargetMachine *targetMachine{};
   CliOptions *cliOptions;
   bool requiresMainFct = true;

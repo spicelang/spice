@@ -18,8 +18,8 @@ This is the home repo of the Spice programming language. Spice is a compiled lan
 
 If you like Spice, please consider a GitHub star! ⭐
 
-|:warning: | The compiler of the Spice language is still in alpha stages and under development. Please note that code may behave differently in the future or even break due to the volatility of the compiler. |
-|----------|:-------------------------------|
+|:warning: | The compiler of the Spice language is still in alpha stages and under development. Please note that code may behave differently in the future or even break due to the volatility of the compiler.  |
+|----------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
 ## Documentation
 Please visit the documentation at [spicelang.com](https://www.spicelang.com).
@@ -34,39 +34,47 @@ cd spice
 #### Download third-party libraries
 There is a batch / sh script to help you with that. Use this command to run it:
 
-Linux: <br>
+**Linux:** <br>
 ```sh
 ./setup-libs.sh
 ```
 
-Windows: <br>
+**Windows:** <br>
 ```bat
 .\setup-libs.bat
 ```
 
 #### Build LLVM
-Spice needs the LLVM sources to compile successfully. Before you clone LLVM, you should navigate outside of the Spice repository.
+Spice needs the LLVM 14.0.0 sources to compile successfully. Before you clone LLVM, you should navigate outside of the Spice repository.
 
-Clone: <br>
+**Clone:** <br>
 ```sh
-git clone --depth 1 --branch llvmorg-14.0.0-rc4 https://github.com/llvm/llvm-project.git
+git clone --depth 1 --branch llvmorg-14.0.0 https://github.com/llvm/llvm-project.git
+cd llvm-project
 ```
 
-Compile: <br>
+**Compile:** <br>
 ```sh
+mkdir build-release
+cd build-release
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
 cmake --build .
+```
+
+**Set env:** <br>
+```sh
+export LLVM_DIR=<your-llvm-root-dir>/build-release/lib/cmake/llvm
 ```
 
 #### Build Spice
 To build Spice there is also a bat/sh file to help you with that. Use the following command to run it
 
-Linux: <br>
+**Linux:** <br>
 ```sh
 ./build.sh
 ```
 
-Windows: <br>
+**Windows:** <br>
 ```bat
 .\build.bat
 ```
@@ -77,6 +85,8 @@ You can find the build output in the `./bin` subdirectory.
 The Spice grammar can be found [here](./src/grammar/Spice.g4) as a ANTLR grammar configuration file.
 
 ## Available target platforms
+
+Currently, Spice only offers stable support for x86_64/windows and x86_64/linux. But you can try to compile to the following architectures without any stability promises:
 
 - `aarch64`
 - `amdgpu`

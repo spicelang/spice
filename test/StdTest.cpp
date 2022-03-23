@@ -101,6 +101,10 @@ void executeTest(const StdTestCase &testCase) {
 
     // Create instance of cli options
     CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, 0};
+    CliInterface cli(options);
+    cli.validate();
+    cli.init();
+    options = *cli.getOptions();
 
     // Create linker interface
     LinkerInterface linker = LinkerInterface(&err, &threadFactory, &options);

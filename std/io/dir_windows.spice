@@ -33,17 +33,17 @@ const int INVALID_HANDLE = -1; // Decimal for 0xFFFFFFFF
 const int FILE_ATTRIBUTE_DIRECTORY = 16;
 
 type FileStat struct {
-    int f1
-    short f2
-    short mode
-    short f4
-    short f5
-    short f6
-    int f7
-    int f8
-    long f9
-    long f10
-    long f11
+    unsigned int st_dev    // ID of the device containing file
+    unsigned short st_ino  // Inode number
+    unsigned short st_mode // File type and mode
+    short st_nlink         // Number of hard links
+    short st_uid           // User ID of owner
+    short st_gid           // Group ID of owner
+    unsigned int st_rdev   // Device ID (if special file)
+    int st_size            // Total size in bytes
+    long st_atime          // Time of last access
+    long st_mtime          // Time of last modificatio
+    long st_ctime          // Time of last status change
 }
 
 type FileTime struct {
@@ -140,8 +140,10 @@ public f<bool> dirExists(string path) {
     if access(path, F_OK) == 0 {
         // Check if it is a dir
         dyn fs = FileStat{};
-        stat(path, &fs);
-        return ((int) fs.mode & IF_MT) == IF_DIR;
+        if stat(path, &fs) != 0 {
+            return false;
+        }
+        return ((int) fs.st_mode & IF_MT) == IF_DIR;
     }
     return false;
 }

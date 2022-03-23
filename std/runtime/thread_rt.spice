@@ -1,4 +1,5 @@
 import "std/time/delay" as delay;
+import "std/os/cpu" as cpu;
 
 type Mutex struct {
 	bool occupied
@@ -6,7 +7,7 @@ type Mutex struct {
 
 p Mutex.acquire() {
 	while this.occupied {
-		delay.delay(10);
+		cpu.yield();
 	}
 	this.occupied = true;
 }

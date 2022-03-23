@@ -37,14 +37,7 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   this->sourceFile = sourceFile;
   this->objectFile = objectFile;
   this->requiresMainFct = requiresMainFct;
-
-  // Get target triple
-  if (options->targetTriple.empty()) {
-    targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-  } else {
-    targetTriple = llvm::Triple(options->targetArch, options->targetVendor, options->targetOs); // GCOV_EXCL_LINE
-  }
-  cliOptions = options;
+  this->cliOptions = options;
 
   // Create error factory for this specific file
   this->err = new ErrorFactory(sourceFile);
@@ -65,18 +58,17 @@ void GeneratorVisitor::init() {
   llvm::InitializeAllAsmPrinters();
 
   // Configure output target
-  std::string tripletString = targetTriple.getTriple();
-  module->setTargetTriple(tripletString);
+  module->setTargetTriple(cliOptions->targetTriple);
 
   // Search after selected target
   std::string error;
-  const llvm::Target *target = llvm::TargetRegistry::lookupTarget(tripletString, error);
+  const llvm::Target *target = llvm::TargetRegistry::lookupTarget(cliOptions->targetTriple, error);
   if (!target)
     throw err->get(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
 
   llvm::TargetOptions opt;
   llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
-  targetMachine = target->createTargetMachine(tripletString, "generic", "", opt, rm);
+  targetMachine = target->createTargetMachine(cliOptions->targetTriple, "generic", "", opt, rm);
 
   module->setDataLayout(targetMachine->createDataLayout());
 }
@@ -109,7 +101,7 @@ void GeneratorVisitor::optimize() {
 void GeneratorVisitor::emit() {
   // GCOV_EXCL_START
   if (cliOptions->printDebugOutput)
-    std::cout << "\nEmitting object file for triplet '" << targetTriple.getTriple() << "' to path: " << objectFile << std::endl;
+    std::cout << "\nEmitting object file for triplet '" << cliOptions->targetTriple << "' to path: " << objectFile << std::endl;
   // GCOV_EXCL_STOP
 
   // Open file output stream

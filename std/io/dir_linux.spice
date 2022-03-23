@@ -28,18 +28,25 @@ const int R_OK = 4; // Can read
 const int IF_MT          = 61440; // Decimal for octal: 0170000
 const int IF_DIR         = 16384; // Decimal for octal: 0040000
 
-type FileStat struct {
-    int f1
-    short f2
-    short mode
-    short f4
-    short f5
-    short f6
-    int f7
-    int f8
-    long f9
-    long f10
-    long f11
+type FileStat struct {         // Total size: 46 bytes
+    unsigned long st_dev       // ID of the device containing file
+    unsigned long st_ino       // Inode number
+    long st_nlink              // Number of hard links
+    unsigned int st_mode       // File type and mode
+    int st_uid                 // User ID of owner
+    int st_gid                 // Group ID of owner
+    unsigned long st_rdev      // Device ID (if special file)
+    long st_size               // Total size in bytes
+    long st_blksize            // Block size for filesystem I/O
+    long st_blocks             // Number of 512B blocks allocated
+    long st_atime              // Time of last access
+    unsigned long st_atimensec // Nsecs of last access
+    long st_mtime              // Time of last modification
+    unsigned long st_mtimensec // Nsecs of last modification
+    long st_ctime              // Time of last status change
+    unsigned long st_ctimensec // Nsecs of last status change
+    long[3] __glibc_reserved0
+    int __glibc_reserved1
 }
 
 type DirEntry struct {
@@ -131,8 +138,10 @@ public f<bool> dirExists(string path) {
     if access(path, F_OK) == 0 {
         // Check if it is a dir
         dyn fs = FileStat{};
-        stat(path, &fs);
-        return ((int) fs.mode & IF_MT) == IF_DIR;
+        if stat(path, &fs) != 0 {
+            return false;
+        }
+        return ((int) fs.st_mode & IF_MT) == IF_DIR;
     }
     return false;
 }
@@ -140,7 +149,7 @@ public f<bool> dirExists(string path) {
 /**
  * Lists all files/subdirectories at a given path.
  */
-public p listDir(string path) {
+/*public p listDir(string path) {
     // Open the directory stream
     DirStream* dirStream = opendir(path);
 
@@ -152,4 +161,4 @@ public p listDir(string path) {
         printf("Filename: %s\n", dirEntry.dName);
     }
     closedir(dirStream);
-}
+}*/

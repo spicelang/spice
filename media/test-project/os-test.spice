@@ -33,9 +33,14 @@ f<int> main() {
     //s.close();
 }*/
 
+import "std/io/dir" as dir;
+
 f<int> main() {
-    string[5] welcomeMessage = { "Hello", "Spice", "programmers!" };
-    foreach int i, string word : welcomeMessage {
-        printf("Word no. %d: %s\n", i, word);
-    }
+    printf("Existing before create: %d\n", dir.dirExists("./test"));
+    dyn mkReturnCode = dir.mkDir("./test", dir.MODE_ALL_RWX);
+    printf("mkDir return code: %d\n", mkReturnCode);
+    printf("Existing after create: %d\n", dir.dirExists("./test"));
+    dyn rmReturnCode = dir.rmDir("./test");
+    printf("rmDir return code: %d\n", rmReturnCode);
+    printf("Existing after delete: %d\n", dir.dirExists("./test"));
 }

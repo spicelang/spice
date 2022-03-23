@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
   cli.parse(argc, argv);
   if (cli.shouldCompile()) {
     cli.validate();                   // Check if all required fields are present
+    cli.init();                       // Prepare the cli options
     compileProject(cli.getOptions()); // Kick off the compiling process
     if (cli.shouldRun())
       cli.runBinary(); // Run executable if appropriate
