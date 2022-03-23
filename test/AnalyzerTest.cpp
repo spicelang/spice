@@ -1,5 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
+// GCOV_EXCL_START
+
 #include <stdexcept>
 
 #include <gtest/gtest.h>
@@ -106,7 +108,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + "/exception.out"))
-      FAIL() << "Expected error, but got no error"; // GCOV_EXCL_LINE
+      FAIL() << "Expected error, but got no error";
 
     // Check if the AST matches the expected output
     /*std::string astFileName = testCase.testPath + "/syntax-tree.ast";
@@ -120,7 +122,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
     if (FileUtil::fileExists(symbolTableFileName)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(symbolTableFileName, symbolTable->toJSON().dump(2)); // GCOV_EXCL_LINE
+        TestUtil::setFileContent(symbolTableFileName, symbolTable->toJSON().dump(2));
       } else {
         std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
         EXPECT_EQ(expectedSymbolTable, symbolTable->toJSON().dump(2));
@@ -134,13 +136,13 @@ void executeTest(const AnalyzerTestCase &testCase) {
     if (FileUtil::fileExists(exceptionFile)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(exceptionFile, error.what()); // GCOV_EXCL_LINE
+        TestUtil::setFileContent(exceptionFile, error.what());
       } else {
         std::string expectedException = TestUtil::getFileContent(exceptionFile);
         EXPECT_EQ(std::string(error.what()), expectedException);
       }
     } else {
-      FAIL() << "Expected no error, but got '" << error.what() << "'"; // GCOV_EXCL_LINE
+      FAIL() << "Expected no error, but got '" << error.what() << "'";
     }
   } catch (SemanticError &error) {
     // Check if the exception message matches the expected output
@@ -148,13 +150,13 @@ void executeTest(const AnalyzerTestCase &testCase) {
     if (FileUtil::fileExists(exceptionFile)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(exceptionFile, error.what()); // GCOV_EXCL_LINE
+        TestUtil::setFileContent(exceptionFile, error.what());
       } else {
         std::string expectedException = TestUtil::getFileContent(exceptionFile);
         EXPECT_EQ(std::string(error.what()), expectedException);
       }
     } else {
-      FAIL() << "Expected no error, but got '" << error.what() << "'"; // GCOV_EXCL_LINE
+      FAIL() << "Expected no error, but got '" << error.what() << "'";
     }
   }
 }
@@ -287,3 +289,5 @@ INSTANTIATE_TEST_SUITE_P(AnalyzerTypeSystemTests, AnalyzerTypeSystemTests, ::tes
 INSTANTIATE_TEST_SUITE_P(AnalyzerVariableTests, AnalyzerVariableTests, ::testing::ValuesIn(testSuites[20]), NameResolver());
 
 INSTANTIATE_TEST_SUITE_P(AnalyzerWhileLoopTests, AnalyzerWhileLoopTests, ::testing::ValuesIn(testSuites[21]), NameResolver());
+
+// GCOV_EXCL_STOP
