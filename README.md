@@ -86,6 +86,8 @@ The Spice grammar can be found [here](./src/grammar/Spice.g4) as a ANTLR grammar
 
 ## Available target platforms
 
+Currently, Spice only offers stable support for x86_64/windows and x86_64/linux. But you can try to compile to the following architectures without any stability promises:
+
 - `aarch64`
 - `amdgpu`
 - `armv5`, `armv6`, `armv7`
