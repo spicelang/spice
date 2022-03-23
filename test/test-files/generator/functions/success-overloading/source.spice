@@ -1,0 +1,14 @@
+f<int> testFunc() {
+    printf("Test func 1");
+    return 1;
+}
+
+f<int> testFunc(string param) {
+    printf("Test func 2");
+    return 2;
+}
+
+f<int> main() {
+    int res = testFunc();
+    printf("Result: %d\n", res);
+}
