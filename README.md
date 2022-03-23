@@ -49,7 +49,7 @@ Spice needs the LLVM 14.0.0 sources to compile successfully. Before you clone LL
 
 **Clone:** <br>
 ```sh
-git clone --depth 1 --branch llvmorg-14.0.0-rc4 https://github.com/llvm/llvm-project.git
+git clone --depth 1 --branch llvmorg-14.0.0 https://github.com/llvm/llvm-project.git
 cd llvm-project
 ```
 

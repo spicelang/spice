@@ -35,11 +35,11 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-14-0-0-rc4-linux-x64
+          key: llvm-14-0-0-linux-x64
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-14.0.0-rc4 https://github.com/llvm/llvm-project.git llvm
+        run: git clone --depth 1 --branch llvmorg-14.0.0 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -118,11 +118,11 @@ jobs:
         uses: actions/cache@v3
         with:
           path: D:/a/spice/spice/llvm
-          key: llvm-14-0-0-rc4-win-x64
+          key: llvm-14-0-0-win-x64
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-14.0.0-rc4 https://github.com/llvm/llvm-project.git llvm
+        run: git clone --depth 1 --branch llvmorg-14.0.0 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
