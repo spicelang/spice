@@ -7,10 +7,13 @@ ext<char*> malloc(int);
 ext free(char*);
 ext<char*> memcpy(char*, char*, int);
 
+// Add generic type definition
+type T dyn;
+
 /**
  * A stack in Spice is a commonly used data structure, which uses the FiLo (first in, last out) principle
  */
-public type Stack<dyn T> struct {
+public type Stack<T> struct {
     T* contents             // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
     unsigned long size      // Current number of items
@@ -22,6 +25,11 @@ public p Stack.constructor() {
     this.capacity = INITIAL_ALLOC_COUNT;
     this.idxFront = 0l;
     this.idxBack = 0l;
+}
+
+public p Stack.destructor() {
+    // Free all the memory
+    free(this.contents);
 }
 
 /**
@@ -41,15 +49,9 @@ public p Stack.push(T item) {
 /**
  * Retrieve item and remove it from the stack
  */
-public p Stack.pop() {
-    // Check if we need to re-allocate memory
-    if this.isFull() {
-        this.capacity *= RESIZE_FACTOR;
-        this.contents = malloc(sizeof(T) * this.capacity);
-    }
-
-    // Insert the element at the back
-    this.contents[this.size++] = item;
+public f<T> Stack.pop() {
+    // Pop the element from the stack
+    return this.contents[--this.size];
 }
 
 /**

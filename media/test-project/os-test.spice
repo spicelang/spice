@@ -25,22 +25,10 @@ f<int> main() {
     a.destructor();
 }*/
 
-/*import "std/net/socket" as socket;
+import "std/data/vector" as vector;
 
 f<int> main() {
-    socket.Socket s = socket.openServerSocket(8080s, 2);
-    printf("Error code: %d", s.errorCode);
-    //s.close();
-}*/
-
-import "std/io/dir" as dir;
-
-f<int> main() {
-    printf("Existing before create: %d\n", dir.dirExists("./test"));
-    dyn mkReturnCode = dir.mkDir("./test", dir.MODE_ALL_RWX);
-    printf("mkDir return code: %d\n", mkReturnCode);
-    printf("Existing after create: %d\n", dir.dirExists("./test"));
-    dyn rmReturnCode = dir.rmDir("./test");
-    printf("rmDir return code: %d\n", rmReturnCode);
-    printf("Existing after delete: %d\n", dir.dirExists("./test"));
+    dyn v = vector.Vector<int>{};
+    v.push(4);
+    v.push(2);
 }

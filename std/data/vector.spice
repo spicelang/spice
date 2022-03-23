@@ -7,10 +7,13 @@ ext<char*> malloc(int);
 ext free(char*);
 ext<char*> memcpy(char*, char*, int);
 
+// Add generic type definition
+type T dyn;
+
 /**
  * A vector in Spice is a commonly used data structure, which can be used to represent a list of items
  */
-public type Vector<dyn T> struct {
+public type Vector<T> struct {
     T* contents             // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
     unsigned long size      // Current number of items
@@ -20,6 +23,11 @@ public p Vector.constructor() {
     // Allocate space for the initial number of elements
     this.contents = malloc(sizeof(T) * INITIAL_ALLOC_COUNT);
     this.capacity = INITIAL_ALLOC_COUNT;
+}
+
+public p Vector.destructor() {
+    // Free all the memory
+    free(this.contents);
 }
 
 /**

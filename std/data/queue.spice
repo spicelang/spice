@@ -7,10 +7,13 @@ ext<char*> malloc(int);
 ext free(char*);
 ext<char*> memcpy(char*, char*, int);
 
+// Add generic type definition
+type T dyn;
+
 /**
  * A queue in Spice is a commonly used data structure, which uses the FiFo (first in, first out) principle
  */
-public type Queue<dyn T> struct {
+public type Queue<T> struct {
     T* contents             // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
     unsigned long size      // Current number of items
@@ -24,6 +27,11 @@ public p Queue.constructor() {
     this.capacity = INITIAL_ALLOC_COUNT;
     this.idxFront = 0l;
     this.idxBack = 0l;
+}
+
+public p Queue.destructor() {
+    // Free all the memory
+    free(this.contents);
 }
 
 /**
