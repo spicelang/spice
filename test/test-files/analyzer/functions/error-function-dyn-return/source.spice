@@ -1,0 +1,7 @@
+f<dyn> test() {
+    return 1;
+}
+
+f<int> main() {
+    dyn t = test();
+}

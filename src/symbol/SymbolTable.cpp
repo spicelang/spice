@@ -281,13 +281,12 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
  *
  * @param functionName Function name requirement
  * @param thisType This type requirement
- * @param expectedReturnType Return type requirement (dyn for no requirement)
  * @param argTypes Argument types requirement
  * @return Matched function or nullptr
  */
 const Function *SymbolTable::matchFunction(const std::string &functionName, const SymbolType &thisType,
-                                           const SymbolType &expectedReturnType, const std::vector<SymbolType> &argTypes,
-                                           ErrorFactory *err, const antlr4::Token &token) {
+                                           const std::vector<SymbolType> &argTypes, ErrorFactory *err,
+                                           const antlr4::Token &token) {
   std::vector<Function *> matches;
 
   // Loop through function and add any matches to the matches vector
@@ -297,9 +296,6 @@ const Function *SymbolTable::matchFunction(const std::string &functionName, cons
       continue;
     // Check this type requirement
     if (f.getThisType() != thisType)
-      continue;
-    // Check return type requirement
-    if (!expectedReturnType.is(TY_DYN) && f.getReturnType() != expectedReturnType)
       continue;
     // Check arg types requirement
     std::vector<SymbolType> curArgTypes = f.getArgTypes();
@@ -453,7 +449,7 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
   // Add function to function list
   functions.insert({function.getMangledName(), function});
   // Add symbol table entry for the function
-  insert(function.getSignature(), SymbolType(TY_FUNCTION), function.getSpecifiers(), INITIALIZED, token, false);
+  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token, false);
   // Add function access pointer for the function definition
   functionAccessPointers.push(&functions.at(function.getMangledName()));
 }

@@ -397,7 +397,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 
   // Create procedure itself
   llvm::FunctionType *procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), paramTypes, false);
-  llvm::Function *proc = llvm::Function::Create(procType, linkage, spiceFunc->getSignature(), module.get());
+  llvm::Function *proc = llvm::Function::Create(procType, linkage, spiceFunc->getMangledName(), module.get());
   proc->addFnAttr(llvm::Attribute::NoUnwind);
   if (explicitInlined)
     proc->addFnAttr(llvm::Attribute::AlwaysInline);
@@ -2213,7 +2213,8 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx)
   // Throw an error if something went wrong.
   // This should technically never occur because of the semantic analysis
   if (!type)
-    throw err->get(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, "Dyn was other"); // GCOV_EXCL_LINE
+    throw err->get(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, // GCOV_EXCL_LINE
+                   "Internal compiler error: Dyn was other");                // GCOV_EXCL_LINE
   return type;
 }
 

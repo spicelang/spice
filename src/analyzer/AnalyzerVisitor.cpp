@@ -208,7 +208,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   parameterMode = false;
 
   // Declare 'this' variable in new scope
-  SymbolType thisType;
+  SymbolType thisType = SymbolType(TY_DYN);
   if (isMethod) {
     std::string structName = ctx->IDENTIFIER().front()->toString();
     SymbolTableEntry *structEntry = currentScope->lookup(structName);
@@ -919,9 +919,10 @@ antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) 
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   // Visit the right side
-  currentVarName = ""; // Reset the current variable name
-  scopePrefix = "";    // Reset the scope prefix
-  scopePath.clear();   // Clear the scope path
+  currentVarName = "";                  // Reset the current variable name
+  scopePrefix = "";                     // Reset the scope prefix
+  scopePath.clear();                    // Clear the scope path
+  currentThisType = SymbolType(TY_DYN); // Reset the current this type
 
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment
@@ -929,9 +930,10 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *c
     SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
 
     // Visit the left side
-    currentVarName = ""; // Reset the current variable name
-    scopePrefix = "";    // Reset the scope prefix
-    scopePath.clear();   // Clear the scope path
+    currentVarName = "";                  // Reset the current variable name
+    scopePrefix = "";                     // Reset the scope prefix
+    scopePath.clear();                    // Clear the scope path
+    currentThisType = SymbolType(TY_DYN); // Reset the current this type
     SymbolType lhsTy = visit(ctx->prefixUnaryExpr()).as<SymbolType>();
     std::string variableName = currentVarName;
 
@@ -1285,6 +1287,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
       // Save the scope path to restore it after visiting the params
       ScopePath scopePathBackup = scopePath;
+      SymbolType thisType = currentThisType;
 
       // Visit params
       std::vector<SymbolType> argTypes;
@@ -1304,9 +1307,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
       // Match a function onto the requirements of the call
       SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
-      SymbolType thisType = currentEntry ? currentEntry->getType() : SymbolType(TY_DYN);
-      const Function *spiceFunc =
-          functionParentScope->matchFunction(functionName, thisType, expectedType, argTypes, err, *token->getSymbol());
+      const Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err, *token->getSymbol());
       if (!spiceFunc)
         throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
                        "Function/Procedure '" + functionName + "' could not be found");
@@ -1429,7 +1430,7 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *c
     // Otherwise, push the retrieved scope to the scope path
     scopePath.pushFragment(currentVarName, newAccessScope);
 
-    return entry->getType();
+    return currentThisType = entry->getType();
   }
   if (ctx->builtinCall())
     return visit(ctx->builtinCall());

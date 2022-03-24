@@ -132,6 +132,13 @@ bool Function::isMethodFunction() const { return !returnType.is(TY_DYN) && !this
 bool Function::isMethodProcedure() const { return returnType.is(TY_DYN) && !thisType.is(TY_DYN); }
 
 /**
+ * Get symbol type. Possible super types are TY_FUNCTION and TY_PROCEDURE
+ *
+ * @return
+ */
+SymbolType Function::getSymbolType() const { return SymbolType(isFunction() || isMethodFunction() ? TY_FUNCTION : TY_PROCEDURE); }
+
+/**
  * Convert the current ambiguous function with potential optional arguments to a vector of
  * definite functions without optional arguments
  *

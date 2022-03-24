@@ -27,6 +27,7 @@ public:
   [[nodiscard]] bool isProcedure() const;
   [[nodiscard]] bool isMethodFunction() const;
   [[nodiscard]] bool isMethodProcedure() const;
+  [[nodiscard]] SymbolType getSymbolType() const;
   [[nodiscard]] std::vector<Function> substantiate() const;
   [[nodiscard]] bool isSubstantiated() const;
 
