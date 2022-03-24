@@ -7,6 +7,7 @@
 
 #include "Token.h"
 
+#include <exception/ErrorFactory.h>
 #include <symbol/SymbolSpecifiers.h>
 #include <symbol/SymbolType.h>
 

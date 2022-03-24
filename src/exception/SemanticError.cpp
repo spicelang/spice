@@ -30,12 +30,14 @@ const char *SemanticError::what() const noexcept { return errorMessage.c_str(); 
  */
 std::string SemanticError::getMessagePrefix(SemanticErrorType type) const {
   switch (type) {
-  case REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE:
+  case REFERENCED_UNDEFINED_FUNCTION:
     return "Referenced undefined function";
   case REFERENCED_UNDEFINED_VARIABLE:
     return "Referenced undefined variable";
   case REFERENCED_UNDEFINED_STRUCT:
     return "Referenced undefined struct";
+  case FUNCTION_AMBIGUITY:
+    return "Function ambiguity";
   case VARIABLE_DECLARED_TWICE:
     return "Multiple declarations of the same variable";
   case FUNCTION_DECLARED_TWICE:

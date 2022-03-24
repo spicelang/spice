@@ -23,9 +23,6 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, Symbol
   unsigned int orderIndex = symbols.size();
   // Insert into symbols map
   symbols.insert({name, SymbolTableEntry(name, type, specifiers, state, token, orderIndex, isGlobal)});
-  // If the symbol is a parameter, add it to the parameters list
-  if (isParameter)
-    paramNames.push_back(name);
 }
 
 /**
@@ -264,114 +261,84 @@ unsigned int SymbolTable::getFieldCount() const {
 }
 
 /**
- * Insert an item to the list of function declarations. This list is used to link in functions from other modules and
- * therefore not storing their definition, but their declaration.
- *
- * @param signature Signature of the function declaration
- * @param types List of parameter types of the function declaration
+ * Insert a function object into this symbol table scope
  */
-void SymbolTable::insertFunctionDeclaration(const std::string &signature, const std::vector<SymbolType> &types) {
-  functionDeclarations.insert({signature, types});
-}
-
-/**
- * Retrieve an item from the list of function declarations.
- *
- * @param signature Signature of the desired function declaration
- * @return List of parameter types of the desired function declaration
- */
-std::vector<SymbolType> SymbolTable::getFunctionDeclaration(const std::string &signature) const {
-  if (functionDeclarations.find(signature) == functionDeclarations.end())
-    return {};
-  return functionDeclarations.at(signature);
-}
-
-/**
- * Insert an item to the list of procedure declarations. This list is used to link in procedures from other modules and
- * therefore not storing their definition, but their declaration.
- *
- * @param signature Signature of the procedure declaration
- * @param types List of parameter types of the procedure declaration
- */
-void SymbolTable::insertProcedureDeclaration(const std::string &signature, const std::vector<SymbolType> &types) {
-  procedureDeclarations.insert({signature, types});
-}
-
-/**
- * Retrieve an item from the list of procedure declarations.
- *
- * @param signature Signature of the desired procedure declaration
- * @return List of parameter types of the desired procedure declaration
- */
-std::vector<SymbolType> SymbolTable::getProcedureDeclaration(const std::string &signature) const {
-  if (procedureDeclarations.find(signature) == procedureDeclarations.end())
-    return {};
-  return procedureDeclarations.at(signature);
-}
-
-/**
- * Changes a specific type to another in the whole sub-table
- * ToDo: Currently unused. Maybe remove in the future
- *
- * @param oldType Old symbol type
- * @param newType Replacement type
- */
-void SymbolTable::updateSymbolTypes(ErrorFactory *err, const antlr4::Token &token, const SymbolType &oldType,
-                                    const SymbolType &newType) {
-  // Update types in the symbol list
-  for (auto &[key, symbol] : symbols) {
-    SymbolType currentType = symbol.getType();
-    std::vector<SymbolSuperType> ptrArrayList;
-    while (currentType.isOneOf({TY_PTR, TY_ARRAY})) {
-      if (currentType.isPointer())
-        ptrArrayList.push_back(TY_PTR);
-      else
-        ptrArrayList.push_back(TY_ARRAY);
-      currentType = currentType.getContainedTy();
-    }
-    if (currentType == oldType) {
-      std::reverse(ptrArrayList.begin(), ptrArrayList.end());
-      SymbolType currentNewType = newType;
-      for (auto it = ptrArrayList.rbegin(); it != ptrArrayList.rend(); ++it) {
-        if (*it == TY_PTR)
-          currentNewType = currentNewType.toPointer(err, token);
-        else
-          currentNewType = currentNewType.toArray(err, token);
-      }
-      symbol.updateType(currentNewType, true);
-    }
+void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
+  // Check if function is already substantiated
+  if (function.isSubstantiated()) {
+    insertSubstantiatedFunction(function, err, token);
+    return;
   }
-  // Update function declarations
-  for (auto &[functionSignature, types] : functionDeclarations) {
-    for (auto &i : types) {
-      if (i == oldType)
-        i = newType;
-    }
-  }
-  // Visit all child tables
-  for (auto &[key, child] : children)
-    child.updateSymbolTypes(err, token, oldType, newType);
+
+  // Substantiate the function and insert the substantiated instances
+  for (auto &fct : function.substantiate())
+    insertSubstantiatedFunction(fct, err, token);
 }
 
 /**
- * Push a function/procedure signature to a queue of function/procedure signatures. This is used to push the signatures
- * of function/procedure definitions and calls in the semantic analysis
+ * Check if there is a function in this scope, fulfilling all given requirements and if found, return it.
+ * If more than one function matches the requirement, an error gets thrown
  *
- * @param signature Signature of the function/procedure
+ * @param functionName Function name requirement
+ * @param thisType This type requirement
+ * @param expectedReturnType Return type requirement (dyn for no requirement)
+ * @param argTypes Argument types requirement
+ * @return Matched function or nullptr
  */
-void SymbolTable::pushSignature(const FunctionSignature &signature) { functionSignatures.push(signature); }
+const Function *SymbolTable::matchFunction(const std::string &functionName, const SymbolType &thisType,
+                                           const SymbolType &expectedReturnType, const std::vector<SymbolType> &argTypes,
+                                           ErrorFactory *err, const antlr4::Token &token) {
+  std::vector<Function *> matches;
+
+  // Loop through function and add any matches to the matches vector
+  for (auto &[key, f] : functions) {
+    // Check name requirement
+    if (f.getName() != functionName)
+      continue;
+    // Check this type requirement
+    if (f.getThisType() != thisType)
+      continue;
+    // Check return type requirement
+    if (!expectedReturnType.is(TY_DYN) && f.getReturnType() != expectedReturnType)
+      continue;
+    // Check arg types requirement
+    std::vector<SymbolType> curArgTypes = f.getArgTypes();
+    if (curArgTypes.size() != argTypes.size())
+      continue;
+    for (int i = 0; i < argTypes.size(); i++) {
+      if (curArgTypes[i] != argTypes[i])
+        continue;
+    }
+    // It's a match!
+    matches.push_back(&functions.at(key));
+  }
+
+  if (matches.empty())
+    return nullptr;
+
+  // Throw error if more than one function matches the criteria
+  if (matches.size() > 1)
+    throw err->get(
+        token, FUNCTION_AMBIGUITY,
+        "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
+
+  // Add function access pointer for function call
+  functionAccessPointers.push(matches[0]);
+
+  return matches[0];
+}
 
 /**
- * Pop a function/procedure signature from a queue of function/procedure signatures. This is used to pop the signatures
- * of function/procedure definitions and calls in the generator component
+ * Get the next function declaration in order of visiting
  *
- * @return Signature of the function/procedure
+ * @return Function
  */
-FunctionSignature SymbolTable::popSignature() {
-  assert(!functionSignatures.empty());
-  auto signature = functionSignatures.front();
-  functionSignatures.pop();
-  return signature;
+Function *SymbolTable::popFunctionAccessPointer() {
+  if (functionAccessPointers.empty())
+    throw std::runtime_error("Internal compiler error: Could not pop function declaration");
+  Function *function = functionAccessPointers.front();
+  functionAccessPointers.pop();
+  return function;
 }
 
 /**
@@ -467,3 +434,26 @@ bool SymbolTable::isImported() const { return imported; }
  * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
  */
 void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
+
+/**
+ * Insert a substantiated function into the function list. If the list already contains a function with the same signature,
+ * an exception will be thrown
+ *
+ * @param function Substantiated function
+ * @param err Error factory
+ * @param token Token, where the function is declared
+ */
+void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
+  if (!function.isSubstantiated())
+    throw std::runtime_error("Internal compiler error: Expected substantiated function");
+
+  // Check if the function exists already
+  if (functions.find(function.getMangledName()) != functions.end())
+    throw err->get(token, FUNCTION_DECLARED_TWICE, "The function");
+  // Add function to function list
+  functions.insert({function.getMangledName(), function});
+  // Add symbol table entry for the function
+  insert(function.getSignature(), SymbolType(TY_FUNCTION), function.getSpecifiers(), INITIALIZED, token, false);
+  // Add function access pointer for the function definition
+  functionAccessPointers.push(&functions.at(function.getMangledName()));
+}

@@ -52,8 +52,6 @@ set(SOURCES
         util/ModuleRegistry.h
         util/ThreadFactory.cpp
         util/ThreadFactory.h
-        util/FunctionSignature.cpp
-        util/FunctionSignature.h
         util/FileUtil.cpp
         util/FileUtil.h
         util/CompilerWarning.cpp

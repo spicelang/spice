@@ -88,6 +88,7 @@ private:
   std::unique_ptr<llvm::Module> module;
   std::vector<llvm::Function *> functions;
   SymbolTable *currentScope;
+  SymbolTable *rootScope;
   std::string scopePrefix;
   SymbolType currentSymbolType;
   ScopePath scopePath;

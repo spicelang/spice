@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "Token.h"
+
 #include <stack>
 #include <string>
 #include <vector>

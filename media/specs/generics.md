@@ -2,7 +2,7 @@
 
 ## Implementation steps:
 
-- [ ] 1. Re-write the function choosing mechanism
+- [x] 1. Re-write the function choosing mechanism
 - [ ] 2. Implement Generics for functions/procedures/methods
 - [ ] 3. Add tests for this feature
 - [ ] 4. Implement Generics for structs

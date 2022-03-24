@@ -6,6 +6,8 @@
 
 #include "SymbolTableEntry.h"
 
+#include "../../lib/json/json.hpp"
+
 enum CaptureMode { READ_ONLY, READ_WRITE };
 
 class Capture {

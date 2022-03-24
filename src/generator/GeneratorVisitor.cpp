@@ -33,7 +33,7 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   this->context = context;
   this->builder = builder;
   this->threadFactory = threadFactory;
-  this->currentScope = symbolTable;
+  this->currentScope = this->rootScope = symbolTable;
   this->sourceFile = sourceFile;
   this->objectFile = objectFile;
   this->requiresMainFct = requiresMainFct;
@@ -232,8 +232,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   }
 
   // Change scope
-  FunctionSignature signature = currentScope->popSignature();
-  currentScope = currentScope->getChild(signature.toString());
+  Function *spiceFunc = currentScope->popFunctionAccessPointer();
+  currentScope = currentScope->getChild(spiceFunc->getSignature());
 
   // Get return type
   currentVarName = RETURN_VARIABLE_NAME;
@@ -279,7 +279,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 
   // Create function itself
   llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
-  llvm::Function *fct = llvm::Function::Create(fctType, linkage, signature.toString(), module.get());
+  llvm::Function *fct = llvm::Function::Create(fctType, linkage, spiceFunc->getMangledName(), module.get());
   fct->addFnAttr(llvm::Attribute::NoUnwind);
   if (explicitInlined)
     fct->addFnAttr(llvm::Attribute::AlwaysInline);
@@ -333,9 +333,6 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   currentScope = currentScope->getParent();
   assert(currentScope != nullptr);
 
-  // Insert function declaration into symbol table
-  currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
-
   // Restore old scope
   currentScope = oldScope;
 
@@ -357,8 +354,8 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
   }
 
   // Change scope
-  FunctionSignature signature = currentScope->popSignature();
-  currentScope = currentScope->getChild(signature.toString());
+  Function *spiceFunc = currentScope->popFunctionAccessPointer();
+  currentScope = currentScope->getChild(spiceFunc->getSignature());
   assert(currentScope != nullptr);
 
   // Create parameter list
@@ -400,7 +397,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 
   // Create procedure itself
   llvm::FunctionType *procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), paramTypes, false);
-  llvm::Function *proc = llvm::Function::Create(procType, linkage, signature.toString(), module.get());
+  llvm::Function *proc = llvm::Function::Create(procType, linkage, spiceFunc->getSignature(), module.get());
   proc->addFnAttr(llvm::Attribute::NoUnwind);
   if (explicitInlined)
     proc->addFnAttr(llvm::Attribute::AlwaysInline);
@@ -443,9 +440,6 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
   currentScope = currentScope->getParent();
   assert(currentScope != nullptr);
 
-  // Insert function declaration into symbol table
-  currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
-
   // Restore old scope
   currentScope = oldScope;
 
@@ -458,13 +452,13 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::vector<SymbolType> symbolTypes;
 
   // Pop function signature from the signature stack
-  FunctionSignature signature = currentScope->popSignature();
+  Function *spiceFunc = currentScope->popFunctionAccessPointer();
 
   // Get LLVM return type
   llvm::Type *returnType;
   if (ctx->dataType()) {
     returnType = visit(ctx->dataType()).as<llvm::Type *>();
-    SymbolTable *functionTable = currentScope->getChild(signature.toString());
+    SymbolTable *functionTable = currentScope->getChild(spiceFunc->getSignature());
     assert(functionTable != nullptr);
     SymbolTableEntry *returnEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
     assert(returnEntry != nullptr);
@@ -481,7 +475,7 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
       paramTypes.push_back(paramType);
     }
   }
-  std::vector<SymbolType> paramSymbolTypes = signature.getParamTypes();
+  std::vector<SymbolType> paramSymbolTypes = spiceFunc->getArgTypes();
   symbolTypes.insert(std::end(symbolTypes), std::begin(paramSymbolTypes), std::end(paramSymbolTypes));
 
   // Get vararg
@@ -492,12 +486,6 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   module->getOrInsertFunction(functionName, functionType);
   if (ctx->DLL())
     module->getFunction(functionName)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-
-  if (ctx->dataType()) { // Function
-    currentScope->insertFunctionDeclaration(signature.toString(), symbolTypes);
-  } else { // Procedure
-    currentScope->insertProcedureDeclaration(signature.toString(), symbolTypes);
-  }
 
   return nullptr;
 }
@@ -1703,35 +1691,33 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
         std::string functionName = isMethod ? scopePrefix : currentVarName;
         std::string accessScopePrefix = scopePath.getScopeName();
 
+        // Retrieve the access scope
+        SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
+
         // Get function by signature
-        FunctionSignature signature = currentScope->popSignature();
+        Function *spiceFunc = accessScope->popFunctionAccessPointer();
         // Check if function exists in the current module
         bool functionFound = false;
-        std::string fctIdentifier = signature.toString();
+        std::string fctIdentifier = spiceFunc->getMangledName();
         for (auto &function : module->getFunctionList()) { // Search for function definition
-          if (function.getName() == signature.toString()) {
+          if (function.getName() == spiceFunc->getMangledName()) {
             functionFound = true;
             break;
-          } else if (function.getName() == signature.getFunctionName()) {
+          } else if (function.getName() == spiceFunc->getName()) {
             functionFound = true;
-            fctIdentifier = signature.getFunctionName();
+            fctIdentifier = spiceFunc->getName();
             break;
           }
         }
 
-        // Retrieve the access scope
-        SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
-
         if (!functionFound) { // Not found => Declare function, which will be linked in
           // Get the symbol table of the module where the function is defined
-          SymbolTable *table = accessScope->lookupTableWithSignature(signature.toString());
+          SymbolTable *table = accessScope->lookupTableWithSignature(spiceFunc->getSignature());
           assert(table != nullptr);
           // Check if it is a function or a procedure
-          if (!table->getFunctionDeclaration(signature.toString()).empty()) { // Function
-            std::vector<SymbolType> symbolTypes = table->getFunctionDeclaration(signature.toString());
-
+          if (spiceFunc->isFunction() || spiceFunc->isMethodFunction()) { // Function
             // Get return type
-            SymbolType returnSymbolType = symbolTypes[0];
+            SymbolType returnSymbolType = spiceFunc->getReturnType();
             // Check if the return type is an imported struct. Due to not supporting pointers as return values, we do
             // not have to check for nested structs in pointers here.
             if (accessScope->isImported() && returnSymbolType.is(TY_STRUCT)) {
@@ -1743,41 +1729,38 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
               throw std::runtime_error("Internal compiler error: Could not find return type of function call");
 
             // Get parameter types
-            std::vector<llvm::Type *> paramTypes;
-            for (int i = 1; i < symbolTypes.size(); i++) {
-              SymbolType paramSymbolType = symbolTypes[i];
+            std::vector<llvm::Type *> argTypes;
+            for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
-              if (accessScope->isImported() && paramSymbolType.isBaseType(TY_STRUCT))
-                paramSymbolType = paramSymbolType.replaceSubType(scopePrefix);
+              if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))
+                argType = argType.replaceSubType(scopePrefix);
               // Retrieve the LLVM type of the symbol type
-              llvm::Type *paramType = getTypeForSymbolType(paramSymbolType);
+              llvm::Type *paramType = getTypeForSymbolType(argType);
               if (!paramType)
                 throw std::runtime_error("Internal compiler error: Could not get parameter type of function call");
-              paramTypes.push_back(paramType);
+              argTypes.push_back(paramType);
             }
 
             // Declare the function
-            llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
+            llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
             module->getOrInsertFunction(fctIdentifier, fctType);
-          } else if (!table->getProcedureDeclaration(signature.toString()).empty()) { // Procedure
-            std::vector<SymbolType> symbolTypes = table->getProcedureDeclaration(signature.toString());
-
+          } else if (spiceFunc->isProcedure() || spiceFunc->isMethodProcedure()) { // Procedure
             // Get parameter types
-            std::vector<llvm::Type *> paramTypes;
-            for (auto &paramSymbolType : symbolTypes) {
+            std::vector<llvm::Type *> argTypes;
+            for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
-              if (accessScope->isImported() && paramSymbolType.isBaseType(TY_STRUCT))
-                paramSymbolType = paramSymbolType.replaceSubType(scopePrefix);
+              if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))
+                argType = argType.replaceSubType(scopePrefix);
               // Retrieve the LLVM type of the symbol type
-              llvm::Type *paramType = getTypeForSymbolType(paramSymbolType);
+              llvm::Type *paramType = getTypeForSymbolType(argType);
               if (!paramType)
                 throw std::runtime_error("Internal compiler error");
-              paramTypes.push_back(paramType);
+              argTypes.push_back(paramType);
             }
 
             // Declare the procedure
             llvm::Type *returnType = llvm::Type::getVoidTy(*context);
-            llvm::FunctionType *procType = llvm::FunctionType::get(returnType, paramTypes, false);
+            llvm::FunctionType *procType = llvm::FunctionType::get(returnType, argTypes, false);
             module->getOrInsertFunction(fctIdentifier, procType);
           }
         }

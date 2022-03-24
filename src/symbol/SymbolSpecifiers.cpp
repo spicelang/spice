@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include "symbol/SymbolSpecifiers.h"
+#include "SymbolSpecifiers.h"
 
 #include <stdexcept>
 

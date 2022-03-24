@@ -33,13 +33,8 @@ f<int> main() {
     v.push(2);
 }*/
 
-f<int> testFunc() {
-    printf("Test func 1");
-    return 1;
-}
-
-f<int> testFunc(string param) {
-    printf("Test func 2");
+f<int> testFunc(string param = "Test") {
+    printf("Test func %s\n", param);
     return 2;
 }
 
