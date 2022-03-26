@@ -97,7 +97,7 @@ private:
   SymbolTable *rootScope = nullptr;
   ScopePath scopePath;
   std::string scopePrefix;
-  bool parameterMode = false;
+  bool argumentMode = false;
   int nestedLoopCounter = 0;
   std::string currentVarName;
   SymbolTableEntry *currentEntry = nullptr;

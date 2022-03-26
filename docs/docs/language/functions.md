@@ -12,15 +12,15 @@ f<double> functionName() {
 }
 ```
 
-Spice also allows you to pass parameters to a function. This parameters may also have default values, which can then be omitted when calling the function. 
+Spice also allows you to pass arguments to a function. This arguments may also have default values, which can then be omitted when calling the function. 
 
 !!! note
-    Parameters with default value / optional parameters have to go after those without default value in the function declaration.
+    Optional arguments have to go after the mandatory arguments in the function head.
 
-Here, the second parameter is one with a default value attached.
+Here, the second argument is one with a default value attached.
 ```spice
-f<int> demoFunction(string parameter1, double parameter2 = 5.89) {
-	... // Do something with the parameters
+f<int> demoFunction(string arg1, double arg2 = 5.89) {
+	... // Do something with the arguments
 	result = -4;
 }
 ```

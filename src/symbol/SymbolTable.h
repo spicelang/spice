@@ -28,7 +28,7 @@ public:
 
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
-              const antlr4::Token &token, bool isParameter);
+              const antlr4::Token &token, bool isArg);
 
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);

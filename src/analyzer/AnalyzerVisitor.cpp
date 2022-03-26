@@ -14,7 +14,6 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &conte
                                  const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
                                  ThreadFactory *threadFactory, CliOptions *options, LinkerInterface *linker,
                                  const std::string &sourceFile, bool requiresMainFct, bool isStdFile) {
-  // Save parameters
   this->context = context, this->builder = builder;
   this->moduleRegistry = moduleRegistry;
   this->threadFactory = threadFactory;
@@ -81,11 +80,11 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
   currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, *ctx->start, false);
   currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
 
-  // Visit parameters
-  parameterMode = true;
+  // Visit arguments
+  argumentMode = true;
   if (ctx->argLstDef())
     visit(ctx->argLstDef());
-  parameterMode = false;
+  argumentMode = false;
 
   // Visit statements in new scope
   visit(ctx->stmtLst());
@@ -117,12 +116,12 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
 
-  // Visit params in new scope
-  parameterMode = true;
+  // Visit arguments in new scope
+  argumentMode = true;
   std::vector<std::pair<SymbolType, bool>> argTypes;
   if (ctx->argLstDef())
     argTypes = visit(ctx->argLstDef()).as<ArgList>();
-  parameterMode = false;
+  argumentMode = false;
 
   // Declare 'this' variable in new scope
   SymbolType thisType = SymbolType(TY_DYN);
@@ -203,12 +202,12 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
 
-  // Visit params in new scope
-  parameterMode = true;
+  // Visit arguments in new scope
+  argumentMode = true;
   std::vector<std::pair<SymbolType, bool>> argTypes;
   if (ctx->argLstDef())
     argTypes = visit(ctx->argLstDef()).as<std::vector<std::pair<SymbolType, bool>>>();
-  parameterMode = false;
+  argumentMode = false;
 
   // Declare 'this' variable in new scope
   SymbolType thisType = SymbolType(TY_DYN);
@@ -264,13 +263,12 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   std::vector<std::pair<SymbolType, bool>> argTypes;
   if (ctx->typeLst()) {
-    // Check if a param is dyn
-    for (auto &param : ctx->typeLst()->dataType()) {
-      SymbolType paramType = visit(param).as<SymbolType>();
-      if (paramType.is(TY_DYN))
-        throw err->get(*param->start, UNEXPECTED_DYN_TYPE_SA,
-                       "Dyn data type is not allowed as param type for external functions");
-      argTypes.emplace_back(paramType, false);
+    // Check if an argument is dyn
+    for (auto &arg : ctx->typeLst()->dataType()) {
+      SymbolType argType = visit(arg).as<SymbolType>();
+      if (argType.is(TY_DYN))
+        throw err->get(*arg->start, UNEXPECTED_DYN_TYPE_SA, "Dyn data type is not allowed as arg type for external functions");
+      argTypes.emplace_back(argType, false);
     }
   }
 
@@ -420,7 +418,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
   }
 
   // Insert into symbol table
-  currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, state, *ctx->start, parameterMode);
+  currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, state, *ctx->start, argumentMode);
 
   return nullptr;
 }
@@ -597,16 +595,15 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) 
 
 antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
   ArgList argList;
-  for (auto &param : ctx->declStmt()) {
-    SymbolType argType = visit(param).as<SymbolType>();
+  for (auto &arg : ctx->declStmt()) {
+    SymbolType argType = visit(arg).as<SymbolType>();
 
     // Check if the type could be inferred. Dyn without a default value is forbidden
     if (argType.is(TY_DYN))
-      throw err->get(*param->start, FCT_PARAM_IS_TYPE_DYN,
-                     "Type of parameter '" + param->IDENTIFIER()->toString() + "' is invalid");
+      throw err->get(*arg->start, FCT_ARG_IS_TYPE_DYN, "Type of argument '" + arg->IDENTIFIER()->toString() + "' is invalid");
 
     // Check if the argument is optional
-    bool isOptional = param->ASSIGN();
+    bool isOptional = arg->ASSIGN();
 
     argList.emplace_back(argType, isOptional);
   }
@@ -635,7 +632,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
       throw err->get(*ctx->dataType()->start, ARRAY_SIZE_INVALID, "The declaration of an array type must have a size attached");
   }
 
-  if (parameterMode && symbolType.isArray()) // Change array type to pointer type for function/procedure parameters
+  if (argumentMode && symbolType.isArray()) // Change array type to pointer type for function/procedure arguments
     symbolType = symbolType.getContainedTy().toPointer(err, *ctx->dataType()->start);
 
   // Build symbol specifiers
@@ -656,7 +653,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
   }
 
   // Insert variable into symbol table
-  currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, initialState, *ctx->start, parameterMode);
+  currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, initialState, *ctx->start, argumentMode);
 
   return symbolType;
 }
@@ -890,7 +887,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *c
     index = templateString.find_first_of('%', index + 1);
   }
 
-  // Check if the number of placeholders matches the number of params
+  // Check if the number of placeholders matches the number of args
   if (placeholderCount < ctx->assignExpr().size())
     throw err->get(*ctx->start, PRINTF_ARG_COUNT_ERROR,
                    "The placeholder string contains less placeholders that arguments were passed");
@@ -1285,22 +1282,22 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
       std::string functionName = currentVarName;
       std::string accessScopePrefix = scopePath.getScopeName();
 
-      // Save the scope path to restore it after visiting the params
+      // Save the scope path to restore it after visiting the args
       ScopePath scopePathBackup = scopePath;
       SymbolType thisType = currentThisType;
 
-      // Visit params
+      // Visit args
       std::vector<SymbolType> argTypes;
       auto *argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
       if (argLst != nullptr) {
-        for (auto &param : argLst->assignExpr()) {
-          SymbolType paramType = visit(param).as<SymbolType>();
-          if (paramType.isArray())
-            paramType = paramType.getContainedTy().toPointer(err, *param->start);
-          argTypes.push_back(paramType);
+        for (auto &arg : argLst->assignExpr()) {
+          SymbolType argType = visit(arg).as<SymbolType>();
+          if (argType.isArray())
+            argType = argType.getContainedTy().toPointer(err, *arg->start);
+          argTypes.push_back(argType);
         }
       }
-      tokenCounter++; // Consume paramLst
+      tokenCounter++; // Consume argLst
 
       // Restore scope path
       scopePath = scopePathBackup;
@@ -1326,7 +1323,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         throw err->get(*token->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access function/procedure '" + currentVarName + "' due to its private visibility");
 
-      // Search for symbol table of called function/procedure to read parameters
+      // Search for symbol table of called function/procedure to read arguments
       if (functionEntry->getType().is(TY_FUNCTION)) {
         SymbolTable *functionTable = functionParentScope->getChild(spiceFunc->getSignature());
         assert(functionTable != nullptr);

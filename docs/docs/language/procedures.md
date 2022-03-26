@@ -11,15 +11,15 @@ p procedureName() {
 }
 ```
 
-Spice also allows you to pass parameters to a procedure. This parameters may also have default values, which can then be omitted when calling the procedure. 
+Spice also allows you to pass arguments to a procedure. This arguments may also have default values, which can then be omitted when calling the procedure. 
 
 !!! note
-    Parameters with default value / optional parameters have to go after those without default value in the procedure declaration.
+    Optional arguments have to go after mandatory arguments in the procedure head.
 
-Here, the second parameter is one with a default value attached.
+Here, the second argument is one with a default value attached.
 ```spice
-p demoProcedure(int parameter1, bool parameter2 = false) {
-	... // Do something with the parameters
+p demoProcedure(int arg1, bool arg2 = false) {
+	... // Do something with the arguments
 }
 ```
 

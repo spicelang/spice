@@ -62,7 +62,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) const {
     return "Condition must be bool";
   case MISSING_MAIN_FUNCTION:
     return "Spice programs must contain a main function";
-  case FCT_PARAM_IS_TYPE_DYN:
+  case FCT_ARG_IS_TYPE_DYN:
     return "Parameter type dyn not valid in function/procedure definition without default value";
   case INVALID_BREAK_NUMBER:
     return "Invalid number of break calls";

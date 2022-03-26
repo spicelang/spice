@@ -101,7 +101,7 @@ private:
   std::stack<llvm::BasicBlock *> breakBlocks;
   std::stack<llvm::BasicBlock *> continueBlocks;
   bool constNegate = false;
-  bool allParamsHardcoded = true;
+  bool allArgsHardcoded = true;
   llvm::Constant *currentConstValue = nullptr;
   bool currentVarSigned = false;
   std::string currentVarName;

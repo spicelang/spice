@@ -1,6 +1,6 @@
-f<double> calledFunction(int mandatoryParam, dyn optionalParam = true) {
-    printf("Mandatory: %d", mandatoryParam);
-    printf("Optional: %d", optionalParam);
+f<double> calledFunction(int mandatoryArg, dyn optionalArg = true) {
+    printf("Mandatory: %d", mandatoryArg);
+    printf("Optional: %d", optionalArg);
     return 0.1;
 }
 

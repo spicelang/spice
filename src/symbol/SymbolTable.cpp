@@ -15,10 +15,10 @@
  * @param type Type of the symbol
  * @param state State of the symbol (declared or initialized)
  * @param isConstant Enabled if the symbol is a constant
- * @param isParameter Enabled if the symbol is a function/procedure parameter
+ * @param isArg Enabled if the symbol is a function/procedure parameter
  */
 void SymbolTable::insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
-                         const antlr4::Token &token, bool isParameter) {
+                         const antlr4::Token &token, bool isArg) {
   bool isGlobal = getParent() == nullptr;
   unsigned int orderIndex = symbols.size();
   // Insert into symbols map
