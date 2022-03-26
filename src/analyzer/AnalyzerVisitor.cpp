@@ -118,7 +118,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
 
   // Visit arguments in new scope
   argumentMode = true;
-  std::vector<std::pair<SymbolType, bool>> argTypes;
+  ArgList argTypes;
   if (ctx->argLstDef())
     argTypes = visit(ctx->argLstDef()).as<ArgList>();
   argumentMode = false;
@@ -174,6 +174,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
 
   // Go down again in scope
   currentScope = currentScope->getChild(substantiatedFunctions[0].getSignature());
+  assert(currentScope != nullptr);
 
   // Visit statements in new scope
   visit(ctx->stmtLst());
@@ -195,7 +196,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   // Check if this is a global function or a method
   bool isMethod = false;
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
-  if (ctx->IDENTIFIER().size() > 1) {
+  if (ctx->IDENTIFIER().size() > 1) { // Method
     isMethod = true;
     // Change to the struct scope
     currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
@@ -207,9 +208,9 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
 
   // Visit arguments in new scope
   argumentMode = true;
-  std::vector<std::pair<SymbolType, bool>> argTypes;
+  ArgList argTypes;
   if (ctx->argLstDef())
-    argTypes = visit(ctx->argLstDef()).as<std::vector<std::pair<SymbolType, bool>>>();
+    argTypes = visit(ctx->argLstDef()).as<ArgList>();
   argumentMode = false;
 
   // Declare 'this' variable in new scope
@@ -247,13 +248,14 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   currentScope->insertFunction(spiceProc, err, *ctx->IDENTIFIER().back()->getSymbol());
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
-  std::vector<Function> substantiatedFunctions = spiceProc.substantiate();
-  currentScope->renameChildBlock(scopeId, substantiatedFunctions[0].getSignature());
-  for (int i = 0; i < substantiatedFunctions.size(); i++)
-    currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
+  std::vector<Function> substantiatedProcedures = spiceProc.substantiate();
+  currentScope->renameChildBlock(scopeId, substantiatedProcedures[0].getSignature());
+  for (int i = 0; i < substantiatedProcedures.size(); i++)
+    currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(), substantiatedProcedures[i].getSignature());
 
   // Go down again in scope
-  currentScope = currentScope->getChild(spiceProc.getSignature());
+  currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
+  assert(currentScope != nullptr);
 
   // Visit statement list in new scope
   visit(ctx->stmtLst());

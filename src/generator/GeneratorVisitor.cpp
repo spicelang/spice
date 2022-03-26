@@ -146,18 +146,16 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     currentScope = currentScope->getChild(scopeId);
 
     // Visit arguments
-    std::vector<SymbolType> symbolTypes;
     std::vector<std::string> argNames;
     std::vector<llvm::Type *> argTypes;
-    argNames.reserve(ctx->argLstDef()->declStmt().size());
-    argTypes.reserve(ctx->argLstDef()->declStmt().size());
     if (ctx->argLstDef()) {
+      argNames.reserve(ctx->argLstDef()->declStmt().size());
+      argTypes.reserve(ctx->argLstDef()->declStmt().size());
       for (const auto &arg : ctx->argLstDef()->declStmt()) {
         currentVarName = arg->IDENTIFIER()->toString();
         argNames.push_back(currentVarName);
         llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
         argTypes.push_back(argType);
-        symbolTypes.push_back(currentSymbolType);
       }
     }
 
@@ -206,9 +204,6 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     if (llvm::verifyFunction(*fct, &oss))
       throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
 
-    // Add function to function list
-    functions.push_back(fct);
-
     // Change scope back
     currentScope = currentScope->getParent();
     assert(currentScope != nullptr);
@@ -231,106 +226,112 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     assert(currentScope != nullptr);
   }
 
-  // Change scope
-  Function *spiceFunc = currentScope->popFunctionAccessPointer();
-  currentScope = currentScope->getChild(spiceFunc->getSignature());
+  // Get all substantiated function which result from this function declaration
+  std::vector<Function *> spiceFuncs = currentScope->popFunctionDeclarationPointers();
+  for (const auto &spiceFunc : spiceFuncs) {
+    // Change scope
+    currentScope = currentScope->getChild(spiceFunc->getSignature());
 
-  // Get return type
-  currentVarName = RETURN_VARIABLE_NAME;
-  llvm::Type *returnType = visit(ctx->dataType()).as<llvm::Type *>();
-  std::vector<SymbolType> symbolTypes;
-  symbolTypes.push_back(currentSymbolType);
+    // Get return type
+    currentVarName = RETURN_VARIABLE_NAME;
+    llvm::Type *returnType = visit(ctx->dataType()).as<llvm::Type *>();
 
-  // Create argument list
-  std::vector<std::string> argNames;
-  std::vector<llvm::Type *> argTypes;
-  // This variable (struct ptr of the parent struct)
-  if (isMethod) {
-    argNames.push_back(THIS_VARIABLE_NAME);
-    SymbolTableEntry *thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
-    assert(thisEntry != nullptr);
-    llvm::Type *argType = thisEntry->getLLVMType()->getPointerTo();
-    argTypes.push_back(argType);
-    symbolTypes.push_back(thisEntry->getType().toPointer(err, *ctx->start));
-  }
-  // Arguments
-  if (ctx->argLstDef()) {
-    for (const auto &arg : ctx->argLstDef()->declStmt()) {
-      currentVarName = arg->IDENTIFIER()->toString();
-      argNames.push_back(currentVarName);
-      llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
+    // Create argument list
+    std::vector<std::string> argNames;
+    std::vector<llvm::Type *> argTypes;
+    // This variable (struct ptr of the parent struct)
+    if (isMethod) {
+      argNames.push_back(THIS_VARIABLE_NAME);
+      SymbolTableEntry *thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
+      assert(thisEntry != nullptr);
+      llvm::Type *argType = thisEntry->getLLVMType()->getPointerTo();
       argTypes.push_back(argType);
-      symbolTypes.push_back(currentSymbolType);
     }
-  }
 
-  // Check if function is public and/or explicit inlined
-  llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
-  bool explicitInlined = false;
-  if (ctx->declSpecifiers()) {
-    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
-      if (specifier->INLINE()) {
-        explicitInlined = true;
-      } else if (specifier->PUBLIC()) {
-        linkage = llvm::Function::ExternalLinkage;
+    // Arguments
+    unsigned int currentArgIndex = 0;
+    if (ctx->argLstDef()) {
+      for (; currentArgIndex < spiceFunc->getArgTypes().size(); currentArgIndex++) {
+        const auto arg = ctx->argLstDef()->declStmt()[currentArgIndex];
+        currentVarName = arg->IDENTIFIER()->toString();
+        argNames.push_back(currentVarName);
+        llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
+        argTypes.push_back(argType);
       }
     }
+
+    // Check if function is public and/or explicit inlined
+    llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
+    bool explicitInlined = false;
+    if (ctx->declSpecifiers()) {
+      for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+        if (specifier->INLINE()) {
+          explicitInlined = true;
+        } else if (specifier->PUBLIC()) {
+          linkage = llvm::Function::ExternalLinkage;
+        }
+      }
+    }
+
+    // Create function itself
+    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
+    llvm::Function *fct = llvm::Function::Create(fctType, linkage, spiceFunc->getMangledName(), module.get());
+    fct->addFnAttr(llvm::Attribute::NoUnwind);
+    if (explicitInlined)
+      fct->addFnAttr(llvm::Attribute::AlwaysInline);
+
+    // Create entry block
+    llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+    allocaInsertInst = nullptr;
+    fct->getBasicBlockList().push_back(bEntry);
+    moveInsertPointToBlock(bEntry);
+
+    // Store mandatory function args
+    for (auto &arg : fct->args()) {
+      unsigned int argNo = arg.getArgNo();
+      std::string argName = argNames[argNo];
+      llvm::Type *argType = fct->getFunctionType()->getParamType(argNo);
+      llvm::Value *memAddress = insertAlloca(argType, argName);
+      SymbolTableEntry *argEntry = currentScope->lookup(argName);
+      assert(argEntry != nullptr);
+      argEntry->updateAddress(memAddress);
+      argEntry->updateLLVMType(argType);
+      builder->CreateStore(&arg, memAddress);
+    }
+
+    // Store the default values for optional function args
+    if (ctx->argLstDef()) {
+      for (; currentArgIndex < ctx->argLstDef()->declStmt().size(); currentArgIndex++) {
+        visit(ctx->argLstDef()->declStmt()[currentArgIndex]);
+      }
+    }
+
+    // Declare result variable
+    llvm::Value *returnMemAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
+    SymbolTableEntry *returnSymbol = currentScope->lookup(RETURN_VARIABLE_NAME);
+    assert(returnSymbol != nullptr);
+    returnSymbol->updateAddress(returnMemAddress);
+    returnSymbol->updateLLVMType(returnType);
+
+    // Generate IR for function body
+    visit(ctx->stmtLst());
+
+    // Generate return statement for result variable
+    if (!blockAlreadyTerminated) {
+      llvm::Value *result = returnSymbol->getAddress();
+      builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
+    }
+
+    // Verify function
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyFunction(*fct, &oss))
+      throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+
+    // Change scope back
+    currentScope = currentScope->getParent();
+    assert(currentScope != nullptr);
   }
-
-  // Create function itself
-  llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
-  llvm::Function *fct = llvm::Function::Create(fctType, linkage, spiceFunc->getMangledName(), module.get());
-  fct->addFnAttr(llvm::Attribute::NoUnwind);
-  if (explicitInlined)
-    fct->addFnAttr(llvm::Attribute::AlwaysInline);
-
-  // Create entry block
-  llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
-  allocaInsertInst = nullptr;
-  fct->getBasicBlockList().push_back(bEntry);
-  moveInsertPointToBlock(bEntry);
-
-  // Store function args
-  for (auto &arg : fct->args()) {
-    unsigned int argNo = arg.getArgNo();
-    std::string argName = argNames[argNo];
-    llvm::Type *argType = fct->getFunctionType()->getParamType(argNo);
-    llvm::Value *memAddress = insertAlloca(argType, argName);
-    SymbolTableEntry *argEntry = currentScope->lookup(argName);
-    assert(argEntry != nullptr);
-    argEntry->updateAddress(memAddress);
-    argEntry->updateLLVMType(argType);
-    builder->CreateStore(&arg, memAddress);
-  }
-
-  // Declare result variable
-  llvm::Value *returnMemAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
-  SymbolTableEntry *returnSymbol = currentScope->lookup(RETURN_VARIABLE_NAME);
-  assert(returnSymbol != nullptr);
-  returnSymbol->updateAddress(returnMemAddress);
-  returnSymbol->updateLLVMType(returnType);
-
-  // Generate IR for function body
-  visit(ctx->stmtLst());
-
-  // Generate return statement for result variable
-  if (!blockAlreadyTerminated) {
-    llvm::Value *result = returnSymbol->getAddress();
-    builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
-  }
-
-  // Verify function
-  std::string output;
-  llvm::raw_string_ostream oss(output);
-  if (llvm::verifyFunction(*fct, &oss))
-    throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
-
-  // Add function to function list
-  functions.push_back(fct);
-
-  // Change scope back
-  currentScope = currentScope->getParent();
-  assert(currentScope != nullptr);
 
   // Restore old scope
   currentScope = oldScope;
@@ -352,92 +353,99 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     assert(currentScope != nullptr);
   }
 
-  // Change scope
-  Function *spiceFunc = currentScope->popFunctionAccessPointer();
-  currentScope = currentScope->getChild(spiceFunc->getSignature());
-  assert(currentScope != nullptr);
+  // Get all substantiated function which result from this function declaration
+  std::vector<Function *> spiceProcs = currentScope->popFunctionDeclarationPointers();
+  for (const auto &spiceProc : spiceProcs) {
+    // Change scope
+    currentScope = currentScope->getChild(spiceProc->getSignature());
+    assert(currentScope != nullptr);
 
-  // Create argument list
-  std::vector<std::string> argNames;
-  std::vector<llvm::Type *> argTypes;
-  std::vector<SymbolType> symbolTypes;
-  // This variable (struct ptr of the parent struct)
-  if (isMethod) {
-    argNames.push_back(THIS_VARIABLE_NAME);
-    SymbolTableEntry *thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
-    assert(thisEntry != nullptr);
-    llvm::Type *argType = thisEntry->getLLVMType()->getPointerTo();
-    argTypes.push_back(argType);
-    symbolTypes.push_back(thisEntry->getType().toPointer(err, *ctx->start));
-  }
-  // Arguments
-  if (ctx->argLstDef()) {
-    for (const auto &arg : ctx->argLstDef()->declStmt()) {
-      currentVarName = arg->IDENTIFIER()->toString();
-      argNames.push_back(currentVarName);
-      llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
+    // Create argument list
+    std::vector<std::string> argNames;
+    std::vector<llvm::Type *> argTypes;
+    // This variable (struct ptr of the parent struct)
+    if (isMethod) {
+      argNames.push_back(THIS_VARIABLE_NAME);
+      SymbolTableEntry *thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
+      assert(thisEntry != nullptr);
+      llvm::Type *argType = thisEntry->getLLVMType()->getPointerTo();
       argTypes.push_back(argType);
-      symbolTypes.push_back(currentSymbolType);
     }
-  }
 
-  // Check if function is public and/or explicit inlined
-  llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
-  bool explicitInlined = false;
-  if (ctx->declSpecifiers()) {
-    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
-      if (specifier->INLINE()) {
-        explicitInlined = true;
-      } else if (specifier->PUBLIC()) {
-        linkage = llvm::Function::ExternalLinkage;
+    // Arguments
+    unsigned int currentArgIndex = 0;
+    if (ctx->argLstDef()) {
+      for (; currentArgIndex < spiceProc->getArgTypes().size(); currentArgIndex++) {
+        const auto arg = ctx->argLstDef()->declStmt()[currentArgIndex];
+        currentVarName = arg->IDENTIFIER()->toString();
+        argNames.push_back(currentVarName);
+        llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
+        argTypes.push_back(argType);
       }
     }
+
+    // Check if function is public and/or explicit inlined
+    llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
+    bool explicitInlined = false;
+    if (ctx->declSpecifiers()) {
+      for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+        if (specifier->INLINE()) {
+          explicitInlined = true;
+        } else if (specifier->PUBLIC()) {
+          linkage = llvm::Function::ExternalLinkage;
+        }
+      }
+    }
+
+    // Create procedure itself
+    llvm::FunctionType *procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), argTypes, false);
+    llvm::Function *proc = llvm::Function::Create(procType, linkage, spiceProc->getMangledName(), module.get());
+    proc->addFnAttr(llvm::Attribute::NoUnwind);
+    if (explicitInlined)
+      proc->addFnAttr(llvm::Attribute::AlwaysInline);
+
+    // Create entry block
+    llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+    allocaInsertInst = nullptr;
+    proc->getBasicBlockList().push_back(bEntry);
+    moveInsertPointToBlock(bEntry);
+
+    // Store mandatory procedure args
+    for (auto &arg : proc->args()) {
+      unsigned int argNo = arg.getArgNo();
+      std::string argName = argNames[argNo];
+      llvm::Type *argType = proc->getFunctionType()->getParamType(argNo);
+      llvm::Value *memAddress = insertAlloca(argType, argName);
+      SymbolTableEntry *argSymbol = currentScope->lookup(argName);
+      assert(argSymbol != nullptr);
+      argSymbol->updateAddress(memAddress);
+      argSymbol->updateLLVMType(argType);
+      builder->CreateStore(&arg, memAddress);
+    }
+
+    // Store the default values for optional procedure args
+    if (ctx->argLstDef()) {
+      for (; currentArgIndex < ctx->argLstDef()->declStmt().size(); currentArgIndex++) {
+        visit(ctx->argLstDef()->declStmt()[currentArgIndex]);
+      }
+    }
+
+    // Generate IR for procedure body
+    visit(ctx->stmtLst());
+
+    // Create return
+    builder->CreateRetVoid();
+
+    // Verify procedure
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyFunction(*proc, &oss))
+      throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+
+    // Change scope back
+    currentScope = currentScope->getParent();
+    assert(currentScope != nullptr);
   }
-
-  // Create procedure itself
-  llvm::FunctionType *procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), argTypes, false);
-  llvm::Function *proc = llvm::Function::Create(procType, linkage, spiceFunc->getMangledName(), module.get());
-  proc->addFnAttr(llvm::Attribute::NoUnwind);
-  if (explicitInlined)
-    proc->addFnAttr(llvm::Attribute::AlwaysInline);
-
-  // Create entry block
-  llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
-  allocaInsertInst = nullptr;
-  proc->getBasicBlockList().push_back(bEntry);
-  moveInsertPointToBlock(bEntry);
-
-  // Store procedure args
-  for (auto &arg : proc->args()) {
-    unsigned int argNo = arg.getArgNo();
-    std::string argName = argNames[argNo];
-    llvm::Type *argType = proc->getFunctionType()->getParamType(argNo);
-    llvm::Value *memAddress = insertAlloca(argType, argName);
-    SymbolTableEntry *argSymbol = currentScope->lookup(argName);
-    assert(argSymbol != nullptr);
-    argSymbol->updateAddress(memAddress);
-    argSymbol->updateLLVMType(argType);
-    builder->CreateStore(&arg, memAddress);
-  }
-
-  // Generate IR for procedure body
-  visit(ctx->stmtLst());
-
-  // Create return
-  builder->CreateRetVoid();
-
-  // Verify procedure
-  std::string output;
-  llvm::raw_string_ostream oss(output);
-  if (llvm::verifyFunction(*proc, &oss))
-    throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
-
-  // Add function to function list
-  functions.push_back(proc);
-
-  // Change scope back
-  currentScope = currentScope->getParent();
-  assert(currentScope != nullptr);
 
   // Restore old scope
   currentScope = oldScope;

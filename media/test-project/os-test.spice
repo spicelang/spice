@@ -43,19 +43,17 @@ f<int> main() {
     printf("Result: %d\n", res);
 }*/
 
-f<double> calledFunction(int mandatoryArg, dyn optionalArg = true) {
-    printf("Mandatory: %d", mandatoryArg);
-    printf("Optional: %d", optionalArg);
-    return 0.1;
+p calledFunction(int mandatoryArg, dyn optionalArg = true) {
+    printf("Mandatory: %d\n", mandatoryArg);
+    printf("Optional: %d\n", optionalArg);
 }
 
-f<double> calledFunction(string testString) {
-    printf("String: %s", testString);
-    return 0.3;
+p calledFunction(string testString) {
+    printf("String: %s\n", testString);
 }
 
 f<int> main() {
-    dyn res = calledFunction(1, false);
-    printf("Result: %f", res);
+    calledFunction(1);
+    //printf("Result: %f\n", res);
     calledFunction("test");
 }

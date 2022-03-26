@@ -55,6 +55,7 @@ public:
   const Function *matchFunction(const std::string &functionName, const SymbolType &thisType,
                                 const std::vector<SymbolType> &argTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
   Function *popFunctionAccessPointer();
+  std::vector<Function *> popFunctionDeclarationPointers();
 
   void printCompilerWarnings();
 
@@ -72,6 +73,7 @@ private:
   std::map<std::string, SymbolTableEntry> symbols;
   std::map<std::string, Capture> captures;
   std::map<std::string, Function> functions;
+  std::queue<std::vector<Function *>> functionDeclarationPointers;
   std::queue<Function *> functionAccessPointers;
   bool inMainSourceFile;
   bool imported = false;

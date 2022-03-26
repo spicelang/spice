@@ -265,6 +265,9 @@ unsigned int SymbolTable::getFieldCount() const {
  * Insert a function object into this symbol table scope
  */
 void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
+  // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
+  functionDeclarationPointers.push(std::vector<Function *>());
+
   // Check if function is already substantiated
   if (function.isSubstantiated()) {
     insertSubstantiatedFunction(function, err, token);
@@ -331,15 +334,28 @@ const Function *SymbolTable::matchFunction(const std::string &functionName, cons
 }
 
 /**
- * Get the next function declaration in order of visiting
+ * Get the next function access in order of visiting
  *
- * @return Function
+ * @return Function pointer for the function access
  */
 Function *SymbolTable::popFunctionAccessPointer() {
   if (functionAccessPointers.empty())
-    throw std::runtime_error("Internal compiler error: Could not pop function declaration");
+    throw std::runtime_error("Internal compiler error: Could not pop function access");
   Function *function = functionAccessPointers.front();
   functionAccessPointers.pop();
+  return function;
+}
+
+/**
+ * Get the next list of function declarations in order of visiting
+ *
+ * @return Function pointer for the function declaration
+ */
+std::vector<Function *> SymbolTable::popFunctionDeclarationPointers() {
+  if (functionDeclarationPointers.empty())
+    throw std::runtime_error("Internal compiler error: Could not pop function declaration");
+  std::vector<Function *> function = functionDeclarationPointers.front();
+  functionDeclarationPointers.pop();
   return function;
 }
 
@@ -456,6 +472,6 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
   functions.insert({function.getMangledName(), function});
   // Add symbol table entry for the function
   insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
-  // Add function access pointer for the function definition
-  functionAccessPointers.push(&functions.at(function.getMangledName()));
+  // Add function declaration pointer for the function definition
+  functionDeclarationPointers.back().push_back(&functions.at(function.getMangledName()));
 }

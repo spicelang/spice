@@ -98,7 +98,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
     CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, 0};
     CliInterface cli(options);
     cli.validate();
-    cli.init();
+    cli.enrich();
     options = *cli.getOptions();
 
     // Execute semantic analysis

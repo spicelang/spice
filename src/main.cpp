@@ -11,10 +11,6 @@
 #include <linker/LinkerInterface.h>
 #include <util/ThreadFactory.h>
 
-#include <llvm/IR/IRBuilder.h>
-
-#include "../lib/cli11/CLI11.hpp"
-
 /**
  * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
  * function again.
@@ -70,7 +66,7 @@ int main(int argc, char **argv) {
   cli.parse(argc, argv);
   if (cli.shouldCompile()) {
     cli.validate();                   // Check if all required fields are present
-    cli.init();                       // Prepare the cli options
+    cli.enrich();                     // Prepare the cli options
     compileProject(cli.getOptions()); // Kick off the compiling process
     if (cli.shouldRun())
       cli.runBinary(); // Run executable if appropriate
