@@ -87,7 +87,8 @@ void CliInterface::validate() const {
   // Check if all three of --target-arch, --target-vendor and --target-os are provided or none of them
   if (!((cliOptions.targetArch.empty() && cliOptions.targetVendor.empty() && cliOptions.targetOs.empty()) ||
         (!cliOptions.targetArch.empty() && !cliOptions.targetVendor.empty() && !cliOptions.targetOs.empty()))) {
-    throw err.get(INCOMPLETE_TARGET_TRIPLE, "You need to provide all three of --target-arch, --target-vendor and --target-os");
+    throw ErrorFactory::get(INCOMPLETE_TARGET_TRIPLE,
+                            "You need to provide all three of --target-arch, --target-vendor and --target-os");
   }
 }
 

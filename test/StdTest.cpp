@@ -170,7 +170,7 @@ void executeTest(const StdTestCase &testCase) {
     generator.visit(tree); // Generate IR code
 
     // Check if the ir code matches the expected output
-    /*std::string irCodeFileName = testCase.testPath + "/ir-code.ll";
+    std::string irCodeFileName = testCase.testPath + "/ir-code.ll";
     if (FileUtil::fileExists(irCodeFileName)) {
       std::string actualIR = generator.getIRString();
       if (TestUtil::isUpdateRefsEnabled()) {
@@ -185,10 +185,10 @@ void executeTest(const StdTestCase &testCase) {
         }
         EXPECT_EQ(expectedIR, actualIR);
       }
-    }*/
+    }
 
     // Check if the optimized ir code matches the expected output
-    /*if (options.optLevel > 0) {
+    if (options.optLevel > 0) {
       generator.optimize();
       std::string actualOptimizedIR = generator.getIRString();
       if (TestUtil::isUpdateRefsEnabled()) {
@@ -202,7 +202,7 @@ void executeTest(const StdTestCase &testCase) {
         }
         EXPECT_EQ(expectedOptIR, actualOptimizedIR);
       }
-    }*/
+    }
 
     // Check if the execution output matches the expected output
     std::string outputFileName = testCase.testPath + "/cout.out";
@@ -217,7 +217,7 @@ void executeTest(const StdTestCase &testCase) {
       std::string linkerFlagsFile = testCase.testPath + "/linker-flags.txt";
       std::string linkerFlags;
       if (FileUtil::fileExists(linkerFlagsFile)) {
-        for (auto &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
+        for (const auto &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           linker.addLinkerFlag(linkerFlag);
       }
 
@@ -260,9 +260,9 @@ class StdOSTests : public ::testing::TestWithParam<StdTestCase> {};
 
 // Test macros
 
-TEST_P(StdIOTests, IOTests) { executeTest(GetParam()); }
+TEST_P(StdIOTests, IOTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
-TEST_P(StdOSTests, OSTests) { executeTest(GetParam()); }
+TEST_P(StdOSTests, OSTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 // Name resolver
 
@@ -275,10 +275,10 @@ struct NameResolver {
 
 // Instantiations
 
-const std::vector<StdTestSuite> testSuites = detectStdTestSuites("./test-files/std");
+const std::vector<StdTestSuite> testSuites = detectStdTestSuites("./test-files/std"); // NOLINT(cert-err58-cpp)
 
-INSTANTIATE_TEST_SUITE_P(StdIOTests, StdIOTests, ::testing::ValuesIn(testSuites[0]), NameResolver());
+INSTANTIATE_TEST_SUITE_P(StdIOTests, StdIOTests, ::testing::ValuesIn(testSuites[0]), NameResolver()); // NOLINT(cert-err58-cpp)
 
-INSTANTIATE_TEST_SUITE_P(StdOSTests, StdOSTests, ::testing::ValuesIn(testSuites[1]), NameResolver());
+INSTANTIATE_TEST_SUITE_P(StdOSTests, StdOSTests, ::testing::ValuesIn(testSuites[1]), NameResolver()); // NOLINT(cert-err58-cpp)
 
 // GCOV_EXCL_STOP

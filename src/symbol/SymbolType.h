@@ -68,5 +68,5 @@ private:
   TypeChain typeChain;
 
   // Private methods
-  [[nodiscard]] std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize) const;
+  [[nodiscard]] static std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize);
 };

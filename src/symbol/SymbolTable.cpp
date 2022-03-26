@@ -8,6 +8,12 @@
 #include <analyzer/AnalyzerVisitor.h>
 #include <util/CompilerWarning.h>
 
+SymbolTable::~SymbolTable() {
+  // Delete heap-allocated child tables
+  for (const auto &[key, table] : children)
+    delete table;
+}
+
 /**
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
  *
@@ -18,7 +24,7 @@
  * @param isArg Enabled if the symbol is a function/procedure parameter
  */
 void SymbolTable::insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
-                         const antlr4::Token &token, bool isArg) {
+                         const antlr4::Token &token) {
   bool isGlobal = getParent() == nullptr;
   unsigned int orderIndex = symbols.size();
   // Insert into symbols map
@@ -75,7 +81,7 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
  * @param orderIndex Order index of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-SymbolTableEntry *SymbolTable::lookupByIndexInCurrentScope(unsigned int orderIndex) {
+SymbolTableEntry *SymbolTable::lookupByIndex(unsigned int orderIndex) {
   for (auto &[key, val] : symbols) {
     if (val.getOrderIndex() == orderIndex)
       return &val;
@@ -89,7 +95,7 @@ SymbolTableEntry *SymbolTable::lookupByIndexInCurrentScope(unsigned int orderInd
  * @param globalName Name of the global variable
  * @return Desired symbol / nullptr if the global was not found
  */
-SymbolTableEntry *SymbolTable::lookupGlobalByName(const std::string &globalName, bool skipThisScope) {
+SymbolTableEntry *SymbolTable::lookupGlobal(const std::string &globalName, bool skipThisScope) {
   // Search in the current scope
   if (!skipThisScope) {
     SymbolTableEntry *globalSymbol = lookupStrict(globalName);
@@ -97,9 +103,9 @@ SymbolTableEntry *SymbolTable::lookupGlobalByName(const std::string &globalName,
       return globalSymbol;
   }
   // Loop through all children to find the global var
-  for (auto &[scopeName, childScope] : children) {
-    if (childScope.isImported()) { // Only consider if it is an imported module scope
-      SymbolTableEntry *globalSymbol = childScope.lookupGlobalByName(globalName);
+  for (const auto &[scopeName, childScope] : children) {
+    if (childScope->isImported()) { // Only consider if it is an imported module scope
+      SymbolTableEntry *globalSymbol = childScope->lookupGlobal(globalName);
       if (globalSymbol)
         return globalSymbol;
     }
@@ -155,47 +161,30 @@ SymbolTable *SymbolTable::lookupTable(const std::string &scopeId) {
     return parent->lookupTable(scopeId);
   }
   // Otherwise, return the entry
-  return &children.at(scopeId);
-}
-
-/**
- * Search for a symbol table by its name, where a symbol is defined. Used for function calls to function/procedures
- * which were linked in from other modules
- *
- * @param signature Signature of the function/procedure
- * @return Desired symbol table
- */
-SymbolTable *SymbolTable::lookupTableWithSignature(const std::string &signature) {
-  // Check if scope contains this signature
-  if (symbols.find(signature) != symbols.end())
-    return this;
-  // Current scope does not contain the signature => go up one table
-  if (parent == nullptr)
-    return nullptr;
-  return parent->lookupTableWithSignature(signature);
+  return children.at(scopeId);
 }
 
 /**
  * Create a child leaf for the tree of symbol tables and return it
  *
- * @param blockName Name of the child scope
+ * @param childBlockName Name of the child scope
  * @return Newly created child table
  */
-SymbolTable *SymbolTable::createChildBlock(const std::string &blockName) {
-  children.insert({blockName, SymbolTable(this, inMainSourceFile)});
-  return &children.at(blockName);
+SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName) {
+  children.insert({childBlockName, new SymbolTable(this, inMainSourceFile)});
+  return children.at(childBlockName);
 }
 
 /**
  * Mount in symbol tables manually. This is used to hook in symbol tables of imported modules into the symbol table of
  * the source file, which imported the modules
  *
- * @param blockName Name of the child scope
+ * @param childBlockName Name of the child block
  * @param childBlock Child symbol table
  */
-void SymbolTable::mountChildBlock(const std::string &blockName, SymbolTable *childBlock) {
+void SymbolTable::mountChildBlock(const std::string &childBlockName, SymbolTable *childBlock) {
   childBlock->parent = this;
-  children.insert({blockName, *childBlock});
+  children.insert({childBlockName, childBlock});
 }
 
 /**
@@ -209,6 +198,18 @@ void SymbolTable::renameChildBlock(const std::string &oldName, const std::string
   auto nodeHandler = children.extract(oldName);
   nodeHandler.key() = newName;
   children.insert(std::move(nodeHandler));
+}
+
+/**
+ * Duplicates the child block entry, but it points to the same child block
+ *
+ * @param originalChildBlockName Original name of the child block
+ * @param newChildBlockName New name
+ */
+void SymbolTable::duplicateChildBlockEntry(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
+  SymbolTable *childBlock = children.at(originalChildBlockName);
+  assert(childBlock != nullptr);
+  children.insert({newChildBlockName, childBlock});
 }
 
 /**
@@ -229,7 +230,7 @@ SymbolTable *SymbolTable::getChild(const std::string &scopeId) {
     return nullptr;
   if (children.find(scopeId) == children.end())
     return nullptr;
-  return &children.at(scopeId);
+  return children.at(scopeId);
 }
 
 /**
@@ -253,7 +254,7 @@ std::map<std::string, Capture> &SymbolTable::getCaptures() { return captures; }
  */
 unsigned int SymbolTable::getFieldCount() const {
   unsigned int count = 0;
-  for (auto &[key, symbol] : symbols) {
+  for (const auto &[key, symbol] : symbols) {
     if (!symbol.getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT}))
       count++;
   }
@@ -271,7 +272,7 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
   }
 
   // Substantiate the function and insert the substantiated instances
-  for (auto &fct : function.substantiate())
+  for (const auto &fct : function.substantiate())
     insertSubstantiatedFunction(fct, err, token);
 }
 
@@ -290,7 +291,7 @@ const Function *SymbolTable::matchFunction(const std::string &functionName, cons
   std::vector<Function *> matches;
 
   // Loop through function and add any matches to the matches vector
-  for (auto &[key, f] : functions) {
+  for (const auto &[key, f] : functions) {
     // Check name requirement
     if (f.getName() != functionName)
       continue;
@@ -301,10 +302,15 @@ const Function *SymbolTable::matchFunction(const std::string &functionName, cons
     std::vector<SymbolType> curArgTypes = f.getArgTypes();
     if (curArgTypes.size() != argTypes.size())
       continue;
+    bool differentArgTypes = false;
     for (int i = 0; i < argTypes.size(); i++) {
-      if (curArgTypes[i] != argTypes[i])
-        continue;
+      if (curArgTypes[i] != argTypes[i]) {
+        differentArgTypes = true;
+        break;
+      }
     }
+    if (differentArgTypes)
+      continue;
     // It's a match!
     matches.push_back(&functions.at(key));
   }
@@ -345,7 +351,7 @@ void SymbolTable::printCompilerWarnings() {
   if (imported)
     return;
   // Visit own symbols
-  for (auto &[key, entry] : symbols) {
+  for (const auto &[key, entry] : symbols) {
     if (!entry.isUsed()) {
       if (entry.getType().is(TY_FUNCTION)) {
         CompilerWarning(entry.getDefinitionToken(), UNUSED_FUNCTION, "The function '" + entry.getName() + "' is unused").print();
@@ -364,8 +370,8 @@ void SymbolTable::printCompilerWarnings() {
     }
   }
   // Visit children
-  for (auto &[key, child] : children)
-    child.printCompilerWarnings();
+  for (const auto &[key, child] : children)
+    child->printCompilerWarnings();
 }
 
 /**
@@ -388,20 +394,20 @@ nlohmann::json SymbolTable::toJSON() const {
   // Collect all symbols
   std::vector<nlohmann::json> jsonSymbols;
   jsonSymbols.reserve(symbols.size());
-  for (auto &symbol : symbols)
+  for (const auto &symbol : symbols)
     jsonSymbols.emplace_back(symbol.second.toJSON());
 
   // Collect all captures
   std::vector<nlohmann::json> jsonCaptures;
   jsonCaptures.reserve(captures.size());
-  for (auto &capture : captures)
+  for (const auto &capture : captures)
     jsonCaptures.emplace_back(capture.second.toJSON());
 
   // Collect all children
   std::vector<nlohmann::json> jsonChildren;
   jsonChildren.reserve(symbols.size());
-  for (auto &child : children) {
-    nlohmann::json c = child.second.toJSON();
+  for (const auto &child : children) {
+    nlohmann::json c = child.second->toJSON();
     c["name"] = child.first; // Inject symbol table name into JSON object
     jsonChildren.emplace_back(c);
   }
@@ -449,7 +455,7 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
   // Add function to function list
   functions.insert({function.getMangledName(), function});
   // Add symbol table entry for the function
-  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token, false);
+  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
   // Add function access pointer for the function definition
   functionAccessPointers.push(&functions.at(function.getMangledName()));
 }

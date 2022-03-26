@@ -252,7 +252,7 @@ bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeC
  * @param withSize Include size in string
  * @return Type chain element name
  */
-std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize) const {
+std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize) {
   switch (chainElement.first) {
   case TY_PTR:
     return "*";

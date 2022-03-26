@@ -37,7 +37,7 @@ const char *IRError::what() const noexcept { return errorMessage.c_str(); }
  * @param type Type of the error
  * @return Prefix string for the error type
  */
-std::string IRError::getMessagePrefix(IRErrorType type) const {
+std::string IRError::getMessagePrefix(IRErrorType type) {
   switch (type) {
   case TARGET_NOT_AVAILABLE:
     return "Selected target not available";

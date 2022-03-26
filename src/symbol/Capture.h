@@ -17,7 +17,6 @@ public:
 
   // Public methods
   [[nodiscard]] SymbolTableEntry *getEntry() const;
-  [[nodiscard]] CaptureMode getCaptureMode() const;
   void setCaptureMode(CaptureMode captureMode);
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 

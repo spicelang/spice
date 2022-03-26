@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "ScopeIdUtil.h"
+#include "analyzer/AnalyzerVisitor.h"
 
 /**
  * Get scope id for the MainFunctionDef AST node
@@ -40,7 +41,9 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::ProcedureDefContext *ctx) {
  *
  * @return Scope id
  */
-std::string ScopeIdUtil::getScopeId(SpiceParser::StructDefContext *ctx) { return "struct:" + ctx->IDENTIFIER()->toString(); }
+std::string ScopeIdUtil::getScopeId(SpiceParser::StructDefContext *ctx) {
+  return STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()->toString();
+}
 
 /**
  * Get scope id for the ThreadDef AST node

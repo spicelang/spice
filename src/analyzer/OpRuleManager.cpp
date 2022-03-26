@@ -200,7 +200,7 @@ SymbolType OpRuleManager::getCastResultType(const antlr4::Token &token, SymbolTy
 
 SymbolType OpRuleManager::validateBinaryOperation(const antlr4::Token &token, const std::vector<BinaryOpRule> &opRules,
                                                   const std::string &opName, const SymbolType &lhs, const SymbolType &rhs) {
-  for (auto &rule : opRules) {
+  for (const auto &rule : opRules) {
     if (std::get<0>(rule) == lhs && std::get<1>(rule) == rhs)
       return std::get<2>(rule);
   }
@@ -209,7 +209,7 @@ SymbolType OpRuleManager::validateBinaryOperation(const antlr4::Token &token, co
 
 SymbolType OpRuleManager::validateUnaryOperation(const antlr4::Token &token, const std::vector<UnaryOpRule> &opRules,
                                                  const std::string &opName, const SymbolType &lhs) {
-  for (auto &rule : opRules) {
+  for (const auto &rule : opRules) {
     if (std::get<0>(rule) == lhs)
       return std::get<1>(rule);
   }

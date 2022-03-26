@@ -28,7 +28,7 @@ const char *SemanticError::what() const noexcept { return errorMessage.c_str(); 
  * @param type Type of the error
  * @return Prefix string for the error type
  */
-std::string SemanticError::getMessagePrefix(SemanticErrorType type) const {
+std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
   switch (type) {
   case REFERENCED_UNDEFINED_FUNCTION:
     return "Referenced undefined function";

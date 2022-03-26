@@ -152,7 +152,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     argNames.reserve(ctx->argLstDef()->declStmt().size());
     argTypes.reserve(ctx->argLstDef()->declStmt().size());
     if (ctx->argLstDef()) {
-      for (auto &arg : ctx->argLstDef()->declStmt()) {
+      for (const auto &arg : ctx->argLstDef()->declStmt()) {
         currentVarName = arg->IDENTIFIER()->toString();
         argNames.push_back(currentVarName);
         llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
@@ -171,7 +171,6 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     moveInsertPointToBlock(bEntry);
 
     // Store function arguments
-    unsigned int declStmtCount = ctx->argLstDef() ? ctx->argLstDef()->declStmt().size() : 0;
     for (auto &arg : fct->args()) {
       unsigned argNo = arg.getArgNo();
       std::string argName = argNames[argNo];
@@ -228,7 +227,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   if (ctx->IDENTIFIER().size() > 1) { // Method
     isMethod = true;
     // Change to the struct scope
-    currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
     assert(currentScope != nullptr);
   }
 
@@ -256,7 +255,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   }
   // Arguments
   if (ctx->argLstDef()) {
-    for (auto &arg : ctx->argLstDef()->declStmt()) {
+    for (const auto &arg : ctx->argLstDef()->declStmt()) {
       currentVarName = arg->IDENTIFIER()->toString();
       argNames.push_back(currentVarName);
       llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
@@ -269,7 +268,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
   bool explicitInlined = false;
   if (ctx->declSpecifiers()) {
-    for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->INLINE()) {
         explicitInlined = true;
       } else if (specifier->PUBLIC()) {
@@ -292,7 +291,6 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   moveInsertPointToBlock(bEntry);
 
   // Store function args
-  unsigned int declStmtCount = ctx->argLstDef() ? ctx->argLstDef()->declStmt().size() : 0;
   for (auto &arg : fct->args()) {
     unsigned int argNo = arg.getArgNo();
     std::string argName = argNames[argNo];
@@ -350,7 +348,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
   if (ctx->IDENTIFIER().size() > 1) { // Method
     isMethod = true;
     // Change to the struct scope
-    currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
     assert(currentScope != nullptr);
   }
 
@@ -374,7 +372,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
   }
   // Arguments
   if (ctx->argLstDef()) {
-    for (auto &arg : ctx->argLstDef()->declStmt()) {
+    for (const auto &arg : ctx->argLstDef()->declStmt()) {
       currentVarName = arg->IDENTIFIER()->toString();
       argNames.push_back(currentVarName);
       llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
@@ -387,7 +385,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
   llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
   bool explicitInlined = false;
   if (ctx->declSpecifiers()) {
-    for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->INLINE()) {
         explicitInlined = true;
       } else if (specifier->PUBLIC()) {
@@ -471,7 +469,7 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   // Get LLVM arg types
   std::vector<llvm::Type *> argTypes;
   if (ctx->typeLst()) {
-    for (auto &arg : ctx->typeLst()->dataType()) {
+    for (const auto &arg : ctx->typeLst()->dataType()) {
       llvm::Type *argType = visit(arg).as<llvm::Type *>();
       argTypes.push_back(argType);
     }
@@ -496,7 +494,7 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ct
 
   // Collect member types
   std::vector<llvm::Type *> memberTypes;
-  for (auto &field : ctx->field())
+  for (const auto &field : ctx->field())
     memberTypes.push_back(visit(field->dataType()).as<llvm::Type *>());
 
   // Create global struct
@@ -557,7 +555,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ct
   std::vector<std::string> argStructFieldNames;
   std::vector<llvm::Type *> argStructFieldTypes;
   std::vector<llvm::Value *> argStructFieldPointers;
-  for (auto &capture : currentScope->getCaptures()) {
+  for (const auto &capture : currentScope->getCaptures()) {
     argStructFieldNames.push_back(capture.first);
     argStructFieldTypes.push_back(capture.second.getEntry()->getLLVMType()->getPointerTo());
     argStructFieldPointers.push_back(capture.second.getEntry()->getAddress());
@@ -587,7 +585,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ct
   // Store function args
   llvm::Value *recArgStructPtr = builder->CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
   unsigned int i = 0;
-  for (auto &capture : currentScope->getCaptures()) {
+  for (const auto &capture : currentScope->getCaptures()) {
     std::string argName = argStructFieldNames[i];
     llvm::Value *memAddress = builder->CreateStructGEP(argStructTy, recArgStructPtr, i);
     memAddress = builder->CreateLoad(memAddress->getType()->getPointerElementType(), memAddress);
@@ -600,7 +598,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ct
   visit(ctx->stmtLst());
 
   // Pop address from each capture to ensure that the address is valid and known to the outer function
-  for (auto &capture : currentScope->getCaptures())
+  for (const auto &capture : currentScope->getCaptures())
     capture.second.getEntry()->popAddress();
 
   // Change scope back
@@ -857,7 +855,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ct
 }
 
 antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
-  for (auto &child : ctx->children) {
+  for (const auto &child : ctx->children) {
     if (!blockAlreadyTerminated)
       visit(child);
   }
@@ -1043,7 +1041,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *
   stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\n"), "\n");
   stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
   printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
-  for (auto &arg : ctx->assignExpr()) {
+  for (const auto &arg : ctx->assignExpr()) {
     // Visit argument
     llvm::Value *argValPtr = visit(arg).as<llvm::Value *>();
 
@@ -1126,7 +1124,7 @@ antlrcpp::Any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx)
   }
 
   unsigned int joinCount = 0;
-  for (auto &assignExpr : ctx->assignExpr()) {
+  for (const auto &assignExpr : ctx->assignExpr()) {
     // Check if it is an id or an array of ids
     llvm::Value *threadIdPtr = visit(assignExpr).as<llvm::Value *>();
     assert(threadIdPtr != nullptr && threadIdPtr->getType()->isPointerTy());
@@ -1694,7 +1692,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
         // Check if function exists in the current module
         bool functionFound = false;
         std::string fctIdentifier = spiceFunc->getMangledName();
-        for (auto &function : module->getFunctionList()) { // Search for function definition
+        for (const auto &function : module->getFunctionList()) { // Search for function definition
           if (function.getName() == spiceFunc->getMangledName()) {
             functionFound = true;
             break;
@@ -1707,7 +1705,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 
         if (!functionFound) { // Not found => Declare function, which will be linked in
           // Get the symbol table of the module where the function is defined
-          SymbolTable *table = accessScope->lookupTableWithSignature(spiceFunc->getSignature());
+          SymbolTable *table = accessScope->lookupTable(spiceFunc->getSignature());
           assert(table != nullptr);
           // Check if it is a function or a procedure
           if (spiceFunc->isFunction() || spiceFunc->isMethodFunction()) { // Function
@@ -1773,7 +1771,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
         }
         auto *argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
         if (argLst != nullptr) {
-          for (auto &arg : argLst->assignExpr()) {
+          for (const auto &arg : argLst->assignExpr()) {
             // Get expected arg type
             llvm::Type *expectedArgType = fctType->getParamType(argIndex);
             // Get the actual arg value
@@ -1908,7 +1906,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *
     if (entry->getType().is(TY_IMPORT)) { // Import
       newAccessScope = accessScope->lookupTable(entry->getName());
     } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
-      newAccessScope = accessScope->lookupTable("struct:" + entry->getType().getBaseType().getSubType());
+      newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + entry->getType().getBaseType().getSubType());
     }
     assert(newAccessScope != nullptr);
 
@@ -1968,7 +1966,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
         if (entry->getType().is(TY_IMPORT)) {
           structScope = structScope->lookupTable(iden);
         } else if (entry->getType().is(TY_STRUCT)) {
-          structScope = structScope->lookupTable("struct:" + iden);
+          structScope = structScope->lookupTable(STRUCT_SCOPE_PREFIX + iden);
         } else {
           throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                          "The variable '" + iden + "' is of type " + entry->getType().getName(false) +
@@ -1990,14 +1988,14 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     variableSymbol->updateLLVMType(structType);
 
     // Get struct table
-    SymbolTable *structTable = currentScope->lookupTable("struct:" + structName);
+    SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
     assert(structTable != nullptr);
 
     // Fill the struct with the stated values
     if (ctx->argLst()) {
       for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
         // Set address to the struct instance field
-        SymbolTableEntry *fieldEntry = structTable->lookupByIndexInCurrentScope(i);
+        SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
         assert(fieldEntry != nullptr);
         // Visit assignment
         llvm::Value *assignmentPtr = visit(ctx->argLst()->assignExpr()[i]).as<llvm::Value *>();

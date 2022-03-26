@@ -37,7 +37,7 @@ SymbolType Function::getReturnType() const { return returnType; }
  */
 std::vector<SymbolType> Function::getArgTypes() const {
   std::vector<SymbolType> newArgTypes;
-  for (auto &argType : argTypes)
+  for (const auto &argType : argTypes)
     newArgTypes.push_back(argType.first);
   return newArgTypes;
 }
@@ -67,11 +67,9 @@ std::string Function::getMangledName() const {
     returnTyStr = returnType.getName() + "_";
 
   std::string argTyStr;
-  for (int i = 0; i < argTypes.size(); i++) {
-    if (i == 0)
-      argTyStr += "_";
-    argTyStr += argTypes[i].first.getName();
-    if (argTypes[i].second)
+  for (const auto &argType : argTypes) {
+    argTyStr += "_" + argType.first.getName();
+    if (argType.second)
       argTyStr += "?";
   }
 
@@ -149,7 +147,7 @@ std::vector<Function> Function::substantiate() const {
   std::vector<std::pair<SymbolType, bool>> currentFunctionArgTypes;
   bool metFirstOptionalArg = false;
 
-  for (auto &argType : argTypes) {
+  for (const auto &argType : argTypes) {
     if (argType.second) {         // Met optional argument
       if (!metFirstOptionalArg) { // Add substantiation without the optional argument
         definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes);
@@ -163,6 +161,9 @@ std::vector<Function> Function::substantiate() const {
     }
   }
 
+  if (definiteFunctions.empty())
+    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes);
+
   return definiteFunctions;
 }
 
@@ -172,7 +173,7 @@ std::vector<Function> Function::substantiate() const {
  * @return
  */
 bool Function::isSubstantiated() const {
-  for (auto &argType : argTypes) {
+  for (const auto &argType : argTypes) {
     if (argType.second)
       return false;
   }
