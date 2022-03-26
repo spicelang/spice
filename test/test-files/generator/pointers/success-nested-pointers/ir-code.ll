@@ -11,7 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 @4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 1
 
 ; Function Attrs: nounwind
-define internal void @"testProc(int[]***)"(i32**** %0) #0 {
+define internal void @"_p_testProc_int[]***"(i32**** %0) #0 {
 entry:
   %nums = alloca i32****, align 8
   %nums1 = alloca i32**, align 8
@@ -111,7 +111,7 @@ entry:
   store i32* %22, i32** %8, align 8
   store i32** %8, i32*** %9, align 8
   store i32*** %9, i32**** %10, align 8
-  call void @"testProc(int[]***)"(i32**** %10)
+  call void @"_p_testProc_int[]***"(i32**** %10)
   store i1 true, i1* %11, align 1
   %23 = load i32, i32* %result, align 4
   ret i32 %23

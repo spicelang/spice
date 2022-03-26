@@ -11,7 +11,7 @@ entry:
   %integer = alloca i32, align 4
   %0 = alloca i32, align 4
   store i32 0, i32* %result, align 4
-  %1 = call i32 @"forwardToOtherModule()"()
+  %1 = call i32 @_f_int_forwardToOtherModule()
   store i32 %1, i32* %0, align 4
   %2 = load i32, i32* %0, align 4
   store i32 %2, i32* %integer, align 4
@@ -21,6 +21,6 @@ entry:
   ret i32 %5
 }
 
-declare i32 @"forwardToOtherModule()"()
+declare i32 @_f_int_forwardToOtherModule()
 
 declare i32 @printf(i8*, ...)

@@ -42,8 +42,3 @@ Result:
 - `TestStruct.existsFilter(int): bool`
 - `TestStruct.existsFilter(int, int): bool`
 - `TestStruct.existsFilter(int, int, double): bool`
-
-
-## To Test
-- [ ] Dyn return type
-- 

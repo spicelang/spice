@@ -60,7 +60,7 @@ std::string Function::getMangledName() const {
 
   std::string thisTyStr;
   if (!thisType.is(TY_DYN))
-    thisTyStr = thisType.getSubType() + "_";
+    thisTyStr = thisType.getBaseType().getSubType() + "_";
 
   std::string returnTyStr;
   if (!returnType.is(TY_DYN))
@@ -75,7 +75,7 @@ std::string Function::getMangledName() const {
       argTyStr += "?";
   }
 
-  return "_" + fpm + "_" + thisTyStr + returnTyStr + name + argTyStr;
+  return "_" + fpm + "_" + returnTyStr + thisTyStr + name + argTyStr;
 }
 
 /**
@@ -86,7 +86,7 @@ std::string Function::getMangledName() const {
 std::string Function::getSignature() const {
   std::string thisTyStr;
   if (!thisType.is(TY_DYN))
-    thisTyStr = thisType.getSubType() + ".";
+    thisTyStr = thisType.getBaseType().getSubType() + ".";
 
   std::string returnTyStr;
   if (!returnType.is(TY_DYN))

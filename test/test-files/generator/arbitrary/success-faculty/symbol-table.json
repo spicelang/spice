@@ -11,7 +11,7 @@
           "symbols": []
         }
       ],
-      "name": "faculty(int)",
+      "name": "faculty(int): int",
       "symbols": [
         {
           "isGlobal": false,
@@ -92,7 +92,7 @@
     {
       "isGlobal": true,
       "isVolatile": false,
-      "name": "faculty(int)",
+      "name": "faculty(int): int",
       "orderIndex": 0,
       "specifiers": {
         "const": true,

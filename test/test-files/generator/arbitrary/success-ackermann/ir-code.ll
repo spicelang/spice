@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
 
 ; Function Attrs: nounwind
-define internal i32 @"ack(int,int)"(i32 %0, i32 %1) #0 {
+define internal i32 @_f_int_ack_intint(i32 %0, i32 %1) #0 {
 entry:
   %m = alloca i32, align 4
   %n = alloca i32, align 4
@@ -64,7 +64,7 @@ if.then1:                                         ; preds = %if.end
   %33 = load i32, i32* %9, align 4
   store i32 1, i32* %10, align 4
   %34 = load i32, i32* %10, align 4
-  %35 = call i32 @"ack(int,int)"(i32 %33, i32 %34)
+  %35 = call i32 @_f_int_ack_intint(i32 %33, i32 %34)
   store i32 %35, i32* %11, align 4
   %36 = load i32, i32* %11, align 4
   ret i32 %36
@@ -83,10 +83,10 @@ if.end2:                                          ; preds = %if.end
   %44 = sub i32 %42, %43
   store i32 %44, i32* %15, align 4
   %45 = load i32, i32* %15, align 4
-  %46 = call i32 @"ack(int,int)"(i32 %41, i32 %45)
+  %46 = call i32 @_f_int_ack_intint(i32 %41, i32 %45)
   store i32 %46, i32* %16, align 4
   %47 = load i32, i32* %16, align 4
-  %48 = call i32 @"ack(int,int)"(i32 %40, i32 %47)
+  %48 = call i32 @_f_int_ack_intint(i32 %40, i32 %47)
   store i32 %48, i32* %17, align 4
   %49 = load i32, i32* %17, align 4
   ret i32 %49
@@ -111,7 +111,7 @@ entry:
   %6 = load i32, i32* %baseN, align 4
   %7 = load i32, i32* %baseM, align 4
   %8 = load i32, i32* %baseN, align 4
-  %9 = call i32 @"ack(int,int)"(i32 %7, i32 %8)
+  %9 = call i32 @_f_int_ack_intint(i32 %7, i32 %8)
   store i32 %9, i32* %2, align 4
   %10 = load i32, i32* %2, align 4
   %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @0, i32 0, i32 0), i32 %5, i32 %6, i32 %10)

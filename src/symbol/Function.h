@@ -7,6 +7,8 @@
 #include <symbol/SymbolSpecifiers.h>
 #include <symbol/SymbolType.h>
 
+typedef std::vector<std::pair<SymbolType, bool>> ArgList;
+
 class Function {
 public:
   // Constructors

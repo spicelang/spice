@@ -150,8 +150,8 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     std::vector<SymbolType> symbolTypes;
     std::vector<std::string> paramNames;
     std::vector<llvm::Type *> paramTypes;
-    if (ctx->paramLstDef()) {
-      for (auto &param : ctx->paramLstDef()->declStmt()) {
+    if (ctx->argLstDef()) {
+      for (auto &param : ctx->argLstDef()->declStmt()) {
         currentVarName = param->IDENTIFIER()->toString();
         paramNames.push_back(currentVarName);
         llvm::Type *paramType = visit(param->dataType()).as<llvm::Type *>();
@@ -170,7 +170,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     moveInsertPointToBlock(bEntry);
 
     // Store function params
-    unsigned int declStmtCount = ctx->paramLstDef() ? ctx->paramLstDef()->declStmt().size() : 0;
+    unsigned int declStmtCount = ctx->argLstDef() ? ctx->argLstDef()->declStmt().size() : 0;
     for (auto &param : fct->args()) {
       unsigned paramNo = param.getArgNo();
       std::string paramName = paramNames[paramNo];
@@ -254,8 +254,8 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     symbolTypes.push_back(thisEntry->getType().toPointer(err, *ctx->start));
   }
   // Parameters
-  if (ctx->paramLstDef()) {
-    for (auto &param : ctx->paramLstDef()->declStmt()) {
+  if (ctx->argLstDef()) {
+    for (auto &param : ctx->argLstDef()->declStmt()) {
       currentVarName = param->IDENTIFIER()->toString();
       paramNames.push_back(currentVarName);
       llvm::Type *paramType = visit(param->dataType()).as<llvm::Type *>();
@@ -291,7 +291,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   moveInsertPointToBlock(bEntry);
 
   // Store function params
-  unsigned int declStmtCount = ctx->paramLstDef() ? ctx->paramLstDef()->declStmt().size() : 0;
+  unsigned int declStmtCount = ctx->argLstDef() ? ctx->argLstDef()->declStmt().size() : 0;
   for (auto &param : fct->args()) {
     unsigned int paramNo = param.getArgNo();
     std::string paramName = paramNames[paramNo];
@@ -372,8 +372,8 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     symbolTypes.push_back(thisEntry->getType().toPointer(err, *ctx->start));
   }
   // Parameters
-  if (ctx->paramLstDef()) {
-    for (auto &param : ctx->paramLstDef()->declStmt()) {
+  if (ctx->argLstDef()) {
+    for (auto &param : ctx->argLstDef()->declStmt()) {
       currentVarName = param->IDENTIFIER()->toString();
       paramNames.push_back(currentVarName);
       llvm::Type *paramType = visit(param->dataType()).as<llvm::Type *>();
@@ -1163,13 +1163,6 @@ antlrcpp::Any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
-  // Visit the right side
-  currentVarName = "";         // Reset the current variable name
-  scopePrefix = "";            // Reset the scope prefix
-  scopePath.clear();           // Clear the scope path
-  structAccessIndices.clear(); // Clear struct access indices
-  currentThisValue = nullptr;  // Reset this value
-
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment or compound assignment
     lhsType = nullptr;   // Reset lhs type
@@ -1179,11 +1172,6 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *
     llvm::Value *rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
 
     // Visit the left side
-    currentVarName = "";         // Reset the current variable name
-    scopePrefix = "";            // Reset the scope prefix
-    scopePath.clear();           // Clear the scope path
-    structAccessIndices.clear(); // Clear struct access indices
-    currentThisValue = nullptr;  // Reset this value
     llvm::Value *lhsPtr = visit(ctx->prefixUnaryExpr()).as<llvm::Value *>();
     lhsVarName = currentVarName;
 
@@ -1580,6 +1568,12 @@ antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+  currentVarName = "";         // Reset the current variable name
+  scopePrefix = "";            // Reset the scope prefix
+  scopePath.clear();           // Clear the scope path
+  structAccessIndices.clear(); // Clear struct access indices
+  currentThisValue = nullptr;  // Reset this value
+
   llvm::Value *lhsPtr = visit(ctx->postfixUnaryExpr()).as<llvm::Value *>();
 
   if (!ctx->prefixUnaryOp().empty()) {
@@ -1776,7 +1770,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
           argValues.push_back(currentThisValue);
           paramIndex++;
         }
-        auto *paramLst = dynamic_cast<SpiceParser::ParamLstContext *>(ctx->children[tokenCounter]);
+        auto *paramLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
         if (paramLst != nullptr) {
           for (auto &param : paramLst->assignExpr()) {
             // Get expected arg type
@@ -1999,13 +1993,13 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     assert(structTable != nullptr);
 
     // Fill the struct with the stated values
-    if (ctx->paramLst()) {
-      for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+    if (ctx->argLst()) {
+      for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
         // Set address to the struct instance field
         SymbolTableEntry *fieldEntry = structTable->lookupByIndexInCurrentScope(i);
         assert(fieldEntry != nullptr);
         // Visit assignment
-        llvm::Value *assignmentPtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value *>();
+        llvm::Value *assignmentPtr = visit(ctx->argLst()->assignExpr()[i]).as<llvm::Value *>();
         llvm::Value *assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
         // Get pointer to struct element
         llvm::Value *fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
@@ -2020,18 +2014,18 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 
   if (ctx->LBRACE()) { // Array initialization
     // Get data type
-    size_t actualItemCount = ctx->paramLst() ? ctx->paramLst()->assignExpr().size() : 0;
+    size_t actualItemCount = ctx->argLst() ? ctx->argLst()->assignExpr().size() : 0;
     size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
     auto arrayType = static_cast<llvm::ArrayType *>(lhsType);
 
     // Fill items with the stated values
-    if (ctx->paramLst()) {
+    if (ctx->argLst()) {
       // Visit all params to check if they are hardcoded or not
       std::vector<llvm::Value *> itemValuePointers;
       std::vector<llvm::Constant *> itemConstants;
       allParamsHardcoded = true;
-      for (size_t i = 0; i < std::min(ctx->paramLst()->assignExpr().size(), arraySize); i++) {
-        llvm::Value *itemValuePtr = visit(ctx->paramLst()->assignExpr()[i]).as<llvm::Value *>();
+      for (size_t i = 0; i < std::min(ctx->argLst()->assignExpr().size(), arraySize); i++) {
+        llvm::Value *itemValuePtr = visit(ctx->argLst()->assignExpr()[i]).as<llvm::Value *>();
         itemValuePointers.push_back(itemValuePtr);
         itemConstants.push_back(currentConstValue);
       }
@@ -2076,7 +2070,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 
         // Insert all given values
         size_t valueIndex = 0;
-        for (; valueIndex < std::min(ctx->paramLst()->assignExpr().size(), arraySize); valueIndex++) {
+        for (; valueIndex < std::min(ctx->argLst()->assignExpr().size(), arraySize); valueIndex++) {
           llvm::Value *itemValuePtr = itemValuePointers[valueIndex];
           llvm::Value *itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
           // Calculate item address

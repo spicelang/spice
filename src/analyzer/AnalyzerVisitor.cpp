@@ -83,8 +83,8 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
 
   // Visit parameters
   parameterMode = true;
-  if (ctx->paramLstDef())
-    visit(ctx->paramLstDef());
+  if (ctx->argLstDef())
+    visit(ctx->argLstDef());
   parameterMode = false;
 
   // Visit statements in new scope
@@ -120,8 +120,8 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   // Visit params in new scope
   parameterMode = true;
   std::vector<std::pair<SymbolType, bool>> argTypes;
-  if (ctx->paramLstDef())
-    argTypes = visit(ctx->paramLstDef()).as<std::vector<std::pair<SymbolType, bool>>>();
+  if (ctx->argLstDef())
+    argTypes = visit(ctx->argLstDef()).as<ArgList>();
   parameterMode = false;
 
   // Declare 'this' variable in new scope
@@ -129,14 +129,17 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   if (isMethod) {
     std::string structName = ctx->IDENTIFIER().front()->toString();
     SymbolTableEntry *structEntry = currentScope->lookup(structName);
-    thisType = structEntry->getType().toPointer(err, *ctx->start);
-    auto thisTypeSpecifiers = SymbolSpecifiers(thisType);
+    SymbolType curThisType = thisType = structEntry->getType();
+    curThisType = curThisType.toPointer(err, *ctx->start);
+    auto thisTypeSpecifiers = SymbolSpecifiers(curThisType);
     thisTypeSpecifiers.setConst(true);
-    currentScope->insert(THIS_VARIABLE_NAME, thisType, thisTypeSpecifiers, INITIALIZED, *ctx->start, false);
+    currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisTypeSpecifiers, INITIALIZED, *ctx->start, false);
   }
 
   // Declare variable for the return value in the function scope
   SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
+  if (returnType.is(TY_DYN))
+    throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
   if (returnType.isPointer())
     throw err->get(*ctx->start, COMING_SOON_SA,
                    "Spice currently not supports pointer return types due to not supporting heap allocations.");
@@ -203,8 +206,8 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   // Visit params in new scope
   parameterMode = true;
   std::vector<std::pair<SymbolType, bool>> argTypes;
-  if (ctx->paramLstDef())
-    argTypes = visit(ctx->paramLstDef()).as<std::vector<std::pair<SymbolType, bool>>>();
+  if (ctx->argLstDef())
+    argTypes = visit(ctx->argLstDef()).as<std::vector<std::pair<SymbolType, bool>>>();
   parameterMode = false;
 
   // Declare 'this' variable in new scope
@@ -212,10 +215,11 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   if (isMethod) {
     std::string structName = ctx->IDENTIFIER().front()->toString();
     SymbolTableEntry *structEntry = currentScope->lookup(structName);
-    thisType = structEntry->getType().toPointer(err, *ctx->start);
-    auto thisSymbolSpecifiers = SymbolSpecifiers(thisType);
+    SymbolType curThisType = thisType = structEntry->getType();
+    curThisType = curThisType.toPointer(err, *ctx->start);
+    auto thisSymbolSpecifiers = SymbolSpecifiers(curThisType);
     thisSymbolSpecifiers.setConst(true);
-    currentScope->insert(THIS_VARIABLE_NAME, thisType, thisSymbolSpecifiers, INITIALIZED, *ctx->start, false);
+    currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisSymbolSpecifiers, INITIALIZED, *ctx->start, false);
   }
 
   // Return to old scope
@@ -591,22 +595,22 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) 
   return SymbolType(TY_BOOL);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) {
-  std::vector<std::pair<SymbolType, bool>> paramTypes;
+antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
+  ArgList argList;
   for (auto &param : ctx->declStmt()) {
-    SymbolType paramType = visit(param).as<SymbolType>();
+    SymbolType argType = visit(param).as<SymbolType>();
 
     // Check if the type could be inferred. Dyn without a default value is forbidden
-    if (paramType.is(TY_DYN))
+    if (argType.is(TY_DYN))
       throw err->get(*param->start, FCT_PARAM_IS_TYPE_DYN,
                      "Type of parameter '" + param->IDENTIFIER()->toString() + "' is invalid");
 
     // Check if the argument is optional
     bool isOptional = param->ASSIGN();
 
-    paramTypes.emplace_back(paramType, isOptional);
+    argList.emplace_back(argType, isOptional);
   }
-  return paramTypes;
+  return argList;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
@@ -918,22 +922,13 @@ antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
-  // Visit the right side
-  currentVarName = "";                  // Reset the current variable name
-  scopePrefix = "";                     // Reset the scope prefix
-  scopePath.clear();                    // Clear the scope path
-  currentThisType = SymbolType(TY_DYN); // Reset the current this type
-
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment
     // Get symbol type of right side
     SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
 
     // Visit the left side
-    currentVarName = "";                  // Reset the current variable name
-    scopePrefix = "";                     // Reset the scope prefix
-    scopePath.clear();                    // Clear the scope path
-    currentThisType = SymbolType(TY_DYN); // Reset the current this type
+    currentVarName = ""; // Reset the current variable name
     SymbolType lhsTy = visit(ctx->prefixUnaryExpr()).as<SymbolType>();
     std::string variableName = currentVarName;
 
@@ -1193,6 +1188,11 @@ antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+  currentVarName = "";                  // Reset the current variable name
+  scopePrefix = "";                     // Reset scope prefix
+  scopePath.clear();                    // Clear the scope path
+  currentThisType = SymbolType(TY_DYN); // Reset this type
+
   SymbolType lhs = visit(ctx->postfixUnaryExpr()).as<SymbolType>();
 
   unsigned int tokenCounter = 0;
@@ -1291,9 +1291,9 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
       // Visit params
       std::vector<SymbolType> argTypes;
-      auto *paramLst = dynamic_cast<SpiceParser::ParamLstContext *>(ctx->children[tokenCounter]);
-      if (paramLst != nullptr) {
-        for (auto &param : paramLst->assignExpr()) {
+      auto *argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
+      if (argLst != nullptr) {
+        for (auto &param : argLst->assignExpr()) {
           SymbolType paramType = visit(param).as<SymbolType>();
           if (paramType.isArray())
             paramType = paramType.getContainedTy().toPointer(err, *param->start);
@@ -1424,13 +1424,14 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *c
       newAccessScope = accessScope->lookupTable(entry->getName());
     } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
       newAccessScope = accessScope->lookupTable("struct:" + entry->getType().getBaseType().getSubType());
+      currentThisType = entry->getType();
     }
     assert(newAccessScope != nullptr);
 
     // Otherwise, push the retrieved scope to the scope path
     scopePath.pushFragment(currentVarName, newAccessScope);
 
-    return currentThisType = entry->getType();
+    return entry->getType();
   }
   if (ctx->builtinCall())
     return visit(ctx->builtinCall());
@@ -1492,15 +1493,15 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 
     // Check if the number of fields matches
     SymbolTable *structTable = currentScope->lookupTable("struct:" + accessScopePrefix + structName);
-    if (ctx->paramLst()) { // Check if any fields are passed. Empty braces are also allowed
-      if (structTable->getFieldCount() != ctx->paramLst()->assignExpr().size())
-        throw err->get(*ctx->paramLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
+    if (ctx->argLst()) { // Check if any fields are passed. Empty braces are also allowed
+      if (structTable->getFieldCount() != ctx->argLst()->assignExpr().size())
+        throw err->get(*ctx->argLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
                        "You've passed too less/many field values. Pass either none or all of them");
 
       // Check if the field types are matching
-      for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+      for (int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
         // Get actual type
-        auto ternary = ctx->paramLst()->assignExpr()[i];
+        auto ternary = ctx->argLst()->assignExpr()[i];
         SymbolType actualType = visit(ternary).as<SymbolType>();
         // Get expected type
         SymbolTableEntry *expectedField = structTable->lookupByIndexInCurrentScope(i);
@@ -1522,13 +1523,13 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     assert(expectedType.isArray() || expectedType.is(TY_DYN));
     SymbolType expectedItemType = expectedType.isArray() ? expectedType.getContainedTy() : expectedType;
     unsigned int actualSize = 0;
-    if (ctx->paramLst()) {
-      for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-        SymbolType itemType = visit(ctx->paramLst()->assignExpr()[i]).as<SymbolType>();
+    if (ctx->argLst()) {
+      for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
+        SymbolType itemType = visit(ctx->argLst()->assignExpr()[i]).as<SymbolType>();
         if (expectedItemType.is(TY_DYN)) {
           expectedItemType = itemType;
         } else if (itemType != expectedItemType) {
-          throw err->get(*ctx->paramLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
+          throw err->get(*ctx->argLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
                          "All provided values have to be of the same data type. You provided " + expectedItemType.getName(false) +
                              " and " + itemType.getName(false));
         }

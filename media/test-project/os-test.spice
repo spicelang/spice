@@ -33,7 +33,7 @@ f<int> main() {
     v.push(2);
 }*/
 
-f<int> testFunc(string param = "Test") {
+/*f<int> testFunc(string param = "Test") {
     printf("Test func %s\n", param);
     return 2;
 }
@@ -41,4 +41,21 @@ f<int> testFunc(string param = "Test") {
 f<int> main() {
     int res = testFunc();
     printf("Result: %d\n", res);
+}*/
+
+f<double> calledFunction(int mandatoryParam, dyn optionalParam = true) {
+    printf("Mandatory: %d", mandatoryParam);
+    printf("Optional: %d", optionalParam);
+    return 0.1;
+}
+
+f<double> calledFunction(string testString) {
+    printf("String: %s", testString);
+    return 0.3;
+}
+
+f<int> main() {
+    dyn res = calledFunction(1, false);
+    printf("Result: %f", res);
+    calledFunction("test");
 }

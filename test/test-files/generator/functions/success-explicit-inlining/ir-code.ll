@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [19 x i8] c"Inlined value: %d\0A\00", align 1
 
 ; Function Attrs: alwaysinline nounwind
-define internal i64 @"getInlinedValue()"() #0 {
+define internal i64 @_f_long_getInlinedValue() #0 {
 entry:
   %result = alloca i64, align 8
   %0 = alloca i64, align 8
@@ -20,7 +20,7 @@ entry:
   %result = alloca i32, align 4
   %0 = alloca i64, align 8
   store i32 0, i32* %result, align 4
-  %1 = call i64 @"getInlinedValue()"()
+  %1 = call i64 @_f_long_getInlinedValue()
   store i64 %1, i64* %0, align 8
   %2 = load i64, i64* %0, align 8
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @0, i32 0, i32 0), i64 %2)

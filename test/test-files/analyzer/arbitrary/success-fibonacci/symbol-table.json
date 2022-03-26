@@ -11,7 +11,7 @@
           "symbols": []
         }
       ],
-      "name": "fibo(int)",
+      "name": "fibo(int): int",
       "symbols": [
         {
           "isGlobal": false,
@@ -66,7 +66,7 @@
     {
       "isGlobal": true,
       "isVolatile": false,
-      "name": "fibo(int)",
+      "name": "fibo(int): int",
       "orderIndex": 0,
       "specifiers": {
         "const": true,
