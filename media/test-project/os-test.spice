@@ -43,17 +43,18 @@ f<int> main() {
     printf("Result: %d\n", res);
 }*/
 
-p calledFunction(int mandatoryArg, dyn optionalArg = true) {
-    printf("Mandatory: %d\n", mandatoryArg);
-    printf("Optional: %d\n", optionalArg);
-}
-
-p calledFunction(string testString) {
-    printf("String: %s\n", testString);
+p testProc(int[]*** nums) {
+    /*int[]* nums1 = **nums;
+    int[] nums2 = *nums1;
+    nums2[2] = 10;
+    printf("1: %d\n", nums2[0]);
+    printf("2: %d\n", nums2[1]);
+    printf("3: %d\n", nums2[2]);
+    printf("4: %d\n", nums2[3]);*/
 }
 
 f<int> main() {
-    calledFunction(1);
-    //printf("Result: %f\n", res);
-    calledFunction("test");
+    int[4] intArray = { 1, 2, 3, 4 };
+    printf("1: %d\n", intArray[1]);
+    testProc(&&&intArray);
 }

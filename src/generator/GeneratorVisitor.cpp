@@ -458,8 +458,10 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::string functionName = ctx->IDENTIFIER()->toString();
   std::vector<SymbolType> symbolTypes;
 
-  // Pop function signature from the signature stack
-  Function *spiceFunc = currentScope->popFunctionAccessPointer();
+  // Pop function declaration pointer from the stack
+  std::vector<Function *> spiceFuncs = currentScope->popFunctionDeclarationPointers();
+  assert(!spiceFuncs.empty());
+  Function *spiceFunc = spiceFuncs[0];
 
   // Get LLVM return type
   llvm::Type *returnType;

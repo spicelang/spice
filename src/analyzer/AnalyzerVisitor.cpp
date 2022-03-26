@@ -269,8 +269,9 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
 antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::string functionName = ctx->IDENTIFIER()->toString();
 
-  std::vector<std::pair<SymbolType, bool>> argTypes;
+  ArgList argTypes;
   if (ctx->typeLst()) {
+    argTypes.reserve(ctx->typeLst()->dataType().size());
     // Check if an argument is dyn
     for (const auto &arg : ctx->typeLst()->dataType()) {
       SymbolType argType = visit(arg).as<SymbolType>();
@@ -297,7 +298,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     functionTable->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, *ctx->start);
     functionTable->lookup(RETURN_VARIABLE_NAME)->setUsed();
   } else { // Procedure
-    // Insert function into symbol table
+    // Insert procedure into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
     Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes);
     currentScope->insertFunction(spiceProc, err, *ctx->IDENTIFIER()->getSymbol());
