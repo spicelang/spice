@@ -229,6 +229,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   // Get all substantiated function which result from this function declaration
   std::vector<Function *> spiceFuncs = currentScope->popFunctionDeclarationPointers();
   for (const auto &spiceFunc : spiceFuncs) {
+    // Check if the function is used by anybody
+    if (!spiceFunc->isUsed() && !spiceFunc->getSpecifiers().isPublic())
+      continue;
+
     // Change scope
     currentScope = currentScope->getChild(spiceFunc->getSignature());
 
@@ -356,6 +360,10 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
   // Get all substantiated function which result from this function declaration
   std::vector<Function *> spiceProcs = currentScope->popFunctionDeclarationPointers();
   for (const auto &spiceProc : spiceProcs) {
+    // Check if the procedure is used by anybody
+    if (!spiceProc->isUsed() && !spiceProc->getSpecifiers().isPublic())
+      continue;
+
     // Change scope
     currentScope = currentScope->getChild(spiceProc->getSignature());
     assert(currentScope != nullptr);

@@ -32,6 +32,8 @@ public:
   [[nodiscard]] SymbolType getSymbolType() const;
   [[nodiscard]] std::vector<Function> substantiate() const;
   [[nodiscard]] bool isSubstantiated() const;
+  void setUsed();
+  [[nodiscard]] bool isUsed() const;
 
 private:
   // Members
@@ -40,4 +42,5 @@ private:
   SymbolType thisType = SymbolType(TY_DYN);
   SymbolType returnType = SymbolType(TY_DYN);
   std::vector<std::pair<SymbolType, bool>> argTypes;
+  bool used = false;
 };

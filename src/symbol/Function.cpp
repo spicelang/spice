@@ -177,3 +177,15 @@ bool Function::isSubstantiated() const {
   }
   return true;
 }
+
+/**
+ * Set the function to used. The compiler only generates IR if the function is used
+ */
+void Function::setUsed() { used = true; }
+
+/**
+ * Check if the function is used and the compiler needs to generate IR for it
+ *
+ * @return Used or not
+ */
+bool Function::isUsed() const { return used; }

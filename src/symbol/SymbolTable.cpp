@@ -288,9 +288,8 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
  * @param argTypes Argument types requirement
  * @return Matched function or nullptr
  */
-const Function *SymbolTable::matchFunction(const std::string &functionName, const SymbolType &thisType,
-                                           const std::vector<SymbolType> &argTypes, ErrorFactory *err,
-                                           const antlr4::Token &token) {
+Function *SymbolTable::matchFunction(const std::string &functionName, const SymbolType &thisType,
+                                     const std::vector<SymbolType> &argTypes, ErrorFactory *err, const antlr4::Token &token) {
   std::vector<Function *> matches;
 
   // Loop through function and add any matches to the matches vector
