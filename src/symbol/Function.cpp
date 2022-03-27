@@ -58,14 +58,12 @@ std::string Function::getMangledName() const {
     fpm = "mp";
   }
 
+  // This type string
   std::string thisTyStr;
   if (!thisType.is(TY_DYN))
     thisTyStr = thisType.getBaseType().getSubType() + "_";
 
-  std::string returnTyStr;
-  if (!returnType.is(TY_DYN))
-    returnTyStr = returnType.getName() + "_";
-
+  // Arg type string
   std::string argTyStr;
   for (const auto &argType : argTypes) {
     argTyStr += "_" + argType.first.getName();
@@ -73,7 +71,7 @@ std::string Function::getMangledName() const {
       argTyStr += "?";
   }
 
-  return "_" + fpm + "_" + returnTyStr + thisTyStr + name + argTyStr;
+  return "_" + fpm + "_" + thisTyStr + name + argTyStr;
 }
 
 /**

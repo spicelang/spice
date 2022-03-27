@@ -1319,9 +1319,17 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
       // Match a function onto the requirements of the call
       SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
       const Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err, *token->getSymbol());
-      if (!spiceFunc)
+      if (!spiceFunc) {
+        // Build function to get a better error message
+        std::vector<std::pair<SymbolType, bool>> argTypesWithOptional;
+        argTypesWithOptional.reserve(argTypes.size());
+        for (auto &argType : argTypes)
+          argTypesWithOptional.emplace_back(argType, false);
+        Function function =
+            Function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN), argTypesWithOptional);
         throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
-                       "Function/Procedure '" + functionName + "' could not be found");
+                       "Function/Procedure '" + function.getSignature() + "' could not be found");
+      }
 
       // Get function scope
       scopePath.pushFragment(spiceFunc->getSignature(), functionParentScope);

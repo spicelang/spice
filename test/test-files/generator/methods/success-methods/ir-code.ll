@@ -10,7 +10,7 @@ target triple = "x86_64-w64-windows-gnu"
 @2 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 1
 
 ; Function Attrs: nounwind
-define internal i8* @_mf_string_Letter_getContent(%Letter* %0) #0 {
+define internal i8* @_mf_Letter_getContent(%Letter* %0) #0 {
 entry:
   %this = alloca %Letter*, align 8
   %result = alloca i8*, align 8
@@ -59,7 +59,7 @@ entry:
   call void @_mp_Letter_setContent_string(%Letter* %letter, i8* %9)
   store i1 true, i1* %3, align 1
   %10 = load %Letter, %Letter* %letter, align 8
-  %11 = call i8* @_mf_string_Letter_getContent(%Letter* %letter)
+  %11 = call i8* @_mf_Letter_getContent(%Letter* %letter)
   store i8* %11, i8** %4, align 8
   %12 = load i8*, i8** %4, align 8
   %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @2, i32 0, i32 0), i8* %12)

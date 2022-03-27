@@ -1,0 +1,7 @@
+f<string> getTestString(int arg0, double arg1, bool arg2 = false, double arg3 = 1.34) {
+    return "Test";
+}
+
+f<int> main() {
+    printf("Result: %s\n", getTestString(1, 3.4, true));
+}

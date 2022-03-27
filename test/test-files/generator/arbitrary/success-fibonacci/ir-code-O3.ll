@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [20 x i8] c"Fibonacci of %d: %d\00", align 1
 
 ; Function Attrs: nofree nosync nounwind readnone
-define internal fastcc i32 @_f_int_fib_int(i32 %0) unnamed_addr #0 {
+define internal fastcc i32 @_f_fib_int(i32 %0) unnamed_addr #0 {
 entry:
   %1 = icmp slt i32 %0, 3
   br i1 %1, label %common.ret, label %if.end
@@ -23,7 +23,7 @@ if.end:                                           ; preds = %entry, %if.end
   %.tr12 = phi i32 [ %4, %if.end ], [ %0, %entry ]
   %accumulator.tr11 = phi i32 [ %5, %if.end ], [ 0, %entry ]
   %2 = add nsw i32 %.tr12, -1
-  %3 = tail call fastcc i32 @_f_int_fib_int(i32 %2)
+  %3 = tail call fastcc i32 @_f_fib_int(i32 %2)
   %4 = add nsw i32 %.tr12, -2
   %5 = add i32 %3, %accumulator.tr11
   %6 = icmp ult i32 %.tr12, 5
@@ -33,7 +33,7 @@ if.end:                                           ; preds = %entry, %if.end
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #1 {
 entry:
-  %0 = tail call fastcc i32 @_f_int_fib_int(i32 46)
+  %0 = tail call fastcc i32 @_f_fib_int(i32 46)
   %1 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @0, i64 0, i64 0), i32 46, i32 %0)
   ret i32 0
 }

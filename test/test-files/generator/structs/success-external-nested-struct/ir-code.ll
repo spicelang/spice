@@ -17,7 +17,7 @@ entry:
   store i32 0, i32* %result, align 4
   store i16 8080, i16* %0, align 2
   %2 = load i16, i16* %0, align 2
-  %3 = call %Socket @"_f_struct(Socket)_openServerSocket_short"(i16 %2)
+  %3 = call %Socket @_f_openServerSocket_short(i16 %2)
   store %Socket %3, %Socket* %1, align 8
   %4 = load %Socket, %Socket* %1, align 8
   store %Socket %4, %Socket* %s, align 8
@@ -29,6 +29,6 @@ entry:
   ret i32 %9
 }
 
-declare %Socket @"_f_struct(Socket)_openServerSocket_short"(i16)
+declare %Socket @_f_openServerSocket_short(i16)
 
 declare i32 @printf(i8*, ...)

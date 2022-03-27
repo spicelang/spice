@@ -1,10 +1,10 @@
 f<int> testFunc() {
-    printf("Test func 1");
+    printf("Test func 1\n");
     return 1;
 }
 
 f<int> testFunc(string param) {
-    printf("Test func 2");
+    printf("Test func 2\n");
     return 2;
 }
 

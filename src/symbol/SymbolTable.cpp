@@ -467,7 +467,7 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
 
   // Check if the function exists already
   if (functions.find(function.getMangledName()) != functions.end())
-    throw err->get(token, FUNCTION_DECLARED_TWICE, "The function");
+    throw err->get(token, FUNCTION_DECLARED_TWICE, "The function/procedure '" + function.getSignature() + "' is declared twice");
   // Add function to function list
   functions.insert({function.getMangledName(), function});
   // Add symbol table entry for the function

@@ -43,7 +43,7 @@ f<int> main() {
     printf("Result: %d\n", res);
 }*/
 
-f<int> testFunc(int i = 5, int j) {
+f<int> testFunc(int i, int j = 5) {
     return 4;
 }
 

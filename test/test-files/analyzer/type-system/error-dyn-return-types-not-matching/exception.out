@@ -1,1 +1,0 @@
-Semantic error in ./test-files/analyzer/type-system/error-dyn-return-types-not-matching/source.spice at 1:1: Unexpected dyn type: Dyn return types are not allowed

@@ -1,1 +1,0 @@
-Semantic error in ./test-files/analyzer/type-system/error-return-type-matches-def/source.spice at 2:12: Wrong data type for operator: Passed wrong data type to return statement. Expected string but got int
