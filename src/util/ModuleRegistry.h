@@ -5,6 +5,8 @@
 
 #include <exception/ErrorFactory.h>
 
+#include "Token.h"
+
 /**
  * Class to remember source files, which have already been imported. This is required to detect circular dependencies
  */

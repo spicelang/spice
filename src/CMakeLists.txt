@@ -22,6 +22,8 @@ set(SOURCES
         symbol/SymbolTable.h
         symbol/SymbolTableEntry.cpp
         symbol/SymbolTableEntry.h
+        symbol/Function.cpp
+        symbol/Function.h
         symbol/Capture.cpp
         symbol/Capture.h
         symbol/SymbolType.cpp
@@ -50,8 +52,6 @@ set(SOURCES
         util/ModuleRegistry.h
         util/ThreadFactory.cpp
         util/ThreadFactory.h
-        util/FunctionSignature.cpp
-        util/FunctionSignature.h
         util/FileUtil.cpp
         util/FileUtil.h
         util/CompilerWarning.cpp

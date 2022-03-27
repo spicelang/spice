@@ -42,7 +42,7 @@ public:
   void createInterface();
   int parse(int argc, char **argv);
   void validate() const;
-  void init();
+  void enrich();
   CliOptions *getOptions();
   [[nodiscard]] bool shouldCompile() const;
   [[nodiscard]] bool shouldRun() const;

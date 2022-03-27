@@ -4,12 +4,12 @@
     {
       "captures": [],
       "children": [],
-      "name": "calledFunction(int,bool)",
+      "name": "calledFunction(int): double",
       "symbols": [
         {
           "isGlobal": false,
           "isVolatile": false,
-          "name": "mandatoryParam",
+          "name": "mandatoryArg",
           "orderIndex": 0,
           "specifiers": {
             "const": false,
@@ -22,7 +22,7 @@
         {
           "isGlobal": false,
           "isVolatile": false,
-          "name": "optionalParam",
+          "name": "optionalArg",
           "orderIndex": 1,
           "specifiers": {
             "const": false,
@@ -40,7 +40,7 @@
           "specifiers": {
             "const": false,
             "public": false,
-            "signed": false
+            "signed": true
           },
           "state": "initialized",
           "type": "double"
@@ -50,7 +50,53 @@
     {
       "captures": [],
       "children": [],
-      "name": "calledFunction(string)",
+      "name": "calledFunction(int,bool): double",
+      "symbols": [
+        {
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "mandatoryArg",
+          "orderIndex": 0,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "declared",
+          "type": "int"
+        },
+        {
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "optionalArg",
+          "orderIndex": 1,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": false
+          },
+          "state": "initialized",
+          "type": "bool"
+        },
+        {
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 2,
+          "specifiers": {
+            "const": false,
+            "public": false,
+            "signed": true
+          },
+          "state": "initialized",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "calledFunction(string): double",
       "symbols": [
         {
           "isGlobal": false,
@@ -60,7 +106,7 @@
           "specifiers": {
             "const": false,
             "public": false,
-            "signed": false
+            "signed": true
           },
           "state": "initialized",
           "type": "double"
@@ -118,7 +164,7 @@
     {
       "isGlobal": true,
       "isVolatile": false,
-      "name": "calledFunction(int,bool)",
+      "name": "calledFunction(int): double",
       "orderIndex": 0,
       "specifiers": {
         "const": true,
@@ -131,7 +177,7 @@
     {
       "isGlobal": true,
       "isVolatile": false,
-      "name": "calledFunction(string)",
+      "name": "calledFunction(int,bool): double",
       "orderIndex": 1,
       "specifiers": {
         "const": true,
@@ -144,8 +190,21 @@
     {
       "isGlobal": true,
       "isVolatile": false,
-      "name": "main()",
+      "name": "calledFunction(string): double",
       "orderIndex": 2,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "initialized",
+      "type": "function"
+    },
+    {
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main()",
+      "orderIndex": 3,
       "specifiers": {
         "const": true,
         "public": false,

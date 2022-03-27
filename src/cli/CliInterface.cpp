@@ -87,14 +87,15 @@ void CliInterface::validate() const {
   // Check if all three of --target-arch, --target-vendor and --target-os are provided or none of them
   if (!((cliOptions.targetArch.empty() && cliOptions.targetVendor.empty() && cliOptions.targetOs.empty()) ||
         (!cliOptions.targetArch.empty() && !cliOptions.targetVendor.empty() && !cliOptions.targetOs.empty()))) {
-    throw err.get(INCOMPLETE_TARGET_TRIPLE, "You need to provide all three of --target-arch, --target-vendor and --target-os");
+    throw ErrorFactory::get(INCOMPLETE_TARGET_TRIPLE,
+                            "You need to provide all three of --target-arch, --target-vendor and --target-os");
   }
 }
 
 /**
  * Initialize the cli options based on the input of the user
  */
-void CliInterface::init() {
+void CliInterface::enrich() {
   // Propagate target information
   if (cliOptions.targetTriple.empty() && cliOptions.targetArch.empty()) { // We have nothing -> obtain the host triplet
     llvm::Triple triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
@@ -148,12 +149,18 @@ void CliInterface::addBuildSubcommand() {
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
 
   // Opt levels
-  subCmd->add_flag<short>("-O0{0}", cliOptions.optLevel, "Disable optimization for the output executable.");
-  subCmd->add_flag<short>("-O1{1}", cliOptions.optLevel, "Optimization level 1. Only basic optimization is executed.");
-  subCmd->add_flag<short>("-O2{2}", cliOptions.optLevel, "Optimization level 2. More advanced optimization is applied.");
-  subCmd->add_flag<short>("-O3{3}", cliOptions.optLevel, "Optimization level 3. Aggressive optimization for best performance.");
-  subCmd->add_flag<short>("-Os{4}", cliOptions.optLevel, "Optimization level s. Size optimization for output executable.");
-  subCmd->add_flag<short>("-Oz{5}", cliOptions.optLevel, "Optimization level z. Aggressive optimization for best size.");
+  subCmd->add_flag_callback(
+      "-O0", [&]() { cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
+  subCmd->add_flag_callback(
+      "-O1", [&]() { cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
+  subCmd->add_flag_callback(
+      "-O2", [&]() { cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
+  subCmd->add_flag_callback(
+      "-O3", [&]() { cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
+  subCmd->add_flag_callback(
+      "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
+  subCmd->add_flag_callback(
+      "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
 
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
@@ -180,12 +187,18 @@ void CliInterface::addRunSubcommand() {
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
 
   // Opt levels
-  subCmd->add_flag<short>("-O0{0}", cliOptions.optLevel, "Disable optimization for the output executable.");
-  subCmd->add_flag<short>("-O1{1}", cliOptions.optLevel, "Optimization level 1. Only basic optimization is executed.");
-  subCmd->add_flag<short>("-O2{2}", cliOptions.optLevel, "Optimization level 2. More advanced optimization is applied.");
-  subCmd->add_flag<short>("-O3{3}", cliOptions.optLevel, "Optimization level 3. Aggressive optimization for best performance.");
-  subCmd->add_flag<short>("-Os{4}", cliOptions.optLevel, "Optimization level s. Size optimization for output executable.");
-  subCmd->add_flag<short>("-Oz{5}", cliOptions.optLevel, "Optimization level z. Aggressive optimization for best size.");
+  subCmd->add_flag_callback(
+      "-O0", [&]() { cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
+  subCmd->add_flag_callback(
+      "-O1", [&]() { cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
+  subCmd->add_flag_callback(
+      "-O2", [&]() { cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
+  subCmd->add_flag_callback(
+      "-O3", [&]() { cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
+  subCmd->add_flag_callback(
+      "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
+  subCmd->add_flag_callback(
+      "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
 
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
@@ -213,12 +226,18 @@ void CliInterface::addInstallSubcommand() {
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
 
   // Opt levels
-  subCmd->add_flag<short>("-O0{0}", cliOptions.optLevel, "Disable optimization for the output executable.");
-  subCmd->add_flag<short>("-O1{1}", cliOptions.optLevel, "Optimization level 1. Only basic optimization is executed.");
-  subCmd->add_flag<short>("-O2{2}", cliOptions.optLevel, "Optimization level 2. More advanced optimization is applied.");
-  subCmd->add_flag<short>("-O3{3}", cliOptions.optLevel, "Optimization level 3. Aggressive optimization for best performance.");
-  subCmd->add_flag<short>("-Os{4}", cliOptions.optLevel, "Optimization level s. Size optimization for output executable.");
-  subCmd->add_flag<short>("-Oz{5}", cliOptions.optLevel, "Optimization level z. Aggressive optimization for best size.");
+  subCmd->add_flag_callback(
+      "-O0", [&]() { cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
+  subCmd->add_flag_callback(
+      "-O1", [&]() { cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
+  subCmd->add_flag_callback(
+      "-O2", [&]() { cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
+  subCmd->add_flag_callback(
+      "-O3", [&]() { cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
+  subCmd->add_flag_callback(
+      "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
+  subCmd->add_flag_callback(
+      "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
 
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")

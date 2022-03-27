@@ -24,7 +24,7 @@ const char *LinkerError::what() const noexcept { return errorMessage.c_str(); }
  * @param type Type of the error
  * @return Prefix string for the error type
  */
-std::string LinkerError::getMessagePrefix(LinkerErrorType type) const {
+std::string LinkerError::getMessagePrefix(LinkerErrorType type) {
   switch (type) {
   case LINKER_NOT_FOUND:
     return "Linker not found";

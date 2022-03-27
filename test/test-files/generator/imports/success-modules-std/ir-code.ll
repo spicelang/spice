@@ -13,7 +13,7 @@ entry:
   store i32 0, i32* %result, align 4
   store i1 true, i1* %0, align 1
   %2 = load i1, i1* %0, align 1
-  %3 = call i32 @"toInt(bool)"(i1 %2)
+  %3 = call i32 @_f_toInt_bool(i1 %2)
   store i32 %3, i32* %1, align 4
   %4 = load i32, i32* %1, align 4
   %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0), i32 %4)
@@ -23,4 +23,4 @@ entry:
 
 declare i32 @printf(i8*, ...)
 
-declare i32 @"toInt(bool)"(i1)
+declare i32 @_f_toInt_bool(i1)

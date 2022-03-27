@@ -11,7 +11,7 @@
           "symbols": []
         }
       ],
-      "name": "fib(int)",
+      "name": "fib(int): int",
       "symbols": [
         {
           "isGlobal": false,
@@ -134,7 +134,7 @@
     {
       "isGlobal": true,
       "isVolatile": false,
-      "name": "fib(int)",
+      "name": "fib(int): int",
       "orderIndex": 0,
       "specifiers": {
         "const": true,

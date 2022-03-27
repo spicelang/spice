@@ -92,7 +92,7 @@
     {
       "captures": [],
       "children": [],
-      "name": "usleep(int)",
+      "name": "usleep(int): int",
       "symbols": [
         {
           "isGlobal": false,
@@ -127,7 +127,7 @@
     {
       "isGlobal": true,
       "isVolatile": false,
-      "name": "usleep(int)",
+      "name": "usleep(int): int",
       "orderIndex": 0,
       "specifiers": {
         "const": true,

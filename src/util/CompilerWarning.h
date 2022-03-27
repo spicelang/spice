@@ -33,5 +33,5 @@ private:
   // Members
   std::string warningMessage{};
 
-  [[nodiscard]] std::string getMessagePrefix(CompilerWarningType warningType) const;
+  [[nodiscard]] static std::string getMessagePrefix(CompilerWarningType warningType);
 };

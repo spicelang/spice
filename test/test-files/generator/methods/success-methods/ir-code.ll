@@ -10,7 +10,7 @@ target triple = "x86_64-w64-windows-gnu"
 @2 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 1
 
 ; Function Attrs: nounwind
-define internal i8* @"getContent()"(%Letter* %0) #0 {
+define internal i8* @_mf_Letter_getContent(%Letter* %0) #0 {
 entry:
   %this = alloca %Letter*, align 8
   %result = alloca i8*, align 8
@@ -23,7 +23,7 @@ entry:
 }
 
 ; Function Attrs: nounwind
-define internal void @"setContent(string)"(%Letter* %0, i8* %1) #0 {
+define internal void @_mp_Letter_setContent_string(%Letter* %0, i8* %1) #0 {
 entry:
   %this = alloca %Letter*, align 8
   %text = alloca i8*, align 8
@@ -56,10 +56,10 @@ entry:
   %8 = load %Letter, %Letter* %letter, align 8
   store i8* getelementptr inbounds ([13 x i8], [13 x i8]* @1, i32 0, i32 0), i8** %2, align 8
   %9 = load i8*, i8** %2, align 8
-  call void @"setContent(string)"(%Letter* %letter, i8* %9)
+  call void @_mp_Letter_setContent_string(%Letter* %letter, i8* %9)
   store i1 true, i1* %3, align 1
   %10 = load %Letter, %Letter* %letter, align 8
-  %11 = call i8* @"getContent()"(%Letter* %letter)
+  %11 = call i8* @_mf_Letter_getContent(%Letter* %letter)
   store i8* %11, i8** %4, align 8
   %12 = load i8*, i8** %4, align 8
   %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @2, i32 0, i32 0), i8* %12)

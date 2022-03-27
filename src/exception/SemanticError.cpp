@@ -28,20 +28,20 @@ const char *SemanticError::what() const noexcept { return errorMessage.c_str(); 
  * @param type Type of the error
  * @return Prefix string for the error type
  */
-std::string SemanticError::getMessagePrefix(SemanticErrorType type) const {
+std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
   switch (type) {
-  case REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE:
+  case REFERENCED_UNDEFINED_FUNCTION:
     return "Referenced undefined function";
   case REFERENCED_UNDEFINED_VARIABLE:
     return "Referenced undefined variable";
   case REFERENCED_UNDEFINED_STRUCT:
     return "Referenced undefined struct";
+  case FUNCTION_AMBIGUITY:
+    return "Function ambiguity";
   case VARIABLE_DECLARED_TWICE:
     return "Multiple declarations of the same variable";
   case FUNCTION_DECLARED_TWICE:
-    return "Multiple declarations of a function with the same name";
-  case PROCEDURE_DECLARED_TWICE:
-    return "Multiple declarations of a procedure with the same name";
+    return "Multiple declarations of a function/procedure";
   case STRUCT_DECLARED_TWICE:
     return "Multiple declarations of a struct with the same name";
   case GLOBAL_OF_TYPE_DYN:
@@ -50,6 +50,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) const {
     return "Global of invalid type";
   case FUNCTION_WITHOUT_RETURN_STMT:
     return "Missing return statement";
+  case INVALID_ARGUMENT_ORDER:
+    return "Invalid argument order";
   case OPERATOR_WRONG_DATA_TYPE:
     return "Wrong data type for operator";
   case UNEXPECTED_DYN_TYPE_SA:
@@ -60,7 +62,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) const {
     return "Condition must be bool";
   case MISSING_MAIN_FUNCTION:
     return "Spice programs must contain a main function";
-  case FCT_PARAM_IS_TYPE_DYN:
+  case FCT_ARG_IS_TYPE_DYN:
     return "Parameter type dyn not valid in function/procedure definition without default value";
   case INVALID_BREAK_NUMBER:
     return "Invalid number of break calls";

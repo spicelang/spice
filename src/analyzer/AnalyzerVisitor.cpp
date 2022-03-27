@@ -14,7 +14,6 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &conte
                                  const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
                                  ThreadFactory *threadFactory, CliOptions *options, LinkerInterface *linker,
                                  const std::string &sourceFile, bool requiresMainFct, bool isStdFile) {
-  // Save parameters
   this->context = context, this->builder = builder;
   this->moduleRegistry = moduleRegistry;
   this->threadFactory = threadFactory;
@@ -71,21 +70,21 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
 
   // Insert function name into the root symbol table
   SymbolType symbolType = SymbolType(TY_FUNCTION);
-  currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
+  currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start);
 
   // Create the function scope
   currentScope = currentScope->createChildBlock(mainSignature);
 
   // Declare variable for the return value in the function scope
   SymbolType returnType = SymbolType(TY_INT);
-  currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, *ctx->start, false);
+  currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, *ctx->start);
   currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
 
-  // Visit parameters
-  parameterMode = true;
-  if (ctx->paramLstDef())
-    visit(ctx->paramLstDef());
-  parameterMode = false;
+  // Visit arguments
+  argumentMode = true;
+  if (ctx->argLstDef())
+    visit(ctx->argLstDef());
+  argumentMode = false;
 
   // Visit statements in new scope
   visit(ctx->stmtLst());
@@ -110,50 +109,48 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   if (ctx->IDENTIFIER().size() > 1) { // Method
     isMethod = true;
     // Change to the struct scope
-    currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
   }
 
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
 
-  // Visit params in new scope
-  parameterMode = true;
-  std::vector<SymbolType> paramTypes;
-  if (ctx->paramLstDef())
-    paramTypes = visit(ctx->paramLstDef()).as<std::vector<SymbolType>>();
-  parameterMode = false;
+  // Visit arguments in new scope
+  argumentMode = true;
+  ArgList argTypes;
+  if (ctx->argLstDef())
+    argTypes = visit(ctx->argLstDef()).as<ArgList>();
+  argumentMode = false;
 
   // Declare 'this' variable in new scope
+  SymbolType thisType = SymbolType(TY_DYN);
   if (isMethod) {
     std::string structName = ctx->IDENTIFIER().front()->toString();
     SymbolTableEntry *structEntry = currentScope->lookup(structName);
-    SymbolType thisType = structEntry->getType().toPointer(err, *ctx->start);
-    auto thisTypeSpecifiers = SymbolSpecifiers(thisType);
+    SymbolType curThisType = thisType = structEntry->getType();
+    curThisType = curThisType.toPointer(err, *ctx->start);
+    auto thisTypeSpecifiers = SymbolSpecifiers(curThisType);
     thisTypeSpecifiers.setConst(true);
-    currentScope->insert(THIS_VARIABLE_NAME, thisType, thisTypeSpecifiers, INITIALIZED, *ctx->start, false);
+    currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisTypeSpecifiers, INITIALIZED, *ctx->start);
   }
 
   // Declare variable for the return value in the function scope
   SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
+  if (returnType.is(TY_DYN))
+    throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
   if (returnType.isPointer())
     throw err->get(*ctx->start, COMING_SOON_SA,
                    "Spice currently not supports pointer return types due to not supporting heap allocations.");
-  currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, *ctx->start, false);
+  currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, *ctx->start);
 
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  // Insert function into the symbol table
-  FunctionSignature signature = FunctionSignature(functionName, paramTypes);
-
-  // Check if the function is already defined
-  if (currentScope->lookup(signature.toString()))
-    throw err->get(*ctx->start, FUNCTION_DECLARED_TWICE, "Function '" + signature.toString() + "' is declared twice");
-  SymbolType symbolType = SymbolType(TY_FUNCTION);
-  auto functionSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  // Build function
+  auto functionSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
   if (ctx->declSpecifiers()) {
-    for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->PUBLIC()) {
         functionSymbolSpecifiers.setPublic(true);
       } else if (specifier->INLINE()) {
@@ -164,17 +161,22 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
       }
     }
   }
-  currentScope->insert(signature.toString(), symbolType, functionSymbolSpecifiers, INITIALIZED, *ctx->start, false);
-  currentScope->pushSignature(signature);
 
-  // Rename function scope block to support function overloading
-  currentScope->renameChildBlock(scopeId, signature.toString());
+  // Insert function into the symbol table
+  Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes);
+  currentScope->insertFunction(spiceFunc, err, *ctx->IDENTIFIER().back()->getSymbol());
+
+  // Rename / duplicate the original child block to reflect the substantiated versions of the function
+  std::vector<Function> substantiatedFunctions = spiceFunc.substantiate();
+  currentScope->renameChildBlock(scopeId, substantiatedFunctions[0].getSignature());
+  for (int i = 0; i < substantiatedFunctions.size(); i++)
+    currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
 
   // Go down again in scope
-  currentScope = currentScope->getChild(signature.toString());
+  currentScope = currentScope->getChild(substantiatedFunctions[0].getSignature());
+  assert(currentScope != nullptr);
 
   // Visit statements in new scope
-
   visit(ctx->stmtLst());
 
   // Check if return variable is now initialized
@@ -194,46 +196,42 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   // Check if this is a global function or a method
   bool isMethod = false;
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
-  if (ctx->IDENTIFIER().size() > 1) {
+  if (ctx->IDENTIFIER().size() > 1) { // Method
     isMethod = true;
     // Change to the struct scope
-    currentScope = currentScope->lookupTable("struct:" + ctx->IDENTIFIER()[0]->toString());
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
   }
 
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
 
-  // Visit params in new scope
-  parameterMode = true;
-  std::vector<SymbolType> paramTypes;
-  if (ctx->paramLstDef())
-    paramTypes = visit(ctx->paramLstDef()).as<std::vector<SymbolType>>();
-  parameterMode = false;
+  // Visit arguments in new scope
+  argumentMode = true;
+  ArgList argTypes;
+  if (ctx->argLstDef())
+    argTypes = visit(ctx->argLstDef()).as<ArgList>();
+  argumentMode = false;
 
   // Declare 'this' variable in new scope
+  SymbolType thisType = SymbolType(TY_DYN);
   if (isMethod) {
     std::string structName = ctx->IDENTIFIER().front()->toString();
     SymbolTableEntry *structEntry = currentScope->lookup(structName);
-    SymbolType thisSymbolType = structEntry->getType().toPointer(err, *ctx->start);
-    auto thisSymbolSpecifiers = SymbolSpecifiers(thisSymbolType);
+    SymbolType curThisType = thisType = structEntry->getType();
+    curThisType = curThisType.toPointer(err, *ctx->start);
+    auto thisSymbolSpecifiers = SymbolSpecifiers(curThisType);
     thisSymbolSpecifiers.setConst(true);
-    currentScope->insert(THIS_VARIABLE_NAME, thisSymbolType, thisSymbolSpecifiers, INITIALIZED, *ctx->start, false);
+    currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisSymbolSpecifiers, INITIALIZED, *ctx->start);
   }
 
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  // Insert procedure into the symbol table
-  FunctionSignature signature = FunctionSignature(procedureName, paramTypes);
-
   // Check if the procedure is already defined
-  if (currentScope->lookup(signature.toString()))
-    throw err->get(*ctx->start, PROCEDURE_DECLARED_TWICE, "Procedure '" + signature.toString() + "' is declared twice");
-  SymbolType symbolType = SymbolType(TY_PROCEDURE);
-  auto procedureSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  auto procedureSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
   if (ctx->declSpecifiers()) {
-    for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->PUBLIC()) {
         procedureSymbolSpecifiers.setPublic(true);
       } else if (specifier->INLINE()) {
@@ -244,14 +242,20 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
       }
     }
   }
-  currentScope->insert(signature.toString(), symbolType, procedureSymbolSpecifiers, INITIALIZED, *ctx->start, false);
-  currentScope->pushSignature(signature);
 
-  // Rename function scope block to support function overloading
-  currentScope->renameChildBlock(scopeId, signature.toString());
+  // Insert function into the symbol table
+  Function spiceProc = Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes);
+  currentScope->insertFunction(spiceProc, err, *ctx->IDENTIFIER().back()->getSymbol());
+
+  // Rename / duplicate the original child block to reflect the substantiated versions of the function
+  std::vector<Function> substantiatedProcedures = spiceProc.substantiate();
+  currentScope->renameChildBlock(scopeId, substantiatedProcedures[0].getSignature());
+  for (int i = 0; i < substantiatedProcedures.size(); i++)
+    currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(), substantiatedProcedures[i].getSignature());
 
   // Go down again in scope
-  currentScope = currentScope->getChild(signature.toString());
+  currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
+  assert(currentScope != nullptr);
 
   // Visit statement list in new scope
   visit(ctx->stmtLst());
@@ -265,15 +269,15 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
 antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::string functionName = ctx->IDENTIFIER()->toString();
 
-  std::vector<SymbolType> paramTypes;
+  ArgList argTypes;
   if (ctx->typeLst()) {
-    // Check if a param is dyn
-    for (auto &param : ctx->typeLst()->dataType()) {
-      SymbolType paramType = visit(param).as<SymbolType>();
-      if (paramType.is(TY_DYN))
-        throw err->get(*param->start, UNEXPECTED_DYN_TYPE_SA,
-                       "Dyn data type is not allowed as param type for external functions");
-      paramTypes.push_back(paramType);
+    argTypes.reserve(ctx->typeLst()->dataType().size());
+    // Check if an argument is dyn
+    for (const auto &arg : ctx->typeLst()->dataType()) {
+      SymbolType argType = visit(arg).as<SymbolType>();
+      if (argType.is(TY_DYN))
+        throw err->get(*arg->start, UNEXPECTED_DYN_TYPE_SA, "Dyn data type is not allowed as arg type for external functions");
+      argTypes.emplace_back(argType, false);
     }
   }
 
@@ -284,19 +288,20 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
       throw err->get(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA,
                      "Dyn data type is not allowed as return type for external functions");
 
-    FunctionSignature signature = FunctionSignature(functionName, paramTypes);
-    SymbolType symbolType = SymbolType(TY_FUNCTION);
-    currentScope->insert(signature.toString(), symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
-    currentScope->pushSignature(signature);
+    // Insert function into symbol table
+    SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes);
+    currentScope->insertFunction(spiceFunc, err, *ctx->IDENTIFIER()->getSymbol());
+
     // Add return symbol for function
-    SymbolTable *functionTable = currentScope->createChildBlock(signature.toString());
-    functionTable->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, *ctx->start, false);
+    SymbolTable *functionTable = currentScope->createChildBlock(spiceFunc.getSignature());
+    functionTable->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, *ctx->start);
     functionTable->lookup(RETURN_VARIABLE_NAME)->setUsed();
   } else { // Procedure
-    FunctionSignature signature = FunctionSignature(functionName, paramTypes);
-    SymbolType symbolType = SymbolType(TY_PROCEDURE);
-    currentScope->insert(signature.toString(), symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
-    currentScope->pushSignature(signature);
+    // Insert procedure into symbol table
+    SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
+    Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes);
+    currentScope->insertFunction(spiceProc, err, *ctx->IDENTIFIER()->getSymbol());
   }
 
   return nullptr;
@@ -311,7 +316,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
   SymbolType symbolType = SymbolType(TY_STRUCT, structName);
   auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
-    for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->PUBLIC()) {
         structSymbolSpecifiers.setPublic(true);
       } else {
@@ -320,19 +325,19 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
       }
     }
   }
-  currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start, false);
+  currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
   // Visit field list in a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
   // Insert a field for each field list entry
-  for (auto &field : ctx->field()) {
+  for (const auto &field : ctx->field()) {
     std::string fieldName = field->IDENTIFIER()->toString();
     SymbolType fieldType = visit(field->dataType()).as<SymbolType>();
 
     // Build symbol specifiers
     auto fieldTypeSpecifiers = SymbolSpecifiers(symbolType);
     if (field->declSpecifiers()) {
-      for (auto &specifier : field->declSpecifiers()->declSpecifier()) {
+      for (const auto &specifier : field->declSpecifiers()->declSpecifier()) {
         if (specifier->CONST()) {
           // Struct fields cannot be const
           throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
@@ -350,7 +355,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
       }
     }
 
-    currentScope->insert(fieldName, fieldType, fieldTypeSpecifiers, DECLARED, *field->start, false);
+    currentScope->insert(fieldName, fieldType, fieldTypeSpecifiers, DECLARED, *field->start);
   }
   // Return to the old scope
   currentScope = currentScope->getParent();
@@ -366,7 +371,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
                    "The global variable '" + variableName + "' was declared more than once");
 
   // Check if symbol already exists in any imported module scope
-  if (currentScope->lookupGlobalByName(variableName, true))
+  if (currentScope->lookupGlobal(variableName, true))
     throw err->get(*ctx->start, VARIABLE_DECLARED_TWICE,
                    "A global variable named '" + variableName +
                        "' is already declared in another module. Please use a different name.");
@@ -399,7 +404,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
   // Create symbol specifiers
   auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
-    for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->CONST()) {
         symbolTypeSpecifiers.setConst(true);
       } else if (specifier->SIGNED()) {
@@ -422,7 +427,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
   }
 
   // Insert into symbol table
-  currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, state, *ctx->start, parameterMode);
+  currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, state, *ctx->start);
 
   return nullptr;
 }
@@ -506,7 +511,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext 
     SymbolType symbolType = SymbolType(TY_INT);
     auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
     symbolTypeSpecifiers.setConst(true);
-    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, symbolType, symbolTypeSpecifiers, INITIALIZED, *ctx->start, false);
+    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, symbolType, symbolTypeSpecifiers, INITIALIZED, *ctx->start);
   }
 
   // Check type of the item
@@ -597,16 +602,26 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) 
   return SymbolType(TY_BOOL);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) {
-  std::vector<SymbolType> paramTypes;
-  for (auto &param : ctx->declStmt()) {
-    SymbolType paramType = visit(param).as<SymbolType>();
-    if (paramType.is(TY_DYN))
-      throw err->get(*param->start, FCT_PARAM_IS_TYPE_DYN,
-                     "Type of parameter '" + param->IDENTIFIER()->toString() + "' is invalid");
-    paramTypes.push_back(paramType);
+antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
+  ArgList argList;
+  bool metOptional = false;
+  for (const auto &arg : ctx->declStmt()) {
+    SymbolType argType = visit(arg).as<SymbolType>();
+
+    // Check if the type could be inferred. Dyn without a default value is forbidden
+    if (argType.is(TY_DYN))
+      throw err->get(*arg->start, FCT_ARG_IS_TYPE_DYN, "Type of argument '" + arg->IDENTIFIER()->toString() + "' is invalid");
+
+    // Ensure that no optional argument comes after a mandatory argument
+    if (arg->ASSIGN()) {
+      metOptional = true;
+    } else if (metOptional) {
+      throw err->get(*arg->start, INVALID_ARGUMENT_ORDER, "Mandatory arguments must go before any optional arguments");
+    }
+
+    argList.emplace_back(argType, metOptional);
   }
-  return paramTypes;
+  return argList;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
@@ -631,13 +646,13 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
       throw err->get(*ctx->dataType()->start, ARRAY_SIZE_INVALID, "The declaration of an array type must have a size attached");
   }
 
-  if (parameterMode && symbolType.isArray()) // Change array type to pointer type for function/procedure parameters
+  if (argumentMode && symbolType.isArray()) // Change array type to pointer type for function/procedure arguments
     symbolType = symbolType.getContainedTy().toPointer(err, *ctx->dataType()->start);
 
   // Build symbol specifiers
   auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
-    for (auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->CONST()) {
         symbolTypeSpecifiers.setConst(true);
       } else if (specifier->SIGNED()) {
@@ -652,7 +667,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
   }
 
   // Insert variable into symbol table
-  currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, initialState, *ctx->start, parameterMode);
+  currentScope->insert(variableName, symbolType, symbolTypeSpecifiers, initialState, *ctx->start);
 
   return symbolType;
 }
@@ -724,7 +739,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *c
   // Create symbol of type TYPE_IMPORT in the current scope
   std::string importIden = ctx->IDENTIFIER()->toString();
   SymbolType symbolType = SymbolType(TY_IMPORT);
-  currentScope->insert(importIden, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start, false);
+  currentScope->insert(importIden, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start);
 
   // Mount symbol table of the imported source file into the current scope
   nestedTable->setImported();
@@ -886,7 +901,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *c
     index = templateString.find_first_of('%', index + 1);
   }
 
-  // Check if the number of placeholders matches the number of params
+  // Check if the number of placeholders matches the number of args
   if (placeholderCount < ctx->assignExpr().size())
     throw err->get(*ctx->start, PRINTF_ARG_COUNT_ERROR,
                    "The placeholder string contains less placeholders that arguments were passed");
@@ -906,7 +921,7 @@ antlrcpp::Any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) {
 
 antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
   SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(err, *ctx->start);
-  for (auto &assignExpr : ctx->assignExpr()) {
+  for (const auto &assignExpr : ctx->assignExpr()) {
     SymbolType argSymbolType = visit(assignExpr).as<SymbolType>();
     if (argSymbolType == bytePtr && argSymbolType.isArrayOf(bytePtr))
       throw err->get(*assignExpr->start, JOIN_ARG_MUST_BE_TID,
@@ -918,11 +933,6 @@ antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
-  // Visit the right side
-  currentVarName = ""; // Reset the current variable name
-  scopePrefix = "";    // Reset the scope prefix
-  scopePath.clear();   // Clear the scope path
-
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment
     // Get symbol type of right side
@@ -930,8 +940,6 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *c
 
     // Visit the left side
     currentVarName = ""; // Reset the current variable name
-    scopePrefix = "";    // Reset the scope prefix
-    scopePath.clear();   // Clear the scope path
     SymbolType lhsTy = visit(ctx->prefixUnaryExpr()).as<SymbolType>();
     std::string variableName = currentVarName;
 
@@ -1191,6 +1199,11 @@ antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+  currentVarName = "";                  // Reset the current variable name
+  scopePrefix = "";                     // Reset scope prefix
+  scopePath.clear();                    // Clear the scope path
+  currentThisType = SymbolType(TY_DYN); // Reset this type
+
   SymbolType lhs = visit(ctx->postfixUnaryExpr()).as<SymbolType>();
 
   unsigned int tokenCounter = 0;
@@ -1273,7 +1286,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
         assert(accessScope != nullptr);
 
-        SymbolTable *newAccessScope = accessScope->lookupTable("struct:" + lhs.getBaseType().getSubType());
+        SymbolTable *newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + lhs.getBaseType().getSubType());
         assert(newAccessScope != nullptr);
         // Push the retrieved scope to the scope path
         scopePath.pushFragment("[idx]", newAccessScope);
@@ -1283,37 +1296,47 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
       std::string functionName = currentVarName;
       std::string accessScopePrefix = scopePath.getScopeName();
 
-      // Save the scope path to restore it after visiting the params
+      // Save the scope path to restore it after visiting the args
       ScopePath scopePathBackup = scopePath;
+      SymbolType thisType = currentThisType;
 
-      // Visit params
-      std::vector<SymbolType> paramTypes;
-      auto *paramLst = dynamic_cast<SpiceParser::ParamLstContext *>(ctx->children[tokenCounter]);
-      if (paramLst != nullptr) {
-        for (auto &param : paramLst->assignExpr()) {
-          SymbolType paramType = visit(param).as<SymbolType>();
-          if (paramType.isArray())
-            paramType = paramType.getContainedTy().toPointer(err, *param->start);
-          paramTypes.push_back(paramType);
+      // Visit args
+      std::vector<SymbolType> argTypes;
+      auto *argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
+      if (argLst != nullptr) {
+        for (const auto &arg : argLst->assignExpr()) {
+          SymbolType argType = visit(arg).as<SymbolType>();
+          if (argType.isArray())
+            argType = argType.getContainedTy().toPointer(err, *arg->start);
+          argTypes.push_back(argType);
         }
       }
-      tokenCounter++; // Consume paramLst
+      tokenCounter++; // Consume argLst
 
       // Restore scope path
       scopePath = scopePathBackup;
 
+      // Match a function onto the requirements of the call
+      SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
+      const Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err, *token->getSymbol());
+      if (!spiceFunc) {
+        // Build function to get a better error message
+        std::vector<std::pair<SymbolType, bool>> argTypesWithOptional;
+        argTypesWithOptional.reserve(argTypes.size());
+        for (auto &argType : argTypes)
+          argTypesWithOptional.emplace_back(argType, false);
+        Function function =
+            Function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN), argTypesWithOptional);
+        throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
+                       "Function/Procedure '" + function.getSignature() + "' could not be found");
+      }
+
       // Get function scope
-      FunctionSignature signature = FunctionSignature(functionName, paramTypes);
-      SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
-      functionParentScope = functionParentScope->lookupTableWithSignature(signature.toString());
-      if (!functionParentScope)
-        throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION_OR_PROCEDURE,
-                       "Function/Procedure '" + signature.toString() + "' could not be found");
-      scopePath.pushFragment(signature.toString(), functionParentScope);
-      currentVarName = signature.toString();
+      scopePath.pushFragment(spiceFunc->getSignature(), functionParentScope);
+      currentVarName = spiceFunc->getSignature();
 
       // Get function entry
-      SymbolTableEntry *functionEntry = functionParentScope->lookup(signature.toString());
+      SymbolTableEntry *functionEntry = functionParentScope->lookup(spiceFunc->getSignature());
       assert(functionEntry != nullptr);
       functionEntry->setUsed(); // Set the function to used
 
@@ -1322,12 +1345,10 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         throw err->get(*token->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access function/procedure '" + currentVarName + "' due to its private visibility");
 
-      // Add function call to the signature queue of the current scope
-      currentScope->pushSignature(signature);
-
-      // Search for symbol table of called function/procedure to read parameters
+      // Search for symbol table of called function/procedure to read arguments
       if (functionEntry->getType().is(TY_FUNCTION)) {
-        SymbolTable *functionTable = functionParentScope->getChild(signature.toString());
+        SymbolTable *functionTable = functionParentScope->getChild(spiceFunc->getSignature());
+        assert(functionTable != nullptr);
         // Get return type of called function
         SymbolTableEntry *returnValueEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
         assert(returnValueEntry != nullptr);
@@ -1421,7 +1442,8 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *c
     if (entry->getType().is(TY_IMPORT)) { // Import
       newAccessScope = accessScope->lookupTable(entry->getName());
     } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
-      newAccessScope = accessScope->lookupTable("struct:" + entry->getType().getBaseType().getSubType());
+      newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + entry->getType().getBaseType().getSubType());
+      currentThisType = entry->getType();
     }
     assert(newAccessScope != nullptr);
 
@@ -1463,7 +1485,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
         if (entry->getType().is(TY_IMPORT)) {
           structScope = structScope->lookupTable(structName);
         } else if (entry->getType().is(TY_STRUCT)) {
-          structScope = structScope->lookupTable("struct:" + structName);
+          structScope = structScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
         } else {
           throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                          "The variable '" + structName + "' is of type " + entry->getType().getName(false) +
@@ -1489,19 +1511,19 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     structSymbol->setUsed();
 
     // Check if the number of fields matches
-    SymbolTable *structTable = currentScope->lookupTable("struct:" + accessScopePrefix + structName);
-    if (ctx->paramLst()) { // Check if any fields are passed. Empty braces are also allowed
-      if (structTable->getFieldCount() != ctx->paramLst()->assignExpr().size())
-        throw err->get(*ctx->paramLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
+    SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + accessScopePrefix + structName);
+    if (ctx->argLst()) { // Check if any fields are passed. Empty braces are also allowed
+      if (structTable->getFieldCount() != ctx->argLst()->assignExpr().size())
+        throw err->get(*ctx->argLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
                        "You've passed too less/many field values. Pass either none or all of them");
 
       // Check if the field types are matching
-      for (int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
+      for (int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
         // Get actual type
-        auto ternary = ctx->paramLst()->assignExpr()[i];
+        auto ternary = ctx->argLst()->assignExpr()[i];
         SymbolType actualType = visit(ternary).as<SymbolType>();
         // Get expected type
-        SymbolTableEntry *expectedField = structTable->lookupByIndexInCurrentScope(i);
+        SymbolTableEntry *expectedField = structTable->lookupByIndex(i);
         assert(expectedField != nullptr);
         SymbolType expectedFieldType = expectedField->getType();
         // Check if type matches declaration
@@ -1520,13 +1542,13 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     assert(expectedType.isArray() || expectedType.is(TY_DYN));
     SymbolType expectedItemType = expectedType.isArray() ? expectedType.getContainedTy() : expectedType;
     unsigned int actualSize = 0;
-    if (ctx->paramLst()) {
-      for (unsigned int i = 0; i < ctx->paramLst()->assignExpr().size(); i++) {
-        SymbolType itemType = visit(ctx->paramLst()->assignExpr()[i]).as<SymbolType>();
+    if (ctx->argLst()) {
+      for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
+        SymbolType itemType = visit(ctx->argLst()->assignExpr()[i]).as<SymbolType>();
         if (expectedItemType.is(TY_DYN)) {
           expectedItemType = itemType;
         } else if (itemType != expectedItemType) {
-          throw err->get(*ctx->paramLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
+          throw err->get(*ctx->argLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
                          "All provided values have to be of the same data type. You provided " + expectedItemType.getName(false) +
                              " and " + itemType.getName(false));
         }
@@ -1618,7 +1640,7 @@ antlrcpp::Any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContex
       if (!symbolEntry)
         throw err->get(*ctx->IDENTIFIER()[0]->getSymbol(), UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
 
-      std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : "struct:" + structName;
+      std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
       accessScope = accessScope->lookupTable(tableName);
       if (accessScope->isImported())
         structIsImported = true;
@@ -1655,7 +1677,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   externalStructSymbol->setUsed();
 
   // Get the associated symbolTable of the external struct symbol
-  SymbolTable *externalStructTable = sourceScope->lookupTable("struct:" + structName);
+  SymbolTable *externalStructTable = sourceScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
 
   // Initialize potential structs for field types
   for (auto &symbol : externalStructTable->getSymbols()) {
@@ -1678,14 +1700,14 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
 
   // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
   rootScope->insert(newStructName, newStructTy, SymbolSpecifiers(newStructTy), DECLARED,
-                    externalStructSymbol->getDefinitionToken(), false);
+                    externalStructSymbol->getDefinitionToken());
   newStructSymbol = rootScope->lookup(newStructName);
   newStructSymbol->updateLLVMType(externalStructSymbol->getLLVMType());
   newStructSymbol->setUsed();
 
   // Mount the external struct table to the new position in the root scope of the current source file
   externalStructTable->setImported();
-  rootScope->mountChildBlock("struct:" + newStructName, externalStructTable);
+  rootScope->mountChildBlock(STRUCT_SCOPE_PREFIX + newStructName, externalStructTable);
 
   return newStructTy;
 }
@@ -1708,8 +1730,7 @@ SymbolType AnalyzerVisitor::initExtGlobal(const antlr4::Token &token, SymbolTabl
   SymbolType globalTy = externalGlobalSymbol->getType();
 
   // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
-  rootScope->insert(newGlobalName, globalTy, SymbolSpecifiers(globalTy), DECLARED, externalGlobalSymbol->getDefinitionToken(),
-                    false);
+  rootScope->insert(newGlobalName, globalTy, SymbolSpecifiers(globalTy), DECLARED, externalGlobalSymbol->getDefinitionToken());
   newGlobalSymbol = rootScope->lookup(newGlobalName);
   newGlobalSymbol->updateLLVMType(externalGlobalSymbol->getLLVMType());
   newGlobalSymbol->setUsed();

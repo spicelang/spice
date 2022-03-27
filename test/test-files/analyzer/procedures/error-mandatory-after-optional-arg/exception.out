@@ -1,0 +1,1 @@
+Semantic error in ./test-files/analyzer/procedures/error-mandatory-after-optional-arg/source.spice at 1:44: Invalid argument order: Mandatory arguments must go before any optional arguments

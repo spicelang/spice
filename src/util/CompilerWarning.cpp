@@ -38,7 +38,7 @@ void CompilerWarning::print() const {
  * @param type Type of the warning
  * @return Prefix string for the warning type
  */
-std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) const {
+std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
   switch (type) {
   case UNUSED_FUNCTION:
     return "Unused function";

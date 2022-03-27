@@ -1,9 +1,10 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
+#include "ModuleRegistry.h"
+
 #include <algorithm>
 
 #include <exception/SemanticError.h>
-#include <util/ModuleRegistry.h>
 
 /**
  * Add a module path to the module registry

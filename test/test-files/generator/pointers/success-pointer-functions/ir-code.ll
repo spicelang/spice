@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 @4 = private unnamed_addr constant [24 x i8] c"Age after birthday: %d\0A\00", align 1
 
 ; Function Attrs: nounwind
-define internal void @"birthday(struct(Person)*)"(%Person* %0) #0 {
+define internal void @"_p_birthday_struct(Person)*"(%Person* %0) #0 {
 entry:
   %person = alloca %Person*, align 8
   %1 = alloca i32, align 4
@@ -67,7 +67,7 @@ entry:
   store %Person* %mike, %Person** %4, align 8
   store %Person* %mike, %Person** %4, align 8
   %25 = load %Person*, %Person** %4, align 8
-  call void @"birthday(struct(Person)*)"(%Person* %25)
+  call void @"_p_birthday_struct(Person)*"(%Person* %25)
   store i1 true, i1* %5, align 1
   %26 = load %Person, %Person* %mike, align 8
   %27 = getelementptr inbounds %Person, %Person* %mike, i32 0, i32 2

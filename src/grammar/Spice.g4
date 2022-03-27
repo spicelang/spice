@@ -4,9 +4,9 @@ grammar Spice;
 
 // Control structures
 entry: (mainFunctionDef | functionDef | procedureDef | structDef | globalVarDef | importStmt | extDecl)*;
-mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
-functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
-procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER LPAREN paramLstDef? RPAREN LBRACE stmtLst RBRACE;
+mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
+functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
 structDef: declSpecifiers? TYPE IDENTIFIER STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
@@ -23,8 +23,8 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | threadDef)*;
 field: declSpecifiers? dataType IDENTIFIER;
 typeLst: dataType (COMMA dataType)* ELLIPSIS?;
-paramLstDef: declStmt (COMMA declStmt)*;
-paramLst: assignExpr (COMMA assignExpr)*;
+argLstDef: declStmt (COMMA declStmt)*;
+argLst: assignExpr (COMMA assignExpr)*;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: declSpecifiers? dataType IDENTIFIER (ASSIGN assignExpr)?;
 declSpecifiers: declSpecifier+;
@@ -56,11 +56,11 @@ additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: prefixUnaryExpr | LPAREN dataType RPAREN prefixUnaryExpr;
 prefixUnaryExpr: prefixUnaryOp* postfixUnaryExpr;
-postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | LPAREN paramLst? RPAREN | DOT postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
+postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | LPAREN argLst? RPAREN | DOT postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
 atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
-value: primitiveValue | LBRACE paramLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* LBRACE paramLst? RBRACE | NIL LESS dataType GREATER;
+value: primitiveValue | LBRACE argLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* LBRACE argLst? RBRACE | NIL LESS dataType GREATER;
 primitiveValue: DOUBLE | INTEGER | SHORT | LONG | CHAR_LITERAL | STRING_LITERAL | TRUE | FALSE;
 dataType: baseDataType (MUL | LBRACKET INTEGER? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER (DOT IDENTIFIER)*;

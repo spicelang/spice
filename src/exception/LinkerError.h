@@ -23,5 +23,5 @@ private:
   // Members
   std::string errorMessage;
 
-  [[nodiscard]] std::string getMessagePrefix(LinkerErrorType errorType) const;
+  [[nodiscard]] static std::string getMessagePrefix(LinkerErrorType errorType);
 };

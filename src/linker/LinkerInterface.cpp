@@ -2,7 +2,11 @@
 
 #include "LinkerInterface.h"
 
+#include <exception/LinkerError.h>
 #include <util/FileUtil.h>
+
+#include <iostream>
+#include <stdexcept>
 
 #ifdef __unix__
 #define OS_UNIX
@@ -33,10 +37,10 @@ void LinkerInterface::link() {
   std::string linkerCommand = LINKER_EXECUTABLE_NAME;
   if (threadFactory->isUsingThreads())
     linkerCommand += " -pthread";
-  for (auto &linkerFlag : linkerFlags)
+  for (const auto &linkerFlag : linkerFlags)
     linkerCommand += " " + linkerFlag;
   linkerCommand += " -o " + outputPath;
-  for (auto &objectFilePath : objectFilePaths)
+  for (const auto &objectFilePath : objectFilePaths)
     linkerCommand += " " + objectFilePath;
 
   // Print status message

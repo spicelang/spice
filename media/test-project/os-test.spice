@@ -25,10 +25,28 @@ f<int> main() {
     a.destructor();
 }*/
 
-import "std/data/vector" as vector;
+/*import "std/data/vector" as vector;
 
 f<int> main() {
     dyn v = vector.Vector<int>{};
     v.push(4);
     v.push(2);
+}*/
+
+/*f<int> testFunc(string param = "Test") {
+    printf("Test func %s\n", param);
+    return 2;
+}
+
+f<int> main() {
+    int res = testFunc();
+    printf("Result: %d\n", res);
+}*/
+
+f<int> testFunc(int i, int j = 5) {
+    return 4;
+}
+
+f<int> main() {
+    testFunc(3);
 }

@@ -1,5 +1,5 @@
-f<int*> escapingFunction(int param) {
-    return &param;
+f<int*> escapingFunction(int arg) {
+    return &arg;
 }
 
 f<int> main() {

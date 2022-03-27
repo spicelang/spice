@@ -3,6 +3,7 @@
 #include "SymbolType.h"
 
 #include <stdexcept>
+#include <tuple>
 
 #include <exception/SemanticError.h>
 
@@ -13,7 +14,7 @@
  */
 SymbolType SymbolType::toPointer(const ErrorFactory *err, const antlr4::Token &token) {
   // Do not allow pointers of dyn
-  if (std::get<0>(typeChain.top()) == TY_DYN)
+  if (typeChain.top().first == TY_DYN)
     throw err->get(token, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
@@ -28,7 +29,7 @@ SymbolType SymbolType::toPointer(const ErrorFactory *err, const antlr4::Token &t
  */
 SymbolType SymbolType::toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size) {
   // Do not allow arrays of dyn
-  if (std::get<0>(typeChain.top()) == TY_DYN)
+  if (typeChain.top().first == TY_DYN)
     throw err->get(token, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
@@ -44,7 +45,7 @@ SymbolType SymbolType::toArray(const ErrorFactory *err, const antlr4::Token &tok
 SymbolType SymbolType::getContainedTy() const {
   if (typeChain.empty())                                                                          // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get contained type of empty type"); // GCOV_EXCL_LINE
-  if (std::get<0>(typeChain.top()) == TY_STRING)
+  if (typeChain.top().first == TY_STRING)
     return SymbolType(TY_CHAR);
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop();
@@ -62,12 +63,12 @@ SymbolType SymbolType::replaceSubType(const std::string &newSubType) {
   TypeChain chainCopy = typeChain;
   // Unwrap the chain until the base type can be retrieved. To be able to restore the structure later, save it to the tmp chain
   TypeChain tmp;
-  while (std::get<0>(chainCopy.top()) == TY_PTR || std::get<0>(chainCopy.top()) == TY_ARRAY) {
+  while (chainCopy.top().first == TY_PTR || chainCopy.top().first == TY_ARRAY) {
     tmp.push(chainCopy.top());
     chainCopy.pop();
   }
   // Replace the subType of the base chain element
-  std::get<1>(chainCopy.top()) = newSubType;
+  chainCopy.top().second = newSubType;
   // Restore the other chain elements
   for (unsigned int i = 0; i < tmp.size(); i++) {
     chainCopy.push(tmp.top());
@@ -165,10 +166,10 @@ bool SymbolType::isBaseType(SymbolSuperType superType) const {
   // Copy the stack to not destroy the present one
   TypeChain chainCopy = typeChain;
   // Unwrap the chain until the base type can be retrieved
-  while (std::get<0>(chainCopy.top()) == TY_PTR || std::get<0>(chainCopy.top()) == TY_ARRAY)
+  while (chainCopy.top().first == TY_PTR || chainCopy.top().first == TY_ARRAY)
     chainCopy.pop();
   // Check if it is of the given superType and subType
-  return std::get<0>(chainCopy.top()) == superType;
+  return chainCopy.top().first == superType;
 }
 
 /**
@@ -187,14 +188,14 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
  *
  * @return Super type
  */
-SymbolSuperType SymbolType::getSuperType() const { return std::get<0>(typeChain.top()); }
+SymbolSuperType SymbolType::getSuperType() const { return typeChain.top().first; }
 
 /**
  * Retrieve the sub type of the current type
  *
  * @return Sub type
  */
-std::string SymbolType::getSubType() const { return std::get<1>(typeChain.top()); }
+std::string SymbolType::getSubType() const { return typeChain.top().second; }
 
 /**
  * Retrieve the base type of the current type. E.g. int of int[]*[]**
@@ -205,7 +206,7 @@ SymbolType SymbolType::getBaseType() const {
   // Copy the stack to not destroy the present one
   TypeChain chainCopy = typeChain;
   // Unwrap the chain until the base type can be retrieved
-  while (std::get<0>(chainCopy.top()) == TY_PTR || std::get<0>(chainCopy.top()) == TY_ARRAY)
+  while (chainCopy.top().first == TY_PTR || chainCopy.top().first == TY_ARRAY)
     chainCopy.pop();
   // Check if it is of the given superType and subType
   return SymbolType(chainCopy);
@@ -234,10 +235,35 @@ std::string SymbolType::getName(bool withSize) const {
  * @return Size
  */
 unsigned int SymbolType::getArraySize() const {
-  if (std::get<0>(typeChain.top()) != TY_ARRAY)                                             // GCOV_EXCL_LINE
+  if (typeChain.top().first != TY_ARRAY)                                                    // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
 
-  return std::stoi(std::get<1>(typeChain.top()));
+  return std::stoi(typeChain.top().second);
+}
+
+/**
+ * Compares the type chains of two symbol types without taking array sizes into account
+ *
+ * @param lhs Lhs symbol type
+ * @param rhs Rhs symbol type
+ * @return Equal or not
+ */
+bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs) {
+  // Compare sizes of stacks
+  if (lhs.typeChain.size() != rhs.typeChain.size())
+    return false;
+
+  // Compare stack elements
+  for (int i = 0; i < lhs.typeChain.size(); i++) {
+    if ((lhs.typeChain.top().first != TY_ARRAY || rhs.typeChain.top().first != TY_ARRAY) &&
+        lhs.typeChain.top() != rhs.typeChain.top()) {
+      return false;
+    }
+    lhs.typeChain.pop();
+    rhs.typeChain.pop();
+  }
+
+  return true;
 }
 
 bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
@@ -251,12 +277,12 @@ bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeC
  * @param withSize Include size in string
  * @return Type chain element name
  */
-std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize) const {
-  switch (std::get<0>(chainElement)) {
+std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize) {
+  switch (chainElement.first) {
   case TY_PTR:
     return "*";
   case TY_ARRAY:
-    return !withSize || std::get<1>(chainElement) == "0" ? "[]" : "[" + std::get<1>(chainElement) + "]";
+    return !withSize || chainElement.second == "0" ? "[]" : "[" + chainElement.second + "]";
   case TY_DOUBLE:
     return "double";
   case TY_INT:
@@ -274,7 +300,7 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
   case TY_BOOL:
     return "bool";
   case TY_STRUCT:
-    return "struct(" + std::get<1>(chainElement) + ")";
+    return "struct(" + chainElement.second + ")";
   case TY_DYN:
     return "dyn";
   case TY_FUNCTION:

@@ -86,8 +86,8 @@ private:
   std::shared_ptr<llvm::LLVMContext> context;
   std::shared_ptr<llvm::IRBuilder<>> builder;
   std::unique_ptr<llvm::Module> module;
-  std::vector<llvm::Function *> functions;
   SymbolTable *currentScope;
+  SymbolTable *rootScope;
   std::string scopePrefix;
   SymbolType currentSymbolType;
   ScopePath scopePath;
@@ -100,7 +100,7 @@ private:
   std::stack<llvm::BasicBlock *> breakBlocks;
   std::stack<llvm::BasicBlock *> continueBlocks;
   bool constNegate = false;
-  bool allParamsHardcoded = true;
+  bool allArgsHardcoded = true;
   llvm::Constant *currentConstValue = nullptr;
   bool currentVarSigned = false;
   std::string currentVarName;

@@ -22,6 +22,7 @@ const std::string MAIN_FUNCTION_NAME = "main";
 const std::string RETURN_VARIABLE_NAME = "result";
 const std::string THIS_VARIABLE_NAME = "this";
 const std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
+const std::string STRUCT_SCOPE_PREFIX = "struct:";
 const std::string UNUSED_VARIABLE_NAME = "_";
 const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case"};
 
@@ -47,7 +48,7 @@ public:
   antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
   antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
   antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
-  antlrcpp::Any visitParamLstDef(SpiceParser::ParamLstDefContext *ctx) override;
+  antlrcpp::Any visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) override;
   antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
   antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
   antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
@@ -97,11 +98,12 @@ private:
   SymbolTable *rootScope = nullptr;
   ScopePath scopePath;
   std::string scopePrefix;
-  bool parameterMode = false;
+  bool argumentMode = false;
   int nestedLoopCounter = 0;
   std::string currentVarName;
   SymbolTableEntry *currentEntry = nullptr;
   SymbolType expectedType = SymbolType(TY_DYN);
+  SymbolType currentThisType = SymbolType(TY_DYN);
 
   // Private methods
   SymbolType initExtStruct(const antlr4::Token &token, SymbolTable *sourceScope, const std::string &structScopePrefix,

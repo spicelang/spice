@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 1
 
 ; Function Attrs: nounwind
-define internal i32 @"faculty(int)"(i32 %0) #0 {
+define internal i32 @_f_faculty_int(i32 %0) #0 {
 entry:
   %input = alloca i32, align 4
   %result = alloca i32, align 4
@@ -39,7 +39,7 @@ if.end:                                           ; preds = %entry
   %16 = sub i32 %14, %15
   store i32 %16, i32* %5, align 4
   %17 = load i32, i32* %5, align 4
-  %18 = call i32 @"faculty(int)"(i32 %17)
+  %18 = call i32 @_f_faculty_int(i32 %17)
   store i32 %18, i32* %6, align 4
   %19 = load i32, i32* %6, align 4
   %20 = mul i32 %13, %19
@@ -62,7 +62,7 @@ entry:
   %2 = load i32, i32* %0, align 4
   store i32 %2, i32* %input, align 4
   %3 = load i32, i32* %input, align 4
-  %4 = call i32 @"faculty(int)"(i32 %3)
+  %4 = call i32 @_f_faculty_int(i32 %3)
   store i32 %4, i32* %1, align 4
   %5 = load i32, i32* %1, align 4
   store i32 %5, i32* %faculty, align 4

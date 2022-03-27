@@ -20,6 +20,6 @@ IRError ErrorFactory::get(IRErrorType type, const std::string &message) const {
   return IRError(fileName, type, message);
 }
 
-CliError ErrorFactory::get(CliErrorType type, const std::string &message) const { return CliError(type, message); }
+CliError ErrorFactory::get(CliErrorType type, const std::string &message) { return CliError(type, message); }
 
-LinkerError ErrorFactory::get(LinkerErrorType type, const std::string &message) const { return LinkerError(type, message); }
+LinkerError ErrorFactory::get(LinkerErrorType type, const std::string &message) { return LinkerError(type, message); }

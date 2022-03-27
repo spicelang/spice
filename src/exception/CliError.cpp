@@ -24,7 +24,7 @@ const char *CliError::what() const noexcept { return errorMessage.c_str(); }
  * @param type Type of the error
  * @return Prefix string for the error type
  */
-std::string CliError::getMessagePrefix(CliErrorType type) const {
+std::string CliError::getMessagePrefix(CliErrorType type) {
   switch (type) {
   case INCOMPLETE_TARGET_TRIPLE:
     return "Incomplete target triple";

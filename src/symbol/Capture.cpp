@@ -10,13 +10,6 @@
 SymbolTableEntry *Capture::getEntry() const { return capturedEntry; }
 
 /**
- * Retrieve the mode of this capture
- *
- * @return Capture mode (READ_ONLY or READ_WRITE)
- */
-CaptureMode Capture::getCaptureMode() const { return mode; }
-
-/**
  * Set the mode of this capture.
  * Possible values are READ_ONLY and READ_WRITE
  *

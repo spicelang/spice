@@ -38,5 +38,5 @@ private:
   std::string errorMessage;
 
   // Private methods
-  [[nodiscard]] std::string getMessagePrefix(IRErrorType errorType) const;
+  [[nodiscard]] static std::string getMessagePrefix(IRErrorType errorType);
 };

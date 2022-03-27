@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @3 = private unnamed_addr constant [29 x i8] c"Logical or evaluated to: %d\0A\00", align 1
 
 ; Function Attrs: nounwind
-define internal i1 @"functionTrue()"() #0 {
+define internal i1 @_f_functionTrue() #0 {
 entry:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
@@ -22,7 +22,7 @@ entry:
 declare i32 @printf(i8*, ...)
 
 ; Function Attrs: nounwind
-define internal i1 @"functionFalse()"() #0 {
+define internal i1 @_f_functionFalse() #0 {
 entry:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
@@ -42,13 +42,13 @@ entry:
   %4 = alloca i1, align 1
   %5 = alloca i1, align 1
   store i32 0, i32* %result, align 4
-  %6 = call i1 @"functionFalse()"()
+  %6 = call i1 @_f_functionFalse()
   store i1 %6, i1* %0, align 1
   %7 = load i1, i1* %0, align 1
   br i1 %7, label %land.1, label %land.end
 
 land.1:                                           ; preds = %entry
-  %8 = call i1 @"functionTrue()"()
+  %8 = call i1 @_f_functionTrue()
   store i1 %8, i1* %1, align 1
   %9 = load i1, i1* %1, align 1
   br label %land.end
@@ -59,13 +59,13 @@ land.end:                                         ; preds = %land.1, %entry
   %10 = load i1, i1* %2, align 1
   %11 = zext i1 %10 to i32
   %12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @2, i32 0, i32 0), i32 %11)
-  %13 = call i1 @"functionTrue()"()
+  %13 = call i1 @_f_functionTrue()
   store i1 %13, i1* %3, align 1
   %14 = load i1, i1* %3, align 1
   br i1 %14, label %lor.end, label %lor.1
 
 lor.1:                                            ; preds = %land.end
-  %15 = call i1 @"functionFalse()"()
+  %15 = call i1 @_f_functionFalse()
   store i1 %15, i1* %4, align 1
   %16 = load i1, i1* %4, align 1
   br label %lor.end

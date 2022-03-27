@@ -8,9 +8,10 @@
 #include <vector>
 
 #include <symbol/Capture.h>
+#include <symbol/Function.h>
+#include <symbol/SymbolSpecifiers.h>
 #include <symbol/SymbolTableEntry.h>
 #include <symbol/SymbolType.h>
-#include <util/FunctionSignature.h>
 
 #include <llvm/IR/BasicBlock.h>
 
@@ -24,22 +25,23 @@ class SymbolTable {
 public:
   // Constructors
   explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile) : parent(parent), inMainSourceFile(inMainSourceFile){};
+  ~SymbolTable();
 
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
-              const antlr4::Token &token, bool isParameter);
+              const antlr4::Token &token);
 
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
-  SymbolTableEntry *lookupByIndexInCurrentScope(unsigned int);
-  SymbolTableEntry *lookupGlobalByName(const std::string &globalName, bool skipThisScope = false);
+  SymbolTableEntry *lookupByIndex(unsigned int orderIndex);
+  SymbolTableEntry *lookupGlobal(const std::string &globalName, bool skipThisScope = false);
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
   SymbolTable *lookupTable(const std::string &tableName);
-  SymbolTable *lookupTableWithSignature(const std::string &signature);
-  SymbolTable *createChildBlock(const std::string &tableName);
-  void mountChildBlock(const std::string &tableName, SymbolTable *symbolTable);
+  SymbolTable *createChildBlock(const std::string &childBlockName);
+  void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable);
   void renameChildBlock(const std::string &oldName, const std::string &newName);
+  void duplicateChildBlockEntry(const std::string &originalChildBlockName, const std::string &newChildBlockName);
 
   [[nodiscard]] SymbolTable *getParent() const;
   SymbolTable *getChild(const std::string &tableName);
@@ -49,16 +51,11 @@ public:
 
   [[nodiscard]] unsigned int getFieldCount() const;
 
-  void insertFunctionDeclaration(const std::string &functionName, const std::vector<SymbolType> &argTypes);
-  [[nodiscard]] std::vector<SymbolType> getFunctionDeclaration(const std::string &functionName) const;
-
-  void insertProcedureDeclaration(const std::string &procedureName, const std::vector<SymbolType> &argTypes);
-  [[nodiscard]] std::vector<SymbolType> getProcedureDeclaration(const std::string &procedureName) const;
-
-  void updateSymbolTypes(ErrorFactory *err, const antlr4::Token &token, const SymbolType &oldType, const SymbolType &newType);
-
-  void pushSignature(const FunctionSignature &signature);
-  FunctionSignature popSignature();
+  void insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
+  const Function *matchFunction(const std::string &functionName, const SymbolType &thisType,
+                                const std::vector<SymbolType> &argTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
+  Function *popFunctionAccessPointer();
+  std::vector<Function *> popFunctionDeclarationPointers();
 
   void printCompilerWarnings();
 
@@ -72,14 +69,16 @@ public:
 private:
   // Members
   SymbolTable *parent;
-  std::map<std::string, SymbolTable> children;
+  std::map<std::string, SymbolTable *> children;
   std::map<std::string, SymbolTableEntry> symbols;
   std::map<std::string, Capture> captures;
-  std::map<std::string, std::vector<SymbolType>> functionDeclarations;
-  std::map<std::string, std::vector<SymbolType>> procedureDeclarations;
-  std::vector<std::string> paramNames;
-  std::queue<FunctionSignature> functionSignatures;
+  std::map<std::string, Function> functions;
+  std::queue<std::vector<Function *>> functionDeclarationPointers;
+  std::queue<Function *> functionAccessPointers;
   bool inMainSourceFile;
   bool imported = false;
   bool requiresCapturing = false;
+
+  // Private methods
+  void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
 };
