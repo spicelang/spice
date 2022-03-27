@@ -1,8 +1,8 @@
-f<dyn> exampleFunc() {
+f<string> exampleFunc() {
     return "Hello";
 }
 
-f<dyn> exampleFunc() {
+f<string> exampleFunc() {
     return "World";
 }
 

@@ -604,6 +604,7 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) 
 
 antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
   ArgList argList;
+  bool metOptional = false;
   for (const auto &arg : ctx->declStmt()) {
     SymbolType argType = visit(arg).as<SymbolType>();
 
@@ -611,10 +612,14 @@ antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx
     if (argType.is(TY_DYN))
       throw err->get(*arg->start, FCT_ARG_IS_TYPE_DYN, "Type of argument '" + arg->IDENTIFIER()->toString() + "' is invalid");
 
-    // Check if the argument is optional
-    bool isOptional = arg->ASSIGN();
+    // Ensure that no optional argument comes after a mandatory argument
+    if (arg->ASSIGN()) {
+      metOptional = true;
+    } else if (metOptional) {
+      throw err->get(*arg->start, INVALID_ARGUMENT_ORDER, "Mandatory arguments must go before any optional arguments");
+    }
 
-    argList.emplace_back(argType, isOptional);
+    argList.emplace_back(argType, metOptional);
   }
   return argList;
 }

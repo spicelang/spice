@@ -52,6 +52,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Global of invalid type";
   case FUNCTION_WITHOUT_RETURN_STMT:
     return "Missing return statement";
+  case INVALID_ARGUMENT_ORDER:
+    return "Invalid argument order";
   case OPERATOR_WRONG_DATA_TYPE:
     return "Wrong data type for operator";
   case UNEXPECTED_DYN_TYPE_SA:

@@ -42,3 +42,11 @@ f<int> main() {
     int res = testFunc();
     printf("Result: %d\n", res);
 }*/
+
+f<int> testFunc(int i = 5, int j) {
+    return 4;
+}
+
+f<int> main() {
+    testFunc(3);
+}

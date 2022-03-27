@@ -1,0 +1,7 @@
+f<int> testFunc(int i = 5, int j) {
+    return 4;
+}
+
+f<int> main() {
+    testFunc(3);
+}
