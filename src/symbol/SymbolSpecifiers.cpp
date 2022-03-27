@@ -36,6 +36,9 @@ SymbolSpecifiers::SymbolSpecifiers(const SymbolType &type) {
   case TY_ARRAY:
     specifierValue = SPECIFIER_DEFAULTS_ARRAY;
     break;
+  case TY_GENERIC:
+    specifierValue = SPECIFIER_DEFAULTS_GENERIC;
+    break;
   case TY_STRUCT:
     specifierValue = SPECIFIER_DEFAULTS_STRUCT;
     break;

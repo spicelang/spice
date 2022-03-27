@@ -3,7 +3,7 @@
 ## Implementation steps:
 
 - [x] 1. Re-write the function choosing mechanism
-- [ ] 2. Implement Generics for functions/procedures/methods
+- [x] 2. Implement Generics for functions/procedures/methods
 - [ ] 3. Add tests for this feature
 - [ ] 4. Implement Generics for structs
 - [ ] 5. Add tests for this feature
@@ -17,7 +17,7 @@
 ```spice
 type T dyn;
 
-f<T> max(T a, T b) {
+f<T> max<T>(T a, T b) {
 	return b > a ? b : a;
 }
 ```
@@ -52,6 +52,3 @@ dyn v = Vector<string>{};
 
 ## Functionality
 While running the analyzer, Spice will check which concrete manifestations generic functions or structs are being used elsewhere within the code base. It will generate IR for exactly those manifestations.
-
-## Requirements
-- The change for re-writing the function choosing mechanism / function overloading mechanisms should go first

@@ -24,7 +24,7 @@ const std::string THIS_VARIABLE_NAME = "this";
 const std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
 const std::string STRUCT_SCOPE_PREFIX = "struct:";
 const std::string UNUSED_VARIABLE_NAME = "_";
-const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case"};
+const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "pick", "sync"};
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
@@ -40,6 +40,7 @@ public:
   antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
   antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
   antlrcpp::Any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
+  antlrcpp::Any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override;
   antlrcpp::Any visitStructDef(SpiceParser::StructDefContext *ctx) override;
   antlrcpp::Any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
   antlrcpp::Any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;

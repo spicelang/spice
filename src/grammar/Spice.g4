@@ -3,12 +3,12 @@
 grammar Spice;
 
 // Control structures
-entry: (mainFunctionDef | functionDef | procedureDef | typeDef | globalVarDef | importStmt | extDecl)*;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | genericTypeDef | globalVarDef | importStmt | extDecl)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
+functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER templateDef? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER templateDef? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
-typeDef: declSpecifiers? TYPE IDENTIFIER (structDef | TYPE_DYN SEMICOLON);
+genericTypeDef: declSpecifiers? TYPE IDENTIFIER TYPE_DYN SEMICOLON;
 structDef: declSpecifiers? TYPE IDENTIFIER STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
 threadDef: THREAD LBRACE stmtLst RBRACE;
@@ -22,6 +22,7 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | threadDef)*;
+templateDef: LESS typeLst GREATER;
 field: declSpecifiers? dataType IDENTIFIER;
 typeLst: dataType (COMMA dataType)* ELLIPSIS?;
 argLstDef: declStmt (COMMA declStmt)*;
@@ -57,7 +58,7 @@ additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: prefixUnaryExpr | LPAREN dataType RPAREN prefixUnaryExpr;
 prefixUnaryExpr: prefixUnaryOp* postfixUnaryExpr;
-postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | LPAREN argLst? RPAREN | DOT postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
+postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | templateDef? LPAREN argLst? RPAREN | DOT postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
 atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types

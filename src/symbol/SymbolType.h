@@ -20,6 +20,7 @@ enum SymbolSuperType {
   TY_CHAR,
   TY_STRING,
   TY_BOOL,
+  TY_GENERIC,
   TY_STRUCT,
   TY_DYN,
   TY_PTR,

@@ -45,10 +45,10 @@ f<int> main() {
 
 type T dyn;
 
-f<double> genericFunction(T arg1, T arg2) {
+f<double> genericFunction<T>(T arg1, T arg2) {
     return (double) arg1 + arg2;
 }
 
 f<int> main() {
-    printf("%f\n", genericFunction(1, 2));
+    printf("%f\n", genericFunction<int>(1, 2));
 }

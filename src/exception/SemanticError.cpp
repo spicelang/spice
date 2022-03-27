@@ -42,6 +42,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Multiple declarations of the same variable";
   case FUNCTION_DECLARED_TWICE:
     return "Multiple declarations of a function/procedure";
+  case GENERIC_TYPE_DECLARED_TWICE:
+    return "Multiple declarations of a generic type with the same name";
   case STRUCT_DECLARED_TWICE:
     return "Multiple declarations of a struct with the same name";
   case GLOBAL_OF_TYPE_DYN:

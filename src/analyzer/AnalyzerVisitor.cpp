@@ -307,12 +307,41 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   return nullptr;
 }
 
+antlrcpp::Any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
+  std::string typeName = ctx->IDENTIFIER()->toString();
+
+  // Check if type already exists in this scope
+  if (currentScope->lookup(typeName))
+    throw err->get(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate generic type '" + typeName + "'");
+
+  // Build symbol specifiers
+  SymbolType symbolType = SymbolType(TY_GENERIC, typeName);
+  auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  if (ctx->declSpecifiers()) {
+    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+      if (specifier->PUBLIC()) {
+        structSymbolSpecifiers.setPublic(true);
+      } else {
+        throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                       "Cannot use the " + specifier->getText() + " specifier on a struct definition");
+      }
+    }
+  }
+
+  // Create a new symbol table entry
+  currentScope->insert(typeName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
+
+  return nullptr;
+}
+
 antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   std::string structName = ctx->IDENTIFIER()->toString();
+
   // Check if struct already exists in this scope
   if (currentScope->lookup(structName))
     throw err->get(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate struct '" + structName + "'");
-  // Create a new table entry for the struct
+
+  // Build symbol specifiers
   SymbolType symbolType = SymbolType(TY_STRUCT, structName);
   auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
@@ -325,10 +354,14 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
       }
     }
   }
+
+  // Create a new symbol table entry for the struct
   currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
+
   // Visit field list in a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
+
   // Insert a field for each field list entry
   for (const auto &field : ctx->field()) {
     std::string fieldName = field->IDENTIFIER()->toString();
@@ -357,6 +390,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
 
     currentScope->insert(fieldName, fieldType, fieldTypeSpecifiers, DECLARED, *field->start);
   }
+
   // Return to the old scope
   currentScope = currentScope->getParent();
   return nullptr;
