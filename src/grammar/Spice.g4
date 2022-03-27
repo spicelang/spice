@@ -3,11 +3,12 @@
 grammar Spice;
 
 // Control structures
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | globalVarDef | importStmt | extDecl)*;
+entry: (mainFunctionDef | functionDef | procedureDef | typeDef | globalVarDef | importStmt | extDecl)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
+typeDef: declSpecifiers? TYPE IDENTIFIER (structDef | TYPE_DYN SEMICOLON);
 structDef: declSpecifiers? TYPE IDENTIFIER STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
 threadDef: THREAD LBRACE stmtLst RBRACE;
@@ -35,7 +36,7 @@ breakStmt: BREAK INTEGER?;
 continueStmt: CONTINUE INTEGER?;
 
 // Builtin functions
-builtinCall: printfCall | sizeOfCall | tidCall |joinCall;
+builtinCall: printfCall | sizeOfCall | tidCall | joinCall;
 printfCall: PRINTF LPAREN STRING_LITERAL (COMMA assignExpr)* RPAREN;
 sizeOfCall: SIZEOF LPAREN assignExpr RPAREN;
 tidCall: TID LPAREN RPAREN;

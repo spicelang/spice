@@ -43,10 +43,12 @@ f<int> main() {
     printf("Result: %d\n", res);
 }*/
 
-f<int> testFunc(int i, int j = 5) {
-    return 4;
+type T dyn;
+
+f<double> genericFunction(T arg1, T arg2) {
+    return (double) arg1 + arg2;
 }
 
 f<int> main() {
-    testFunc(3);
+    printf("%f\n", genericFunction(1, 2));
 }
