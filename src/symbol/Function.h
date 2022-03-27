@@ -13,9 +13,9 @@ class Function {
 public:
   // Constructors
   explicit Function(std::string name, SymbolSpecifiers specifiers, SymbolType thisType, SymbolType returnType,
-                    std::vector<std::pair<SymbolType, bool>> argTypes)
+                    std::vector<std::pair<SymbolType, bool>> argTypes, std::vector<SymbolType> templateTypes)
       : name(std::move(name)), specifiers(specifiers), thisType(std::move(thisType)), returnType(std::move(returnType)),
-        argTypes(std::move(argTypes)) {}
+        argTypes(std::move(argTypes)), templateTypes(std::move(templateTypes)) {}
 
   // Public methods
   [[nodiscard]] std::string getName() const;
@@ -42,5 +42,6 @@ private:
   SymbolType thisType = SymbolType(TY_DYN);
   SymbolType returnType = SymbolType(TY_DYN);
   std::vector<std::pair<SymbolType, bool>> argTypes;
+  std::vector<SymbolType> templateTypes;
   bool used = false;
 };

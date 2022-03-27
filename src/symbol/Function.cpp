@@ -49,13 +49,13 @@ std::vector<SymbolType> Function::getArgTypes() const {
  */
 std::string Function::getMangledName() const {
   // f, p, mf or mp depending on the function type
-  std::string fpm = "f";
+  std::string functionTyStr = "f";
   if (isProcedure()) {
-    fpm = "p";
+    functionTyStr = "p";
   } else if (isMethodFunction()) {
-    fpm = "mf";
+    functionTyStr = "mf";
   } else if (isMethodProcedure()) {
-    fpm = "mp";
+    functionTyStr = "mp";
   }
 
   // This type string
@@ -71,7 +71,12 @@ std::string Function::getMangledName() const {
       argTyStr += "?";
   }
 
-  return "_" + fpm + "_" + thisTyStr + name + argTyStr;
+  // Template type string
+  std::string templateTyStr;
+  for (const auto &templateType : templateTypes)
+    templateTyStr += "_" + templateType.getName();
+
+  return "_" + functionTyStr + "_" + thisTyStr + templateTyStr + name + argTyStr;
 }
 
 /**
@@ -84,10 +89,12 @@ std::string Function::getSignature() const {
   if (!thisType.is(TY_DYN))
     thisTyStr = thisType.getBaseType().getSubType() + ".";
 
+  // Return type string
   std::string returnTyStr;
   if (!returnType.is(TY_DYN))
     returnTyStr = ": " + returnType.getName();
 
+  // Argument type string
   std::string argTyStr;
   for (int i = 0; i < argTypes.size(); i++) {
     if (i != 0)
@@ -96,7 +103,18 @@ std::string Function::getSignature() const {
     if (argTypes[i].second)
       argTyStr += "?";
   }
-  return thisTyStr + name + "(" + argTyStr + ")" + returnTyStr;
+
+  // Template type string
+  std::string templateTyStr;
+  for (const auto &templateType : templateTypes) {
+    if (!templateTyStr.empty())
+      templateTyStr += ",";
+    templateTyStr += templateType.getName();
+  }
+  if (!templateTyStr.empty())
+    templateTyStr = "<" + templateTyStr + ">";
+
+  return thisTyStr + name + templateTyStr + "(" + argTyStr + ")" + returnTyStr;
 }
 
 /**
@@ -148,19 +166,19 @@ std::vector<Function> Function::substantiate() const {
   for (const auto &argType : argTypes) {
     if (argType.second) {         // Met optional argument
       if (!metFirstOptionalArg) { // Add substantiation without the optional argument
-        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes);
+        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes);
         metFirstOptionalArg = true;
       }
       // Add substantiation with the optional argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
-      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes);
+      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes);
     } else { // Met mandatory argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
     }
   }
 
   if (definiteFunctions.empty())
-    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes);
+    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes);
 
   return definiteFunctions;
 }

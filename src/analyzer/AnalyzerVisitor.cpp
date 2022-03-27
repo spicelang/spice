@@ -112,6 +112,13 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
   }
 
+  // Get template types
+  std::vector<SymbolType> templateTypes;
+  if (ctx->templateDef()) {
+    for (const auto &dataType : ctx->templateDef()->typeLst()->dataType())
+      templateTypes.push_back(visit(dataType).as<SymbolType>());
+  }
+
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
@@ -147,7 +154,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  // Build function
+  // Build function specifiers
   auto functionSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
   if (ctx->declSpecifiers()) {
     for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
@@ -163,7 +170,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   }
 
   // Insert function into the symbol table
-  Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes);
+  Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes);
   currentScope->insertFunction(spiceFunc, err, *ctx->IDENTIFIER().back()->getSymbol());
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -202,6 +209,13 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
   }
 
+  // Get template types
+  std::vector<SymbolType> templateTypes;
+  if (ctx->templateDef()) {
+    for (const auto &dataType : ctx->templateDef()->typeLst()->dataType())
+      templateTypes.push_back(visit(dataType).as<SymbolType>());
+  }
+
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
@@ -228,7 +242,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  // Check if the procedure is already defined
+  // Build procedure specifiers
   auto procedureSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
   if (ctx->declSpecifiers()) {
     for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
@@ -244,7 +258,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   }
 
   // Insert function into the symbol table
-  Function spiceProc = Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes);
+  Function spiceProc = Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes);
   currentScope->insertFunction(spiceProc, err, *ctx->IDENTIFIER().back()->getSymbol());
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -271,7 +285,6 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   ArgList argTypes;
   if (ctx->typeLst()) {
-    argTypes.reserve(ctx->typeLst()->dataType().size());
     // Check if an argument is dyn
     for (const auto &arg : ctx->typeLst()->dataType()) {
       SymbolType argType = visit(arg).as<SymbolType>();
@@ -290,7 +303,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
     // Insert function into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes);
+    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {});
     currentScope->insertFunction(spiceFunc, err, *ctx->IDENTIFIER()->getSymbol());
 
     // Add return symbol for function
@@ -300,7 +313,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   } else { // Procedure
     // Insert procedure into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
-    Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes);
+    Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {});
     currentScope->insertFunction(spiceProc, err, *ctx->IDENTIFIER()->getSymbol());
   }
 
@@ -1326,7 +1339,6 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         scopePath.pushFragment("[idx]", newAccessScope);
       }
     } else if (tokenType == SpiceParser::LPAREN) { // Consider function call
-      tokenCounter++;                              // Consume LPAREN
       std::string functionName = currentVarName;
       std::string accessScopePrefix = scopePath.getScopeName();
 
@@ -1334,7 +1346,16 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
       ScopePath scopePathBackup = scopePath;
       SymbolType thisType = currentThisType;
 
+      // Get template types
+      std::vector<SymbolType> templateTypes;
+      if (!ctx->templateDef().empty()) {
+        for (const auto &dataType : ctx->templateDef()[0]->typeLst()->dataType())
+          templateTypes.push_back(visit(dataType).as<SymbolType>());
+        tokenCounter++; // Consume templateDef
+      }
+
       // Visit args
+      tokenCounter++; // Consume LPAREN
       std::vector<SymbolType> argTypes;
       auto *argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
       if (argLst != nullptr) {
@@ -1359,8 +1380,8 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         argTypesWithOptional.reserve(argTypes.size());
         for (auto &argType : argTypes)
           argTypesWithOptional.emplace_back(argType, false);
-        Function function =
-            Function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN), argTypesWithOptional);
+        Function function = Function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN),
+                                     argTypesWithOptional, templateTypes);
         throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
                        "Function/Procedure '" + function.getSignature() + "' could not be found");
       }

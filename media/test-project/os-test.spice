@@ -44,11 +44,12 @@ f<int> main() {
 }*/
 
 type T dyn;
+type U dyn;
 
-f<double> genericFunction<T>(T arg1, T arg2) {
+f<double> genericFunction<T, U>(T arg1, U arg2) {
     return (double) arg1 + arg2;
 }
 
 f<int> main() {
-    printf("%f\n", genericFunction<int>(1, 2));
+    printf("%f\n", genericFunction<int, double>(1, 2.4));
 }
