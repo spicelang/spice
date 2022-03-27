@@ -51,4 +51,12 @@ dyn v = Vector<string>{};
 ```
 
 ## Functionality
-While running the analyzer, Spice will check which concrete manifestations generic functions or structs are being used elsewhere within the code base. It will generate IR for exactly those manifestations.
+While running the analyzer, Spice will check which concrete manifestations generic functions or structs are being used elsewhere
+within the code base. It will generate IR for exactly those manifestations.
+
+### Detailed technical description
+After a call to `substantiate()`, the optional arguments are substantiated, but the generic types are not. When `match()` is called,
+it also checks if the call matches to a generic function. If yes, the generic function is duplicated in the function registry, the
+duplicate gets the concrete types by the `match()` method and the new function gets returned to the caller of `match()`.  At the end
+of the analyzer run, all functions that are not fully substantiated (optional types as well as generic types) get removed from the
+symbol table.

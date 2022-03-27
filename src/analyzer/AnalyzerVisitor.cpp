@@ -1680,10 +1680,16 @@ antlrcpp::Any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContex
     return SymbolType(TY_STRING);
   if (ctx->TYPE_BOOL())
     return SymbolType(TY_BOOL);
-  if (!ctx->IDENTIFIER().empty()) { // Struct type
-    SymbolTable *accessScope = scopePath.getCurrentScope();
-    if (accessScope == nullptr)
-      accessScope = currentScope;
+  if (!ctx->IDENTIFIER().empty()) { // Struct or generic type
+    // Check if it is a generic type
+    std::string firstFragment = ctx->IDENTIFIER()[0]->toString();
+    SymbolTableEntry *entry = currentScope->lookup(firstFragment);
+    if (ctx->IDENTIFIER().size() == 1 && entry && entry->getType().is(TY_GENERIC))
+      return SymbolType(TY_GENERIC, firstFragment);
+
+    // It is a struct type -> get the access scope
+    SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+
     // Get type name in format: a.b.c and retrieve the scope in parallel
     std::string accessScopePrefix;
     std::string structName;

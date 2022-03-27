@@ -25,7 +25,7 @@ void ScopePath::clear() { fragments.clear(); }
 SymbolTable *ScopePath::getCurrentScope() const {
   if (fragments.empty())
     return nullptr;
-  return std::get<1>(fragments.back());
+  return fragments.back().second;
 }
 
 /**

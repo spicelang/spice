@@ -21,7 +21,8 @@
 ## Syntax
 
 ### Push work to a new anonymous thread
-This enables the programmer to execute portions of code in another thread that runs in parallel to the original one. The block immediately returns after launching the new thread and continues executing the code after the thread block.
+This enables the programmer to execute portions of code in another thread that runs in parallel to the original one. The block
+immediately returns after launching the new thread and continues executing the code after the thread block.
 
 ```spice
 import "std/os/thread" as t;
@@ -34,10 +35,12 @@ thread {
 }
 ```
 
-Within the thread block, the builtin function `tid()` can be used to obtain the so-called thread id (in the following called `tid`). This is the id, which Spice assigned to the anonymous thread.
+Within the thread block, the builtin function `tid()` can be used to obtain the so-called thread id (in the following called `tid`).
+This is the id, which Spice assigned to the anonymous thread.
 
 ### Waiting for a thread to terminate
-To wait for another thread to end its execution, the builtin `join(byte*...)` can be used. The program will suspend the execution when calling `join` until the thread with the given tid has terminated.
+To wait for another thread to end its execution, the builtin `join(byte*...)` can be used. The program will suspend the execution
+when calling `join` until the thread with the given tid has terminated.
 
 ```spice
 byte* t1;
@@ -59,12 +62,16 @@ t3 = thread {
 ```
 
 ### Captures
-Variables from outside the thread, that are used within a thread are called `captures`. For being thread-safe, we need to know whether it is only a reading capture or it also needs write access. If we write to a capture from within a thread, we need to mark the allocation of the variable as `volatile`.
+Variables from outside the thread, that are used within a thread are called `captures`. For being thread-safe, we need to know
+whether it is only a reading capture or it also needs write access. If we write to a capture from within a thread, we need to mark
+the allocation of the variable as `volatile`.
 
 ### Thread synchronization
 To really become thread-safe Spice needs support for Mutexes and synchronized functions/procedures/methods.
 
-Synchronizing functions/procedures/methods could be achieved by providing the specifier `sync`, which can be attached to them and mark them as synchronized. For each occurrence of the `sync` keyword could be an instance of `Mutex`, that will track the accessing theads. Mutexes could be realized with a `Mutex` struct in the runtime std lib for threading.
+Synchronizing functions/procedures/methods could be achieved by providing the specifier `sync`, which can be attached to them and
+mark them as synchronized. For each occurrence of the `sync` keyword could be an instance of `Mutex`, that will track the accessing
+theads. Mutexes could be realized with a `Mutex` struct in the runtime std lib for threading.
 
 A minimalistic implementation could look like this:
 
@@ -88,7 +95,10 @@ p Mutex.abandon() {
 ```
 
 ### Communication between threads (requires generics)
-For the communication between threads, there is a feature, called `Pipes`. A pipe is a wrapper around any type and can act like a temporary buffer queue for one or multiple (primitive or complex) values. Those values can be pushed by calling the builtin function `yield(pipe<any>, any)` and received by calling the `pick(pipe<any>)` builtin. If `pick` is called on a pipe and this pipe currently has no value present, the execution will pause until there is a new value for that pipe. 
+For the communication between threads, there is a feature, called `Pipes`. A pipe is a wrapper around any type and can act like a
+temporary buffer queue for one or multiple (primitive or complex) values. Those values can be pushed by calling the builtin
+function `yield(pipe<any>, any)` and received by calling the `pick(pipe<any>)` builtin. If `pick` is called on a pipe and this pipe
+currently has no value present, the execution will pause until there is a new value for that pipe. 
 
 ```spice
 pipe<int> intPipe;
@@ -106,7 +116,8 @@ byte* t2 = thread 2 {
 
 ### Thread pools (long way off, not finalized, may change)
 To support thread pools in Spice, a std module called `std/os/threadpool` is planned. <br>
-We probably need Spice support for function pointers to realize thread pools efficiently. Furthermore, it would be useful to have the `Queue` data structure to manage the tasks to execute. And for realizing Queues, we probably first need to support generics.
+We probably need Spice support for function pointers to realize thread pools efficiently. Furthermore, it would be useful to have
+the `Queue` data structure to manage the tasks to execute. And for realizing Queues, we probably first need to support generics.
 
 Idea: https://stackoverflow.com/questions/18627817/is-there-any-method-other-than-pthread-create-to-assign-work-to-the-same-thread
 

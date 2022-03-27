@@ -1309,17 +1309,17 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
       parentFunction->getBasicBlockList().push_back(bb);
       incomingBlocks[i] = {nullptr, bb};
     }
-    createCondBr(lhs, bEnd, std::get<1>(incomingBlocks[1]));
+    createCondBr(lhs, bEnd, incomingBlocks[1].second);
 
     // Create a block for every other condition
     for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
-      moveInsertPointToBlock(std::get<1>(incomingBlocks[i]));
+      moveInsertPointToBlock(incomingBlocks[i].second);
       llvm::Value *rhsPtr = visit(ctx->logicalAndExpr()[i]).as<llvm::Value *>();
       llvm::Value *rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-      std::get<0>(incomingBlocks[i]) = rhs;
-      std::get<1>(incomingBlocks[i]) = builder->GetInsertBlock();
+      incomingBlocks[i].first = rhs;
+      incomingBlocks[i].second = builder->GetInsertBlock();
       if (i < ctx->logicalAndExpr().size() - 1) {
-        createCondBr(rhs, bEnd, std::get<1>(incomingBlocks[i + 1]));
+        createCondBr(rhs, bEnd, incomingBlocks[i + 1].second);
       } else {
         createBr(bEnd);
       }
@@ -1330,7 +1330,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
     moveInsertPointToBlock(bEnd);
     llvm::PHINode *phi = builder->CreatePHI(lhs->getType(), ctx->logicalAndExpr().size(), "lor_phi");
     for (const auto &incomingBlock : incomingBlocks)
-      phi->addIncoming(std::get<0>(incomingBlock), std::get<1>(incomingBlock));
+      phi->addIncoming(incomingBlock.first, incomingBlock.second);
 
     // Store the result
     llvm::Value *resultPtr = insertAlloca(phi->getType());
@@ -1358,17 +1358,17 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
       parentFunction->getBasicBlockList().push_back(bb);
       incomingBlocks[i] = {nullptr, bb};
     }
-    createCondBr(lhs, std::get<1>(incomingBlocks[1]), bEnd);
+    createCondBr(lhs, incomingBlocks[1].second, bEnd);
 
     // Create a block for every other condition
     for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
-      moveInsertPointToBlock(std::get<1>(incomingBlocks[i]));
+      moveInsertPointToBlock(incomingBlocks[i].second);
       llvm::Value *rhsPtr = visit(ctx->bitwiseOrExpr()[i]).as<llvm::Value *>();
       llvm::Value *rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
-      std::get<0>(incomingBlocks[i]) = rhs;
-      std::get<1>(incomingBlocks[i]) = builder->GetInsertBlock();
+      incomingBlocks[i].first = rhs;
+      incomingBlocks[i].second = builder->GetInsertBlock();
       if (i < ctx->bitwiseOrExpr().size() - 1) {
-        createCondBr(rhs, std::get<1>(incomingBlocks[i + 1]), bEnd);
+        createCondBr(rhs, incomingBlocks[i + 1].second, bEnd);
       } else {
         createBr(bEnd);
       }
@@ -1379,7 +1379,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
     moveInsertPointToBlock(bEnd);
     llvm::PHINode *phi = builder->CreatePHI(lhs->getType(), ctx->bitwiseOrExpr().size(), "land_phi");
     for (const auto &incomingBlock : incomingBlocks)
-      phi->addIncoming(std::get<0>(incomingBlock), std::get<1>(incomingBlock));
+      phi->addIncoming(incomingBlock.first, incomingBlock.second);
 
     // Store the result
     llvm::Value *resultPtr = insertAlloca(phi->getType());

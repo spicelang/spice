@@ -210,8 +210,8 @@ SymbolType OpRuleManager::validateBinaryOperation(const antlr4::Token &token, co
 SymbolType OpRuleManager::validateUnaryOperation(const antlr4::Token &token, const std::vector<UnaryOpRule> &opRules,
                                                  const std::string &opName, const SymbolType &lhs) {
   for (const auto &rule : opRules) {
-    if (std::get<0>(rule) == lhs)
-      return std::get<1>(rule);
+    if (rule.first == lhs)
+      return rule.second;
   }
   throw printErrorMessageUnary(token, opName, lhs);
 }
