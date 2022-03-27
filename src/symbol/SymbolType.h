@@ -60,6 +60,7 @@ public:
   [[nodiscard]] SymbolType getBaseType() const;
   [[nodiscard]] std::string getName(bool withSize = false) const;
   [[nodiscard]] unsigned int getArraySize() const;
+  friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
 

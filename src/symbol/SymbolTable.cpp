@@ -307,7 +307,7 @@ const Function *SymbolTable::matchFunction(const std::string &functionName, cons
       continue;
     bool differentArgTypes = false;
     for (int i = 0; i < argTypes.size(); i++) {
-      if (curArgTypes[i] != argTypes[i]) {
+      if (!equalsIgnoreArraySizes(curArgTypes[i], argTypes[i])) {
         differentArgTypes = true;
         break;
       }

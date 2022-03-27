@@ -241,6 +241,31 @@ unsigned int SymbolType::getArraySize() const {
   return std::stoi(typeChain.top().second);
 }
 
+/**
+ * Compares the type chains of two symbol types without taking array sizes into account
+ *
+ * @param lhs Lhs symbol type
+ * @param rhs Rhs symbol type
+ * @return Equal or not
+ */
+bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs) {
+  // Compare sizes of stacks
+  if (lhs.typeChain.size() != rhs.typeChain.size())
+    return false;
+
+  // Compare stack elements
+  for (int i = 0; i < lhs.typeChain.size(); i++) {
+    if ((lhs.typeChain.top().first != TY_ARRAY || rhs.typeChain.top().first != TY_ARRAY) &&
+        lhs.typeChain.top() != rhs.typeChain.top()) {
+      return false;
+    }
+    lhs.typeChain.pop();
+    rhs.typeChain.pop();
+  }
+
+  return true;
+}
+
 bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
 
 bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain != rhs.typeChain; }
