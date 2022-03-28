@@ -75,11 +75,26 @@ source file.
       C-->D;
 ```
 
-*Note: A is the main source file*
+A is the main source file.
 
 Up to now, the compiler executed the analyzer/generator runs in following order:
 
-- Analyzer run for A
-- Analyzer run for B
-- Analyzer run for D
-- 
+1. ┌ Run analyzer for A
+2. │┌ Run analyzer for B
+3. ││┌ Run analyzer for D
+4. ││└ Run generator for D 
+5. │└ Run generator for B
+6. │┌ Run analyzer for C
+7. │└ Run generator for C
+8. └ Generator run for A
+
+The new execution order has to be:
+
+1. ┌─── Run analyzer for A
+2. │┌── Run analyzer for B
+3. ││┌─ Run analyzer for D
+4. │││┌ Run analyzer for C
+5. └┼┼┼ Run generator or A
+6.  └┼┼ Run generator for B
+7.   └┼ Run generator for D
+8.    └ Run generator for C
