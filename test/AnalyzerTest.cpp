@@ -101,6 +101,9 @@ void executeTest(const AnalyzerTestCase &testCase) {
     cli.enrich();
     options = *cli.getOptions();
 
+    // Push main source file to module registry
+    moduleRegistry.pushToImportPath(sourceFile);
+
     // Execute semantic analysis
     AnalyzerVisitor analyzer =
         AnalyzerVisitor(context, builder, &moduleRegistry, &threadFactory, &options, nullptr, sourceFile, true, false);

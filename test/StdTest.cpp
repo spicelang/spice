@@ -111,6 +111,9 @@ void executeTest(const StdTestCase &testCase) {
     // Create linker interface
     LinkerInterface linker = LinkerInterface(&err, &threadFactory, &options);
 
+    // Push main source file to module registry
+    moduleRegistry.pushToImportPath(sourceFile);
+
     // Execute semantic analysis
     AnalyzerVisitor analyzer =
         AnalyzerVisitor(context, builder, &moduleRegistry, &threadFactory, &options, &linker, sourceFile, true, false);

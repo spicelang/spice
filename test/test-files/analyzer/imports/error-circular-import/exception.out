@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/imports/error-circular-import/source.spice at 1:8: Circular import detected: './test-files/analyzer/imports/error-circular-import/source1.spice'
+Semantic error in ./test-files/analyzer/imports/error-circular-import/source2.spice at 1:8: Circular import detected: ./test-files/analyzer/imports/error-circular-import/source.spice

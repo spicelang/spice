@@ -760,7 +760,6 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *c
   } else { // Include own source file
     // Check in module registry if the file can be imported
     std::string sourceFileDir = FileUtil::getFileDir(sourceFile);
-    moduleRegistry->addModule(err, *ctx->STRING_LITERAL()->getSymbol(), sourceFileDir + "/" + importPath);
     // Import file
     std::string defaultPath = sourceFileDir + "/" + importPath + ".spice";
     std::string osPath = sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + ".spice";
@@ -779,9 +778,27 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *c
     }
   }
 
-  // Kick off the compilation of the imported source file
-  SymbolTable *nestedTable = CompilerInstance::CompileSourceFile(context, builder, moduleRegistry, threadFactory, cliOptions,
-                                                                 linker, filePath, false, foundInStd);
+  // Check if this file could cause a circular import
+  if (moduleRegistry->causesCircularImport(filePath))
+    throw err->get(*ctx->STRING_LITERAL()->getSymbol(), CIRCULAR_DEPENDENCY, filePath);
+
+  // Check if the file is already or needs to be compiled
+  SymbolTable *nestedTable;
+  if (moduleRegistry->isAlreadyCompiled(filePath)) {
+    nestedTable = moduleRegistry->getSymbolTable(filePath);
+  } else {
+    // Push module to module path
+    moduleRegistry->pushToImportPath(filePath);
+
+    // Kick off the compilation of the imported source file
+    nestedTable = CompilerInstance::CompileSourceFile(context, builder, moduleRegistry, threadFactory, cliOptions, linker,
+                                                      filePath, false, foundInStd);
+    moduleRegistry->addToCompiledModules(filePath, nestedTable);
+
+    // Pop module from module path
+    moduleRegistry->popFromImportPath();
+  }
+  assert(nestedTable != nullptr);
 
   // Create symbol of type TYPE_IMPORT in the current scope
   std::string importIden = ctx->IDENTIFIER()->toString();
@@ -792,7 +809,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *c
   nestedTable->setImported();
   currentScope->mountChildBlock(importIden, nestedTable);
 
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {

@@ -51,10 +51,8 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) {
       return nullptr;
 
     // Check if this scope requires capturing and capture the variable if appropriate
-    if (requiresCapturing && captures.find(name) == captures.end() &&
-        !entry->getType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE})) {
+    if (requiresCapturing && !captures.contains(name) && !entry->getType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
       captures.insert({name, Capture(entry)});
-    }
   }
 
   return entry;
@@ -68,7 +66,7 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) {
  */
 SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
   // If not available in the current scope, return nullptr
-  if (symbols.find(name) == symbols.end())
+  if (!symbols.contains(name))
     return nullptr;
   // Otherwise, return the symbol
   return &symbols.at(name);
@@ -140,7 +138,7 @@ Capture *SymbolTable::lookupCapture(const std::string &name) {
  */
 Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
   // If not available in the current scope, return nullptr
-  if (captures.find(name) == captures.end())
+  if (!captures.contains(name))
     return nullptr;
   // Otherwise, return the capture
   return &captures.at(name);
@@ -155,7 +153,7 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
  */
 SymbolTable *SymbolTable::lookupTable(const std::string &scopeId) {
   // If not available in the current scope, search in the parent scope
-  if (children.find(scopeId) == children.end()) {
+  if (!children.contains(scopeId)) {
     if (parent == nullptr)
       return nullptr;
     return parent->lookupTable(scopeId);
@@ -226,9 +224,7 @@ SymbolTable *SymbolTable::getParent() const { return parent; }
  * @return Pointer to the child symbol table
  */
 SymbolTable *SymbolTable::getChild(const std::string &scopeId) {
-  if (children.empty())
-    return nullptr;
-  if (children.find(scopeId) == children.end())
+  if (children.empty() || !children.contains(scopeId))
     return nullptr;
   return children.at(scopeId);
 }
@@ -465,7 +461,7 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
   // Check if the function exists already
-  if (functions.find(function.getMangledName()) != functions.end())
+  if (functions.contains(function.getMangledName()))
     throw err->get(token, FUNCTION_DECLARED_TWICE, "The function/procedure '" + function.getSignature() + "' is declared twice");
   // Add function to function list
   functions.insert({function.getMangledName(), function});

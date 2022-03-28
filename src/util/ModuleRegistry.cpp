@@ -4,15 +4,32 @@
 
 #include <algorithm>
 
-#include <exception/SemanticError.h>
+void ModuleRegistry::pushToImportPath(const std::string &modulePath) { currentImportPath.push(modulePath); }
 
-/**
- * Add a module path to the module registry
- *
- * @param modulePath Path to a source file / module
- */
-void ModuleRegistry::addModule(const ErrorFactory *err, const antlr4::Token &token, const std::string &modulePath) {
-  if (std::find(modulePaths.begin(), modulePaths.end(), modulePath) != modulePaths.end())
-    throw err->get(token, CIRCULAR_DEPENDENCY, "'" + modulePath + ".spice'");
-  modulePaths.push_back(modulePath);
+void ModuleRegistry::popFromImportPath() { currentImportPath.pop(); }
+
+void ModuleRegistry::addToCompiledModules(const std::string &modulePath, SymbolTable *symbolTable) {
+  compiledModules.insert({modulePath, symbolTable});
 }
+
+SymbolTable *ModuleRegistry::getSymbolTable(const std::string &modulePath) const {
+  // If not available in the current scope, return nullptr
+  if (!compiledModules.contains(modulePath))
+    return nullptr;
+  return compiledModules.at(modulePath);
+}
+
+bool ModuleRegistry::causesCircularImport(const std::string &modulePath) const {
+  std::stack<std::string> tmpImportPath = currentImportPath;
+
+  // Check if there is a path on the stack which matches with the module path to check
+  while (!tmpImportPath.empty()) {
+    if (tmpImportPath.top() == modulePath)
+      return true;
+    tmpImportPath.pop();
+  }
+
+  return false;
+}
+
+bool ModuleRegistry::isAlreadyCompiled(const std::string &modulePath) const { return compiledModules.contains(modulePath); }

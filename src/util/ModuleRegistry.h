@@ -3,9 +3,8 @@
 #include <string>
 #include <vector>
 
-#include <exception/ErrorFactory.h>
-
 #include "Token.h"
+#include "symbol/SymbolTable.h"
 
 /**
  * Class to remember source files, which have already been imported. This is required to detect circular dependencies
@@ -13,9 +12,15 @@
 class ModuleRegistry {
 public:
   // Public methods
-  void addModule(const ErrorFactory *errorFactory, const antlr4::Token &token, const std::string &moduleName);
+  void pushToImportPath(const std::string &modulePath);
+  void popFromImportPath();
+  void addToCompiledModules(const std::string &modulePath, SymbolTable *symbolTable);
+  [[nodiscard]] bool causesCircularImport(const std::string &modulePath) const;
+  [[nodiscard]] bool isAlreadyCompiled(const std::string &modulePath) const;
+  [[nodiscard]] SymbolTable *getSymbolTable(const std::string &modulePath) const;
 
 private:
   // Members
-  std::vector<std::string> modulePaths;
+  std::map<std::string, SymbolTable *> compiledModules;
+  std::stack<std::string> currentImportPath;
 };

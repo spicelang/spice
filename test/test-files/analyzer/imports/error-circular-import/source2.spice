@@ -1,0 +1,5 @@
+import "source" as s;
+
+p test() {
+    printf("p: %f", s.getDouble());
+}

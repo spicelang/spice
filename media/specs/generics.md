@@ -60,3 +60,26 @@ it also checks if the call matches to a generic function. If yes, the generic fu
 duplicate gets the concrete types by the `match()` method and the new function gets returned to the caller of `match()`.  At the end
 of the analyzer run, all functions that are not fully substantiated (optional types as well as generic types) get removed from the
 symbol table.
+
+### Change order of analyzer/generator runs
+For generics, it is essential to have the whole symbol table (for all source files) present when the generator runs for the first
+source file.
+
+#### Example
+
+```mermaid
+  graph TD;
+      A-->B;
+      A-->C;
+      B-->D;
+      C-->D;
+```
+
+*Note: A is the main source file*
+
+Up to now, the compiler executed the analyzer/generator runs in following order:
+
+- Analyzer run for A
+- Analyzer run for B
+- Analyzer run for D
+- 

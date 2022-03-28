@@ -34,6 +34,9 @@ void compileProject(CliOptions *options) {
     LinkerInterface linker = LinkerInterface(&err, &threadFactory, options);
     linker.setOutputPath(options->outputPath);
 
+    // Push main source file to module registry
+    moduleRegistry.pushToImportPath(options->mainSourceFile);
+
     // Compile main source file
     CompilerInstance::CompileSourceFile(context, builder, &moduleRegistry, &threadFactory, options, &linker,
                                         options->mainSourceFile, true, false);
