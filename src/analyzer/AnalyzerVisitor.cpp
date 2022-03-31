@@ -725,58 +725,8 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *c
   importPath = importPath.substr(1, importPath.size() - 2);
 
   // Check if source file exists
-  std::string filePath;
-  bool foundInStd = false;
-  if (importPath.rfind("std/", 0) == 0) { // Include source file from standard library
-    foundInStd = true;
-    std::string sourceFileIden = importPath.substr(importPath.find("std/") + 4);
-    // Find std library
-    std::string stdPath;
-    if (FileUtil::fileExists("/usr/lib/spice/std")) {
-      stdPath = "/usr/lib/spice/std/";
-    } else if (FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
-      stdPath = std::string(std::getenv("SPICE_STD_DIR"));
-      if (stdPath.rfind('/') != stdPath.size() - 1)
-        stdPath += "/";
-    } else {
-      throw err->get(*ctx->STRING_LITERAL()->getSymbol(), STD_NOT_FOUND,
-                     "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
-    }
-    // Check if source file exists
-    std::string defaultPath = stdPath + sourceFileIden + ".spice";
-    std::string osPath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + ".spice";
-    std::string osArchPath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
-
-    if (FileUtil::fileExists(defaultPath)) {
-      filePath = defaultPath;
-    } else if (FileUtil::fileExists(osPath)) {
-      filePath = osPath;
-    } else if (FileUtil::fileExists(osArchPath)) {
-      filePath = osArchPath;
-    } else {
-      throw err->get(*ctx->STRING_LITERAL()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
-                     "The source file '" + importPath + ".spice' was not found in the standard library");
-    }
-  } else { // Include own source file
-    // Check in module registry if the file can be imported
-    std::string sourceFileDir = FileUtil::getFileDir(sourceFile);
-    // Import file
-    std::string defaultPath = sourceFileDir + "/" + importPath + ".spice";
-    std::string osPath = sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + ".spice";
-    std::string osArchPath =
-        sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
-
-    if (FileUtil::fileExists(defaultPath)) {
-      filePath = defaultPath;
-    } else if (FileUtil::fileExists(osPath)) {
-      filePath = osPath;
-    } else if (FileUtil::fileExists(osArchPath)) {
-      filePath = osArchPath;
-    } else {
-      throw err->get(*ctx->STRING_LITERAL()->getSymbol(), IMPORTED_FILE_NOT_EXISTING,
-                     "The source file '" + importPath + ".spice' does not exist");
-    }
-  }
+  bool foundInStd = importPath.rfind("std/", 0) == 0;
+  std::string filePath = FileUtil::getImportPath(importPath, sourceFile, err, *ctx->STRING_LITERAL()->getSymbol(), cliOptions);
 
   // Check if this file could cause a circular import
   if (moduleRegistry->causesCircularImport(filePath))
@@ -784,16 +734,18 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *c
 
   // Check if the file is already or needs to be compiled
   SymbolTable *nestedTable;
-  if (moduleRegistry->isAlreadyCompiled(filePath)) {
+  if (moduleRegistry->isAlreadyAnalyzed(filePath)) {
     nestedTable = moduleRegistry->getSymbolTable(filePath);
   } else {
     // Push module to module path
     moduleRegistry->pushToImportPath(filePath);
 
-    // Kick off the compilation of the imported source file
-    nestedTable = CompilerInstance::CompileSourceFile(context, builder, moduleRegistry, threadFactory, cliOptions, linker,
+    // Kick off the analyzer for the imported source file
+    nestedTable = CompilerInstance::analyzeSourceFile(context, builder, moduleRegistry, threadFactory, cliOptions, linker,
                                                       filePath, false, foundInStd);
-    moduleRegistry->addToCompiledModules(filePath, nestedTable);
+
+    // Add to analyzed modules
+    moduleRegistry->addToAnalyzedModules(filePath, nestedTable);
 
     // Pop module from module path
     moduleRegistry->popFromImportPath();
@@ -1744,49 +1696,43 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   // Get external struct name
   std::string newStructName = structScopePrefix + structName;
 
+  // Create new struct type
+  SymbolType newStructTy = SymbolType(TY_STRUCT, newStructName);
+
   // Check if the struct is imported already
-  SymbolTableEntry *newStructSymbol = sourceScope->lookup(newStructName);
-  if (newStructSymbol)
-    return newStructSymbol->getType();
+  Capture *globalCapture = rootScope->lookupCapture(newStructName);
+  if (globalCapture)
+    return newStructTy;
 
   // Check if external struct is declared
   SymbolTableEntry *externalStructSymbol = sourceScope->lookup(structName);
   if (!externalStructSymbol)
     throw err->get(token, REFERENCED_UNDEFINED_STRUCT, "Could not find struct '" + newStructName + "'");
-  externalStructSymbol->setUsed();
 
   // Get the associated symbolTable of the external struct symbol
   SymbolTable *externalStructTable = sourceScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
 
   // Initialize potential structs for field types
   for (auto &symbol : externalStructTable->getSymbols()) {
-    if (symbol.second.getType().isBaseType(TY_STRUCT)) {
-      std::string nestedStructName = symbol.second.getType().getBaseType().getSubType();
+    SymbolTableEntry &entry = symbol.second;
+    if (entry.getType().isBaseType(TY_STRUCT)) {
+      std::string nestedStructName = entry.getType().getBaseType().getSubType();
       // Initialize nested struct
       initExtStruct(token, sourceScope, structScopePrefix, nestedStructName);
       // Re-map type of field to the imported struct
-      SymbolType newNestedStructType = symbol.second.getType().replaceSubType(structScopePrefix + nestedStructName);
-      symbol.second.updateType(newNestedStructType, true);
-      // Set LLVM type of nested struct to the field
-      SymbolTableEntry *nestedStructEntry = rootScope->lookup(structScopePrefix + nestedStructName);
-      assert(nestedStructEntry != nullptr);
-      symbol.second.updateLLVMType(nestedStructEntry->getLLVMType());
+      SymbolType newNestedStructType = entry.getType().replaceSubType(structScopePrefix + nestedStructName);
+      entry.updateType(newNestedStructType, true);
     }
   }
 
-  // Copy struct symbol and struct table to the root scope of the current source file
-  SymbolType newStructTy = SymbolType(TY_STRUCT, newStructName);
-
   // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
-  rootScope->insert(newStructName, newStructTy, SymbolSpecifiers(newStructTy), DECLARED,
-                    externalStructSymbol->getDefinitionToken());
-  newStructSymbol = rootScope->lookup(newStructName);
-  newStructSymbol->updateLLVMType(externalStructSymbol->getLLVMType());
-  newStructSymbol->setUsed();
+  Capture newGlobalCapture = Capture(externalStructSymbol, newStructName, DECLARED);
+  rootScope->addCapture(newStructName, newGlobalCapture);
+  externalStructSymbol->setUsed();
 
   // Mount the external struct table to the new position in the root scope of the current source file
-  externalStructTable->setImported();
   rootScope->mountChildBlock(STRUCT_SCOPE_PREFIX + newStructName, externalStructTable);
+  rootScope->lookupTable(STRUCT_SCOPE_PREFIX + newStructName)->disableCompilerWarnings(); // Disable compiler warnings
 
   return newStructTy;
 }
@@ -1797,22 +1743,19 @@ SymbolType AnalyzerVisitor::initExtGlobal(const antlr4::Token &token, SymbolTabl
   std::string newGlobalName = globalScopePrefix + globalName;
 
   // Check if the global var is imported already
-  SymbolTableEntry *newGlobalSymbol = sourceScope->lookup(newGlobalName);
-  if (newGlobalSymbol)
-    return newGlobalSymbol->getType();
+  Capture *globalCapture = rootScope->lookupCapture(newGlobalName);
+  if (globalCapture)
+    return globalCapture->getEntry()->getType();
 
   // Check if external global var is declared
   SymbolTableEntry *externalGlobalSymbol = sourceScope->lookup(globalName);
   if (!externalGlobalSymbol)
-    throw err->get(token, REFERENCED_UNDEFINED_STRUCT, "Could not find global variable '" + newGlobalName + "'");
-  externalGlobalSymbol->setUsed();
-  SymbolType globalTy = externalGlobalSymbol->getType();
+    throw err->get(token, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + newGlobalName + "'");
 
   // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
-  rootScope->insert(newGlobalName, globalTy, SymbolSpecifiers(globalTy), DECLARED, externalGlobalSymbol->getDefinitionToken());
-  newGlobalSymbol = rootScope->lookup(newGlobalName);
-  newGlobalSymbol->updateLLVMType(externalGlobalSymbol->getLLVMType());
-  newGlobalSymbol->setUsed();
+  Capture newGlobalCapture = Capture(externalGlobalSymbol, newGlobalName, DECLARED);
+  rootScope->addCapture(newGlobalName, newGlobalCapture);
+  externalGlobalSymbol->setUsed();
 
-  return globalTy;
+  return externalGlobalSymbol->getType();
 }

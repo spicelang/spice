@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "GeneratorVisitor.h"
+#include "CompilerInstance.h"
 
 #include <stdexcept>
 
@@ -26,17 +27,20 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
-                                   const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory *threadFactory,
-                                   SymbolTable *symbolTable, CliOptions *options, const std::string &sourceFile,
-                                   const std::string &objectFile, bool requiresMainFct) {
+                                   const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
+                                   ThreadFactory *threadFactory, SymbolTable *symbolTable, CliOptions *options,
+                                   LinkerInterface *linker, const std::string &sourceFile, const std::string &objectFile,
+                                   bool requiresMainFct) {
   this->context = context;
   this->builder = builder;
+  this->moduleRegistry = moduleRegistry;
   this->threadFactory = threadFactory;
   this->currentScope = this->rootScope = symbolTable;
   this->sourceFile = sourceFile;
   this->objectFile = objectFile;
   this->requiresMainFct = requiresMainFct;
   this->cliOptions = options;
+  this->linker = linker;
 
   // Create error factory for this specific file
   this->err = new ErrorFactory(sourceFile);
@@ -528,20 +532,20 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
   std::string varName = currentVarName = ctx->IDENTIFIER()->toString();
 
   // Get symbol table entry and the symbol specifiers
-  SymbolTableEntry *symbolTableEntry = currentScope->lookup(varName);
-  assert(symbolTableEntry != nullptr);
-  SymbolSpecifiers specifiers = symbolTableEntry->getSpecifiers();
+  SymbolTableEntry *globalVarEntry = currentScope->lookup(varName);
+  assert(globalVarEntry != nullptr);
+  SymbolSpecifiers specifiers = globalVarEntry->getSpecifiers();
   llvm::GlobalValue::LinkageTypes linkage =
       specifiers.isPublic() ? llvm::GlobalValue::LinkageTypes::ExternalLinkage : llvm::GlobalValue::LinkageTypes::InternalLinkage;
 
   // Create correctly signed LLVM type from the data type
   currentVarSigned = specifiers.isSigned();
   llvm::Type *varType = visit(ctx->dataType()).as<llvm::Type *>();
-  symbolTableEntry->updateLLVMType(varType);
+  globalVarEntry->updateLLVMType(varType);
 
   // Create global variable
   llvm::Value *memAddress = module->getOrInsertGlobal(varName, varType);
-  symbolTableEntry->updateAddress(memAddress);
+  globalVarEntry->updateAddress(memAddress);
   // Set some attributes to it
   llvm::GlobalVariable *global = module->getNamedGlobal(varName);
   global->setLinkage(linkage);
@@ -968,7 +972,34 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
-  return nullptr; // Noop
+  // Check if imported library exists
+  std::string importPath = ctx->STRING_LITERAL()->toString();
+  importPath = importPath.substr(1, importPath.size() - 2);
+
+  // Check if source file exists
+  std::string filePath = FileUtil::getImportPath(importPath, sourceFile, err, *ctx->STRING_LITERAL()->getSymbol(), cliOptions);
+
+  // Check if the file is already or needs to be compiled
+  if (!moduleRegistry->isAlreadyGenerated(filePath)) {
+    // Push module to module path
+    moduleRegistry->pushToImportPath(filePath);
+
+    // Get child symbol table
+    SymbolTable *symbolTable = currentScope->getChild(ctx->IDENTIFIER()->toString());
+    assert(symbolTable != nullptr);
+
+    // Kick off the generator for the imported source file
+    CompilerInstance::generateSourceFile(context, builder, moduleRegistry, threadFactory, cliOptions, linker, filePath, false,
+                                         symbolTable);
+
+    // Add to generated modules
+    moduleRegistry->addToGeneratedModules(filePath);
+
+    // Pop module from module path
+    moduleRegistry->popFromImportPath();
+  }
+
+  return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
@@ -1944,7 +1975,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     currentConstValue = visit(ctx->primitiveValue()).as<llvm::Constant *>();
 
     // If global variable value, return value immediately, because it is already a pointer
-    if (!currentScope->getParent())
+    if (currentScope == rootScope)
       return currentConstValue;
 
     // Store the value to a tmp variable
@@ -1958,7 +1989,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     currentConstValue = llvm::Constant::getNullValue(nilType);
 
     // If global variable value, return value immediately, because it is already a pointer
-    if (!currentScope->getParent())
+    if (currentScope == rootScope)
       return currentConstValue;
 
     // Store the value to a tmp variable
@@ -2345,6 +2376,11 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
   }
   case TY_STRUCT: {
     SymbolTableEntry *structSymbol = currentScope->lookup(symbolType.getSubType());
+    /*if (!structSymbol) { // Symbol not found, check if there is a capture that references an external struct
+      Capture *externalCapture = currentScope->lookupCapture(symbolType.getSubType());
+      assert(externalCapture != nullptr);
+      structSymbol = externalCapture->getEntry();
+    }*/
     assert(structSymbol != nullptr);
     llvmBaseType = structSymbol->getLLVMType();
     assert(llvmBaseType != nullptr);
@@ -2398,17 +2434,18 @@ llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type) {
 }
 
 SymbolTableEntry *GeneratorVisitor::initExtGlobal(const std::string &globalName, const std::string &fqGlobalName) {
-  SymbolTableEntry *entry = currentScope->lookup(fqGlobalName);
+  Capture *capture = currentScope->lookupCapture(fqGlobalName);
+  SymbolTableEntry *global = capture->getEntry();
 
   // Check if the entry is already initialized
-  if (entry->getState() == INITIALIZED)
-    return entry;
+  if (capture->getState() == INITIALIZED)
+    return global;
 
   // Declare the global also in the current module and update the address of the symbol accordingly
-  llvm::Value *memAddress = module->getOrInsertGlobal(globalName, entry->getLLVMType());
-  entry->updateAddress(memAddress);
+  llvm::Value *memAddress = module->getOrInsertGlobal(globalName, global->getLLVMType());
+  global->updateAddress(memAddress);
 
-  return entry;
+  return global;
 }
 
 bool GeneratorVisitor::compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs) {

@@ -1,5 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
+#pragma once
+
 #include <string>
 #include <vector>
 
@@ -14,13 +16,16 @@ public:
   // Public methods
   void pushToImportPath(const std::string &modulePath);
   void popFromImportPath();
-  void addToCompiledModules(const std::string &modulePath, SymbolTable *symbolTable);
+  void addToAnalyzedModules(const std::string &modulePath, SymbolTable *symbolTable);
+  void addToGeneratedModules(const std::string &modulePath);
   [[nodiscard]] bool causesCircularImport(const std::string &modulePath) const;
-  [[nodiscard]] bool isAlreadyCompiled(const std::string &modulePath) const;
+  [[nodiscard]] bool isAlreadyAnalyzed(const std::string &modulePath) const;
+  [[nodiscard]] bool isAlreadyGenerated(const std::string &modulePath) const;
   [[nodiscard]] SymbolTable *getSymbolTable(const std::string &modulePath) const;
 
 private:
   // Members
-  std::map<std::string, SymbolTable *> compiledModules;
+  std::map<std::string, SymbolTable *> analyzedModules;
+  std::map<std::string, bool> generatedModules;
   std::stack<std::string> currentImportPath;
 };

@@ -167,8 +167,8 @@ void executeTest(const GeneratorTestCase &testCase) {
     }
 
     // Execute generator
-    GeneratorVisitor generator =
-        GeneratorVisitor(context, builder, &threadFactory, symbolTable, &options, sourceFile, "./source.spice.o", true);
+    GeneratorVisitor generator = GeneratorVisitor(context, builder, &moduleRegistry, &threadFactory, symbolTable, &options,
+                                                  &linker, sourceFile, "./source.spice.o", true);
     generator.init();      // Initialize code generation
     generator.visit(tree); // Generate IR code
 

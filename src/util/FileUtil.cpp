@@ -9,6 +9,60 @@
 #include <sys/stat.h>
 
 /**
+ * Get the concrete import path from an import statement
+ *
+ * @return File path
+ */
+std::string FileUtil::getImportPath(const std::string &importPath, const std::string &sourceFile, const ErrorFactory *err,
+                                    const antlr4::Token &token, const CliOptions *cliOptions) {
+  if (importPath.rfind("std/", 0) == 0) { // Include source file from standard library
+    std::string sourceFileIden = importPath.substr(importPath.find("std/") + 4);
+    // Find std library
+    std::string stdPath;
+    if (FileUtil::fileExists("/usr/lib/spice/std")) {
+      stdPath = "/usr/lib/spice/std/";
+    } else if (FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
+      stdPath = std::string(std::getenv("SPICE_STD_DIR"));
+      if (stdPath.rfind('/') != stdPath.size() - 1)
+        stdPath += "/";
+    } else {
+      throw err->get(token, STD_NOT_FOUND, "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
+    }
+    // Check if source file exists
+    std::string defaultPath = stdPath + sourceFileIden + ".spice";
+    std::string osPath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + ".spice";
+    std::string osArchPath = stdPath + sourceFileIden + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
+
+    if (FileUtil::fileExists(defaultPath)) {
+      return defaultPath;
+    } else if (FileUtil::fileExists(osPath)) {
+      return osPath;
+    } else if (FileUtil::fileExists(osArchPath)) {
+      return osArchPath;
+    }
+    throw err->get(token, IMPORTED_FILE_NOT_EXISTING,
+                   "The source file '" + importPath + ".spice' was not found in the standard library");
+  } else { // Include own source file
+    // Check in module registry if the file can be imported
+    std::string sourceFileDir = FileUtil::getFileDir(sourceFile);
+    // Import file
+    std::string defaultPath = sourceFileDir + "/" + importPath + ".spice";
+    std::string osPath = sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + ".spice";
+    std::string osArchPath =
+        sourceFileDir + "/" + importPath + "_" + cliOptions->targetOs + "_" + cliOptions->targetArch + ".spice";
+
+    if (FileUtil::fileExists(defaultPath)) {
+      return defaultPath;
+    } else if (FileUtil::fileExists(osPath)) {
+      return osPath;
+    } else if (FileUtil::fileExists(osArchPath)) {
+      return osArchPath;
+    }
+    throw err->get(token, IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath + ".spice' does not exist");
+  }
+}
+
+/**
  * Checks if a certain file exists on the file system
  *
  * @param filePath Path to the file

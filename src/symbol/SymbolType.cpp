@@ -309,6 +309,8 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "procedure";
   case TY_IMPORT:
     return "import";
+  case TY_GENERIC:
+    return "generic(" + chainElement.second + ")";
   case TY_INVALID:
     return "invalid"; // GCOV_EXCL_LINE
   }

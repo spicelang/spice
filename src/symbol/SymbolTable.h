@@ -30,7 +30,7 @@ public:
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
               const antlr4::Token &token);
-
+  void addCapture(const std::string &name, const Capture &capture);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
   SymbolTableEntry *lookupByIndex(unsigned int orderIndex);
@@ -58,6 +58,7 @@ public:
   std::vector<Function *> popFunctionDeclarationPointers();
 
   void printCompilerWarnings();
+  void disableCompilerWarnings();
 
   [[nodiscard]] nlohmann::json toJSON() const;
 
@@ -77,6 +78,7 @@ private:
   std::queue<Function *> functionAccessPointers;
   bool inMainSourceFile;
   bool imported = false;
+  bool compilerWarningsEnabled = true;
   bool requiresCapturing = false;
 
   // Private methods

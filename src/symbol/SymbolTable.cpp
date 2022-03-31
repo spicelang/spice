@@ -32,6 +32,13 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, Symbol
 }
 
 /**
+ * Add a capture to the capture list manually
+ *
+ * @param capture
+ */
+void SymbolTable::addCapture(const std::string &name, const Capture &capture) { captures.insert({name, capture}); }
+
+/**
  * Check if a symbol exists in the current or any parent scope and return it if possible
  *
  * @param name Name of the desired symbol
@@ -65,11 +72,14 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) {
  * @return Desired symbol / nullptr if the symbol was not found
  */
 SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
-  // If not available in the current scope, return nullptr
-  if (!symbols.contains(name))
-    return nullptr;
-  // Otherwise, return the symbol
-  return &symbols.at(name);
+  // Check if a symbol with this name exists in this scope
+  if (symbols.contains(name))
+    return &symbols.at(name);
+  // Check if a capture with this name exists in this scope
+  if (captures.contains(name))
+    return captures.at(name).getEntry();
+  // Otherwise, return a nullptr
+  return nullptr;
 }
 
 /**
@@ -359,7 +369,7 @@ std::vector<Function *> SymbolTable::popFunctionDeclarationPointers() {
  */
 void SymbolTable::printCompilerWarnings() {
   // Omit this table if it is an imported sub-table
-  if (imported)
+  if (compilerWarningsEnabled)
     return;
   // Visit own symbols
   for (const auto &[key, entry] : symbols) {
@@ -383,6 +393,15 @@ void SymbolTable::printCompilerWarnings() {
   // Visit children
   for (const auto &[key, child] : children)
     child->printCompilerWarnings();
+}
+
+/**
+ * Disable compiler warnings for this table and all sub-tables
+ */
+void SymbolTable::disableCompilerWarnings() {
+  for (auto &child : children)
+    child.second->disableCompilerWarnings();
+  compilerWarningsEnabled = false;
 }
 
 /**

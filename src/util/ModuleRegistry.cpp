@@ -8,15 +8,17 @@ void ModuleRegistry::pushToImportPath(const std::string &modulePath) { currentIm
 
 void ModuleRegistry::popFromImportPath() { currentImportPath.pop(); }
 
-void ModuleRegistry::addToCompiledModules(const std::string &modulePath, SymbolTable *symbolTable) {
-  compiledModules.insert({modulePath, symbolTable});
+void ModuleRegistry::addToAnalyzedModules(const std::string &modulePath, SymbolTable *symbolTable) {
+  analyzedModules.insert({modulePath, symbolTable});
 }
+
+void ModuleRegistry::addToGeneratedModules(const std::string &modulePath) { generatedModules.insert({modulePath, true}); }
 
 SymbolTable *ModuleRegistry::getSymbolTable(const std::string &modulePath) const {
   // If not available in the current scope, return nullptr
-  if (!compiledModules.contains(modulePath))
+  if (!analyzedModules.contains(modulePath))
     return nullptr;
-  return compiledModules.at(modulePath);
+  return analyzedModules.at(modulePath);
 }
 
 bool ModuleRegistry::causesCircularImport(const std::string &modulePath) const {
@@ -32,4 +34,6 @@ bool ModuleRegistry::causesCircularImport(const std::string &modulePath) const {
   return false;
 }
 
-bool ModuleRegistry::isAlreadyCompiled(const std::string &modulePath) const { return compiledModules.contains(modulePath); }
+bool ModuleRegistry::isAlreadyAnalyzed(const std::string &modulePath) const { return analyzedModules.contains(modulePath); }
+
+bool ModuleRegistry::isAlreadyGenerated(const std::string &modulePath) const { return generatedModules.contains(modulePath); }

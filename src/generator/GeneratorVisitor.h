@@ -6,8 +6,10 @@
 
 #include <cli/CliInterface.h>
 #include <generator/OpRuleConversionsManager.h>
+#include <linker/LinkerInterface.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolTable.h>
+#include <util/ModuleRegistry.h>
 #include <util/ThreadFactory.h>
 
 #include <SpiceBaseVisitor.h>
@@ -20,8 +22,9 @@ class GeneratorVisitor : public SpiceBaseVisitor {
 public:
   // Constructors
   explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                            ThreadFactory *threadFactory, SymbolTable *symbolTable, CliOptions *options,
-                            const std::string &sourceFile, const std::string &objectFile, bool requiresMainFct);
+                            ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, SymbolTable *symbolTable,
+                            CliOptions *options, LinkerInterface *linker, const std::string &sourceFile,
+                            const std::string &objectFile, bool requiresMainFct);
   ~GeneratorVisitor() override;
 
   // Public methods
@@ -82,6 +85,7 @@ private:
   std::string objectFile;
   llvm::TargetMachine *targetMachine{};
   CliOptions *cliOptions;
+  LinkerInterface *linker;
   bool requiresMainFct = true;
   std::shared_ptr<llvm::LLVMContext> context;
   std::shared_ptr<llvm::IRBuilder<>> builder;
@@ -91,6 +95,7 @@ private:
   std::string scopePrefix;
   SymbolType currentSymbolType;
   ScopePath scopePath;
+  ModuleRegistry *moduleRegistry;
   ThreadFactory *threadFactory;
   const ErrorFactory *err;
   bool blockAlreadyTerminated = false;

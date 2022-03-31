@@ -28,6 +28,21 @@ SymbolTable *CompilerInstance::CompileSourceFile(const std::shared_ptr<llvm::LLV
                                                  ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory,
                                                  CliOptions *options, LinkerInterface *linker, const std::string &sourceFile,
                                                  bool requiresMainFct, bool stdFile) {
+  // Analyze main source file
+  SymbolTable *symbolTable =
+      analyzeSourceFile(context, builder, moduleRegistry, threadFactory, options, linker, sourceFile, requiresMainFct, stdFile);
+
+  // Generate main source file
+  generateSourceFile(context, builder, moduleRegistry, threadFactory, options, linker, sourceFile, requiresMainFct, symbolTable);
+
+  return symbolTable;
+}
+
+SymbolTable *CompilerInstance::analyzeSourceFile(const std::shared_ptr<llvm::LLVMContext> &context,
+                                                 const std::shared_ptr<llvm::IRBuilder<>> &builder,
+                                                 ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory,
+                                                 CliOptions *options, LinkerInterface *linker, const std::string &sourceFile,
+                                                 bool requiresMainFct, bool stdFile) {
   // Read from file
   std::ifstream stream(sourceFile);
   if (!stream)
@@ -48,28 +63,57 @@ SymbolTable *CompilerInstance::CompileSourceFile(const std::shared_ptr<llvm::LLV
   SpiceParser parser(&tokens); // Check for syntax errors
   parser.removeErrorListeners();
   parser.addErrorListener(&parserErrorHandler);
-  antlr4::tree::ParseTree *tree = parser.entry(); // Get AST
+  antlr4::tree::ParseTree *ast = parser.entry(); // Get AST
 
   // Execute syntactical analysis
   SymbolTable *symbolTable;
   AnalyzerVisitor analyzer =
       AnalyzerVisitor(context, builder, moduleRegistry, threadFactory, options, linker, sourceFile, requiresMainFct, stdFile);
-  symbolTable = analyzer.visit(tree).as<SymbolTable *>(); // Check for semantic errors
-  if (options->printDebugOutput) {                        // GCOV_EXCL_START
+  symbolTable = analyzer.visit(ast).as<SymbolTable *>(); // Check for semantic errors
+  if (options->printDebugOutput) {                       // GCOV_EXCL_START
     // Print symbol table
     std::cout << std::endl << "Symbol table of file " << sourceFile << ":" << std::endl << std::endl;
     std::cout << symbolTable->toJSON().dump(2) << std::endl;
   } // GCOV_EXCL_STOP
+
+  return symbolTable;
+}
+
+void CompilerInstance::generateSourceFile(const std::shared_ptr<llvm::LLVMContext> &context,
+                                          const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
+                                          ThreadFactory *threadFactory, CliOptions *options, LinkerInterface *linker,
+                                          const std::string &sourceFile, bool requiresMainFct, SymbolTable *symbolTable) {
+  // Read from file
+  std::ifstream stream(sourceFile);
+  if (!stream)
+    throw std::runtime_error("Source file at path '" + sourceFile + "' does not exist.");
+
+  // Create error handlers for lexer and parser
+  AntlrThrowingErrorListener lexerErrorHandler = AntlrThrowingErrorListener(LEXER);
+  AntlrThrowingErrorListener parserErrorHandler = AntlrThrowingErrorListener(PARSER);
+
+  // Tokenize input
+  antlr4::ANTLRInputStream input(stream);
+  SpiceLexer lexer(&input);
+  lexer.removeErrorListeners();
+  lexer.addErrorListener(&lexerErrorHandler);
+  antlr4::CommonTokenStream tokens((antlr4::TokenSource *)&lexer);
+
+  // Parse input to AST
+  SpiceParser parser(&tokens); // Check for syntax errors
+  parser.removeErrorListeners();
+  parser.addErrorListener(&parserErrorHandler);
+  antlr4::tree::ParseTree *ast = parser.entry(); // Get AST
 
   // Get file name from file path
   std::string fileName = FileUtil::getFileName(sourceFile);
   std::string objectFlePath = options->outputDir + "/" + fileName + ".o";
 
   // Execute generator
-  GeneratorVisitor generator =
-      GeneratorVisitor(context, builder, threadFactory, symbolTable, options, fileName, objectFlePath, requiresMainFct);
+  GeneratorVisitor generator = GeneratorVisitor(context, builder, moduleRegistry, threadFactory, symbolTable, options, linker,
+                                                sourceFile, objectFlePath, requiresMainFct);
   generator.init();                // Initialize code generation
-  generator.visit(tree);           // Generate IR code
+  generator.visit(ast);            // Generate IR code
   if (options->printDebugOutput) { // GCOV_EXCL_START
     // Dump unoptimized IR code
     std::cout << std::endl << "IR code:" << std::endl;
@@ -91,6 +135,4 @@ SymbolTable *CompilerInstance::CompileSourceFile(const std::shared_ptr<llvm::LLV
   // Add object file to the linker interface
   if (linker)
     linker->addObjectFilePath(objectFlePath);
-
-  return symbolTable;
 }
