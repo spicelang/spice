@@ -2,11 +2,12 @@
 
 #include "AnalyzerVisitor.h"
 
-#include "util/CompilerWarning.h"
 #include <CompilerInstance.h>
 #include <analyzer/OpRuleManager.h>
 #include <exception/SemanticError.h>
+#include <symbol/GenericType.h>
 #include <symbol/SymbolSpecifiers.h>
+#include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
 
@@ -112,9 +113,9 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   // Get template types
   bool isGeneric = false;
   std::vector<SymbolType> templateTypes;
-  if (ctx->templateDef()) {
+  if (ctx->typeLst()) {
     isGeneric = true;
-    for (const auto &dataType : ctx->templateDef()->typeLst()->dataType())
+    for (const auto &dataType : ctx->typeLst()->dataType())
       templateTypes.push_back(visit(dataType).as<SymbolType>());
   }
 
@@ -124,9 +125,15 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
 
   // Visit arguments in new scope
   argumentMode = true;
+  std::vector<std::string> argNames;
   ArgList argTypes;
-  if (ctx->argLstDef())
-    argTypes = visit(ctx->argLstDef()).as<ArgList>();
+  if (ctx->argLstDef()) {
+    NamedArgList namedArgList = visit(ctx->argLstDef()).as<NamedArgList>();
+    for (const auto &namedArg : namedArgList) {
+      argNames.push_back(std::get<0>(namedArg));
+      argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
+    }
+  }
   argumentMode = false;
 
   // Declare 'this' variable in new scope
@@ -178,13 +185,31 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   for (int i = 0; i < substantiatedFunctions.size(); i++)
     currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
 
-  auto analyzeFunction = [&]() {
+  auto analyzeFunction = [&](const std::vector<GenericTypeReplacement> &replacements = {}) {
     // Go down again in scope
     currentScope = currentScope->getChild(substantiatedFunctions[0].getSignature());
     assert(currentScope != nullptr);
 
+    // Morph the generic types to the replacements
+    std::vector<GenericTypeReplacement> resetTypesList;
+    for (const auto &replacement : replacements) {
+      for (const auto &argName : argNames) {
+        SymbolTableEntry *argEntry = currentScope->lookup(argName);
+        if (argEntry->getType().is(TY_GENERIC, replacement.first)) {
+          argEntry->updateType(replacement.second, true);
+          resetTypesList.emplace_back(argName, GenericType(replacement.first));
+        }
+      }
+    }
+
     // Visit statements in new scope
     visit(ctx->stmtLst());
+
+    // Reset generic types
+    for (const auto &resetType : resetTypesList) {
+      SymbolTableEntry *argEntry = currentScope->lookup(resetType.first);
+      argEntry->updateType(resetType.second, true);
+    }
 
     // Check if return variable is now initialized
     if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
@@ -212,9 +237,9 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   // Get template types
   bool isGeneric = false;
   std::vector<SymbolType> templateTypes;
-  if (ctx->templateDef()) {
+  if (ctx->typeLst()) {
     isGeneric = true;
-    for (const auto &dataType : ctx->templateDef()->typeLst()->dataType())
+    for (const auto &dataType : ctx->typeLst()->dataType())
       templateTypes.push_back(visit(dataType).as<SymbolType>());
   }
 
@@ -224,9 +249,15 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
 
   // Visit arguments in new scope
   argumentMode = true;
+  std::vector<std::string> argNames;
   ArgList argTypes;
-  if (ctx->argLstDef())
-    argTypes = visit(ctx->argLstDef()).as<ArgList>();
+  if (ctx->argLstDef()) {
+    NamedArgList namedArgList = visit(ctx->argLstDef()).as<NamedArgList>();
+    for (const auto &namedArg : namedArgList) {
+      argNames.push_back(std::get<0>(namedArg));
+      argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
+    }
+  }
   argumentMode = false;
 
   // Declare 'this' variable in new scope
@@ -269,13 +300,31 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   for (int i = 0; i < substantiatedProcedures.size(); i++)
     currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(), substantiatedProcedures[i].getSignature());
 
-  auto analyzeProcedure = [&]() {
+  auto analyzeProcedure = [&](const std::vector<GenericTypeReplacement> &replacements = {}) {
     // Go down again in scope
     currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
     assert(currentScope != nullptr);
 
+    // Morph the generic types to the replacements
+    std::vector<GenericTypeReplacement> resetTypesList;
+    for (const auto &replacement : replacements) {
+      for (const auto &argName : argNames) {
+        SymbolTableEntry *argEntry = currentScope->lookup(argName);
+        if (argEntry->getType().is(TY_GENERIC, replacement.first)) {
+          argEntry->updateType(replacement.second, true);
+          resetTypesList.emplace_back(argName, GenericType(replacement.first));
+        }
+      }
+    }
+
     // Visit statement list in new scope
     visit(ctx->stmtLst());
+
+    // Reset generic types
+    for (const auto &resetType : resetTypesList) {
+      SymbolTableEntry *argEntry = currentScope->lookup(resetType.first);
+      argEntry->updateType(resetType.second, true);
+    }
 
     // Return to old scope
     currentScope = currentScope->getParent();
@@ -334,8 +383,8 @@ antlrcpp::Any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefCo
     throw err->get(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate generic type '" + typeName + "'");
 
   // Build symbol specifiers
-  SymbolType symbolType = SymbolType(TY_GENERIC, typeName);
-  auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  GenericType genericType = GenericType(typeName);
+  auto structSymbolSpecifiers = SymbolSpecifiers(genericType);
   if (ctx->declSpecifiers()) {
     for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
       if (specifier->PUBLIC()) {
@@ -348,7 +397,7 @@ antlrcpp::Any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefCo
   }
 
   // Create a new symbol table entry
-  currentScope->insert(typeName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
+  currentScope->insert(typeName, genericType, structSymbolSpecifiers, DECLARED, *ctx->start);
 
   return nullptr;
 }
@@ -656,9 +705,10 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
-  ArgList argList;
+  NamedArgList namedArgList;
   bool metOptional = false;
   for (const auto &arg : ctx->declStmt()) {
+    std::string argName = arg->IDENTIFIER()->toString();
     SymbolType argType = visit(arg).as<SymbolType>();
 
     // Check if the type could be inferred. Dyn without a default value is forbidden
@@ -672,9 +722,9 @@ antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx
       throw err->get(*arg->start, INVALID_ARGUMENT_ORDER, "Mandatory arguments must go before any optional arguments");
     }
 
-    argList.emplace_back(argType, metOptional);
+    namedArgList.emplace_back(argName, argType, metOptional);
   }
-  return argList;
+  return namedArgList;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
@@ -1313,7 +1363,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         // Push the retrieved scope to the scope path
         scopePath.pushFragment("[idx]", newAccessScope);
       }
-    } else if (tokenType == SpiceParser::LPAREN) { // Consider function call
+    } else if (tokenType == SpiceParser::LPAREN || tokenType == SpiceParser::LESS) { // Consider function call
       std::string functionName = currentVarName;
       std::string accessScopePrefix = scopePath.getScopeName();
 
@@ -1323,8 +1373,8 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
       // Get template types
       std::vector<SymbolType> templateTypes;
-      if (!ctx->templateDef().empty()) {
-        for (const auto &dataType : ctx->templateDef()[0]->typeLst()->dataType())
+      if (!ctx->typeLst().empty()) {
+        for (const auto &dataType : ctx->typeLst()[0]->dataType())
           templateTypes.push_back(visit(dataType).as<SymbolType>());
         tokenCounter++; // Consume templateDef
       }

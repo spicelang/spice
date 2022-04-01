@@ -36,8 +36,8 @@ typedef std::stack<TypeChainElement> TypeChain;
 class SymbolType {
 public:
   // Constructors
-  explicit SymbolType(SymbolSuperType superType) : typeChain({std::make_pair(superType, "")}) {}
-  SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({std::make_pair(superType, subType)}) {}
+  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, ""}}) {}
+  SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
   SymbolType() = default;
 
@@ -64,11 +64,13 @@ public:
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
+  [[nodiscard]] TypeChain getTypeChain() const;
 
-private:
+protected:
   // Members
   TypeChain typeChain;
 
+private:
   // Private methods
   [[nodiscard]] static std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize);
 };

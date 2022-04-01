@@ -316,3 +316,10 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
   }
   return "unknown"; // GCOV_EXCL_LINE
 }
+
+/**
+ * Retrieve the type chain of the symbol type
+ *
+ * @return Type chain
+ */
+TypeChain SymbolType::getTypeChain() const { return typeChain; }

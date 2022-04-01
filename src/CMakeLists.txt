@@ -28,6 +28,8 @@ set(SOURCES
         symbol/Capture.h
         symbol/SymbolType.cpp
         symbol/SymbolType.h
+        symbol/GenericType.cpp
+        symbol/GenericType.h
         symbol/ScopePath.cpp
         symbol/ScopePath.h
         symbol/SymbolSpecifiers.cpp
