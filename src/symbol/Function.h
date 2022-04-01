@@ -36,6 +36,7 @@ public:
   [[nodiscard]] std::vector<Function> substantiateOptionalArgs() const;
   [[nodiscard]] Function substantiateGenerics(const std::vector<SymbolType> &concreteArgTypes) const;
   [[nodiscard]] bool hasSubstantiatedArgs() const;
+  [[nodiscard]] bool isFullySubstantiated() const;
   void setUsed();
   [[nodiscard]] bool isUsed() const;
 

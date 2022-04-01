@@ -233,6 +233,10 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   // Get all substantiated function which result from this function declaration
   std::vector<Function *> spiceFuncs = currentScope->popFunctionDeclarationPointers();
   for (const auto &spiceFunc : spiceFuncs) {
+    // Check if the function is substantiated
+    if (!spiceFunc->isFullySubstantiated())
+      continue;
+
     // Check if the function is used by anybody
     if (!spiceFunc->isUsed() && !spiceFunc->getSpecifiers().isPublic())
       continue;
@@ -259,12 +263,11 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Arguments
     unsigned int currentArgIndex = 0;
     if (ctx->argLstDef()) {
-      for (; currentArgIndex < spiceFunc->getArgTypes().size(); currentArgIndex++) {
-        const auto arg = ctx->argLstDef()->declStmt()[currentArgIndex];
-        currentVarName = arg->IDENTIFIER()->toString();
+      std::vector<SymbolType> argSymbolTypes = spiceFunc->getArgTypes();
+      for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
+        currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
         argNames.push_back(currentVarName);
-        llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
-        argTypes.push_back(argType);
+        argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex]));
       }
     }
 
@@ -387,12 +390,11 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Arguments
     unsigned int currentArgIndex = 0;
     if (ctx->argLstDef()) {
-      for (; currentArgIndex < spiceProc->getArgTypes().size(); currentArgIndex++) {
-        const auto arg = ctx->argLstDef()->declStmt()[currentArgIndex];
-        currentVarName = arg->IDENTIFIER()->toString();
+      std::vector<SymbolType> argSymbolTypes = spiceProc->getArgTypes();
+      for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
+        currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
         argNames.push_back(currentVarName);
-        llvm::Type *argType = visit(arg->dataType()).as<llvm::Type *>();
-        argTypes.push_back(argType);
+        argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex]));
       }
     }
 

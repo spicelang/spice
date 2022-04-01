@@ -319,7 +319,7 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
       continue;
     bool differentArgTypes = false; // Note: This is a workaround for a break from an inner loop
     for (int i = 0; i < argTypes.size(); i++) {
-      if (!equalsIgnoreArraySizes(curArgTypes[i], argTypes[i])) {
+      if (!curArgTypes[i].is(TY_GENERIC) && !equalsIgnoreArraySizes(curArgTypes[i], argTypes[i])) {
         differentArgTypes = true;
         break;
       }
@@ -335,19 +335,19 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
     } else {
       if (curTemplateTypes.size() != templateTypes.size())
         continue;
-      std::vector<SymbolType> concreteArgTypes;
+      std::vector<SymbolType> concreteTemplateTypes;
       bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
       for (int i = 0; i < templateTypes.size(); i++) {
         if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
           differentTemplateTypes = true;
           break;
         }
-        concreteArgTypes.push_back(templateTypes[i]);
+        concreteTemplateTypes.push_back(templateTypes[i]);
       }
       if (differentTemplateTypes)
         continue;
       // Duplicate function
-      Function newFunction = f.substantiateGenerics(concreteArgTypes);
+      Function newFunction = f.substantiateGenerics(concreteTemplateTypes);
       insertSubstantiatedFunction(newFunction, err, token);
       duplicateChildBlockEntry(f.getSignature(), newFunction.getSignature());
       matches.push_back(&functions.at(newFunction.getMangledName()));

@@ -51,5 +51,5 @@ f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
 }
 
 f<int> main() {
-    printf("%f\n", genericFunction<int, double>(1, 2.4));
+    printf("%f\n", genericFunction<int, double>(1, 2.4, 9));
 }
