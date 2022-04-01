@@ -47,7 +47,7 @@ type T dyn;
 type U dyn;
 
 f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
-    return (double) arg1 + arg2 + arg3;
+    return arg1 + arg2 + arg3;
 }
 
 f<int> main() {

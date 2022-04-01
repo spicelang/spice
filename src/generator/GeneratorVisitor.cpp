@@ -2376,11 +2376,6 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
   }
   case TY_STRUCT: {
     SymbolTableEntry *structSymbol = currentScope->lookup(symbolType.getSubType());
-    /*if (!structSymbol) { // Symbol not found, check if there is a capture that references an external struct
-      Capture *externalCapture = currentScope->lookupCapture(symbolType.getSubType());
-      assert(externalCapture != nullptr);
-      structSymbol = externalCapture->getEntry();
-    }*/
     assert(structSymbol != nullptr);
     llvmBaseType = structSymbol->getLLVMType();
     assert(llvmBaseType != nullptr);

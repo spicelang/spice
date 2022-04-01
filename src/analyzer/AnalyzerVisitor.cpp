@@ -80,7 +80,7 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
   currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, *ctx->start);
   currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
 
-  // Visit arguments
+  // Visit arguments in new scope
   argumentMode = true;
   if (ctx->argLstDef())
     visit(ctx->argLstDef());
@@ -89,7 +89,7 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
   // Visit statements in new scope
   visit(ctx->stmtLst());
 
-  // Return to global scope
+  // Return to root scope
   currentScope = currentScope->getParent();
 
   // Confirm main function
@@ -100,9 +100,6 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
-  // Save the old scope to restore later
-  SymbolTable *oldScope = currentScope;
-
   // Check if this is a global function or a method
   bool isMethod = false;
   std::string functionName = ctx->IDENTIFIER().back()->toString();
@@ -113,8 +110,10 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   }
 
   // Get template types
+  bool isGeneric = false;
   std::vector<SymbolType> templateTypes;
   if (ctx->templateDef()) {
+    isGeneric = true;
     for (const auto &dataType : ctx->templateDef()->typeLst()->dataType())
       templateTypes.push_back(visit(dataType).as<SymbolType>());
   }
@@ -179,27 +178,28 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   for (int i = 0; i < substantiatedFunctions.size(); i++)
     currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
 
-  // Go down again in scope
-  currentScope = currentScope->getChild(substantiatedFunctions[0].getSignature());
-  assert(currentScope != nullptr);
+  auto analyzeFunction = [&]() {
+    // Go down again in scope
+    currentScope = currentScope->getChild(substantiatedFunctions[0].getSignature());
+    assert(currentScope != nullptr);
 
-  // Visit statements in new scope
-  visit(ctx->stmtLst());
+    // Visit statements in new scope
+    visit(ctx->stmtLst());
 
-  // Check if return variable is now initialized
-  if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
-    throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
+    // Check if return variable is now initialized
+    if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
+      throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
 
-  // Restore old scope
-  currentScope = oldScope;
+    // Restore old scope
+    currentScope = currentScope->getParent();
+  };
+  if (!isGeneric)
+    analyzeFunction();
 
   return nullptr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
-  // Save the old scope to restore later
-  SymbolTable *oldScope = currentScope;
-
   // Check if this is a global function or a method
   bool isMethod = false;
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
@@ -210,8 +210,10 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   }
 
   // Get template types
+  bool isGeneric = false;
   std::vector<SymbolType> templateTypes;
   if (ctx->templateDef()) {
+    isGeneric = true;
     for (const auto &dataType : ctx->templateDef()->typeLst()->dataType())
       templateTypes.push_back(visit(dataType).as<SymbolType>());
   }
@@ -267,15 +269,19 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   for (int i = 0; i < substantiatedProcedures.size(); i++)
     currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(), substantiatedProcedures[i].getSignature());
 
-  // Go down again in scope
-  currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
-  assert(currentScope != nullptr);
+  auto analyzeProcedure = [&]() {
+    // Go down again in scope
+    currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
+    assert(currentScope != nullptr);
 
-  // Visit statement list in new scope
-  visit(ctx->stmtLst());
+    // Visit statement list in new scope
+    visit(ctx->stmtLst());
 
-  // Return to old scope
-  currentScope = oldScope;
+    // Return to old scope
+    currentScope = currentScope->getParent();
+  };
+  if (!isGeneric)
+    analyzeProcedure();
 
   return nullptr;
 }
