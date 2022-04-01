@@ -317,10 +317,15 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
     std::vector<SymbolType> curArgTypes = f.getArgTypes();
     if (curArgTypes.size() != argTypes.size())
       continue;
+    bool differentArgTypes = false; // Note: This is a workaround for a break from an inner loop
     for (int i = 0; i < argTypes.size(); i++) {
-      if (!equalsIgnoreArraySizes(curArgTypes[i], argTypes[i]))
-        continue;
+      if (!equalsIgnoreArraySizes(curArgTypes[i], argTypes[i])) {
+        differentArgTypes = true;
+        break;
+      }
     }
+    if (differentArgTypes)
+      continue;
 
     // Check template types requirement
     std::vector<GenericType> curTemplateTypes = f.getTemplateTypes();
@@ -331,11 +336,16 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
       if (curTemplateTypes.size() != templateTypes.size())
         continue;
       std::vector<SymbolType> concreteArgTypes;
+      bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
       for (int i = 0; i < templateTypes.size(); i++) {
-        if (!curTemplateTypes[i].meetsConditions(templateTypes[i]))
-          continue;
+        if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
+          differentTemplateTypes = true;
+          break;
+        }
         concreteArgTypes.push_back(templateTypes[i]);
       }
+      if (differentTemplateTypes)
+        continue;
       // Duplicate function
       Function newFunction = f.substantiateGenerics(concreteArgTypes);
       insertSubstantiatedFunction(newFunction, err, token);

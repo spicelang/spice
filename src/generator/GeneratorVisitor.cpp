@@ -2291,7 +2291,8 @@ antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeConte
 
     SymbolTableEntry *typeEntry = currentScope->lookup(typeName);
     assert(typeEntry != nullptr);
-    return typeEntry->getType();
+    SymbolSuperType superType = typeEntry->getType().is(TY_STRUCT) ? TY_STRUCT : TY_GENERIC;
+    return SymbolType(superType, typeName);
   }
   throw std::runtime_error("Internal compiler error: Base datatype generator fall-through");
 }
