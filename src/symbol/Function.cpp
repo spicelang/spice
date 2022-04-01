@@ -43,6 +43,13 @@ std::vector<SymbolType> Function::getArgTypes() const {
 }
 
 /**
+ * Retrieve the template types of the current function
+ *
+ * @return Vector of template types
+ */
+std::vector<GenericType> Function::getTemplateTypes() const { return templateTypes; }
+
+/**
  * Mange the function and return the mangled string
  *
  * @return Mangled string
@@ -158,7 +165,7 @@ SymbolType Function::getSymbolType() const { return SymbolType(isFunction() || i
  *
  * @return List of definite functions
  */
-std::vector<Function> Function::substantiate() const {
+std::vector<Function> Function::substantiateOptionalArgs() const {
   std::vector<Function> definiteFunctions;
   std::vector<std::pair<SymbolType, bool>> currentFunctionArgTypes;
   bool metFirstOptionalArg = false;
@@ -184,11 +191,28 @@ std::vector<Function> Function::substantiate() const {
 }
 
 /**
+ * Convert the current ambiguous function with potential generic types to a definite function without generic types
+ *
+ * @return Substantiated function with concrete arg types and without template types
+ */
+Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteArgTypes) const {
+  std::vector<std::pair<SymbolType, bool>> currentFunctionArgTypes;
+
+  for (auto &argType : currentFunctionArgTypes) {
+    assert(!argType.second); // Optional args need to be substantiated at this point
+    for (const auto &concreteArgType : concreteArgTypes)
+      currentFunctionArgTypes.emplace_back(concreteArgType, false);
+  }
+
+  return Function(name, specifiers, thisType, returnType, currentFunctionArgTypes, {});
+}
+
+/**
  * Checks if a function contains optional arguments. This would imply that the function is not substantiated yet
  *
- * @return
+ * @return Substantiated args or not
  */
-bool Function::isSubstantiated() const {
+bool Function::hasSubstantiatedArgs() const {
   for (const auto &argType : argTypes) {
     if (argType.second)
       return false;

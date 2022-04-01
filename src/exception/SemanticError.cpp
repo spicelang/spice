@@ -108,6 +108,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Invalid thread id";
   case JOIN_ARG_MUST_BE_TID:
     return "Argument of join builtin must be a tid";
+  case EXPECTED_GENERIC_TYPE:
+    return "Expected a generic type";
   case RESERVED_KEYWORD:
     return "Reserved keyword used as identifier";
   case COMING_SOON_SA:

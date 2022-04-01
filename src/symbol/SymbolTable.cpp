@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "symbol/SymbolTable.h"
+#include "GenericType.h"
 
 #include <stdexcept>
 #include <utility>
@@ -275,13 +276,13 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
   functionDeclarationPointers.push(std::vector<Function *>());
 
   // Check if function is already substantiated
-  if (function.isSubstantiated()) {
+  if (function.hasSubstantiatedArgs()) {
     insertSubstantiatedFunction(function, err, token);
     return;
   }
 
   // Substantiate the function and insert the substantiated instances
-  for (const auto &fct : function.substantiate())
+  for (const auto &fct : function.substantiateOptionalArgs())
     insertSubstantiatedFunction(fct, err, token);
 }
 
@@ -292,10 +293,14 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
  * @param functionName Function name requirement
  * @param thisType This type requirement
  * @param argTypes Argument types requirement
+ * @param templateTypes Template types requirement
+ * @param err Error Factory
+ * @param token Definition token for the error message
  * @return Matched function or nullptr
  */
 Function *SymbolTable::matchFunction(const std::string &functionName, const SymbolType &thisType,
-                                     const std::vector<SymbolType> &argTypes, ErrorFactory *err, const antlr4::Token &token) {
+                                     const std::vector<SymbolType> &argTypes, const std::vector<SymbolType> &templateTypes,
+                                     ErrorFactory *err, const antlr4::Token &token) {
   std::vector<Function *> matches;
 
   // Loop through function and add any matches to the matches vector
@@ -303,24 +308,40 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
     // Check name requirement
     if (f.getName() != functionName)
       continue;
+
     // Check this type requirement
     if (f.getThisType() != thisType)
       continue;
+
     // Check arg types requirement
     std::vector<SymbolType> curArgTypes = f.getArgTypes();
     if (curArgTypes.size() != argTypes.size())
       continue;
-    bool differentArgTypes = false;
     for (int i = 0; i < argTypes.size(); i++) {
-      if (!equalsIgnoreArraySizes(curArgTypes[i], argTypes[i])) {
-        differentArgTypes = true;
-        break;
-      }
+      if (!equalsIgnoreArraySizes(curArgTypes[i], argTypes[i]))
+        continue;
     }
-    if (differentArgTypes)
-      continue;
-    // It's a match!
-    matches.push_back(&functions.at(key));
+
+    // Check template types requirement
+    std::vector<GenericType> curTemplateTypes = f.getTemplateTypes();
+    if (curTemplateTypes.empty()) {
+      // It's a match!
+      matches.push_back(&functions.at(key));
+    } else {
+      if (curTemplateTypes.size() != templateTypes.size())
+        continue;
+      std::vector<SymbolType> concreteArgTypes;
+      for (int i = 0; i < templateTypes.size(); i++) {
+        if (!curTemplateTypes[i].meetsConditions(templateTypes[i]))
+          continue;
+        concreteArgTypes.push_back(templateTypes[i]);
+      }
+      // Duplicate function
+      Function newFunction = f.substantiateGenerics(concreteArgTypes);
+      insertSubstantiatedFunction(newFunction, err, token);
+      duplicateChildBlockEntry(f.getSignature(), newFunction.getSignature());
+      matches.push_back(&functions.at(newFunction.getMangledName()));
+    }
   }
 
   if (matches.empty())
@@ -476,7 +497,7 @@ void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
  * @param token Token, where the function is declared
  */
 void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
-  if (!function.isSubstantiated())
+  if (!function.hasSubstantiatedArgs())
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
   // Check if the function exists already

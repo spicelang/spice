@@ -53,7 +53,7 @@ public:
 
   void insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
   Function *matchFunction(const std::string &functionName, const SymbolType &thisType, const std::vector<SymbolType> &argTypes,
-                          ErrorFactory *errorFactory, const antlr4::Token &token);
+                          const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
   Function *popFunctionAccessPointer();
   std::vector<Function *> popFunctionDeclarationPointers();
 

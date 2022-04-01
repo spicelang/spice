@@ -2283,13 +2283,15 @@ antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeConte
     assert(symbolTableEntry != nullptr);
     return symbolTableEntry->getType();
   }
-  if (!ctx->IDENTIFIER().empty()) { // Custom data type
+  if (!ctx->IDENTIFIER().empty()) { // Struct type or generic type
     // Get type name in format: a.b.c
     std::string typeName = ctx->IDENTIFIER()[0]->toString();
     for (size_t i = 1; i < ctx->IDENTIFIER().size(); i++)
       typeName += "." + ctx->IDENTIFIER()[i]->toString();
 
-    return SymbolType(TY_STRUCT, typeName);
+    SymbolTableEntry *typeEntry = currentScope->lookup(typeName);
+    assert(typeEntry != nullptr);
+    return typeEntry->getType();
   }
   throw std::runtime_error("Internal compiler error: Base datatype generator fall-through");
 }

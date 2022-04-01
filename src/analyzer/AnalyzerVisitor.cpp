@@ -112,11 +112,15 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
 
   // Get template types
   bool isGeneric = false;
-  std::vector<SymbolType> templateTypes;
+  std::vector<GenericType> templateTypes;
   if (ctx->typeLst()) {
     isGeneric = true;
-    for (const auto &dataType : ctx->typeLst()->dataType())
-      templateTypes.push_back(visit(dataType).as<SymbolType>());
+    for (const auto &dataType : ctx->typeLst()->dataType()) {
+      SymbolType symbolType = visit(dataType).as<SymbolType>();
+      if (!symbolType.is(TY_GENERIC))
+        throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+      templateTypes.emplace_back(symbolType.getSubType(), symbolType);
+    }
   }
 
   // Create a new scope
@@ -180,7 +184,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   currentScope->insertFunction(spiceFunc, err, *ctx->IDENTIFIER().back()->getSymbol());
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
-  std::vector<Function> substantiatedFunctions = spiceFunc.substantiate();
+  std::vector<Function> substantiatedFunctions = spiceFunc.substantiateOptionalArgs();
   currentScope->renameChildBlock(scopeId, substantiatedFunctions[0].getSignature());
   for (int i = 0; i < substantiatedFunctions.size(); i++)
     currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
@@ -236,11 +240,15 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
 
   // Get template types
   bool isGeneric = false;
-  std::vector<SymbolType> templateTypes;
+  std::vector<GenericType> templateTypes;
   if (ctx->typeLst()) {
     isGeneric = true;
-    for (const auto &dataType : ctx->typeLst()->dataType())
-      templateTypes.push_back(visit(dataType).as<SymbolType>());
+    for (const auto &dataType : ctx->typeLst()->dataType()) {
+      SymbolType symbolType = visit(dataType).as<SymbolType>();
+      if (!symbolType.is(TY_GENERIC))
+        throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+      templateTypes.emplace_back(symbolType.getSubType(), symbolType);
+    }
   }
 
   // Create a new scope
@@ -295,7 +303,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   currentScope->insertFunction(spiceProc, err, *ctx->IDENTIFIER().back()->getSymbol());
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
-  std::vector<Function> substantiatedProcedures = spiceProc.substantiate();
+  std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalArgs();
   currentScope->renameChildBlock(scopeId, substantiatedProcedures[0].getSignature());
   for (int i = 0; i < substantiatedProcedures.size(); i++)
     currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(), substantiatedProcedures[i].getSignature());
@@ -1364,6 +1372,8 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         scopePath.pushFragment("[idx]", newAccessScope);
       }
     } else if (tokenType == SpiceParser::LPAREN || tokenType == SpiceParser::LESS) { // Consider function call
+      tokenCounter++;                                                                // Consume LPAREN or LESS
+
       std::string functionName = currentVarName;
       std::string accessScopePrefix = scopePath.getScopeName();
 
@@ -1372,15 +1382,15 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
       SymbolType thisType = currentThisType;
 
       // Get template types
-      std::vector<SymbolType> templateTypes;
-      if (!ctx->typeLst().empty()) {
-        for (const auto &dataType : ctx->typeLst()[0]->dataType())
-          templateTypes.push_back(visit(dataType).as<SymbolType>());
-        tokenCounter++; // Consume templateDef
+      std::vector<SymbolType> concreteTypes;
+      auto *typeLst = dynamic_cast<SpiceParser::TypeLstContext *>(ctx->children[tokenCounter]);
+      if (typeLst != nullptr) {
+        for (const auto &dataType : typeLst->dataType())
+          concreteTypes.push_back(visit(dataType).as<SymbolType>());
+        tokenCounter += 3; // Consume typeLst, GREATER and LPAREN
       }
 
       // Visit args
-      tokenCounter++; // Consume LPAREN
       std::vector<SymbolType> argTypes;
       auto *argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
       if (argLst != nullptr) {
@@ -1398,7 +1408,8 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
       // Match a function onto the requirements of the call
       SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
-      Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err, *token->getSymbol());
+      Function *spiceFunc =
+          functionParentScope->matchFunction(functionName, thisType, argTypes, concreteTypes, err, *token->getSymbol());
       if (!spiceFunc) {
         // Build function to get a better error message
         std::vector<std::pair<SymbolType, bool>> argTypesWithOptional;
@@ -1406,7 +1417,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         for (auto &argType : argTypes)
           argTypesWithOptional.emplace_back(argType, false);
         Function function = Function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN),
-                                     argTypesWithOptional, templateTypes);
+                                     argTypesWithOptional, {});
         throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
                        "Function/Procedure '" + function.getSignature() + "' could not be found");
       }

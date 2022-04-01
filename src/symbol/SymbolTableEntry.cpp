@@ -19,7 +19,7 @@ std::string SymbolTableEntry::getName() const { return name; }
 SymbolType SymbolTableEntry::getType() const { return type; }
 
 /**
- * Update the type of a symbol. This is used for substantiate types in the process of type inference
+ * Update the type of a symbol. This is used for substantiateOptionalArgs types in the process of type inference
  *
  * @param newType New type of the current symbol
  */
