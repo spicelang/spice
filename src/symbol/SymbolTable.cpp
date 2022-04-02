@@ -149,7 +149,7 @@ Capture *SymbolTable::lookupCapture(const std::string &name) {
  */
 Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
   // If available in the current scope, return it
-  if (!captures.contains(name))
+  if (captures.contains(name))
     return &captures.at(name);
   // Otherwise, return nullptr
   return nullptr;

@@ -190,11 +190,12 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
 
   // Create analyzer callback for the body
+  SymbolTable *injectedScope = currentScope;
   auto analyzeFunction = [=, this](const std::vector<GenericTypeReplacement> &replacements = {}) {
     SymbolTable *scopeBackup = currentScope;
 
     // Go down again in scope
-    currentScope = rootScope->getChild(substantiatedFunctions[0].getSignature());
+    currentScope = injectedScope->getChild(substantiatedFunctions[0].getSignature());
     assert(currentScope != nullptr);
 
     // Morph the generic types to the replacements
@@ -319,9 +320,12 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(), substantiatedProcedures[i].getSignature());
 
   // Create analyzer callback for the body
+  SymbolTable *injectedScope = currentScope;
   auto analyzeProcedure = [=, this](const std::vector<GenericTypeReplacement> &replacements = {}) {
+    SymbolTable *scopeBackup = currentScope;
+
     // Go down again in scope
-    currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
+    currentScope = injectedScope->getChild(substantiatedProcedures[0].getSignature());
     assert(currentScope != nullptr);
 
     // Morph the generic types to the replacements
@@ -346,7 +350,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     }
 
     // Return to old scope
-    currentScope = currentScope->getParent();
+    currentScope = scopeBackup;
   };
 
   // Run the callback immediately or save it up for later
