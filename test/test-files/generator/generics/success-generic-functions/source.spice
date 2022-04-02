@@ -1,0 +1,15 @@
+type T dyn;
+type U dyn;
+
+f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
+    return arg1 + arg2 + arg3;
+}
+
+f<double> genericFunction<T, U>(T arg1, U arg2, T arg3) {
+    return arg1 + arg2 + arg3;
+}
+
+f<int> main() {
+    printf("%f\n", genericFunction<int, double>(1, 2.4));
+    printf("%f\n", genericFunction<long, double>(12l, 2.0));
+}

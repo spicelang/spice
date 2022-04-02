@@ -266,6 +266,7 @@ class GeneratorExtDeclTests : public ::testing::TestWithParam<GeneratorTestCase>
 class GeneratorForLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorForEachLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorFunctionTests : public ::testing::TestWithParam<GeneratorTestCase> {};
+class GeneratorGenericsTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorIfStatementTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorImportTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorMethodTests : public ::testing::TestWithParam<GeneratorTestCase> {};
@@ -294,6 +295,8 @@ TEST_P(GeneratorForLoopTests, ForLoopTests) { executeTest(GetParam()); } // NOLI
 TEST_P(GeneratorForEachLoopTests, ForEachLoopTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 TEST_P(GeneratorFunctionTests, FunctionTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
+
+TEST_P(GeneratorGenericsTests, GenericsTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 TEST_P(GeneratorIfStatementTests, IfStatementTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
@@ -353,34 +356,37 @@ INSTANTIATE_TEST_SUITE_P(GeneratorForEachLoopTests, GeneratorForEachLoopTests, /
 INSTANTIATE_TEST_SUITE_P(GeneratorFunctionTests, GeneratorFunctionTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[7]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorIfStatementTests, GeneratorIfStatementTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorGenericsTests, GeneratorGenericsTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[8]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorImportTests, GeneratorImportTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorIfStatementTests, GeneratorIfStatementTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[9]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorMethodTests, GeneratorMethodTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorImportTests, GeneratorImportTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[10]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorOperatorTests, GeneratorOperatorTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorMethodTests, GeneratorMethodTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[11]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorPointerTests, GeneratorPointerTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorOperatorTests, GeneratorOperatorTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[12]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorProcedureTests, GeneratorProcedureTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorPointerTests, GeneratorPointerTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[13]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorStructTests, GeneratorStructTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorProcedureTests, GeneratorProcedureTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[14]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorThreadTests, GeneratorThreadTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorStructTests, GeneratorStructTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[15]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorVariableTests, GeneratorVariableTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorThreadTests, GeneratorThreadTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[16]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorWhileLoopTests, GeneratorWhileLoopTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorVariableTests, GeneratorVariableTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[17]), NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(GeneratorWhileLoopTests, GeneratorWhileLoopTests, // NOLINT(cert-err58-cpp)
+                         ::testing::ValuesIn(generatorSuites[18]), NameResolver());
 
 // GCOV_EXCL_STOP
