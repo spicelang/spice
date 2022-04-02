@@ -189,9 +189,12 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   for (int i = 0; i < substantiatedFunctions.size(); i++)
     currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
 
-  auto analyzeFunction = [&](const std::vector<GenericTypeReplacement> &replacements = {}) {
+  // Create analyzer callback for the body
+  auto analyzeFunction = [=, this](const std::vector<GenericTypeReplacement> &replacements = {}) {
+    SymbolTable *scopeBackup = currentScope;
+
     // Go down again in scope
-    currentScope = currentScope->getChild(substantiatedFunctions[0].getSignature());
+    currentScope = rootScope->getChild(substantiatedFunctions[0].getSignature());
     assert(currentScope != nullptr);
 
     // Morph the generic types to the replacements
@@ -220,10 +223,17 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
       throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
 
     // Restore old scope
-    currentScope = currentScope->getParent();
+    currentScope = scopeBackup;
   };
-  if (!isGeneric)
+
+  // Run the callback immediately or save it up for later
+  if (isGeneric) {
+    // Set analyzer callback to the substantiated functions
+    for (auto &substantiatedFct : substantiatedFunctions)
+      currentScope->getFunction(substantiatedFct.getMangledName())->analyzerCallback = analyzeFunction;
+  } else {
     analyzeFunction();
+  }
 
   return nullptr;
 }
@@ -308,7 +318,8 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   for (int i = 0; i < substantiatedProcedures.size(); i++)
     currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(), substantiatedProcedures[i].getSignature());
 
-  auto analyzeProcedure = [&](const std::vector<GenericTypeReplacement> &replacements = {}) {
+  // Create analyzer callback for the body
+  auto analyzeProcedure = [=, this](const std::vector<GenericTypeReplacement> &replacements = {}) {
     // Go down again in scope
     currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
     assert(currentScope != nullptr);
@@ -337,8 +348,15 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     // Return to old scope
     currentScope = currentScope->getParent();
   };
-  if (!isGeneric)
+
+  // Run the callback immediately or save it up for later
+  if (isGeneric) {
+    // Set analyzer callback to the substantiated procedures
+    for (auto &substantiatedProc : substantiatedProcedures)
+      currentScope->getFunction(substantiatedProc.getMangledName())->analyzerCallback = analyzeProcedure;
+  } else {
     analyzeProcedure();
+  }
 
   return nullptr;
 }
@@ -1228,9 +1246,9 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
       SymbolType nextType = visit(next).as<SymbolType>();
 
       if (tokenType == SpiceParser::PLUS) { // Operator was plus
-        opRuleManager->getPlusResultType(*next->start, currentType, nextType);
+        currentType = opRuleManager->getPlusResultType(*next->start, currentType, nextType);
       } else if (tokenType == SpiceParser::MINUS) { // Operator was minus
-        opRuleManager->getMinusResultType(*next->start, currentType, nextType);
+        currentType = opRuleManager->getMinusResultType(*next->start, currentType, nextType);
       }
 
       operatorIndex += 2;
@@ -1253,11 +1271,11 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
       SymbolType nextType = visit(next).as<SymbolType>();
 
       if (tokenType == SpiceParser::MUL) { // Operator is mul
-        opRuleManager->getMulResultType(*next->start, currentType, nextType);
+        currentType = opRuleManager->getMulResultType(*next->start, currentType, nextType);
       } else if (tokenType == SpiceParser::DIV) { // Operator is div
-        opRuleManager->getDivResultType(*next->start, currentType, nextType);
+        currentType = opRuleManager->getDivResultType(*next->start, currentType, nextType);
       } else if (tokenType == SpiceParser::REM) { // Operator is rem
-        opRuleManager->getRemResultType(*next->start, currentType, nextType);
+        currentType = opRuleManager->getRemResultType(*next->start, currentType, nextType);
       }
 
       operatorIndex += 2;

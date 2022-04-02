@@ -2,6 +2,8 @@
 
 #include "Function.h"
 
+#include <utility>
+
 /**
  * Retrieve the name of the current function
  *
@@ -201,9 +203,8 @@ Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteA
   for (auto &argType : argTypes) {
     assert(!argType.second); // Optional args need to be substantiated at this point
     SymbolType newArgType = argType.first;
-    if (newArgType.is(TY_GENERIC)) { // We have to replace it only if it is a generic type
-      for (int i = 0; i < templateTypes.size();
-           i++) { // Go through all template types and get the respective concrete representation
+    if (newArgType.is(TY_GENERIC)) {                   // We have to replace it only if it is a generic type
+      for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
         const SymbolType concreteArgType = concreteArgTypes[i];
         const SymbolType genericType = templateTypes[i];
         if (newArgType == genericType) {

@@ -54,6 +54,7 @@ public:
   void insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
   Function *matchFunction(const std::string &functionName, const SymbolType &thisType, const std::vector<SymbolType> &argTypes,
                           const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
+  [[nodiscard]] Function *getFunction(const std::string &mangledName);
   Function *popFunctionAccessPointer();
   std::vector<Function *> popFunctionDeclarationPointers();
 

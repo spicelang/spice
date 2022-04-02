@@ -148,11 +148,11 @@ Capture *SymbolTable::lookupCapture(const std::string &name) {
  * @return Capture / nullptr if the capture was not found
  */
 Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
-  // If not available in the current scope, return nullptr
+  // If available in the current scope, return it
   if (!captures.contains(name))
-    return nullptr;
-  // Otherwise, return the capture
-  return &captures.at(name);
+    return &captures.at(name);
+  // Otherwise, return nullptr
+  return nullptr;
 }
 
 /**
@@ -304,7 +304,8 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
   std::vector<Function *> matches;
 
   // Loop through function and add any matches to the matches vector
-  for (const auto &[key, f] : functions) {
+  std::map<std::string, Function> oldFunctionsList = functions;
+  for (const auto &[key, f] : oldFunctionsList) {
     // Check name requirement
     if (f.getName() != functionName)
       continue;
@@ -336,6 +337,7 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
       if (curTemplateTypes.size() != templateTypes.size())
         continue;
       std::vector<SymbolType> concreteTemplateTypes;
+      std::vector<GenericTypeReplacement> typeReplacements;
       bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
       for (int i = 0; i < templateTypes.size(); i++) {
         if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
@@ -343,13 +345,19 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
           break;
         }
         concreteTemplateTypes.push_back(templateTypes[i]);
+        typeReplacements.emplace_back(curTemplateTypes[i].getSubType(), templateTypes[i]);
       }
       if (differentTemplateTypes)
         continue;
+
       // Duplicate function
       Function newFunction = f.substantiateGenerics(concreteTemplateTypes);
       insertSubstantiatedFunction(newFunction, err, token);
       duplicateChildBlockEntry(f.getSignature(), newFunction.getSignature());
+
+      // Execute analyzer on the function body and provide the concrete types
+      f.analyzerCallback(typeReplacements);
+
       matches.push_back(&functions.at(newFunction.getMangledName()));
     }
   }
@@ -367,6 +375,20 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
   functionAccessPointers.push(matches[0]);
 
   return matches[0];
+}
+
+/**
+ * Retrieve function by its mangled name
+ *
+ * @param mangledName Mangled function name
+ * @return Function
+ */
+Function *SymbolTable::getFunction(const std::string &mangledName) {
+  // Check if there is an item with that mangled name
+  if (functions.contains(mangledName))
+    return &functions.at(mangledName);
+  // Otherwise, return nullptr
+  return nullptr;
 }
 
 /**

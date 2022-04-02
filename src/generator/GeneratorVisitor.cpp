@@ -1697,8 +1697,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
     unsigned int tokenCounter = 1;
     while (tokenCounter < ctx->children.size()) {
       auto *token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
-
-      // Insert conversion instructions depending on the used operator
+      assert(token != nullptr);
       unsigned long long symbolType = token->getSymbol()->getType();
       if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
         tokenCounter++;                          // Consume LBRACKET
@@ -1726,9 +1725,9 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
         currentVarName = arrayName;  // Restore current var name
         scopePath = scopePathBackup; // Restore scope path
 
-        lhs = nullptr;                                // Set lhs to nullptr to prevent a store
-      } else if (symbolType == SpiceParser::LPAREN) { // Consider function call
-        tokenCounter++;                               // Consume LPAREN
+        lhs = nullptr;                                                                   // Set lhs to nullptr to prevent a store
+      } else if (symbolType == SpiceParser::LPAREN || symbolType == SpiceParser::LESS) { // Consider function call
+        tokenCounter++;                                                                  // Consume LPAREN or LESS
 
         // Check if the function is a method and retrieve the function name based on that
         bool isMethod = currentThisValue != nullptr;
@@ -1737,6 +1736,10 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
 
         // Retrieve the access scope
         SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
+
+        // Consume template list
+        if (symbolType == SpiceParser::LESS)
+          tokenCounter += 3; // Consume typeLst, GREATER and LPAREN
 
         // Get function by signature
         Function *spiceFunc = accessScope->popFunctionAccessPointer();
