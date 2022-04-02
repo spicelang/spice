@@ -231,18 +231,18 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   }
 
   // Get all substantiated function which result from this function declaration
-  std::vector<Function *> spiceFuncs = currentScope->popFunctionDeclarationPointers();
-  for (const auto &spiceFunc : spiceFuncs) {
+  std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+  for (const auto &[mangledName, spiceFunc] : *manifestations) {
     // Check if the function is substantiated
-    if (!spiceFunc->isFullySubstantiated())
+    if (!spiceFunc.isFullySubstantiated())
       continue;
 
     // Check if the function is used by anybody
-    if (!spiceFunc->isUsed() && !spiceFunc->getSpecifiers().isPublic())
+    if (!spiceFunc.isUsed() && !spiceFunc.getSpecifiers().isPublic())
       continue;
 
     // Change scope
-    currentScope = currentScope->getChild(spiceFunc->getSignature());
+    currentScope = currentScope->getChild(spiceFunc.getSignature());
 
     // Get return type
     currentVarName = RETURN_VARIABLE_NAME;
@@ -263,7 +263,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     // Arguments
     unsigned int currentArgIndex = 0;
     if (ctx->argLstDef()) {
-      std::vector<SymbolType> argSymbolTypes = spiceFunc->getArgTypes();
+      std::vector<SymbolType> argSymbolTypes = spiceFunc.getArgTypes();
       for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
         currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
         argNames.push_back(currentVarName);
@@ -286,7 +286,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
 
     // Create function itself
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
-    llvm::Function *fct = llvm::Function::Create(fctType, linkage, spiceFunc->getMangledName(), module.get());
+    llvm::Function *fct = llvm::Function::Create(fctType, linkage, mangledName, module.get());
     fct->addFnAttr(llvm::Attribute::NoUnwind);
     if (explicitInlined)
       fct->addFnAttr(llvm::Attribute::AlwaysInline);
@@ -365,14 +365,14 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
   }
 
   // Get all substantiated function which result from this function declaration
-  std::vector<Function *> spiceProcs = currentScope->popFunctionDeclarationPointers();
-  for (const auto &spiceProc : spiceProcs) {
+  std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+  for (const auto &[mangledName, spiceProc] : *manifestations) {
     // Check if the procedure is used by anybody
-    if (!spiceProc->isUsed() && !spiceProc->getSpecifiers().isPublic())
+    if (!spiceProc.isUsed() && !spiceProc.getSpecifiers().isPublic())
       continue;
 
     // Change scope
-    currentScope = currentScope->getChild(spiceProc->getSignature());
+    currentScope = currentScope->getChild(spiceProc.getSignature());
     assert(currentScope != nullptr);
 
     // Create argument list
@@ -390,7 +390,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     // Arguments
     unsigned int currentArgIndex = 0;
     if (ctx->argLstDef()) {
-      std::vector<SymbolType> argSymbolTypes = spiceProc->getArgTypes();
+      std::vector<SymbolType> argSymbolTypes = spiceProc.getArgTypes();
       for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
         currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
         argNames.push_back(currentVarName);
@@ -413,7 +413,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
 
     // Create procedure itself
     llvm::FunctionType *procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), argTypes, false);
-    llvm::Function *proc = llvm::Function::Create(procType, linkage, spiceProc->getMangledName(), module.get());
+    llvm::Function *proc = llvm::Function::Create(procType, linkage, mangledName, module.get());
     proc->addFnAttr(llvm::Attribute::NoUnwind);
     if (explicitInlined)
       proc->addFnAttr(llvm::Attribute::AlwaysInline);
@@ -473,15 +473,15 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::vector<SymbolType> symbolTypes;
 
   // Pop function declaration pointer from the stack
-  std::vector<Function *> spiceFuncs = currentScope->popFunctionDeclarationPointers();
-  assert(!spiceFuncs.empty());
-  Function *spiceFunc = spiceFuncs[0];
+  std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+  assert(!manifestations->empty());
+  Function spiceFunc = manifestations->begin()->second;
 
   // Get LLVM return type
   llvm::Type *returnType;
   if (ctx->dataType()) {
     returnType = visit(ctx->dataType()).as<llvm::Type *>();
-    SymbolTable *functionTable = currentScope->getChild(spiceFunc->getSignature());
+    SymbolTable *functionTable = currentScope->getChild(spiceFunc.getSignature());
     assert(functionTable != nullptr);
     SymbolTableEntry *returnEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
     assert(returnEntry != nullptr);
@@ -498,7 +498,7 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
       argTypes.push_back(argType);
     }
   }
-  std::vector<SymbolType> argSymbolTypes = spiceFunc->getArgTypes();
+  std::vector<SymbolType> argSymbolTypes = spiceFunc.getArgTypes();
   symbolTypes.insert(std::end(symbolTypes), std::begin(argSymbolTypes), std::end(argSymbolTypes));
 
   // Get vararg

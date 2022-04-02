@@ -160,3 +160,13 @@ std::string FileUtil::getSpiceBinDir() {
   return "/usr/local/bin/";
 #endif
 }
+
+/**
+ * Generate a code loc string with for a token
+ *
+ * @param token Token
+ * @return Code loc string
+ */
+std::string FileUtil::tokenToCodeLoc(const antlr4::Token &token) {
+  return "L" + std::to_string(token.getLine()) + "C" + std::to_string(token.getCharPositionInLine());
+}

@@ -54,9 +54,9 @@ public:
   void insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
   Function *matchFunction(const std::string &functionName, const SymbolType &thisType, const std::vector<SymbolType> &argTypes,
                           const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
-  [[nodiscard]] Function *getFunction(const std::string &mangledName);
+  [[nodiscard]] Function *getFunction(const antlr4::Token &defToken, const std::string &mangledName);
+  [[nodiscard]] std::shared_ptr<std::map<std::string, Function>> getManifestations(const antlr4::Token &defToken) const;
   Function *popFunctionAccessPointer();
-  std::vector<Function *> popFunctionDeclarationPointers();
 
   void printCompilerWarnings();
   void disableCompilerWarnings();
@@ -74,9 +74,8 @@ private:
   std::map<std::string, SymbolTable *> children;
   std::map<std::string, SymbolTableEntry> symbols;
   std::map<std::string, Capture> captures;
-  std::map<std::string, Function> functions;
-  std::queue<std::vector<Function *>> functionDeclarationPointers;
-  std::queue<Function *> functionAccessPointers;
+  std::map<std::string, std::shared_ptr<std::map<std::string, Function>>> functions; // <code-loc, vector-of-representations>
+  std::queue<Function *> functionAccessPointers;                                     // <code-loc, vector-of-representations>
   bool inMainSourceFile;
   bool imported = false;
   bool compilerWarningsEnabled = true;

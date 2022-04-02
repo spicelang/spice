@@ -180,8 +180,9 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   }
 
   // Insert function into the symbol table
-  Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes);
-  currentScope->insertFunction(spiceFunc, err, *ctx->IDENTIFIER().back()->getSymbol());
+  Function spiceFunc =
+      Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, *ctx->start);
+  currentScope->insertFunction(spiceFunc, err, *ctx->start);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
   std::vector<Function> substantiatedFunctions = spiceFunc.substantiateOptionalArgs();
@@ -231,7 +232,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   if (isGeneric) {
     // Set analyzer callback to the substantiated functions
     for (auto &substantiatedFct : substantiatedFunctions)
-      currentScope->getFunction(substantiatedFct.getMangledName())->analyzerCallback = analyzeFunction;
+      currentScope->getFunction(*ctx->start, substantiatedFct.getMangledName())->analyzerCallback = analyzeFunction;
   } else {
     analyzeFunction();
   }
@@ -310,8 +311,9 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   }
 
   // Insert function into the symbol table
-  Function spiceProc = Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes);
-  currentScope->insertFunction(spiceProc, err, *ctx->IDENTIFIER().back()->getSymbol());
+  Function spiceProc =
+      Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, *ctx->start);
+  currentScope->insertFunction(spiceProc, err, *ctx->start);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
   std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalArgs();
@@ -357,7 +359,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   if (isGeneric) {
     // Set analyzer callback to the substantiated procedures
     for (auto &substantiatedProc : substantiatedProcedures)
-      currentScope->getFunction(substantiatedProc.getMangledName())->analyzerCallback = analyzeProcedure;
+      currentScope->getFunction(*ctx->start, substantiatedProc.getMangledName())->analyzerCallback = analyzeProcedure;
   } else {
     analyzeProcedure();
   }
@@ -388,8 +390,8 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
     // Insert function into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {});
-    currentScope->insertFunction(spiceFunc, err, *ctx->IDENTIFIER()->getSymbol());
+    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, *ctx->start);
+    currentScope->insertFunction(spiceFunc, err, *ctx->start);
 
     // Add return symbol for function
     SymbolTable *functionTable = currentScope->createChildBlock(spiceFunc.getSignature());
@@ -398,8 +400,9 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   } else { // Procedure
     // Insert procedure into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
-    Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {});
-    currentScope->insertFunction(spiceProc, err, *ctx->IDENTIFIER()->getSymbol());
+    Function spiceProc =
+        Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, *ctx->start);
+    currentScope->insertFunction(spiceProc, err, *ctx->start);
   }
 
   return nullptr;
@@ -1439,7 +1442,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         for (auto &argType : argTypes)
           argTypesWithOptional.emplace_back(argType, false);
         Function function = Function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN),
-                                     argTypesWithOptional, {});
+                                     argTypesWithOptional, {}, *ctx->start);
         throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
                        "Function/Procedure '" + function.getSignature() + "' could not be found");
       }

@@ -2,6 +2,7 @@
 
 #include "symbol/SymbolTable.h"
 #include "GenericType.h"
+#include "util/FileUtil.h"
 
 #include <stdexcept>
 #include <utility>
@@ -273,7 +274,7 @@ unsigned int SymbolTable::getFieldCount() const {
  */
 void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  functionDeclarationPointers.push(std::vector<Function *>());
+  functions.insert({FileUtil::tokenToCodeLoc(token), std::make_shared<std::map<std::string, Function>>()});
 
   // Check if function is already substantiated
   if (function.hasSubstantiatedArgs()) {
@@ -304,61 +305,64 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
   std::vector<Function *> matches;
 
   // Loop through function and add any matches to the matches vector
-  std::map<std::string, Function> oldFunctionsList = functions;
-  for (const auto &[key, f] : oldFunctionsList) {
-    // Check name requirement
-    if (f.getName() != functionName)
-      continue;
-
-    // Check this type requirement
-    if (f.getThisType() != thisType)
-      continue;
-
-    // Check arg types requirement
-    std::vector<SymbolType> curArgTypes = f.getArgTypes();
-    if (curArgTypes.size() != argTypes.size())
-      continue;
-    bool differentArgTypes = false; // Note: This is a workaround for a break from an inner loop
-    for (int i = 0; i < argTypes.size(); i++) {
-      if (!curArgTypes[i].is(TY_GENERIC) && !equalsIgnoreArraySizes(curArgTypes[i], argTypes[i])) {
-        differentArgTypes = true;
-        break;
-      }
-    }
-    if (differentArgTypes)
-      continue;
-
-    // Check template types requirement
-    std::vector<GenericType> curTemplateTypes = f.getTemplateTypes();
-    if (curTemplateTypes.empty()) {
-      // It's a match!
-      matches.push_back(&functions.at(key));
-    } else {
-      if (curTemplateTypes.size() != templateTypes.size())
+  auto oldFunctionsList = functions;
+  for (const auto &[codeLoc, manifestations] : oldFunctionsList) {
+    auto oldManifestations = *manifestations;
+    for (auto &[mangledName, f] : oldManifestations) {
+      // Check name requirement
+      if (f.getName() != functionName)
         continue;
-      std::vector<SymbolType> concreteTemplateTypes;
-      std::vector<GenericTypeReplacement> typeReplacements;
-      bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
-      for (int i = 0; i < templateTypes.size(); i++) {
-        if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
-          differentTemplateTypes = true;
+
+      // Check this type requirement
+      if (f.getThisType() != thisType)
+        continue;
+
+      // Check arg types requirement
+      std::vector<SymbolType> curArgTypes = f.getArgTypes();
+      if (curArgTypes.size() != argTypes.size())
+        continue;
+      bool differentArgTypes = false; // Note: This is a workaround for a break from an inner loop
+      for (int i = 0; i < argTypes.size(); i++) {
+        if (!curArgTypes[i].is(TY_GENERIC) && !equalsIgnoreArraySizes(curArgTypes[i], argTypes[i])) {
+          differentArgTypes = true;
           break;
         }
-        concreteTemplateTypes.push_back(templateTypes[i]);
-        typeReplacements.emplace_back(curTemplateTypes[i].getSubType(), templateTypes[i]);
       }
-      if (differentTemplateTypes)
+      if (differentArgTypes)
         continue;
 
-      // Duplicate function
-      Function newFunction = f.substantiateGenerics(concreteTemplateTypes);
-      insertSubstantiatedFunction(newFunction, err, token);
-      duplicateChildBlockEntry(f.getSignature(), newFunction.getSignature());
+      // Check template types requirement
+      std::vector<GenericType> curTemplateTypes = f.getTemplateTypes();
+      if (curTemplateTypes.empty()) {
+        // It's a match!
+        matches.push_back(&functions.at(codeLoc)->at(f.getMangledName()));
+      } else {
+        if (curTemplateTypes.size() != templateTypes.size())
+          continue;
+        std::vector<SymbolType> concreteTemplateTypes;
+        std::vector<GenericTypeReplacement> typeReplacements;
+        bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
+        for (int i = 0; i < templateTypes.size(); i++) {
+          if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
+            differentTemplateTypes = true;
+            break;
+          }
+          concreteTemplateTypes.push_back(templateTypes[i]);
+          typeReplacements.emplace_back(curTemplateTypes[i].getSubType(), templateTypes[i]);
+        }
+        if (differentTemplateTypes)
+          continue;
 
-      // Execute analyzer on the function body and provide the concrete types
-      f.analyzerCallback(typeReplacements);
+        // Duplicate function
+        Function newFunction = f.substantiateGenerics(concreteTemplateTypes);
+        insertSubstantiatedFunction(newFunction, err, f.getDefinitionToken());
+        duplicateChildBlockEntry(f.getSignature(), newFunction.getSignature());
 
-      matches.push_back(&functions.at(newFunction.getMangledName()));
+        // Execute analyzer on the function body and provide the concrete types
+        f.analyzerCallback(typeReplacements);
+
+        matches.push_back(&functions.at(codeLoc)->at(newFunction.getMangledName()));
+      }
     }
   }
 
@@ -383,12 +387,29 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
  * @param mangledName Mangled function name
  * @return Function
  */
-Function *SymbolTable::getFunction(const std::string &mangledName) {
+Function *SymbolTable::getFunction(const antlr4::Token &defToken, const std::string &mangledName) {
+  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
+  // Return nullptr if function definition list was not found
+  if (!functions.contains(accessId))
+    return nullptr;
   // Check if there is an item with that mangled name
-  if (functions.contains(mangledName))
-    return &functions.at(mangledName);
+  std::shared_ptr<std::map<std::string, Function>> functionManifestations = functions.at(accessId);
+  if (functionManifestations->contains(mangledName))
+    return &functionManifestations->at(mangledName);
   // Otherwise, return nullptr
   return nullptr;
+}
+
+/**
+ * Retrieve the manifestations of the function, defined at defToken
+ *
+ * @return Function manifestations
+ */
+std::shared_ptr<std::map<std::string, Function>> SymbolTable::getManifestations(const antlr4::Token &defToken) const {
+  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
+  if (!functions.contains(accessId))
+    throw std::runtime_error("Internal compiler error: Cannot get manifestations at " + accessId);
+  return functions.at(accessId);
 }
 
 /**
@@ -401,19 +422,6 @@ Function *SymbolTable::popFunctionAccessPointer() {
     throw std::runtime_error("Internal compiler error: Could not pop function access");
   Function *function = functionAccessPointers.front();
   functionAccessPointers.pop();
-  return function;
-}
-
-/**
- * Get the next list of function declarations in order of visiting
- *
- * @return Function pointer for the function declaration
- */
-std::vector<Function *> SymbolTable::popFunctionDeclarationPointers() {
-  if (functionDeclarationPointers.empty())
-    throw std::runtime_error("Internal compiler error: Could not pop function declaration");
-  std::vector<Function *> function = functionDeclarationPointers.front();
-  functionDeclarationPointers.pop();
   return function;
 }
 
@@ -533,12 +541,14 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
   // Check if the function exists already
-  if (functions.contains(function.getMangledName()))
-    throw err->get(token, FUNCTION_DECLARED_TWICE, "The function/procedure '" + function.getSignature() + "' is declared twice");
+  for (const auto &[_, manifestations] : functions) {
+    if (manifestations->contains(function.getMangledName()))
+      throw err->get(token, FUNCTION_DECLARED_TWICE,
+                     "The function/procedure '" + function.getSignature() + "' is declared twice");
+  }
   // Add function to function list
-  functions.insert({function.getMangledName(), function});
+  std::string accessId = FileUtil::tokenToCodeLoc(token);
+  functions.at(accessId)->insert({function.getMangledName(), function});
   // Add symbol table entry for the function
   insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
-  // Add function declaration pointer for the function definition
-  functionDeclarationPointers.back().push_back(&functions.at(function.getMangledName()));
 }
