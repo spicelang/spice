@@ -5,12 +5,12 @@
 
 #include <stdexcept>
 
+#include <analyzer/AnalyzerVisitor.h>
+#include <dependency/SourceFile.h>
 #include <exception/IRError.h>
+#include <exception/SemanticError.h>
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
-
-#include <analyzer/AnalyzerVisitor.h>
-#include <exception/SemanticError.h>
 
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/IR/GlobalValue.h>
@@ -28,30 +28,25 @@
 
 GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
                                    const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
-                                   ThreadFactory *threadFactory, SymbolTable *symbolTable, CliOptions *options,
-                                   LinkerInterface *linker, const std::string &sourceFile, const std::string &objectFile,
-                                   bool requiresMainFct) {
+                                   ThreadFactory *threadFactory, LinkerInterface *linker, CliOptions *options,
+                                   SourceFile *sourceFile, const std::string &objectFile) {
   this->context = context;
   this->builder = builder;
   this->moduleRegistry = moduleRegistry;
   this->threadFactory = threadFactory;
-  this->currentScope = this->rootScope = symbolTable;
+  this->linker = linker;
+  this->cliOptions = options;
   this->sourceFile = sourceFile;
   this->objectFile = objectFile;
-  this->requiresMainFct = requiresMainFct;
-  this->cliOptions = options;
-  this->linker = linker;
+  this->requiresMainFct = sourceFile->parent == nullptr;
+  this->currentScope = this->rootScope = sourceFile->symbolTable.get();
 
   // Create error factory for this specific file
-  this->err = new ErrorFactory(sourceFile);
-}
+  this->err = std::make_unique<ErrorFactory>(sourceFile->filePath);
 
-GeneratorVisitor::~GeneratorVisitor() { delete this->err; }
-
-void GeneratorVisitor::init() {
   // Create LLVM base components
-  module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile), *context);
-  conversionsManager = std::make_unique<OpRuleConversionsManager>(builder, err);
+  module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile->filePath), *context);
+  conversionsManager = std::make_unique<OpRuleConversionsManager>(builder, err.get());
 
   // Initialize LLVM
   llvm::InitializeAllTargetInfos();
@@ -975,7 +970,7 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx)
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   // Check if imported library exists
-  std::string importPath = ctx->STRING_LITERAL()->toString();
+  /*std::string importPath = ctx->STRING_LITERAL()->toString();
   importPath = importPath.substr(1, importPath.size() - 2);
 
   // Check if source file exists
@@ -999,7 +994,7 @@ antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *
 
     // Pop module from module path
     moduleRegistry->popFromImportPath();
-  }
+  }*/
 
   return nullptr;
 }
@@ -2241,7 +2236,7 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx)
   while (tokenCounter < ctx->children.size()) {
     auto *token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
     if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
-      currentSymbolType = currentSymbolType.toPointer(err, *token->getSymbol());
+      currentSymbolType = currentSymbolType.toPointer(err.get(), *token->getSymbol());
     } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
       tokenCounter++;                                                    // Consume LBRACKET
       token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
@@ -2250,7 +2245,7 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx)
         size = std::stoi(token->toString());
         tokenCounter++; // Consume INTEGER
       }
-      currentSymbolType = currentSymbolType.toArray(err, *token->getSymbol(), size);
+      currentSymbolType = currentSymbolType.toArray(err.get(), *token->getSymbol(), size);
     }
     tokenCounter++;
   }

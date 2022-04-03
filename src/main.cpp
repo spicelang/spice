@@ -39,7 +39,7 @@ void compileProject(CliOptions *options) {
 
     // Compile main source file
     CompilerInstance::compileSourceFile(context, builder, &moduleRegistry, &threadFactory, options, &linker,
-                                        options->mainSourceFile, true, false);
+                                        options->mainSourceFile);
 
     // Link the target executable
     linker.link();

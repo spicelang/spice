@@ -19,6 +19,9 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/Host.h>
 
+// Forward declaration (circular import)
+class SourceFile;
+
 const std::string MAIN_FUNCTION_NAME = "main";
 const std::string RETURN_VARIABLE_NAME = "result";
 const std::string THIS_VARIABLE_NAME = "this";
@@ -31,9 +34,8 @@ class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
   // Constructors
   explicit AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                           ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, CliOptions *options,
-                           LinkerInterface *linker, const std::string &sourceFile, bool requiresMainFct, bool stdFile);
-  ~AnalyzerVisitor() override;
+                           ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, SourceFile *sourceFile,
+                           CliOptions *options, LinkerInterface *linker, bool requiresMainFct, bool stdFile);
 
   // Public methods
   antlrcpp::Any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -87,12 +89,12 @@ private:
   std::shared_ptr<llvm::LLVMContext> context;
   std::shared_ptr<llvm::IRBuilder<>> builder;
   std::unique_ptr<OpRuleManager> opRuleManager;
-  ErrorFactory *err;
+  std::unique_ptr<ErrorFactory> err;
   ModuleRegistry *moduleRegistry;
   ThreadFactory *threadFactory;
+  SourceFile *sourceFile;
   CliOptions *cliOptions;
   LinkerInterface *linker;
-  std::string sourceFile;
   bool requiresMainFct = true;
   bool hasMainFunction = false;
   bool isStdFile = false;

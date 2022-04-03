@@ -8,6 +8,8 @@ set(SOURCES
         CompilerInstance.h
         cli/CliInterface.cpp
         cli/CliInterface.h
+        analyzer/PreAnalyzerVisitor.cpp
+        analyzer/PreAnalyzerVisitor.h
         analyzer/AnalyzerVisitor.cpp
         analyzer/AnalyzerVisitor.h
         analyzer/OpRuleManager.cpp
@@ -34,6 +36,8 @@ set(SOURCES
         symbol/ScopePath.h
         symbol/SymbolSpecifiers.cpp
         symbol/SymbolSpecifiers.h
+        dependency/SourceFile.cpp
+        dependency/SourceFile.h
         exception/ErrorFactory.cpp
         exception/ErrorFactory.h
         exception/CliError.cpp

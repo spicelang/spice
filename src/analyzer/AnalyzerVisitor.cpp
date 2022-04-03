@@ -4,6 +4,7 @@
 
 #include <CompilerInstance.h>
 #include <analyzer/OpRuleManager.h>
+#include <dependency/SourceFile.h>
 #include <exception/SemanticError.h>
 #include <symbol/GenericType.h>
 #include <symbol/SymbolSpecifiers.h>
@@ -13,13 +14,14 @@
 
 AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
                                  const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
-                                 ThreadFactory *threadFactory, CliOptions *options, LinkerInterface *linker,
-                                 const std::string &sourceFile, bool requiresMainFct, bool isStdFile) {
+                                 ThreadFactory *threadFactory, SourceFile *sourceFile, CliOptions *options,
+                                 LinkerInterface *linker, bool requiresMainFct, bool isStdFile) {
   this->context = context, this->builder = builder;
   this->moduleRegistry = moduleRegistry;
   this->threadFactory = threadFactory;
-  this->linker = linker;
   this->sourceFile = sourceFile;
+  this->currentScope = this->rootScope = sourceFile->symbolTable.get();
+  this->linker = linker;
   this->requiresMainFct = requiresMainFct;
   this->isStdFile = isStdFile;
 
@@ -33,18 +35,14 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &conte
   this->cliOptions = options;
 
   // Create error factory for this specific file
-  this->err = new ErrorFactory(sourceFile);
+  this->err = std::make_unique<ErrorFactory>(sourceFile->filePath);
 
   // Create OpRuleManager
-  opRuleManager = std::make_unique<OpRuleManager>(err);
+  opRuleManager = std::make_unique<OpRuleManager>(err.get());
 }
-
-AnalyzerVisitor::~AnalyzerVisitor() { delete this->err; }
 
 antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   // --- Pre-traversing actions
-  // Create current scope
-  rootScope = currentScope = new SymbolTable(nullptr, requiresMainFct);
 
   // --- Traverse AST
   visitChildren(ctx);
@@ -146,7 +144,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     std::string structName = ctx->IDENTIFIER().front()->toString();
     SymbolTableEntry *structEntry = currentScope->lookup(structName);
     SymbolType curThisType = thisType = structEntry->getType();
-    curThisType = curThisType.toPointer(err, *ctx->start);
+    curThisType = curThisType.toPointer(err.get(), *ctx->start);
     auto thisTypeSpecifiers = SymbolSpecifiers(curThisType);
     thisTypeSpecifiers.setConst(true);
     currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisTypeSpecifiers, INITIALIZED, *ctx->start);
@@ -182,7 +180,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   // Insert function into the symbol table
   std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
   Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, codeLoc);
-  currentScope->insertFunction(spiceFunc, err, *ctx->start);
+  currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
   std::vector<Function> substantiatedFunctions = spiceFunc.substantiateOptionalArgs();
@@ -286,7 +284,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     std::string structName = ctx->IDENTIFIER().front()->toString();
     SymbolTableEntry *structEntry = currentScope->lookup(structName);
     SymbolType curThisType = thisType = structEntry->getType();
-    curThisType = curThisType.toPointer(err, *ctx->start);
+    curThisType = curThisType.toPointer(err.get(), *ctx->start);
     auto thisSymbolSpecifiers = SymbolSpecifiers(curThisType);
     thisSymbolSpecifiers.setConst(true);
     currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisSymbolSpecifiers, INITIALIZED, *ctx->start);
@@ -314,7 +312,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
   Function spiceProc =
       Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, codeLoc);
-  currentScope->insertFunction(spiceProc, err, *ctx->start);
+  currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
   std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalArgs();
@@ -393,7 +391,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     // Insert function into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
     Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, codeLoc);
-    currentScope->insertFunction(spiceFunc, err, *ctx->start);
+    currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
     // Add return symbol for function
     SymbolTable *functionTable = currentScope->createChildBlock(spiceFunc.getSignature());
@@ -403,7 +401,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     // Insert procedure into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
     Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, codeLoc);
-    currentScope->insertFunction(spiceProc, err, *ctx->start);
+    currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
   }
 
   return nullptr;
@@ -580,7 +578,7 @@ antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  return SymbolType(TY_BYTE).toPointer(err, *ctx->start);
+  return SymbolType(TY_BYTE).toPointer(err.get(), *ctx->start);
 }
 
 antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
@@ -635,7 +633,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext 
       std::string varName = head->declStmt().front()->IDENTIFIER()->toString();
       SymbolTableEntry *entry = currentScope->lookup(varName);
       assert(entry != nullptr);
-      entry->updateState(INITIALIZED, err, *head->declStmt().front()->IDENTIFIER()->getSymbol());
+      entry->updateState(INITIALIZED, err.get(), *head->declStmt().front()->IDENTIFIER()->getSymbol());
     }
 
     // Check if index type is int
@@ -664,7 +662,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext 
                      "Foreach loop item type does not match array type. Expected " + arrayType.getName(false) + ", provided " +
                          itemType.getName(false));
   }
-  itemVarSymbol->updateState(INITIALIZED, err, *head->declStmt().back()->IDENTIFIER()->getSymbol());
+  itemVarSymbol->updateState(INITIALIZED, err.get(), *head->declStmt().back()->IDENTIFIER()->getSymbol());
 
   // Visit statement list in new scope
   nestedLoopCounter++;
@@ -784,7 +782,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
   }
 
   if (argumentMode && symbolType.isArray()) // Change array type to pointer type for function/procedure arguments
-    symbolType = symbolType.getContainedTy().toPointer(err, *ctx->dataType()->start);
+    symbolType = symbolType.getContainedTy().toPointer(err.get(), *ctx->dataType()->start);
 
   // Build symbol specifiers
   auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
@@ -810,8 +808,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
-  // Check if imported library exists
-  std::string importPath = ctx->STRING_LITERAL()->toString();
+  /*std::string importPath = ctx->STRING_LITERAL()->toString();
   importPath = importPath.substr(1, importPath.size() - 2);
 
   // Check if source file exists
@@ -849,7 +846,7 @@ antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *c
 
   // Mount symbol table of the imported source file into the current scope
   nestedTable->setImported();
-  currentScope->mountChildBlock(importIden, nestedTable);
+  currentScope->mountChildBlock(importIden, nestedTable);*/
 
   return nullptr;
 }
@@ -877,7 +874,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *c
       }
 
       // Set the return variable to initialized
-      returnVariable->updateState(INITIALIZED, err, *ctx->start);
+      returnVariable->updateState(INITIALIZED, err.get(), *ctx->start);
     }
 
     // Check if result variable is initialized
@@ -1026,7 +1023,7 @@ antlrcpp::Any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) {
 }
 
 antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
-  SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(err, *ctx->start);
+  SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(err.get(), *ctx->start);
   for (const auto &assignExpr : ctx->assignExpr()) {
     SymbolType argSymbolType = visit(assignExpr).as<SymbolType>();
     if (argSymbolType == bytePtr && argSymbolType.isArrayOf(bytePtr))
@@ -1086,7 +1083,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *c
 
       // Update state in symbol table
       if (!currentEntry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}))
-        currentEntry->updateState(INITIALIZED, err, *ctx->prefixUnaryExpr()->start);
+        currentEntry->updateState(INITIALIZED, err.get(), *ctx->prefixUnaryExpr()->start);
 
       // In case the lhs variable is captured, notify the capture about the write access
       Capture *lhsCapture = currentScope->lookupCapture(variableName);
@@ -1322,7 +1319,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err, *token->start);
+        currentEntry->updateState(INITIALIZED, err.get(), *token->start);
 
       // In case the lhs is captured, notify the capture about the write access
       Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
@@ -1333,7 +1330,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err, *token->start);
+        currentEntry->updateState(INITIALIZED, err.get(), *token->start);
 
       // In case the lhs is captured, notify the capture about the write access
       Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
@@ -1423,7 +1420,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         for (const auto &arg : argLst->assignExpr()) {
           SymbolType argType = visit(arg).as<SymbolType>();
           if (argType.isArray())
-            argType = argType.getContainedTy().toPointer(err, *arg->start);
+            argType = argType.getContainedTy().toPointer(err.get(), *arg->start);
           argTypes.push_back(argType);
         }
       }
@@ -1435,7 +1432,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
       // Match a function onto the requirements of the call
       SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
       Function *spiceFunc =
-          functionParentScope->matchFunction(functionName, thisType, argTypes, concreteTypes, err, *token->getSymbol());
+          functionParentScope->matchFunction(functionName, thisType, argTypes, concreteTypes, err.get(), *token->getSymbol());
       if (!spiceFunc) {
         // Build function to get a better error message
         std::vector<std::pair<SymbolType, bool>> argTypesWithOptional;
@@ -1490,7 +1487,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err, *token->getSymbol());
+        currentEntry->updateState(INITIALIZED, err.get(), *token->getSymbol());
 
       // In case the lhs is captured, notify the capture about the write access
       Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
@@ -1501,7 +1498,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err, *token->getSymbol());
+        currentEntry->updateState(INITIALIZED, err.get(), *token->getSymbol());
 
       // In case the lhs is captured, notify the capture about the write access
       Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
@@ -1676,7 +1673,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     } else if (expectedType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
       throw err->get(*ctx->LBRACE()->getSymbol(), UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
     }
-    return expectedItemType.toArray(err, *ctx->LBRACE()->getSymbol(), actualSize);
+    return expectedItemType.toArray(err.get(), *ctx->LBRACE()->getSymbol(), actualSize);
   }
 
   return nullptr;
@@ -1705,7 +1702,7 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) 
   while (tokenCounter < ctx->children.size()) {
     auto *token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
     if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
-      type = type.toPointer(err, *ctx->start);
+      type = type.toPointer(err.get(), *ctx->start);
     } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
       tokenCounter++;                                                    // Consume LBRACKET
       token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
@@ -1718,7 +1715,7 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) 
         size = signedSize;
         tokenCounter++; // Consume INTEGER
       }
-      type = type.toArray(err, *ctx->start, size);
+      type = type.toArray(err.get(), *ctx->start, size);
     }
     tokenCounter++;
   }

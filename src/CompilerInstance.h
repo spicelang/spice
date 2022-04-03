@@ -13,20 +13,12 @@
 #include <llvm/IR/IRBuilder.h>
 
 /**
- * Represents the compilation process of a single source file to a LLVM module / object file
+ * Represents the compilation process of a Spice project
  */
 class CompilerInstance {
 public:
   static SymbolTable *compileSourceFile(const std::shared_ptr<llvm::LLVMContext> &context,
                                         const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
                                         ThreadFactory *threadFactory, CliOptions *options, LinkerInterface *linker,
-                                        const std::string &sourceFile, bool requiresMainFct, bool stdFile);
-  static SymbolTable *analyzeSourceFile(const std::shared_ptr<llvm::LLVMContext> &context,
-                                        const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
-                                        ThreadFactory *threadFactory, CliOptions *options, LinkerInterface *linker,
-                                        const std::string &sourceFile, bool requiresMainFct, bool stdFile);
-  static void generateSourceFile(const std::shared_ptr<llvm::LLVMContext> &context,
-                                 const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
-                                 ThreadFactory *threadFactory, CliOptions *options, LinkerInterface *linker,
-                                 const std::string &sourceFile, bool requiresMainFct, SymbolTable *symbolTable);
+                                        const std::string &sourceFilePath);
 };

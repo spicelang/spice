@@ -27,5 +27,5 @@ public:
 
 private:
   // Members
-  const std::string fileName;
+  std::string fileName;
 };

@@ -18,17 +18,17 @@
 #include <llvm/Support/Host.h>
 #include <llvm/Target/TargetMachine.h>
 
+// Forward declaration (circular import)
+class SourceFile;
+
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
   // Constructors
   explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                            ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, SymbolTable *symbolTable,
-                            CliOptions *options, LinkerInterface *linker, const std::string &sourceFile,
-                            const std::string &objectFile, bool requiresMainFct);
-  ~GeneratorVisitor() override;
+                            ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, LinkerInterface *linker,
+                            CliOptions *options, SourceFile *sourceFile, const std::string &objectFile);
 
   // Public methods
-  void init();
   void optimize();
   void emit();
   void dumpIR();
@@ -81,7 +81,7 @@ public:
 private:
   // Members
   std::unique_ptr<OpRuleConversionsManager> conversionsManager;
-  std::string sourceFile;
+  SourceFile *sourceFile;
   std::string objectFile;
   llvm::TargetMachine *targetMachine{};
   CliOptions *cliOptions;
@@ -97,7 +97,7 @@ private:
   ScopePath scopePath;
   ModuleRegistry *moduleRegistry;
   ThreadFactory *threadFactory;
-  const ErrorFactory *err;
+  std::unique_ptr<ErrorFactory> err;
   bool blockAlreadyTerminated = false;
   llvm::Value *currentThisValue = nullptr;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
