@@ -31,7 +31,7 @@ SymbolTable *CompilerInstance::compileSourceFile(const std::shared_ptr<llvm::LLV
                                                  CliOptions *options, LinkerInterface *linker,
                                                  const std::string &sourceFilePath) {
   // Run pre-analyzer visitor to collect imports
-  SourceFile mainSourceFile = SourceFile(nullptr, "root", sourceFilePath, false);
+  SourceFile mainSourceFile = SourceFile(options, nullptr, "root", sourceFilePath, false);
   mainSourceFile.preAnalyze(options);
 
   // Execute analyzer step

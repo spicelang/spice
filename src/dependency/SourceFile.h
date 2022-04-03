@@ -29,7 +29,7 @@ struct SourceFileAntlrCtx {
 class SourceFile {
 public:
   // Constructors
-  explicit SourceFile(SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
+  explicit SourceFile(CliOptions *options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
 
   // Public methods
   void preAnalyze(CliOptions *options);
@@ -49,6 +49,7 @@ public:
   bool stdFile;
   SourceFileAntlrCtx antlrCtx;
   SourceFile *parent;
+  CliOptions *options;
   std::shared_ptr<SymbolTable> symbolTable;
   std::shared_ptr<AnalyzerVisitor> analyzer;
   std::shared_ptr<GeneratorVisitor> generator;

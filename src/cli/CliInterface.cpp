@@ -264,7 +264,7 @@ void CliInterface::addUninstallSubcommand() {
       return;
     }
     FileUtil::deleteFile(installPath);
-    std::cout << "Successfully uninstalled." << std::endl;
+    std::cout << "Successfully uninstalled.\n";
   });
 
   // Source file
@@ -316,7 +316,7 @@ int CliInterface::parse(int argc, char **argv) {
 void CliInterface::runBinary() const {
   // Print status message
   if (cliOptions.printDebugOutput)
-    std::cout << std::endl << "Running executable ..." << std::endl;
+    std::cout << "\nRunning executable ...\n";
 
   // Run executable
   std::system(cliOptions.outputPath.c_str());

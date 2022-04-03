@@ -44,13 +44,13 @@ void compileProject(CliOptions *options) {
     // Link the target executable
     linker.link();
   } catch (SemanticError &e) {
-    std::cout << e.what() << std::endl;
+    std::cout << e.what() << "\n";
     std::exit(1); // Exit with result code other than 0
   } catch (IRError &e) {
-    std::cout << e.what() << std::endl;
+    std::cout << e.what() << "\n";
     std::exit(1); // Exit with result code other than 0
   } catch (LexerParserError &e) {
-    std::cout << e.what() << std::endl;
+    std::cout << e.what() << "\n";
     std::exit(1); // Exit with result code other than 0
   }
 }

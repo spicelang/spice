@@ -73,7 +73,7 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
 
 void GeneratorVisitor::optimize() {
   if (cliOptions->printDebugOutput)
-    std::cout << "\nOptimizing on level " + std::to_string(cliOptions->optLevel) << " ..." << std::endl; // GCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(cliOptions->optLevel) << " ...\n"; // GCOV_EXCL_LINE
 
   llvm::LoopAnalysisManager loopAnalysisMgr;
   llvm::FunctionAnalysisManager functionAnalysisMgr;
@@ -99,7 +99,7 @@ void GeneratorVisitor::optimize() {
 void GeneratorVisitor::emit() {
   // GCOV_EXCL_START
   if (cliOptions->printDebugOutput)
-    std::cout << "\nEmitting object file for triplet '" << cliOptions->targetTriple << "' to path: " << objectFile << std::endl;
+    std::cout << "\nEmitting object file for triplet '" << cliOptions->targetTriple << "' to path: " << objectFile << "\n";
   // GCOV_EXCL_STOP
 
   // Open file output stream

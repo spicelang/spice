@@ -8,12 +8,13 @@
 
 #include <util/FileUtil.h>
 
-SourceFile::SourceFile(SourceFile *parent, std::string name, const std::string &filePath, bool stdFile) {
+SourceFile::SourceFile(CliOptions *options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile) {
   this->name = std::move(name);
   this->filePath = filePath;
-  this->objectFilePath = FileUtil::getFileName(filePath) + ".o";
+  this->objectFilePath = options->outputDir + "/" + FileUtil::getFileName(filePath) + ".o";
   this->stdFile = stdFile;
   this->parent = parent;
+  this->options = options;
 
   // Read from file
   std::ifstream fileInputStream(filePath);
@@ -49,6 +50,7 @@ void SourceFile::preAnalyze(CliOptions *options) {
   // Pre-analyze this source file
   PreAnalyzerVisitor preAnalyzer = PreAnalyzerVisitor(options, this);
   preAnalyzer.visit(antlrCtx.parser->entry());
+  antlrCtx.parser->reset();
 
   // Analyze the imported source files
   for (auto &[importName, sourceFile] : dependencies)
@@ -65,7 +67,16 @@ SymbolTable *SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &conte
   // Analyze this source file
   analyzer = std::make_shared<AnalyzerVisitor>(context, builder, moduleRegistry, threadFactory, this, options, linker,
                                                parent == nullptr, stdFile);
-  return analyzer->visit(antlrCtx.parser->entry()).as<SymbolTable *>();
+  SymbolTable *symbolTable = analyzer->visit(antlrCtx.parser->entry()).as<SymbolTable *>();
+  antlrCtx.parser->reset();
+
+  // Dump symbol table
+  if (options->printDebugOutput) { // GCOV_EXCL_START
+    std::cout << "\nSymbol table of file " << filePath << ":\n\n";
+    std::cout << symbolTable->toJSON().dump(2) << "\n";
+  } // GCOV_EXCL_STOP
+
+  return symbolTable;
 }
 
 void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
@@ -79,7 +90,31 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   generator =
       std::make_shared<GeneratorVisitor>(context, builder, moduleRegistry, threadFactory, linker, options, this, objectFilePath);
   generator->visit(antlrCtx.parser->entry());
-  generator->optimize();
+
+  // Dump unoptimized IR code
+  if (options->printDebugOutput) { // GCOV_EXCL_START
+    std::cout << "\nIR code:\n";
+    generator->dumpIR();
+  } // GCOV_EXCL_STOP
+
+  // Optimize IR code
+  if (options->optLevel >= 1 && options->optLevel <= 5) {
+    generator->optimize();
+    // Dump optimized IR code
+    if (options->printDebugOutput) { // GCOV_EXCL_START
+      std::cout << "\nOptimized IR code:\n";
+      generator->dumpIR();
+    } // GCOV_EXCL_STOP
+  }
+
+  // Emit object file
+  generator->emit();
+
+  antlrCtx.parser->reset();
+
+  // Add object file to the linker interface
+  if (linker)
+    linker->addObjectFilePath(objectFilePath);
 }
 
 void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &token, SourceFile *parent, const std::string &name,
@@ -89,7 +124,7 @@ void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &tok
     throw err->get(token, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
-  dependencies.insert({name, std::make_shared<SourceFile>(parent, name, filePath, stdFile)});
+  dependencies.insert({name, std::make_shared<SourceFile>(options, parent, name, filePath, stdFile)});
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {

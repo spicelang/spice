@@ -62,6 +62,7 @@ f<int> main() {
 import "os-test2" as s1;
 
 f<int> main() {
+    printf("Hello");
     //s1.printFormat<double>(1.123);
     //s1.printFormat<int>(543);
     //s1.printFormat<string[]>({"Hello", "World"});
