@@ -1,0 +1,7 @@
+import "source1" as s1;
+
+f<int> main() {
+    s1.printFormat<double>(1.123);
+    s1.printFormat<int>(543);
+    s1.printFormat<string[]>({"Hello", "World"});
+}

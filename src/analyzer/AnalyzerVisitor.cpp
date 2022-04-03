@@ -180,8 +180,8 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   }
 
   // Insert function into the symbol table
-  Function spiceFunc =
-      Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, *ctx->start);
+  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+  Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, codeLoc);
   currentScope->insertFunction(spiceFunc, err, *ctx->start);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -311,8 +311,9 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   }
 
   // Insert function into the symbol table
+  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
   Function spiceProc =
-      Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, *ctx->start);
+      Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, codeLoc);
   currentScope->insertFunction(spiceProc, err, *ctx->start);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -369,6 +370,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
 
 antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::string functionName = ctx->IDENTIFIER()->toString();
+  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
 
   ArgList argTypes;
   if (ctx->typeLst()) {
@@ -390,7 +392,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
     // Insert function into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, *ctx->start);
+    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, codeLoc);
     currentScope->insertFunction(spiceFunc, err, *ctx->start);
 
     // Add return symbol for function
@@ -400,8 +402,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   } else { // Procedure
     // Insert procedure into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
-    Function spiceProc =
-        Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, *ctx->start);
+    Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, codeLoc);
     currentScope->insertFunction(spiceProc, err, *ctx->start);
   }
 
@@ -1441,8 +1442,9 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
         argTypesWithOptional.reserve(argTypes.size());
         for (auto &argType : argTypes)
           argTypesWithOptional.emplace_back(argType, false);
+        std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
         Function function = Function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN),
-                                     argTypesWithOptional, {}, *ctx->start);
+                                     argTypesWithOptional, {}, codeLoc);
         throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
                        "Function/Procedure '" + function.getSignature() + "' could not be found");
       }

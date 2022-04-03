@@ -23,7 +23,7 @@
  *
  * @return Symbol table of this program part
  */
-SymbolTable *CompilerInstance::CompileSourceFile(const std::shared_ptr<llvm::LLVMContext> &context,
+SymbolTable *CompilerInstance::compileSourceFile(const std::shared_ptr<llvm::LLVMContext> &context,
                                                  const std::shared_ptr<llvm::IRBuilder<>> &builder,
                                                  ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory,
                                                  CliOptions *options, LinkerInterface *linker, const std::string &sourceFile,
@@ -66,11 +66,10 @@ SymbolTable *CompilerInstance::analyzeSourceFile(const std::shared_ptr<llvm::LLV
   antlr4::tree::ParseTree *ast = parser.entry(); // Get AST
 
   // Execute syntactical analysis
-  SymbolTable *symbolTable;
   AnalyzerVisitor analyzer =
       AnalyzerVisitor(context, builder, moduleRegistry, threadFactory, options, linker, sourceFile, requiresMainFct, stdFile);
-  symbolTable = analyzer.visit(ast).as<SymbolTable *>(); // Check for semantic errors
-  if (options->printDebugOutput) {                       // GCOV_EXCL_START
+  SymbolTable *symbolTable = analyzer.visit(ast).as<SymbolTable *>(); // Check for semantic errors
+  if (options->printDebugOutput) {                                    // GCOV_EXCL_START
     // Print symbol table
     std::cout << std::endl << "Symbol table of file " << sourceFile << ":" << std::endl << std::endl;
     std::cout << symbolTable->toJSON().dump(2) << std::endl;
@@ -97,7 +96,7 @@ void CompilerInstance::generateSourceFile(const std::shared_ptr<llvm::LLVMContex
   SpiceLexer lexer(&input);
   lexer.removeErrorListeners();
   lexer.addErrorListener(&lexerErrorHandler);
-  antlr4::CommonTokenStream tokens((antlr4::TokenSource *)&lexer);
+  antlr4::CommonTokenStream tokens(&lexer);
 
   // Parse input to AST
   SpiceParser parser(&tokens); // Check for syntax errors

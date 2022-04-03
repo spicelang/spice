@@ -82,5 +82,6 @@ private:
   bool requiresCapturing = false;
 
   // Private methods
-  void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
+  void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
+                                   const std::string &codeLoc);
 };

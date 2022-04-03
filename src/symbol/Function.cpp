@@ -176,13 +176,13 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
     if (argType.second) {         // Met optional argument
       if (!metFirstOptionalArg) { // Add substantiation without the optional argument
         definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                       definitionToken);
+                                       definitionCodeLoc);
         metFirstOptionalArg = true;
       }
       // Add substantiation with the optional argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
       definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                     definitionToken);
+                                     definitionCodeLoc);
     } else { // Met mandatory argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
     }
@@ -190,7 +190,7 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
 
   if (definiteFunctions.empty())
     definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                   definitionToken);
+                                   definitionCodeLoc);
 
   return definiteFunctions;
 }
@@ -219,7 +219,7 @@ Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteA
     currentFunctionArgTypes.emplace_back(newArgType, false);
   }
 
-  return Function(name, specifiers, thisType, returnType, currentFunctionArgTypes, {}, definitionToken);
+  return Function(name, specifiers, thisType, returnType, currentFunctionArgTypes, {}, definitionCodeLoc);
 }
 
 /**
@@ -256,8 +256,8 @@ void Function::setUsed() { used = true; }
 bool Function::isUsed() const { return used; }
 
 /**
- * Retrieve the definition token of this function
+ * Retrieve the definition code loc of this function
  *
- * @return Definition token
+ * @return Definition code location
  */
-const antlr4::Token &Function::getDefinitionToken() const { return definitionToken; }
+const std::string &Function::getDefinitionCodeLoc() const { return definitionCodeLoc; }

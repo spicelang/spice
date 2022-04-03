@@ -278,13 +278,13 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
 
   // Check if function is already substantiated
   if (function.hasSubstantiatedArgs()) {
-    insertSubstantiatedFunction(function, err, token);
+    insertSubstantiatedFunction(function, err, token, FileUtil::tokenToCodeLoc(token));
     return;
   }
 
   // Substantiate the function and insert the substantiated instances
   for (const auto &fct : function.substantiateOptionalArgs())
-    insertSubstantiatedFunction(fct, err, token);
+    insertSubstantiatedFunction(fct, err, token, FileUtil::tokenToCodeLoc(token));
 }
 
 /**
@@ -355,7 +355,7 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
 
         // Duplicate function
         Function newFunction = f.substantiateGenerics(concreteTemplateTypes);
-        insertSubstantiatedFunction(newFunction, err, f.getDefinitionToken());
+        insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
         duplicateChildBlockEntry(f.getSignature(), newFunction.getSignature());
 
         // Execute analyzer on the function body and provide the concrete types
@@ -536,7 +536,8 @@ void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
  * @param err Error factory
  * @param token Token, where the function is declared
  */
-void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
+void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
+                                              const std::string &codeLoc) {
   if (!function.hasSubstantiatedArgs())
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
@@ -547,8 +548,7 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
                      "The function/procedure '" + function.getSignature() + "' is declared twice");
   }
   // Add function to function list
-  std::string accessId = FileUtil::tokenToCodeLoc(token);
-  functions.at(accessId)->insert({function.getMangledName(), function});
+  functions.at(codeLoc)->insert({function.getMangledName(), function});
   // Add symbol table entry for the function
   insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
 }

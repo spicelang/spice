@@ -38,7 +38,7 @@ void compileProject(CliOptions *options) {
     moduleRegistry.pushToImportPath(options->mainSourceFile);
 
     // Compile main source file
-    CompilerInstance::CompileSourceFile(context, builder, &moduleRegistry, &threadFactory, options, &linker,
+    CompilerInstance::compileSourceFile(context, builder, &moduleRegistry, &threadFactory, options, &linker,
                                         options->mainSourceFile, true, false);
 
     // Link the target executable
