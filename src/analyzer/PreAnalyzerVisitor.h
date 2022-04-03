@@ -7,6 +7,7 @@
 #include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/ErrorFactory.h>
+#include <util/ModuleRegistry.h>
 
 class PreAnalyzerVisitor : public SpiceBaseVisitor {
 public:

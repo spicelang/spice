@@ -8,13 +8,15 @@
 
 #include <util/FileUtil.h>
 
-SourceFile::SourceFile(CliOptions *options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile) {
+SourceFile::SourceFile(ModuleRegistry *moduleRegistry, CliOptions *options, SourceFile *parent, std::string name,
+                       const std::string &filePath, bool stdFile) {
   this->name = std::move(name);
   this->filePath = filePath;
   this->objectFilePath = options->outputDir + "/" + FileUtil::getFileName(filePath) + ".o";
   this->stdFile = stdFile;
   this->parent = parent;
   this->options = options;
+  this->moduleRegistry = moduleRegistry;
 
   // Read from file
   std::ifstream fileInputStream(filePath);
@@ -44,6 +46,9 @@ SourceFile::SourceFile(CliOptions *options, SourceFile *parent, std::string name
   } else { // Imported source file
     symbolTable = std::make_shared<SymbolTable>(parent->symbolTable.get(), false);
   }
+
+  // Add to module registry
+  moduleRegistry->pushToImportPath(filePath);
 }
 
 void SourceFile::preAnalyze(CliOptions *options) {
@@ -58,17 +63,20 @@ void SourceFile::preAnalyze(CliOptions *options) {
 }
 
 SymbolTable *SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context,
-                                 const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
-                                 ThreadFactory *threadFactory, LinkerInterface *linker, CliOptions *options) {
+                                 const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory *threadFactory,
+                                 LinkerInterface *linker) {
   // Analyze the imported source files
   for (auto &[importName, sourceFile] : dependencies)
-    sourceFile->analyze(context, builder, moduleRegistry, threadFactory, linker, options);
+    sourceFile->analyze(context, builder, threadFactory, linker);
 
   // Analyze this source file
   analyzer = std::make_shared<AnalyzerVisitor>(context, builder, moduleRegistry, threadFactory, this, options, linker,
                                                parent == nullptr, stdFile);
   SymbolTable *symbolTable = analyzer->visit(antlrCtx.parser->entry()).as<SymbolTable *>();
   antlrCtx.parser->reset();
+
+  // Save the JSON version in the compiler output
+  compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
 
   // Dump symbol table
   if (options->printDebugOutput) { // GCOV_EXCL_START
@@ -80,16 +88,18 @@ SymbolTable *SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &conte
 }
 
 void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                          ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, LinkerInterface *linker,
-                          CliOptions *options) {
+                          ThreadFactory *threadFactory, LinkerInterface *linker) {
   // Generate the imported source files
   for (auto &[importName, sourceFile] : dependencies)
-    sourceFile->generate(context, builder, moduleRegistry, threadFactory, linker, options);
+    sourceFile->generate(context, builder, threadFactory, linker);
 
   // Generate this source file
   generator =
       std::make_shared<GeneratorVisitor>(context, builder, moduleRegistry, threadFactory, linker, options, this, objectFilePath);
   generator->visit(antlrCtx.parser->entry());
+
+  // Save the JSON version in the compiler output
+  compilerOutput.irString = generator->getIRString();
 
   // Dump unoptimized IR code
   if (options->printDebugOutput) { // GCOV_EXCL_START
@@ -100,6 +110,10 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   // Optimize IR code
   if (options->optLevel >= 1 && options->optLevel <= 5) {
     generator->optimize();
+
+    // Save the JSON version in the compiler output
+    compilerOutput.irOptString = generator->getIRString();
+
     // Dump optimized IR code
     if (options->printDebugOutput) { // GCOV_EXCL_START
       std::cout << "\nOptimized IR code:\n";
@@ -124,7 +138,7 @@ void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &tok
     throw err->get(token, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
-  dependencies.insert({name, std::make_shared<SourceFile>(options, parent, name, filePath, stdFile)});
+  dependencies.insert({name, std::make_shared<SourceFile>(moduleRegistry, options, parent, name, filePath, stdFile)});
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {

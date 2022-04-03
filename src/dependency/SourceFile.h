@@ -26,18 +26,24 @@ struct SourceFileAntlrCtx {
   std::shared_ptr<SpiceParser> parser;
 };
 
+struct CompilerOutput {
+  std::string symbolTableString;
+  std::string irString;
+  std::string irOptString;
+};
+
 class SourceFile {
 public:
   // Constructors
-  explicit SourceFile(CliOptions *options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
+  explicit SourceFile(ModuleRegistry *moduleRegistry, CliOptions *options, SourceFile *parent, std::string name,
+                      const std::string &filePath, bool stdFile);
 
   // Public methods
   void preAnalyze(CliOptions *options);
   SymbolTable *analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                       ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, LinkerInterface *linker,
-                       CliOptions *options);
+                       ThreadFactory *threadFactory, LinkerInterface *linker);
   void generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, LinkerInterface *linker, CliOptions *options);
+                ThreadFactory *threadFactory, LinkerInterface *linker);
   void addDependency(const ErrorFactory *err, const antlr4::Token &token, SourceFile *parent, const std::string &name,
                      const std::string &filePath, bool stdFile);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
@@ -48,10 +54,14 @@ public:
   std::string objectFilePath;
   bool stdFile;
   SourceFileAntlrCtx antlrCtx;
+  CompilerOutput compilerOutput;
   SourceFile *parent;
   CliOptions *options;
   std::shared_ptr<SymbolTable> symbolTable;
   std::shared_ptr<AnalyzerVisitor> analyzer;
   std::shared_ptr<GeneratorVisitor> generator;
   std::map<std::string, std::shared_ptr<SourceFile>> dependencies;
+
+private:
+  ModuleRegistry *moduleRegistry;
 };

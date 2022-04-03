@@ -1,10 +1,9 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include "CompilerInstance.h"
-
 #include <stdexcept>
 
 #include <cli/CliInterface.h>
+#include <dependency/SourceFile.h>
 #include <exception/IRError.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
@@ -34,12 +33,15 @@ void compileProject(CliOptions *options) {
     LinkerInterface linker = LinkerInterface(&err, &threadFactory, options);
     linker.setOutputPath(options->outputPath);
 
-    // Push main source file to module registry
-    moduleRegistry.pushToImportPath(options->mainSourceFile);
+    // Pre-analyze visitor to collect imports
+    SourceFile mainSourceFile = SourceFile(&moduleRegistry, options, nullptr, "root", options->mainSourceFile, false);
+    mainSourceFile.preAnalyze(options);
 
-    // Compile main source file
-    CompilerInstance::compileSourceFile(context, builder, &moduleRegistry, &threadFactory, options, &linker,
-                                        options->mainSourceFile);
+    // Analyze the project
+    mainSourceFile.analyze(context, builder, &threadFactory, &linker);
+
+    // Generate the project
+    mainSourceFile.generate(context, builder, &threadFactory, &linker);
 
     // Link the target executable
     linker.link();

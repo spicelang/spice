@@ -4,7 +4,6 @@
 
 #include <SpiceBaseVisitor.h>
 
-#include <CompilerInstance.h>
 #include <analyzer/OpRuleManager.h>
 #include <cli/CliInterface.h>
 #include <exception/ErrorFactory.h>

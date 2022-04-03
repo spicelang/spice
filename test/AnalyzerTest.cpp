@@ -12,6 +12,7 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
+#include <dependency/SourceFile.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
@@ -101,13 +102,11 @@ void executeTest(const AnalyzerTestCase &testCase) {
     cli.enrich();
     options = *cli.getOptions();
 
-    // Push main source file to module registry
-    moduleRegistry.pushToImportPath(sourceFile);
+    // Create main source file
+    SourceFile mainSourceFile = SourceFile(&moduleRegistry, &options, nullptr, "root", sourceFile, false);
 
     // Execute semantic analysis
-    AnalyzerVisitor analyzer =
-        AnalyzerVisitor(context, builder, &moduleRegistry, &threadFactory, &options, nullptr, sourceFile, true, false);
-    SymbolTable *symbolTable = analyzer.visit(tree).as<SymbolTable *>();
+    SymbolTable *symbolTable = mainSourceFile.analyze(context, builder, &threadFactory, nullptr);
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + "/exception.out"))

@@ -2,7 +2,6 @@
 
 #include "AnalyzerVisitor.h"
 
-#include <CompilerInstance.h>
 #include <analyzer/OpRuleManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/SemanticError.h>
