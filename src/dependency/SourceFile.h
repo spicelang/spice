@@ -40,8 +40,8 @@ public:
 
   // Public methods
   void preAnalyze(CliOptions *options);
-  SymbolTable *analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                       ThreadFactory *threadFactory, LinkerInterface *linker);
+  void analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
+               ThreadFactory *threadFactory, LinkerInterface *linker);
   void generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                 ThreadFactory *threadFactory, LinkerInterface *linker);
   void addDependency(const ErrorFactory *err, const antlr4::Token &token, SourceFile *parent, const std::string &name,

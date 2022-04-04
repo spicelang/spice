@@ -25,7 +25,6 @@ class SymbolTable {
 public:
   // Constructors
   explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile) : parent(parent), inMainSourceFile(inMainSourceFile){};
-  ~SymbolTable();
 
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,

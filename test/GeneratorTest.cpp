@@ -116,7 +116,7 @@ void executeTest(const GeneratorTestCase &testCase) {
     SourceFile mainSourceFile = SourceFile(&moduleRegistry, &options, nullptr, "root", sourceFile, false);
 
     // Execute semantic analysis
-    SymbolTable *symbolTable = mainSourceFile.analyze(context, builder, &threadFactory, &linker);
+    mainSourceFile.analyze(context, builder, &threadFactory, &linker);
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + "/exception.out"))
@@ -125,7 +125,7 @@ void executeTest(const GeneratorTestCase &testCase) {
     // Check if the symbol table matches the expected output
     std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
     if (FileUtil::fileExists(symbolTableFileName)) {
-      std::string actualSymbolTable = symbolTable->toJSON().dump(2);
+      std::string actualSymbolTable = mainSourceFile.symbolTable->toJSON().dump(2);
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
         TestUtil::setFileContent(symbolTableFileName, actualSymbolTable);
@@ -207,7 +207,6 @@ void executeTest(const GeneratorTestCase &testCase) {
     if (FileUtil::fileExists(outputFileName)) {
       // Prepare linker
       linker.setOutputPath(TestUtil::getDefaultExecutableName()); // Add output path
-      linker.addObjectFilePath("source.spice.o");                 // Add default object file
 
       std::string linkerFlagsFile = testCase.testPath + "/linker-flags.txt";
       std::string linkerFlags;

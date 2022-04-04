@@ -10,12 +10,6 @@
 #include <analyzer/AnalyzerVisitor.h>
 #include <util/CompilerWarning.h>
 
-SymbolTable::~SymbolTable() {
-  // Delete heap-allocated child tables
-  for (const auto &[key, table] : children)
-    delete table;
-}
-
 /**
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
  *

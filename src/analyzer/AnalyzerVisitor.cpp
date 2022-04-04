@@ -55,8 +55,7 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   if (requiresMainFct && !isStdFile)
     rootScope->printCompilerWarnings();
 
-  // Return the symbol table for further use in following compile phases
-  return currentScope;
+  return nullptr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {

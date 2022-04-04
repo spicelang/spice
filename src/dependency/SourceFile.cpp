@@ -62,9 +62,8 @@ void SourceFile::preAnalyze(CliOptions *options) {
     sourceFile->preAnalyze(options);
 }
 
-SymbolTable *SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context,
-                                 const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory *threadFactory,
-                                 LinkerInterface *linker) {
+void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
+                         ThreadFactory *threadFactory, LinkerInterface *linker) {
   // Analyze the imported source files
   for (auto &[importName, sourceFile] : dependencies)
     sourceFile->analyze(context, builder, threadFactory, linker);
@@ -72,7 +71,7 @@ SymbolTable *SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &conte
   // Analyze this source file
   analyzer = std::make_shared<AnalyzerVisitor>(context, builder, moduleRegistry, threadFactory, this, options, linker,
                                                parent == nullptr, stdFile);
-  SymbolTable *symbolTable = analyzer->visit(antlrCtx.parser->entry()).as<SymbolTable *>();
+  analyzer->visit(antlrCtx.parser->entry()).as<SymbolTable *>();
   antlrCtx.parser->reset();
 
   // Save the JSON version in the compiler output
@@ -83,8 +82,6 @@ SymbolTable *SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &conte
     std::cout << "\nSymbol table of file " << filePath << ":\n\n";
     std::cout << symbolTable->toJSON().dump(2) << "\n";
   } // GCOV_EXCL_STOP
-
-  return symbolTable;
 }
 
 void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
