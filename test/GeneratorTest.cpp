@@ -115,6 +115,9 @@ void executeTest(const GeneratorTestCase &testCase) {
     // Create main source file
     SourceFile mainSourceFile = SourceFile(&moduleRegistry, &options, nullptr, "root", sourceFile, false);
 
+    // Execute pre-analyzer
+    mainSourceFile.preAnalyze(&options);
+
     // Execute semantic analysis
     mainSourceFile.analyze(context, builder, &threadFactory, &linker);
 

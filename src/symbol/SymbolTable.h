@@ -13,8 +13,6 @@
 #include <symbol/SymbolTableEntry.h>
 #include <symbol/SymbolType.h>
 
-#include <llvm/IR/BasicBlock.h>
-
 #include "../../lib/json/json.hpp"
 
 /**
@@ -24,7 +22,7 @@
 class SymbolTable {
 public:
   // Constructors
-  explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile) : parent(parent), inMainSourceFile(inMainSourceFile){};
+  explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile) : parent(parent), isMainSourceFile(inMainSourceFile){};
 
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
@@ -42,6 +40,7 @@ public:
   void renameChildBlock(const std::string &oldName, const std::string &newName);
   void duplicateChildBlockEntry(const std::string &originalChildBlockName, const std::string &newChildBlockName);
 
+  void setParent(SymbolTable *symbolTable);
   [[nodiscard]] SymbolTable *getParent() const;
   SymbolTable *getChild(const std::string &tableName);
 
@@ -75,7 +74,7 @@ private:
   std::map<std::string, Capture> captures;
   std::map<std::string, std::shared_ptr<std::map<std::string, Function>>> functions; // <code-loc, vector-of-representations>
   std::queue<Function *> functionAccessPointers;                                     // <code-loc, vector-of-representations>
-  bool inMainSourceFile;
+  bool isMainSourceFile;
   bool imported = false;
   bool compilerWarningsEnabled = true;
   bool requiresCapturing = false;

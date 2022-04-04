@@ -233,6 +233,10 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     analyzeFunction();
   }
 
+  // Leave the struct scope
+  if (isMethod)
+    currentScope = currentScope->getParent();
+
   return nullptr;
 }
 
@@ -360,6 +364,10 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   } else {
     analyzeProcedure();
   }
+
+  // Leave the struct scope
+  if (isMethod)
+    currentScope = currentScope->getParent();
 
   return nullptr;
 }
@@ -806,46 +814,7 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
 }
 
 antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
-  /*std::string importPath = ctx->STRING_LITERAL()->toString();
-  importPath = importPath.substr(1, importPath.size() - 2);
-
-  // Check if source file exists
-  bool foundInStd = importPath.rfind("std/", 0) == 0;
-  std::string filePath = FileUtil::getImportPath(importPath, sourceFile, err, *ctx->STRING_LITERAL()->getSymbol(), cliOptions);
-
-  // Check if this file could cause a circular import
-  if (moduleRegistry->causesCircularImport(filePath))
-    throw err->get(*ctx->STRING_LITERAL()->getSymbol(), CIRCULAR_DEPENDENCY, filePath);
-
-  // Check if the file is already or needs to be compiled
-  SymbolTable *nestedTable;
-  if (moduleRegistry->isAlreadyAnalyzed(filePath)) {
-    nestedTable = moduleRegistry->getSymbolTable(filePath);
-  } else {
-    // Push module to module path
-    moduleRegistry->pushToImportPath(filePath);
-
-    // Kick off the analyzer for the imported source file
-    nestedTable = CompilerInstance::analyzeSourceFile(context, builder, moduleRegistry, threadFactory, cliOptions, linker,
-                                                      filePath, false, foundInStd);
-
-    // Add to analyzed modules
-    moduleRegistry->addToAnalyzedModules(filePath, nestedTable);
-
-    // Pop module from module path
-    moduleRegistry->popFromImportPath();
-  }
-  assert(nestedTable != nullptr);
-
-  // Create symbol of type TYPE_IMPORT in the current scope
-  std::string importIden = ctx->IDENTIFIER()->toString();
-  SymbolType symbolType = SymbolType(TY_IMPORT);
-  currentScope->insert(importIden, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start);
-
-  // Mount symbol table of the imported source file into the current scope
-  nestedTable->setImported();
-  currentScope->mountChildBlock(importIden, nestedTable);*/
-
+  // Noop
   return nullptr;
 }
 

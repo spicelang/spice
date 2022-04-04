@@ -41,11 +41,7 @@ SourceFile::SourceFile(ModuleRegistry *moduleRegistry, CliOptions *options, Sour
   antlrCtx.parser->removeParseListeners();
 
   // Create symbol table
-  if (parent == nullptr) { // Main source file
-    symbolTable = std::make_shared<SymbolTable>(nullptr, true);
-  } else { // Imported source file
-    symbolTable = std::make_shared<SymbolTable>(parent->symbolTable.get(), false);
-  }
+  symbolTable = std::make_shared<SymbolTable>(nullptr, parent == nullptr);
 
   // Add to module registry
   moduleRegistry->pushToImportPath(filePath);
@@ -59,19 +55,31 @@ void SourceFile::preAnalyze(CliOptions *options) {
 
   // Analyze the imported source files
   for (auto &[importName, sourceFile] : dependencies)
-    sourceFile->preAnalyze(options);
+    sourceFile.first->preAnalyze(options);
 }
 
 void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                          ThreadFactory *threadFactory, LinkerInterface *linker) {
   // Analyze the imported source files
-  for (auto &[importName, sourceFile] : dependencies)
-    sourceFile->analyze(context, builder, threadFactory, linker);
+  for (auto &[importName, sourceFile] : dependencies) {
+    // Analyze the imported source file
+    sourceFile.first->analyze(context, builder, threadFactory, linker);
+
+    // Mount symbol table to the current one
+    sourceFile.first->symbolTable->setImported();
+    sourceFile.first->symbolTable->setParent(symbolTable.get());
+    symbolTable->mountChildBlock(importName, sourceFile.first->symbolTable.get());
+
+    // Insert import symbol
+    SymbolType type = SymbolType(TY_IMPORT);
+    SymbolSpecifiers specifiers(type);
+    symbolTable->insert(importName, type, specifiers, INITIALIZED, sourceFile.second);
+  }
 
   // Analyze this source file
   analyzer = std::make_shared<AnalyzerVisitor>(context, builder, moduleRegistry, threadFactory, this, options, linker,
                                                parent == nullptr, stdFile);
-  analyzer->visit(antlrCtx.parser->entry()).as<SymbolTable *>();
+  analyzer->visit(antlrCtx.parser->entry());
   antlrCtx.parser->reset();
 
   // Save the JSON version in the compiler output
@@ -80,7 +88,7 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
   // Dump symbol table
   if (options->printDebugOutput) { // GCOV_EXCL_START
     std::cout << "\nSymbol table of file " << filePath << ":\n\n";
-    std::cout << symbolTable->toJSON().dump(2) << "\n";
+    std::cout << compilerOutput.symbolTableString << "\n";
   } // GCOV_EXCL_STOP
 }
 
@@ -88,7 +96,7 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
                           ThreadFactory *threadFactory, LinkerInterface *linker) {
   // Generate the imported source files
   for (auto &[importName, sourceFile] : dependencies)
-    sourceFile->generate(context, builder, threadFactory, linker);
+    sourceFile.first->generate(context, builder, threadFactory, linker);
 
   // Generate this source file
   generator =
@@ -128,20 +136,20 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
     linker->addObjectFilePath(objectFilePath);
 }
 
-void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &token, SourceFile *parent, const std::string &name,
+void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name,
                                const std::string &filePath, bool stdFile) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(filePath))
     throw err->get(token, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
-  dependencies.insert({name, std::make_shared<SourceFile>(moduleRegistry, options, parent, name, filePath, stdFile)});
+  dependencies.insert({name, {std::make_shared<SourceFile>(moduleRegistry, options, this, name, filePath, stdFile), token}});
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {
   // Check if the current source file corresponds to the path to search
   if (filePath == filePathSearch)
     return true;
-  // Check all own dependencies recursively
-  return std::ranges::any_of(dependencies, [&](auto const &d) { return d.second->isAlreadyImported(filePathSearch); });
+  // Check parent recursively
+  return parent != nullptr && parent->isAlreadyImported(filePathSearch);
 }

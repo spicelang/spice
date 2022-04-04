@@ -142,6 +142,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->getChild(scopeId);
+    assert(currentScope != nullptr);
 
     // Visit arguments
     std::vector<std::string> argNames;
@@ -211,9 +212,6 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
 }
 
 antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
-  // Save the old scope to restore later
-  SymbolTable *oldScope = currentScope;
-
   // Check if this is a global function or a method
   bool isMethod = false;
   std::string functionName = ctx->IDENTIFIER().back()->toString();
@@ -338,16 +336,14 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
     assert(currentScope != nullptr);
   }
 
-  // Restore old scope
-  currentScope = oldScope;
+  // Leave the struct scope
+  if (isMethod)
+    currentScope = currentScope->getParent();
 
   return nullptr;
 }
 
 antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
-  // Save the old scope to restore later
-  SymbolTable *oldScope = currentScope;
-
   // Check if this is a global function or a method
   bool isMethod = false;
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
@@ -455,8 +451,9 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
     assert(currentScope != nullptr);
   }
 
-  // Restore old scope
-  currentScope = oldScope;
+  // Leave the struct scope
+  if (isMethod)
+    currentScope = currentScope->getParent();
 
   return nullptr;
 }
@@ -968,33 +965,7 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx)
 }
 
 antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
-  // Check if imported library exists
-  /*std::string importPath = ctx->STRING_LITERAL()->toString();
-  importPath = importPath.substr(1, importPath.size() - 2);
-
-  // Check if source file exists
-  std::string filePath = FileUtil::getImportPath(importPath, sourceFile, err, *ctx->STRING_LITERAL()->getSymbol(), cliOptions);
-
-  // Check if the file is already or needs to be compiled
-  if (!moduleRegistry->isAlreadyGenerated(filePath)) {
-    // Push module to module path
-    moduleRegistry->pushToImportPath(filePath);
-
-    // Get child symbol table
-    SymbolTable *symbolTable = currentScope->getChild(ctx->IDENTIFIER()->toString());
-    assert(symbolTable != nullptr);
-
-    // Kick off the generator for the imported source file
-    CompilerInstance::generateSourceFile(context, builder, moduleRegistry, threadFactory, cliOptions, linker, filePath, false,
-                                         symbolTable);
-
-    // Add to generated modules
-    moduleRegistry->addToGeneratedModules(filePath);
-
-    // Pop module from module path
-    moduleRegistry->popFromImportPath();
-  }*/
-
+  // Noop
   return nullptr;
 }
 
@@ -1950,16 +1921,15 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *
     }
 
     // Retrieve scope for the new scope path fragment
-    SymbolTable *newAccessScope = accessScope;
     if (entry->getType().is(TY_IMPORT)) { // Import
-      newAccessScope = accessScope->lookupTable(entry->getName());
+      accessScope = accessScope->lookupTable(entry->getName());
     } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
-      newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + entry->getType().getBaseType().getSubType());
+      accessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + entry->getType().getBaseType().getSubType());
     }
-    assert(newAccessScope != nullptr);
+    assert(accessScope != nullptr);
 
     // Otherwise, push the current scope to the scope path
-    scopePath.pushFragment(currentVarName, newAccessScope);
+    scopePath.pushFragment(currentVarName, accessScope);
 
     return memAddress;
   }

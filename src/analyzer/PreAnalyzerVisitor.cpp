@@ -78,7 +78,7 @@ antlrcpp::Any PreAnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext
   }
 
   // Visit the imported file
-  sourceFile->addDependency(&err, *ctx->STRING_LITERAL()->getSymbol(), sourceFile, importName, importPath, isImportStd);
+  sourceFile->addDependency(&err, *ctx->STRING_LITERAL()->getSymbol(), importName, importPath, isImportStd);
 
   return nullptr;
 }

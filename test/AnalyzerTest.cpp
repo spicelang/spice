@@ -105,6 +105,9 @@ void executeTest(const AnalyzerTestCase &testCase) {
     // Create main source file
     SourceFile mainSourceFile = SourceFile(&moduleRegistry, &options, nullptr, "root", sourceFile, false);
 
+    // Execute pre-analyzer
+    mainSourceFile.preAnalyze(&options);
+
     // Execute semantic analysis
     mainSourceFile.analyze(context, builder, &threadFactory, nullptr);
 
@@ -124,7 +127,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
     if (FileUtil::fileExists(symbolTableFileName)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(symbolTableFileName, mainSourceFile.symbolTable->toJSON().dump(2));
+        TestUtil::setFileContent(symbolTableFileName, mainSourceFile.compilerOutput.symbolTableString);
       } else {
         std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
         EXPECT_EQ(expectedSymbolTable, mainSourceFile.symbolTable->toJSON().dump(2));

@@ -21,7 +21,7 @@
  */
 void SymbolTable::insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
                          const antlr4::Token &token) {
-  bool isGlobal = getParent() == nullptr;
+  bool isGlobal = parent == nullptr;
   unsigned int orderIndex = symbols.size();
   // Insert into symbols map
   symbols.insert({name, SymbolTableEntry(name, type, specifiers, state, token, orderIndex, isGlobal)});
@@ -175,7 +175,7 @@ SymbolTable *SymbolTable::lookupTable(const std::string &scopeId) {
  * @return Newly created child table
  */
 SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName) {
-  children.insert({childBlockName, new SymbolTable(this, inMainSourceFile)});
+  children.insert({childBlockName, new SymbolTable(this, isMainSourceFile)});
   return children.at(childBlockName);
 }
 
@@ -217,7 +217,12 @@ void SymbolTable::duplicateChildBlockEntry(const std::string &originalChildBlock
 }
 
 /**
- * Navigate to parent table of the current one in the tree structure
+ * Set the parent table of the current one in the tree structure
+ */
+void SymbolTable::setParent(SymbolTable *parent) { this->parent = parent; }
+
+/**
+ * Retrieve the parent table of the current one in the tree structure
  *
  * @return Pointer to the parent symbol table
  */
