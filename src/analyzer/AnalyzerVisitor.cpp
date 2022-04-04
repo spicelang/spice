@@ -324,6 +324,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
 
   // Create analyzer callback for the body
   SymbolTable *injectedScope = currentScope;
+  auto stmtLst = ctx->stmtLst();
   auto analyzeProcedure = [=, this](const std::vector<GenericTypeReplacement> &replacements = {}) {
     SymbolTable *scopeBackup = currentScope;
 
@@ -344,7 +345,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     }
 
     // Visit statement list in new scope
-    visit(ctx->stmtLst());
+    visit(stmtLst);
 
     // Reset generic types
     for (const auto &resetType : resetTypesList) {

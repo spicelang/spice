@@ -357,7 +357,11 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
   // Get all substantiated function which result from this function declaration
   std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
   for (const auto &[mangledName, spiceProc] : *manifestations) {
-    // Check if the procedure is used by anybody
+    // Check if the function is substantiated
+    if (!spiceProc.isFullySubstantiated())
+      continue;
+
+    // Check if the function is used by anybody
     if (!spiceProc.isUsed() && !spiceProc.getSpecifiers().isPublic())
       continue;
 
@@ -2354,6 +2358,7 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
     break;
   }
   default:
+    assert(!symbolType.is(TY_GENERIC));
     throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName(true));
   }
 
