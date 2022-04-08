@@ -1,5 +1,6 @@
 type A dyn;
 
 public p printFormat<A>(A element) {
-    printf("Sizeof output: %d\n", sizeof(element));
+    printf("Test");
+    /*printf("Sizeof output: %d\n", sizeof(element));*/
 }

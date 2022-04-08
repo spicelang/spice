@@ -42,11 +42,6 @@ public:
   [[nodiscard]] bool isUsed() const;
   [[nodiscard]] const std::string &getDefinitionCodeLoc() const;
 
-  std::function<void(const std::vector<GenericTypeReplacement> &)> analyzerCallback =
-      [](const std::vector<GenericTypeReplacement> &) {
-        throw std::runtime_error("Internal compiler error: Called empty analyzer callback");
-      };
-
 private:
   // Members
   std::string name;

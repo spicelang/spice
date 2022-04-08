@@ -41,7 +41,9 @@ public:
   // Public methods
   void preAnalyze(CliOptions *options);
   void analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-               ThreadFactory *threadFactory, LinkerInterface *linker);
+               ThreadFactory *threadFactory);
+  void reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
+                 ThreadFactory *threadFactory);
   void generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                 ThreadFactory *threadFactory, LinkerInterface *linker);
   void addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name, const std::string &filePath,
@@ -55,6 +57,7 @@ public:
   bool stdFile;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
+  bool needsReAnalyze = false;
   SourceFile *parent;
   CliOptions *options;
   std::shared_ptr<SymbolTable> symbolTable;

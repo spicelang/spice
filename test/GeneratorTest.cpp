@@ -119,7 +119,8 @@ void executeTest(const GeneratorTestCase &testCase) {
     mainSourceFile.preAnalyze(&options);
 
     // Execute semantic analysis
-    mainSourceFile.analyze(context, builder, &threadFactory, &linker);
+    mainSourceFile.analyze(context, builder, &threadFactory);
+    mainSourceFile.reAnalyze(context, builder, &threadFactory);
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + "/exception.out"))

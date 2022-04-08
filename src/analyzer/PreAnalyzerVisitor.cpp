@@ -8,10 +8,7 @@
 #include <util/FileUtil.h>
 
 PreAnalyzerVisitor::PreAnalyzerVisitor(CliOptions *options, SourceFile *sourceFile) {
-  // Unpack args struct
   this->cliOptions = options;
-
-  // Unpack other args
   this->sourceFile = sourceFile;
 
   // Create error factory

@@ -59,11 +59,11 @@ void SourceFile::preAnalyze(CliOptions *options) {
 }
 
 void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                         ThreadFactory *threadFactory, LinkerInterface *linker) {
+                         ThreadFactory *threadFactory) {
   // Analyze the imported source files
   for (auto &[importName, sourceFile] : dependencies) {
     // Analyze the imported source file
-    sourceFile.first->analyze(context, builder, threadFactory, linker);
+    sourceFile.first->analyze(context, builder, threadFactory);
 
     // Mount symbol table to the current one
     sourceFile.first->symbolTable->setImported();
@@ -77,10 +77,23 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
   }
 
   // Analyze this source file
-  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, moduleRegistry, threadFactory, this, options, linker,
-                                               parent == nullptr, stdFile);
-  analyzer->visit(antlrCtx.parser->entry());
+  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, moduleRegistry, threadFactory, this, options, parent == nullptr,
+                                               stdFile);
+  needsReAnalyze = analyzer->visit(antlrCtx.parser->entry()).as<bool>();
   antlrCtx.parser->reset();
+}
+
+void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
+                           ThreadFactory *threadFactory) {
+  // Re-analyze the imported source files
+  for (auto &[importName, sourceFile] : dependencies)
+    sourceFile.first->reAnalyze(context, builder, threadFactory);
+
+  // Re-Analyze this source file
+  if (needsReAnalyze) {
+    analyzer->visit(antlrCtx.parser->entry());
+    antlrCtx.parser->reset();
+  }
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);

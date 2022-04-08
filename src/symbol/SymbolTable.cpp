@@ -357,9 +357,6 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
         duplicateChildBlockEntry(f.getSignature(), newFunction.getSignature());
 
-        // Execute analyzer on the function body and provide the concrete types
-        f.analyzerCallback(typeReplacements);
-
         matches.push_back(&functions.at(codeLoc)->at(newFunction.getMangledName()));
       }
     }

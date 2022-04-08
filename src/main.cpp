@@ -38,7 +38,10 @@ void compileProject(CliOptions *options) {
     mainSourceFile.preAnalyze(options);
 
     // Analyze the project
-    mainSourceFile.analyze(context, builder, &threadFactory, &linker);
+    mainSourceFile.analyze(context, builder, &threadFactory);
+
+    // Re-analyze the project
+    mainSourceFile.reAnalyze(context, builder, &threadFactory);
 
     // Generate the project
     mainSourceFile.generate(context, builder, &threadFactory, &linker);

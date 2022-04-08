@@ -109,7 +109,8 @@ void executeTest(const AnalyzerTestCase &testCase) {
     mainSourceFile.preAnalyze(&options);
 
     // Execute semantic analysis
-    mainSourceFile.analyze(context, builder, &threadFactory, nullptr);
+    mainSourceFile.analyze(context, builder, &threadFactory);
+    mainSourceFile.reAnalyze(context, builder, &threadFactory);
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + "/exception.out"))

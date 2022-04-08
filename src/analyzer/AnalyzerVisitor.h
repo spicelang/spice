@@ -34,7 +34,7 @@ public:
   // Constructors
   explicit AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                            ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, SourceFile *sourceFile,
-                           CliOptions *options, LinkerInterface *linker, bool requiresMainFct, bool stdFile);
+                           CliOptions *options, bool requiresMainFct, bool stdFile);
 
   // Public methods
   antlrcpp::Any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -93,10 +93,11 @@ private:
   ThreadFactory *threadFactory;
   SourceFile *sourceFile;
   CliOptions *cliOptions;
-  LinkerInterface *linker;
   bool requiresMainFct = true;
   bool hasMainFunction = false;
   bool isStdFile = false;
+  bool secondRun = false;
+  bool needsReAnalyze;
   SymbolTable *currentScope = nullptr;
   SymbolTable *rootScope = nullptr;
   ScopePath scopePath;

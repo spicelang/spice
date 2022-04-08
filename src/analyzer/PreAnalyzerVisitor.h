@@ -9,6 +9,12 @@
 #include <exception/ErrorFactory.h>
 #include <util/ModuleRegistry.h>
 
+/**
+ * Visitor for pre-analyzing all source files in hierarchical order from bottom to top.
+ *
+ * Jobs:
+ * - Collect imports
+ */
 class PreAnalyzerVisitor : public SpiceBaseVisitor {
 public:
   explicit PreAnalyzerVisitor(CliOptions *options, SourceFile *sourceFile);

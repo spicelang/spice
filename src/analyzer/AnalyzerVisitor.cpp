@@ -13,14 +13,13 @@
 
 AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
                                  const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
-                                 ThreadFactory *threadFactory, SourceFile *sourceFile, CliOptions *options,
-                                 LinkerInterface *linker, bool requiresMainFct, bool isStdFile) {
+                                 ThreadFactory *threadFactory, SourceFile *sourceFile, CliOptions *options, bool requiresMainFct,
+                                 bool isStdFile) {
   this->context = context, this->builder = builder;
   this->moduleRegistry = moduleRegistry;
   this->threadFactory = threadFactory;
   this->sourceFile = sourceFile;
   this->currentScope = this->rootScope = sourceFile->symbolTable.get();
-  this->linker = linker;
   this->requiresMainFct = requiresMainFct;
   this->isStdFile = isStdFile;
 
@@ -42,6 +41,7 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &conte
 
 antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   // --- Pre-traversing actions
+  needsReAnalyze = false;
 
   // --- Traverse AST
   visitChildren(ctx);
@@ -55,10 +55,13 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   if (requiresMainFct && !isStdFile)
     rootScope->printCompilerWarnings();
 
-  return nullptr;
+  return needsReAnalyze;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   std::string mainSignature = MAIN_FUNCTION_NAME + "()";
 
   // Check if the function is already defined
@@ -97,283 +100,235 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
 }
 
 antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
-  // Check if this is a global function or a method
-  bool isMethod = false;
-  std::string functionName = ctx->IDENTIFIER().back()->toString();
-  if (ctx->IDENTIFIER().size() > 1) { // Method
-    isMethod = true;
-    // Change to the struct scope
-    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
-  }
+  if (!secondRun) { // First run
+    std::string functionName = ctx->IDENTIFIER().back()->toString();
 
-  // Get template types
-  bool isGeneric = false;
-  std::vector<GenericType> templateTypes;
-  if (ctx->typeLst()) {
-    isGeneric = true;
-    for (const auto &dataType : ctx->typeLst()->dataType()) {
-      SymbolType symbolType = visit(dataType).as<SymbolType>();
-      if (!symbolType.is(TY_GENERIC))
-        throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
-      templateTypes.emplace_back(symbolType.getSubType(), symbolType);
+    // Check if this is a global function or a method
+    bool isMethod = false;
+    if (ctx->IDENTIFIER().size() > 1) { // Method
+      isMethod = true;
+      // Change to the struct scope
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
     }
-  }
 
-  // Create a new scope
-  std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+    // Create a new scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->createChildBlock(scopeId);
 
-  // Visit arguments in new scope
-  argumentMode = true;
-  std::vector<std::string> argNames;
-  ArgList argTypes;
-  if (ctx->argLstDef()) {
-    NamedArgList namedArgList = visit(ctx->argLstDef()).as<NamedArgList>();
-    for (const auto &namedArg : namedArgList) {
-      argNames.push_back(std::get<0>(namedArg));
-      argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
-    }
-  }
-  argumentMode = false;
-
-  // Declare 'this' variable in new scope
-  SymbolType thisType = SymbolType(TY_DYN);
-  if (isMethod) {
-    std::string structName = ctx->IDENTIFIER().front()->toString();
-    SymbolTableEntry *structEntry = currentScope->lookup(structName);
-    SymbolType curThisType = thisType = structEntry->getType();
-    curThisType = curThisType.toPointer(err.get(), *ctx->start);
-    auto thisTypeSpecifiers = SymbolSpecifiers(curThisType);
-    thisTypeSpecifiers.setConst(true);
-    currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisTypeSpecifiers, INITIALIZED, *ctx->start);
-  }
-
-  // Declare variable for the return value in the function scope
-  SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
-  if (returnType.is(TY_DYN))
-    throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
-  if (returnType.isPointer())
-    throw err->get(*ctx->start, COMING_SOON_SA,
-                   "Spice currently not supports pointer return types due to not supporting heap allocations.");
-  currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, *ctx->start);
-
-  // Return to old scope
-  currentScope = currentScope->getParent();
-
-  // Build function specifiers
-  auto functionSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-  if (ctx->declSpecifiers()) {
-    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
-      if (specifier->PUBLIC()) {
-        functionSymbolSpecifiers.setPublic(true);
-      } else if (specifier->INLINE()) {
-        functionSymbolSpecifiers.setPublic(false);
-      } else {
-        throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                       "Cannot use the " + specifier->getText() + " specifier on a function definition");
+    // Get template types
+    bool isGeneric = false;
+    std::vector<GenericType> templateTypes;
+    if (ctx->typeLst()) {
+      isGeneric = true;
+      needsReAnalyze = true;
+      for (const auto &dataType : ctx->typeLst()->dataType()) {
+        SymbolType symbolType = visit(dataType).as<SymbolType>();
+        if (!symbolType.is(TY_GENERIC))
+          throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+        templateTypes.emplace_back(symbolType.getSubType(), symbolType);
       }
     }
-  }
 
-  // Insert function into the symbol table
-  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-  Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, codeLoc);
-  currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
+    // Visit arguments in new scope
+    argumentMode = true;
+    std::vector<std::string> argNames;
+    ArgList argTypes;
+    if (ctx->argLstDef()) {
+      NamedArgList namedArgList = visit(ctx->argLstDef()).as<NamedArgList>();
+      for (const auto &namedArg : namedArgList) {
+        argNames.push_back(std::get<0>(namedArg));
+        argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
+      }
+    }
+    argumentMode = false;
 
-  // Rename / duplicate the original child block to reflect the substantiated versions of the function
-  std::vector<Function> substantiatedFunctions = spiceFunc.substantiateOptionalArgs();
-  currentScope->renameChildBlock(scopeId, substantiatedFunctions[0].getSignature());
-  for (int i = 0; i < substantiatedFunctions.size(); i++)
-    currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
+    // Declare 'this' variable in new scope
+    SymbolType thisType = SymbolType(TY_DYN);
+    if (isMethod) {
+      std::string structName = ctx->IDENTIFIER().front()->toString();
+      SymbolTableEntry *structEntry = currentScope->lookup(structName);
+      SymbolType curThisType = thisType = structEntry->getType();
+      curThisType = curThisType.toPointer(err.get(), *ctx->start);
+      auto thisTypeSpecifiers = SymbolSpecifiers(curThisType);
+      thisTypeSpecifiers.setConst(true);
+      currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisTypeSpecifiers, INITIALIZED, *ctx->start);
+    }
 
-  // Create analyzer callback for the body
-  SymbolTable *injectedScope = currentScope;
-  auto analyzeFunction = [=, this](const std::vector<GenericTypeReplacement> &replacements = {}) {
-    SymbolTable *scopeBackup = currentScope;
+    // Declare variable for the return value in the function scope
+    SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
+    if (returnType.is(TY_DYN))
+      throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
+    if (returnType.isPointer())
+      throw err->get(*ctx->start, COMING_SOON_SA,
+                     "Spice currently not supports pointer return types due to not supporting heap allocations.");
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, *ctx->start);
 
-    // Go down again in scope
-    currentScope = injectedScope->getChild(substantiatedFunctions[0].getSignature());
-    assert(currentScope != nullptr);
+    // Return to old scope
+    currentScope = currentScope->getParent();
 
-    // Morph the generic types to the replacements
-    std::vector<GenericTypeReplacement> resetTypesList;
-    for (const auto &replacement : replacements) {
-      for (const auto &argName : argNames) {
-        SymbolTableEntry *argEntry = currentScope->lookup(argName);
-        if (argEntry->getType().is(TY_GENERIC, replacement.first)) {
-          argEntry->updateType(replacement.second, true);
-          resetTypesList.emplace_back(argName, GenericType(replacement.first));
+    // Build function specifiers
+    auto functionSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+    if (ctx->declSpecifiers()) {
+      for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+        if (specifier->PUBLIC()) {
+          functionSymbolSpecifiers.setPublic(true);
+        } else if (specifier->INLINE()) {
+          functionSymbolSpecifiers.setPublic(false);
+        } else {
+          throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                         "Cannot use the " + specifier->getText() + " specifier on a function definition");
         }
       }
     }
 
-    // Visit statements in new scope
-    visit(ctx->stmtLst());
+    // Insert function into the symbol table
+    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, codeLoc);
+    currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
-    // Reset generic types
-    for (const auto &resetType : resetTypesList) {
-      SymbolTableEntry *argEntry = currentScope->lookup(resetType.first);
-      argEntry->updateType(resetType.second, true);
+    // Rename / duplicate the original child block to reflect the substantiated versions of the function
+    std::vector<Function> substantiatedFunctions = spiceFunc.substantiateOptionalArgs();
+    currentScope->renameChildBlock(scopeId, substantiatedFunctions[0].getSignature());
+    for (int i = 0; i < substantiatedFunctions.size(); i++)
+      currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
+
+    if (!isGeneric) { // Only visit body for non-generic functions. Otherwise, bodies will be visited with the second analyzer run
+      // Go down again in scope
+      currentScope = currentScope->getChild(substantiatedFunctions[0].getSignature());
+      assert(currentScope != nullptr);
+
+      // Visit statements in new scope
+      visit(ctx->stmtLst());
+
+      // Check if return variable is now initialized
+      if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
+        throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
+
+      // Leave the function scope
+      currentScope = currentScope->getParent();
     }
 
-    // Check if return variable is now initialized
-    if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
-      throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
-
-    // Restore old scope
-    currentScope = scopeBackup;
-  };
-
-  // Run the callback immediately or save it up for later
-  if (isGeneric) {
-    // Set analyzer callback to the substantiated functions
-    for (auto &substantiatedFct : substantiatedFunctions)
-      currentScope->getFunction(*ctx->start, substantiatedFct.getMangledName())->analyzerCallback = analyzeFunction;
-  } else {
-    analyzeFunction();
+    // Leave the struct scope
+    if (isMethod)
+      currentScope = currentScope->getParent();
+  } else { // Second run
   }
-
-  // Leave the struct scope
-  if (isMethod)
-    currentScope = currentScope->getParent();
 
   return nullptr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
-  // Check if this is a global function or a method
-  bool isMethod = false;
-  std::string procedureName = ctx->IDENTIFIER().back()->toString();
-  if (ctx->IDENTIFIER().size() > 1) { // Method
-    isMethod = true;
-    // Change to the struct scope
-    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
-  }
+  if (!secondRun) { // First run
+    std::string procedureName = ctx->IDENTIFIER().back()->toString();
 
-  // Get template types
-  bool isGeneric = false;
-  std::vector<GenericType> templateTypes;
-  if (ctx->typeLst()) {
-    isGeneric = true;
-    for (const auto &dataType : ctx->typeLst()->dataType()) {
-      SymbolType symbolType = visit(dataType).as<SymbolType>();
-      if (!symbolType.is(TY_GENERIC))
-        throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
-      templateTypes.emplace_back(symbolType.getSubType(), symbolType);
+    // Check if this is a global function or a method
+    bool isMethod = false;
+    if (ctx->IDENTIFIER().size() > 1) { // Method
+      isMethod = true;
+      // Change to the struct scope
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
     }
-  }
 
-  // Create a new scope
-  std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+    // Create a new scope
+    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+    currentScope = currentScope->createChildBlock(scopeId);
 
-  // Visit arguments in new scope
-  argumentMode = true;
-  std::vector<std::string> argNames;
-  ArgList argTypes;
-  if (ctx->argLstDef()) {
-    NamedArgList namedArgList = visit(ctx->argLstDef()).as<NamedArgList>();
-    for (const auto &namedArg : namedArgList) {
-      argNames.push_back(std::get<0>(namedArg));
-      argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
-    }
-  }
-  argumentMode = false;
-
-  // Declare 'this' variable in new scope
-  SymbolType thisType = SymbolType(TY_DYN);
-  if (isMethod) {
-    std::string structName = ctx->IDENTIFIER().front()->toString();
-    SymbolTableEntry *structEntry = currentScope->lookup(structName);
-    SymbolType curThisType = thisType = structEntry->getType();
-    curThisType = curThisType.toPointer(err.get(), *ctx->start);
-    auto thisSymbolSpecifiers = SymbolSpecifiers(curThisType);
-    thisSymbolSpecifiers.setConst(true);
-    currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisSymbolSpecifiers, INITIALIZED, *ctx->start);
-  }
-
-  // Return to old scope
-  currentScope = currentScope->getParent();
-
-  // Build procedure specifiers
-  auto procedureSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
-  if (ctx->declSpecifiers()) {
-    for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
-      if (specifier->PUBLIC()) {
-        procedureSymbolSpecifiers.setPublic(true);
-      } else if (specifier->INLINE()) {
-        procedureSymbolSpecifiers.setPublic(false);
-      } else {
-        throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                       "Cannot use the " + specifier->getText() + " specifier on a procedure definition");
+    // Get template types
+    bool isGeneric = false;
+    std::vector<GenericType> templateTypes;
+    if (ctx->typeLst()) {
+      isGeneric = true;
+      needsReAnalyze = true;
+      for (const auto &dataType : ctx->typeLst()->dataType()) {
+        SymbolType symbolType = visit(dataType).as<SymbolType>();
+        if (!symbolType.is(TY_GENERIC))
+          throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+        templateTypes.emplace_back(symbolType.getSubType(), symbolType);
       }
     }
-  }
 
-  // Insert function into the symbol table
-  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-  Function spiceProc =
-      Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, codeLoc);
-  currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
+    // Visit arguments in new scope
+    argumentMode = true;
+    std::vector<std::string> argNames;
+    ArgList argTypes;
+    if (ctx->argLstDef()) {
+      NamedArgList namedArgList = visit(ctx->argLstDef()).as<NamedArgList>();
+      for (const auto &namedArg : namedArgList) {
+        argNames.push_back(std::get<0>(namedArg));
+        argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
+      }
+    }
+    argumentMode = false;
 
-  // Rename / duplicate the original child block to reflect the substantiated versions of the function
-  std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalArgs();
-  currentScope->renameChildBlock(scopeId, substantiatedProcedures[0].getSignature());
-  for (int i = 0; i < substantiatedProcedures.size(); i++)
-    currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(), substantiatedProcedures[i].getSignature());
+    // Declare 'this' variable in new scope
+    SymbolType thisType = SymbolType(TY_DYN);
+    if (isMethod) {
+      std::string structName = ctx->IDENTIFIER().front()->toString();
+      SymbolTableEntry *structEntry = currentScope->lookup(structName);
+      SymbolType curThisType = thisType = structEntry->getType();
+      curThisType = curThisType.toPointer(err.get(), *ctx->start);
+      auto thisSymbolSpecifiers = SymbolSpecifiers(curThisType);
+      thisSymbolSpecifiers.setConst(true);
+      currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisSymbolSpecifiers, INITIALIZED, *ctx->start);
+    }
 
-  // Create analyzer callback for the body
-  SymbolTable *injectedScope = currentScope;
-  auto stmtLst = ctx->stmtLst();
-  auto analyzeProcedure = [=, this](const std::vector<GenericTypeReplacement> &replacements = {}) {
-    SymbolTable *scopeBackup = currentScope;
+    // Return to old scope
+    currentScope = currentScope->getParent();
 
-    // Go down again in scope
-    currentScope = injectedScope->getChild(substantiatedProcedures[0].getSignature());
-    assert(currentScope != nullptr);
-
-    // Morph the generic types to the replacements
-    std::vector<GenericTypeReplacement> resetTypesList;
-    for (const auto &replacement : replacements) {
-      for (const auto &argName : argNames) {
-        SymbolTableEntry *argEntry = currentScope->lookup(argName);
-        if (argEntry->getType().is(TY_GENERIC, replacement.first)) {
-          argEntry->updateType(replacement.second, true);
-          resetTypesList.emplace_back(argName, GenericType(replacement.first));
+    // Build procedure specifiers
+    auto procedureSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
+    if (ctx->declSpecifiers()) {
+      for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+        if (specifier->PUBLIC()) {
+          procedureSymbolSpecifiers.setPublic(true);
+        } else if (specifier->INLINE()) {
+          procedureSymbolSpecifiers.setPublic(false);
+        } else {
+          throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                         "Cannot use the " + specifier->getText() + " specifier on a procedure definition");
         }
       }
     }
 
-    // Visit statement list in new scope
-    visit(stmtLst);
+    // Insert function into the symbol table
+    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    Function spiceProc =
+        Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, codeLoc);
+    currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
 
-    // Reset generic types
-    for (const auto &resetType : resetTypesList) {
-      SymbolTableEntry *argEntry = currentScope->lookup(resetType.first);
-      argEntry->updateType(resetType.second, true);
+    // Rename / duplicate the original child block to reflect the substantiated versions of the function
+    std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalArgs();
+    currentScope->renameChildBlock(scopeId, substantiatedProcedures[0].getSignature());
+    for (int i = 0; i < substantiatedProcedures.size(); i++)
+      currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(),
+                                             substantiatedProcedures[i].getSignature());
+
+    if (!isGeneric) { // Only visit body for non-generic procedures. Otherwise, bodies will be visited with the second analyzer
+                      // run
+      // Go down again in scope
+      currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
+      assert(currentScope != nullptr);
+
+      // Visit statement list in new scope
+      visit(ctx->stmtLst());
+
+      // Leave the function scope
+      currentScope = currentScope->getParent();
     }
 
-    // Return to old scope
-    currentScope = scopeBackup;
-  };
-
-  // Run the callback immediately or save it up for later
-  if (isGeneric) {
-    // Set analyzer callback to the substantiated procedures
-    for (auto &substantiatedProc : substantiatedProcedures)
-      currentScope->getFunction(*ctx->start, substantiatedProc.getMangledName())->analyzerCallback = analyzeProcedure;
-  } else {
-    analyzeProcedure();
+    // Leave the struct scope
+    if (isMethod)
+      currentScope = currentScope->getParent();
+  } else { // Second run
   }
-
-  // Leave the struct scope
-  if (isMethod)
-    currentScope = currentScope->getParent();
 
   return nullptr;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   std::string functionName = ctx->IDENTIFIER()->toString();
   std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
 
@@ -415,6 +370,9 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 }
 
 antlrcpp::Any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   std::string typeName = ctx->IDENTIFIER()->toString();
 
   // Check if type already exists in this scope
@@ -442,6 +400,9 @@ antlrcpp::Any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefCo
 }
 
 antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   std::string structName = ctx->IDENTIFIER()->toString();
 
   // Check if struct already exists in this scope
@@ -504,6 +465,9 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
 }
 
 antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   std::string variableName = ctx->IDENTIFIER()->toString();
 
   // Check if symbol already exists in the symbol table
