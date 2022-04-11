@@ -80,7 +80,7 @@ jobs:
           chmod +x spice
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: spice-linux-x64
           path: ./bin/spice**
@@ -167,7 +167,7 @@ jobs:
         run: mv ./src/Spice_run.exe spice.exe
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: spice-windows-static-x64
           path: ./bin/spice**
@@ -240,7 +240,7 @@ jobs:
           #TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           #TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: dist-output
           path: dist/
