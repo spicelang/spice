@@ -2,6 +2,8 @@
 
 #include "Function.h"
 
+#include <utility>
+
 /**
  * Retrieve the name of the current function
  *
@@ -43,25 +45,32 @@ std::vector<SymbolType> Function::getArgTypes() const {
 }
 
 /**
+ * Retrieve the template types of the current function
+ *
+ * @return Vector of template types
+ */
+std::vector<GenericType> Function::getTemplateTypes() const { return templateTypes; }
+
+/**
  * Mange the function and return the mangled string
  *
  * @return Mangled string
  */
 std::string Function::getMangledName() const {
   // f, p, mf or mp depending on the function type
-  std::string fpm = "f";
+  std::string functionTyStr = "f";
   if (isProcedure()) {
-    fpm = "p";
+    functionTyStr = "p";
   } else if (isMethodFunction()) {
-    fpm = "mf";
+    functionTyStr = "mf";
   } else if (isMethodProcedure()) {
-    fpm = "mp";
+    functionTyStr = "mp";
   }
 
   // This type string
   std::string thisTyStr;
   if (!thisType.is(TY_DYN))
-    thisTyStr = thisType.getBaseType().getSubType() + "_";
+    thisTyStr = "_" + thisType.getBaseType().getSubType();
 
   // Arg type string
   std::string argTyStr;
@@ -71,7 +80,12 @@ std::string Function::getMangledName() const {
       argTyStr += "?";
   }
 
-  return "_" + fpm + "_" + thisTyStr + name + argTyStr;
+  // Template type string
+  std::string templateTyStr;
+  for (const auto &templateType : templateTypes)
+    templateTyStr += "_" + templateType.getName();
+
+  return "_" + functionTyStr + thisTyStr + templateTyStr + "_" + name + argTyStr;
 }
 
 /**
@@ -84,10 +98,12 @@ std::string Function::getSignature() const {
   if (!thisType.is(TY_DYN))
     thisTyStr = thisType.getBaseType().getSubType() + ".";
 
+  // Return type string
   std::string returnTyStr;
   if (!returnType.is(TY_DYN))
     returnTyStr = ": " + returnType.getName();
 
+  // Argument type string
   std::string argTyStr;
   for (int i = 0; i < argTypes.size(); i++) {
     if (i != 0)
@@ -96,7 +112,18 @@ std::string Function::getSignature() const {
     if (argTypes[i].second)
       argTyStr += "?";
   }
-  return thisTyStr + name + "(" + argTyStr + ")" + returnTyStr;
+
+  // Template type string
+  std::string templateTyStr;
+  for (const auto &templateType : templateTypes) {
+    if (!templateTyStr.empty())
+      templateTyStr += ",";
+    templateTyStr += templateType.getName();
+  }
+  if (!templateTyStr.empty())
+    templateTyStr = "<" + templateTyStr + ">";
+
+  return thisTyStr + name + templateTyStr + "(" + argTyStr + ")" + returnTyStr;
 }
 
 /**
@@ -140,7 +167,7 @@ SymbolType Function::getSymbolType() const { return SymbolType(isFunction() || i
  *
  * @return List of definite functions
  */
-std::vector<Function> Function::substantiate() const {
+std::vector<Function> Function::substantiateOptionalArgs() const {
   std::vector<Function> definiteFunctions;
   std::vector<std::pair<SymbolType, bool>> currentFunctionArgTypes;
   bool metFirstOptionalArg = false;
@@ -148,32 +175,89 @@ std::vector<Function> Function::substantiate() const {
   for (const auto &argType : argTypes) {
     if (argType.second) {         // Met optional argument
       if (!metFirstOptionalArg) { // Add substantiation without the optional argument
-        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes);
+        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
+                                       definitionCodeLoc);
         metFirstOptionalArg = true;
       }
       // Add substantiation with the optional argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
-      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes);
+      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
+                                     definitionCodeLoc);
     } else { // Met mandatory argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
     }
   }
 
   if (definiteFunctions.empty())
-    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes);
+    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
+                                   definitionCodeLoc);
 
   return definiteFunctions;
 }
 
 /**
+ * Convert the current ambiguous function with potential generic types to a definite function without generic types
+ *
+ * @return Substantiated function with concrete arg types and without template types
+ */
+Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteArgTypes) const {
+  std::vector<std::pair<SymbolType, bool>> currentFunctionArgTypes;
+
+  for (auto &argType : argTypes) {
+    assert(!argType.second); // Optional args need to be substantiated at this point
+    SymbolType newArgType = argType.first;
+    if (newArgType.is(TY_GENERIC)) {                   // We have to replace it only if it is a generic type
+      for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
+        const SymbolType concreteArgType = concreteArgTypes[i];
+        const SymbolType genericType = templateTypes[i];
+        if (newArgType == genericType) {
+          newArgType = concreteArgType; // Use the concrete type instead of the generic one
+          break;
+        }
+      }
+    }
+    currentFunctionArgTypes.emplace_back(newArgType, false);
+  }
+
+  return Function(name, specifiers, thisType, returnType, currentFunctionArgTypes, {}, definitionCodeLoc);
+}
+
+/**
  * Checks if a function contains optional arguments. This would imply that the function is not substantiated yet
  *
- * @return
+ * @return Substantiated args or not
  */
-bool Function::isSubstantiated() const {
+bool Function::hasSubstantiatedArgs() const {
   for (const auto &argType : argTypes) {
     if (argType.second)
       return false;
   }
   return true;
 }
+
+/**
+ * Checks if a function contains optional arguments or has generic types present. This would imply that the function is not
+ * fully substantiated yet
+ *
+ * @return Fully substantiated or not
+ */
+bool Function::isFullySubstantiated() const { return hasSubstantiatedArgs() && templateTypes.empty(); }
+
+/**
+ * Set the function to used. The compiler only generates IR if the function is used
+ */
+void Function::setUsed() { used = true; }
+
+/**
+ * Check if the function is used and the compiler needs to generate IR for it
+ *
+ * @return Used or not
+ */
+bool Function::isUsed() const { return used; }
+
+/**
+ * Retrieve the definition code loc of this function
+ *
+ * @return Definition code location
+ */
+const std::string &Function::getDefinitionCodeLoc() const { return definitionCodeLoc; }

@@ -1,5 +1,5 @@
-import "source" as s;
+import "source2" as s2;
 
 p test() {
-    printf("p: %f", s.getDouble());
+    printf("p: %f", s2.getDouble());
 }

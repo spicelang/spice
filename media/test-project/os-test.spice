@@ -43,10 +43,26 @@ f<int> main() {
     printf("Result: %d\n", res);
 }*/
 
-f<int> testFunc(int i, int j = 5) {
-    return 4;
+/*type T dyn;
+type U dyn;
+
+f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
+    return arg1 + arg2 + arg3;
+}
+
+f<double> genericFunction<T, U>(T arg1, U arg2, T arg3) {
+    return arg1 + arg2 + arg3;
 }
 
 f<int> main() {
-    testFunc(3);
+    printf("%f\n", genericFunction<int, double>(1, 2.4));
+    printf("%f\n", genericFunction<long, double>(12l, 2.0));
+}*/
+
+import "os-test2" as s1;
+
+f<int> main() {
+    s1.printFormat<double>(1.123);
+    s1.printFormat<int>(543);
+    s1.printFormat<string[]>({"Hello", "World"});
 }

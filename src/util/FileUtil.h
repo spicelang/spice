@@ -4,6 +4,9 @@
 
 #include <string>
 
+#include <cli/CliInterface.h>
+#include <exception/ErrorFactory.h>
+
 /**
  * Util class for file-related work
  */
@@ -18,4 +21,5 @@ public:
   static std::string exec(const std::string &cmd);
   static char getDirSeparator();
   static std::string getSpiceBinDir();
+  static std::string tokenToCodeLoc(const antlr4::Token &token);
 };

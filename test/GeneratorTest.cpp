@@ -12,6 +12,7 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
+#include <dependency/SourceFile.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
@@ -111,10 +112,15 @@ void executeTest(const GeneratorTestCase &testCase) {
     // Create linker interface
     LinkerInterface linker = LinkerInterface(&err, &threadFactory, &options);
 
+    // Create main source file
+    SourceFile mainSourceFile = SourceFile(&moduleRegistry, &options, nullptr, "root", sourceFile, false);
+
+    // Execute pre-analyzer
+    mainSourceFile.preAnalyze(&options);
+
     // Execute semantic analysis
-    AnalyzerVisitor analyzer =
-        AnalyzerVisitor(context, builder, &moduleRegistry, &threadFactory, &options, &linker, sourceFile, true, false);
-    SymbolTable *symbolTable = analyzer.visit(tree).as<SymbolTable *>();
+    mainSourceFile.analyze(context, builder, &threadFactory);
+    mainSourceFile.reAnalyze(context, builder, &threadFactory);
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + "/exception.out"))
@@ -123,7 +129,7 @@ void executeTest(const GeneratorTestCase &testCase) {
     // Check if the symbol table matches the expected output
     std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
     if (FileUtil::fileExists(symbolTableFileName)) {
-      std::string actualSymbolTable = symbolTable->toJSON().dump(2);
+      std::string actualSymbolTable = mainSourceFile.symbolTable->toJSON().dump(2);
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
         TestUtil::setFileContent(symbolTableFileName, actualSymbolTable);
@@ -164,15 +170,12 @@ void executeTest(const GeneratorTestCase &testCase) {
     }
 
     // Execute generator
-    GeneratorVisitor generator =
-        GeneratorVisitor(context, builder, &threadFactory, symbolTable, &options, sourceFile, "./source.spice.o", true);
-    generator.init();      // Initialize code generation
-    generator.visit(tree); // Generate IR code
+    mainSourceFile.generate(context, builder, &threadFactory, &linker);
 
     // Check if the ir code matches the expected output
     std::string irCodeFileName = testCase.testPath + "/ir-code.ll";
     if (FileUtil::fileExists(irCodeFileName)) {
-      std::string actualIR = generator.getIRString();
+      std::string actualIR = mainSourceFile.compilerOutput.irString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
         TestUtil::setFileContent(irCodeFileName, actualIR);
@@ -189,8 +192,7 @@ void executeTest(const GeneratorTestCase &testCase) {
 
     // Check if the optimized ir code matches the expected output
     if (options.optLevel > 0) {
-      generator.optimize();
-      std::string actualOptimizedIR = generator.getIRString();
+      std::string actualOptimizedIR = mainSourceFile.compilerOutput.irOptString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
         TestUtil::setFileContent(irCodeOptFileName, actualOptimizedIR);
@@ -207,12 +209,8 @@ void executeTest(const GeneratorTestCase &testCase) {
     // Check if the execution output matches the expected output
     std::string outputFileName = testCase.testPath + "/cout.out";
     if (FileUtil::fileExists(outputFileName)) {
-      // Emit the object file
-      generator.emit(); // Emit object file for specified platform
-
       // Prepare linker
       linker.setOutputPath(TestUtil::getDefaultExecutableName()); // Add output path
-      linker.addObjectFilePath("source.spice.o");                 // Add default object file
 
       std::string linkerFlagsFile = testCase.testPath + "/linker-flags.txt";
       std::string linkerFlags;
@@ -263,6 +261,7 @@ class GeneratorExtDeclTests : public ::testing::TestWithParam<GeneratorTestCase>
 class GeneratorForLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorForEachLoopTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorFunctionTests : public ::testing::TestWithParam<GeneratorTestCase> {};
+class GeneratorGenericsTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorIfStatementTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorImportTests : public ::testing::TestWithParam<GeneratorTestCase> {};
 class GeneratorMethodTests : public ::testing::TestWithParam<GeneratorTestCase> {};
@@ -291,6 +290,8 @@ TEST_P(GeneratorForLoopTests, ForLoopTests) { executeTest(GetParam()); } // NOLI
 TEST_P(GeneratorForEachLoopTests, ForEachLoopTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 TEST_P(GeneratorFunctionTests, FunctionTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
+
+TEST_P(GeneratorGenericsTests, GenericsTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 TEST_P(GeneratorIfStatementTests, IfStatementTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
@@ -350,34 +351,37 @@ INSTANTIATE_TEST_SUITE_P(GeneratorForEachLoopTests, GeneratorForEachLoopTests, /
 INSTANTIATE_TEST_SUITE_P(GeneratorFunctionTests, GeneratorFunctionTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[7]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorIfStatementTests, GeneratorIfStatementTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorGenericsTests, GeneratorGenericsTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[8]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorImportTests, GeneratorImportTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorIfStatementTests, GeneratorIfStatementTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[9]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorMethodTests, GeneratorMethodTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorImportTests, GeneratorImportTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[10]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorOperatorTests, GeneratorOperatorTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorMethodTests, GeneratorMethodTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[11]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorPointerTests, GeneratorPointerTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorOperatorTests, GeneratorOperatorTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[12]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorProcedureTests, GeneratorProcedureTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorPointerTests, GeneratorPointerTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[13]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorStructTests, GeneratorStructTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorProcedureTests, GeneratorProcedureTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[14]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorThreadTests, GeneratorThreadTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorStructTests, GeneratorStructTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[15]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorVariableTests, GeneratorVariableTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorThreadTests, GeneratorThreadTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[16]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(GeneratorWhileLoopTests, GeneratorWhileLoopTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(GeneratorVariableTests, GeneratorVariableTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(generatorSuites[17]), NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(GeneratorWhileLoopTests, GeneratorWhileLoopTests, // NOLINT(cert-err58-cpp)
+                         ::testing::ValuesIn(generatorSuites[18]), NameResolver());
 
 // GCOV_EXCL_STOP

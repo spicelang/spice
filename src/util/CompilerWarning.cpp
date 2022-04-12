@@ -29,7 +29,7 @@ CompilerWarning::CompilerWarning(CompilerWarningType type, const std::string &me
  */
 void CompilerWarning::print() const {
   if (!warningMessage.empty())
-    std::cout << warningMessage << std::endl;
+    std::cout << warningMessage << "\n";
 }
 
 /**

@@ -1,10 +1,9 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include "CompilerInstance.h"
-
 #include <stdexcept>
 
 #include <cli/CliInterface.h>
+#include <dependency/SourceFile.h>
 #include <exception/IRError.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
@@ -34,20 +33,29 @@ void compileProject(CliOptions *options) {
     LinkerInterface linker = LinkerInterface(&err, &threadFactory, options);
     linker.setOutputPath(options->outputPath);
 
-    // Compile main source file
-    CompilerInstance::CompileSourceFile(context, builder, &moduleRegistry, &threadFactory, options, &linker,
-                                        options->mainSourceFile, true, false);
+    // Pre-analyze visitor to collect imports
+    SourceFile mainSourceFile = SourceFile(&moduleRegistry, options, nullptr, "root", options->mainSourceFile, false);
+    mainSourceFile.preAnalyze(options);
+
+    // Analyze the project
+    mainSourceFile.analyze(context, builder, &threadFactory);
+
+    // Re-analyze the project
+    mainSourceFile.reAnalyze(context, builder, &threadFactory);
+
+    // Generate the project
+    mainSourceFile.generate(context, builder, &threadFactory, &linker);
 
     // Link the target executable
     linker.link();
   } catch (SemanticError &e) {
-    std::cout << e.what() << std::endl;
+    std::cout << e.what() << "\n";
     std::exit(1); // Exit with result code other than 0
   } catch (IRError &e) {
-    std::cout << e.what() << std::endl;
+    std::cout << e.what() << "\n";
     std::exit(1); // Exit with result code other than 0
   } catch (LexerParserError &e) {
-    std::cout << e.what() << std::endl;
+    std::cout << e.what() << "\n";
     std::exit(1); // Exit with result code other than 0
   }
 }

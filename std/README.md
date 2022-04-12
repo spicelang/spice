@@ -7,6 +7,9 @@ The package `std/runtime` is an internal package which is linked automatically t
 ## I/O
 The package `std/io` offers functions for reading/writing files, etc.
 
+## Data
+The package `std/data` offers common data structures for organizing data, etc.
+
 ## Math
 The package `std/math` offers functions for mathematical operations, etc.
 

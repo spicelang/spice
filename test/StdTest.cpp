@@ -20,6 +20,7 @@
 #include <util/FileUtil.h>
 
 #include "TestUtil.h"
+#include "dependency/SourceFile.h"
 
 const unsigned int IR_FILE_SKIP_LINES = 4;
 
@@ -111,10 +112,15 @@ void executeTest(const StdTestCase &testCase) {
     // Create linker interface
     LinkerInterface linker = LinkerInterface(&err, &threadFactory, &options);
 
+    // Create main source file
+    SourceFile mainSourceFile = SourceFile(&moduleRegistry, &options, nullptr, "root", sourceFile, false);
+
+    // Execute pre-analyzer
+    mainSourceFile.preAnalyze(&options);
+
     // Execute semantic analysis
-    AnalyzerVisitor analyzer =
-        AnalyzerVisitor(context, builder, &moduleRegistry, &threadFactory, &options, &linker, sourceFile, true, false);
-    SymbolTable *symbolTable = analyzer.visit(tree).as<SymbolTable *>();
+    mainSourceFile.analyze(context, builder, &threadFactory);
+    mainSourceFile.reAnalyze(context, builder, &threadFactory);
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + "/exception.out"))
@@ -123,7 +129,7 @@ void executeTest(const StdTestCase &testCase) {
     // Check if the symbol table matches the expected output
     std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
     if (FileUtil::fileExists(symbolTableFileName)) {
-      std::string actualSymbolTable = symbolTable->toJSON().dump(2);
+      std::string actualSymbolTable = mainSourceFile.symbolTable->toJSON().dump(2);
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
         TestUtil::setFileContent(symbolTableFileName, actualSymbolTable);
@@ -164,15 +170,12 @@ void executeTest(const StdTestCase &testCase) {
     }
 
     // Execute generator
-    GeneratorVisitor generator =
-        GeneratorVisitor(context, builder, &threadFactory, symbolTable, &options, sourceFile, "./source.spice.o", true);
-    generator.init();      // Initialize code generation
-    generator.visit(tree); // Generate IR code
+    mainSourceFile.generate(context, builder, &threadFactory, &linker);
 
     // Check if the ir code matches the expected output
     std::string irCodeFileName = testCase.testPath + "/ir-code.ll";
     if (FileUtil::fileExists(irCodeFileName)) {
-      std::string actualIR = generator.getIRString();
+      std::string actualIR = mainSourceFile.compilerOutput.irString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
         TestUtil::setFileContent(irCodeFileName, actualIR);
@@ -189,8 +192,7 @@ void executeTest(const StdTestCase &testCase) {
 
     // Check if the optimized ir code matches the expected output
     if (options.optLevel > 0) {
-      generator.optimize();
-      std::string actualOptimizedIR = generator.getIRString();
+      std::string actualOptimizedIR = mainSourceFile.compilerOutput.irOptString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
         TestUtil::setFileContent(irCodeOptFileName, actualOptimizedIR);
@@ -207,12 +209,8 @@ void executeTest(const StdTestCase &testCase) {
     // Check if the execution output matches the expected output
     std::string outputFileName = testCase.testPath + "/cout.out";
     if (FileUtil::fileExists(outputFileName)) {
-      // Emit the object file
-      generator.emit(); // Emit object file for specified platform
-
       // Prepare linker
       linker.setOutputPath(TestUtil::getDefaultExecutableName()); // Add output path
-      linker.addObjectFilePath("source.spice.o");                 // Add default object file
 
       std::string linkerFlagsFile = testCase.testPath + "/linker-flags.txt";
       std::string linkerFlags;

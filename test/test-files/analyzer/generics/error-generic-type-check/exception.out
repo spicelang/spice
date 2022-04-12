@@ -1,0 +1,1 @@
+Semantic error in ./test-files/analyzer/generics/error-generic-type-check/source.spice at 4:18: Types of printf call not matching: Template string expects int, byte or bool, but got string

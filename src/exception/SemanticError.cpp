@@ -42,6 +42,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Multiple declarations of the same variable";
   case FUNCTION_DECLARED_TWICE:
     return "Multiple declarations of a function/procedure";
+  case GENERIC_TYPE_DECLARED_TWICE:
+    return "Multiple declarations of a generic type with the same name";
   case STRUCT_DECLARED_TWICE:
     return "Multiple declarations of a struct with the same name";
   case GLOBAL_OF_TYPE_DYN:
@@ -106,6 +108,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Invalid thread id";
   case JOIN_ARG_MUST_BE_TID:
     return "Argument of join builtin must be a tid";
+  case EXPECTED_GENERIC_TYPE:
+    return "Expected a generic type";
   case RESERVED_KEYWORD:
     return "Reserved keyword used as identifier";
   case COMING_SOON_SA:

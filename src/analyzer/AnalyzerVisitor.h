@@ -18,21 +18,23 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/Host.h>
 
+// Forward declaration (circular import)
+class SourceFile;
+
 const std::string MAIN_FUNCTION_NAME = "main";
 const std::string RETURN_VARIABLE_NAME = "result";
 const std::string THIS_VARIABLE_NAME = "this";
 const std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
 const std::string STRUCT_SCOPE_PREFIX = "struct:";
 const std::string UNUSED_VARIABLE_NAME = "_";
-const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case"};
+const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync"};
 
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
   // Constructors
   explicit AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                           ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, CliOptions *options,
-                           LinkerInterface *linker, const std::string &sourceFile, bool requiresMainFct, bool stdFile);
-  ~AnalyzerVisitor() override;
+                           ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, SourceFile *sourceFile,
+                           CliOptions *options, bool requiresMainFct, bool stdFile);
 
   // Public methods
   antlrcpp::Any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -40,6 +42,7 @@ public:
   antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
   antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
   antlrcpp::Any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
+  antlrcpp::Any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override;
   antlrcpp::Any visitStructDef(SpiceParser::StructDefContext *ctx) override;
   antlrcpp::Any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
   antlrcpp::Any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
@@ -85,15 +88,16 @@ private:
   std::shared_ptr<llvm::LLVMContext> context;
   std::shared_ptr<llvm::IRBuilder<>> builder;
   std::unique_ptr<OpRuleManager> opRuleManager;
-  ErrorFactory *err;
+  std::unique_ptr<ErrorFactory> err;
   ModuleRegistry *moduleRegistry;
   ThreadFactory *threadFactory;
+  SourceFile *sourceFile;
   CliOptions *cliOptions;
-  LinkerInterface *linker;
-  std::string sourceFile;
   bool requiresMainFct = true;
   bool hasMainFunction = false;
   bool isStdFile = false;
+  bool secondRun = false;
+  bool needsReAnalyze;
   SymbolTable *currentScope = nullptr;
   SymbolTable *rootScope = nullptr;
   ScopePath scopePath;

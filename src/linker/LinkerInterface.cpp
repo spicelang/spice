@@ -45,14 +45,14 @@ void LinkerInterface::link() {
 
   // Print status message
   if (cliOptions->printDebugOutput)
-    std::cout << std::endl << "Emitting executable to path: " << outputPath << std::endl; // GCOV_EXCL_LINE
+    std::cout << "\nEmitting executable to path: " << outputPath << "\n"; // GCOV_EXCL_LINE
 
   // Call the linker
   std::string result = FileUtil::exec(linkerCommand);
 
   // Print linker result if appropriate
   if (cliOptions->printDebugOutput && !result.empty())
-    std::cout << "Linking result: " << result << std::endl; // GCOV_EXCL_LINE
+    std::cout << "Linking result: " << result << "\n"; // GCOV_EXCL_LINE
 }
 
 /**

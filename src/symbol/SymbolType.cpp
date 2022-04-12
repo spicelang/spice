@@ -309,8 +309,17 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "procedure";
   case TY_IMPORT:
     return "import";
+  case TY_GENERIC:
+    return "generic(" + chainElement.second + ")";
   case TY_INVALID:
     return "invalid"; // GCOV_EXCL_LINE
   }
   return "unknown"; // GCOV_EXCL_LINE
 }
+
+/**
+ * Retrieve the type chain of the symbol type
+ *
+ * @return Type chain
+ */
+TypeChain SymbolType::getTypeChain() const { return typeChain; }
