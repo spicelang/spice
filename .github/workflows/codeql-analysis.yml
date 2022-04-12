@@ -16,6 +16,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 11
+
       - name: Setup latest GCC and build dependencies
         run: |
           sudo apt install gcc-11 g++-11
