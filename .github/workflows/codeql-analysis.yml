@@ -16,6 +16,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 11
+
       - name: Setup latest GCC and build dependencies
         run: |
           sudo apt install gcc-11 g++-11
@@ -62,7 +67,7 @@ jobs:
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -DCMAKE_BUILD_TYPE=Release -DSPICE_LINK_STATIC=OFF -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -GNinja -Wattributes ..
           cmake --build . --target Spice_test
 
       - name: Perform CodeQL Analysis
