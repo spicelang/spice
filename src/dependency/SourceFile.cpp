@@ -79,7 +79,7 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
   // Analyze this source file
   analyzer = std::make_shared<AnalyzerVisitor>(context, builder, moduleRegistry, threadFactory, this, options, parent == nullptr,
                                                stdFile);
-  needsReAnalyze = analyzer->visit(antlrCtx.parser->entry()).as<bool>();
+  needsReAnalyze = any_cast<bool>(analyzer->visit(antlrCtx.parser->entry()));
   antlrCtx.parser->reset();
 }
 

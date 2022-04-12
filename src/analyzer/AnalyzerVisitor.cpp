@@ -122,7 +122,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
       isGeneric = true;
       needsReAnalyze = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
-        SymbolType symbolType = visit(dataType).as<SymbolType>();
+        auto symbolType = any_cast<SymbolType>(visit(dataType));
         if (!symbolType.is(TY_GENERIC))
           throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
         templateTypes.emplace_back(symbolType.getSubType(), symbolType);
@@ -134,7 +134,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     std::vector<std::string> argNames;
     ArgList argTypes;
     if (ctx->argLstDef()) {
-      NamedArgList namedArgList = visit(ctx->argLstDef()).as<NamedArgList>();
+      auto namedArgList = any_cast<NamedArgList>(visit(ctx->argLstDef()));
       for (const auto &namedArg : namedArgList) {
         argNames.push_back(std::get<0>(namedArg));
         argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
@@ -155,7 +155,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     }
 
     // Declare variable for the return value in the function scope
-    SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
+    auto returnType = any_cast<SymbolType>(visit(ctx->dataType()));
     if (returnType.is(TY_DYN))
       throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
     if (returnType.isPointer())
@@ -240,7 +240,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
       isGeneric = true;
       needsReAnalyze = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
-        SymbolType symbolType = visit(dataType).as<SymbolType>();
+        auto symbolType = any_cast<SymbolType>(visit(dataType));
         if (!symbolType.is(TY_GENERIC))
           throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
         templateTypes.emplace_back(symbolType.getSubType(), symbolType);
@@ -252,7 +252,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     std::vector<std::string> argNames;
     ArgList argTypes;
     if (ctx->argLstDef()) {
-      NamedArgList namedArgList = visit(ctx->argLstDef()).as<NamedArgList>();
+      auto namedArgList = any_cast<NamedArgList>(visit(ctx->argLstDef()));
       for (const auto &namedArg : namedArgList) {
         argNames.push_back(std::get<0>(namedArg));
         argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
@@ -336,7 +336,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   if (ctx->typeLst()) {
     // Check if an argument is dyn
     for (const auto &arg : ctx->typeLst()->dataType()) {
-      SymbolType argType = visit(arg).as<SymbolType>();
+      auto argType = any_cast<SymbolType>(visit(arg));
       if (argType.is(TY_DYN))
         throw err->get(*arg->start, UNEXPECTED_DYN_TYPE_SA, "Dyn data type is not allowed as arg type for external functions");
       argTypes.emplace_back(argType, false);
@@ -345,7 +345,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   if (ctx->dataType()) { // Function
     // Check if return type is dyn
-    SymbolType returnType = visit(ctx->dataType()).as<SymbolType>();
+    auto returnType = any_cast<SymbolType>(visit(ctx->dataType()));
     if (returnType.is(TY_DYN))
       throw err->get(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA,
                      "Dyn data type is not allowed as return type for external functions");
@@ -433,7 +433,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
   // Insert a field for each field list entry
   for (const auto &field : ctx->field()) {
     std::string fieldName = field->IDENTIFIER()->toString();
-    SymbolType fieldType = visit(field->dataType()).as<SymbolType>();
+    auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
 
     // Build symbol specifiers
     auto fieldTypeSpecifiers = SymbolSpecifiers(symbolType);
@@ -482,11 +482,11 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
                        "' is already declared in another module. Please use a different name.");
 
   // Insert variable name to symbol table
-  SymbolType symbolType = visit(ctx->dataType()).as<SymbolType>();
+  auto symbolType = any_cast<SymbolType>(visit(ctx->dataType()));
 
   SymbolState state = DECLARED;
   if (ctx->value()) { // Variable is initialized here
-    SymbolType valueType = visit(ctx->value()).as<SymbolType>();
+    auto valueType = any_cast<SymbolType>(visit(ctx->value()));
     // Infer type
     if (symbolType.is(TY_DYN)) {
       symbolType = valueType;
@@ -563,7 +563,7 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   visit(head->declStmt());
 
   // Visit condition in new scope
-  SymbolType conditionType = visit(head->assignExpr()[0]).as<SymbolType>();
+  auto conditionType = any_cast<SymbolType>(visit(head->assignExpr()[0]));
   if (!conditionType.is(TY_BOOL))
     throw err->get(*head->assignExpr()[0]->start, CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool");
 
@@ -589,7 +589,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext 
 
   // Check type of the array
   expectedType = SymbolType(TY_DYN);
-  SymbolType arrayType = visit(head->assignExpr()).as<SymbolType>();
+  auto arrayType = any_cast<SymbolType>(visit(head->assignExpr()));
   if (!arrayType.isArray() && !arrayType.is(TY_STRING))
     throw err->get(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
                    "Can only apply foreach loop on an array type. You provided " + arrayType.getName(false));
@@ -597,7 +597,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext 
   // Check index assignment or declaration
   SymbolType indexType;
   if (head->declStmt().size() >= 2) {
-    indexType = visit(head->declStmt().front()).as<SymbolType>();
+    indexType = any_cast<SymbolType>(visit(head->declStmt().front()));
 
     // Set declared variable to initialized, because we increment it internally in the loop
     if (!head->declStmt().front()->assignExpr()) {
@@ -620,7 +620,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext 
   }
 
   // Check type of the item
-  SymbolType itemType = visit(head->declStmt().back()).as<SymbolType>();
+  auto itemType = any_cast<SymbolType>(visit(head->declStmt().back()));
   std::string itemVarName = head->declStmt().back()->IDENTIFIER()->toString();
   SymbolTableEntry *itemVarSymbol = currentScope->lookup(itemVarName);
   assert(itemVarSymbol != nullptr);
@@ -652,7 +652,7 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx
   currentScope = currentScope->createChildBlock(scopeId);
 
   // Visit condition
-  SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
+  auto conditionType = any_cast<SymbolType>(visit(ctx->assignExpr()));
   if (!conditionType.is(TY_BOOL))
     throw err->get(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool");
 
@@ -673,7 +673,7 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   currentScope = currentScope->createChildBlock(scopeId);
 
   // Visit condition
-  SymbolType conditionType = visit(ctx->assignExpr()).as<SymbolType>();
+  auto conditionType = any_cast<SymbolType>(visit(ctx->assignExpr()));
   if (!conditionType.is(TY_BOOL))
     throw err->get(*ctx->assignExpr()->start, CONDITION_MUST_BE_BOOL, "If condition must be of type bool");
 
@@ -712,7 +712,7 @@ antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx
   bool metOptional = false;
   for (const auto &arg : ctx->declStmt()) {
     std::string argName = arg->IDENTIFIER()->toString();
-    SymbolType argType = visit(arg).as<SymbolType>();
+    auto argType = any_cast<SymbolType>(visit(arg));
 
     // Check if the type could be inferred. Dyn without a default value is forbidden
     if (argType.is(TY_DYN))
@@ -737,12 +737,12 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
     throw err->get(*ctx->start, VARIABLE_DECLARED_TWICE, "The variable '" + variableName + "' was declared more than once");
 
   // Get the type of the symbol
-  SymbolType symbolType = expectedType = visit(ctx->dataType()).as<SymbolType>();
+  SymbolType symbolType = expectedType = any_cast<SymbolType>(visit(ctx->dataType()));
 
   // Visit the right side
   SymbolState initialState = DECLARED;
   if (ctx->assignExpr()) {
-    SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
+    auto rhsTy = any_cast<SymbolType>(visit(ctx->assignExpr()));
     // Check if type has to be inferred or both types are fixed
     symbolType = symbolType.is(TY_DYN) ? rhsTy : opRuleManager->getAssignResultType(*ctx->start, symbolType, rhsTy, true);
     initialState = INITIALIZED;
@@ -791,7 +791,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *c
     // Check if there is a value attached to the return statement
     if (ctx->assignExpr()) {
       // Visit the value
-      SymbolType returnType = visit(ctx->assignExpr()).as<SymbolType>();
+      auto returnType = any_cast<SymbolType>(visit(ctx->assignExpr()));
 
       // Check data type of return statement
       if (returnVariable->getType().is(TY_DYN)) {
@@ -882,7 +882,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *c
                      "The placeholder string contains more placeholders that arguments were passed");
 
     auto assignment = ctx->assignExpr()[placeholderCount];
-    SymbolType assignmentType = visit(assignment).as<SymbolType>();
+    auto assignmentType = any_cast<SymbolType>(visit(assignment));
     switch (templateString[index + 1]) {
     case 'c': {
       if (!assignmentType.is(TY_CHAR))
@@ -957,7 +957,7 @@ antlrcpp::Any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) {
 antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
   SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(err.get(), *ctx->start);
   for (const auto &assignExpr : ctx->assignExpr()) {
-    SymbolType argSymbolType = visit(assignExpr).as<SymbolType>();
+    auto argSymbolType = any_cast<SymbolType>(visit(assignExpr));
     if (argSymbolType == bytePtr && argSymbolType.isArrayOf(bytePtr))
       throw err->get(*assignExpr->start, JOIN_ARG_MUST_BE_TID,
                      "You have to pass a thread id (byte*) or a array of thread ids (byte*[]) to to join builtin");
@@ -971,11 +971,11 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *c
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment
     // Get symbol type of right side
-    SymbolType rhsTy = visit(ctx->assignExpr()).as<SymbolType>();
+    auto rhsTy = any_cast<SymbolType>(visit(ctx->assignExpr()));
 
     // Visit the left side
     currentVarName = ""; // Reset the current variable name
-    SymbolType lhsTy = visit(ctx->prefixUnaryExpr()).as<SymbolType>();
+    auto lhsTy = any_cast<SymbolType>(visit(ctx->prefixUnaryExpr()));
     std::string variableName = currentVarName;
 
     // Take a look at the operator
@@ -1045,9 +1045,9 @@ antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext 
   // Check if there is a ternary operator applied
   if (ctx->children.size() > 1) {
     auto condition = ctx->logicalOrExpr()[0];
-    SymbolType conditionType = visit(condition).as<SymbolType>();
-    SymbolType trueType = visit(ctx->logicalOrExpr()[1]).as<SymbolType>();
-    SymbolType falseType = visit(ctx->logicalOrExpr()[2]).as<SymbolType>();
+    auto conditionType = any_cast<SymbolType>(visit(condition));
+    auto trueType = any_cast<SymbolType>(visit(ctx->logicalOrExpr()[1]));
+    auto falseType = any_cast<SymbolType>(visit(ctx->logicalOrExpr()[2]));
     // Check if the condition evaluates to boolean
     if (!conditionType.is(TY_BOOL))
       throw err->get(*condition->start, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool");
@@ -1062,9 +1062,9 @@ antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext 
 antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
   // Check if a logical or operator is applied
   if (ctx->children.size() > 1) {
-    SymbolType lhsTy = visit(ctx->logicalAndExpr()[0]).as<SymbolType>();
+    auto lhsTy = any_cast<SymbolType>(visit(ctx->logicalAndExpr()[0]));
     for (int i = 1; i < ctx->logicalAndExpr().size(); i++) {
-      SymbolType rhsTy = visit(ctx->logicalAndExpr()[i]).as<SymbolType>();
+      auto rhsTy = any_cast<SymbolType>(visit(ctx->logicalAndExpr()[i]));
       lhsTy = opRuleManager->getLogicalOrResultType(*ctx->start, lhsTy, rhsTy);
     }
     return lhsTy;
@@ -1075,9 +1075,9 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
 antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
   // Check if a logical and operator is applied
   if (ctx->children.size() > 1) {
-    SymbolType lhsTy = visit(ctx->bitwiseOrExpr()[0]).as<SymbolType>();
+    auto lhsTy = any_cast<SymbolType>(visit(ctx->bitwiseOrExpr()[0]));
     for (int i = 1; i < ctx->bitwiseOrExpr().size(); i++) {
-      SymbolType rhsTy = visit(ctx->bitwiseOrExpr()[i]).as<SymbolType>();
+      auto rhsTy = any_cast<SymbolType>(visit(ctx->bitwiseOrExpr()[i]));
       lhsTy = opRuleManager->getLogicalAndResultType(*ctx->start, lhsTy, rhsTy);
     }
     return lhsTy;
@@ -1088,9 +1088,9 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
 antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
   // Check if a bitwise or operator is applied
   if (ctx->children.size() > 1) {
-    SymbolType lhsTy = visit(ctx->bitwiseXorExpr()[0]).as<SymbolType>();
+    auto lhsTy = any_cast<SymbolType>(visit(ctx->bitwiseXorExpr()[0]));
     for (int i = 1; i < ctx->bitwiseXorExpr().size(); i++) {
-      SymbolType rhsTy = visit(ctx->bitwiseXorExpr()[i]).as<SymbolType>();
+      auto rhsTy = any_cast<SymbolType>(visit(ctx->bitwiseXorExpr()[i]));
       lhsTy = opRuleManager->getBitwiseOrResultType(*ctx->start, lhsTy, rhsTy);
     }
     return lhsTy;
@@ -1101,9 +1101,9 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
 antlrcpp::Any AnalyzerVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
   // Check if a bitwise xor operator is applied
   if (ctx->children.size() > 1) {
-    SymbolType lhsTy = visit(ctx->bitwiseAndExpr()[0]).as<SymbolType>();
+    auto lhsTy = any_cast<SymbolType>(visit(ctx->bitwiseAndExpr()[0]));
     for (int i = 1; i < ctx->bitwiseAndExpr().size(); i++) {
-      SymbolType rhsTy = visit(ctx->bitwiseAndExpr()[i]).as<SymbolType>();
+      auto rhsTy = any_cast<SymbolType>(visit(ctx->bitwiseAndExpr()[i]));
       lhsTy = opRuleManager->getBitwiseXorResultType(*ctx->start, lhsTy, rhsTy);
     }
     return lhsTy;
@@ -1114,9 +1114,9 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprCo
 antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
   // Check if a bitwise and operator is applied
   if (ctx->children.size() > 1) {
-    SymbolType lhsTy = visit(ctx->equalityExpr()[0]).as<SymbolType>();
+    auto lhsTy = any_cast<SymbolType>(visit(ctx->equalityExpr()[0]));
     for (int i = 1; i < ctx->equalityExpr().size(); i++) {
-      SymbolType rhsTy = visit(ctx->equalityExpr()[i]).as<SymbolType>();
+      auto rhsTy = any_cast<SymbolType>(visit(ctx->equalityExpr()[i]));
       lhsTy = opRuleManager->getBitwiseAndResultType(*ctx->start, lhsTy, rhsTy);
     }
     return lhsTy;
@@ -1127,8 +1127,8 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
 antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   // Check if at least one equality operator is applied
   if (ctx->children.size() > 1) {
-    SymbolType lhsTy = visit(ctx->relationalExpr()[0]).as<SymbolType>();
-    SymbolType rhsTy = visit(ctx->relationalExpr()[1]).as<SymbolType>();
+    auto lhsTy = any_cast<SymbolType>(visit(ctx->relationalExpr()[0]));
+    auto rhsTy = any_cast<SymbolType>(visit(ctx->relationalExpr()[1]));
 
     if (ctx->EQUAL()) // Operator was equal
       return opRuleManager->getEqualResultType(*ctx->start, lhsTy, rhsTy);
@@ -1141,8 +1141,8 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
 antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
   // Check if a relational operator is applied
   if (ctx->children.size() > 1) {
-    SymbolType lhsTy = visit(ctx->shiftExpr()[0]).as<SymbolType>();
-    SymbolType rhsTy = visit(ctx->shiftExpr()[1]).as<SymbolType>();
+    auto lhsTy = any_cast<SymbolType>(visit(ctx->shiftExpr()[0]));
+    auto rhsTy = any_cast<SymbolType>(visit(ctx->shiftExpr()[1]));
 
     if (ctx->LESS()) // Operator was less
       return opRuleManager->getLessResultType(*ctx->start, lhsTy, rhsTy);
@@ -1159,8 +1159,8 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
 antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   // Check if at least one shift operator is applied
   if (ctx->children.size() > 1) {
-    SymbolType lhsTy = visit(ctx->additiveExpr()[0]).as<SymbolType>();
-    SymbolType rhsTy = visit(ctx->additiveExpr()[1]).as<SymbolType>();
+    auto lhsTy = any_cast<SymbolType>(visit(ctx->additiveExpr()[0]));
+    auto rhsTy = any_cast<SymbolType>(visit(ctx->additiveExpr()[1]));
 
     if (ctx->SHL()) // Operator was shl
       return opRuleManager->getShiftLeftResultType(*ctx->start, lhsTy, rhsTy);
@@ -1173,14 +1173,14 @@ antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx
 antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
   // Check if at least one additive operator is applied
   if (ctx->multiplicativeExpr().size() > 1) {
-    SymbolType currentType = visit(ctx->multiplicativeExpr()[0]).as<SymbolType>();
+    auto currentType = any_cast<SymbolType>(visit(ctx->multiplicativeExpr()[0]));
     // Check if data types are compatible
     unsigned int operatorIndex = 1;
     for (int i = 1; i < ctx->multiplicativeExpr().size(); i++) {
-      auto *op = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[operatorIndex]);
+      auto op = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[operatorIndex]);
       const size_t tokenType = op->getSymbol()->getType();
       auto next = ctx->multiplicativeExpr()[i];
-      SymbolType nextType = visit(next).as<SymbolType>();
+      auto nextType = any_cast<SymbolType>(visit(next));
 
       if (tokenType == SpiceParser::PLUS) { // Operator was plus
         currentType = opRuleManager->getPlusResultType(*next->start, currentType, nextType);
@@ -1198,14 +1198,14 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
 antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
   // Check if at least one multiplicative operator is applied
   if (ctx->castExpr().size() > 1) {
-    SymbolType currentType = visit(ctx->castExpr()[0]).as<SymbolType>();
+    auto currentType = any_cast<SymbolType>(visit(ctx->castExpr()[0]));
     // Check if data types are compatible
     unsigned int operatorIndex = 1;
     for (int i = 1; i < ctx->castExpr().size(); i++) {
-      auto *op = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[operatorIndex]);
+      auto op = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[operatorIndex]);
       const size_t tokenType = op->getSymbol()->getType();
       auto next = ctx->castExpr()[i];
-      SymbolType nextType = visit(next).as<SymbolType>();
+      auto nextType = any_cast<SymbolType>(visit(next));
 
       if (tokenType == SpiceParser::MUL) { // Operator is mul
         currentType = opRuleManager->getMulResultType(*next->start, currentType, nextType);
@@ -1226,8 +1226,8 @@ antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) 
   antlrcpp::Any rhs = visit(ctx->prefixUnaryExpr());
 
   if (ctx->LPAREN()) { // Cast is applied
-    SymbolType dstType = visit(ctx->dataType()).as<SymbolType>();
-    return opRuleManager->getCastResultType(*ctx->start, dstType, rhs.as<SymbolType>());
+    auto dstType = any_cast<SymbolType>(visit(ctx->dataType()));
+    return opRuleManager->getCastResultType(*ctx->start, dstType, any_cast<SymbolType>(rhs));
   }
 
   return rhs;
@@ -1239,11 +1239,11 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
   scopePath.clear();                    // Clear the scope path
   currentThisType = SymbolType(TY_DYN); // Reset this type
 
-  SymbolType lhs = visit(ctx->postfixUnaryExpr()).as<SymbolType>();
+  auto lhs = any_cast<SymbolType>(visit(ctx->postfixUnaryExpr()));
 
   unsigned int tokenCounter = 0;
   while (tokenCounter < ctx->children.size() - 1) {
-    auto *token = dynamic_cast<SpiceParser::PrefixUnaryOpContext *>(ctx->children[tokenCounter]);
+    auto token = dynamic_cast<SpiceParser::PrefixUnaryOpContext *>(ctx->children[tokenCounter]);
     if (token->MINUS()) { // Consider - operator
       lhs = opRuleManager->getPrefixMinusResultType(*ctx->postfixUnaryExpr()->start, lhs);
     } else if (token->PLUS_PLUS()) { // Consider ++ operator
@@ -1287,11 +1287,11 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
 }
 
 antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
-  SymbolType lhs = visit(ctx->atomicExpr()).as<SymbolType>();
+  auto lhs = any_cast<SymbolType>(visit(ctx->atomicExpr()));
 
   unsigned int tokenCounter = 1;
   while (tokenCounter < ctx->children.size()) {
-    auto *token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
+    auto token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
     const size_t tokenType = token->getSymbol()->getType();
     if (tokenType == SpiceParser::LBRACKET) { // Subscript operator
       tokenCounter++;                         // Consume LBRACKET
@@ -1300,8 +1300,8 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
       ScopePath scopePathBackup = scopePath;  // Save scope path
       scopePrefix += "[idx]";
 
-      auto *rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter]);
-      SymbolType indexType = visit(rule).as<SymbolType>();
+      auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter]);
+      auto indexType = any_cast<SymbolType>(visit(rule));
       tokenCounter++; // Consume assignExpr
 
       if (!indexType.is(TY_INT))
@@ -1338,19 +1338,19 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
 
       // Get template types
       std::vector<SymbolType> concreteTypes;
-      auto *typeLst = dynamic_cast<SpiceParser::TypeLstContext *>(ctx->children[tokenCounter]);
+      auto typeLst = dynamic_cast<SpiceParser::TypeLstContext *>(ctx->children[tokenCounter]);
       if (typeLst != nullptr) {
         for (const auto &dataType : typeLst->dataType())
-          concreteTypes.push_back(visit(dataType).as<SymbolType>());
+          concreteTypes.push_back(any_cast<SymbolType>(visit(dataType)));
         tokenCounter += 3; // Consume typeLst, GREATER and LPAREN
       }
 
       // Visit args
       std::vector<SymbolType> argTypes;
-      auto *argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
+      auto argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
       if (argLst != nullptr) {
         for (const auto &arg : argLst->assignExpr()) {
-          SymbolType argType = visit(arg).as<SymbolType>();
+          auto argType = any_cast<SymbolType>(visit(arg));
           if (argType.isArray())
             argType = argType.getContainedTy().toPointer(err.get(), *arg->start);
           argTypes.push_back(argType);
@@ -1412,8 +1412,8 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
       tokenCounter++;                           // Consume dot
       scopePrefix += ".";
       // Visit rhs
-      auto *postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(ctx->children[tokenCounter]);
-      lhs = visit(postfixUnary).as<SymbolType>();
+      auto postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(ctx->children[tokenCounter]);
+      lhs = any_cast<SymbolType>(visit(postfixUnary));
     } else if (tokenType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
       lhs = opRuleManager->getPostfixPlusPlusResultType(*ctx->atomicExpr()->start, lhs);
 
@@ -1510,7 +1510,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     return visit(ctx->primitiveValue());
 
   if (ctx->NIL()) {
-    SymbolType nilType = visit(ctx->dataType()).as<SymbolType>();
+    auto nilType = any_cast<SymbolType>(visit(ctx->dataType()));
     if (nilType.is(TY_DYN))
       throw err->get(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA, "Nil must have an explicit type");
     return nilType;
@@ -1569,7 +1569,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
       for (int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
         // Get actual type
         auto ternary = ctx->argLst()->assignExpr()[i];
-        SymbolType actualType = visit(ternary).as<SymbolType>();
+        auto actualType = any_cast<SymbolType>(visit(ternary));
         // Get expected type
         SymbolTableEntry *expectedField = structTable->lookupByIndex(i);
         assert(expectedField != nullptr);
@@ -1592,7 +1592,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     unsigned int actualSize = 0;
     if (ctx->argLst()) {
       for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
-        SymbolType itemType = visit(ctx->argLst()->assignExpr()[i]).as<SymbolType>();
+        auto itemType = any_cast<SymbolType>(visit(ctx->argLst()->assignExpr()[i]));
         if (expectedItemType.is(TY_DYN)) {
           expectedItemType = itemType;
         } else if (itemType != expectedItemType) {
@@ -1628,11 +1628,11 @@ antlrcpp::Any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueCo
 }
 
 antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
-  SymbolType type = visit(ctx->baseDataType()).as<SymbolType>();
+  auto type = any_cast<SymbolType>(visit(ctx->baseDataType()));
 
   unsigned int tokenCounter = 1;
   while (tokenCounter < ctx->children.size()) {
-    auto *token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
+    auto token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
     if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
       type = type.toPointer(err.get(), *ctx->start);
     } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
