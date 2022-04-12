@@ -6,7 +6,7 @@
 - [x] 2. Implement Generics for functions/procedures/methods
 - [ ] 3. Support basic type conditions for generic types
 - [ ] 3. Add tests for this feature
-- [ ] 4. Implement Generics for structs
+- [x] 4. Implement Generics for structs
 - [ ] 5. Add tests for this feature
 - [ ] 6. Add documentation for generics
 

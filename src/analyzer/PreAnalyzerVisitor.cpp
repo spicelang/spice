@@ -15,7 +15,7 @@ PreAnalyzerVisitor::PreAnalyzerVisitor(CliOptions *options, SourceFile *sourceFi
   this->err = ErrorFactory(sourceFile->filePath);
 }
 
-antlrcpp::Any PreAnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
+std::any PreAnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   // Get import name and identifier
   std::string importName = ctx->IDENTIFIER()->toString();
   std::string importIdentifier = ctx->STRING_LITERAL()->toString();

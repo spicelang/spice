@@ -1,5 +1,9 @@
-type A dyn;
+type T dyn;
 
-public p printFormat<A>(A element) {
-    printf("Sizeof output: %d\n", sizeof(element));
+type Vector<T> struct {
+    T data
+}
+
+p Vector.setData<T>(T data) {
+    this.data = data;
 }

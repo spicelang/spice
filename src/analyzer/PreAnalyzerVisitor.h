@@ -20,7 +20,7 @@ public:
   explicit PreAnalyzerVisitor(CliOptions *options, SourceFile *sourceFile);
 
   // Public methods
-  antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
+  std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
 
 private:
   CliOptions *cliOptions;

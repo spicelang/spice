@@ -125,8 +125,8 @@ std::string GeneratorVisitor::getIRString() {
   return oss.str();
 }
 
-antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
-  antlrcpp::Any result = SpiceBaseVisitor::visitEntry(ctx);
+std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
+  std::any result = SpiceBaseVisitor::visitEntry(ctx);
 
   // Verify module to detect IR code bugs
   std::string output;
@@ -137,7 +137,7 @@ antlrcpp::Any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   return result;
 }
 
-antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
   if (requiresMainFct) { // Only create main function when it is required
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -211,7 +211,7 @@ antlrcpp::Any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDe
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
+std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   // Check if this is a global function or a method
   bool isMethod = false;
   std::string functionName = ctx->IDENTIFIER().back()->toString();
@@ -343,7 +343,7 @@ antlrcpp::Any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
+std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   // Check if this is a global function or a method
   bool isMethod = false;
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
@@ -462,7 +462,7 @@ antlrcpp::Any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefConte
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
+std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   // Get function name
   std::string functionName = ctx->IDENTIFIER()->toString();
   std::vector<SymbolType> symbolTypes;
@@ -508,7 +508,7 @@ antlrcpp::Any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
+std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   std::string structName = ctx->IDENTIFIER()->toString();
 
   // Collect member types
@@ -525,7 +525,7 @@ antlrcpp::Any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ct
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
+std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
   std::string varName = currentVarName = ctx->IDENTIFIER()->toString();
 
   // Get symbol table entry and the symbol specifiers
@@ -558,7 +558,7 @@ antlrcpp::Any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefConte
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
+std::any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   // Create threaded function
   std::string threadedFctName = "_thread" + std::to_string(threadFactory->getNextFunctionSuffix());
   llvm::Type *voidPtrTy = builder->getInt8PtrTy();
@@ -663,7 +663,7 @@ antlrcpp::Any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ct
   return pthread;
 }
 
-antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
+std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto head = ctx->forHead();
 
   // Create blocks
@@ -727,7 +727,7 @@ antlrcpp::Any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   return static_cast<llvm::Value *>(builder->getTrue());
 }
 
-antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
+std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
   auto head = ctx->foreachHead();
 
   // Create blocks
@@ -828,7 +828,7 @@ antlrcpp::Any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext
   return static_cast<llvm::Value *>(builder->getTrue());
 }
 
-antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
+std::any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
   // Create blocks
@@ -873,7 +873,7 @@ antlrcpp::Any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ct
   return static_cast<llvm::Value *>(builder->getTrue());
 }
 
-antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
+std::any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   for (const auto &child : ctx->children) {
     if (!blockAlreadyTerminated)
       visit(child);
@@ -881,7 +881,7 @@ antlrcpp::Any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
+std::any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   // Change scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->getChild(scopeId);
@@ -926,7 +926,7 @@ antlrcpp::Any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   return condValue;
 }
 
-antlrcpp::Any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
+std::any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   if (ctx->ifStmt()) { // It is an else if branch
     visit(ctx->ifStmt());
   } else { // It is an else branch
@@ -945,7 +945,7 @@ antlrcpp::Any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx)
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
+std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   currentVarName = lhsVarName = ctx->IDENTIFIER()->toString();
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
 
@@ -968,12 +968,12 @@ antlrcpp::Any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx)
   return lhsVarName;
 }
 
-antlrcpp::Any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
+std::any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   // Noop
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
+std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
 
   // Check if a value is attached to the return statement
@@ -1003,7 +1003,7 @@ antlrcpp::Any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *
   return returnValuePtr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
+std::any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
   // Get number, how many loops we want to break
   int breakCount = 1;
   if (ctx->INTEGER())
@@ -1018,7 +1018,7 @@ antlrcpp::Any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ct
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
+std::any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
   // Get number, how many loops we want to continue
   int continueCount = 1;
   if (ctx->INTEGER())
@@ -1033,7 +1033,7 @@ antlrcpp::Any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtConte
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
+std::any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
   if (ctx->printfCall())
     return visit(ctx->printfCall());
   if (ctx->sizeOfCall())
@@ -1045,7 +1045,7 @@ antlrcpp::Any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext
   throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
-antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
+std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   // Declare if not declared already
   std::string printfFctName = "printf";
   llvm::Function *printfFct = module->getFunction(printfFctName);
@@ -1086,7 +1086,7 @@ antlrcpp::Any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *
   return static_cast<llvm::Value *>(builder->CreateCall(printfFct, printfArgs));
 }
 
-antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
+std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   // Visit the arguments
   auto valuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
   llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
@@ -1110,7 +1110,7 @@ antlrcpp::Any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *
   return resultPtr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) {
+std::any GeneratorVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) {
   // Declare if not declared already
   std::string psFctName = "pthread_self";
   llvm::Function *psFct = module->getFunction(psFctName);
@@ -1132,7 +1132,7 @@ antlrcpp::Any GeneratorVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) {
   return resultPtr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
+std::any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
   // Declare if not declared already
   std::string pjFctName = "pthread_join";
   llvm::Function *pjFct = module->getFunction(pjFctName);
@@ -1181,7 +1181,7 @@ antlrcpp::Any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx)
   return resultPtr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
+std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment or compound assignment
     lhsType = nullptr;   // Reset lhs type
@@ -1236,11 +1236,11 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *
     }
     return lhsPtr;
   } else if (ctx->ternaryExpr()) {
-    antlrcpp::Any rhs = visit(ctx->ternaryExpr());
+    std::any rhs = visit(ctx->ternaryExpr());
     lhsType = nullptr; // Reset lhs type
     return rhs;
   } else if (ctx->threadDef()) {
-    antlrcpp::Any rhs = visit(ctx->threadDef());
+    std::any rhs = visit(ctx->threadDef());
     lhsType = nullptr; // Reset lhs type
     return rhs;
   }
@@ -1249,7 +1249,7 @@ antlrcpp::Any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *
   throw std::runtime_error("Internal compiler error: Assign stmt fall-through"); // GCOV_EXCL_LINE
 }
 
-antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
+std::any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   if (ctx->logicalOrExpr().size() > 1) {
     auto conditionPtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[0]));
     llvm::Value *condition = builder->CreateLoad(conditionPtr->getType()->getPointerElementType(), conditionPtr);
@@ -1293,7 +1293,7 @@ antlrcpp::Any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext
   return visit(ctx->logicalOrExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
+std::any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
   if (ctx->logicalAndExpr().size() > 1) {
     // Prepare for short-circuiting
     std::pair<llvm::Value *, llvm::BasicBlock *> incomingBlocks[ctx->logicalAndExpr().size()];
@@ -1342,7 +1342,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCon
   return visit(ctx->logicalAndExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
+std::any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
   if (ctx->bitwiseOrExpr().size() > 1) {
     // Prepare for short-circuiting
     std::pair<llvm::Value *, llvm::BasicBlock *> incomingBlocks[ctx->bitwiseOrExpr().size()];
@@ -1391,7 +1391,7 @@ antlrcpp::Any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprC
   return visit(ctx->bitwiseOrExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
+std::any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
   if (ctx->bitwiseXorExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->bitwiseXorExpr()[0]));
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1407,7 +1407,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCon
   return visit(ctx->bitwiseXorExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
+std::any GeneratorVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
   if (ctx->bitwiseAndExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->bitwiseAndExpr()[0]));
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1423,7 +1423,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprC
   return visit(ctx->bitwiseAndExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
+std::any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
   if (ctx->equalityExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->equalityExpr()[0]));
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1439,7 +1439,7 @@ antlrcpp::Any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprC
   return visit(ctx->equalityExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
+std::any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   if (ctx->relationalExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->relationalExpr()[0]));
     auto rhsPtr = any_cast<llvm::Value *>(visit(ctx->relationalExpr()[1]));
@@ -1461,7 +1461,7 @@ antlrcpp::Any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprConte
   return visit(ctx->relationalExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
+std::any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
   if (ctx->shiftExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->shiftExpr()[0]));
     auto rhsPtr = any_cast<llvm::Value *>(visit(ctx->shiftExpr()[1]));
@@ -1493,7 +1493,7 @@ antlrcpp::Any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprC
   return visit(ctx->shiftExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
+std::any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   // Check if there is a shift operation attached
   if (ctx->additiveExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->additiveExpr()[0]));
@@ -1516,7 +1516,7 @@ antlrcpp::Any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ct
   return visit(ctx->additiveExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
+std::any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
   // Check if at least one additive operator is applied
   if (ctx->multiplicativeExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->multiplicativeExpr()[0]));
@@ -1542,7 +1542,7 @@ antlrcpp::Any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprConte
   return visit(ctx->multiplicativeExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
+std::any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
   // Check if at least one multiplicative operator is applied
   if (ctx->castExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->castExpr()[0]));
@@ -1570,7 +1570,7 @@ antlrcpp::Any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicat
   return visit(ctx->castExpr()[0]);
 }
 
-antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
+std::any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   auto value = visit(ctx->prefixUnaryExpr());
 
   if (ctx->LPAREN()) { // Cast operator is applied
@@ -1586,7 +1586,7 @@ antlrcpp::Any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx)
   return value;
 }
 
-antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
   currentVarName = "";         // Reset the current variable name
   scopePrefix = "";            // Reset the scope prefix
   scopePath.clear();           // Clear the scope path
@@ -1654,7 +1654,7 @@ antlrcpp::Any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExp
   return lhsPtr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
+std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
   auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->atomicExpr()));
 
   if (ctx->children.size() > 1) {
@@ -1852,7 +1852,7 @@ antlrcpp::Any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryE
   return lhsPtr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
+std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   if (ctx->value())
     return visit(ctx->value());
   allArgsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
@@ -1942,7 +1942,7 @@ antlrcpp::Any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *
   return visit(ctx->assignExpr());
 }
 
-antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   if (ctx->primitiveValue()) { // Primitive value
     // Visit the primitive value
     currentConstValue = any_cast<llvm::Constant *>(visit(ctx->primitiveValue()));
@@ -2118,7 +2118,7 @@ antlrcpp::Any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   return nullptr;
 }
 
-antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
+std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
   // Value is a double constant
   if (ctx->DOUBLE()) {
     currentSymbolType = SymbolType(TY_DOUBLE);
@@ -2202,7 +2202,7 @@ antlrcpp::Any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueC
   throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through"); // GCOV_EXCL_LINE
 }
 
-antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
+std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
   currentSymbolType = any_cast<SymbolType>(visit(ctx->baseDataType()));
 
   size_t tokenCounter = 1;
@@ -2233,7 +2233,7 @@ antlrcpp::Any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx)
   return type;
 }
 
-antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
+std::any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
   if (ctx->TYPE_DOUBLE())
     return SymbolType(TY_DOUBLE);
   if (ctx->TYPE_INT())
@@ -2256,18 +2256,21 @@ antlrcpp::Any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeConte
     assert(symbolTableEntry != nullptr);
     return symbolTableEntry->getType();
   }
-  if (!ctx->IDENTIFIER().empty()) { // Struct type or generic type
-    // Get type name in format: a.b.c
-    std::string typeName = ctx->IDENTIFIER()[0]->toString();
-    for (size_t i = 1; i < ctx->IDENTIFIER().size(); i++)
-      typeName += "." + ctx->IDENTIFIER()[i]->toString();
-
-    SymbolTableEntry *typeEntry = currentScope->lookup(typeName);
-    assert(typeEntry != nullptr);
-    SymbolSuperType superType = typeEntry->getType().is(TY_STRUCT) ? TY_STRUCT : TY_GENERIC;
-    return SymbolType(superType, typeName);
-  }
+  if (ctx->customDataType()) // Struct type or generic type
+    return visit(ctx->customDataType());
   throw std::runtime_error("Internal compiler error: Base datatype generator fall-through");
+}
+
+std::any GeneratorVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
+  // Get type name in format: a.b.c
+  std::string typeName = ctx->IDENTIFIER()[0]->toString();
+  for (size_t i = 1; i < ctx->IDENTIFIER().size(); i++)
+    typeName += "." + ctx->IDENTIFIER()[i]->toString();
+
+  SymbolTableEntry *typeEntry = currentScope->lookup(typeName);
+  assert(typeEntry != nullptr);
+  SymbolSuperType superType = typeEntry->getType().is(TY_STRUCT) ? TY_STRUCT : TY_GENERIC;
+  return SymbolType(superType, typeName);
 }
 
 void GeneratorVisitor::createBr(llvm::BasicBlock *targetBlock) {

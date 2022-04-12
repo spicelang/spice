@@ -39,7 +39,7 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &conte
   opRuleManager = std::make_unique<OpRuleManager>(err.get());
 }
 
-antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
+std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   // --- Pre-traversing actions
   needsReAnalyze = false;
 
@@ -58,7 +58,7 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   return secondRun = needsReAnalyze;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
   if (secondRun)
     return nullptr;
 
@@ -99,7 +99,7 @@ antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDef
   return nullptr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
+std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   if (!secondRun) { // First run
     std::string functionName = ctx->IDENTIFIER().back()->toString();
 
@@ -262,7 +262,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
   return nullptr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
+std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   if (!secondRun) { // First run
     std::string procedureName = ctx->IDENTIFIER().back()->toString();
 
@@ -410,7 +410,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
   return nullptr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
+std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   if (secondRun)
     return nullptr;
 
@@ -454,7 +454,7 @@ antlrcpp::Any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   return nullptr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
+std::any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
   if (secondRun)
     return nullptr;
 
@@ -484,7 +484,7 @@ antlrcpp::Any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefCo
   return nullptr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
+std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   if (secondRun)
     return nullptr;
 
@@ -549,7 +549,7 @@ antlrcpp::Any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx
   return nullptr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
+std::any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
   if (secondRun)
     return nullptr;
 
@@ -622,7 +622,7 @@ antlrcpp::Any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContex
   return nullptr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
+std::any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
@@ -637,7 +637,7 @@ antlrcpp::Any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx
   return SymbolType(TY_BYTE).toPointer(err.get(), *ctx->start);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
+std::any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto head = ctx->forHead();
 
   // Create a new scope
@@ -665,7 +665,7 @@ antlrcpp::Any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   return SymbolType(TY_BOOL);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
+std::any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
   auto head = ctx->foreachHead();
 
   // Create a new scope
@@ -731,7 +731,7 @@ antlrcpp::Any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext 
   return SymbolType(TY_BOOL);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
+std::any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
@@ -752,7 +752,7 @@ antlrcpp::Any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx
   return SymbolType(TY_BOOL);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
+std::any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
@@ -775,7 +775,7 @@ antlrcpp::Any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   return SymbolType(TY_BOOL);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
+std::any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   if (ctx->ifStmt()) { // Visit if statement in the case of an else if branch
     visit(ctx->ifStmt());
   } else { // Make a new scope in case of an else branch
@@ -792,7 +792,7 @@ antlrcpp::Any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) 
   return SymbolType(TY_BOOL);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
+std::any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
   NamedArgList namedArgList;
   bool metOptional = false;
   for (const auto &arg : ctx->declStmt()) {
@@ -815,7 +815,7 @@ antlrcpp::Any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx
   return namedArgList;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
+std::any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   std::string variableName = ctx->IDENTIFIER()->toString();
   // Check if symbol already exists in the symbol table
   if (currentScope->lookupStrict(variableName))
@@ -863,12 +863,12 @@ antlrcpp::Any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) 
   return symbolType;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
+std::any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   // Noop
   return nullptr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
+std::any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   SymbolTableEntry *returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
   if (returnVariable) { // Return variable => function
     expectedType = returnVariable->getType();
@@ -909,7 +909,7 @@ antlrcpp::Any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *c
   return SymbolType(TY_DYN);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
+std::any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
   int breakCount = 1;
   if (ctx->INTEGER()) {
     // Check if the stated number is valid
@@ -925,7 +925,7 @@ antlrcpp::Any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx
   return SymbolType(TY_INT);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
+std::any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
   int continueCount = 1;
   if (ctx->INTEGER()) {
     // Check if the stated number is valid
@@ -941,7 +941,7 @@ antlrcpp::Any AnalyzerVisitor::visitContinueStmt(SpiceParser::ContinueStmtContex
   return SymbolType(TY_INT);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
+std::any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
   if (ctx->printfCall())
     return visit(ctx->printfCall());
   if (ctx->sizeOfCall())
@@ -953,7 +953,7 @@ antlrcpp::Any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext 
   throw std::runtime_error("Internal compiler error: Could not find builtin function"); // GCOV_EXCL_LINE
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
+std::any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   std::string templateString = ctx->STRING_LITERAL()->toString();
   templateString = templateString.substr(1, templateString.size() - 2);
 
@@ -1029,17 +1029,17 @@ antlrcpp::Any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *c
   return SymbolType(TY_BOOL);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
+std::any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   // Nothing to check here. Sizeof builtin can handle any type
   return SymbolType(TY_INT);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) {
+std::any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) {
   // Nothing to check here. Tid builtin has no arguments
   return SymbolType(TY_INT);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
+std::any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
   SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(err.get(), *ctx->start);
   for (const auto &assignExpr : ctx->assignExpr()) {
     auto argSymbolType = any_cast<SymbolType>(visit(assignExpr));
@@ -1052,7 +1052,7 @@ antlrcpp::Any AnalyzerVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) 
   return SymbolType(TY_INT);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
+std::any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment
     // Get symbol type of right side
@@ -1126,7 +1126,7 @@ antlrcpp::Any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *c
   throw std::runtime_error("Internal compiler error: Assign stmt fall-through"); // GCOV_EXCL_LINE
 }
 
-antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
+std::any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   // Check if there is a ternary operator applied
   if (ctx->children.size() > 1) {
     auto condition = ctx->logicalOrExpr()[0];
@@ -1144,7 +1144,7 @@ antlrcpp::Any AnalyzerVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext 
   return visit(ctx->logicalOrExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
+std::any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
   // Check if a logical or operator is applied
   if (ctx->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(ctx->logicalAndExpr()[0]));
@@ -1157,7 +1157,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprCont
   return visit(ctx->logicalAndExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
+std::any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
   // Check if a logical and operator is applied
   if (ctx->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(ctx->bitwiseOrExpr()[0]));
@@ -1170,7 +1170,7 @@ antlrcpp::Any AnalyzerVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprCo
   return visit(ctx->bitwiseOrExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
+std::any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
   // Check if a bitwise or operator is applied
   if (ctx->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(ctx->bitwiseXorExpr()[0]));
@@ -1183,7 +1183,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprCont
   return visit(ctx->bitwiseXorExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
+std::any AnalyzerVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
   // Check if a bitwise xor operator is applied
   if (ctx->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(ctx->bitwiseAndExpr()[0]));
@@ -1196,7 +1196,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprCo
   return visit(ctx->bitwiseAndExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
+std::any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
   // Check if a bitwise and operator is applied
   if (ctx->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(ctx->equalityExpr()[0]));
@@ -1209,7 +1209,7 @@ antlrcpp::Any AnalyzerVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprCo
   return visit(ctx->equalityExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
+std::any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   // Check if at least one equality operator is applied
   if (ctx->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(ctx->relationalExpr()[0]));
@@ -1223,7 +1223,7 @@ antlrcpp::Any AnalyzerVisitor::visitEqualityExpr(SpiceParser::EqualityExprContex
   return visit(ctx->relationalExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
+std::any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
   // Check if a relational operator is applied
   if (ctx->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(ctx->shiftExpr()[0]));
@@ -1241,7 +1241,7 @@ antlrcpp::Any AnalyzerVisitor::visitRelationalExpr(SpiceParser::RelationalExprCo
   return visit(ctx->shiftExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
+std::any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   // Check if at least one shift operator is applied
   if (ctx->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(ctx->additiveExpr()[0]));
@@ -1255,7 +1255,7 @@ antlrcpp::Any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx
   return visit(ctx->additiveExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
+std::any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
   // Check if at least one additive operator is applied
   if (ctx->multiplicativeExpr().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(ctx->multiplicativeExpr()[0]));
@@ -1280,7 +1280,7 @@ antlrcpp::Any AnalyzerVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContex
   return visit(ctx->multiplicativeExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
+std::any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
   // Check if at least one multiplicative operator is applied
   if (ctx->castExpr().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(ctx->castExpr()[0]));
@@ -1307,8 +1307,8 @@ antlrcpp::Any AnalyzerVisitor::visitMultiplicativeExpr(SpiceParser::Multiplicati
   return visit(ctx->castExpr()[0]);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
-  antlrcpp::Any rhs = visit(ctx->prefixUnaryExpr());
+std::any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
+  std::any rhs = visit(ctx->prefixUnaryExpr());
 
   if (ctx->LPAREN()) { // Cast is applied
     auto dstType = any_cast<SymbolType>(visit(ctx->dataType()));
@@ -1318,7 +1318,7 @@ antlrcpp::Any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) 
   return rhs;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+std::any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
   currentVarName = "";                  // Reset the current variable name
   scopePrefix = "";                     // Reset scope prefix
   scopePath.clear();                    // Clear the scope path
@@ -1371,7 +1371,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExpr
   return lhs;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
+std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
   auto lhs = any_cast<SymbolType>(visit(ctx->atomicExpr()));
 
   unsigned int tokenCounter = 1;
@@ -1532,7 +1532,7 @@ antlrcpp::Any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryEx
   return lhs;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
+std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   if (ctx->value())
     return visit(ctx->value());
   if (ctx->IDENTIFIER()) {
@@ -1590,7 +1590,7 @@ antlrcpp::Any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *c
   return visit(ctx->assignExpr());
 }
 
-antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   if (ctx->primitiveValue())
     return visit(ctx->primitiveValue());
 
@@ -1696,7 +1696,7 @@ antlrcpp::Any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   return nullptr;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
+std::any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
   if (ctx->DOUBLE())
     return SymbolType(TY_DOUBLE);
   if (ctx->INTEGER())
@@ -1712,7 +1712,7 @@ antlrcpp::Any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueCo
   return SymbolType(TY_BOOL);
 }
 
-antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
+std::any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
   auto type = any_cast<SymbolType>(visit(ctx->baseDataType()));
 
   unsigned int tokenCounter = 1;
@@ -1740,7 +1740,7 @@ antlrcpp::Any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) 
   return type;
 }
 
-antlrcpp::Any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
+std::any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
   if (ctx->TYPE_DOUBLE())
     return SymbolType(TY_DOUBLE);
   if (ctx->TYPE_INT())
@@ -1757,46 +1757,48 @@ antlrcpp::Any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContex
     return SymbolType(TY_STRING);
   if (ctx->TYPE_BOOL())
     return SymbolType(TY_BOOL);
-  if (!ctx->IDENTIFIER().empty()) { // Struct or generic type
-    // Check if it is a generic type
-    std::string firstFragment = ctx->IDENTIFIER()[0]->toString();
-    SymbolTableEntry *entry = currentScope->lookup(firstFragment);
-    if (ctx->IDENTIFIER().size() == 1 && entry && entry->getType().is(TY_GENERIC))
-      return SymbolType(TY_GENERIC, firstFragment);
-
-    // It is a struct type -> get the access scope
-    SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
-
-    // Get type name in format: a.b.c and retrieve the scope in parallel
-    std::string accessScopePrefix;
-    std::string structName;
-    bool structIsImported = false;
-    for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
-      structName = ctx->IDENTIFIER()[i]->toString();
-      if (i < ctx->IDENTIFIER().size() - 1)
-        accessScopePrefix += structName + ".";
-      SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
-      if (!symbolEntry)
-        throw err->get(*ctx->IDENTIFIER()[0]->getSymbol(), UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-
-      std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
-      accessScope = accessScope->lookupTable(tableName);
-      if (accessScope->isImported())
-        structIsImported = true;
-    }
-
-    if (structIsImported) { // Imported struct
-      return initExtStruct(*ctx->start, accessScope, accessScopePrefix, structName);
-    } else { // Struct in same source file
-      // Check if struct was declared
-      SymbolTableEntry *structSymbol = accessScope->lookup(structName);
-      if (!structSymbol)
-        throw err->get(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
-      structSymbol->setUsed();
-      return SymbolType(TY_STRUCT, structName);
-    }
-  }
+  if (ctx->customDataType()) // Struct or generic type
+    return visit(ctx->customDataType());
   return SymbolType(TY_DYN);
+}
+
+std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
+  // Check if it is a generic type
+  std::string firstFragment = ctx->IDENTIFIER()[0]->toString();
+  SymbolTableEntry *entry = currentScope->lookup(firstFragment);
+  if (ctx->IDENTIFIER().size() == 1 && entry && entry->getType().is(TY_GENERIC))
+    return SymbolType(TY_GENERIC, firstFragment);
+
+  // It is a struct type -> get the access scope
+  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+
+  // Get type name in format: a.b.c and retrieve the scope in parallel
+  std::string accessScopePrefix;
+  std::string structName;
+  bool structIsImported = false;
+  for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
+    structName = ctx->IDENTIFIER()[i]->toString();
+    if (i < ctx->IDENTIFIER().size() - 1)
+      accessScopePrefix += structName + ".";
+    SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
+    if (!symbolEntry)
+      throw err->get(*ctx->IDENTIFIER()[0]->getSymbol(), UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+
+    std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
+    accessScope = accessScope->lookupTable(tableName);
+    if (accessScope->isImported())
+      structIsImported = true;
+  }
+
+  if (structIsImported) // Imported struct
+    return initExtStruct(*ctx->start, accessScope, accessScopePrefix, structName);
+
+  // Check if struct was declared
+  SymbolTableEntry *structSymbol = accessScope->lookup(structName);
+  if (!structSymbol)
+    throw err->get(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+  structSymbol->setUsed();
+  return SymbolType(TY_STRUCT, structName);
 }
 
 SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTable *sourceScope,
