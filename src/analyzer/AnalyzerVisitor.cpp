@@ -120,6 +120,7 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     std::vector<GenericType> templateTypes;
     if (ctx->typeLst()) {
       isGeneric = true;
+      needsReAnalyze = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
         auto symbolType = any_cast<SymbolType>(visit(dataType));
         if (!symbolType.is(TY_GENERIC))
@@ -211,6 +212,51 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     if (isMethod)
       currentScope = currentScope->getParent();
   } else { // Second run
+    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+    for (const auto &[mangledName, spiceFunc] : *manifestations) {
+      // Check if the function is substantiated
+      if (!spiceFunc.isFullySubstantiated())
+        continue;
+
+      // Go down again in scope
+      currentScope = currentScope->getChild(spiceFunc.getSignature());
+      assert(currentScope != nullptr);
+
+      // Get argument types
+      std::vector<std::pair<std::string, SymbolType>> args;
+      if (ctx->argLstDef()) {
+        for (const auto argDecl : ctx->argLstDef()->declStmt()) {
+          std::string argName = argDecl->IDENTIFIER()->toString();
+          SymbolTableEntry *argEntry = currentScope->lookup(argName);
+          assert(argEntry);
+          args.emplace_back(argName, argEntry->getType());
+        }
+      }
+
+      // Morph the generic types to the replacements
+      std::vector<SymbolType> newArgTypes = spiceFunc.getArgTypes();
+      for (int i = 0; i < newArgTypes.size(); i++) {
+        SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
+        argEntry->updateType(newArgTypes[i], true);
+      }
+
+      // Visit statements in new scope
+      visit(ctx->stmtLst());
+
+      // Reset generic types
+      for (const auto &arg : args) {
+        SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
+        assert(argEntry);
+        argEntry->updateType(arg.second, true);
+      }
+
+      // Check if return variable is now initialized
+      if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
+        throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
+
+      // Leave the function scope
+      currentScope = currentScope->getParent();
+    }
   }
 
   return nullptr;
@@ -237,7 +283,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     std::vector<GenericType> templateTypes;
     if (ctx->typeLst()) {
       isGeneric = true;
-      secondRun = true;
+      needsReAnalyze = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
         auto symbolType = any_cast<SymbolType>(visit(dataType));
         if (!symbolType.is(TY_GENERIC))
@@ -302,8 +348,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
       currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(),
                                              substantiatedProcedures[i].getSignature());
 
-    if (!isGeneric) { // Only visit body for non-generic procedures. Otherwise, bodies will be visited with the second analyzer
-                      // run
+    if (!isGeneric) { // Only visit body for non-generic procs. Otherwise, bodies will be visited with the second analyzer run
       // Go down again in scope
       currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
       assert(currentScope != nullptr);
@@ -319,6 +364,47 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     if (isMethod)
       currentScope = currentScope->getParent();
   } else { // Second run
+    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+    for (const auto &[mangledName, spiceProc] : *manifestations) {
+      // Check if the function is substantiated
+      if (!spiceProc.isFullySubstantiated())
+        continue;
+
+      // Go down again in scope
+      currentScope = currentScope->getChild(spiceProc.getSignature());
+      assert(currentScope != nullptr);
+
+      // Get argument types
+      std::vector<std::pair<std::string, SymbolType>> args;
+      if (ctx->argLstDef()) {
+        for (const auto argDecl : ctx->argLstDef()->declStmt()) {
+          std::string argName = argDecl->IDENTIFIER()->toString();
+          SymbolTableEntry *argEntry = currentScope->lookup(argName);
+          assert(argEntry);
+          args.emplace_back(argName, argEntry->getType());
+        }
+      }
+
+      // Morph the generic types to the replacements
+      std::vector<SymbolType> newArgTypes = spiceProc.getArgTypes();
+      for (int i = 0; i < newArgTypes.size(); i++) {
+        SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
+        argEntry->updateType(newArgTypes[i], true);
+      }
+
+      // Visit statements in new scope
+      visit(ctx->stmtLst());
+
+      // Reset generic types
+      for (const auto &arg : args) {
+        SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
+        assert(argEntry);
+        argEntry->updateType(arg.second, true);
+      }
+
+      // Leave the function scope
+      currentScope = currentScope->getParent();
+    }
   }
 
   return nullptr;
