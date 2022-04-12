@@ -55,7 +55,7 @@ antlrcpp::Any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   if (requiresMainFct && !isStdFile)
     rootScope->printCompilerWarnings();
 
-  return needsReAnalyze;
+  return secondRun = needsReAnalyze;
 }
 
 antlrcpp::Any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
@@ -120,7 +120,6 @@ antlrcpp::Any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext 
     std::vector<GenericType> templateTypes;
     if (ctx->typeLst()) {
       isGeneric = true;
-      needsReAnalyze = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
         auto symbolType = any_cast<SymbolType>(visit(dataType));
         if (!symbolType.is(TY_GENERIC))
@@ -238,7 +237,7 @@ antlrcpp::Any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContex
     std::vector<GenericType> templateTypes;
     if (ctx->typeLst()) {
       isGeneric = true;
-      needsReAnalyze = true;
+      secondRun = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
         auto symbolType = any_cast<SymbolType>(visit(dataType));
         if (!symbolType.is(TY_GENERIC))
@@ -377,7 +376,7 @@ antlrcpp::Any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefCo
 
   // Check if type already exists in this scope
   if (currentScope->lookup(typeName))
-    throw err->get(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate generic type '" + typeName + "'");
+    throw err->get(*ctx->start, GENERIC_TYPE_DECLARED_TWICE, "Duplicate generic type '" + typeName + "'");
 
   // Build symbol specifiers
   GenericType genericType = GenericType(typeName);
