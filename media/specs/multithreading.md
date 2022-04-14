@@ -15,7 +15,7 @@
 - [ ] 11. Add tests for the feature
 - [ ] 12. Implement variable volatility
 - [ ] 13. Add support for pipes (paused due to the work on generics)
-- [ ] 14. Add `yield` and `pick` builtin
+- [ ] 14. Add `shash` and `pick` builtin
 - [ ] 15. Add documentation
 
 ## Syntax
@@ -97,15 +97,15 @@ p Mutex.abandon() {
 ### Communication between threads (requires generics)
 For the communication between threads, there is a feature, called `Pipes`. A pipe is a wrapper around any type and can act like a
 temporary buffer queue for one or multiple (primitive or complex) values. Those values can be pushed by calling the builtin
-function `yield(pipe<any>, any)` and received by calling the `pick(pipe<any>)` builtin. If `pick` is called on a pipe and this pipe
+function `shash(pipe<any>, any)` and received by calling the `pick(pipe<any>)` builtin. If `pick` is called on a pipe and this pipe
 currently has no value present, the execution will pause until there is a new value for that pipe. 
 
 ```spice
 pipe<int> intPipe;
 
 byte* t1 = thread {
-    int yieldValue = 12345;
-    yield(intPipe, yieldValue);
+    int shashValue = 12345;
+    stash(intPipe, stashValue);
 };
 
 byte* t2 = thread 2 {
