@@ -223,7 +223,7 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
   }
 
   // Get all substantiated function which result from this function declaration
-  std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+  std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
   for (const auto &[mangledName, spiceFunc] : *manifestations) {
     // Check if the function is substantiated
     if (!spiceFunc.isFullySubstantiated())
@@ -355,7 +355,7 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
   }
 
   // Get all substantiated function which result from this function declaration
-  std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+  std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
   for (const auto &[mangledName, spiceProc] : *manifestations) {
     // Check if the function is substantiated
     if (!spiceProc.isFullySubstantiated())
@@ -468,7 +468,7 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::vector<SymbolType> symbolTypes;
 
   // Pop function declaration pointer from the stack
-  std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+  std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
   assert(!manifestations->empty());
   Function spiceFunc = manifestations->begin()->second;
 

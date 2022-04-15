@@ -22,6 +22,9 @@ public:
   [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
   [[nodiscard]] std::vector<SymbolType> getFieldTypes() const;
   [[nodiscard]] std::vector<GenericType> getTemplateTypes() const;
+  [[nodiscard]] std::string getMangledName() const;
+  [[nodiscard]] std::string getSignature() const;
+  [[nodiscard]] SymbolType getSymbolType() const;
   [[nodiscard]] Struct substantiateGenerics(const std::vector<SymbolType> &concreteArgTypes) const;
   [[nodiscard]] bool isFullySubstantiated() const;
   void setUsed();

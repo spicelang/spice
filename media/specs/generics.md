@@ -53,8 +53,9 @@ dyn v = Vector<string>{};
 
 ### Generics with conditions
 ```spice
-type T int|double|string; // T can only be either int, double or string
-
+type T int | double | string { // T can only be either int, double or string
+    toString(T);
+}; 
 ```
 
 ## Functionality

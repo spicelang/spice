@@ -31,6 +31,59 @@ std::vector<SymbolType> Struct::getFieldTypes() const { return fieldTypes; }
 std::vector<GenericType> Struct::getTemplateTypes() const { return templateTypes; }
 
 /**
+ * Mange the struct and return the mangled string
+ *
+ * @return Mangled string
+ */
+std::string Struct::getMangledName() const {
+  // Field type string
+  std::string fieldTyStr;
+  for (const auto &fieldType : fieldTypes)
+    fieldTyStr += "_" + fieldType.getName();
+
+  // Template type string
+  std::string templateTyStr;
+  for (const auto &templateType : templateTypes)
+    templateTyStr += "_" + templateType.getName();
+
+  return "_s" + templateTyStr + "_" + name + fieldTyStr;
+}
+
+/**
+ * Get a string representation of the current struct
+ *
+ * @return String representation as struct signature
+ */
+std::string Struct::getSignature() const {
+  // Argument type string
+  std::string fieldTyStr;
+  for (const auto &fieldType : fieldTypes) {
+    if (!fieldTyStr.empty())
+      fieldTyStr += ",";
+    fieldTyStr += fieldType.getName();
+  }
+
+  // Template type string
+  std::string templateTyStr;
+  for (const auto &templateType : templateTypes) {
+    if (!templateTyStr.empty())
+      templateTyStr += ",";
+    templateTyStr += templateType.getName();
+  }
+  if (!templateTyStr.empty())
+    templateTyStr = "<" + templateTyStr + ">";
+
+  return name + templateTyStr + "(" + fieldTyStr + ")";
+}
+
+/**
+ * Get symbol type. Possible super types are TY_STRUCT
+ *
+ * @return Symbol representing the struct
+ */
+SymbolType Struct::getSymbolType() const { return SymbolType(TY_STRUCT, name); }
+
+/**
  * Convert the current ambiguous struct with potential generic types to a definite struct without generic types
  *
  * @return Substantiated struct without template types
@@ -43,10 +96,8 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
     SymbolType newFieldType = fieldType;
     if (fieldType.is(TY_GENERIC)) {                    // We have to replace it only if it is a generic type
       for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
-        const SymbolType concreteArgType = concreteTemplateTypes[i];
-        const SymbolType genericType = templateTypes[i];
-        if (fieldType == genericType) {
-          newFieldType = concreteArgType; // Use the concrete type instead of the generic one
+        if (fieldType == templateTypes[i]) {
+          newFieldType = concreteTemplateTypes[i]; // Use the concrete type instead of the generic one
           break;
         }
       }
@@ -55,7 +106,8 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
   }
 
   // Substantiate methods
-  // ToDo: implement
+  for (const auto &method : methods)
+    method->substantiateGenerics(concreteTemplateTypes);
 
   return Struct(name, specifiers, currentFieldTypes, {}, definitionCodeLoc);
 }
@@ -85,3 +137,4 @@ bool Struct::isUsed() const { return used; }
  * @return Definition code location
  */
 const std::string &Struct::getDefinitionCodeLoc() const { return definitionCodeLoc; }
+

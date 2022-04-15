@@ -378,30 +378,11 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
 }
 
 /**
- * Retrieve function by its mangled name
- *
- * @param mangledName Mangled function name
- * @return Function
- */
-Function *SymbolTable::getFunction(const antlr4::Token &defToken, const std::string &mangledName) {
-  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
-  // Return nullptr if function definition list was not found
-  if (!functions.contains(accessId))
-    return nullptr;
-  // Check if there is an item with that mangled name
-  std::shared_ptr<std::map<std::string, Function>> functionManifestations = functions.at(accessId);
-  if (functionManifestations->contains(mangledName))
-    return &functionManifestations->at(mangledName);
-  // Otherwise, return nullptr
-  return nullptr;
-}
-
-/**
  * Retrieve the manifestations of the function, defined at defToken
  *
  * @return Function manifestations
  */
-std::shared_ptr<std::map<std::string, Function>> SymbolTable::getManifestations(const antlr4::Token &defToken) const {
+std::shared_ptr<std::map<std::string, Function>> SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
   std::string accessId = FileUtil::tokenToCodeLoc(defToken);
   if (!functions.contains(accessId))
     throw std::runtime_error("Internal compiler error: Cannot get manifestations at " + accessId);
@@ -419,6 +400,15 @@ Function *SymbolTable::popFunctionAccessPointer() {
   Function *function = functionAccessPointers.front();
   functionAccessPointers.pop();
   return function;
+}
+
+/**
+ * Insert a struct object into this symbol table scope
+ */
+void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token) {
+  // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
+  structs.insert({FileUtil::tokenToCodeLoc(token), std::make_shared<std::map<std::string, Struct>>()});
+  insertSubstantiatedStruct(s, err, token, FileUtil::tokenToCodeLoc(token));
 }
 
 /**
@@ -547,4 +537,25 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
   functions.at(codeLoc)->insert({function.getMangledName(), function});
   // Add symbol table entry for the function
   insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
+}
+
+/**
+ * Insert a substantiated struct into the struct list. If the list already contains a struct with the same signature,
+ * an exception will be thrown
+ *
+ * @param s Substantiated struct
+ * @param err Error factory
+ * @param token Token, where the struct is declared
+ */
+void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token,
+                                            const std::string &codeLoc) {
+  // Check if the struct exists already
+  for (const auto &[_, manifestations] : structs) {
+    if (manifestations->contains(s.getMangledName()))
+      throw err->get(token, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
+  }
+  // Add struct to struct list
+  structs.at(codeLoc)->insert({s.getMangledName(), s});
+  // Add symbol table entry for the struct
+  insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, token);
 }

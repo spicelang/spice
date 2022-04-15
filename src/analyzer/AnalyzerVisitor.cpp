@@ -212,7 +212,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     if (isMethod)
       currentScope = currentScope->getParent();
   } else { // Second run
-    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
     for (const auto &[mangledName, spiceFunc] : *manifestations) {
       // Check if the function is substantiated
       if (!spiceFunc.isFullySubstantiated())
@@ -364,7 +364,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     if (isMethod)
       currentScope = currentScope->getParent();
   } else { // Second run
-    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getManifestations(*ctx->start);
+    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
     for (const auto &[mangledName, spiceProc] : *manifestations) {
       // Check if the function is substantiated
       if (!spiceProc.isFullySubstantiated())

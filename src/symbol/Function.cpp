@@ -105,11 +105,11 @@ std::string Function::getSignature() const {
 
   // Argument type string
   std::string argTyStr;
-  for (int i = 0; i < argTypes.size(); i++) {
-    if (i != 0)
+  for (const auto &argType : argTypes) {
+    if (!argTyStr.empty())
       argTyStr += ",";
-    argTyStr += argTypes[i].first.getName();
-    if (argTypes[i].second)
+    argTyStr += argType.first.getName();
+    if (argType.second)
       argTyStr += "?";
   }
 
@@ -157,7 +157,7 @@ bool Function::isMethodProcedure() const { return returnType.is(TY_DYN) && !this
 /**
  * Get symbol type. Possible super types are TY_FUNCTION and TY_PROCEDURE
  *
- * @return
+ * @return Symbol representing the function
  */
 SymbolType Function::getSymbolType() const { return SymbolType(isFunction() || isMethodFunction() ? TY_FUNCTION : TY_PROCEDURE); }
 
@@ -208,10 +208,8 @@ Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteT
     SymbolType newArgType = argType.first;
     if (newArgType.is(TY_GENERIC)) {                   // We have to replace it only if it is a generic type
       for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
-        const SymbolType concreteTemplateType = concreteTemplateTypes[i];
-        const SymbolType genericType = templateTypes[i];
-        if (newArgType == genericType) {
-          newArgType = concreteTemplateType; // Use the concrete type instead of the generic one
+        if (newArgType == templateTypes[i]) {
+          newArgType = concreteTemplateTypes[i]; // Use the concrete type instead of the generic one
           break;
         }
       }
