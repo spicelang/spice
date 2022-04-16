@@ -25,9 +25,7 @@ f<T> max<T>(T a, T b) {
 
 #### Caller
 ```spice
-...
 int result = max<int>(1, 4);
-...
 ```
 
 ### Generics with structs
@@ -44,11 +42,9 @@ type Vector<T> struct {
 
 #### Referencing
 ```spice
-...
 Vector<int> v = Vector<int>{};
 // or
 dyn v = Vector<string>{};
-...
 ```
 
 ### Generics with conditions

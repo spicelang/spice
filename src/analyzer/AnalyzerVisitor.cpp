@@ -100,17 +100,17 @@ std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefConte
 }
 
 std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
+  std::string functionName = ctx->IDENTIFIER().back()->toString();
+
+  // Check if this is a global function or a method
+  bool isMethod = false;
+  if (ctx->IDENTIFIER().size() > 1) { // Method
+    isMethod = true;
+    // Change to the struct scope
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+  }
+
   if (!secondRun) { // First run
-    std::string functionName = ctx->IDENTIFIER().back()->toString();
-
-    // Check if this is a global function or a method
-    bool isMethod = false;
-    if (ctx->IDENTIFIER().size() > 1) { // Method
-      isMethod = true;
-      // Change to the struct scope
-      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
-    }
-
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -207,10 +207,6 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       // Leave the function scope
       currentScope = currentScope->getParent();
     }
-
-    // Leave the struct scope
-    if (isMethod)
-      currentScope = currentScope->getParent();
   } else { // Second run
     std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
     for (const auto &[mangledName, spiceFunc] : *manifestations) {
@@ -221,6 +217,16 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       // Go down again in scope
       currentScope = currentScope->getChild(spiceFunc.getSignature());
       assert(currentScope != nullptr);
+
+      // Morph the generic return type
+      SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
+      if (returnVarEntry->getType().is(TY_GENERIC)) {
+        SymbolType returnType = spiceFunc.getReturnType();
+        if (returnType.isPointer())
+          throw err->get(*ctx->start, COMING_SOON_SA,
+                         "Spice currently not supports pointer return types due to not supporting heap allocations.");
+        returnVarEntry->updateType(returnType, true);
+      }
 
       // Get argument types
       std::vector<std::pair<std::string, SymbolType>> args;
@@ -259,21 +265,25 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     }
   }
 
+  // Leave the struct scope
+  if (isMethod)
+    currentScope = currentScope->getParent();
+
   return nullptr;
 }
 
 std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
+  std::string procedureName = ctx->IDENTIFIER().back()->toString();
+
+  // Check if this is a global function or a method
+  bool isMethod = false;
+  if (ctx->IDENTIFIER().size() > 1) { // Method
+    isMethod = true;
+    // Change to the struct scope
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+  }
+
   if (!secondRun) { // First run
-    std::string procedureName = ctx->IDENTIFIER().back()->toString();
-
-    // Check if this is a global function or a method
-    bool isMethod = false;
-    if (ctx->IDENTIFIER().size() > 1) { // Method
-      isMethod = true;
-      // Change to the struct scope
-      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
-    }
-
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -359,10 +369,6 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       // Leave the function scope
       currentScope = currentScope->getParent();
     }
-
-    // Leave the struct scope
-    if (isMethod)
-      currentScope = currentScope->getParent();
   } else { // Second run
     std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
     for (const auto &[mangledName, spiceProc] : *manifestations) {
@@ -407,6 +413,10 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     }
   }
 
+  // Leave the struct scope
+  if (isMethod)
+    currentScope = currentScope->getParent();
+
   return nullptr;
 }
 
@@ -418,9 +428,9 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
 
   ArgList argTypes;
-  if (ctx->typeLst()) {
+  if (ctx->typeLstEllipsis()) {
     // Check if an argument is dyn
-    for (const auto &arg : ctx->typeLst()->dataType()) {
+    for (const auto &arg : ctx->typeLstEllipsis()->typeLst()->dataType()) {
       auto argType = any_cast<SymbolType>(visit(arg));
       if (argType.is(TY_DYN))
         throw err->get(*arg->start, UNEXPECTED_DYN_TYPE_SA, "Dyn data type is not allowed as arg type for external functions");
@@ -1485,7 +1495,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
         // Get return type of called function
         SymbolTableEntry *returnValueEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
         assert(returnValueEntry != nullptr);
-        SymbolType returnType = returnValueEntry->getType();
+        SymbolType returnType = spiceFunc->getReturnType();
         // Structs from outside the module require more initialization
         if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported())
           return initExtStruct(*ctx->start, scopePath.getCurrentScope(), accessScopePrefix + ".", returnType.getSubType());

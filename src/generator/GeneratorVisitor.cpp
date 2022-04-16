@@ -487,8 +487,8 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   // Get LLVM arg types
   std::vector<llvm::Type *> argTypes;
-  if (ctx->typeLst()) {
-    for (const auto &arg : ctx->typeLst()->dataType()) {
+  if (ctx->typeLstEllipsis()) {
+    for (const auto &arg : ctx->typeLstEllipsis()->typeLst()->dataType()) {
       auto argType = any_cast<llvm::Type *>(visit(arg));
       argTypes.push_back(argType);
     }
@@ -497,7 +497,7 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   symbolTypes.insert(std::end(symbolTypes), std::begin(argSymbolTypes), std::end(argSymbolTypes));
 
   // Get vararg
-  bool isVararg = ctx->typeLst() && ctx->typeLst()->ELLIPSIS();
+  bool isVararg = ctx->typeLstEllipsis() && ctx->typeLstEllipsis()->ELLIPSIS();
 
   // Declare function
   llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, isVararg);
@@ -879,6 +879,10 @@ std::any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
       visit(child);
   }
   return nullptr;
+}
+
+std::any GeneratorVisitor::visitTypeAlts(SpiceParser::TypeAltsContext *ctx) {
+  return nullptr; // Noop
 }
 
 std::any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {

@@ -7,8 +7,8 @@ entry: (mainFunctionDef | functionDef | procedureDef | structDef | genericTypeDe
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
-genericTypeDef: declSpecifiers? TYPE IDENTIFIER TYPE_DYN SEMICOLON;
+extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLstEllipsis? RPAREN DLL? SEMICOLON;
+genericTypeDef: declSpecifiers? TYPE IDENTIFIER typeAlts SEMICOLON;
 structDef: declSpecifiers? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
 threadDef: THREAD LBRACE stmtLst RBRACE;
@@ -23,7 +23,9 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 // Statements, declarations, definitions and lists
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | threadDef)*;
 field: declSpecifiers? dataType IDENTIFIER;
-typeLst: dataType (COMMA dataType)* ELLIPSIS?;
+typeLst: dataType (COMMA dataType)*;
+typeLstEllipsis: typeLst ELLIPSIS?;
+typeAlts: dataType (BITWISE_OR dataType)*;
 argLstDef: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;

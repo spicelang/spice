@@ -201,8 +201,9 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
  * @return Substantiated function with concrete arg types and without template types
  */
 Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes) const {
-  std::vector<std::pair<SymbolType, bool>> currentFunctionArgTypes;
+  std::vector<std::pair<SymbolType, bool>> newArgTypes;
 
+  // Substantiate arg types
   for (const auto &argType : argTypes) {
     assert(!argType.second); // Optional args need to be substantiated at this point
     SymbolType newArgType = argType.first;
@@ -214,10 +215,21 @@ Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteT
         }
       }
     }
-    currentFunctionArgTypes.emplace_back(newArgType, false);
+    newArgTypes.emplace_back(newArgType, false);
   }
 
-  return Function(name, specifiers, thisType, returnType, currentFunctionArgTypes, {}, definitionCodeLoc);
+  // Substantiate return type
+  SymbolType newReturnType = returnType;
+  if (newReturnType.is(TY_GENERIC)) {
+    for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
+      if (newReturnType == templateTypes[i]) {
+        newReturnType = concreteTemplateTypes[i]; // Use the concrete type instead of the generic one
+        break;
+      }
+    }
+  }
+
+  return Function(name, specifiers, thisType, newReturnType, newArgTypes, {}, definitionCodeLoc);
 }
 
 /**
