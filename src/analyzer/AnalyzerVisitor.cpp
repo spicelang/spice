@@ -138,8 +138,19 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     if (ctx->argLstDef()) {
       auto namedArgList = any_cast<NamedArgList>(visit(ctx->argLstDef()));
       for (const auto &namedArg : namedArgList) {
-        argNames.push_back(std::get<0>(namedArg));
-        argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
+        std::string argName = std::get<0>(namedArg);
+        SymbolType argType = std::get<1>(namedArg);
+        bool argOptional = std::get<2>(namedArg);
+
+        // Check if the type is present in the template for generic types
+        if (argType.is(TY_GENERIC)) {
+          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](GenericType t) { return t == argType; }))
+            throw err->get(*ctx->argLstDef()->start, GENERIC_TYPE_NOT_IN_TEMPLATE,
+                           "Generic arg type not included in function template");
+        }
+
+        argNames.push_back(argName);
+        argTypes.push_back({argType, argOptional});
       }
     }
     argumentMode = false;
@@ -313,8 +324,19 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     if (ctx->argLstDef()) {
       auto namedArgList = any_cast<NamedArgList>(visit(ctx->argLstDef()));
       for (const auto &namedArg : namedArgList) {
-        argNames.push_back(std::get<0>(namedArg));
-        argTypes.push_back({std::get<1>(namedArg), std::get<2>(namedArg)});
+        std::string argName = std::get<0>(namedArg);
+        SymbolType argType = std::get<1>(namedArg);
+        bool argOptional = std::get<2>(namedArg);
+
+        // Check if the type is present in the template for generic types
+        if (argType.is(TY_GENERIC)) {
+          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](GenericType t) { return t == argType; }))
+            throw err->get(*ctx->argLstDef()->start, GENERIC_TYPE_NOT_IN_TEMPLATE,
+                           "Generic arg type not included in procedure template");
+        }
+
+        argNames.push_back(argName);
+        argTypes.push_back({argType, argOptional});
       }
     }
     argumentMode = false;
@@ -515,6 +537,20 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   if (currentScope->lookup(structName))
     throw err->get(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate struct '" + structName + "'");
 
+  // Get template types
+  std::vector<GenericType> templateTypes;
+  if (ctx->typeLst()) {
+    needsReAnalyze = true;
+    for (const auto &dataType : ctx->typeLst()->dataType()) {
+      auto templateType = any_cast<SymbolType>(visit(dataType));
+      if (!templateType.is(TY_GENERIC))
+        throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+      GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
+      assert(genericType != nullptr);
+      templateTypes.push_back(*genericType);
+    }
+  }
+
   // Build symbol specifiers
   SymbolType symbolType = SymbolType(TY_STRUCT, structName);
   auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
@@ -529,17 +565,21 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
     }
   }
 
-  // Create a new symbol table entry for the struct
-  currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
-
   // Visit field list in a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
 
   // Insert a field for each field list entry
+  std::vector<SymbolType> fieldTypes;
   for (const auto &field : ctx->field()) {
     std::string fieldName = field->IDENTIFIER()->toString();
     auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
+
+    if (fieldType.is(TY_GENERIC)) { // Check if the type is present in the template for generic types
+      if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](GenericType t) { return t == fieldType; }))
+        throw err->get(*field->dataType()->start, GENERIC_TYPE_NOT_IN_TEMPLATE,
+                       "Generic field type not included in struct template");
+    }
 
     // Build symbol specifiers
     auto fieldTypeSpecifiers = SymbolSpecifiers(symbolType);
@@ -562,11 +602,21 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
       }
     }
 
+    // Add the field to the symbol table
     currentScope->insert(fieldName, fieldType, fieldTypeSpecifiers, DECLARED, *field->start);
+
+    fieldTypes.push_back(fieldType);
   }
 
   // Return to the old scope
   currentScope = currentScope->getParent();
+
+  // Add the struct to the symbol table
+  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+  Struct s(structName, structSymbolSpecifiers, fieldTypes, templateTypes, codeLoc);
+  currentScope->insertStruct(s, err.get(), *ctx->start);
+  currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
+
   return nullptr;
 }
 

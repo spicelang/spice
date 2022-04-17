@@ -62,9 +62,6 @@ f<int> main() {
 import "os-test2" as s1;
 
 f<int> main() {
-    dyn test = s1.max<int>(1, 2);
-    printf("Output: %d\n", test);
-
-    //s1.Vector<int> v = s1.Vector<int>{};
-    //v.setData<int>(12);
+    s1.Vector<int> v = s1.Vector<int>{};
+    v.setData<int>(12);
 }

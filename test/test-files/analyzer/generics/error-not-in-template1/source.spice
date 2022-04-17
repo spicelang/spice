@@ -1,0 +1,10 @@
+type T dyn;
+type U dyn;
+
+f<T> getDyn<T>(T a1, U a2) {
+    return a1 + a2;
+}
+
+f<int> main() {
+    dyn res = getDyn<double, int>(1.3, 4);
+}

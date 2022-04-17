@@ -1,0 +1,9 @@
+type T dyn;
+
+type Vec struct {
+    T genericField
+}
+
+f<int> main() {
+    Vec v = Vec{};
+}
