@@ -180,6 +180,29 @@ SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName) {
 }
 
 /**
+ * Insert a new generic type in this scope
+ *
+ * @param typeName Name of the generic type
+ * @param genericType Generic type itself
+ */
+void SymbolTable::insertGenericType(const std::string &typeName, GenericType &genericType) {
+  genericTypes.insert({typeName, genericType});
+}
+
+/**
+ * Search for a generic type by its name. If it was not found, the parent scopes will be searched.
+ * If the generic type does not exist at all, the function will return a nullptr.
+ *
+ * @param typeName Name of the generic type
+ * @return Generic type
+ */
+GenericType *SymbolTable::lookupGenericType(const std::string &typeName) {
+  if (genericTypes.contains(typeName))
+    return &genericTypes.at(typeName);
+  return parent ? parent->lookupGenericType(typeName) : nullptr;
+}
+
+/**
  * Mount in symbol tables manually. This is used to hook in symbol tables of imported modules into the symbol table of
  * the source file, which imported the modules
  *
@@ -385,7 +408,7 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
 std::shared_ptr<std::map<std::string, Function>> SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
   std::string accessId = FileUtil::tokenToCodeLoc(defToken);
   if (!functions.contains(accessId))
-    throw std::runtime_error("Internal compiler error: Cannot get manifestations at " + accessId);
+    throw std::runtime_error("Internal compiler error: Cannot get function manifestations at " + accessId);
   return functions.at(accessId);
 }
 
@@ -409,6 +432,47 @@ void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4:
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
   structs.insert({FileUtil::tokenToCodeLoc(token), std::make_shared<std::map<std::string, Struct>>()});
   insertSubstantiatedStruct(s, err, token, FileUtil::tokenToCodeLoc(token));
+}
+
+/**
+ * Check if there is a struct in this scope, fulfilling all given requirements and if found, return it.
+ * If more than one struct matches the requirement, an error gets thrown
+ *
+ * @param structName Struct name
+ * @param fieldTypes Field type requirement
+ * @param errorFactory Error factory
+ * @param token Definition token for the error message
+ * @return Matched struct or nullptr
+ */
+Struct *SymbolTable::matchStruct(const std::string &structName, const std::vector<SymbolType> &fieldTypes,
+                                 ErrorFactory *errorFactory, const antlr4::Token &token) {
+  // ToDo: Implement
+  return nullptr;
+}
+
+/**
+ * Retrieve the manifestations of the struct, defined at defToken
+ *
+ * @return Struct manifestations
+ */
+std::shared_ptr<std::map<std::string, Struct>> SymbolTable::getStructManifestations(const antlr4::Token &defToken) const {
+  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
+  if (!structs.contains(accessId))
+    throw std::runtime_error("Internal compiler error: Cannot get struct manifestations at " + accessId);
+  return structs.at(accessId);
+}
+
+/**
+ * Get the next struct access in order of visiting
+ *
+ * @return Struct pointer for the struct access
+ */
+Struct *SymbolTable::popStructAccessPointer() {
+  if (structAccessPointers.empty())
+    throw std::runtime_error("Internal compiler error: Could not pop struct access");
+  Struct *s = structAccessPointers.front();
+  structAccessPointers.pop();
+  return s;
 }
 
 /**

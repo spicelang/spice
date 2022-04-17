@@ -3,17 +3,15 @@
 #include "GenericType.h"
 
 GenericType::GenericType(const std::string &name, const SymbolType &type) {
-  this->name = name;
   this->typeChain = type.getTypeChain();
 }
 
 GenericType::GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions) {
-  this->name = name;
+  this->typeChain.push({TY_GENERIC, name});
   this->typeConditions = typeConditions;
 }
 
 GenericType::GenericType(const std::string &name) {
-  this->name = name;
   this->typeChain.push({TY_GENERIC, name});
 }
 

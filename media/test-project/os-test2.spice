@@ -1,12 +1,12 @@
 type T int|double;
 
-type Vector<T> struct {
+/*type Vector<T> struct {
     T data
 }
 
 p Vector.setData<T>(T data) {
     this.data = data;
-}
+}*/
 
 public f<T> max<T>(T a, T b) {
     return a > b ? a : b;

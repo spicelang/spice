@@ -22,7 +22,6 @@ public:
 
 private:
   // Members
-  std::string name;
   std::vector<SymbolType> typeConditions = {SymbolType(TY_DYN)};
 
   // Private methods

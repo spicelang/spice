@@ -16,7 +16,7 @@ std::string SymbolTableEntry::getName() const { return name; }
  *
  * @return Type of the current symbol
  */
-SymbolType SymbolTableEntry::getType() const { return type; }
+const SymbolType &SymbolTableEntry::getType() const { return type; }
 
 /**
  * Update the type of a symbol. This is used for substantiateOptionalArgs types in the process of type inference

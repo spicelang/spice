@@ -122,10 +122,12 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       isGeneric = true;
       needsReAnalyze = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
-        auto symbolType = any_cast<SymbolType>(visit(dataType));
-        if (!symbolType.is(TY_GENERIC))
+        auto templateType = any_cast<SymbolType>(visit(dataType));
+        if (!templateType.is(TY_GENERIC))
           throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
-        templateTypes.emplace_back(symbolType.getSubType(), symbolType);
+        GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
+        assert(genericType != nullptr);
+        templateTypes.push_back(*genericType);
       }
     }
 
@@ -295,10 +297,12 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       isGeneric = true;
       needsReAnalyze = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
-        auto symbolType = any_cast<SymbolType>(visit(dataType));
-        if (!symbolType.is(TY_GENERIC))
+        auto templateType = any_cast<SymbolType>(visit(dataType));
+        if (!templateType.is(TY_GENERIC))
           throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
-        templateTypes.emplace_back(symbolType.getSubType(), symbolType);
+        GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
+        assert(genericType != nullptr);
+        templateTypes.push_back(*genericType);
       }
     }
 
@@ -474,8 +478,15 @@ std::any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext
   if (currentScope->lookup(typeName))
     throw err->get(*ctx->start, GENERIC_TYPE_DECLARED_TWICE, "Duplicate generic type '" + typeName + "'");
 
+  // Get type conditions
+  std::vector<SymbolType> typeConditions;
+  for (const auto &typeAlt : ctx->typeAlts()->dataType()) {
+    SymbolType typeCondition = any_cast<SymbolType>(visit(typeAlt));
+    typeConditions.push_back(typeCondition);
+  }
+
   // Build symbol specifiers
-  GenericType genericType = GenericType(typeName);
+  GenericType genericType = GenericType(typeName, typeConditions);
   auto structSymbolSpecifiers = SymbolSpecifiers(genericType);
   if (ctx->declSpecifiers()) {
     for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
@@ -488,8 +499,8 @@ std::any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext
     }
   }
 
-  // Create a new symbol table entry
-  currentScope->insert(typeName, genericType, structSymbolSpecifiers, DECLARED, *ctx->start);
+  // Add it to the symbol table
+  currentScope->insertGenericType(typeName, genericType);
 
   return nullptr;
 }
@@ -1776,7 +1787,7 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   // Check if it is a generic type
   std::string firstFragment = ctx->IDENTIFIER()[0]->toString();
   SymbolTableEntry *entry = currentScope->lookup(firstFragment);
-  if (ctx->IDENTIFIER().size() == 1 && entry && entry->getType().is(TY_GENERIC))
+  if (ctx->IDENTIFIER().size() == 1 && !entry && currentScope->lookupGenericType(firstFragment))
     return SymbolType(TY_GENERIC, firstFragment);
 
   // It is a struct type -> get the access scope
@@ -1840,7 +1851,8 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
       // Initialize nested struct
       initExtStruct(token, sourceScope, structScopePrefix, nestedStructName);
       // Re-map type of field to the imported struct
-      SymbolType newNestedStructType = entry.getType().replaceSubType(structScopePrefix + nestedStructName);
+      SymbolType newNestedStructType = entry.getType();
+      newNestedStructType = newNestedStructType.replaceSubType(structScopePrefix + nestedStructName);
       entry.updateType(newNestedStructType, true);
     }
   }

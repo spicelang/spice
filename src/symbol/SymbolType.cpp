@@ -8,6 +8,13 @@
 #include <exception/SemanticError.h>
 
 /**
+ * Retrieve the type chain of the symbol type
+ *
+ * @return Type chain
+ */
+TypeChain SymbolType::getTypeChain() const { return typeChain; }
+
+/**
  * Get the pointer type of the current type as a new type
  *
  * @return Pointer type of the current type
@@ -316,10 +323,3 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
   }
   return "unknown"; // GCOV_EXCL_LINE
 }
-
-/**
- * Retrieve the type chain of the symbol type
- *
- * @return Type chain
- */
-TypeChain SymbolType::getTypeChain() const { return typeChain; }

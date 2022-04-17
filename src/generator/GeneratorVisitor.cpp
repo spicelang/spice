@@ -237,8 +237,7 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
     currentScope = currentScope->getChild(spiceFunc.getSignature());
 
     // Get return type
-    currentVarName = RETURN_VARIABLE_NAME;
-    auto returnType = any_cast<llvm::Type *>(visit(ctx->dataType()));
+    llvm::Type *returnType = getTypeForSymbolType(spiceFunc.getReturnType());
 
     // Create argument list
     std::vector<std::string> argNames;

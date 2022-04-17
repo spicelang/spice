@@ -40,8 +40,10 @@ public:
   SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
   SymbolType() = default;
+  virtual ~SymbolType() = default;
 
   // Public methods
+  [[nodiscard]] TypeChain getTypeChain() const;
   SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token);
   SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size = 0);
   [[nodiscard]] SymbolType getContainedTy() const;
@@ -64,7 +66,6 @@ public:
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
-  [[nodiscard]] TypeChain getTypeChain() const;
 
 protected:
   // Members
