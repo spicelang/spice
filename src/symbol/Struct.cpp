@@ -2,6 +2,8 @@
 
 #include "Struct.h"
 
+#include <symbol/SymbolTable.h>
+
 /**
  * Retrieve the name of the current struct
  *
@@ -88,7 +90,8 @@ SymbolType Struct::getSymbolType() const { return SymbolType(TY_STRUCT, name); }
  *
  * @return Substantiated struct without template types
  */
-Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes) const {
+Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *structScope,
+                                    ErrorFactory *err, const antlr4::Token &token) const {
   std::vector<SymbolType> currentFieldTypes;
 
   // Substantiate field types
@@ -106,18 +109,31 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
   }
 
   // Substantiate methods
-  for (const auto &method : methods)
-    method->substantiateGenerics(concreteTemplateTypes);
+  for (const auto &method : methods) {
+    // Duplicate method
+    Function newMethod = method->substantiateGenerics(concreteTemplateTypes);
+    structScope->insertSubstantiatedFunction(newMethod, err, token, method->getDefinitionCodeLoc());
+    structScope->duplicateChildBlockEntry(method->getSignature(), newMethod.getSignature());
+  }
 
   return Struct(name, specifiers, currentFieldTypes, {}, definitionCodeLoc);
 }
 
 /**
- * Checks if a struct has generic types present. This would imply that the struct is not fully substantiated yet
+ * Checks if a struct contains template types.
+ * This would imply that the struct is not substantiated by its generic types yet.
+ *
+ * @return Substantiated generics or not
+ */
+bool Struct::hasSubstantiatedGenerics() const { return templateTypes.empty(); }
+
+/**
+ * Checks if a struct has generic types present.
+ * This would imply that the struct is not fully substantiated yet.
  *
  * @return Fully substantiated or not
  */
-bool Struct::isFullySubstantiated() const { return templateTypes.empty(); }
+bool Struct::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
 
 /**
  * Set the struct to used. The compiler only generates IR if the struct is used
@@ -137,4 +153,3 @@ bool Struct::isUsed() const { return used; }
  * @return Definition code location
  */
 const std::string &Struct::getDefinitionCodeLoc() const { return definitionCodeLoc; }
-

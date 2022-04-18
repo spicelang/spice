@@ -233,25 +233,30 @@ Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteT
 }
 
 /**
- * Checks if a function contains optional arguments. This would imply that the function is not substantiated yet
+ * Checks if a function contains optional arguments.
+ * This would imply that the function is not substantiated by its optional arguments yet.
  *
  * @return Substantiated args or not
  */
 bool Function::hasSubstantiatedArgs() const {
-  for (const auto &argType : argTypes) {
-    if (argType.second)
-      return false;
-  }
-  return true;
+  return std::none_of(argTypes.begin(), argTypes.end(), [](auto t) { return t.second; });
 }
 
 /**
- * Checks if a function contains optional arguments or has generic types present. This would imply that the function is not
- * fully substantiated yet
+ * Checks if a function contains template types.
+ * This would imply that the function is not substantiated by its generic types yet.
+ *
+ * @return Substantiated generics or not
+ */
+bool Function::hasSubstantiatedGenerics() const { return templateTypes.empty(); }
+
+/**
+ * Checks if a function contains optional arguments or has generic types present.
+ * This would imply that the function is not fully substantiated yet.
  *
  * @return Fully substantiated or not
  */
-bool Function::isFullySubstantiated() const { return hasSubstantiatedArgs() && templateTypes.empty(); }
+bool Function::isFullySubstantiated() const { return hasSubstantiatedArgs() && hasSubstantiatedGenerics(); }
 
 /**
  * Set the function to used. The compiler only generates IR if the function is used

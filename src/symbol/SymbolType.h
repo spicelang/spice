@@ -30,14 +30,17 @@ enum SymbolSuperType {
   TY_IMPORT
 };
 
-typedef std::pair<SymbolSuperType, std::string> TypeChainElement;
-typedef std::stack<TypeChainElement> TypeChain;
-
 class SymbolType {
+  typedef std::vector<SymbolType> TemplateTypes;
+  typedef std::tuple<SymbolSuperType, std::string, TemplateTypes> TypeChainElement;
+  typedef std::stack<TypeChainElement> TypeChain;
+
 public:
   // Constructors
-  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, ""}}) {}
-  SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType}}) {}
+  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}}}) {}
+  explicit SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}}}) {}
+  explicit SymbolType(SymbolSuperType superType, const std::string &subType, const std::vector<SymbolType> &templateTypes)
+      : typeChain({{superType, subType, templateTypes}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
   SymbolType() = default;
   virtual ~SymbolType() = default;
@@ -61,6 +64,7 @@ public:
   [[nodiscard]] SymbolSuperType getSuperType() const;
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;
+  [[nodiscard]] TemplateTypes getTemplateTypes() const;
   [[nodiscard]] std::string getName(bool withSize = false) const;
   [[nodiscard]] unsigned int getArraySize() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);

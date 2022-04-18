@@ -53,7 +53,7 @@ void CliInterface::createInterface() {
     }
 
     // Add relative prefix to filename
-    if (cliOptions.mainSourceFile.find("/\\") != std::string::npos)
+    if (cliOptions.mainSourceFile.find("/\\") == std::string::npos)
       cliOptions.mainSourceFile = "./" + cliOptions.mainSourceFile;
 
     // Set outputDir to <system-tmp-dir>/spice-output

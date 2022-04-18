@@ -57,12 +57,15 @@ public:
                           const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
   [[nodiscard]] std::shared_ptr<std::map<std::string, Function>> getFunctionManifestations(const antlr4::Token &defToken) const;
   Function *popFunctionAccessPointer();
+  void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
+                                   const std::string &codeLoc);
 
   void insertStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token);
-  Struct *matchStruct(const std::string &structName, const std::vector<SymbolType> &fieldTypes, ErrorFactory *errorFactory,
+  Struct *matchStruct(const std::string &structName, const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory,
                       const antlr4::Token &token);
   [[nodiscard]] std::shared_ptr<std::map<std::string, Struct>> getStructManifestations(const antlr4::Token &defToken) const;
   Struct *popStructAccessPointer();
+  void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token, const std::string &codeLoc);
 
   void printCompilerWarnings();
   void disableCompilerWarnings();
@@ -89,9 +92,4 @@ private:
   bool imported = false;
   bool compilerWarningsEnabled = true;
   bool requiresCapturing = false;
-
-  // Private methods
-  void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
-                                   const std::string &codeLoc);
-  void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token, const std::string &codeLoc);
 };

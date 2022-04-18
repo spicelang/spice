@@ -426,6 +426,31 @@ Function *SymbolTable::popFunctionAccessPointer() {
 }
 
 /**
+ * Insert a substantiated function into the function list. If the list already contains a function with the same signature,
+ * an exception will be thrown
+ *
+ * @param function Substantiated function
+ * @param err Error factory
+ * @param token Token, where the function is declared
+ */
+void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
+                                              const std::string &codeLoc) {
+  if (!function.hasSubstantiatedArgs())
+    throw std::runtime_error("Internal compiler error: Expected substantiated function");
+
+  // Check if the function exists already
+  for (const auto &[_, manifestations] : functions) {
+    if (manifestations->contains(function.getMangledName()))
+      throw err->get(token, FUNCTION_DECLARED_TWICE,
+                     "The function/procedure '" + function.getSignature() + "' is declared twice");
+  }
+  // Add function to function list
+  functions.at(codeLoc)->insert({function.getMangledName(), function});
+  // Add symbol table entry for the function
+  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
+}
+
+/**
  * Insert a struct object into this symbol table scope
  */
 void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token) {
@@ -439,15 +464,69 @@ void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4:
  * If more than one struct matches the requirement, an error gets thrown
  *
  * @param structName Struct name
- * @param fieldTypes Field type requirement
+ * @param templateTypes Template type requirements
  * @param errorFactory Error factory
  * @param token Definition token for the error message
  * @return Matched struct or nullptr
  */
-Struct *SymbolTable::matchStruct(const std::string &structName, const std::vector<SymbolType> &fieldTypes,
-                                 ErrorFactory *errorFactory, const antlr4::Token &token) {
-  // ToDo: Implement
-  return nullptr;
+Struct *SymbolTable::matchStruct(const std::string &structName, const std::vector<SymbolType> &templateTypes, ErrorFactory *err,
+                                 const antlr4::Token &token) {
+  std::vector<Struct *> matches;
+
+  // Loop through function and add any matches to the matches vector
+  auto oldStructList = structs;
+  for (const auto &[codeLoc, manifestations] : oldStructList) {
+    auto oldManifestations = *manifestations;
+    for (auto &[mangledName, s] : oldManifestations) {
+      // Check name requirement
+      if (s.getName() != structName)
+        continue;
+
+      // Check template types requirement
+      std::vector<GenericType> curTemplateTypes = s.getTemplateTypes();
+      if (curTemplateTypes.empty()) {
+        // It's a match!
+        matches.push_back(&structs.at(codeLoc)->at(s.getMangledName()));
+      } else {
+        if (curTemplateTypes.size() != templateTypes.size())
+          continue;
+        std::vector<SymbolType> concreteTemplateTypes;
+        std::vector<GenericTypeReplacement> typeReplacements;
+        bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
+        for (int i = 0; i < templateTypes.size(); i++) {
+          if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
+            differentTemplateTypes = true;
+            break;
+          }
+          concreteTemplateTypes.push_back(templateTypes[i]);
+          typeReplacements.emplace_back(curTemplateTypes[i].getSubType(), templateTypes[i]);
+        }
+        if (differentTemplateTypes)
+          continue;
+
+        // Duplicate function
+        Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, this, err, token);
+        insertSubstantiatedStruct(newStruct, err, token, s.getDefinitionCodeLoc());
+        duplicateChildBlockEntry(STRUCT_SCOPE_PREFIX + newStruct.getName(), STRUCT_SCOPE_PREFIX + newStruct.getSignature());
+
+        matches.push_back(&structs.at(codeLoc)->at(newStruct.getMangledName()));
+      }
+    }
+  }
+
+  if (matches.empty())
+    return nullptr;
+
+  // Throw error if more than one function matches the criteria
+  if (matches.size() > 1)
+    throw err->get(
+        token, STRUCT_AMBIGUITY,
+        "More than one struct matches your requested signature criteria. Please try to specify the return type explicitly");
+
+  // Add function access pointer for function call
+  structAccessPointers.push(matches[0]);
+
+  return matches[0];
 }
 
 /**
@@ -473,6 +552,32 @@ Struct *SymbolTable::popStructAccessPointer() {
   Struct *s = structAccessPointers.front();
   structAccessPointers.pop();
   return s;
+}
+
+/**
+ * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
+ */
+void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
+
+/**
+ * Insert a substantiated struct into the struct list. If the list already contains a struct with the same signature,
+ * an exception will be thrown
+ *
+ * @param s Substantiated struct
+ * @param err Error factory
+ * @param token Token, where the struct is declared
+ */
+void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token,
+                                            const std::string &codeLoc) {
+  // Check if the struct exists already
+  for (const auto &[_, manifestations] : structs) {
+    if (manifestations->contains(s.getMangledName()))
+      throw err->get(token, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
+  }
+  // Add struct to struct list
+  structs.at(codeLoc)->insert({s.getMangledName(), s});
+  // Add symbol table entry for the struct
+  insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, token);
 }
 
 /**
@@ -572,54 +677,3 @@ void SymbolTable::setImported() { imported = true; }
  * @return Imported / not imported
  */
 bool SymbolTable::isImported() const { return imported; }
-
-/**
- * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
- */
-void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
-
-/**
- * Insert a substantiated function into the function list. If the list already contains a function with the same signature,
- * an exception will be thrown
- *
- * @param function Substantiated function
- * @param err Error factory
- * @param token Token, where the function is declared
- */
-void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
-                                              const std::string &codeLoc) {
-  if (!function.hasSubstantiatedArgs())
-    throw std::runtime_error("Internal compiler error: Expected substantiated function");
-
-  // Check if the function exists already
-  for (const auto &[_, manifestations] : functions) {
-    if (manifestations->contains(function.getMangledName()))
-      throw err->get(token, FUNCTION_DECLARED_TWICE,
-                     "The function/procedure '" + function.getSignature() + "' is declared twice");
-  }
-  // Add function to function list
-  functions.at(codeLoc)->insert({function.getMangledName(), function});
-  // Add symbol table entry for the function
-  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
-}
-
-/**
- * Insert a substantiated struct into the struct list. If the list already contains a struct with the same signature,
- * an exception will be thrown
- *
- * @param s Substantiated struct
- * @param err Error factory
- * @param token Token, where the struct is declared
- */
-void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token,
-                                            const std::string &codeLoc) {
-  // Check if the struct exists already
-  for (const auto &[_, manifestations] : structs) {
-    if (manifestations->contains(s.getMangledName()))
-      throw err->get(token, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
-  }
-  // Add struct to struct list
-  structs.at(codeLoc)->insert({s.getMangledName(), s});
-  // Add symbol table entry for the struct
-  insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, token);
-}

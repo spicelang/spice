@@ -7,12 +7,12 @@ GenericType::GenericType(const std::string &name, const SymbolType &type) {
 }
 
 GenericType::GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions) {
-  this->typeChain.push({TY_GENERIC, name});
+  this->typeChain.push({TY_GENERIC, name, {}});
   this->typeConditions = typeConditions;
 }
 
 GenericType::GenericType(const std::string &name) {
-  this->typeChain.push({TY_GENERIC, name});
+  this->typeChain.push({TY_GENERIC, name, {}});
 }
 
 /**

@@ -33,35 +33,11 @@ f<int> main() {
     v.push(2);
 }*/
 
-/*f<int> testFunc(string param = "Test") {
-    printf("Test func %s\n", param);
-    return 2;
-}
-
-f<int> main() {
-    int res = testFunc();
-    printf("Result: %d\n", res);
-}*/
-
-/*type T dyn;
-type U dyn;
-
-f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
-    return arg1 + arg2 + arg3;
-}
-
-f<double> genericFunction<T, U>(T arg1, U arg2, T arg3) {
-    return arg1 + arg2 + arg3;
-}
-
-f<int> main() {
-    printf("%f\n", genericFunction<int, double>(1, 2.4));
-    printf("%f\n", genericFunction<long, double>(12l, 2.0));
-}*/
-
 import "os-test2" as s1;
 
 f<int> main() {
-    s1.Vector<int> v = s1.Vector<int>{};
-    v.setData<int>(12);
+    s1.Vec v = s1.Vec{11, false};
+    v.print();
+    //dyn v = s1.Vector<int>{};
+    //v.setData<int>(12);
 }

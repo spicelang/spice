@@ -1528,8 +1528,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
         for (auto &argType : argTypes)
           argTypesWithOptional.emplace_back(argType, false);
         std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-        Function function = Function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN),
-                                     argTypesWithOptional, {}, codeLoc);
+        Function function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN),
+                          argTypesWithOptional, {}, codeLoc);
         throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
                        "Function/Procedure '" + function.getSignature() + "' could not be found");
       }
@@ -1698,7 +1698,16 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
       }
     }
 
-    // Check if a symbol is existing with that fully qualified name
+    // Get the concrete template types
+    std::vector<SymbolType> concreteTypes;
+    if (ctx->typeLst()) {
+      for (const auto &dataType : ctx->typeLst()->dataType()) {
+        SymbolType templateType = any_cast<SymbolType>(visit(dataType));
+        concreteTypes.push_back(templateType);
+      }
+    }
+
+    // Check if a symbol is existing with that fully qualified name in the current scope
     SymbolTableEntry *structSymbol = currentScope->lookup(accessScopePrefix + structName);
     if (!structSymbol) { // Not found
       // Trigger an external struct initialization which loads the struct from another source file and modifies the
@@ -1706,6 +1715,7 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
       initExtStruct(*ctx->IDENTIFIER()[0]->getSymbol(), structScope, accessScopePrefix, ctx->IDENTIFIER().back()->toString());
       // Reload the struct symbol
       structSymbol = currentScope->lookup(accessScopePrefix + structName);
+      assert(structSymbol != nullptr);
     }
 
     // Check if the symbol is of the expected struct type
@@ -1714,8 +1724,19 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
                      "Struct '" + accessScopePrefix + structName + "' was used before defined");
     structSymbol->setUsed();
 
+    // Get the struct instance
+    /*Struct *spiceStruct = structScope->matchStruct(structName, concreteTypes, err.get(), *ctx->start);
+    if (!spiceStruct) {
+      // Build struct to get a better error message
+      std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+      Struct s(structName, SymbolSpecifiers(SymbolType(TY_STRUCT)), {}, {}, codeLoc);
+      throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + s.getSignature() + "' could not be found");
+    }
+    spiceStruct->setUsed();*/
+
     // Check if the number of fields matches
     SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + accessScopePrefix + structName);
+    std::vector<SymbolType> fieldTypes;
     if (ctx->argLst()) { // Check if any fields are passed. Empty braces are also allowed
       if (structTable->getFieldCount() != ctx->argLst()->assignExpr().size())
         throw err->get(*ctx->argLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
@@ -1724,15 +1745,15 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
       // Check if the field types are matching
       for (int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
         // Get actual type
-        auto ternary = ctx->argLst()->assignExpr()[i];
-        auto actualType = any_cast<SymbolType>(visit(ternary));
+        auto assignExpr = ctx->argLst()->assignExpr()[i];
+        auto actualType = any_cast<SymbolType>(visit(assignExpr));
         // Get expected type
         SymbolTableEntry *expectedField = structTable->lookupByIndex(i);
         assert(expectedField != nullptr);
         SymbolType expectedFieldType = expectedField->getType();
         // Check if type matches declaration
         if (actualType != expectedFieldType)
-          throw err->get(*ternary->start, FIELD_TYPE_NOT_MATCHING,
+          throw err->get(*assignExpr->start, FIELD_TYPE_NOT_MATCHING,
                          "Expected type " + expectedFieldType.getName(false) + " for the field '" + expectedField->getName() +
                              "', but got " + actualType.getName(false));
       }
@@ -1859,6 +1880,15 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
     accessScope = accessScope->lookupTable(tableName);
     if (accessScope->isImported())
       structIsImported = true;
+  }
+
+  // Get the template types
+  std::vector<SymbolType> templateTypes;
+  if (ctx->typeLst()) {
+    for (const auto &dataType : ctx->typeLst()->dataType()) {
+      SymbolType templateType = any_cast<SymbolType>(visit(dataType));
+      templateTypes.push_back(templateType);
+    }
   }
 
   if (structIsImported) // Imported struct
