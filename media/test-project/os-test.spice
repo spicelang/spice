@@ -33,11 +33,21 @@ f<int> main() {
     v.push(2);
 }*/
 
-import "os-test2" as s1;
+/*import "os-test2" as s1;
 
 f<int> main() {
     s1.Vec v = s1.Vec{11, false};
     v.print();
     //dyn v = s1.Vector<int>{};
     //v.setData<int>(12);
+}*/
+
+type TestStruct struct {
+    int f1
+    int f2
+}
+
+f<int> main() {
+    TestStruct a = TestStructTypo { 1, 2 };
+    printf("Field 1: %d", a.f1);
 }

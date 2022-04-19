@@ -157,15 +157,12 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
  * @param scopeId Scope ID of the desired symbol table
  * @return Desired symbol table
  */
-SymbolTable *SymbolTable::lookupTable(const std::string &scopeId) {
+SymbolTable *SymbolTable::lookupTable(const std::string &tableName) {
   // If not available in the current scope, search in the parent scope
-  if (!children.contains(scopeId)) {
-    if (parent == nullptr)
-      return nullptr;
-    return parent->lookupTable(scopeId);
-  }
+  if (!children.contains(tableName))
+    return parent ? parent->lookupTable(tableName) : nullptr;
   // Otherwise, return the entry
-  return children.at(scopeId);
+  return children.at(tableName);
 }
 
 /**
@@ -209,8 +206,9 @@ GenericType *SymbolTable::lookupGenericType(const std::string &typeName) {
  * @param childBlockName Name of the child block
  * @param childBlock Child symbol table
  */
-void SymbolTable::mountChildBlock(const std::string &childBlockName, SymbolTable *childBlock) {
-  childBlock->parent = this;
+void SymbolTable::mountChildBlock(const std::string &childBlockName, SymbolTable *childBlock, bool alterParent) {
+  if (alterParent)
+    childBlock->parent = this;
   children.insert({childBlockName, childBlock});
 }
 

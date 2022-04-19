@@ -1673,28 +1673,25 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   }
 
   if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
+    // Get the access scope
+    SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+
     // Retrieve fully qualified struct name and the scope where to search it
     std::string accessScopePrefix;
     std::string structName;
-    SymbolTable *structScope = currentScope;
+    bool structIsImported = false;
     for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
       structName = ctx->IDENTIFIER()[i]->toString();
       if (i < ctx->IDENTIFIER().size() - 1) {
         accessScopePrefix += structName + ".";
-        SymbolTableEntry *entry = structScope->lookup(structName);
-        if (!entry)
+        SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
+        if (!symbolEntry)
           throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                          "Struct '" + accessScopePrefix + structName + "' was used before defined");
-        // Check the type of the symbol table entry
-        if (entry->getType().is(TY_IMPORT)) {
-          structScope = structScope->lookupTable(structName);
-        } else if (entry->getType().is(TY_STRUCT)) {
-          structScope = structScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
-        } else {
-          throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                         "The variable '" + structName + "' is of type " + entry->getType().getName(false) +
-                             ". Expected struct or import");
-        }
+        std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
+        accessScope = accessScope->lookupTable(tableName);
+        if (accessScope->isImported())
+          structIsImported = true;
       }
     }
 
@@ -1707,22 +1704,17 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
       }
     }
 
-    // Check if a symbol is existing with that fully qualified name in the current scope
-    SymbolTableEntry *structSymbol = currentScope->lookup(accessScopePrefix + structName);
-    if (!structSymbol) { // Not found
-      // Trigger an external struct initialization which loads the struct from another source file and modifies the
-      // symbol table accordingly
-      initExtStruct(*ctx->IDENTIFIER()[0]->getSymbol(), structScope, accessScopePrefix, ctx->IDENTIFIER().back()->toString());
-      // Reload the struct symbol
-      structSymbol = currentScope->lookup(accessScopePrefix + structName);
-      assert(structSymbol != nullptr);
+    SymbolType structType;
+    if (structIsImported) { // Imported struct
+      structType =
+          initExtStruct(*ctx->IDENTIFIER()[0]->getSymbol(), accessScope, accessScopePrefix, ctx->IDENTIFIER().back()->toString());
+    } else { // Not imported
+      SymbolTableEntry *structSymbol = currentScope->lookup(accessScopePrefix + structName);
+      if (!structSymbol)
+        throw err->get(*ctx->IDENTIFIER().front()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                       "Could not find struct '" + accessScopePrefix + structName + "'");
+      structType = structSymbol->getType();
     }
-
-    // Check if the symbol is of the expected struct type
-    if (!structSymbol->getType().is(TY_STRUCT, accessScopePrefix + structName))
-      throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                     "Struct '" + accessScopePrefix + structName + "' was used before defined");
-    structSymbol->setUsed();
 
     // Get the struct instance
     /*Struct *spiceStruct = structScope->matchStruct(structName, concreteTypes, err.get(), *ctx->start);
@@ -1759,7 +1751,7 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
       }
     }
 
-    return structSymbol->getType();
+    return structType;
   }
 
   if (ctx->LBRACE()) { // Array initialization
@@ -1943,7 +1935,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   externalStructSymbol->setUsed();
 
   // Mount the external struct table to the new position in the root scope of the current source file
-  rootScope->mountChildBlock(STRUCT_SCOPE_PREFIX + newStructName, externalStructTable);
+  rootScope->mountChildBlock(STRUCT_SCOPE_PREFIX + newStructName, externalStructTable, false);
   rootScope->lookupTable(STRUCT_SCOPE_PREFIX + newStructName)->disableCompilerWarnings(); // Disable compiler warnings
 
   return newStructTy;

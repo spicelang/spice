@@ -39,7 +39,7 @@ public:
   SymbolTable *createChildBlock(const std::string &childBlockName);
   void insertGenericType(const std::string &typeName, GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
-  void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable);
+  void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable, bool alterParent = true);
   void renameChildBlock(const std::string &oldName, const std::string &newName);
   void duplicateChildBlockEntry(const std::string &originalChildBlockName, const std::string &newChildBlockName);
 

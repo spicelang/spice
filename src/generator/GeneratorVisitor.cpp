@@ -229,12 +229,13 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
     if (!spiceFunc.isFullySubstantiated())
       continue;
 
-    // Check if the function is used by anybody
+    // Do not generate this function if it is private and used by nobody
     if (!spiceFunc.isUsed() && !spiceFunc.getSpecifiers().isPublic())
       continue;
 
     // Change scope
     currentScope = currentScope->getChild(spiceFunc.getSignature());
+    assert(currentScope != nullptr);
 
     // Get return type
     llvm::Type *returnType = getTypeForSymbolType(spiceFunc.getReturnType());
@@ -245,7 +246,8 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
     // This variable (struct ptr of the parent struct)
     if (isMethod) {
       argNames.push_back(THIS_VARIABLE_NAME);
-      SymbolTableEntry *thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
+      std::string structName = ctx->IDENTIFIER().front()->toString();
+      SymbolTableEntry *thisEntry = currentScope->getParent()->getParent()->lookup(structName);
       assert(thisEntry != nullptr);
       llvm::Type *argType = thisEntry->getLLVMType()->getPointerTo();
       argTypes.push_back(argType);
@@ -360,7 +362,7 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
     if (!spiceProc.isFullySubstantiated())
       continue;
 
-    // Check if the function is used by anybody
+    // Do not generate this function if it is private and used by nobody
     if (!spiceProc.isUsed() && !spiceProc.getSpecifiers().isPublic())
       continue;
 
@@ -374,7 +376,9 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
     // This variable (struct ptr of the parent struct)
     if (isMethod) {
       argNames.push_back(THIS_VARIABLE_NAME);
-      SymbolTableEntry *thisEntry = currentScope->getParent()->lookup(ctx->IDENTIFIER()[0]->toString());
+      // Get the struct entry
+      std::string structName = ctx->IDENTIFIER().front()->toString();
+      SymbolTableEntry *thisEntry = currentScope->getParent()->getParent()->lookup(structName);
       assert(thisEntry != nullptr);
       llvm::Type *argType = thisEntry->getLLVMType()->getPointerTo();
       argTypes.push_back(argType);
