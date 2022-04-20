@@ -1737,6 +1737,12 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
           // Get the symbol table of the module where the function is defined
           SymbolTable *table = accessScope->lookupTable(spiceFunc->getSignature());
           assert(table != nullptr);
+
+          // Add this type to argument types
+          std::vector<llvm::Type *> argTypes;
+          if (isMethod)
+            argTypes.push_back(currentThisValue->getType());
+
           // Check if it is a function or a procedure
           if (spiceFunc->isFunction() || spiceFunc->isMethodFunction()) { // Function
             // Get return type
@@ -1752,7 +1758,6 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
               throw std::runtime_error("Internal compiler error: Could not find return type of function call");
 
             // Get argument types
-            std::vector<llvm::Type *> argTypes;
             for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
               if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))
@@ -1769,7 +1774,6 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
             module->getOrInsertFunction(fctIdentifier, fctType);
           } else if (spiceFunc->isProcedure() || spiceFunc->isMethodProcedure()) { // Procedure
             // Get argument types
-            std::vector<llvm::Type *> argTypes;
             for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
               if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))

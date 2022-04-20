@@ -1,4 +1,4 @@
-/*type T int|double;
+type T int|double;
 
 type Vector<T> struct {
     T data
@@ -6,13 +6,4 @@ type Vector<T> struct {
 
 p Vector.setData<T>(T data) {
     this.data = data;
-}*/
-
-public type Vec struct {
-    int f1
-    bool f2
-}
-
-public p Vec.print() {
-    printf("Test: %d, %d", this.f1, this.f2);
 }

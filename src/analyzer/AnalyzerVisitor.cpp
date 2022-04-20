@@ -1647,7 +1647,12 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
       newAccessScope = accessScope->lookupTable(entry->getName());
     } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
       newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + entry->getType().getBaseType().getSubType());
-      currentThisType = entry->getType();
+      // Retrieve the original type if the struct was imported
+      Capture *structCapture = currentScope->lookupCapture(entry->getType().getBaseType().getSubType());
+      if (structCapture)
+        currentThisType = structCapture->getEntry()->getType();
+      else
+        currentThisType = entry->getType();
     }
     assert(newAccessScope != nullptr);
 
