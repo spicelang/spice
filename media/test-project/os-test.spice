@@ -33,9 +33,27 @@ f<int> main() {
     v.push(2);
 }*/
 
-import "os-test2" as s1;
+/*import "os-test2" as s1;
 
 f<int> main() {
     dyn v = s1.Vector<int>{};
     v.setData<int>(12);
+}*/
+
+type T int|double|short|long;
+
+f<T> sumNumbers<T>(T[] numberArray, int arrayLength) {
+    for int i = 0; i < arrayLength; i++ {
+        result += numberArray[i];
+    }
+}
+
+f<int> main() {
+    short[7] numberList1 = { 1s, 2s, 3s, 4s, 5s, 6s, 7s };
+    short result1 = sumNumbers<short>(numberList1, sizeof(numberList1));
+
+    long[4] numberList2 = { 10l, 12l, 14l, 16l };
+    long result2 = sumNumbers<long>(numberList2, sizeof(numberList2));
+
+    printf("Results: %d, %d\n", result1, result2);
 }

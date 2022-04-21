@@ -363,12 +363,37 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         std::vector<GenericTypeReplacement> typeReplacements;
         bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
         for (int i = 0; i < templateTypes.size(); i++) {
-          if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
+          GenericType curTemplateType = curTemplateTypes[i];
+          SymbolType templateType = templateTypes[i];
+
+          // Unpack the types
+          std::stack<std::pair<SymbolSuperType, std::string>> ptrArrayLst;
+          while ((curTemplateType.isPointer() && templateType.isPointer()) ||
+                 (curTemplateType.isArray() && templateType.isArray())) {
+            ptrArrayLst.emplace(templateType.getSuperType(), templateType.getSubType());
+            curTemplateType = curTemplateType.getContainedTy();
+            templateType = templateType.getContainedTy();
+          }
+
+          // Check if the types meet the conditions
+          if (!curTemplateType.meetsConditions(templateType)) {
             differentTemplateTypes = true;
             break;
           }
-          concreteTemplateTypes.push_back(templateTypes[i]);
-          typeReplacements.emplace_back(curTemplateTypes[i].getSubType(), templateTypes[i]);
+
+          // Add replacement to the type replacements list
+          typeReplacements.emplace_back(curTemplateType.getSubType(), templateType);
+
+          // Pack the types again
+          for (const auto &[superType, subType] : ptrArrayLst) {
+            if (superType == TY_PTR)
+              templateType.toPointer(err, token);
+            else
+              templateType.toArray(err, token, );
+          }
+
+          // Add to concrete template types
+          concreteTemplateTypes.push_back(templateType);
         }
         if (differentTemplateTypes)
           continue;
