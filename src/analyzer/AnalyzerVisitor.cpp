@@ -144,7 +144,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
 
         // Check if the type is present in the template for generic types
         if (argType.is(TY_GENERIC)) {
-          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](GenericType t) { return t == argType; }))
+          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == argType; }))
             throw err->get(*ctx->argLstDef()->start, GENERIC_TYPE_NOT_IN_TEMPLATE,
                            "Generic arg type not included in function template");
         }
@@ -330,7 +330,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
 
         // Check if the type is present in the template for generic types
         if (argType.is(TY_GENERIC)) {
-          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](GenericType t) { return t == argType; }))
+          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == argType; }))
             throw err->get(*ctx->argLstDef()->start, GENERIC_TYPE_NOT_IN_TEMPLATE,
                            "Generic arg type not included in procedure template");
         }
@@ -503,7 +503,7 @@ std::any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext
   // Get type conditions
   std::vector<SymbolType> typeConditions;
   for (const auto &typeAlt : ctx->typeAlts()->dataType()) {
-    SymbolType typeCondition = any_cast<SymbolType>(visit(typeAlt));
+    auto typeCondition = any_cast<SymbolType>(visit(typeAlt));
     typeConditions.push_back(typeCondition);
   }
 
@@ -576,7 +576,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
     auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
 
     if (fieldType.is(TY_GENERIC)) { // Check if the type is present in the template for generic types
-      if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](GenericType t) { return t == fieldType; }))
+      if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == fieldType; }))
         throw err->get(*field->dataType()->start, GENERIC_TYPE_NOT_IN_TEMPLATE,
                        "Generic field type not included in struct template");
     }
@@ -1704,7 +1704,7 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     std::vector<SymbolType> concreteTypes;
     if (ctx->typeLst()) {
       for (const auto &dataType : ctx->typeLst()->dataType()) {
-        SymbolType templateType = any_cast<SymbolType>(visit(dataType));
+        auto templateType = any_cast<SymbolType>(visit(dataType));
         concreteTypes.push_back(templateType);
       }
     }
@@ -1883,7 +1883,7 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   std::vector<SymbolType> templateTypes;
   if (ctx->typeLst()) {
     for (const auto &dataType : ctx->typeLst()->dataType()) {
-      SymbolType templateType = any_cast<SymbolType>(visit(dataType));
+      auto templateType = any_cast<SymbolType>(visit(dataType));
       templateTypes.push_back(templateType);
     }
   }
@@ -1929,7 +1929,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
       initExtStruct(token, sourceScope, structScopePrefix, nestedStructName);
       // Re-map type of field to the imported struct
       SymbolType newNestedStructType = entry.getType();
-      newNestedStructType = newNestedStructType.replaceSubType(structScopePrefix + nestedStructName);
+      newNestedStructType = newNestedStructType.replaceBaseSubType(structScopePrefix + nestedStructName);
       entry.updateType(newNestedStructType, true);
     }
   }

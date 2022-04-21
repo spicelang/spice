@@ -65,7 +65,19 @@ SymbolType SymbolType::getContainedTy() const {
  * @param newSubType New sub type of the base type
  * @return The new type with the adjusted type chain
  */
-SymbolType SymbolType::replaceSubType(const std::string &newSubType) {
+SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
+  SymbolType newBaseType = getBaseType();
+  newBaseType.setSubType(newSubType);
+  return replaceBaseType(newBaseType);
+}
+
+/**
+ * Replace the base type with another one
+ *
+ * @param newBaseType New base type
+ * @return The new type
+ */
+SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   // Copy the stack to not destroy the present one
   TypeChain chainCopy = typeChain;
   // Unwrap the chain until the base type can be retrieved. To be able to restore the structure later, save it to the tmp chain
@@ -75,7 +87,9 @@ SymbolType SymbolType::replaceSubType(const std::string &newSubType) {
     chainCopy.pop();
   }
   // Replace the subType of the base chain element
-  std::get<1>(chainCopy.top()) = newSubType;
+  std::get<0>(chainCopy.top()) = newBaseType.getSuperType();
+  std::get<1>(chainCopy.top()) = newBaseType.getSubType();
+  std::get<2>(chainCopy.top()) = newBaseType.getTemplateTypes();
   // Restore the other chain elements
   for (unsigned int i = 0; i < tmp.size(); i++) {
     chainCopy.push(tmp.top());
@@ -285,6 +299,13 @@ bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeC
 bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain != rhs.typeChain; }
 
 /**
+ * Set the sub type of the top element
+ *
+ * @param newSubType New sub type
+ */
+void SymbolType::setSubType(const std::string &newSubType) { std::get<1>(typeChain.top()) = newSubType; }
+
+/**
  * Get the name of a type chain element
  *
  * @param chainElement Input chain element
@@ -315,7 +336,7 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "bool";
   case TY_STRUCT: {
     std::vector<SymbolType> templateTypes = std::get<2>(chainElement);
-    std::string templateStr = "";
+    std::string templateStr;
     if (!templateTypes.empty()) {
       for (const auto &templateType : templateTypes) {
         if (!templateStr.empty())

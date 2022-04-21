@@ -207,10 +207,11 @@ Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteT
   for (const auto &argType : argTypes) {
     assert(!argType.second); // Optional args need to be substantiated at this point
     SymbolType newArgType = argType.first;
-    if (newArgType.is(TY_GENERIC)) {                   // We have to replace it only if it is a generic type
+    SymbolType newArgBaseType = newArgType.getBaseType();
+    if (newArgBaseType.is(TY_GENERIC)) {               // We have to replace it only if it is a generic type
       for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
-        if (newArgType == templateTypes[i]) {
-          newArgType = concreteTemplateTypes[i]; // Use the concrete type instead of the generic one
+        if (newArgBaseType == templateTypes[i]) {
+          newArgType = newArgType.replaceBaseType(concreteTemplateTypes[i]); // Use the concrete type instead of the generic one
           break;
         }
       }

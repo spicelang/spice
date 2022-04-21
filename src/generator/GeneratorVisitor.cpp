@@ -1761,7 +1761,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
             for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
               if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))
-                argType = argType.replaceSubType(scopePrefix);
+                argType = argType.replaceBaseSubType(scopePrefix);
               // Retrieve the LLVM type of the symbol type
               llvm::Type *llvmType = getTypeForSymbolType(argType);
               if (!llvmType)
@@ -1777,7 +1777,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
             for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
               if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))
-                argType = argType.replaceSubType(scopePrefix);
+                argType = argType.replaceBaseSubType(scopePrefix);
               // Retrieve the LLVM type of the symbol type
               llvm::Type *llvmType = getTypeForSymbolType(argType);
               if (!llvmType)

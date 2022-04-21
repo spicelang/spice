@@ -50,7 +50,8 @@ public:
   SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token);
   SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size = 0);
   [[nodiscard]] SymbolType getContainedTy() const;
-  SymbolType replaceSubType(const std::string &newSubType);
+  SymbolType replaceBaseSubType(const std::string &newSubType) const;
+  [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
   [[nodiscard]] bool isPointer() const;
   [[nodiscard]] bool isPointerOf(SymbolSuperType superType) const;
   [[nodiscard]] bool isArray() const;
@@ -74,6 +75,9 @@ public:
 protected:
   // Members
   TypeChain typeChain;
+
+  // Protected methods
+  void setSubType(const std::string &newSubType);
 
 private:
   // Private methods
