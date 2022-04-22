@@ -248,25 +248,8 @@ void SymbolTable::copyChildBlock(const std::string &originalChildBlockName, cons
   assert(originalChildBlock != nullptr);
   // Copy child block
   auto newChildBlock = new SymbolTable(*originalChildBlock);
-  children.insert({newChildBlockName, newChildBlock});
   // Save the new child block
-
-  /*// Copy children
-  newChildBlock->children = originalChildBlock->children;
-  // Copy symbols
-  newChildBlock->symbols = originalChildBlock->symbols;
-  // Copy captures
-  newChildBlock->captures = originalChildBlock->captures;
-  // Copy generic types
-  newChildBlock->genericTypes = originalChildBlock->genericTypes;
-  // Copy functions and access pointers
-  newChildBlock->functions = originalChildBlock->functions;
-  newChildBlock->functionAccessPointers = originalChildBlock->functionAccessPointers;
-  // Copy structs and access pointers
-  newChildBlock->structs = originalChildBlock->structs;
-  newChildBlock->structAccessPointers = originalChildBlock->structAccessPointers;
-  // Copy other members
-  newChildBlock->*/
+  children.insert({newChildBlockName, newChildBlock});
 }
 
 /**
