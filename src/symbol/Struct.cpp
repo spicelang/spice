@@ -113,7 +113,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
     // Duplicate method
     Function newMethod = method->substantiateGenerics(concreteTemplateTypes);
     structScope->insertSubstantiatedFunction(newMethod, err, token, method->getDefinitionCodeLoc());
-    structScope->duplicateChildBlockEntry(method->getSignature(), newMethod.getSignature());
+    structScope->duplicateChildBlock(method->getSignature(), newMethod.getSignature());
   }
 
   return Struct(name, specifiers, currentFieldTypes, {}, definitionCodeLoc);

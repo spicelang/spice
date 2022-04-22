@@ -153,14 +153,16 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
 
     // Declare 'this' variable in new scope
     SymbolType thisType = SymbolType(TY_DYN);
+    SymbolType thisTypePtr = thisType;
+    SymbolSpecifiers thisTypeSpecifiers(thisType);
     if (isMethod) {
       std::string structName = ctx->IDENTIFIER().front()->toString();
       SymbolTableEntry *structEntry = currentScope->lookup(structName);
-      SymbolType curThisType = thisType = structEntry->getType();
-      curThisType = curThisType.toPointer(err.get(), *ctx->start);
-      auto thisTypeSpecifiers = SymbolSpecifiers(curThisType);
+      thisType = structEntry->getType();
+      thisTypePtr = thisType.toPointer(err.get(), *ctx->start);
+      thisTypeSpecifiers = SymbolSpecifiers(thisTypePtr);
       thisTypeSpecifiers.setConst(true);
-      currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisTypeSpecifiers, INITIALIZED, *ctx->start);
+      currentScope->insert(THIS_VARIABLE_NAME, thisTypePtr, thisTypeSpecifiers, INITIALIZED, *ctx->start);
     }
 
     // Declare variable for the return value in the function scope
@@ -197,13 +199,13 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
     std::vector<Function> substantiatedFunctions = spiceFunc.substantiateOptionalArgs();
-    currentScope->renameChildBlock(scopeId, substantiatedFunctions[0].getSignature());
-    for (int i = 0; i < substantiatedFunctions.size(); i++)
-      currentScope->duplicateChildBlockEntry(substantiatedFunctions[0].getSignature(), substantiatedFunctions[i].getSignature());
+    currentScope->renameChildBlock(scopeId, substantiatedFunctions.front().getSignature());
+    for (int i = 1; i < substantiatedFunctions.size(); i++)
+      currentScope->copyChildBlock(substantiatedFunctions.front().getSignature(), substantiatedFunctions[i].getSignature());
 
     if (!isGeneric) { // Only visit body for non-generic functions. Otherwise, bodies will be visited with the second analyzer run
       // Go down again in scope
-      currentScope = currentScope->getChild(substantiatedFunctions[0].getSignature());
+      currentScope = currentScope->getChild(substantiatedFunctions.front().getSignature());
       assert(currentScope != nullptr);
 
       // Visit statements in new scope
@@ -375,14 +377,13 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
     std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalArgs();
-    currentScope->renameChildBlock(scopeId, substantiatedProcedures[0].getSignature());
+    currentScope->renameChildBlock(scopeId, substantiatedProcedures.front().getSignature());
     for (int i = 0; i < substantiatedProcedures.size(); i++)
-      currentScope->duplicateChildBlockEntry(substantiatedProcedures[0].getSignature(),
-                                             substantiatedProcedures[i].getSignature());
+      currentScope->copyChildBlock(substantiatedProcedures.front().getSignature(), substantiatedProcedures[i].getSignature());
 
     if (!isGeneric) { // Only visit body for non-generic procs. Otherwise, bodies will be visited with the second analyzer run
       // Go down again in scope
-      currentScope = currentScope->getChild(substantiatedProcedures[0].getSignature());
+      currentScope = currentScope->getChild(substantiatedProcedures.front().getSignature());
       assert(currentScope != nullptr);
 
       // Visit statement list in new scope

@@ -41,7 +41,8 @@ public:
   GenericType *lookupGenericType(const std::string &typeName);
   void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable, bool alterParent = true);
   void renameChildBlock(const std::string &oldName, const std::string &newName);
-  void duplicateChildBlockEntry(const std::string &originalChildBlockName, const std::string &newChildBlockName);
+  void duplicateChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName);
+  void copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName);
 
   void setParent(SymbolTable *symbolTable);
   [[nodiscard]] SymbolTable *getParent() const;

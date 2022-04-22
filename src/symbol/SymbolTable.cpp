@@ -226,15 +226,47 @@ void SymbolTable::renameChildBlock(const std::string &oldName, const std::string
 }
 
 /**
- * Duplicates the child block entry, but it points to the same child block
+ * Duplicates the child block, but it points to the same child block
  *
  * @param originalChildBlockName Original name of the child block
- * @param newChildBlockName New name
+ * @param newChildBlockName New block name
  */
-void SymbolTable::duplicateChildBlockEntry(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
+void SymbolTable::duplicateChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
   SymbolTable *childBlock = children.at(originalChildBlockName);
   assert(childBlock != nullptr);
   children.insert({newChildBlockName, childBlock});
+}
+
+/**
+ * Duplicates the child block by copying it. The duplicated symbols point to the original ones.
+ *
+ * @param originalChildBlockName Original name of the child block
+ * @param newChildBlockName New block name
+ */
+void SymbolTable::copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
+  SymbolTable *originalChildBlock = children.at(originalChildBlockName);
+  assert(originalChildBlock != nullptr);
+  // Copy child block
+  auto newChildBlock = new SymbolTable(*originalChildBlock);
+  children.insert({newChildBlockName, newChildBlock});
+  // Save the new child block
+
+  /*// Copy children
+  newChildBlock->children = originalChildBlock->children;
+  // Copy symbols
+  newChildBlock->symbols = originalChildBlock->symbols;
+  // Copy captures
+  newChildBlock->captures = originalChildBlock->captures;
+  // Copy generic types
+  newChildBlock->genericTypes = originalChildBlock->genericTypes;
+  // Copy functions and access pointers
+  newChildBlock->functions = originalChildBlock->functions;
+  newChildBlock->functionAccessPointers = originalChildBlock->functionAccessPointers;
+  // Copy structs and access pointers
+  newChildBlock->structs = originalChildBlock->structs;
+  newChildBlock->structAccessPointers = originalChildBlock->structAccessPointers;
+  // Copy other members
+  newChildBlock->*/
 }
 
 /**
@@ -379,7 +411,7 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         // Duplicate function
         Function newFunction = f.substantiateGenerics(concreteTemplateTypes);
         insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
-        duplicateChildBlockEntry(f.getSignature(), newFunction.getSignature());
+        copyChildBlock(f.getSignature(), newFunction.getSignature());
 
         matches.push_back(&functions.at(codeLoc)->at(newFunction.getMangledName()));
       }
@@ -508,7 +540,7 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
         // Duplicate function
         Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, this, err, token);
         insertSubstantiatedStruct(newStruct, err, token, s.getDefinitionCodeLoc());
-        duplicateChildBlockEntry(STRUCT_SCOPE_PREFIX + newStruct.getName(), STRUCT_SCOPE_PREFIX + newStruct.getSignature());
+        duplicateChildBlock(STRUCT_SCOPE_PREFIX + newStruct.getName(), STRUCT_SCOPE_PREFIX + newStruct.getSignature());
 
         matches.push_back(&structs.at(codeLoc)->at(newStruct.getMangledName()));
       }

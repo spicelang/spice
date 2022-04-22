@@ -14,11 +14,11 @@ typedef std::vector<std::tuple<std::string, SymbolType, bool>> NamedArgList;
 class Function {
 public:
   // Constructors
-  explicit Function(std::string name, SymbolSpecifiers specifiers, SymbolType thisType, SymbolType returnType,
+  explicit Function(std::string name, SymbolSpecifiers specifiers, const SymbolType &thisType, const SymbolType &returnType,
                     std::vector<std::pair<SymbolType, bool>> argTypes, std::vector<GenericType> templateTypes,
                     std::string definitionCodeLoc)
-      : name(std::move(name)), specifiers(specifiers), thisType(std::move(thisType)), returnType(std::move(returnType)),
-        argTypes(std::move(argTypes)), templateTypes(std::move(templateTypes)), definitionCodeLoc(std::move(definitionCodeLoc)) {}
+      : name(std::move(name)), specifiers(specifiers), thisType(thisType), returnType(returnType), argTypes(std::move(argTypes)),
+        templateTypes(std::move(templateTypes)), definitionCodeLoc(std::move(definitionCodeLoc)) {}
 
   // Public methods
   [[nodiscard]] std::string getName() const;
