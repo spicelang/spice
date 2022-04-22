@@ -12,13 +12,10 @@
 #include <util/ScopeIdUtil.h>
 
 AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
-                                 const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
-                                 ThreadFactory *threadFactory, SourceFile *sourceFile, CliOptions *options, bool requiresMainFct,
-                                 bool isStdFile) {
+                                 const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory *threadFactory,
+                                 SourceFile *sourceFile, CliOptions *options, bool requiresMainFct, bool isStdFile) {
   this->context = context, this->builder = builder;
-  this->moduleRegistry = moduleRegistry;
   this->threadFactory = threadFactory;
-  this->sourceFile = sourceFile;
   this->currentScope = this->rootScope = sourceFile->symbolTable.get();
   this->requiresMainFct = requiresMainFct;
   this->isStdFile = isStdFile;
@@ -30,7 +27,6 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &conte
     options->targetVendor = targetTriple.getVendorName();
     options->targetOs = targetTriple.getOSName();
   }
-  this->cliOptions = options;
 
   // Create error factory for this specific file
   this->err = std::make_unique<ErrorFactory>(sourceFile->filePath);

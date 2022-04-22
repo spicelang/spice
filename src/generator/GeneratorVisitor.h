@@ -25,8 +25,8 @@ class GeneratorVisitor : public SpiceBaseVisitor {
 public:
   // Constructors
   explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                            ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, LinkerInterface *linker,
-                            CliOptions *options, SourceFile *sourceFile, const std::string &objectFile);
+                            ThreadFactory *threadFactory, LinkerInterface *linker, CliOptions *options, SourceFile *sourceFile,
+                            const std::string &objectFile);
 
   // Public methods
   void optimize();
@@ -83,7 +83,6 @@ public:
 private:
   // Members
   std::unique_ptr<OpRuleConversionsManager> conversionsManager;
-  SourceFile *sourceFile;
   std::string objectFile;
   llvm::TargetMachine *targetMachine{};
   CliOptions *cliOptions;
@@ -97,7 +96,6 @@ private:
   std::string scopePrefix;
   SymbolType currentSymbolType;
   ScopePath scopePath;
-  ModuleRegistry *moduleRegistry;
   ThreadFactory *threadFactory;
   std::unique_ptr<ErrorFactory> err;
   bool blockAlreadyTerminated = false;

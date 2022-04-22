@@ -26,16 +26,14 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
-                                   const std::shared_ptr<llvm::IRBuilder<>> &builder, ModuleRegistry *moduleRegistry,
-                                   ThreadFactory *threadFactory, LinkerInterface *linker, CliOptions *options,
-                                   SourceFile *sourceFile, const std::string &objectFile) {
+                                   const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory *threadFactory,
+                                   LinkerInterface *linker, CliOptions *options, SourceFile *sourceFile,
+                                   const std::string &objectFile) {
   this->context = context;
   this->builder = builder;
-  this->moduleRegistry = moduleRegistry;
   this->threadFactory = threadFactory;
   this->linker = linker;
   this->cliOptions = options;
-  this->sourceFile = sourceFile;
   this->objectFile = objectFile;
   this->requiresMainFct = sourceFile->parent == nullptr;
   this->currentScope = this->rootScope = sourceFile->symbolTable.get();
@@ -2410,9 +2408,11 @@ llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type) {
   if (OpRuleConversionsManager::isByteOrChar(type))
     return builder->getInt8(0);
 
+  // String
   if (OpRuleConversionsManager::isString(type))
     return builder->CreateGlobalStringPtr("", "", 0, module.get());
 
+  // Bool
   if (OpRuleConversionsManager::isBool(type))
     return builder->getInt1(false);
 
