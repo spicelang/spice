@@ -41,7 +41,6 @@ public:
   GenericType *lookupGenericType(const std::string &typeName);
   void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable, bool alterParent = true);
   void renameChildBlock(const std::string &oldName, const std::string &newName);
-  void duplicateChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName);
   void copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName);
 
   void setParent(SymbolTable *symbolTable);
@@ -51,9 +50,8 @@ public:
   std::map<std::string, SymbolTableEntry> &getSymbols();
   std::map<std::string, Capture> &getCaptures();
 
-  [[nodiscard]] unsigned int getFieldCount() const;
-
   void insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
+  [[nodiscard]] std::vector<Function *> getFunctions() const;
   Function *matchFunction(const std::string &functionName, const SymbolType &thisType, const std::vector<SymbolType> &argTypes,
                           const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
   [[nodiscard]] std::shared_ptr<std::map<std::string, Function>> getFunctionManifestations(const antlr4::Token &defToken) const;

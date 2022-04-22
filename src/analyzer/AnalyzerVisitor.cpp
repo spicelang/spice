@@ -564,7 +564,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
 
   // Visit field list in a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+  SymbolTable *structScope = currentScope = currentScope->createChildBlock(scopeId);
 
   // Insert a field for each field list entry
   std::vector<SymbolType> fieldTypes;
@@ -611,6 +611,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   // Add the struct to the symbol table
   std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
   Struct s(structName, structSymbolSpecifiers, fieldTypes, templateTypes, codeLoc);
+  s.setSymbolTable(structScope);
   currentScope->insertStruct(s, err.get(), *ctx->start);
   currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
 
@@ -1719,20 +1720,20 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     }
 
     // Get the struct instance
-    /*Struct *spiceStruct = structScope->matchStruct(structName, concreteTypes, err.get(), *ctx->start);
+    Struct *spiceStruct = accessScope->matchStruct(structName, concreteTypes, err.get(), *ctx->start);
     if (!spiceStruct) {
       // Build struct to get a better error message
       std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
       Struct s(structName, SymbolSpecifiers(SymbolType(TY_STRUCT)), {}, {}, codeLoc);
       throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + s.getSignature() + "' could not be found");
     }
-    spiceStruct->setUsed();*/
+    spiceStruct->setUsed();
 
     // Check if the number of fields matches
     SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + accessScopePrefix + structName);
     std::vector<SymbolType> fieldTypes;
     if (ctx->argLst()) { // Check if any fields are passed. Empty braces are also allowed
-      if (structTable->getFieldCount() != ctx->argLst()->assignExpr().size())
+      if (spiceStruct->getFieldTypes().size() != ctx->argLst()->assignExpr().size())
         throw err->get(*ctx->argLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
                        "You've passed too less/many field values. Pass either none or all of them");
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <symbol/Function.h>
@@ -17,8 +18,8 @@ public:
   // Constructors
   explicit Struct(std::string name, SymbolSpecifiers specifiers, std::vector<SymbolType> fieldTypes,
                   std::vector<GenericType> templateTypes, std::string definitionCodeLoc)
-      : name(name), specifiers(specifiers), fieldTypes(fieldTypes), templateTypes(templateTypes),
-        definitionCodeLoc(definitionCodeLoc) {}
+      : name(std::move(name)), specifiers(specifiers), fieldTypes(std::move(fieldTypes)), templateTypes(std::move(templateTypes)),
+        definitionCodeLoc(std::move(definitionCodeLoc)) {}
 
   // Public methods
   [[nodiscard]] std::string getName() const;
@@ -32,16 +33,18 @@ public:
                                             ErrorFactory *errorFactory, const antlr4::Token &token) const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
+  void setSymbolTable(SymbolTable *symbolTable);
   void setUsed();
   [[nodiscard]] bool isUsed() const;
   [[nodiscard]] const std::string &getDefinitionCodeLoc() const;
 
 private:
+  // Members
   std::string name;
   SymbolSpecifiers specifiers;
   std::vector<SymbolType> fieldTypes;
   std::vector<GenericType> templateTypes;
-  std::vector<Function *> methods;
+  SymbolTable *symbolTable;
   std::string definitionCodeLoc;
   bool used = false;
 };

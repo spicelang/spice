@@ -109,11 +109,12 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
   }
 
   // Substantiate methods
-  for (const auto &method : methods) {
+  assert(symbolTable != nullptr);
+  for (const auto &method : symbolTable->getFunctions()) {
     // Duplicate method
     Function newMethod = method->substantiateGenerics(concreteTemplateTypes);
     structScope->insertSubstantiatedFunction(newMethod, err, token, method->getDefinitionCodeLoc());
-    structScope->duplicateChildBlock(method->getSignature(), newMethod.getSignature());
+    structScope->copyChildBlock(method->getSignature(), newMethod.getSignature());
   }
 
   return Struct(name, specifiers, currentFieldTypes, {}, definitionCodeLoc);
@@ -134,6 +135,13 @@ bool Struct::hasSubstantiatedGenerics() const { return templateTypes.empty(); }
  * @return Fully substantiated or not
  */
 bool Struct::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
+
+/**
+ * Set the associated symbol table
+ *
+ * @param symbolTable Symbol table
+ */
+void Struct::setSymbolTable(SymbolTable *symbolTable) { this->symbolTable = symbolTable; }
 
 /**
  * Set the struct to used. The compiler only generates IR if the struct is used
