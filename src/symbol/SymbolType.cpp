@@ -86,10 +86,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
     tmp.push(chainCopy.top());
     chainCopy.pop();
   }
-  // Replace the subType of the base chain element
-  std::get<0>(chainCopy.top()) = newBaseType.getSuperType();
-  std::get<1>(chainCopy.top()) = newBaseType.getSubType();
-  std::get<2>(chainCopy.top()) = newBaseType.getTemplateTypes();
+  chainCopy = newBaseType.typeChain; // Replace base type
   // Restore the other chain elements
   for (unsigned int i = 0; i < tmp.size(); i++) {
     chainCopy.push(tmp.top());
