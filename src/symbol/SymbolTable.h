@@ -9,6 +9,7 @@
 
 #include <symbol/Capture.h>
 #include <symbol/Function.h>
+#include <symbol/Struct.h>
 #include <symbol/SymbolSpecifiers.h>
 #include <symbol/SymbolTableEntry.h>
 #include <symbol/SymbolType.h>
@@ -36,9 +37,12 @@ public:
   Capture *lookupCaptureStrict(const std::string &symbolName);
   SymbolTable *lookupTable(const std::string &tableName);
   SymbolTable *createChildBlock(const std::string &childBlockName);
-  void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable);
+  void insertGenericType(const std::string &typeName, GenericType &genericType);
+  GenericType *lookupGenericType(const std::string &typeName);
+  void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable, bool alterParent = true);
   void renameChildBlock(const std::string &oldName, const std::string &newName);
-  void duplicateChildBlockEntry(const std::string &originalChildBlockName, const std::string &newChildBlockName);
+  void duplicateChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName);
+  void copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName);
 
   void setParent(SymbolTable *symbolTable);
   [[nodiscard]] SymbolTable *getParent() const;
@@ -52,9 +56,17 @@ public:
   void insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
   Function *matchFunction(const std::string &functionName, const SymbolType &thisType, const std::vector<SymbolType> &argTypes,
                           const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
-  [[nodiscard]] Function *getFunction(const antlr4::Token &defToken, const std::string &mangledName);
-  [[nodiscard]] std::shared_ptr<std::map<std::string, Function>> getManifestations(const antlr4::Token &defToken) const;
+  [[nodiscard]] std::shared_ptr<std::map<std::string, Function>> getFunctionManifestations(const antlr4::Token &defToken) const;
   Function *popFunctionAccessPointer();
+  void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
+                                   const std::string &codeLoc);
+
+  void insertStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token);
+  Struct *matchStruct(const std::string &structName, const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory,
+                      const antlr4::Token &token);
+  [[nodiscard]] std::shared_ptr<std::map<std::string, Struct>> getStructManifestations(const antlr4::Token &defToken) const;
+  Struct *popStructAccessPointer();
+  void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token, const std::string &codeLoc);
 
   void printCompilerWarnings();
   void disableCompilerWarnings();
@@ -72,14 +84,13 @@ private:
   std::map<std::string, SymbolTable *> children;
   std::map<std::string, SymbolTableEntry> symbols;
   std::map<std::string, Capture> captures;
+  std::map<std::string, GenericType> genericTypes;
   std::map<std::string, std::shared_ptr<std::map<std::string, Function>>> functions; // <code-loc, vector-of-representations>
-  std::queue<Function *> functionAccessPointers;                                     // <code-loc, vector-of-representations>
+  std::queue<Function *> functionAccessPointers;
+  std::map<std::string, std::shared_ptr<std::map<std::string, Struct>>> structs; // <code-loc, vector-of-representations>
+  std::queue<Struct *> structAccessPointers;
   bool isMainSourceFile;
   bool imported = false;
   bool compilerWarningsEnabled = true;
   bool requiresCapturing = false;
-
-  // Private methods
-  void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
-                                   const std::string &codeLoc);
 };

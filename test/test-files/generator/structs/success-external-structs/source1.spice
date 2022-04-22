@@ -1,0 +1,8 @@
+public type Vec struct {
+    int f1
+    bool f2
+}
+
+public p Vec.print() {
+    printf("Test: %d, %d", this.f1, this.f2);
+}

@@ -100,6 +100,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Dyn pointers not allowed";
   case DYN_ARRAYS_NOT_ALLOWED:
     return "Dyn arrays not allowed";
+  case GENERIC_TYPE_NOT_IN_TEMPLATE:
+    return "Generic type not contained in template";
   case SPECIFIER_AT_ILLEGAL_CONTEXT:
     return "Specifier at illegal context";
   case INSUFFICIENT_VISIBILITY:

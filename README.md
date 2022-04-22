@@ -45,11 +45,11 @@ There is a batch / sh script to help you with that. Use this command to run it:
 ```
 
 #### Build LLVM
-Spice needs the LLVM 14.0.0 sources to compile successfully. Before you clone LLVM, you should navigate outside of the Spice repository.
+Spice needs the LLVM 14.0.1 sources to compile successfully. Before you clone LLVM, you should navigate outside of the Spice repository.
 
 **Clone:** <br>
 ```sh
-git clone --depth 1 --branch llvmorg-14.0.0 https://github.com/llvm/llvm-project.git
+git clone --depth 1 --branch llvmorg-14.0.1 https://github.com/llvm/llvm-project.git
 cd llvm-project
 ```
 

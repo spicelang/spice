@@ -1,0 +1,1 @@
+Semantic error in ./test-files/analyzer/generics/error-not-in-template2/source.spice at 4:15: Generic type not contained in template: Generic arg type not included in procedure template

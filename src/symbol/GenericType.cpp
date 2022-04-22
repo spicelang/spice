@@ -2,14 +2,17 @@
 
 #include "GenericType.h"
 
-GenericType::GenericType(const std::string &name, const SymbolType &symbolType) {
-  this->name = name;
-  this->typeChain = symbolType.getTypeChain();
+GenericType::GenericType(const std::string &name, const SymbolType &type) {
+  this->typeChain = type.getTypeChain();
+}
+
+GenericType::GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions) {
+  this->typeChain.push({TY_GENERIC, name, {}});
+  this->typeConditions = typeConditions;
 }
 
 GenericType::GenericType(const std::string &name) {
-  this->name = name;
-  this->typeChain.push({TY_GENERIC, name});
+  this->typeChain.push({TY_GENERIC, name, {}});
 }
 
 /**

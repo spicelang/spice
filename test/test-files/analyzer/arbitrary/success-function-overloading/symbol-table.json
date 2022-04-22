@@ -88,7 +88,7 @@
             "public": false,
             "signed": true
           },
-          "state": "initialized",
+          "state": "declared",
           "type": "double"
         }
       ]

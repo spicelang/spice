@@ -25,63 +25,64 @@ class GeneratorVisitor : public SpiceBaseVisitor {
 public:
   // Constructors
   explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                            ModuleRegistry *moduleRegistry, ThreadFactory *threadFactory, LinkerInterface *linker,
-                            CliOptions *options, SourceFile *sourceFile, const std::string &objectFile);
+                            ThreadFactory *threadFactory, LinkerInterface *linker, CliOptions *options, SourceFile *sourceFile,
+                            const std::string &objectFile);
 
   // Public methods
   void optimize();
   void emit();
   void dumpIR();
   std::string getIRString();
-  antlrcpp::Any visitEntry(SpiceParser::EntryContext *ctx) override;
-  antlrcpp::Any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
-  antlrcpp::Any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
-  antlrcpp::Any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
-  antlrcpp::Any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
-  antlrcpp::Any visitStructDef(SpiceParser::StructDefContext *ctx) override;
-  antlrcpp::Any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
-  antlrcpp::Any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
-  antlrcpp::Any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
-  antlrcpp::Any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override;
-  antlrcpp::Any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
-  antlrcpp::Any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
-  antlrcpp::Any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
-  antlrcpp::Any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
-  antlrcpp::Any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
-  antlrcpp::Any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
-  antlrcpp::Any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
-  antlrcpp::Any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
-  antlrcpp::Any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override;
-  antlrcpp::Any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override;
-  antlrcpp::Any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override;
-  antlrcpp::Any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override;
-  antlrcpp::Any visitTidCall(SpiceParser::TidCallContext *ctx) override;
-  antlrcpp::Any visitJoinCall(SpiceParser::JoinCallContext *ctx) override;
-  antlrcpp::Any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override;
-  antlrcpp::Any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override;
-  antlrcpp::Any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override;
-  antlrcpp::Any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) override;
-  antlrcpp::Any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) override;
-  antlrcpp::Any visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) override;
-  antlrcpp::Any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) override;
-  antlrcpp::Any visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) override;
-  antlrcpp::Any visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) override;
-  antlrcpp::Any visitShiftExpr(SpiceParser::ShiftExprContext *ctx) override;
-  antlrcpp::Any visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) override;
-  antlrcpp::Any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) override;
-  antlrcpp::Any visitCastExpr(SpiceParser::CastExprContext *ctx) override;
-  antlrcpp::Any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) override;
-  antlrcpp::Any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
-  antlrcpp::Any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
-  antlrcpp::Any visitValue(SpiceParser::ValueContext *ctx) override;
-  antlrcpp::Any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
-  antlrcpp::Any visitDataType(SpiceParser::DataTypeContext *ctx) override;
-  antlrcpp::Any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
+  std::any visitEntry(SpiceParser::EntryContext *ctx) override;
+  std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
+  std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
+  std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
+  std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
+  std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
+  std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
+  std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
+  std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
+  std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override;
+  std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
+  std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
+  std::any visitTypeAlts(SpiceParser::TypeAltsContext *ctx) override;
+  std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
+  std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
+  std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
+  std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
+  std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
+  std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
+  std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override;
+  std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override;
+  std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override;
+  std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override;
+  std::any visitTidCall(SpiceParser::TidCallContext *ctx) override;
+  std::any visitJoinCall(SpiceParser::JoinCallContext *ctx) override;
+  std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override;
+  std::any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override;
+  std::any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override;
+  std::any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) override;
+  std::any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) override;
+  std::any visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) override;
+  std::any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) override;
+  std::any visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) override;
+  std::any visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) override;
+  std::any visitShiftExpr(SpiceParser::ShiftExprContext *ctx) override;
+  std::any visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) override;
+  std::any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) override;
+  std::any visitCastExpr(SpiceParser::CastExprContext *ctx) override;
+  std::any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) override;
+  std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
+  std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
+  std::any visitValue(SpiceParser::ValueContext *ctx) override;
+  std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
+  std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
+  std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
+  std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;
 
 private:
   // Members
   std::unique_ptr<OpRuleConversionsManager> conversionsManager;
-  SourceFile *sourceFile;
   std::string objectFile;
   llvm::TargetMachine *targetMachine{};
   CliOptions *cliOptions;
@@ -95,7 +96,6 @@ private:
   std::string scopePrefix;
   SymbolType currentSymbolType;
   ScopePath scopePath;
-  ModuleRegistry *moduleRegistry;
   ThreadFactory *threadFactory;
   std::unique_ptr<ErrorFactory> err;
   bool blockAlreadyTerminated = false;

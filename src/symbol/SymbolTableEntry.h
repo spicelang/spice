@@ -23,14 +23,14 @@ enum SymbolState { DECLARED, INITIALIZED };
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, SymbolType type, SymbolSpecifiers specifiers, SymbolState state, const antlr4::Token &token,
+  SymbolTableEntry(std::string name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state, const antlr4::Token &token,
                    unsigned int orderIndex, const bool global)
-      : name(std::move(name)), type(std::move(type)), specifiers(specifiers), state(state), definitionToken(token),
+      : name(std::move(name)), type(type), specifiers(specifiers), state(state), definitionToken(token),
         orderIndex(orderIndex), global(global){};
 
   // Public methods
   [[nodiscard]] std::string getName() const;
-  [[nodiscard]] SymbolType getType() const;
+  [[nodiscard]] const SymbolType &getType() const;
   void updateType(SymbolType newType, bool force);
   [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
   [[nodiscard]] SymbolState getState() const;

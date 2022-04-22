@@ -30,22 +30,28 @@ enum SymbolSuperType {
   TY_IMPORT
 };
 
-typedef std::pair<SymbolSuperType, std::string> TypeChainElement;
-typedef std::stack<TypeChainElement> TypeChain;
-
 class SymbolType {
+  typedef std::vector<SymbolType> TemplateTypes;
+  typedef std::tuple<SymbolSuperType, std::string, TemplateTypes> TypeChainElement;
+  typedef std::stack<TypeChainElement> TypeChain;
+
 public:
   // Constructors
-  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, ""}}) {}
-  SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType}}) {}
+  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}}}) {}
+  explicit SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}}}) {}
+  explicit SymbolType(SymbolSuperType superType, const std::string &subType, const std::vector<SymbolType> &templateTypes)
+      : typeChain({{superType, subType, templateTypes}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
   SymbolType() = default;
+  virtual ~SymbolType() = default;
 
   // Public methods
+  [[nodiscard]] TypeChain getTypeChain() const;
   SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token);
   SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size = 0);
   [[nodiscard]] SymbolType getContainedTy() const;
-  SymbolType replaceSubType(const std::string &newSubType);
+  SymbolType replaceBaseSubType(const std::string &newSubType) const;
+  [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
   [[nodiscard]] bool isPointer() const;
   [[nodiscard]] bool isPointerOf(SymbolSuperType superType) const;
   [[nodiscard]] bool isArray() const;
@@ -59,16 +65,19 @@ public:
   [[nodiscard]] SymbolSuperType getSuperType() const;
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;
+  [[nodiscard]] TemplateTypes getTemplateTypes() const;
   [[nodiscard]] std::string getName(bool withSize = false) const;
   [[nodiscard]] unsigned int getArraySize() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
-  [[nodiscard]] TypeChain getTypeChain() const;
 
 protected:
   // Members
   TypeChain typeChain;
+
+  // Protected methods
+  void setSubType(const std::string &newSubType);
 
 private:
   // Private methods

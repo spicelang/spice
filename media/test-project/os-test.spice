@@ -33,36 +33,28 @@ f<int> main() {
     v.push(2);
 }*/
 
-/*f<int> testFunc(string param = "Test") {
-    printf("Test func %s\n", param);
-    return 2;
-}
+/*import "os-test2" as s1;
 
 f<int> main() {
-    int res = testFunc();
-    printf("Result: %d\n", res);
+    dyn v = s1.Vector<int>{};
+    v.setData<int>(12);
 }*/
 
-/*type T dyn;
-type U dyn;
+type T int|double|short|long;
 
-f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
-    return arg1 + arg2 + arg3;
-}
-
-f<double> genericFunction<T, U>(T arg1, U arg2, T arg3) {
-    return arg1 + arg2 + arg3;
+f<int> sumNumbers<T>(T[] numberArray, int arrayLength) {
+    result = 0;
+    for int i = 0; i < arrayLength; i++ {
+        result += numberArray[i];
+    }
 }
 
 f<int> main() {
-    printf("%f\n", genericFunction<int, double>(1, 2.4));
-    printf("%f\n", genericFunction<long, double>(12l, 2.0));
-}*/
+    short[7] numberList1 = { 1s, 2s, 3s, 4s, 5s, 6s, 7s };
+    int result1 = sumNumbers<short>(numberList1, sizeof(numberList1));
 
-import "os-test2" as s1;
+    long[4] numberList2 = { 10l, 12l, 14l, 16l };
+    int result2 = sumNumbers<long>(numberList2, sizeof(numberList2));
 
-f<int> main() {
-    s1.printFormat<double>(1.123);
-    s1.printFormat<int>(543);
-    s1.printFormat<string[]>({"Hello", "World"});
+    printf("Results: %d, %d\n", result1, result2);
 }

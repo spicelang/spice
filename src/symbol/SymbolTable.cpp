@@ -157,15 +157,12 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
  * @param scopeId Scope ID of the desired symbol table
  * @return Desired symbol table
  */
-SymbolTable *SymbolTable::lookupTable(const std::string &scopeId) {
+SymbolTable *SymbolTable::lookupTable(const std::string &tableName) {
   // If not available in the current scope, search in the parent scope
-  if (!children.contains(scopeId)) {
-    if (parent == nullptr)
-      return nullptr;
-    return parent->lookupTable(scopeId);
-  }
+  if (!children.contains(tableName))
+    return parent ? parent->lookupTable(tableName) : nullptr;
   // Otherwise, return the entry
-  return children.at(scopeId);
+  return children.at(tableName);
 }
 
 /**
@@ -180,14 +177,38 @@ SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName) {
 }
 
 /**
+ * Insert a new generic type in this scope
+ *
+ * @param typeName Name of the generic type
+ * @param genericType Generic type itself
+ */
+void SymbolTable::insertGenericType(const std::string &typeName, GenericType &genericType) {
+  genericTypes.insert({typeName, genericType});
+}
+
+/**
+ * Search for a generic type by its name. If it was not found, the parent scopes will be searched.
+ * If the generic type does not exist at all, the function will return a nullptr.
+ *
+ * @param typeName Name of the generic type
+ * @return Generic type
+ */
+GenericType *SymbolTable::lookupGenericType(const std::string &typeName) {
+  if (genericTypes.contains(typeName))
+    return &genericTypes.at(typeName);
+  return parent ? parent->lookupGenericType(typeName) : nullptr;
+}
+
+/**
  * Mount in symbol tables manually. This is used to hook in symbol tables of imported modules into the symbol table of
  * the source file, which imported the modules
  *
  * @param childBlockName Name of the child block
  * @param childBlock Child symbol table
  */
-void SymbolTable::mountChildBlock(const std::string &childBlockName, SymbolTable *childBlock) {
-  childBlock->parent = this;
+void SymbolTable::mountChildBlock(const std::string &childBlockName, SymbolTable *childBlock, bool alterParent) {
+  if (alterParent)
+    childBlock->parent = this;
   children.insert({childBlockName, childBlock});
 }
 
@@ -205,15 +226,30 @@ void SymbolTable::renameChildBlock(const std::string &oldName, const std::string
 }
 
 /**
- * Duplicates the child block entry, but it points to the same child block
+ * Duplicates the child block, but it points to the same child block
  *
  * @param originalChildBlockName Original name of the child block
- * @param newChildBlockName New name
+ * @param newChildBlockName New block name
  */
-void SymbolTable::duplicateChildBlockEntry(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
+void SymbolTable::duplicateChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
   SymbolTable *childBlock = children.at(originalChildBlockName);
   assert(childBlock != nullptr);
   children.insert({newChildBlockName, childBlock});
+}
+
+/**
+ * Duplicates the child block by copying it. The duplicated symbols point to the original ones.
+ *
+ * @param originalChildBlockName Original name of the child block
+ * @param newChildBlockName New block name
+ */
+void SymbolTable::copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
+  SymbolTable *originalChildBlock = children.at(originalChildBlockName);
+  assert(originalChildBlock != nullptr);
+  // Copy child block
+  auto newChildBlock = new SymbolTable(*originalChildBlock);
+  // Save the new child block
+  children.insert({newChildBlockName, newChildBlock});
 }
 
 /**
@@ -332,22 +368,25 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
 
       // Check template types requirement
       std::vector<GenericType> curTemplateTypes = f.getTemplateTypes();
+      if (curTemplateTypes.size() != templateTypes.size())
+        continue;
       if (curTemplateTypes.empty()) {
         // It's a match!
         matches.push_back(&functions.at(codeLoc)->at(f.getMangledName()));
       } else {
-        if (curTemplateTypes.size() != templateTypes.size())
-          continue;
         std::vector<SymbolType> concreteTemplateTypes;
         std::vector<GenericTypeReplacement> typeReplacements;
         bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
         for (int i = 0; i < templateTypes.size(); i++) {
-          if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
+          GenericType curTemplateType = curTemplateTypes[i];
+          SymbolType templateType = templateTypes[i];
+
+          if (!curTemplateType.meetsConditions(templateType)) {
             differentTemplateTypes = true;
             break;
           }
-          concreteTemplateTypes.push_back(templateTypes[i]);
-          typeReplacements.emplace_back(curTemplateTypes[i].getSubType(), templateTypes[i]);
+          concreteTemplateTypes.push_back(templateType);
+          typeReplacements.emplace_back(curTemplateType.getSubType(), templateType);
         }
         if (differentTemplateTypes)
           continue;
@@ -355,7 +394,7 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         // Duplicate function
         Function newFunction = f.substantiateGenerics(concreteTemplateTypes);
         insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
-        duplicateChildBlockEntry(f.getSignature(), newFunction.getSignature());
+        copyChildBlock(f.getSignature(), newFunction.getSignature());
 
         matches.push_back(&functions.at(codeLoc)->at(newFunction.getMangledName()));
       }
@@ -378,33 +417,14 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
 }
 
 /**
- * Retrieve function by its mangled name
- *
- * @param mangledName Mangled function name
- * @return Function
- */
-Function *SymbolTable::getFunction(const antlr4::Token &defToken, const std::string &mangledName) {
-  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
-  // Return nullptr if function definition list was not found
-  if (!functions.contains(accessId))
-    return nullptr;
-  // Check if there is an item with that mangled name
-  std::shared_ptr<std::map<std::string, Function>> functionManifestations = functions.at(accessId);
-  if (functionManifestations->contains(mangledName))
-    return &functionManifestations->at(mangledName);
-  // Otherwise, return nullptr
-  return nullptr;
-}
-
-/**
  * Retrieve the manifestations of the function, defined at defToken
  *
  * @return Function manifestations
  */
-std::shared_ptr<std::map<std::string, Function>> SymbolTable::getManifestations(const antlr4::Token &defToken) const {
+std::shared_ptr<std::map<std::string, Function>> SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
   std::string accessId = FileUtil::tokenToCodeLoc(defToken);
   if (!functions.contains(accessId))
-    throw std::runtime_error("Internal compiler error: Cannot get manifestations at " + accessId);
+    throw std::runtime_error("Internal compiler error: Cannot get function manifestations at " + accessId);
   return functions.at(accessId);
 }
 
@@ -419,6 +439,161 @@ Function *SymbolTable::popFunctionAccessPointer() {
   Function *function = functionAccessPointers.front();
   functionAccessPointers.pop();
   return function;
+}
+
+/**
+ * Insert a substantiated function into the function list. If the list already contains a function with the same signature,
+ * an exception will be thrown
+ *
+ * @param function Substantiated function
+ * @param err Error factory
+ * @param token Token, where the function is declared
+ */
+void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
+                                              const std::string &codeLoc) {
+  if (!function.hasSubstantiatedArgs())
+    throw std::runtime_error("Internal compiler error: Expected substantiated function");
+
+  // Check if the function exists already
+  for (const auto &[_, manifestations] : functions) {
+    if (manifestations->contains(function.getMangledName()))
+      throw err->get(token, FUNCTION_DECLARED_TWICE,
+                     "The function/procedure '" + function.getSignature() + "' is declared twice");
+  }
+  // Add function to function list
+  functions.at(codeLoc)->insert({function.getMangledName(), function});
+  // Add symbol table entry for the function
+  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
+}
+
+/**
+ * Insert a struct object into this symbol table scope
+ */
+void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token) {
+  // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
+  structs.insert({FileUtil::tokenToCodeLoc(token), std::make_shared<std::map<std::string, Struct>>()});
+  insertSubstantiatedStruct(s, err, token, FileUtil::tokenToCodeLoc(token));
+}
+
+/**
+ * Check if there is a struct in this scope, fulfilling all given requirements and if found, return it.
+ * If more than one struct matches the requirement, an error gets thrown
+ *
+ * @param structName Struct name
+ * @param templateTypes Template type requirements
+ * @param errorFactory Error factory
+ * @param token Definition token for the error message
+ * @return Matched struct or nullptr
+ */
+Struct *SymbolTable::matchStruct(const std::string &structName, const std::vector<SymbolType> &templateTypes, ErrorFactory *err,
+                                 const antlr4::Token &token) {
+  std::vector<Struct *> matches;
+
+  // Loop through function and add any matches to the matches vector
+  auto oldStructList = structs;
+  for (const auto &[codeLoc, manifestations] : oldStructList) {
+    auto oldManifestations = *manifestations;
+    for (auto &[mangledName, s] : oldManifestations) {
+      // Check name requirement
+      if (s.getName() != structName)
+        continue;
+
+      // Check template types requirement
+      std::vector<GenericType> curTemplateTypes = s.getTemplateTypes();
+      if (curTemplateTypes.empty()) {
+        // It's a match!
+        matches.push_back(&structs.at(codeLoc)->at(s.getMangledName()));
+      } else {
+        if (curTemplateTypes.size() != templateTypes.size())
+          continue;
+        std::vector<SymbolType> concreteTemplateTypes;
+        std::vector<GenericTypeReplacement> typeReplacements;
+        bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
+        for (int i = 0; i < templateTypes.size(); i++) {
+          if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
+            differentTemplateTypes = true;
+            break;
+          }
+          concreteTemplateTypes.push_back(templateTypes[i]);
+          typeReplacements.emplace_back(curTemplateTypes[i].getSubType(), templateTypes[i]);
+        }
+        if (differentTemplateTypes)
+          continue;
+
+        // Duplicate function
+        Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, this, err, token);
+        insertSubstantiatedStruct(newStruct, err, token, s.getDefinitionCodeLoc());
+        duplicateChildBlock(STRUCT_SCOPE_PREFIX + newStruct.getName(), STRUCT_SCOPE_PREFIX + newStruct.getSignature());
+
+        matches.push_back(&structs.at(codeLoc)->at(newStruct.getMangledName()));
+      }
+    }
+  }
+
+  if (matches.empty())
+    return nullptr;
+
+  // Throw error if more than one function matches the criteria
+  if (matches.size() > 1)
+    throw err->get(
+        token, STRUCT_AMBIGUITY,
+        "More than one struct matches your requested signature criteria. Please try to specify the return type explicitly");
+
+  // Add function access pointer for function call
+  structAccessPointers.push(matches[0]);
+
+  return matches[0];
+}
+
+/**
+ * Retrieve the manifestations of the struct, defined at defToken
+ *
+ * @return Struct manifestations
+ */
+std::shared_ptr<std::map<std::string, Struct>> SymbolTable::getStructManifestations(const antlr4::Token &defToken) const {
+  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
+  if (!structs.contains(accessId))
+    throw std::runtime_error("Internal compiler error: Cannot get struct manifestations at " + accessId);
+  return structs.at(accessId);
+}
+
+/**
+ * Get the next struct access in order of visiting
+ *
+ * @return Struct pointer for the struct access
+ */
+Struct *SymbolTable::popStructAccessPointer() {
+  if (structAccessPointers.empty())
+    throw std::runtime_error("Internal compiler error: Could not pop struct access");
+  Struct *s = structAccessPointers.front();
+  structAccessPointers.pop();
+  return s;
+}
+
+/**
+ * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
+ */
+void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
+
+/**
+ * Insert a substantiated struct into the struct list. If the list already contains a struct with the same signature,
+ * an exception will be thrown
+ *
+ * @param s Substantiated struct
+ * @param err Error factory
+ * @param token Token, where the struct is declared
+ */
+void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token,
+                                            const std::string &codeLoc) {
+  // Check if the struct exists already
+  for (const auto &[_, manifestations] : structs) {
+    if (manifestations->contains(s.getMangledName()))
+      throw err->get(token, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
+  }
+  // Add struct to struct list
+  structs.at(codeLoc)->insert({s.getMangledName(), s});
+  // Add symbol table entry for the struct
+  insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, token);
 }
 
 /**
@@ -518,33 +693,3 @@ void SymbolTable::setImported() { imported = true; }
  * @return Imported / not imported
  */
 bool SymbolTable::isImported() const { return imported; }
-
-/**
- * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
- */
-void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
-
-/**
- * Insert a substantiated function into the function list. If the list already contains a function with the same signature,
- * an exception will be thrown
- *
- * @param function Substantiated function
- * @param err Error factory
- * @param token Token, where the function is declared
- */
-void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
-                                              const std::string &codeLoc) {
-  if (!function.hasSubstantiatedArgs())
-    throw std::runtime_error("Internal compiler error: Expected substantiated function");
-
-  // Check if the function exists already
-  for (const auto &[_, manifestations] : functions) {
-    if (manifestations->contains(function.getMangledName()))
-      throw err->get(token, FUNCTION_DECLARED_TWICE,
-                     "The function/procedure '" + function.getSignature() + "' is declared twice");
-  }
-  // Add function to function list
-  functions.at(codeLoc)->insert({function.getMangledName(), function});
-  // Add symbol table entry for the function
-  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
-}

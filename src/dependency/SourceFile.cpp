@@ -77,8 +77,7 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
   }
 
   // Analyze this source file
-  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, moduleRegistry, threadFactory, this, options, parent == nullptr,
-                                               stdFile);
+  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, threadFactory, this, options, parent == nullptr, stdFile);
   needsReAnalyze = any_cast<bool>(analyzer->visit(antlrCtx.parser->entry()));
   antlrCtx.parser->reset();
 }
@@ -112,8 +111,7 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
     sourceFile.first->generate(context, builder, threadFactory, linker);
 
   // Generate this source file
-  generator =
-      std::make_shared<GeneratorVisitor>(context, builder, moduleRegistry, threadFactory, linker, options, this, objectFilePath);
+  generator = std::make_shared<GeneratorVisitor>(context, builder, threadFactory, linker, options, this, objectFilePath);
   generator->visit(antlrCtx.parser->entry());
 
   // Save the JSON version in the compiler output

@@ -1,0 +1,1 @@
+Semantic error in ./test-files/analyzer/generics/error-too-many-call-template-types/source.spice at 15:19: Referenced undefined function: Function/Procedure 'sumNumbers(long*,int)' could not be found

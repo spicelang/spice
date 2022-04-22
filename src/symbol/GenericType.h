@@ -13,7 +13,8 @@ typedef std::pair<std::string, SymbolType> GenericTypeReplacement; // <generic-t
 class GenericType : public SymbolType {
 public:
   // Constructors
-  explicit GenericType(const std::string &name, const SymbolType &symbolType);
+  explicit GenericType(const std::string &name, const SymbolType &type);
+  explicit GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions);
   explicit GenericType(const std::string &name);
 
   // Public methods
@@ -21,7 +22,6 @@ public:
 
 private:
   // Members
-  std::string name;
   std::vector<SymbolType> typeConditions = {SymbolType(TY_DYN)};
 
   // Private methods

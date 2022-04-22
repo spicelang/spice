@@ -105,11 +105,11 @@ std::string Function::getSignature() const {
 
   // Argument type string
   std::string argTyStr;
-  for (int i = 0; i < argTypes.size(); i++) {
-    if (i != 0)
+  for (const auto &argType : argTypes) {
+    if (!argTyStr.empty())
       argTyStr += ",";
-    argTyStr += argTypes[i].first.getName();
-    if (argTypes[i].second)
+    argTyStr += argType.first.getName();
+    if (argType.second)
       argTyStr += "?";
   }
 
@@ -157,7 +157,7 @@ bool Function::isMethodProcedure() const { return returnType.is(TY_DYN) && !this
 /**
  * Get symbol type. Possible super types are TY_FUNCTION and TY_PROCEDURE
  *
- * @return
+ * @return Symbol representing the function
  */
 SymbolType Function::getSymbolType() const { return SymbolType(isFunction() || isMethodFunction() ? TY_FUNCTION : TY_PROCEDURE); }
 
@@ -200,48 +200,64 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
  *
  * @return Substantiated function with concrete arg types and without template types
  */
-Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteArgTypes) const {
-  std::vector<std::pair<SymbolType, bool>> currentFunctionArgTypes;
+Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes) const {
+  std::vector<std::pair<SymbolType, bool>> newArgTypes;
 
-  for (auto &argType : argTypes) {
+  // Substantiate arg types
+  for (const auto &argType : argTypes) {
     assert(!argType.second); // Optional args need to be substantiated at this point
     SymbolType newArgType = argType.first;
-    if (newArgType.is(TY_GENERIC)) {                   // We have to replace it only if it is a generic type
+    SymbolType newArgBaseType = newArgType.getBaseType();
+    if (newArgBaseType.is(TY_GENERIC)) {               // We have to replace it only if it is a generic type
       for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
-        const SymbolType concreteArgType = concreteArgTypes[i];
-        const SymbolType genericType = templateTypes[i];
-        if (newArgType == genericType) {
-          newArgType = concreteArgType; // Use the concrete type instead of the generic one
+        if (newArgBaseType == templateTypes[i]) {
+          newArgType = newArgType.replaceBaseType(concreteTemplateTypes[i]); // Use the concrete type instead of the generic one
           break;
         }
       }
     }
-    currentFunctionArgTypes.emplace_back(newArgType, false);
+    newArgTypes.emplace_back(newArgType, false);
   }
 
-  return Function(name, specifiers, thisType, returnType, currentFunctionArgTypes, {}, definitionCodeLoc);
+  // Substantiate return type
+  SymbolType newReturnType = returnType;
+  if (newReturnType.is(TY_GENERIC)) {
+    for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
+      if (newReturnType == templateTypes[i]) {
+        newReturnType = concreteTemplateTypes[i]; // Use the concrete type instead of the generic one
+        break;
+      }
+    }
+  }
+
+  return Function(name, specifiers, thisType, newReturnType, newArgTypes, {}, definitionCodeLoc);
 }
 
 /**
- * Checks if a function contains optional arguments. This would imply that the function is not substantiated yet
+ * Checks if a function contains optional arguments.
+ * This would imply that the function is not substantiated by its optional arguments yet.
  *
  * @return Substantiated args or not
  */
 bool Function::hasSubstantiatedArgs() const {
-  for (const auto &argType : argTypes) {
-    if (argType.second)
-      return false;
-  }
-  return true;
+  return std::none_of(argTypes.begin(), argTypes.end(), [](auto t) { return t.second; });
 }
 
 /**
- * Checks if a function contains optional arguments or has generic types present. This would imply that the function is not
- * fully substantiated yet
+ * Checks if a function contains template types.
+ * This would imply that the function is not substantiated by its generic types yet.
+ *
+ * @return Substantiated generics or not
+ */
+bool Function::hasSubstantiatedGenerics() const { return templateTypes.empty(); }
+
+/**
+ * Checks if a function contains optional arguments or has generic types present.
+ * This would imply that the function is not fully substantiated yet.
  *
  * @return Fully substantiated or not
  */
-bool Function::isFullySubstantiated() const { return hasSubstantiatedArgs() && templateTypes.empty(); }
+bool Function::isFullySubstantiated() const { return hasSubstantiatedArgs() && hasSubstantiatedGenerics(); }
 
 /**
  * Set the function to used. The compiler only generates IR if the function is used

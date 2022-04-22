@@ -7,9 +7,9 @@ entry: (mainFunctionDef | functionDef | procedureDef | structDef | genericTypeDe
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLst? RPAREN DLL? SEMICOLON;
-genericTypeDef: declSpecifiers? TYPE IDENTIFIER TYPE_DYN SEMICOLON;
-structDef: declSpecifiers? TYPE IDENTIFIER STRUCT LBRACE field* RBRACE;
+extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLstEllipsis? RPAREN DLL? SEMICOLON;
+genericTypeDef: declSpecifiers? TYPE IDENTIFIER typeAlts SEMICOLON;
+structDef: declSpecifiers? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
 threadDef: THREAD LBRACE stmtLst RBRACE;
 forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
@@ -23,7 +23,9 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 // Statements, declarations, definitions and lists
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | threadDef)*;
 field: declSpecifiers? dataType IDENTIFIER;
-typeLst: dataType (COMMA dataType)* ELLIPSIS?;
+typeLst: dataType (COMMA dataType)*;
+typeLstEllipsis: typeLst ELLIPSIS?;
+typeAlts: dataType (BITWISE_OR dataType)*;
 argLstDef: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
@@ -61,10 +63,11 @@ postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | (LESS typeLst GREAT
 atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
-value: primitiveValue | LBRACE argLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* LBRACE argLst? RBRACE | NIL LESS dataType GREATER;
+value: primitiveValue | LBRACE argLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE | NIL LESS dataType GREATER;
 primitiveValue: DOUBLE | INTEGER | SHORT | LONG | CHAR_LITERAL | STRING_LITERAL | TRUE | FALSE;
 dataType: baseDataType (MUL | LBRACKET INTEGER? RBRACKET)*;
-baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | IDENTIFIER (DOT IDENTIFIER)*;
+baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType;
+customDataType: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)?;
 
 // Shorthands
 assignOp: ASSIGN | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | REM_EQUAL | SHL_EQUAL | SHR_EQUAL | AND_EQUAL | OR_EQUAL | XOR_EQUAL;

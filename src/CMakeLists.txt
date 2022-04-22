@@ -24,6 +24,8 @@ set(SOURCES
         symbol/SymbolTableEntry.h
         symbol/Function.cpp
         symbol/Function.h
+        symbol/Struct.cpp
+        symbol/Struct.h
         symbol/Capture.cpp
         symbol/Capture.h
         symbol/SymbolType.cpp
