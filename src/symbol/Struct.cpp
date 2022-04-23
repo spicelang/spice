@@ -83,7 +83,14 @@ std::string Struct::getSignature() const {
  *
  * @return Symbol representing the struct
  */
-SymbolType Struct::getSymbolType() const { return SymbolType(TY_STRUCT, name); }
+SymbolType Struct::getSymbolType() const {
+  std::vector<SymbolType> concreteTemplateTypes;
+  if (isFullySubstantiated()) {
+    for (const auto &templateType : templateTypes)
+      concreteTemplateTypes.push_back(templateType);
+  }
+  return SymbolType(TY_STRUCT, name, concreteTemplateTypes);
+}
 
 /**
  * Convert the current ambiguous struct with potential generic types to a definite struct without generic types
@@ -93,6 +100,11 @@ SymbolType Struct::getSymbolType() const { return SymbolType(TY_STRUCT, name); }
 Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *structScope,
                                     ErrorFactory *err, const antlr4::Token &token) const {
   std::vector<SymbolType> currentFieldTypes;
+
+  // Convert concrete template types to a list of generic types
+  std::vector<GenericType> concreteTemplateTypesGeneric;
+  for (const auto &concreteTemplateType : concreteTemplateTypes)
+    concreteTemplateTypesGeneric.emplace_back(concreteTemplateType);
 
   // Substantiate field types
   for (const auto &fieldType : fieldTypes) {
@@ -117,7 +129,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
     structScope->copyChildBlock(method->getSignature(), newMethod.getSignature());
   }
 
-  return Struct(name, specifiers, currentFieldTypes, {}, definitionCodeLoc);
+  return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, definitionCodeLoc);
 }
 
 /**

@@ -102,6 +102,7 @@ Currently, Spice only offers stable support for x86_64/windows and x86_64/linux.
 - `riscv`
 - `sparc`
 - `systemz`
+- `ve`
 - `webassembly`
 - `x86`
 - `x86_64`
