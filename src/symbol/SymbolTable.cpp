@@ -338,8 +338,26 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         continue;
 
       // Check this type requirement
-      if (f.getThisType() != thisType)
+      SymbolType concreteThisType = thisType;
+      SymbolType functionThisType = f.getThisType();
+      std::vector<SymbolType> functionThisTypeTemplateTypes = functionThisType.getTemplateTypes();
+      std::vector<GenericType> functionTemplateTypes = f.getTemplateTypes();
+      if (!functionThisTypeTemplateTypes.empty()) { // Has generic this type => Check if requirements match
+        std::vector<SymbolType> concreteThisTypeTemplateTypes;
+        for (const auto &functionThisTypeTemplateType : functionThisTypeTemplateTypes) {
+          for (int i = 0; i < functionTemplateTypes.size(); i++) {
+            GenericType functionTemplateType = functionTemplateTypes[i];
+            if (functionTemplateType == functionThisTypeTemplateType && functionTemplateType.meetsConditions(templateTypes[i])) {
+              concreteThisTypeTemplateTypes.push_back(templateTypes[i]);
+            } else {
+              continue;
+            }
+          }
+        }
+        concreteThisType.setTemplateTypes(concreteThisTypeTemplateTypes);
+      } else if (functionThisType != thisType) { // Check for equality
         continue;
+      }
 
       // Check arg types requirement
       std::vector<SymbolType> curArgTypes = f.getArgTypes();
@@ -356,32 +374,28 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         continue;
 
       // Check template types requirement
-      std::vector<GenericType> curTemplateTypes = f.getTemplateTypes();
-      if (curTemplateTypes.size() != templateTypes.size())
+      if (functionTemplateTypes.size() != templateTypes.size())
         continue;
-      if (curTemplateTypes.empty()) {
+      if (functionTemplateTypes.empty()) {
         // It's a match!
         matches.push_back(&functions.at(codeLoc)->at(f.getMangledName()));
       } else {
         std::vector<SymbolType> concreteTemplateTypes;
-        std::vector<GenericTypeReplacement> typeReplacements;
         bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
         for (int i = 0; i < templateTypes.size(); i++) {
-          GenericType curTemplateType = curTemplateTypes[i];
-          SymbolType templateType = templateTypes[i];
+          const SymbolType &templateType = templateTypes[i];
 
-          if (!curTemplateType.meetsConditions(templateType)) {
+          if (!functionTemplateTypes[i].meetsConditions(templateType)) {
             differentTemplateTypes = true;
             break;
           }
           concreteTemplateTypes.push_back(templateType);
-          typeReplacements.emplace_back(curTemplateType.getSubType(), templateType);
         }
         if (differentTemplateTypes)
           continue;
 
         // Duplicate function
-        Function newFunction = f.substantiateGenerics(concreteTemplateTypes);
+        Function newFunction = f.substantiateGenerics(concreteTemplateTypes, concreteThisType);
         if (!getChild(newFunction.getSignature())) { // Insert function
           insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
           copyChildBlock(f.getSignature(), newFunction.getSignature());
@@ -498,7 +512,6 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
         if (curTemplateTypes.size() != templateTypes.size())
           continue;
         std::vector<SymbolType> concreteTemplateTypes;
-        std::vector<GenericTypeReplacement> typeReplacements;
         bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
         for (int i = 0; i < templateTypes.size(); i++) {
           if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
@@ -506,7 +519,6 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
             break;
           }
           concreteTemplateTypes.push_back(templateTypes[i]);
-          typeReplacements.emplace_back(curTemplateTypes[i].getSubType(), templateTypes[i]);
         }
         if (differentTemplateTypes)
           continue;

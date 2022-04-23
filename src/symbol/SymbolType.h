@@ -50,7 +50,7 @@ public:
   SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token);
   SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size = 0);
   [[nodiscard]] SymbolType getContainedTy() const;
-  SymbolType replaceBaseSubType(const std::string &newSubType) const;
+  [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
   [[nodiscard]] bool isPointer() const;
   [[nodiscard]] bool isPointerOf(SymbolSuperType superType) const;
@@ -65,6 +65,7 @@ public:
   [[nodiscard]] SymbolSuperType getSuperType() const;
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;
+  void setTemplateTypes(TemplateTypes templateTypes);
   [[nodiscard]] TemplateTypes getTemplateTypes() const;
   [[nodiscard]] std::string getName(bool withSize = false) const;
   [[nodiscard]] unsigned int getArraySize() const;

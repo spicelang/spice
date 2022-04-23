@@ -200,7 +200,8 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
  *
  * @return Substantiated function with concrete arg types and without template types
  */
-Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes) const {
+Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes,
+                                        const SymbolType &concreteThisType) const {
   std::vector<std::pair<SymbolType, bool>> newArgTypes;
 
   // Substantiate arg types
@@ -230,7 +231,7 @@ Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteT
     }
   }
 
-  return Function(name, specifiers, thisType, newReturnType, newArgTypes, {}, definitionCodeLoc);
+  return Function(name, specifiers, concreteThisType, newReturnType, newArgTypes, {}, definitionCodeLoc);
 }
 
 /**

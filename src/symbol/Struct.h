@@ -29,11 +29,12 @@ public:
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] std::string getSignature() const;
   [[nodiscard]] SymbolType getSymbolType() const;
-  [[nodiscard]] Struct substantiateGenerics(const std::vector<SymbolType> &concreteArgTypes, SymbolTable *structScope,
+  [[nodiscard]] Struct substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *structScope,
                                             ErrorFactory *errorFactory, const antlr4::Token &token) const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   void setSymbolTable(SymbolTable *symbolTable);
+  [[nodiscard]] SymbolTable *getSymbolTable() const;
   void setUsed();
   [[nodiscard]] bool isUsed() const;
   [[nodiscard]] const std::string &getDefinitionCodeLoc() const;
