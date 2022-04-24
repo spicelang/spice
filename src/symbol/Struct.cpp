@@ -57,25 +57,10 @@ std::string Struct::getMangledName() const {
  * @return String representation as struct signature
  */
 std::string Struct::getSignature() const {
-  // Argument type string
-  std::string fieldTyStr;
-  for (const auto &fieldType : fieldTypes) {
-    if (!fieldTyStr.empty())
-      fieldTyStr += ",";
-    fieldTyStr += fieldType.getName();
-  }
-
-  // Template type string
-  std::string templateTyStr;
-  for (const auto &templateType : templateTypes) {
-    if (!templateTyStr.empty())
-      templateTyStr += ",";
-    templateTyStr += templateType.getName();
-  }
-  if (!templateTyStr.empty())
-    templateTyStr = "<" + templateTyStr + ">";
-
-  return name + templateTyStr + "(" + fieldTyStr + ")";
+  std::vector<SymbolType> templateSymbolTypes;
+  for (const auto &templateType : templateTypes)
+    templateSymbolTypes.push_back(templateType);
+  return getSignature(name, templateSymbolTypes);
 }
 
 /**
@@ -99,14 +84,13 @@ SymbolType Struct::getSymbolType() const {
  */
 Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *structScope,
                                     ErrorFactory *err, const antlr4::Token &token) const {
-  std::vector<SymbolType> currentFieldTypes;
-
   // Convert concrete template types to a list of generic types
   std::vector<GenericType> concreteTemplateTypesGeneric;
   for (const auto &concreteTemplateType : concreteTemplateTypes)
     concreteTemplateTypesGeneric.emplace_back(concreteTemplateType);
 
   // Substantiate field types
+  std::vector<SymbolType> currentFieldTypes;
   for (const auto &fieldType : fieldTypes) {
     SymbolType newFieldType = fieldType;
     if (fieldType.is(TY_GENERIC)) {                    // We have to replace it only if it is a generic type
@@ -156,13 +140,6 @@ bool Struct::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
 void Struct::setSymbolTable(SymbolTable *symbolTable) { this->symbolTable = symbolTable; }
 
 /**
- * Retrieve the symbol table of the struct
- *
- * @return Symbol table
- */
-SymbolTable *Struct::getSymbolTable() const { return symbolTable; }
-
-/**
  * Set the struct to used. The compiler only generates IR if the struct is used
  */
 void Struct::setUsed() { used = true; }
@@ -180,3 +157,32 @@ bool Struct::isUsed() const { return used; }
  * @return Definition code location
  */
 const std::string &Struct::getDefinitionCodeLoc() const { return definitionCodeLoc; }
+
+/**
+ * Get the signature from the struct name and the concrete template types
+ *
+ * @param structName Struct name
+ * @param concreteTemplateTypes Concrete template types
+ * @return Signature
+ */
+std::string Struct::getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes) {
+  // Argument type string
+  /*std::string fieldTyStr;
+  for (const auto &fieldType : fieldTypes) {
+    if (!fieldTyStr.empty())
+      fieldTyStr += ",";
+    fieldTyStr += fieldType.getName();
+  }*/
+
+  // Template type string
+  std::string templateTyStr;
+  for (const auto &templateType : concreteTemplateTypes) {
+    if (!templateTyStr.empty())
+      templateTyStr += ",";
+    templateTyStr += templateType.getName();
+  }
+  if (!templateTyStr.empty())
+    templateTyStr = "<" + templateTyStr + ">";
+
+  return structName + templateTyStr /* + "(" + fieldTyStr + ")"*/;
+}

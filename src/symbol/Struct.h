@@ -34,10 +34,12 @@ public:
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   void setSymbolTable(SymbolTable *symbolTable);
-  [[nodiscard]] SymbolTable *getSymbolTable() const;
   void setUsed();
   [[nodiscard]] bool isUsed() const;
   [[nodiscard]] const std::string &getDefinitionCodeLoc() const;
+
+  // Public static methods
+  static std::string getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes);
 
 private:
   // Members

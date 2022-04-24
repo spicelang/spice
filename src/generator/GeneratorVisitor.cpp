@@ -1987,20 +1987,20 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     std::string structName;
     SymbolTable *structScope = currentScope;
     for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
-      std::string iden = ctx->IDENTIFIER()[i]->toString();
-      structName += structName.empty() ? iden : "." + iden;
+      std::string identifier = ctx->IDENTIFIER()[i]->toString();
+      structName += structName.empty() ? identifier : "." + identifier;
       if (i < ctx->IDENTIFIER().size() - 1) {
-        SymbolTableEntry *entry = structScope->lookup(iden);
+        SymbolTableEntry *entry = structScope->lookup(identifier);
         if (!entry)
           throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
                          "Struct '" + structName + "' was used before defined");
         if (entry->getType().is(TY_IMPORT)) {
-          structScope = structScope->lookupTable(iden);
+          structScope = structScope->lookupTable(identifier);
         } else if (entry->getType().is(TY_STRUCT)) {
-          structScope = structScope->lookupTable(STRUCT_SCOPE_PREFIX + iden);
+          structScope = structScope->lookupTable(STRUCT_SCOPE_PREFIX + identifier);
         } else {
           throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                         "The variable '" + iden + "' is of type " + entry->getType().getName(false) +
+                         "The variable '" + identifier + "' is of type " + entry->getType().getName(false) +
                              ". Expected struct or import");
         }
       }
