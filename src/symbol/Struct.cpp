@@ -104,15 +104,6 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
     currentFieldTypes.push_back(newFieldType);
   }
 
-  // Substantiate methods
-  /*assert(symbolTable != nullptr);
-  for (const auto &method : symbolTable->getFunctions()) {
-    // Duplicate method
-    Function newMethod = method->substantiateGenerics(concreteTemplateTypes, method->getThisType());
-    structScope->insertSubstantiatedFunction(newMethod, err, token, method->getDefinitionCodeLoc());
-    structScope->copyChildBlock(method->getSignature(), newMethod.getSignature());
-  }*/
-
   return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, definitionCodeLoc);
 }
 

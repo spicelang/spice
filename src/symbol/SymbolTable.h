@@ -54,7 +54,7 @@ public:
   [[nodiscard]] std::vector<Function *> getFunctions() const;
   Function *matchFunction(const std::string &functionName, const SymbolType &thisType, const std::vector<SymbolType> &argTypes,
                           const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
-  [[nodiscard]] std::shared_ptr<std::map<std::string, Function>> getFunctionManifestations(const antlr4::Token &defToken) const;
+  [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const antlr4::Token &defToken) const;
   Function *popFunctionAccessPointer();
   void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
                                    const std::string &codeLoc);
@@ -65,6 +65,8 @@ public:
   [[nodiscard]] std::shared_ptr<std::map<std::string, Struct>> getStructManifestations(const antlr4::Token &defToken) const;
   Struct *popStructAccessPointer();
   void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token, const std::string &codeLoc);
+
+  void purgeSubstantiationRemnants();
 
   void printCompilerWarnings();
   void disableCompilerWarnings();

@@ -425,11 +425,9 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
  *
  * @return Function manifestations
  */
-std::shared_ptr<std::map<std::string, Function>> SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
+std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
   std::string accessId = FileUtil::tokenToCodeLoc(defToken);
-  if (!functions.contains(accessId))
-    throw std::runtime_error("Internal compiler error: Cannot get function manifestations at " + accessId);
-  return functions.at(accessId);
+  return functions.contains(accessId) ? functions.at(accessId).get() : nullptr;
 }
 
 /**
@@ -536,6 +534,9 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
     }
   }
 
+  if (matches.empty() && parent)
+    matches.push_back(parent->matchStruct(structName, templateTypes, err, token));
+
   if (matches.empty())
     return nullptr;
 
@@ -574,6 +575,39 @@ Struct *SymbolTable::popStructAccessPointer() {
   Struct *s = structAccessPointers.front();
   structAccessPointers.pop();
   return s;
+}
+
+/**
+ * Purge all non-substantiated manifestations of functions and structs
+ */
+void SymbolTable::purgeSubstantiationRemnants() {
+  // Prune non-substantiated functions
+  std::erase_if(functions, [&](const auto &kvOuter) {
+    std::erase_if(*kvOuter.second, [&](const auto &kvInner) {
+      if (!kvInner.second.isFullySubstantiated()) {
+        children.erase(kvInner.first); // Delete associated symbol table
+        return true;
+      }
+      return false;
+    });
+    return kvOuter.second->empty();
+  });
+
+  // Prune non-substantiated structs
+  std::erase_if(structs, [&](const auto &kvOuter) {
+    std::erase_if(*kvOuter.second, [&](const auto &kvInner) {
+      if (!kvInner.second.isFullySubstantiated()) {
+        children.erase(STRUCT_SCOPE_PREFIX + kvInner.second.getName()); // Delete associated symbol table
+        return true;
+      }
+      return false;
+    });
+    return kvOuter.second->empty();
+  });
+
+  // Recursion
+  for (const auto &[_, child] : children)
+    child->purgeSubstantiationRemnants();
 }
 
 /**

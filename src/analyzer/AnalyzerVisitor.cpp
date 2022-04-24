@@ -43,6 +43,10 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   visitChildren(ctx);
 
   // --- Post traversing actions
+  // Remove non-substantiated functions and structs
+  if (requiresMainFct && secondRun)
+    rootScope->purgeSubstantiationRemnants();
+
   // Check if the visitor got a main function
   if (requiresMainFct && !hasMainFunction)
     throw err->get(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
@@ -219,67 +223,69 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       currentScope = currentScope->getParent();
     }
   } else { // Second run
-    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
-    for (const auto &[mangledName, spiceFunc] : *manifestations) {
-      // Check if the function is substantiated
-      if (!spiceFunc.isFullySubstantiated())
-        continue;
+    std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+    if (manifestations) {
+      for (const auto &[mangledName, spiceFunc] : *manifestations) {
+        // Check if the function is substantiated
+        if (!spiceFunc.isFullySubstantiated())
+          continue;
 
-      // Go down again in scope
-      currentScope = currentScope->getChild(spiceFunc.getSignature());
-      assert(currentScope != nullptr);
+        // Go down again in scope
+        currentScope = currentScope->getChild(spiceFunc.getSignature());
+        assert(currentScope != nullptr);
 
-      // Replace this type
-      if (spiceFunc.isMethodFunction()) {
-        SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
-        assert(thisVar != nullptr);
-        thisVar->updateType(spiceFunc.getThisType(), true);
-      }
-
-      // Morph the generic return type
-      SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
-      if (returnVarEntry->getType().is(TY_GENERIC)) {
-        SymbolType returnType = spiceFunc.getReturnType();
-        if (returnType.isPointer())
-          throw err->get(*ctx->start, COMING_SOON_SA,
-                         "Spice currently not supports pointer return types due to not supporting heap allocations.");
-        returnVarEntry->updateType(returnType, true);
-      }
-
-      // Get argument types
-      std::vector<std::pair<std::string, SymbolType>> args;
-      if (ctx->argLstDef()) {
-        for (const auto argDecl : ctx->argLstDef()->declStmt()) {
-          std::string argName = argDecl->IDENTIFIER()->toString();
-          SymbolTableEntry *argEntry = currentScope->lookup(argName);
-          assert(argEntry);
-          args.emplace_back(argName, argEntry->getType());
+        // Replace this type
+        if (spiceFunc.isMethodFunction()) {
+          SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
+          assert(thisVar != nullptr);
+          thisVar->updateType(spiceFunc.getThisType(), true);
         }
+
+        // Morph the generic return type
+        SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
+        if (returnVarEntry->getType().is(TY_GENERIC)) {
+          SymbolType returnType = spiceFunc.getReturnType();
+          if (returnType.isPointer())
+            throw err->get(*ctx->start, COMING_SOON_SA,
+                           "Spice currently not supports pointer return types due to not supporting heap allocations.");
+          returnVarEntry->updateType(returnType, true);
+        }
+
+        // Get argument types
+        std::vector<std::pair<std::string, SymbolType>> args;
+        if (ctx->argLstDef()) {
+          for (const auto argDecl : ctx->argLstDef()->declStmt()) {
+            std::string argName = argDecl->IDENTIFIER()->toString();
+            SymbolTableEntry *argEntry = currentScope->lookup(argName);
+            assert(argEntry);
+            args.emplace_back(argName, argEntry->getType());
+          }
+        }
+
+        // Morph the generic types to the replacements
+        std::vector<SymbolType> newArgTypes = spiceFunc.getArgTypes();
+        for (int i = 0; i < newArgTypes.size(); i++) {
+          SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
+          argEntry->updateType(newArgTypes[i], true);
+        }
+
+        // Visit statements in new scope
+        visit(ctx->stmtLst());
+
+        // Reset generic types
+        for (const auto &arg : args) {
+          SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
+          assert(argEntry);
+          argEntry->updateType(arg.second, true);
+        }
+
+        // Check if return variable is now initialized
+        if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
+          throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
+
+        // Leave the function scope
+        currentScope = currentScope->getParent();
       }
-
-      // Morph the generic types to the replacements
-      std::vector<SymbolType> newArgTypes = spiceFunc.getArgTypes();
-      for (int i = 0; i < newArgTypes.size(); i++) {
-        SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
-        argEntry->updateType(newArgTypes[i], true);
-      }
-
-      // Visit statements in new scope
-      visit(ctx->stmtLst());
-
-      // Reset generic types
-      for (const auto &arg : args) {
-        SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
-        assert(argEntry);
-        argEntry->updateType(arg.second, true);
-      }
-
-      // Check if return variable is now initialized
-      if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
-        throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
-
-      // Leave the function scope
-      currentScope = currentScope->getParent();
     }
   }
 
@@ -403,60 +409,62 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     if (isMethod)
       currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
 
-    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
-    for (const auto &[mangledName, spiceProc] : *manifestations) {
-      // Check if the function is substantiated
-      if (!spiceProc.isFullySubstantiated())
-        continue;
+    std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+    if (manifestations) {
+      for (const auto &[mangledName, spiceProc] : *manifestations) {
+        // Check if the function is substantiated
+        if (!spiceProc.isFullySubstantiated())
+          continue;
 
-      // Change scope to the struct specialization
-      if (isMethod) {
-        std::string structSignature =
-            Struct::getSignature(ctx->IDENTIFIER()[0]->toString(), spiceProc.getThisType().getTemplateTypes());
-        currentScope = currentScope->getParent()->getChild(STRUCT_SCOPE_PREFIX + structSignature);
-      }
-
-      // Go down again in scope
-      currentScope = currentScope->getChild(spiceProc.getSignature());
-      assert(currentScope != nullptr);
-
-      // Replace this type
-      if (spiceProc.isMethodProcedure()) {
-        SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
-        assert(thisVar != nullptr);
-        thisVar->updateType(spiceProc.getThisType(), true);
-      }
-
-      // Get argument types
-      std::vector<std::pair<std::string, SymbolType>> args;
-      if (ctx->argLstDef()) {
-        for (const auto argDecl : ctx->argLstDef()->declStmt()) {
-          std::string argName = argDecl->IDENTIFIER()->toString();
-          SymbolTableEntry *argEntry = currentScope->lookup(argName);
-          assert(argEntry);
-          args.emplace_back(argName, argEntry->getType());
+        // Change scope to the struct specialization
+        if (isMethod) {
+          std::string structSignature =
+              Struct::getSignature(ctx->IDENTIFIER()[0]->toString(), spiceProc.getThisType().getTemplateTypes());
+          currentScope = currentScope->getParent()->getChild(STRUCT_SCOPE_PREFIX + structSignature);
         }
+
+        // Go down again in scope
+        currentScope = currentScope->getChild(spiceProc.getSignature());
+        assert(currentScope != nullptr);
+
+        // Replace this type
+        if (spiceProc.isMethodProcedure()) {
+          SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
+          assert(thisVar != nullptr);
+          thisVar->updateType(spiceProc.getThisType(), true);
+        }
+
+        // Get argument types
+        std::vector<std::pair<std::string, SymbolType>> args;
+        if (ctx->argLstDef()) {
+          for (const auto argDecl : ctx->argLstDef()->declStmt()) {
+            std::string argName = argDecl->IDENTIFIER()->toString();
+            SymbolTableEntry *argEntry = currentScope->lookup(argName);
+            assert(argEntry);
+            args.emplace_back(argName, argEntry->getType());
+          }
+        }
+
+        // Morph the generic types to the replacements
+        std::vector<SymbolType> newArgTypes = spiceProc.getArgTypes();
+        for (int i = 0; i < newArgTypes.size(); i++) {
+          SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
+          argEntry->updateType(newArgTypes[i], true);
+        }
+
+        // Visit statements in new scope
+        visit(ctx->stmtLst());
+
+        // Reset generic types
+        for (const auto &arg : args) {
+          SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
+          assert(argEntry);
+          argEntry->updateType(arg.second, true);
+        }
+
+        // Leave the function scope
+        currentScope = currentScope->getParent();
       }
-
-      // Morph the generic types to the replacements
-      std::vector<SymbolType> newArgTypes = spiceProc.getArgTypes();
-      for (int i = 0; i < newArgTypes.size(); i++) {
-        SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
-        argEntry->updateType(newArgTypes[i], true);
-      }
-
-      // Visit statements in new scope
-      visit(ctx->stmtLst());
-
-      // Reset generic types
-      for (const auto &arg : args) {
-        SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
-        assert(argEntry);
-        argEntry->updateType(arg.second, true);
-      }
-
-      // Leave the function scope
-      currentScope = currentScope->getParent();
     }
   }
 
