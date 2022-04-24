@@ -2,7 +2,8 @@
 
 #include "OpRuleManager.h"
 
-SymbolType OpRuleManager::getAssignResultType(const antlr4::Token &token, SymbolType lhs, SymbolType rhs, bool declStmt) {
+SymbolType OpRuleManager::getAssignResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs,
+                                              bool declStmt) {
   // Skip type compatibility check if the lhs is of type dyn
   if (lhs.is(TY_DYN))
     return rhs;

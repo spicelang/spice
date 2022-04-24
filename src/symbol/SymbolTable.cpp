@@ -226,18 +226,6 @@ void SymbolTable::renameChildBlock(const std::string &oldName, const std::string
 }
 
 /**
- * Duplicates the child block, but it points to the same child block
- *
- * @param originalChildBlockName Original name of the child block
- * @param newChildBlockName New block name
- */
-void SymbolTable::duplicateChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
-  SymbolTable *childBlock = children.at(originalChildBlockName);
-  assert(childBlock != nullptr);
-  children.insert({newChildBlockName, childBlock});
-}
-
-/**
  * Duplicates the child block by copying it. The duplicated symbols point to the original ones.
  *
  * @param originalChildBlockName Original name of the child block
@@ -291,25 +279,12 @@ std::map<std::string, SymbolTableEntry> &SymbolTable::getSymbols() { return symb
 std::map<std::string, Capture> &SymbolTable::getCaptures() { return captures; }
 
 /**
- * Returns the number of symbols in the table, which are no functions, procedures or import
- *
- * @return Number of fields
- */
-unsigned int SymbolTable::getFieldCount() const {
-  unsigned int count = 0;
-  for (const auto &[key, symbol] : symbols) {
-    if (!symbol.getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT}))
-      count++;
-  }
-  return count;
-}
-
-/**
  * Insert a function object into this symbol table scope
  */
 void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  functions.insert({FileUtil::tokenToCodeLoc(token), std::make_shared<std::map<std::string, Function>>()});
+  std::string accessId = FileUtil::tokenToCodeLoc(token);
+  functions.insert({accessId, std::make_shared<std::map<std::string, Function>>()});
 
   // Check if function is already substantiated
   if (function.hasSubstantiatedArgs()) {
@@ -320,6 +295,20 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
   // Substantiate the function and insert the substantiated instances
   for (const auto &fct : function.substantiateOptionalArgs())
     insertSubstantiatedFunction(fct, err, token, FileUtil::tokenToCodeLoc(token));
+}
+
+/**
+ * Retrieve all functions in the current scope
+ *
+ * @return List of functions
+ */
+std::vector<Function *> SymbolTable::getFunctions() const {
+  std::vector<Function *> allFunctions;
+  for (const auto &[_, map] : functions) {
+    for (auto &[_, function] : *map)
+      allFunctions.push_back(&function);
+  }
+  return allFunctions;
 }
 
 /**
@@ -349,8 +338,26 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         continue;
 
       // Check this type requirement
-      if (f.getThisType() != thisType)
+      SymbolType concreteThisType = thisType;
+      SymbolType functionThisType = f.getThisType();
+      std::vector<SymbolType> functionThisTypeTemplateTypes = functionThisType.getTemplateTypes();
+      std::vector<GenericType> functionTemplateTypes = f.getTemplateTypes();
+      if (!functionThisTypeTemplateTypes.empty()) { // Has generic this type => Check if requirements match
+        std::vector<SymbolType> concreteThisTypeTemplateTypes;
+        for (const auto &functionThisTypeTemplateType : functionThisTypeTemplateTypes) {
+          for (int i = 0; i < functionTemplateTypes.size(); i++) {
+            GenericType functionTemplateType = functionTemplateTypes[i];
+            if (functionTemplateType == functionThisTypeTemplateType && functionTemplateType.meetsConditions(templateTypes[i])) {
+              concreteThisTypeTemplateTypes.push_back(templateTypes[i]);
+            } else {
+              continue;
+            }
+          }
+        }
+        concreteThisType.setTemplateTypes(concreteThisTypeTemplateTypes);
+      } else if (functionThisType != thisType) { // Check for equality
         continue;
+      }
 
       // Check arg types requirement
       std::vector<SymbolType> curArgTypes = f.getArgTypes();
@@ -367,35 +374,32 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         continue;
 
       // Check template types requirement
-      std::vector<GenericType> curTemplateTypes = f.getTemplateTypes();
-      if (curTemplateTypes.size() != templateTypes.size())
+      if (functionTemplateTypes.size() != templateTypes.size())
         continue;
-      if (curTemplateTypes.empty()) {
+      if (functionTemplateTypes.empty()) {
         // It's a match!
         matches.push_back(&functions.at(codeLoc)->at(f.getMangledName()));
       } else {
         std::vector<SymbolType> concreteTemplateTypes;
-        std::vector<GenericTypeReplacement> typeReplacements;
         bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
         for (int i = 0; i < templateTypes.size(); i++) {
-          GenericType curTemplateType = curTemplateTypes[i];
-          SymbolType templateType = templateTypes[i];
+          const SymbolType &templateType = templateTypes[i];
 
-          if (!curTemplateType.meetsConditions(templateType)) {
+          if (!functionTemplateTypes[i].meetsConditions(templateType)) {
             differentTemplateTypes = true;
             break;
           }
           concreteTemplateTypes.push_back(templateType);
-          typeReplacements.emplace_back(curTemplateType.getSubType(), templateType);
         }
         if (differentTemplateTypes)
           continue;
 
         // Duplicate function
-        Function newFunction = f.substantiateGenerics(concreteTemplateTypes);
-        insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
-        copyChildBlock(f.getSignature(), newFunction.getSignature());
-
+        Function newFunction = f.substantiateGenerics(concreteTemplateTypes, concreteThisType);
+        if (!getChild(newFunction.getSignature())) { // Insert function
+          insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
+          copyChildBlock(f.getSignature(), newFunction.getSignature());
+        }
         matches.push_back(&functions.at(codeLoc)->at(newFunction.getMangledName()));
       }
     }
@@ -411,9 +415,9 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
-  functionAccessPointers.push(matches[0]);
+  functionAccessPointers.push(matches.front());
 
-  return matches[0];
+  return matches.front();
 }
 
 /**
@@ -421,11 +425,9 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
  *
  * @return Function manifestations
  */
-std::shared_ptr<std::map<std::string, Function>> SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
+std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
   std::string accessId = FileUtil::tokenToCodeLoc(defToken);
-  if (!functions.contains(accessId))
-    throw std::runtime_error("Internal compiler error: Cannot get function manifestations at " + accessId);
-  return functions.at(accessId);
+  return functions.contains(accessId) ? functions.at(accessId).get() : nullptr;
 }
 
 /**
@@ -461,6 +463,7 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
                      "The function/procedure '" + function.getSignature() + "' is declared twice");
   }
   // Add function to function list
+  assert(functions.contains(codeLoc));
   functions.at(codeLoc)->insert({function.getMangledName(), function});
   // Add symbol table entry for the function
   insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
@@ -507,7 +510,6 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
         if (curTemplateTypes.size() != templateTypes.size())
           continue;
         std::vector<SymbolType> concreteTemplateTypes;
-        std::vector<GenericTypeReplacement> typeReplacements;
         bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
         for (int i = 0; i < templateTypes.size(); i++) {
           if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
@@ -515,20 +517,25 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
             break;
           }
           concreteTemplateTypes.push_back(templateTypes[i]);
-          typeReplacements.emplace_back(curTemplateTypes[i].getSubType(), templateTypes[i]);
         }
         if (differentTemplateTypes)
           continue;
 
         // Duplicate function
-        Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, this, err, token);
-        insertSubstantiatedStruct(newStruct, err, token, s.getDefinitionCodeLoc());
-        duplicateChildBlock(STRUCT_SCOPE_PREFIX + newStruct.getName(), STRUCT_SCOPE_PREFIX + newStruct.getSignature());
+        SymbolTable *structScope = getChild(STRUCT_SCOPE_PREFIX + structName);
+        Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, structScope, err, token);
+        if (!getChild(STRUCT_SCOPE_PREFIX + newStruct.getSignature())) { // Insert struct
+          insertSubstantiatedStruct(newStruct, err, token, s.getDefinitionCodeLoc());
+          copyChildBlock(STRUCT_SCOPE_PREFIX + structName, STRUCT_SCOPE_PREFIX + newStruct.getSignature());
+        }
 
         matches.push_back(&structs.at(codeLoc)->at(newStruct.getMangledName()));
       }
     }
   }
+
+  if (matches.empty() && parent)
+    matches.push_back(parent->matchStruct(structName, templateTypes, err, token));
 
   if (matches.empty())
     return nullptr;
@@ -540,9 +547,9 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
         "More than one struct matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
-  structAccessPointers.push(matches[0]);
+  structAccessPointers.push(matches.front());
 
-  return matches[0];
+  return matches.front();
 }
 
 /**
@@ -571,6 +578,39 @@ Struct *SymbolTable::popStructAccessPointer() {
 }
 
 /**
+ * Purge all non-substantiated manifestations of functions and structs
+ */
+void SymbolTable::purgeSubstantiationRemnants() {
+  // Prune non-substantiated functions
+  std::erase_if(functions, [&](const auto &kvOuter) {
+    std::erase_if(*kvOuter.second, [&](const auto &kvInner) {
+      if (!kvInner.second.isFullySubstantiated()) {
+        children.erase(kvInner.first); // Delete associated symbol table
+        return true;
+      }
+      return false;
+    });
+    return kvOuter.second->empty();
+  });
+
+  // Prune non-substantiated structs
+  std::erase_if(structs, [&](const auto &kvOuter) {
+    std::erase_if(*kvOuter.second, [&](const auto &kvInner) {
+      if (!kvInner.second.isFullySubstantiated()) {
+        children.erase(STRUCT_SCOPE_PREFIX + kvInner.second.getName()); // Delete associated symbol table
+        return true;
+      }
+      return false;
+    });
+    return kvOuter.second->empty();
+  });
+
+  // Recursion
+  for (const auto &[_, child] : children)
+    child->purgeSubstantiationRemnants();
+}
+
+/**
  * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
  */
 void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
@@ -591,6 +631,7 @@ void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, 
       throw err->get(token, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
   }
   // Add struct to struct list
+  assert(structs.at(codeLoc) != nullptr);
   structs.at(codeLoc)->insert({s.getMangledName(), s});
   // Add symbol table entry for the struct
   insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, token);

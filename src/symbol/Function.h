@@ -35,7 +35,8 @@ public:
   [[nodiscard]] bool isMethodProcedure() const;
   [[nodiscard]] SymbolType getSymbolType() const;
   [[nodiscard]] std::vector<Function> substantiateOptionalArgs() const;
-  [[nodiscard]] Function substantiateGenerics(const std::vector<SymbolType> &concreteArgTypes) const;
+  [[nodiscard]] Function substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes,
+                                              const SymbolType &concreteThisType) const;
   [[nodiscard]] bool hasSubstantiatedArgs() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;

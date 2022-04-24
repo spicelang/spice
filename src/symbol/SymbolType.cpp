@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <tuple>
+#include <utility>
 
 #include <exception/SemanticError.h>
 
@@ -228,6 +229,13 @@ SymbolType SymbolType::getBaseType() const {
     chainCopy.pop();
   // Check if it is of the given superType and subType
   return SymbolType(chainCopy);
+}
+
+/**
+ * Set the list of templates types
+ */
+void SymbolType::setTemplateTypes(SymbolType::TemplateTypes templateTypes) {
+  std::get<2>(typeChain.top()) = std::move(templateTypes);
 }
 
 /**

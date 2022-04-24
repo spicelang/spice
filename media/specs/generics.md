@@ -7,7 +7,7 @@
 - [x] 3. Support basic type conditions for generic types
 - [x] 3. Add tests for this feature
 - [x] 4. Implement Generics for structs
-- [ ] 5. Add tests for this feature
+- [x] 5. Add tests for this feature
 - [ ] 6. Add documentation for generics
 
 ## Syntax

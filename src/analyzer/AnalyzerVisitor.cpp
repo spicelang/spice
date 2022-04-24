@@ -43,6 +43,10 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   visitChildren(ctx);
 
   // --- Post traversing actions
+  // Remove non-substantiated functions and structs
+  if (requiresMainFct && secondRun)
+    rootScope->purgeSubstantiationRemnants();
+
   // Check if the visitor got a main function
   if (requiresMainFct && !hasMainFunction)
     throw err->get(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
@@ -219,60 +223,69 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       currentScope = currentScope->getParent();
     }
   } else { // Second run
-    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
-    for (const auto &[mangledName, spiceFunc] : *manifestations) {
-      // Check if the function is substantiated
-      if (!spiceFunc.isFullySubstantiated())
-        continue;
+    std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+    if (manifestations) {
+      for (const auto &[mangledName, spiceFunc] : *manifestations) {
+        // Check if the function is substantiated
+        if (!spiceFunc.isFullySubstantiated())
+          continue;
 
-      // Go down again in scope
-      currentScope = currentScope->getChild(spiceFunc.getSignature());
-      assert(currentScope != nullptr);
+        // Go down again in scope
+        currentScope = currentScope->getChild(spiceFunc.getSignature());
+        assert(currentScope != nullptr);
 
-      // Morph the generic return type
-      SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
-      if (returnVarEntry->getType().is(TY_GENERIC)) {
-        SymbolType returnType = spiceFunc.getReturnType();
-        if (returnType.isPointer())
-          throw err->get(*ctx->start, COMING_SOON_SA,
-                         "Spice currently not supports pointer return types due to not supporting heap allocations.");
-        returnVarEntry->updateType(returnType, true);
-      }
-
-      // Get argument types
-      std::vector<std::pair<std::string, SymbolType>> args;
-      if (ctx->argLstDef()) {
-        for (const auto argDecl : ctx->argLstDef()->declStmt()) {
-          std::string argName = argDecl->IDENTIFIER()->toString();
-          SymbolTableEntry *argEntry = currentScope->lookup(argName);
-          assert(argEntry);
-          args.emplace_back(argName, argEntry->getType());
+        // Replace this type
+        if (spiceFunc.isMethodFunction()) {
+          SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
+          assert(thisVar != nullptr);
+          thisVar->updateType(spiceFunc.getThisType(), true);
         }
+
+        // Morph the generic return type
+        SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
+        if (returnVarEntry->getType().is(TY_GENERIC)) {
+          SymbolType returnType = spiceFunc.getReturnType();
+          if (returnType.isPointer())
+            throw err->get(*ctx->start, COMING_SOON_SA,
+                           "Spice currently not supports pointer return types due to not supporting heap allocations.");
+          returnVarEntry->updateType(returnType, true);
+        }
+
+        // Get argument types
+        std::vector<std::pair<std::string, SymbolType>> args;
+        if (ctx->argLstDef()) {
+          for (const auto argDecl : ctx->argLstDef()->declStmt()) {
+            std::string argName = argDecl->IDENTIFIER()->toString();
+            SymbolTableEntry *argEntry = currentScope->lookup(argName);
+            assert(argEntry);
+            args.emplace_back(argName, argEntry->getType());
+          }
+        }
+
+        // Morph the generic types to the replacements
+        std::vector<SymbolType> newArgTypes = spiceFunc.getArgTypes();
+        for (int i = 0; i < newArgTypes.size(); i++) {
+          SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
+          argEntry->updateType(newArgTypes[i], true);
+        }
+
+        // Visit statements in new scope
+        visit(ctx->stmtLst());
+
+        // Reset generic types
+        for (const auto &arg : args) {
+          SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
+          assert(argEntry);
+          argEntry->updateType(arg.second, true);
+        }
+
+        // Check if return variable is now initialized
+        if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
+          throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
+
+        // Leave the function scope
+        currentScope = currentScope->getParent();
       }
-
-      // Morph the generic types to the replacements
-      std::vector<SymbolType> newArgTypes = spiceFunc.getArgTypes();
-      for (int i = 0; i < newArgTypes.size(); i++) {
-        SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
-        argEntry->updateType(newArgTypes[i], true);
-      }
-
-      // Visit statements in new scope
-      visit(ctx->stmtLst());
-
-      // Reset generic types
-      for (const auto &arg : args) {
-        SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
-        assert(argEntry);
-        argEntry->updateType(arg.second, true);
-      }
-
-      // Check if return variable is now initialized
-      if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
-        throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
-
-      // Leave the function scope
-      currentScope = currentScope->getParent();
     }
   }
 
@@ -287,14 +300,13 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
 
   // Check if this is a global function or a method
-  bool isMethod = false;
-  if (ctx->IDENTIFIER().size() > 1) { // Method
-    isMethod = true;
-    // Change to the struct scope
-    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
-  }
+  bool isMethod = ctx->IDENTIFIER().size() > 1;
 
   if (!secondRun) { // First run
+    // Change to the struct scope
+    if (isMethod)
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
@@ -393,46 +405,66 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       currentScope = currentScope->getParent();
     }
   } else { // Second run
-    std::shared_ptr<std::map<std::string, Function>> manifestations = currentScope->getFunctionManifestations(*ctx->start);
-    for (const auto &[mangledName, spiceProc] : *manifestations) {
-      // Check if the function is substantiated
-      if (!spiceProc.isFullySubstantiated())
-        continue;
+    // Change to the struct scope
+    if (isMethod)
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
 
-      // Go down again in scope
-      currentScope = currentScope->getChild(spiceProc.getSignature());
-      assert(currentScope != nullptr);
+    std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+    if (manifestations) {
+      for (const auto &[mangledName, spiceProc] : *manifestations) {
+        // Check if the function is substantiated
+        if (!spiceProc.isFullySubstantiated())
+          continue;
 
-      // Get argument types
-      std::vector<std::pair<std::string, SymbolType>> args;
-      if (ctx->argLstDef()) {
-        for (const auto argDecl : ctx->argLstDef()->declStmt()) {
-          std::string argName = argDecl->IDENTIFIER()->toString();
-          SymbolTableEntry *argEntry = currentScope->lookup(argName);
-          assert(argEntry);
-          args.emplace_back(argName, argEntry->getType());
+        // Change scope to the struct specialization
+        if (isMethod) {
+          std::string structSignature =
+              Struct::getSignature(ctx->IDENTIFIER()[0]->toString(), spiceProc.getThisType().getTemplateTypes());
+          currentScope = currentScope->getParent()->getChild(STRUCT_SCOPE_PREFIX + structSignature);
         }
+
+        // Go down again in scope
+        currentScope = currentScope->getChild(spiceProc.getSignature());
+        assert(currentScope != nullptr);
+
+        // Replace this type
+        if (spiceProc.isMethodProcedure()) {
+          SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
+          assert(thisVar != nullptr);
+          thisVar->updateType(spiceProc.getThisType(), true);
+        }
+
+        // Get argument types
+        std::vector<std::pair<std::string, SymbolType>> args;
+        if (ctx->argLstDef()) {
+          for (const auto argDecl : ctx->argLstDef()->declStmt()) {
+            std::string argName = argDecl->IDENTIFIER()->toString();
+            SymbolTableEntry *argEntry = currentScope->lookup(argName);
+            assert(argEntry);
+            args.emplace_back(argName, argEntry->getType());
+          }
+        }
+
+        // Morph the generic types to the replacements
+        std::vector<SymbolType> newArgTypes = spiceProc.getArgTypes();
+        for (int i = 0; i < newArgTypes.size(); i++) {
+          SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
+          argEntry->updateType(newArgTypes[i], true);
+        }
+
+        // Visit statements in new scope
+        visit(ctx->stmtLst());
+
+        // Reset generic types
+        for (const auto &arg : args) {
+          SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
+          assert(argEntry);
+          argEntry->updateType(arg.second, true);
+        }
+
+        // Leave the function scope
+        currentScope = currentScope->getParent();
       }
-
-      // Morph the generic types to the replacements
-      std::vector<SymbolType> newArgTypes = spiceProc.getArgTypes();
-      for (int i = 0; i < newArgTypes.size(); i++) {
-        SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
-        argEntry->updateType(newArgTypes[i], true);
-      }
-
-      // Visit statements in new scope
-      visit(ctx->stmtLst());
-
-      // Reset generic types
-      for (const auto &arg : args) {
-        SymbolTableEntry *argEntry = currentScope->lookup(arg.first);
-        assert(argEntry);
-        argEntry->updateType(arg.second, true);
-      }
-
-      // Leave the function scope
-      currentScope = currentScope->getParent();
     }
   }
 
@@ -535,7 +567,8 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
     throw err->get(*ctx->start, STRUCT_DECLARED_TWICE, "Duplicate struct '" + structName + "'");
 
   // Get template types
-  std::vector<GenericType> templateTypes;
+  std::vector<GenericType> genericTemplateTypes;
+  std::vector<SymbolType> templateTypes;
   if (ctx->typeLst()) {
     needsReAnalyze = true;
     for (const auto &dataType : ctx->typeLst()->dataType()) {
@@ -544,12 +577,13 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
         throw err->get(*dataType->start, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
+      genericTemplateTypes.push_back(*genericType);
       templateTypes.push_back(*genericType);
     }
   }
 
   // Build symbol specifiers
-  SymbolType symbolType = SymbolType(TY_STRUCT, structName);
+  SymbolType symbolType = SymbolType(TY_STRUCT, structName, templateTypes);
   auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
     for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
@@ -564,7 +598,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
 
   // Visit field list in a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+  SymbolTable *structScope = currentScope = currentScope->createChildBlock(scopeId);
 
   // Insert a field for each field list entry
   std::vector<SymbolType> fieldTypes;
@@ -573,7 +607,8 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
     auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
 
     if (fieldType.is(TY_GENERIC)) { // Check if the type is present in the template for generic types
-      if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == fieldType; }))
+      if (std::none_of(genericTemplateTypes.begin(), genericTemplateTypes.end(),
+                       [&](const GenericType &t) { return t == fieldType; }))
         throw err->get(*field->dataType()->start, GENERIC_TYPE_NOT_IN_TEMPLATE,
                        "Generic field type not included in struct template");
     }
@@ -610,7 +645,8 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
 
   // Add the struct to the symbol table
   std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-  Struct s(structName, structSymbolSpecifiers, fieldTypes, templateTypes, codeLoc);
+  Struct s(structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, codeLoc);
+  s.setSymbolTable(structScope);
   currentScope->insertStruct(s, err.get(), *ctx->start);
   currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
 
@@ -1474,7 +1510,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
         SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
         assert(accessScope != nullptr);
 
-        SymbolTable *newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + lhs.getBaseType().getSubType());
+        std::string structSignature = Struct::getSignature(lhs.getBaseType().getSubType(), lhs.getBaseType().getTemplateTypes());
+        SymbolTable *newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
         assert(newAccessScope != nullptr);
         // Push the retrieved scope to the scope path
         scopePath.pushFragment("[idx]", newAccessScope);
@@ -1556,7 +1593,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
         SymbolType returnType = spiceFunc->getReturnType();
         // Structs from outside the module require more initialization
         if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported())
-          return initExtStruct(*ctx->start, scopePath.getCurrentScope(), accessScopePrefix + ".", returnType.getSubType());
+          return initExtStruct(*ctx->start, scopePath.getCurrentScope(), accessScopePrefix + ".", returnType.getSubType(),
+                               thisType.getTemplateTypes());
         lhs = returnType;
       } else {
         lhs = SymbolType(TY_BOOL);
@@ -1643,13 +1681,13 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     if (entry->getType().is(TY_IMPORT)) { // Import
       newAccessScope = accessScope->lookupTable(entry->getName());
     } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
-      newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + entry->getType().getBaseType().getSubType());
+      std::string structSignature =
+          Struct::getSignature(entry->getType().getBaseType().getSubType(), entry->getType().getBaseType().getTemplateTypes());
+      newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
       // Retrieve the original type if the struct was imported
-      Capture *structCapture = currentScope->lookupCapture(entry->getType().getBaseType().getSubType());
-      if (structCapture)
-        currentThisType = structCapture->getEntry()->getType();
-      else
-        currentThisType = entry->getType();
+      Capture *structCapture = currentScope->lookupCapture(structSignature);
+      currentThisType = structCapture ? structCapture->getEntry()->getType() : entry->getType();
+      currentThisType.setTemplateTypes(entry->getType().getTemplateTypes());
     }
     assert(newAccessScope != nullptr);
 
@@ -1698,41 +1736,49 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     }
 
     // Get the concrete template types
-    std::vector<SymbolType> concreteTypes;
+    std::vector<SymbolType> concreteTemplateTypes;
     if (ctx->typeLst()) {
       for (const auto &dataType : ctx->typeLst()->dataType()) {
         auto templateType = any_cast<SymbolType>(visit(dataType));
-        concreteTypes.push_back(templateType);
+        concreteTemplateTypes.push_back(templateType);
       }
     }
 
-    SymbolType structType;
-    if (structIsImported) { // Imported struct
-      structType =
-          initExtStruct(*ctx->IDENTIFIER()[0]->getSymbol(), accessScope, accessScopePrefix, ctx->IDENTIFIER().back()->toString());
-    } else { // Not imported
-      SymbolTableEntry *structSymbol = currentScope->lookup(accessScopePrefix + structName);
-      if (!structSymbol)
-        throw err->get(*ctx->IDENTIFIER().front()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                       "Could not find struct '" + accessScopePrefix + structName + "'");
-      structType = structSymbol->getType();
-    }
-
     // Get the struct instance
-    /*Struct *spiceStruct = structScope->matchStruct(structName, concreteTypes, err.get(), *ctx->start);
+    Struct *spiceStruct = accessScope->matchStruct(structName, concreteTemplateTypes, err.get(), *ctx->start);
     if (!spiceStruct) {
       // Build struct to get a better error message
       std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
       Struct s(structName, SymbolSpecifiers(SymbolType(TY_STRUCT)), {}, {}, codeLoc);
       throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + s.getSignature() + "' could not be found");
     }
-    spiceStruct->setUsed();*/
+    spiceStruct->setUsed();
+
+    SymbolType structType;
+    if (structIsImported) { // Imported struct
+      structType = initExtStruct(*ctx->IDENTIFIER()[0]->getSymbol(), accessScope, accessScopePrefix,
+                                 ctx->IDENTIFIER().back()->toString(), concreteTemplateTypes);
+    } else { // Not imported
+      SymbolTableEntry *structSymbol =
+          currentScope->lookup(accessScopePrefix + Struct::getSignature(structName, concreteTemplateTypes));
+      if (!structSymbol)
+        throw err->get(*ctx->IDENTIFIER().front()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                       "Could not find struct '" + accessScopePrefix + structName + "'");
+      structType = structSymbol->getType();
+    }
+
+    // Set template types to the struct
+    std::vector<GenericType> genericTemplateTypes = spiceStruct->getTemplateTypes();
+    std::vector<SymbolType> templateTypes;
+    for (auto &genericType : genericTemplateTypes)
+      templateTypes.emplace_back(genericType.getTypeChain());
+    structType.setTemplateTypes(templateTypes);
 
     // Check if the number of fields matches
     SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + accessScopePrefix + structName);
     std::vector<SymbolType> fieldTypes;
     if (ctx->argLst()) { // Check if any fields are passed. Empty braces are also allowed
-      if (structTable->getFieldCount() != ctx->argLst()->assignExpr().size())
+      if (spiceStruct->getFieldTypes().size() != ctx->argLst()->assignExpr().size())
         throw err->get(*ctx->argLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
                        "You've passed too less/many field values. Pass either none or all of them");
 
@@ -1876,17 +1922,17 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
       structIsImported = true;
   }
 
-  // Get the template types
-  std::vector<SymbolType> templateTypes;
+  // Get the concrete template types
+  std::vector<SymbolType> concreteTemplateTypes;
   if (ctx->typeLst()) {
     for (const auto &dataType : ctx->typeLst()->dataType()) {
       auto templateType = any_cast<SymbolType>(visit(dataType));
-      templateTypes.push_back(templateType);
+      concreteTemplateTypes.push_back(templateType);
     }
   }
 
   if (structIsImported) // Imported struct
-    return initExtStruct(*ctx->start, accessScope, accessScopePrefix, structName);
+    return initExtStruct(*ctx->start, accessScope, accessScopePrefix, structName, concreteTemplateTypes);
 
   // Check if struct was declared
   SymbolTableEntry *structSymbol = accessScope->lookup(structName);
@@ -1897,33 +1943,45 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
 }
 
 SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTable *sourceScope,
-                                          const std::string &structScopePrefix, const std::string &structName) {
+                                          const std::string &structScopePrefix, const std::string &structName,
+                                          const std::vector<SymbolType> &templateTypes) {
   // Get external struct name
   std::string newStructName = structScopePrefix + structName;
+
+  // Build signature of required struct
+  std::string templateTyStr;
+  for (const auto &templateType : templateTypes) {
+    if (!templateTyStr.empty())
+      templateTyStr += ",";
+    templateTyStr += templateType.getName();
+  }
+  if (!templateTyStr.empty())
+    templateTyStr = "<" + templateTyStr + ">";
+  std::string structSignature = structName + templateTyStr;
+  std::string newStructSignature = newStructName + templateTyStr;
 
   // Create new struct type
   SymbolType newStructTy = SymbolType(TY_STRUCT, newStructName);
 
   // Check if the struct is imported already
-  Capture *globalCapture = rootScope->lookupCapture(newStructName);
+  Capture *globalCapture = rootScope->lookupCapture(newStructSignature);
   if (globalCapture)
     return newStructTy;
 
   // Check if external struct is declared
-  SymbolTableEntry *externalStructSymbol = sourceScope->lookup(structName);
+  SymbolTableEntry *externalStructSymbol = sourceScope->lookup(structSignature);
   if (!externalStructSymbol)
     throw err->get(token, REFERENCED_UNDEFINED_STRUCT, "Could not find struct '" + newStructName + "'");
 
   // Get the associated symbolTable of the external struct symbol
-  SymbolTable *externalStructTable = sourceScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
+  SymbolTable *externalStructTable = sourceScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
 
   // Initialize potential structs for field types
-  for (auto &symbol : externalStructTable->getSymbols()) {
-    SymbolTableEntry &entry = symbol.second;
+  for (auto &[_, entry] : externalStructTable->getSymbols()) {
     if (entry.getType().isBaseType(TY_STRUCT)) {
       std::string nestedStructName = entry.getType().getBaseType().getSubType();
       // Initialize nested struct
-      initExtStruct(token, sourceScope, structScopePrefix, nestedStructName);
+      initExtStruct(token, sourceScope, structScopePrefix, nestedStructName, entry.getType().getBaseType().getTemplateTypes());
       // Re-map type of field to the imported struct
       SymbolType newNestedStructType = entry.getType();
       newNestedStructType = newNestedStructType.replaceBaseSubType(structScopePrefix + nestedStructName);
@@ -1932,13 +1990,13 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   }
 
   // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
-  Capture newGlobalCapture = Capture(externalStructSymbol, newStructName, DECLARED);
-  rootScope->addCapture(newStructName, newGlobalCapture);
+  Capture newGlobalCapture = Capture(externalStructSymbol, newStructSignature, DECLARED);
+  rootScope->addCapture(newStructSignature, newGlobalCapture);
   externalStructSymbol->setUsed();
 
   // Mount the external struct table to the new position in the root scope of the current source file
-  rootScope->mountChildBlock(STRUCT_SCOPE_PREFIX + newStructName, externalStructTable, false);
-  rootScope->lookupTable(STRUCT_SCOPE_PREFIX + newStructName)->disableCompilerWarnings(); // Disable compiler warnings
+  rootScope->mountChildBlock(STRUCT_SCOPE_PREFIX + newStructSignature, externalStructTable, false);
+  rootScope->lookupTable(STRUCT_SCOPE_PREFIX + newStructSignature)->disableCompilerWarnings(); // Disable compiler warnings
 
   return newStructTy;
 }
