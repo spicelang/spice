@@ -114,7 +114,10 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
  *
  * @return Substantiated generics or not
  */
-bool Struct::hasSubstantiatedGenerics() const { return templateTypes.empty(); }
+bool Struct::hasSubstantiatedGenerics() const {
+  return std::none_of(templateTypes.begin(), templateTypes.end(),
+                      [](const GenericType &genericType) { return genericType.is(TY_GENERIC); });
+}
 
 /**
  * Checks if a struct has generic types present.
