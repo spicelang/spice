@@ -91,17 +91,18 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
 
   // Substantiate field types
   std::vector<SymbolType> currentFieldTypes;
-  for (const auto &fieldType : fieldTypes) {
-    SymbolType newFieldType = fieldType;
-    if (fieldType.is(TY_GENERIC)) {                    // We have to replace it only if it is a generic type
-      for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
-        if (fieldType == templateTypes[i]) {
-          newFieldType = concreteTemplateTypes[i]; // Use the concrete type instead of the generic one
+  for (int i = 0; i < fieldTypes.size(); i++) {
+    SymbolTableEntry *fieldEntry = structScope->lookupByIndex(i);
+    if (fieldTypes[i].is(TY_GENERIC)) {                // We have to replace it only if it is a generic type
+      for (int j = 0; j < templateTypes.size(); j++) { // Go through all template types and get the respective concrete type
+        if (fieldTypes[i] == templateTypes[j]) {
+          const SymbolType &newFieldType = concreteTemplateTypes[j]; // Use the concrete type instead of the generic one
+          fieldEntry->updateType(newFieldType, true);
+          currentFieldTypes.push_back(newFieldType);
           break;
         }
       }
     }
-    currentFieldTypes.push_back(newFieldType);
   }
 
   return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, definitionCodeLoc);

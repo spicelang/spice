@@ -523,11 +523,10 @@ std::any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext
   if (secondRun)
     return nullptr;
 
-  std::string typeName = ctx->IDENTIFIER()->toString();
-
   // Check if type already exists in this scope
+  std::string typeName = ctx->IDENTIFIER()->toString();
   if (currentScope->lookup(typeName))
-    throw err->get(*ctx->start, GENERIC_TYPE_DECLARED_TWICE, "Duplicate generic type '" + typeName + "'");
+    throw err->get(*ctx->start, GENERIC_TYPE_DECLARED_TWICE, "Duplicate symbol name '" + typeName + "'");
 
   // Get type conditions
   std::vector<SymbolType> typeConditions;

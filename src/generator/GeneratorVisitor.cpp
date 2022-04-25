@@ -2280,10 +2280,15 @@ std::any GeneratorVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContex
   for (size_t i = 1; i < ctx->IDENTIFIER().size(); i++)
     typeName += "." + ctx->IDENTIFIER()[i]->toString();
 
+  // Search in symbol for a struct
   SymbolTableEntry *typeEntry = currentScope->lookup(typeName);
-  assert(typeEntry != nullptr);
-  SymbolSuperType superType = typeEntry->getType().is(TY_STRUCT) ? TY_STRUCT : TY_GENERIC;
-  return SymbolType(superType, typeName);
+  if (typeEntry)
+    return SymbolType(TY_STRUCT, typeName);
+
+  // Search in generic types
+  GenericType *genericType = currentScope->lookupGenericType(typeName);
+  assert(genericType);
+  return SymbolType(genericType->getTypeChain());
 }
 
 void GeneratorVisitor::createBr(llvm::BasicBlock *targetBlock) {
