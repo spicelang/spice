@@ -11,8 +11,7 @@
 #include <util/ThreadFactory.h>
 
 /**
- * Compile main source file. All files, that are included by the main source file will call the 'compileSourceFile'
- * function again.
+ * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
  * @param options Command line options
  */
@@ -22,39 +21,38 @@ void compileProject(CliOptions *options) {
     std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
     std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
 
-    // Prepare instance of module registry and thread factory, which have to exist exactly once per executable
-    ModuleRegistry moduleRegistry = ModuleRegistry();
+    // Prepare instance of thread factory and error factory, which have to exist exactly once per executable
     ThreadFactory threadFactory = ThreadFactory();
-
-    // Create instance of error factory and thread factory
     ErrorFactory err{};
 
     // Prepare linker interface
     LinkerInterface linker = LinkerInterface(&err, &threadFactory, options);
     linker.setOutputPath(options->outputPath);
 
-    // Pre-analyze visitor to collect imports
-    SourceFile mainSourceFile = SourceFile(&moduleRegistry, options, nullptr, "root", options->mainSourceFile, false);
+    // Create source file instance for main source file
+    SourceFile mainSourceFile = SourceFile(options, nullptr, "root", options->mainSourceFile, false);
+
+    // Pre-analyze the project (collect imports, etc.)
     mainSourceFile.preAnalyze(options);
 
-    // Analyze the project
+    // Analyze the project (semantic analysis, build symbol table, type inference, type checking, etc.)
     mainSourceFile.analyze(context, builder, &threadFactory);
 
-    // Re-analyze the project
+    // Re-analyze the project (resolve generic functions/procedures/structs, etc.)
     mainSourceFile.reAnalyze(context, builder, &threadFactory);
 
-    // Generate the project
+    // Generate the project (LLVM code gen, optimization, emitting object files, etc.)
     mainSourceFile.generate(context, builder, &threadFactory, &linker);
 
-    // Link the target executable
+    // Link the target executable (Link object files to executable)
     linker.link();
+  } catch (LexerParserError &e) {
+    std::cout << e.what() << "\n";
+    std::exit(1); // Exit with result code other than 0
   } catch (SemanticError &e) {
     std::cout << e.what() << "\n";
     std::exit(1); // Exit with result code other than 0
   } catch (IRError &e) {
-    std::cout << e.what() << "\n";
-    std::exit(1); // Exit with result code other than 0
-  } catch (LexerParserError &e) {
     std::cout << e.what() << "\n";
     std::exit(1); // Exit with result code other than 0
   }
