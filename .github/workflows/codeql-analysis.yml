@@ -30,7 +30,7 @@ jobs:
         run: sudo apt-get install ninja-build
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v1
+        uses: github/codeql-action/init@v2
         with:
           languages: cpp
 
@@ -71,4 +71,4 @@ jobs:
           cmake --build . --target Spice_test
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v1
+        uses: github/codeql-action/analyze@v2
