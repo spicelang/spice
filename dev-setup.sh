@@ -23,7 +23,7 @@ colored_echo "GREEN" "[Step 3] Building LLVM (Could take a whole while, please b
 mkdir ./llvm/build-release
 (
   cd ./llvm/build-release || exit
-  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
+  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
   cmake --build .
 )
 colored_echo "GREEN" "done."

@@ -32,21 +32,21 @@ echo done.
 
 REM - Build LLVM
 echo [Step 3] Building LLVM (Could take a whole while, please be patient) ...
-mkdir ./llvm/build-release
-cd .\llvm\build-release
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
+mkdir .\llvm\build-release
+pushd .\llvm\build-release
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
 cmake --build .
-cd ..\..
+popd
 echo done.
 
 REM - Download third-party libs
 echo [Step 4] Downloading third-party libraries ...
-.\setup-libs.bat > nul 2>&1
+call setup-libs.bat > nul 2>&1
 echo done.
 
 REM - Build in dev context
 echo [Step 5] Building Spice ...
-.\build.sh
+call build.sh
 echo done.
 
 REM - End message
