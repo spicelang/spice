@@ -1,12 +1,17 @@
 #!/bin/sh
 
 colored_echo() {
-    echo "\x1B[01;91m{1}\x1B[0m"
+    GREEN='\e[0;92m' # Green color
+    NC='\e[0m' # No Color
+    echo "${GREEN}${1}${NC}"
 }
 
 # Install Linux dependencies
 colored_echo "[Step 1] Installing dependencies via Linux packages (Could take a while) ... "
-sudo apt-get install cmake make ninja-build uuid-dev opendjk-11-jre-headless
+sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+sudo apt update -y
+sudo apt-get install -y cmake make ninja-build uuid-dev openjdk-11-jre-headless gcc-11 g++-11
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-11 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
 colored_echo "done."
 
 # Clone LLVM
@@ -16,7 +21,7 @@ colored_echo "done."
 
 # Build LLVM
 colored_echo "[Step 3] Building LLVM (Could take a whole while, please be patient) ... "
-mkdir ./llvm/build-release
+mkdir ./llvm/build-release 2>/dev/null
 (
   cd ./llvm/build-release || exit
   cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
