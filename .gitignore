@@ -19,3 +19,6 @@ gen/*
 media/test-project/*
 !media/test-project/*.*
 media/test-project/*.exe
+
+# LLVM
+llvm
