@@ -41,12 +41,12 @@ echo done.
 
 REM - Download third-party libs
 echo [Step 4] Downloading third-party libraries ...
-call setup-libs.bat > nul 2>&1
+cmd /c .\setup-libs.bat > nul 2>&1
 echo done.
 
 REM - Build in dev context
 echo [Step 5] Building Spice ...
-call build.sh
+cmd /c .\build.bat
 echo done.
 
 REM - End message

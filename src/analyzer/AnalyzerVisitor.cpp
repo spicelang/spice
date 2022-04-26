@@ -14,7 +14,8 @@
 AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
                                  const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory *threadFactory,
                                  SourceFile *sourceFile, CliOptions *options, bool requiresMainFct, bool isStdFile) {
-  this->context = context, this->builder = builder;
+  this->context = context;
+  this->builder = builder;
   this->threadFactory = threadFactory;
   this->currentScope = this->rootScope = sourceFile->symbolTable.get();
   this->requiresMainFct = requiresMainFct;

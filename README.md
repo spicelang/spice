@@ -23,6 +23,7 @@ If you like Spice, please consider a GitHub star! ⭐
 
 ## Documentation
 Please visit the documentation at [spicelang.com](https://www.spicelang.com).
+Code coverage at [coverage.spicelang.com](http://coverage.spicelang.com).
 
 ## Setup guide for contributors
 #### Clone the project

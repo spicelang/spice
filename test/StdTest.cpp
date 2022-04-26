@@ -98,8 +98,7 @@ void executeTest(const StdTestCase &testCase) {
     // Create instance of error factory
     ErrorFactory err{};
 
-    // Prepare instance of module registry and thread factory, which have to exist exactly once per executable
-    ModuleRegistry moduleRegistry = ModuleRegistry();
+    // Prepare instance of thread factory, which has to exist exactly once per executable
     ThreadFactory threadFactory = ThreadFactory();
 
     // Create instance of cli options
@@ -113,7 +112,7 @@ void executeTest(const StdTestCase &testCase) {
     LinkerInterface linker = LinkerInterface(&err, &threadFactory, &options);
 
     // Create main source file
-    SourceFile mainSourceFile = SourceFile(&moduleRegistry, &options, nullptr, "root", sourceFile, false);
+    SourceFile mainSourceFile = SourceFile(&options, nullptr, "root", sourceFile, false);
 
     // Execute pre-analyzer
     mainSourceFile.preAnalyze(&options);
