@@ -560,6 +560,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   if (secondRun)
     return nullptr;
 
+  // Get struct name
   std::string structName = ctx->IDENTIFIER()->toString();
 
   // Check if struct already exists in this scope
@@ -1134,7 +1135,7 @@ std::any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
 }
 
 std::any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
-  // Nothing to check here. Sizeof builtin can handle any type
+  visit(ctx->assignExpr());
   return SymbolType(TY_INT);
 }
 
@@ -1579,7 +1580,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
       functionEntry->setUsed(); // Set the function to used
 
       // Check if the function entry has sufficient visibility
-      bool isImported = functionParentScope->isImported() || functionParentScope->getParent()->isImported();
+      bool isImported = functionParentScope->isImported() ||
+                        (functionParentScope->getParent() && functionParentScope->getParent()->isImported());
       if (isImported && !functionEntry->getSpecifiers().isPublic())
         throw err->get(*token->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access function/procedure '" + currentVarName + "' due to its private visibility");
@@ -1947,6 +1949,12 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   if (!structSymbol)
     throw err->get(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
   structSymbol->setUsed();
+
+  // Set the struct instance to used
+  Struct *externalSpiceStruct = accessScope->matchStruct(structName, concreteTemplateTypes, err.get(), *ctx->start);
+  assert(externalSpiceStruct);
+  externalSpiceStruct->setUsed();
+
   return SymbolType(TY_STRUCT, structName);
 }
 
@@ -1956,27 +1964,17 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   // Get external struct name
   std::string newStructName = structScopePrefix + structName;
 
-  // Build signature of required struct
-  std::string templateTyStr;
-  for (const auto &templateType : templateTypes) {
-    if (!templateTyStr.empty())
-      templateTyStr += ",";
-    templateTyStr += templateType.getName();
-  }
-  if (!templateTyStr.empty())
-    templateTyStr = "<" + templateTyStr + ">";
-  std::string structSignature = structName + templateTyStr;
-  std::string newStructSignature = newStructName + templateTyStr;
-
   // Create new struct type
   SymbolType newStructTy = SymbolType(TY_STRUCT, newStructName);
 
   // Check if the struct is imported already
+  std::string newStructSignature = Struct::getSignature(newStructName, templateTypes);
   Capture *globalCapture = rootScope->lookupCapture(newStructSignature);
   if (globalCapture)
     return newStructTy;
 
   // Check if external struct is declared
+  std::string structSignature = Struct::getSignature(structName, templateTypes);
   SymbolTableEntry *externalStructSymbol = sourceScope->lookup(structSignature);
   if (!externalStructSymbol)
     throw err->get(token, REFERENCED_UNDEFINED_STRUCT, "Could not find struct '" + newStructName + "'");
@@ -2001,6 +1999,11 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   Capture newGlobalCapture = Capture(externalStructSymbol, newStructSignature, DECLARED);
   rootScope->addCapture(newStructSignature, newGlobalCapture);
   externalStructSymbol->setUsed();
+
+  // Set the struct instance to used
+  Struct *externalSpiceStruct = sourceScope->matchStruct(structName, templateTypes, err.get(), token);
+  assert(externalSpiceStruct);
+  externalSpiceStruct->setUsed();
 
   // Mount the external struct table to the new position in the root scope of the current source file
   rootScope->mountChildBlock(STRUCT_SCOPE_PREFIX + newStructSignature, externalStructTable, false);

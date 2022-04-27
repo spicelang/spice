@@ -214,7 +214,7 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
   std::string functionName = ctx->IDENTIFIER().back()->toString();
   bool isMethod = ctx->IDENTIFIER().size() > 1;
 
-  // Change to the struct scope
+  // Change to the (potentially generic) struct scope
   if (isMethod)
     currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
 
@@ -222,7 +222,8 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
   std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
 
   // Change back to parent scope
-  currentScope = currentScope->getParent();
+  if (isMethod)
+    currentScope = currentScope->getParent();
 
   if (manifestations) {
     for (const auto &[mangledName, spiceFunc] : *manifestations) {
@@ -354,7 +355,7 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
   bool isMethod = ctx->IDENTIFIER().size() > 1;
 
-  // Change to the struct scope
+  // Change to the (potentially generic) struct scope
   if (isMethod)
     currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
 
@@ -362,7 +363,8 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
   std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
 
   // Change back to parent scope
-  currentScope = currentScope->getParent();
+  if (isMethod)
+    currentScope = currentScope->getParent();
 
   if (manifestations) {
     for (const auto &[mangledName, spiceProc] : *manifestations) {
@@ -392,7 +394,7 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
 
       // Change scope
       currentScope = currentScope->getChild(spiceProc.getSignature());
-      assert(currentScope != nullptr);
+      assert(currentScope);
 
       // Arguments
       unsigned int currentArgIndex = 0;
@@ -2067,14 +2069,14 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 
     // Get struct table
     SymbolTable *structTable = structScope->lookupTable(STRUCT_SCOPE_PREFIX + spiceStruct->getSignature());
-    assert(structTable != nullptr);
+    assert(structTable);
 
     // Fill the struct with the stated values
     if (ctx->argLst()) {
       for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
         // Set address to the struct instance field
         SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
-        assert(fieldEntry != nullptr);
+        assert(fieldEntry);
         // Visit assignment
         auto assignmentPtr = any_cast<llvm::Value *>(visit(ctx->argLst()->assignExpr()[i]));
         llvm::Value *assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);

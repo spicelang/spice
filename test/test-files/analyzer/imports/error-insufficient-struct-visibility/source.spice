@@ -1,5 +1,6 @@
 import "source1" as s1;
 
 f<int> main() {
-    printf("Result: %d\n", s1.Vector{1});
+    dyn s = s1.Vector{1};
+    printf("Result: %d\n", s.i);
 }
