@@ -298,20 +298,6 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
 }
 
 /**
- * Retrieve all functions in the current scope
- *
- * @return List of functions
- */
-std::vector<Function *> SymbolTable::getFunctions() const {
-  std::vector<Function *> allFunctions;
-  for (const auto &[_, map] : functions) {
-    for (auto &[_, function] : *map)
-      allFunctions.push_back(&function);
-  }
-  return allFunctions;
-}
-
-/**
  * Check if there is a function in this scope, fulfilling all given requirements and if found, return it.
  * If more than one function matches the requirement, an error gets thrown
  *
@@ -557,11 +543,11 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
  *
  * @return Struct manifestations
  */
-std::shared_ptr<std::map<std::string, Struct>> SymbolTable::getStructManifestations(const antlr4::Token &defToken) const {
+std::map<std::string, Struct> *SymbolTable::getStructManifestations(const antlr4::Token &defToken) const {
   std::string accessId = FileUtil::tokenToCodeLoc(defToken);
   if (!structs.contains(accessId))
     throw std::runtime_error("Internal compiler error: Cannot get struct manifestations at " + accessId);
-  return structs.at(accessId);
+  return structs.at(accessId).get();
 }
 
 /**

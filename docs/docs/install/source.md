@@ -12,22 +12,20 @@ git clone https://github.com/spicelang/spice.git
 cd spice
 ```
 
-#### Install Go
-For compiling Spice from source, you need to have Go 1.16 or higher installed on your system. Please refer to the [official guide](https://golang.org/doc/install) on how to install Go.
-
-### Build from source
-To build Spice, you can use the `build.sh` for Linux or the `build.bat` for Windows. This will build the executable to the `bin` directory. You can then add the bin directory to the path to use the compiler from elsewhere.
+### Run setup script for setting up your dev environment
+To build Spice, you can use the `dev-setup.sh` for Linux or the `dev-setup.bat` for Windows. This will prepare your dev environment, install the correct LLVM version and builds the Spice executable for the first time to the `bin` directory.
 
 === "Linux"
     ```sh
-    ./build.sh
+    ./dev-setup..sh
     ```
 === "Windows"
     ```sh
-    .\build.bat
+    .\dev-setup..bat
     ```
 
 ### Use
 ```sh
+cd bin
 spice [options] <input>
 ```

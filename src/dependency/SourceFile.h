@@ -35,8 +35,7 @@ struct CompilerOutput {
 class SourceFile {
 public:
   // Constructors
-  explicit SourceFile(ModuleRegistry *moduleRegistry, CliOptions *options, SourceFile *parent, std::string name,
-                      const std::string &filePath, bool stdFile);
+  explicit SourceFile(CliOptions *options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
 
   // Public methods
   void preAnalyze(CliOptions *options);
@@ -64,7 +63,4 @@ public:
   std::shared_ptr<AnalyzerVisitor> analyzer;
   std::shared_ptr<GeneratorVisitor> generator;
   std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const antlr4::Token &>> dependencies;
-
-private:
-  ModuleRegistry *moduleRegistry;
 };

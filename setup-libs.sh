@@ -1,3 +1,5 @@
+#!/bin/sh
+
 mkdir lib
 cd lib || exit
 

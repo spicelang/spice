@@ -9,7 +9,6 @@
 #include <linker/LinkerInterface.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolTable.h>
-#include <util/ModuleRegistry.h>
 #include <util/ThreadFactory.h>
 
 #include <SpiceBaseVisitor.h>
@@ -21,6 +20,14 @@
 // Forward declaration (circular import)
 class SourceFile;
 
+/**
+ * Visitor for generating a source file.
+ *
+ * Jobs:
+ * - LLVM code gen
+ * - Optimization
+ * - Emitting object files
+ */
 class GeneratorVisitor : public SpiceBaseVisitor {
 public:
   // Constructors

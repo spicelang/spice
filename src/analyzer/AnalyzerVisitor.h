@@ -11,7 +11,6 @@
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolTable.h>
 #include <symbol/SymbolType.h>
-#include <util/ModuleRegistry.h>
 #include <util/ThreadFactory.h>
 
 #include <llvm/ADT/Triple.h>
@@ -29,6 +28,16 @@ const std::string STRUCT_SCOPE_PREFIX = "struct:";
 const std::string UNUSED_VARIABLE_NAME = "_";
 const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync"};
 
+/**
+ * Visitor for analyzing a source file.
+ *
+ * Jobs:
+ * - Semantic analysis
+ * - Build symbol table
+ * - Type inference
+ * - Type checking
+ * - Resolve generic functions/procedure/structs
+ */
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
   // Constructors

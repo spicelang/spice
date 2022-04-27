@@ -54,8 +54,6 @@ set(SOURCES
         exception/AntlrThrowingErrorListener.h
         util/ScopeIdUtil.cpp
         util/ScopeIdUtil.h
-        util/ModuleRegistry.cpp
-        util/ModuleRegistry.h
         util/ThreadFactory.cpp
         util/ThreadFactory.h
         util/FileUtil.cpp

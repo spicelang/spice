@@ -28,6 +28,8 @@ title: Install on Linux
 	sudo yum install spice
     ```
 
+If you have cloned the [Spice repository](https://github.com/spicelang/spice) from GitHub, you can execute the respective `install-latest-*.sh` script to install Spice from a user's perspective.
+
 ### Install from package file
 You can also install Spice from a Linux package.
 

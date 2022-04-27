@@ -8,15 +8,13 @@
 
 #include <util/FileUtil.h>
 
-SourceFile::SourceFile(ModuleRegistry *moduleRegistry, CliOptions *options, SourceFile *parent, std::string name,
-                       const std::string &filePath, bool stdFile) {
+SourceFile::SourceFile(CliOptions *options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile) {
   this->name = std::move(name);
   this->filePath = filePath;
   this->objectFilePath = options->outputDir + "/" + FileUtil::getFileName(filePath) + ".o";
   this->stdFile = stdFile;
   this->parent = parent;
   this->options = options;
-  this->moduleRegistry = moduleRegistry;
 
   // Read from file
   std::ifstream fileInputStream(filePath);
@@ -42,9 +40,6 @@ SourceFile::SourceFile(ModuleRegistry *moduleRegistry, CliOptions *options, Sour
 
   // Create symbol table
   symbolTable = std::make_shared<SymbolTable>(nullptr, parent == nullptr);
-
-  // Add to module registry
-  moduleRegistry->pushToImportPath(filePath);
 }
 
 void SourceFile::preAnalyze(CliOptions *options) {
@@ -154,7 +149,7 @@ void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &tok
     throw err->get(token, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
-  dependencies.insert({name, {std::make_shared<SourceFile>(moduleRegistry, options, this, name, filePath, stdFile), token}});
+  dependencies.insert({name, {std::make_shared<SourceFile>(options, this, name, filePath, stdFile), token}});
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {

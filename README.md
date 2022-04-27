@@ -23,6 +23,7 @@ If you like Spice, please consider a GitHub star! ⭐
 
 ## Documentation
 Please visit the documentation at [spicelang.com](https://www.spicelang.com).
+Code coverage at [coverage.spicelang.com](http://coverage.spicelang.com).
 
 ## Setup guide for contributors
 #### Clone the project
@@ -31,43 +32,28 @@ git clone https://github.com/spicelang/spice.git
 cd spice
 ```
 
-#### Download third-party libraries
-There is a batch / sh script to help you with that. Use this command to run it:
+#### Setup dev environment
+There is a batch / sh script to help you with that. It will do the following things:
+
+- Make sure you have all dependencies
+- Clone and build the required LLVM version to the `llvm` subdirectory
+- Download all required third-party libs to the `lib` subdirectory
+- Build Spice for the first time into the `bin` subdirectory
+
+Use this command to run it:
 
 **Linux:** <br>
 ```sh
-./setup-libs.sh
+./dev-setup.sh
 ```
 
 **Windows:** <br>
 ```bat
-.\setup-libs.bat
+.\dev-setup.bat
 ```
 
-#### Build LLVM
-Spice needs the LLVM 14.0.1 sources to compile successfully. Before you clone LLVM, you should navigate outside of the Spice repository.
-
-**Clone:** <br>
-```sh
-git clone --depth 1 --branch llvmorg-14.0.1 https://github.com/llvm/llvm-project.git
-cd llvm-project
-```
-
-**Compile:** <br>
-```sh
-mkdir build-release
-cd build-release
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
-cmake --build .
-```
-
-**Set env:** <br>
-```sh
-export LLVM_DIR=<your-llvm-root-dir>/build-release/lib/cmake/llvm
-```
-
-#### Build Spice
-To build Spice there is also a bat/sh file to help you with that. Use the following command to run it
+#### Re-build Spice
+To re-build Spice there is also a bat/sh file to help you with that. Use the following command to run it:
 
 **Linux:** <br>
 ```sh
@@ -79,13 +65,12 @@ To build Spice there is also a bat/sh file to help you with that. Use the follow
 .\build.bat
 ```
 
-You can find the build output in the `./bin` subdirectory.
+You can find the build output in the `bin` subdirectory.
 
 ## Grammar
 The Spice grammar can be found [here](./src/grammar/Spice.g4) as a ANTLR grammar configuration file.
 
 ## Available target platforms
-
 Currently, Spice only offers stable support for x86_64/windows and x86_64/linux. But you can try to compile to the following architectures without any stability promises:
 
 - `aarch64`

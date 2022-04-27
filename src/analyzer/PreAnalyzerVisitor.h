@@ -7,7 +7,6 @@
 #include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/ErrorFactory.h>
-#include <util/ModuleRegistry.h>
 
 /**
  * Visitor for pre-analyzing all source files in hierarchical order from bottom to top.
