@@ -161,14 +161,6 @@ const std::string &Struct::getDefinitionCodeLoc() const { return definitionCodeL
  * @return Signature
  */
 std::string Struct::getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes) {
-  // Argument type string
-  /*std::string fieldTyStr;
-  for (const auto &fieldType : fieldTypes) {
-    if (!fieldTyStr.empty())
-      fieldTyStr += ",";
-    fieldTyStr += fieldType.getName();
-  }*/
-
   // Template type string
   std::string templateTyStr;
   for (const auto &templateType : concreteTemplateTypes) {
@@ -179,5 +171,5 @@ std::string Struct::getSignature(const std::string &structName, const std::vecto
   if (!templateTyStr.empty())
     templateTyStr = "<" + templateTyStr + ">";
 
-  return structName + templateTyStr /* + "(" + fieldTyStr + ")"*/;
+  return structName + templateTyStr;
 }

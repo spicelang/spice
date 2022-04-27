@@ -1579,7 +1579,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
       functionEntry->setUsed(); // Set the function to used
 
       // Check if the function entry has sufficient visibility
-      if (functionParentScope->isImported() && !functionEntry->getSpecifiers().isPublic())
+      bool isImported = functionParentScope->isImported() || functionParentScope->getParent()->isImported();
+      if (isImported && !functionEntry->getSpecifiers().isPublic())
         throw err->get(*token->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access function/procedure '" + currentVarName + "' due to its private visibility");
 
@@ -1654,7 +1655,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 
     // Load symbol table entry
     SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
-    assert(accessScope != nullptr);
+    assert(accessScope);
     SymbolTableEntry *entry = currentEntry = accessScope->lookup(currentVarName);
 
     // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
@@ -1677,22 +1678,29 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     entry->setUsed();
 
     // Retrieve scope for the new scope path fragment
-    SymbolTable *newAccessScope = accessScope;
     if (entry->getType().is(TY_IMPORT)) { // Import
-      newAccessScope = accessScope->lookupTable(entry->getName());
+      accessScope = accessScope->lookupTable(entry->getName());
     } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
       std::string structSignature =
           Struct::getSignature(entry->getType().getBaseType().getSubType(), entry->getType().getBaseType().getTemplateTypes());
-      newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
+
+      // Get struct table
+      accessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
+
       // Retrieve the original type if the struct was imported
       Capture *structCapture = currentScope->lookupCapture(structSignature);
       currentThisType = structCapture ? structCapture->getEntry()->getType() : entry->getType();
       currentThisType.setTemplateTypes(entry->getType().getTemplateTypes());
+
+      // Check if the entry is public if it is imported
+      if (structCapture && !structCapture->getEntry()->getSpecifiers().isPublic() && accessScope->getParent()->isImported())
+        throw err->get(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
+                       "Cannot access '" + structSignature + "' due to its private visibility");
     }
-    assert(newAccessScope != nullptr);
+    assert(accessScope);
 
     // Otherwise, push the retrieved scope to the scope path
-    scopePath.pushFragment(currentVarName, newAccessScope);
+    scopePath.pushFragment(currentVarName, accessScope);
 
     return entry->getType();
   }

@@ -1,0 +1,5 @@
+import "source1" as s1;
+
+f<int> main() {
+    printf("Result: %d\n", s1.Vector{1});
+}

@@ -214,8 +214,16 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
   std::string functionName = ctx->IDENTIFIER().back()->toString();
   bool isMethod = ctx->IDENTIFIER().size() > 1;
 
+  // Change to the struct scope
+  if (isMethod)
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+
   // Get all substantiated function which result from this function declaration
   std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+
+  // Change back to parent scope
+  currentScope = currentScope->getParent();
+
   if (manifestations) {
     for (const auto &[mangledName, spiceFunc] : *manifestations) {
       // Check if the function is substantiated
@@ -226,9 +234,19 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
       if (!spiceFunc.isUsed() && !spiceFunc.getSpecifiers().isPublic())
         continue;
 
+      std::vector<std::string> argNames;
+      std::vector<llvm::Type *> argTypes;
+
       if (isMethod) { // Change to the struct scope
-        std::string structName = spiceFunc.getThisType().getBaseType().getSubType();
-        currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
+        std::string structSignature = Struct::getSignature(spiceFunc.getThisType().getBaseType().getSubType(),
+                                                           spiceFunc.getThisType().getBaseType().getTemplateTypes());
+        // Get the LLVM type of the struct symbol
+        SymbolTableEntry *thisEntry = currentScope->lookup(structSignature);
+        assert(thisEntry);
+        argNames.push_back(THIS_VARIABLE_NAME);
+        argTypes.push_back(thisEntry->getLLVMType()->getPointerTo());
+        // Change scope to struct
+        currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
         assert(currentScope);
       }
 
@@ -238,19 +256,6 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
 
       // Get return type
       llvm::Type *returnType = getTypeForSymbolType(spiceFunc.getReturnType());
-
-      // Create argument list
-      std::vector<std::string> argNames;
-      std::vector<llvm::Type *> argTypes;
-      // This variable (struct ptr of the parent struct)
-      if (isMethod) {
-        argNames.push_back(THIS_VARIABLE_NAME);
-        std::string structName = ctx->IDENTIFIER().front()->toString();
-        SymbolTableEntry *thisEntry = currentScope->getParent()->getParent()->lookup(structName);
-        assert(thisEntry != nullptr);
-        llvm::Type *argType = thisEntry->getLLVMType()->getPointerTo();
-        argTypes.push_back(argType);
-      }
 
       // Arguments
       unsigned int currentArgIndex = 0;
@@ -349,8 +354,16 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
   bool isMethod = ctx->IDENTIFIER().size() > 1;
 
+  // Change to the struct scope
+  if (isMethod)
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+
   // Get all substantiated function which result from this function declaration
   std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+
+  // Change back to parent scope
+  currentScope = currentScope->getParent();
+
   if (manifestations) {
     for (const auto &[mangledName, spiceProc] : *manifestations) {
       // Check if the function is substantiated
@@ -361,29 +374,25 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
       if (!spiceProc.isUsed() && !spiceProc.getSpecifiers().isPublic())
         continue;
 
+      std::vector<std::string> argNames;
+      std::vector<llvm::Type *> argTypes;
+
       if (isMethod) { // Change to the struct scope
-        std::string structName = spiceProc.getThisType().getBaseType().getSubType();
-        currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
+        std::string structSignature = Struct::getSignature(spiceProc.getThisType().getBaseType().getSubType(),
+                                                           spiceProc.getThisType().getBaseType().getTemplateTypes());
+        // Get the LLVM type of the struct symbol
+        SymbolTableEntry *thisEntry = currentScope->lookup(structSignature);
+        assert(thisEntry);
+        argNames.push_back(THIS_VARIABLE_NAME);
+        argTypes.push_back(thisEntry->getLLVMType()->getPointerTo());
+        // Change scope to struct
+        currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
         assert(currentScope);
       }
 
       // Change scope
       currentScope = currentScope->getChild(spiceProc.getSignature());
       assert(currentScope != nullptr);
-
-      // Create argument list
-      std::vector<std::string> argNames;
-      std::vector<llvm::Type *> argTypes;
-      // This variable (struct ptr of the parent struct)
-      if (isMethod) {
-        argNames.push_back(THIS_VARIABLE_NAME);
-        // Get the struct entry
-        std::string structName = ctx->IDENTIFIER().front()->toString();
-        SymbolTableEntry *thisEntry = currentScope->getParent()->getParent()->lookup(structName);
-        assert(thisEntry != nullptr);
-        llvm::Type *argType = thisEntry->getLLVMType()->getPointerTo();
-        argTypes.push_back(argType);
-      }
 
       // Arguments
       unsigned int currentArgIndex = 0;
@@ -515,6 +524,7 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
+  // Get struct name
   std::string structName = ctx->IDENTIFIER()->toString();
 
   // Get all substantiated function which result from this function declaration
@@ -533,7 +543,7 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
       currentScope = currentScope->getChild(STRUCT_SCOPE_PREFIX + spiceStruct.getSignature());
       assert(currentScope);
 
-      // Collect field types
+      // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
       for (const auto &field : ctx->field()) {
         std::string fieldName = field->IDENTIFIER()->toString();
@@ -1968,9 +1978,11 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
     if (entry->getType().is(TY_IMPORT)) { // Import
       accessScope = accessScope->lookupTable(entry->getName());
     } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
-      accessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + entry->getType().getBaseType().getSubType());
+      std::string structSignature =
+          Struct::getSignature(entry->getType().getBaseType().getSubType(), entry->getType().getBaseType().getTemplateTypes());
+      accessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
     }
-    assert(accessScope != nullptr);
+    assert(accessScope);
 
     // Otherwise, push the current scope to the scope path
     scopePath.pushFragment(currentVarName, accessScope);
@@ -2037,9 +2049,13 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
       }
     }
 
+    // Get struct from struct access pointer
+    Struct *spiceStruct = structScope->popStructAccessPointer();
+    assert(spiceStruct);
+
     // Check if the struct is defined
-    SymbolTableEntry *structSymbol = currentScope->lookup(structName);
-    assert(structSymbol != nullptr);
+    SymbolTableEntry *structSymbol = structScope->lookup(spiceStruct->getSignature());
+    assert(structSymbol);
     llvm::Type *structType = structSymbol->getLLVMType();
 
     // Allocate space for the struct in memory
@@ -2050,7 +2066,7 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     variableSymbol->updateLLVMType(structType);
 
     // Get struct table
-    SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
+    SymbolTable *structTable = structScope->lookupTable(STRUCT_SCOPE_PREFIX + spiceStruct->getSignature());
     assert(structTable != nullptr);
 
     // Fill the struct with the stated values
@@ -2401,9 +2417,9 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType) {
   case TY_STRUCT: {
     std::string structSignature = Struct::getSignature(symbolType.getSubType(), symbolType.getTemplateTypes());
     SymbolTableEntry *structSymbol = currentScope->lookup(structSignature);
-    assert(structSymbol != nullptr);
+    assert(structSymbol);
     llvmBaseType = structSymbol->getLLVMType();
-    assert(llvmBaseType != nullptr);
+    assert(llvmBaseType);
     break;
   }
   default:
