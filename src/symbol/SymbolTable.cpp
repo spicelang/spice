@@ -512,7 +512,7 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
 
         // Duplicate function
         SymbolTable *structScope = getChild(STRUCT_SCOPE_PREFIX + structName);
-        Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, structScope, err, token);
+        Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, structScope, token);
         if (!getChild(STRUCT_SCOPE_PREFIX + newStruct.getSignature())) { // Insert struct
           insertSubstantiatedStruct(newStruct, err, token, s.getDefinitionCodeLoc());
           copyChildBlock(STRUCT_SCOPE_PREFIX + structName, STRUCT_SCOPE_PREFIX + newStruct.getSignature());
