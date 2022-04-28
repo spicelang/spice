@@ -386,7 +386,10 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
           insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
           copyChildBlock(f.getSignature(), newFunction.getSignature());
         }
+
+        assert(functions.contains(codeLoc) && functions.at(codeLoc)->contains(newFunction.getMangledName()));
         matches.push_back(&functions.at(codeLoc)->at(newFunction.getMangledName()));
+        break;
       }
     }
   }
@@ -515,7 +518,9 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
           copyChildBlock(STRUCT_SCOPE_PREFIX + structName, STRUCT_SCOPE_PREFIX + newStruct.getSignature());
         }
 
+        assert(structs.contains(codeLoc) && structs.at(codeLoc)->contains(newStruct.getMangledName()));
         matches.push_back(&structs.at(codeLoc)->at(newStruct.getMangledName()));
+        break;
       }
     }
   }

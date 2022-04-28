@@ -38,6 +38,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Referenced undefined struct";
   case FUNCTION_AMBIGUITY:
     return "Function ambiguity";
+  case STRUCT_AMBIGUITY:
+    return "Struct ambiguity";
   case VARIABLE_DECLARED_TWICE:
     return "Multiple declarations of the same variable";
   case FUNCTION_DECLARED_TWICE:
