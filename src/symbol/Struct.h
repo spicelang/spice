@@ -30,7 +30,7 @@ public:
   [[nodiscard]] std::string getSignature() const;
   [[nodiscard]] SymbolType getSymbolType() const;
   [[nodiscard]] Struct substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *structScope,
-                                            ErrorFactory *errorFactory, const antlr4::Token &token) const;
+                                            const antlr4::Token &token) const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   void setSymbolTable(SymbolTable *symbolTable);

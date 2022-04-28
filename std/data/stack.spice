@@ -17,11 +17,13 @@ public type Stack<T> struct {
     T* contents             // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
     unsigned long size      // Current number of items
+    unsigned int itemSize   // Size of a single item
 }
 
 public p Stack.constructor() {
     // Allocate space for the initial number of elements
-    this.contents = malloc(sizeof(T) * INITIAL_ALLOC_COUNT);
+    this.itemSize = sizeof(*this.itemSize);
+    this.contents = malloc(this.itemSize * INITIAL_ALLOC_COUNT);
     this.capacity = INITIAL_ALLOC_COUNT;
     this.idxFront = 0l;
     this.idxBack = 0l;
@@ -39,7 +41,7 @@ public p Stack.push(T item) {
     // Check if we need to re-allocate memory
     if this.isFull() {
         this.capacity *= RESIZE_FACTOR;
-        this.contents = malloc(sizeof(T) * this.capacity);
+        this.contents = malloc(this.itemSize * this.capacity);
     }
 
     // Insert the element at the back
@@ -59,7 +61,7 @@ public f<T> Stack.pop() {
  *
  * @return Current size of the queue
  */
-public f<unsigned long> Stack.size() {
+public f<long> Stack.size() {
     return this.size;
 }
 
@@ -96,9 +98,9 @@ public p Stack.pack() {
  */
 p Stack.resize(unsigned long itemCount) {
     // Allocate the new memory
-    T* newMemory = malloc(sizeof(T) * itemCount);
+    T* newMemory = malloc(this.itemSize * itemCount);
     // Copy contents over
-    memcpy(newMemory, this.contents, sizeof(T) * this.capacity);
+    memcpy(newMemory, this.contents, this.itemSize * this.capacity);
     // Free the old memory
     free(this.contents);
     // Set new memory to contents array

@@ -17,11 +17,13 @@ public type Vector<T> struct {
     T* contents             // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
     unsigned long size      // Current number of items
+    unsigned int itemSize   // Size of a single item
 }
 
 public p Vector.constructor() {
     // Allocate space for the initial number of elements
-    this.contents = malloc(sizeof(T) * INITIAL_ALLOC_COUNT);
+    this.itemSize = sizeof(*this.contents);
+    this.contents = malloc(this.itemSize * INITIAL_ALLOC_COUNT);
     this.capacity = INITIAL_ALLOC_COUNT;
 }
 
@@ -33,11 +35,11 @@ public p Vector.destructor() {
 /**
  * Add an item at the end of the vector
  */
-public p Vector.pushBack(T item) {
+public p Vector.pushBack<T>(T item) {
     // Check if we need to re-allocate memory
     if this.isFull() {
         this.capacity *= RESIZE_FACTOR;
-        this.contents = malloc(sizeof(T) * this.capacity);
+        this.contents = malloc(this.itemSize * this.capacity);
     }
 
     // Insert the element at the back
@@ -56,7 +58,7 @@ public p Vector.clear() {
  *
  * @return Current size of the queue
  */
-public f<unsigned long> Vector.size() {
+public f<long> Vector.size() {
     return this.size;
 }
 
@@ -93,9 +95,9 @@ public p Vector.pack() {
  */
 p Vector.resize(unsigned long itemCount) {
     // Allocate the new memory
-    T* newMemory = malloc(sizeof(T) * itemCount);
+    T* newMemory = malloc(this.itemSize * itemCount);
     // Copy contents over
-    memcpy(newMemory, this.contents, sizeof(T) * this.capacity);
+    memcpy(newMemory, this.contents, this.itemSize * this.capacity);
     // Free the old memory
     free(this.contents);
     // Set new memory to contents array
