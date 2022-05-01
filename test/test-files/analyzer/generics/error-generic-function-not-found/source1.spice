@@ -1,0 +1,9 @@
+type T int|double;
+
+public type Vector<T> struct {
+    T data
+}
+
+public p Vector.setData<T>(T data) {
+    this.data = data;
+}

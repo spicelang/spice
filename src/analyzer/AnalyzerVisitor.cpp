@@ -224,12 +224,28 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       currentScope = currentScope->getParent();
     }
   } else { // Second run
+    // Change to the struct scope
+    if (isMethod)
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+
+    if (isMethod)
+      currentScope = currentScope->getParent();
+
     if (manifestations) {
       for (const auto &[mangledName, spiceFunc] : *manifestations) {
         // Check if the function is substantiated
         if (!spiceFunc.isFullySubstantiated())
           continue;
+
+        // Change scope to the struct specialization
+        if (isMethod) {
+          std::string structSignature =
+              Struct::getSignature(ctx->IDENTIFIER()[0]->toString(), spiceFunc.getThisType().getTemplateTypes());
+          currentScope = currentScope->getChild(STRUCT_SCOPE_PREFIX + structSignature);
+          assert(currentScope);
+        }
 
         // Go down again in scope
         currentScope = currentScope->getChild(spiceFunc.getSignature());
@@ -411,6 +427,10 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
 
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+
+    if (isMethod)
+      currentScope = currentScope->getParent();
+
     if (manifestations) {
       for (const auto &[mangledName, spiceProc] : *manifestations) {
         // Check if the function is substantiated
@@ -421,7 +441,8 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
         if (isMethod) {
           std::string structSignature =
               Struct::getSignature(ctx->IDENTIFIER()[0]->toString(), spiceProc.getThisType().getTemplateTypes());
-          currentScope = currentScope->getParent()->getChild(STRUCT_SCOPE_PREFIX + structSignature);
+          currentScope = currentScope->getChild(STRUCT_SCOPE_PREFIX + structSignature);
+          assert(currentScope);
         }
 
         // Go down again in scope

@@ -325,23 +325,27 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
 
       // Check this type requirement
       SymbolType concreteThisType = thisType;
-      SymbolType functionThisType = f.getThisType();
-      std::vector<SymbolType> functionThisTypeTemplateTypes = functionThisType.getTemplateTypes();
-      std::vector<GenericType> functionTemplateTypes = f.getTemplateTypes();
-      if (!functionThisTypeTemplateTypes.empty()) { // Has generic this type => Check if requirements match
-        std::vector<SymbolType> concreteThisTypeTemplateTypes;
-        for (const auto &functionThisTypeTemplateType : functionThisTypeTemplateTypes) {
-          for (int i = 0; i < functionTemplateTypes.size(); i++) {
-            GenericType functionTemplateType = functionTemplateTypes[i];
+      SymbolType fctThisType = f.getThisType();
+      std::vector<SymbolType> fctThisTypeTemplateTypes = fctThisType.getTemplateTypes();
+      std::vector<GenericType> fctTemplateTypes = f.getTemplateTypes();
+      if (!fctThisTypeTemplateTypes.empty()) { // Has generic this type => Check if requirements match
+        std::vector<SymbolType> fctConcreteThisTypeTemplateTypes;
+        for (const auto &functionThisTypeTemplateType : fctThisTypeTemplateTypes) {
+          for (int i = 0; i < fctTemplateTypes.size(); i++) {
+            GenericType functionTemplateType = fctTemplateTypes[i];
             if (functionTemplateType == functionThisTypeTemplateType && functionTemplateType.meetsConditions(templateTypes[i])) {
-              concreteThisTypeTemplateTypes.push_back(templateTypes[i]);
+              fctConcreteThisTypeTemplateTypes.push_back(templateTypes[i]);
             } else {
               continue;
             }
           }
         }
-        concreteThisType.setTemplateTypes(concreteThisTypeTemplateTypes);
-      } else if (functionThisType != thisType) { // Check for equality
+        concreteThisType.setTemplateTypes(fctConcreteThisTypeTemplateTypes);
+        // Check if there exists a struct with that particular manifestation
+        std::string structSignature = Struct::getSignature(concreteThisType.getSubType(), concreteThisType.getTemplateTypes());
+        if (!parent->lookupStrict(structSignature))
+          continue;
+      } else if (fctThisType != thisType) { // Check for equality
         continue;
       }
 
@@ -360,22 +364,22 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         continue;
 
       // Check template types requirement
-      if (functionTemplateTypes.size() != templateTypes.size())
+      if (fctTemplateTypes.size() != templateTypes.size())
         continue;
-      if (functionTemplateTypes.empty()) {
+      if (fctTemplateTypes.empty()) {
         // It's a match!
         matches.push_back(&functions.at(codeLoc)->at(f.getMangledName()));
       } else {
         std::vector<SymbolType> concreteTemplateTypes;
         bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
         for (int i = 0; i < templateTypes.size(); i++) {
-          const SymbolType &templateType = templateTypes[i];
+          const SymbolType &concreteTemplateType = templateTypes[i];
 
-          if (!functionTemplateTypes[i].meetsConditions(templateType)) {
+          if (!fctTemplateTypes[i].meetsConditions(concreteTemplateType)) {
             differentTemplateTypes = true;
             break;
           }
-          concreteTemplateTypes.push_back(templateType);
+          concreteTemplateTypes.push_back(concreteTemplateType);
         }
         if (differentTemplateTypes)
           continue;
