@@ -213,14 +213,14 @@ jobs:
           restore-keys: ${{ runner.os }}-go-
 
       - name: Docker login GHCR
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.CR_PAT }}
 
       - name: Docker login Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: docker.io
           username: chillibits
