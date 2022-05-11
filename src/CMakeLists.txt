@@ -1,6 +1,6 @@
 # Find ANTLR
 find_package(ANTLR REQUIRED)
-antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/grammar/Spice.g4 VISITOR)
+antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/Spice.g4 VISITOR)
 
 set(SOURCES
         main.cpp
