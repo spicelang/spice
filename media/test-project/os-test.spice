@@ -33,14 +33,16 @@ f<int> main() {
     v.push(2);
 }*/
 
-import "os-test2" as s1;
+//import "os-test2" as s1;
+import "std/text/format" as fmt;
 
 f<int> main() {
-    dyn v1 = s1.Vector<int>{};
+    /*dyn v1 = s1.Vector<int>{};
     v1.setData<int>(12);
     printf("Data: %d\n", v1.data);
 
     dyn v2 = s1.Vector<double>{};
     v2.setData<double>(1.5);
-    printf("Data: %f\n", v2.data);
+    printf("Data: %f\n", v2.data);*/
+    printf("%s", fmt.toUpper("test"));
 }

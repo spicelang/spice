@@ -41,6 +41,7 @@ const std::vector<BinaryOpRule> PLUS_EQUAL_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),      // long += short = long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),       // long += long = long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),       // byte += byte = byte
+    BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR),       // char += char = char
     BinaryOpRule(TY_STRING, TY_CHAR, TY_STRING),   // string += char = string
     BinaryOpRule(TY_STRING, TY_STRING, TY_STRING), // string += string = string
 };
@@ -58,6 +59,7 @@ const std::vector<BinaryOpRule> MINUS_EQUAL_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG),      // long -= short = long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG),       // long -= long = long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE),       // byte -= byte = byte
+    BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR),       // char += char = char
 };
 
 // Mul equal op rules
