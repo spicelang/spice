@@ -14,7 +14,7 @@
 
 ---
 
-This is the home repo of the Spice programming language. Spice is a compiled language which sets a focus on performance and practicality. It is considered as a systems language, which means it is neither suitable for coding user interfaces nor any interface with the user, except cli tools. Spice supports cross-compilation to all target platforms, listed below.
+This is the home repo of the Spice programming language. Spice is a compiled language which sets a focus on performance and practicality. It is considered as a systems language, which means it is especially useful to write cli tools or device drivers. Spice supports cross-compilation to all target platforms, listed below.
 
 If you like Spice, please consider a GitHub star! ⭐
 
@@ -22,8 +22,8 @@ If you like Spice, please consider a GitHub star! ⭐
 |----------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
 ## Documentation
-Please visit the documentation at [spicelang.com](https://www.spicelang.com).
-Code coverage at [coverage.spicelang.com](http://coverage.spicelang.com).
+Please visit the documentation at [spicelang.com](https://www.spicelang.com). <br>
+Code coverage can be found at [coverage.spicelang.com](http://coverage.spicelang.com).
 
 ## Setup guide for contributors
 #### Clone the project
