@@ -31,6 +31,9 @@ jobs:
       - name: Setup Ninja
         run: sudo apt-get install ninja-build
 
+      - name: Setup Mold
+        uses: rui314/setup-mold@v1
+
       - name: Setup Gcovr
         run: sudo pip install gcovr
 
