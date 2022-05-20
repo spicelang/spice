@@ -116,7 +116,7 @@ jobs:
           choco uninstall llvm --all-versions
           Remove-Item -Recurse -Force C:/Strawberry
           echo "Uninstalling done."
-          Invoke-WebRequest https://chillibits.com/files/gh/mingw64_11_2_0.zip -OutFile mingw64.zip
+          Invoke-WebRequest https://chillibits.com/files/gh/mingw64_12_1_0.zip -OutFile mingw64.zip
           echo "Downloading done."
           7z x mingw64.zip -oC:\mingw64
           echo "Unpacking done."
@@ -131,11 +131,11 @@ jobs:
         uses: actions/cache@v3
         with:
           path: D:/a/spice/spice/llvm
-          key: llvm-14-0-2-win-x64
+          key: llvm-14-0-3-win-x64
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-14.0.2 https://github.com/llvm/llvm-project.git llvm
+        run: git clone --depth 1 --branch llvmorg-14.0.3 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -244,7 +244,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
-          version: v1.9.0
+          version: v1.9.1
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

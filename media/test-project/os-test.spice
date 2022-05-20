@@ -44,5 +44,4 @@ f<int> main() {
     dyn v2 = s1.Vector<double>{};
     v2.setData<double>(1.5);
     printf("Data: %f\n", v2.data);*/
-    printf("%s", fmt.toUpper("test"));
 }
