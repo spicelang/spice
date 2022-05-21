@@ -1,0 +1,11 @@
+/**
+ * Asserts that a condition evaluates to true. If that is not the case, the program will terminate with the passed error message
+ *
+ * @param condition Condition to check
+ * @param message Message to print if the condition evaluates to false
+ */
+public p assert(bool condition, string message = "<no-message>") {
+    if (!condition) {
+
+    }
+}

@@ -2,8 +2,7 @@
 
 #include "OpRuleManager.h"
 
-SymbolType OpRuleManager::getAssignResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs,
-                                              bool declStmt) {
+SymbolType OpRuleManager::getAssignResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs) {
   // Skip type compatibility check if the lhs is of type dyn
   if (lhs.is(TY_DYN))
     return rhs;
@@ -12,9 +11,6 @@ SymbolType OpRuleManager::getAssignResultType(const antlr4::Token &token, const 
     return rhs;
   // Allow array to pointer
   if (lhs.is(TY_PTR) && rhs.is(TY_ARRAY) && lhs.getContainedTy() == rhs.getContainedTy())
-    return lhs;
-  // Allow array of different sizes (only for direct declarations)
-  if (declStmt && lhs.isArray() && rhs.isArray() && lhs.getContainedTy() == rhs.getContainedTy())
     return lhs;
   // Allow char* = string
   if (lhs.isPointerOf(TY_CHAR) && rhs.is(TY_STRING))

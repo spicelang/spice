@@ -584,7 +584,7 @@ public:
   explicit OpRuleManager(const ErrorFactory *errorFactory) : err(errorFactory) {}
 
   // Public methods
-  SymbolType getAssignResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs, bool declStmt);
+  SymbolType getAssignResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getPlusEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getMinusEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getMulEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);

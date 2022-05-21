@@ -955,7 +955,7 @@ std::any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   if (ctx->assignExpr()) {
     auto rhsTy = any_cast<SymbolType>(visit(ctx->assignExpr()));
     // Check if type has to be inferred or both types are fixed
-    symbolType = symbolType.is(TY_DYN) ? rhsTy : opRuleManager->getAssignResultType(*ctx->start, symbolType, rhsTy, true);
+    symbolType = opRuleManager->getAssignResultType(*ctx->start, symbolType, rhsTy);
     initialState = INITIALIZED;
 
     // If the rhs is of type array and was the array initialization, there must be a size attached
@@ -1203,7 +1203,7 @@ std::any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
 
     // Take a look at the operator
     if (ctx->assignOp()->ASSIGN()) {
-      rhsTy = opRuleManager->getAssignResultType(*ctx->start, lhsTy, rhsTy, false);
+      rhsTy = opRuleManager->getAssignResultType(*ctx->start, lhsTy, rhsTy);
     } else if (ctx->assignOp()->PLUS_EQUAL()) {
       rhsTy = opRuleManager->getPlusEqualResultType(*ctx->start, lhsTy, rhsTy);
     } else if (ctx->assignOp()->MINUS_EQUAL()) {
@@ -1862,6 +1862,9 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
         actualSize++;
       }
     }
+
+    // Override actual array size if the expected type has a fixed size
+    actualSize = expectedType.isArray() ? expectedType.getArraySize() : actualSize;
 
     // Check if actual item type is known now
     if (actualItemType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
