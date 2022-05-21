@@ -1072,6 +1072,8 @@ std::any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx)
     return visit(ctx->printfCall());
   if (ctx->sizeOfCall())
     return visit(ctx->sizeOfCall());
+  if (ctx->lenCall())
+    return visit(ctx->lenCall());
   if (ctx->tidCall())
     return visit(ctx->tidCall());
   if (ctx->joinCall())
@@ -1157,6 +1159,16 @@ std::any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
 
 std::any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   visit(ctx->assignExpr());
+  return SymbolType(TY_INT);
+}
+
+std::any AnalyzerVisitor::visitLenCall(SpiceParser::LenCallContext *ctx) {
+  SymbolType argType = any_cast<SymbolType>(visit(ctx->assignExpr()));
+
+  // Check if arg is of type array
+  if (!argType.isArray())
+    throw err->get(*ctx->assignExpr()->getStart(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays");
+
   return SymbolType(TY_INT);
 }
 
@@ -1835,25 +1847,32 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 
   if (ctx->LBRACE()) { // Array initialization
     // Check if all values have the same type
-    assert(expectedType.isArray() || expectedType.is(TY_DYN));
-    SymbolType expectedItemType = expectedType.isArray() ? expectedType.getContainedTy() : expectedType;
     unsigned int actualSize = 0;
+    SymbolType actualItemType = SymbolType(TY_DYN);
     if (ctx->argLst()) {
       for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
         auto itemType = any_cast<SymbolType>(visit(ctx->argLst()->assignExpr()[i]));
-        if (expectedItemType.is(TY_DYN)) {
-          expectedItemType = itemType;
-        } else if (itemType != expectedItemType) {
+        if (actualItemType.is(TY_DYN)) {
+          actualItemType = itemType;
+        } else if (itemType != actualItemType) {
           throw err->get(*ctx->argLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
-                         "All provided values have to be of the same data type. You provided " + expectedItemType.getName(false) +
+                         "All provided values have to be of the same data type. You provided " + actualItemType.getName(false) +
                              " and " + itemType.getName(false));
         }
         actualSize++;
       }
-    } else if (expectedType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
-      throw err->get(*ctx->LBRACE()->getSymbol(), UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
     }
-    return expectedItemType.toArray(err.get(), *ctx->LBRACE()->getSymbol(), actualSize);
+
+    // Check if actual item type is known now
+    if (actualItemType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
+      if (expectedType.is(TY_DYN))
+        throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
+      if (expectedType.is(TY_DYN))
+        throw err->get(*ctx->start, ARRAY_ITEM_TYPE_NOT_MATCHING, "Cannot assign an array to a primitive data type");
+      actualItemType = expectedType.getContainedTy();
+    }
+
+    return actualItemType.toArray(err.get(), *ctx->LBRACE()->getSymbol(), actualSize);
   }
 
   return nullptr;

@@ -10,9 +10,9 @@ SymbolType OpRuleManager::getAssignResultType(const antlr4::Token &token, const 
   // Allow pointers, arrays and structs of the same type straight away
   if (lhs.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhs == rhs)
     return rhs;
-  // Allow pointer to array
-  if (lhs.is(TY_ARRAY) && rhs.is(TY_PTR))
-    return rhs;
+  // Allow array to pointer
+  if (lhs.is(TY_PTR) && rhs.is(TY_ARRAY) && lhs.getContainedTy() == rhs.getContainedTy())
+    return lhs;
   // Allow array of different sizes (only for direct declarations)
   if (declStmt && lhs.isArray() && rhs.isArray() && lhs.getContainedTy() == rhs.getContainedTy())
     return lhs;

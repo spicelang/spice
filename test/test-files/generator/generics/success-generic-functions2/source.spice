@@ -16,13 +16,13 @@ p printData<U>(int arrayLength, U list) {
 
 f<int> main() {
     short[7] numberList1 = { 1s, 2s, 3s, 4s, 5s, 6s, 7s };
-    int result1 = sumNumbers<short>(numberList1, sizeof(numberList1));
+    int result1 = sumNumbers<short>(numberList1, len(numberList1));
 
     long[4] numberList2 = { 10l, 12l, 14l, 16l };
-    int result2 = sumNumbers<long>(numberList2, sizeof(numberList2));
+    int result2 = sumNumbers<long>(numberList2, len(numberList2));
 
     dyn resultList = {result1, result2};
-    printData<int[]>(sizeof(resultList), resultList);
+    printData<int[]>(len(resultList), resultList);
 
     printf("Results: %d, %d\n", result1, result2);
 }

@@ -4,6 +4,7 @@ const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
 ext<char*> malloc(int);
+ext<char*> realloc(char*, int)
 ext free(char*);
 ext<char*> memcpy(char*, char*, int);
 
@@ -98,11 +99,7 @@ public p Stack.pack() {
  */
 p Stack.resize(unsigned long itemCount) {
     // Allocate the new memory
-    T* newMemory = malloc(this.itemSize * itemCount);
-    // Copy contents over
-    memcpy(newMemory, this.contents, this.itemSize * this.capacity);
-    // Free the old memory
-    free(this.contents);
+    T* newMemory = realloc(this.itemSize * itemCount);
     // Set new memory to contents array
     this.contents = newMemory;
     this.capacity = itemCount;
