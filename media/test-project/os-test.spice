@@ -38,8 +38,8 @@ f<int> main() {
 
 f<int> main() {
     int[6] test = {1, 2, 3};
-    int[7] test1 = test;
-    //printf("Size: %d\n", sizeof(test));
+    dyn test1 = test;
+    printf("Size: %d, len: %d\n", sizeof(test), len(test));
     /*dyn v1 = s1.Vector<int>{};
     v1.setData<int>(12);
     printf("Data: %d\n", v1.data);
