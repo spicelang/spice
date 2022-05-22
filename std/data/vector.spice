@@ -4,7 +4,7 @@ const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
 ext<char*> malloc(int);
-ext<char*> realloc(char*, int)
+ext<char*> realloc(char*, int);
 ext free(char*);
 ext<char*> memcpy(char*, char*, int);
 
@@ -23,7 +23,7 @@ public type Vector<T> struct {
 
 public p Vector.constructor() {
     // Allocate space for the initial number of elements
-    this.itemSize = sizeof(*this.contents);
+    this.itemSize = sizeof(T);
     this.contents = malloc(this.itemSize * INITIAL_ALLOC_COUNT);
     this.capacity = INITIAL_ALLOC_COUNT;
 }

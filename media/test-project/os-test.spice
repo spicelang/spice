@@ -33,18 +33,11 @@ f<int> main() {
     v.push(2);
 }*/
 
-//import "os-test2" as s1;
-//import "std/text/format" as fmt;
+import "std/data/vector" as vec;
 
 f<int> main() {
-    int[6] test = {1, 2, 3};
-    dyn test1 = test;
-    printf("Size: %d, len: %d\n", sizeof(test), len(test));
-    /*dyn v1 = s1.Vector<int>{};
-    v1.setData<int>(12);
-    printf("Data: %d\n", v1.data);
+    dyn v1 = vec.Vector<int>{};
+    //v1.constructor();
 
-    dyn v2 = s1.Vector<double>{};
-    v2.setData<double>(1.5);
-    printf("Data: %f\n", v2.data);*/
+    //v1.destructor();
 }
