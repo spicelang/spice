@@ -224,12 +224,28 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       currentScope = currentScope->getParent();
     }
   } else { // Second run
+    // Change to the struct scope
+    if (isMethod)
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+
+    if (isMethod)
+      currentScope = currentScope->getParent();
+
     if (manifestations) {
       for (const auto &[mangledName, spiceFunc] : *manifestations) {
         // Check if the function is substantiated
         if (!spiceFunc.isFullySubstantiated())
           continue;
+
+        // Change scope to the struct specialization
+        if (isMethod) {
+          std::string structSignature =
+              Struct::getSignature(ctx->IDENTIFIER()[0]->toString(), spiceFunc.getThisType().getTemplateTypes());
+          currentScope = currentScope->getChild(STRUCT_SCOPE_PREFIX + structSignature);
+          assert(currentScope);
+        }
 
         // Go down again in scope
         currentScope = currentScope->getChild(spiceFunc.getSignature());
@@ -411,6 +427,10 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
 
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+
+    if (isMethod)
+      currentScope = currentScope->getParent();
+
     if (manifestations) {
       for (const auto &[mangledName, spiceProc] : *manifestations) {
         // Check if the function is substantiated
@@ -421,7 +441,8 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
         if (isMethod) {
           std::string structSignature =
               Struct::getSignature(ctx->IDENTIFIER()[0]->toString(), spiceProc.getThisType().getTemplateTypes());
-          currentScope = currentScope->getParent()->getChild(STRUCT_SCOPE_PREFIX + structSignature);
+          currentScope = currentScope->getChild(STRUCT_SCOPE_PREFIX + structSignature);
+          assert(currentScope);
         }
 
         // Go down again in scope
@@ -934,7 +955,7 @@ std::any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   if (ctx->assignExpr()) {
     auto rhsTy = any_cast<SymbolType>(visit(ctx->assignExpr()));
     // Check if type has to be inferred or both types are fixed
-    symbolType = symbolType.is(TY_DYN) ? rhsTy : opRuleManager->getAssignResultType(*ctx->start, symbolType, rhsTy, true);
+    symbolType = opRuleManager->getAssignResultType(*ctx->start, symbolType, rhsTy);
     initialState = INITIALIZED;
 
     // If the rhs is of type array and was the array initialization, there must be a size attached
@@ -1051,6 +1072,8 @@ std::any AnalyzerVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx)
     return visit(ctx->printfCall());
   if (ctx->sizeOfCall())
     return visit(ctx->sizeOfCall());
+  if (ctx->lenCall())
+    return visit(ctx->lenCall());
   if (ctx->tidCall())
     return visit(ctx->tidCall());
   if (ctx->joinCall())
@@ -1139,6 +1162,16 @@ std::any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   return SymbolType(TY_INT);
 }
 
+std::any AnalyzerVisitor::visitLenCall(SpiceParser::LenCallContext *ctx) {
+  SymbolType argType = any_cast<SymbolType>(visit(ctx->assignExpr()));
+
+  // Check if arg is of type array
+  if (!argType.isArray())
+    throw err->get(*ctx->assignExpr()->getStart(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays");
+
+  return SymbolType(TY_INT);
+}
+
 std::any AnalyzerVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) {
   // Nothing to check here. Tid builtin has no arguments
   return SymbolType(TY_INT);
@@ -1170,7 +1203,7 @@ std::any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
 
     // Take a look at the operator
     if (ctx->assignOp()->ASSIGN()) {
-      rhsTy = opRuleManager->getAssignResultType(*ctx->start, lhsTy, rhsTy, false);
+      rhsTy = opRuleManager->getAssignResultType(*ctx->start, lhsTy, rhsTy);
     } else if (ctx->assignOp()->PLUS_EQUAL()) {
       rhsTy = opRuleManager->getPlusEqualResultType(*ctx->start, lhsTy, rhsTy);
     } else if (ctx->assignOp()->MINUS_EQUAL()) {
@@ -1814,25 +1847,35 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 
   if (ctx->LBRACE()) { // Array initialization
     // Check if all values have the same type
-    assert(expectedType.isArray() || expectedType.is(TY_DYN));
-    SymbolType expectedItemType = expectedType.isArray() ? expectedType.getContainedTy() : expectedType;
     unsigned int actualSize = 0;
+    SymbolType actualItemType = SymbolType(TY_DYN);
     if (ctx->argLst()) {
       for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
         auto itemType = any_cast<SymbolType>(visit(ctx->argLst()->assignExpr()[i]));
-        if (expectedItemType.is(TY_DYN)) {
-          expectedItemType = itemType;
-        } else if (itemType != expectedItemType) {
+        if (actualItemType.is(TY_DYN)) {
+          actualItemType = itemType;
+        } else if (itemType != actualItemType) {
           throw err->get(*ctx->argLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
-                         "All provided values have to be of the same data type. You provided " + expectedItemType.getName(false) +
+                         "All provided values have to be of the same data type. You provided " + actualItemType.getName(false) +
                              " and " + itemType.getName(false));
         }
         actualSize++;
       }
-    } else if (expectedType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
-      throw err->get(*ctx->LBRACE()->getSymbol(), UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
     }
-    return expectedItemType.toArray(err.get(), *ctx->LBRACE()->getSymbol(), actualSize);
+
+    // Override actual array size if the expected type has a fixed size
+    actualSize = expectedType.isArray() ? expectedType.getArraySize() : actualSize;
+
+    // Check if actual item type is known now
+    if (actualItemType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
+      if (expectedType.is(TY_DYN))
+        throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
+      if (expectedType.is(TY_DYN))
+        throw err->get(*ctx->start, ARRAY_ITEM_TYPE_NOT_MATCHING, "Cannot assign an array to a primitive data type");
+      actualItemType = expectedType.getContainedTy();
+    }
+
+    return actualItemType.toArray(err.get(), *ctx->LBRACE()->getSymbol(), actualSize);
   }
 
   return nullptr;

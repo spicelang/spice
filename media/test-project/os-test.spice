@@ -25,20 +25,19 @@ f<int> main() {
     a.destructor();
 }*/
 
-import "std/data/vector" as vector;
+/*import "std/data/vector" as vector;
 
 f<int> main() {
     dyn v = vector.Vector<int>{};
     v.push(4);
     v.push(2);
-}
+}*/
 
-/*import "os-test2" as s1;
+import "std/data/vector" as vec;
 
 f<int> main() {
-    dyn v = s1.Vector<int>{};
-    v.setData<int>(12);
-    printf("Data: %d\n", v.data);
-    v.setData<int>(15);
-    printf("Data: %d\n", v.data);
-}*/
+    dyn v1 = vec.Vector<int>{};
+    //v1.constructor();
+
+    //v1.destructor();
+}

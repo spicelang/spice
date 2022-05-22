@@ -6,6 +6,6 @@ Size of byte: 8
 Size of char: 8
 Size of string: 8
 Size of bool: 1
-Size of int[]: 7
+Size of int[]: 224
 Size of int*: 32
 Size of struct instance: 3

@@ -116,7 +116,7 @@ entry:
   store i32 6, i32* %23, align 4
   store i32 7, i32* %24, align 4
   %64 = load [7 x i32], [7 x i32]* @anonymous.0, align 4
-  store i32 7, i32* %25, align 4
+  store i32 224, i32* %25, align 4
   %65 = load i32, i32* %25, align 4
   %66 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @9, i32 0, i32 0), i32 %65)
   store i32 123, i32* %26, align 4

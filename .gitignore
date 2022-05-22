@@ -1,19 +1,19 @@
 # Build output
-bin/*
+/bin
 spice.exe
 spice
 
-build/*
-coverage/*
-cmake-build-debug/*
-cmake-build-release/*
+/build
+/coverage
+/cmake-build-debug
+/cmake-build-release
 
 # Third party libs
-lib/*
-gen/*
+/lib
+/gen
 
 # CLion
-.idea/*
+/.idea
 
 # Spice build outputs
 media/test-project/*
@@ -21,4 +21,4 @@ media/test-project/*
 media/test-project/*.exe
 
 # LLVM
-llvm
+/llvm

@@ -1,0 +1,4 @@
+f<int> main() {
+    int[7] testIntArray = {1, 2, 3, 4};
+    printf("Array length: %d\n", len(testIntArray));
+}

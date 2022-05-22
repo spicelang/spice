@@ -44,23 +44,37 @@ printf("Here is a string: %s.\nAnd here is a double: %f", "Demo", 1.123);
 ```
 
 ## The `sizeof` builtin
-Sizeof returns the internal size of a variable or a constant in bits. To get the size in bytes, simply divide the result by 8. For arrays, the `sizeof` builtin returns the number of allocated items.
+Sizeof returns the internal size of a variable or a constant in bits. To get the size in bytes, simply divide the result by 8.
 
 ### Signature
 `int sizeof(any variable)`
 
 `variable`: Variable or constant of any type.
 
-If the variable is a pointer type, the size of the contained type is being returned. If the variable is of type array or struct, `sizeof` will return the number of array elements or struct fields respectively.
+If the variable is a pointer type, the size of the contained type is being returned.
 
 ### Usage example
 ```spice
 sizeof(12); // 32
 
-string[9] stringArray = {};
-sizeof(stringArray); // 9
+int[9] intArray = {};
+sizeof(intArray); // 9 * 32 = 288
 
 sizeof("Hello World!"); // 8 (Strings are Char pointers internally and the size of a char is 8)
+```
 
-sizeof(&stringArray); // 9
+## The `len` builtin
+Len returns the length of a Spice array in items.
+
+### Signature
+`int len(any[] variable)`
+
+`variable`: Variable of any type.
+
+### Usage example
+```spice
+len({1, 2, 3, 4}); // 4
+
+string[5] stringArray = {"string1", "string2", "string3"};
+len(stringArray); // 5
 ```

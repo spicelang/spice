@@ -1086,6 +1086,8 @@ std::any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx
     return visit(ctx->printfCall());
   if (ctx->sizeOfCall())
     return visit(ctx->sizeOfCall());
+  if (ctx->lenCall())
+    return visit(ctx->lenCall());
   if (ctx->tidCall())
     return visit(ctx->tidCall());
   if (ctx->joinCall())
@@ -1135,7 +1137,7 @@ std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
-  // Visit the arguments
+  // Visit the argument
   auto valuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
   llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
   llvm::Type *valueTy = value->getType();
@@ -1147,10 +1149,26 @@ std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) 
   // Calculate size at compile-time
   unsigned int size = valueTy->getScalarSizeInBits();
   if (valueTy->isArrayTy()) {
-    size = valueTy->getArrayNumElements();
+    size = valueTy->getArrayNumElements() * valueTy->getArrayElementType()->getScalarSizeInBits();
   } else if (valueTy->isStructTy()) {
     size = valueTy->getStructNumElements();
   }
+  llvm::Value *resultPtr = insertAlloca(builder->getInt32Ty());
+  builder->CreateStore(builder->getInt32(size), resultPtr);
+
+  // Return address to where the size is saved
+  return resultPtr;
+}
+
+std::any GeneratorVisitor::visitLenCall(SpiceParser::LenCallContext *ctx) {
+  // Visit the argument
+  auto valuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
+  llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+
+  // Get array size
+  unsigned int size = value->getType()->getArrayNumElements();
+
+  // Store the result
   llvm::Value *resultPtr = insertAlloca(builder->getInt32Ty());
   builder->CreateStore(builder->getInt32(size), resultPtr);
 

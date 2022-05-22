@@ -94,6 +94,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Array index not of type int";
   case ARRAY_ITEM_TYPE_NOT_MATCHING:
     return "Array item type not matching";
+  case EXPECTED_ARRAY_TYPE:
+    return "Expected array type";
   case RETURN_WITHOUT_VALUE_RESULT:
     return "Return without initialization of result variable";
   case RETURN_WITH_VALUE_IN_PROCEDURE:

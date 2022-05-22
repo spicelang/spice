@@ -30,8 +30,8 @@ f<ShoppingCart> anotherShoppingCart() {
 
 f<int> main() {
     ShoppingCart shoppingCart = newShoppingCart();
-    printf("Shopping cart item 1: %s", shoppingCart.items[1].name);
+    printf("Shopping cart item 1: %s\n", shoppingCart.items[1].name);
 
     shoppingCart = anotherShoppingCart();
-    printf("Another cart item 2 unit: %s", shoppingCart.items[2].unit);
+    printf("Another cart item 2 unit: %s\n", shoppingCart.items[2].unit);
 }

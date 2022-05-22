@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/arrays/error-sized-not-matching/source.spice at 3:5: Wrong data type for operator: Cannot apply '=' operator on types double[2] and double[3]
+Semantic error in ./test-files/analyzer/arrays/error-sized-not-matching/source.spice at 4:5: Wrong data type for operator: Cannot apply '=' operator on types double[3] and double[2]

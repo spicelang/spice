@@ -15,7 +15,7 @@
 - [ ] 11. Add tests for the feature
 - [ ] 12. Implement variable volatility
 - [ ] 13. Add support for pipes (paused due to the work on generics)
-- [ ] 14. Add `shash` and `pick` builtin
+- [ ] 14. Add `stash` and `pick` builtin
 - [ ] 15. Add documentation
 
 ## Syntax
@@ -64,19 +64,20 @@ t3 = thread {
 ### Captures
 Variables from outside the thread, that are used within a thread are called `captures`. For being thread-safe, we need to know
 whether it is only a reading capture or it also needs write access. If we write to a capture from within a thread, we need to mark
-the allocation of the variable as `volatile`.
+the allocation of the variable as `volatile`. This works, by marking a captured variable as `volatile` in the symbol table and
+generate the corresponding volatile allocation at the point of declaration.
 
 ### Thread synchronization
-To really become thread-safe Spice needs support for Mutexes and synchronized functions/procedures/methods.
+To really become thread-safe, Spice needs support for Mutexes and synchronized functions/procedures/methods.
 
 Synchronizing functions/procedures/methods could be achieved by providing the specifier `sync`, which can be attached to them and
-mark them as synchronized. For each occurrence of the `sync` keyword could be an instance of `Mutex`, that will track the accessing
-theads. Mutexes could be realized with a `Mutex` struct in the runtime std lib for threading.
+mark them as synchronized. There could be an instance of `Mutex` for each occurrence of the `sync` keyword, that will track the
+accessing threads. Mutexes could be realized with a `Mutex` struct in the runtime std lib for threading.
 
 A minimalistic implementation could look like this:
 
 ```spice
-import "std/time/delay" as delay;
+import "std/os/cpu" as cpu;
 
 type Mutex struct {
 	bool occupied
@@ -84,7 +85,7 @@ type Mutex struct {
 
 p Mutex.acquire() {
 	while this.occupied {
-		delay.delay(10);
+		cpu.yield();
 	}
 	this.occupied = true;
 }
@@ -95,23 +96,27 @@ p Mutex.abandon() {
 ```
 
 ### Communication between threads (requires generics)
+_Inspired by Goroutines and Channels from the Go programming language_
+
 For the communication between threads, there is a feature, called `Pipes`. A pipe is a wrapper around any type and can act like a
 temporary buffer queue for one or multiple (primitive or complex) values. Those values can be pushed by calling the builtin
-function `shash(pipe<any>, any)` and received by calling the `pick(pipe<any>)` builtin. If `pick` is called on a pipe and this pipe
+function `stash(Pipe<any>, any)` and received by calling the `pick(Pipe<any>)` builtin. If `pick` is called on a pipe and this pipe
 currently has no value present, the execution will pause until there is a new value for that pipe. 
 
 ```spice
-pipe<int> intPipe;
-
-byte* t1 = thread {
-    int shashValue = 12345;
-    stash(intPipe, stashValue);
-};
-
-byte* t2 = thread 2 {
-    int receivedValue = pick(intPipe);
-    printf("Received value: %d", receivedValue); // Output: 12345
-};
+f<int> main() {
+    Pipe<int> intPipe;
+    
+    byte* t1 = thread {
+        int stashValue = 12345;
+        stash(intPipe, stashValue);
+    };
+    
+    byte* t2 = thread {
+        int receivedValue = pick(intPipe);
+        printf("Received value: %d", receivedValue); // Output: 12345
+    };
+}
 ```
 
 ### Thread pools (long way off, not finalized, may change)
@@ -139,3 +144,11 @@ p pushWork(void*); // Pushes a function pointer to the queue of tasks
 f<bool> hasTasks(); // Returns true if the task list contains at least one item
 f<int> getQueueSize(); // Returns the number of items in the task queue
 ```
+
+### Reference points in the implementation
+
+- Thread definition node in ANTLR grammar: [here](https://github.com/spicelang/spice/blob/main/src/grammar/Spice.g4#L14)
+- Semantic analysis of threads: [here](https://github.com/spicelang/spice/blob/main/src/analyzer/AnalyzerVisitor.cpp#L730)
+- Code gen for threads: [here](https://github.com/spicelang/spice/blob/main/src/generator/GeneratorVisitor.cpp#L605)
+- Tests for threads: [here](https://github.com/spicelang/spice/tree/main/test/test-files/analyzer/threads) and [here](https://github.com/spicelang/spice/tree/main/test/test-files/generator/threads)
+- Fully fledged functional test: [here](https://github.com/spicelang/spice/tree/main/test/test-files/generator/arbitrary/success-fibonacci-threaded)
