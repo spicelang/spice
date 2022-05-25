@@ -1,0 +1,4 @@
+/*
+ * Resarch results: LLVM does not support issuing syscalls out of the box. It is required to call an inline assembly instruction (like described here: https://llvm.org/docs/LangRef.html#inline-assembler-expressions)
+ * An example syscall could look like so: https://notes.eatonphil.com/compiler-basics-llvm-system-calls.html
+ */

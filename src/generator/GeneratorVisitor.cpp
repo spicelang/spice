@@ -1137,22 +1137,29 @@ std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
-  // Visit the argument
-  auto valuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
-  llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
-  llvm::Type *valueTy = value->getType();
+  unsigned int size;
+  if (ctx->assignExpr()) { // Assign expression
+    // Visit the argument
+    auto valuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
+    llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    llvm::Type *valueTy = value->getType();
 
-  // Unpack pointer types
-  while (valueTy->isPointerTy())
-    valueTy = valueTy->getPointerElementType();
-
-  // Calculate size at compile-time
-  unsigned int size = valueTy->getScalarSizeInBits();
-  if (valueTy->isArrayTy()) {
-    size = valueTy->getArrayNumElements() * valueTy->getArrayElementType()->getScalarSizeInBits();
-  } else if (valueTy->isStructTy()) {
-    size = valueTy->getStructNumElements();
+    // Calculate size at compile-time
+    if (valueTy->isArrayTy()) {
+      size = valueTy->getArrayNumElements() * valueTy->getArrayElementType()->getScalarSizeInBits();
+    } else if (valueTy->isStructTy()) {
+      size = valueTy->getScalarSizeInBits();
+    } else if (valueTy->isPointerTy()) {
+      size = module->getDataLayout().getPointerSizeInBits();
+    } else {
+      size = valueTy->getScalarSizeInBits();
+    }
+  } else { // Type
+    auto llvmType = std::any_cast<llvm::Type *>(visit(ctx->dataType()));
+    size = llvmType->getScalarSizeInBits();
   }
+
+  // Save size
   llvm::Value *resultPtr = insertAlloca(builder->getInt32Ty());
   builder->CreateStore(builder->getInt32(size), resultPtr);
 

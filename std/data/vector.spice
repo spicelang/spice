@@ -23,20 +23,20 @@ public type Vector<T> struct {
 
 public p Vector.constructor() {
     // Allocate space for the initial number of elements
-    this.itemSize = sizeof(T);
+    this.itemSize = sizeof(type this.itemSize);
     this.contents = malloc(this.itemSize * INITIAL_ALLOC_COUNT);
     this.capacity = INITIAL_ALLOC_COUNT;
 }
 
-public p Vector.destructor() {
+/*public p Vector.destructor() {
     // Free all the memory
     free(this.contents);
-}
+}*/
 
 /**
  * Add an item at the end of the vector
  */
-public p Vector.pushBack<T>(T item) {
+/*public p Vector.pushBack<T>(T item) {
     // Check if we need to re-allocate memory
     if this.isFull() {
         this.capacity *= RESIZE_FACTOR;
@@ -45,59 +45,59 @@ public p Vector.pushBack<T>(T item) {
 
     // Insert the element at the back
     this.contents[this.size++] = item;
-}
+}*/
 
 /**
  * Removes all items from the vector
  */
-public p Vector.clear() {
+/*public p Vector.clear() {
     this.size = 0;
-}
+}*/
 
 /**
  * Retrieve the current size of the queue
  *
  * @return Current size of the queue
  */
-public f<long> Vector.size() {
+/*public f<long> Vector.size() {
     return this.size;
-}
+}*/
 
 /**
  * Checks if the queue contains any items at the moment
  *
  * @return Empty or not empty
  */
-public f<bool> Vector.isEmpty() {
+/*public f<bool> Vector.isEmpty() {
     return this.size == 0l;
-}
+}*/
 
 /**
  * Checks if the queue exhausts its capacity and needs to resize at the next call of push
  *
  * @return Full or not full
  */
-public f<bool> Vector.isFull() {
+/*public f<bool> Vector.isFull() {
     return this.size == this.capacity;
-}
+}*/
 
 /**
  * Frees allocated memory that is not used by the queue
  */
-public p Vector.pack() {
+/*public p Vector.pack() {
     // Return if no packing is required
     if this.isFull() { return; }
     // Pack the array
     this.resize(this.size);
-}
+}*/
 
 /**
  * Re-allocates heap space for the queue contents
  */
-p Vector.resize(unsigned long itemCount) {
+/*p Vector.resize(unsigned long itemCount) {
     // Allocate the new memory
     T* newMemory = realloc(this.itemSize * itemCount);
     // Set new memory to contents array
     this.contents = newMemory;
     this.capacity = itemCount;
-}
+}*/

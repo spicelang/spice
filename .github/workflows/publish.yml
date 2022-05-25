@@ -47,7 +47,7 @@ jobs:
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-14.0.3 https://github.com/llvm/llvm-project.git llvm
+        run: git clone --depth 1 --branch llvmorg-14.0.4 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -135,7 +135,7 @@ jobs:
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-14.0.3 https://github.com/llvm/llvm-project.git llvm
+        run: git clone --depth 1 --branch llvmorg-14.0.4 https://github.com/llvm/llvm-project.git llvm
 
       - name: Setup LLVM - Configure
         if: steps.cache-llvm.outputs.cache-hit != 'true'

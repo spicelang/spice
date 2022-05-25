@@ -40,7 +40,7 @@ continueStmt: CONTINUE INTEGER?;
 // Builtin functions
 builtinCall: printfCall | sizeOfCall | lenCall | tidCall | joinCall;
 printfCall: PRINTF LPAREN STRING_LITERAL (COMMA assignExpr)* RPAREN;
-sizeOfCall: SIZEOF LPAREN assignExpr RPAREN;
+sizeOfCall: SIZEOF LPAREN (assignExpr | TYPE dataType) RPAREN;
 lenCall: LEN LPAREN assignExpr RPAREN;
 tidCall: TID LPAREN RPAREN;
 joinCall: JOIN LPAREN assignExpr (COMMA assignExpr)* RPAREN;

@@ -8,6 +8,16 @@ set(SPICE_BUILT_BY "$ENV{USERNAME}" CACHE STRING "Spice built by person")
 add_definitions(-DSPICE_BUILT_BY="${SPICE_BUILT_BY}")
 message(STATUS "Spice: Built by is set to '${SPICE_BUILT_BY}'")
 
+# Link time optimization
+option(SPICE_LTO "Enable link time optimization (LTO) for the compiler executable" OFF)
+if (SPICE_LTO)
+    message(STATUS "Spice: LTO for Spice is enabled.")
+    SET(CMAKE_CXX_FLAGS_DEBUG "-flto ${CMAKE_CXX_FLAGS_DEBUG}")
+    SET(CMAKE_CXX_FLAGS_RELEASE "-flto ${CMAKE_CXX_FLAGS_RELEASE}")
+else()
+    message(STATUS "Spice: LTO for Spice is disabled.")
+endif()
+
 # Link statically
 option(SPICE_LINK_STATIC "Link the compiler executable statically" OFF)
 if (SPICE_LINK_STATIC)
