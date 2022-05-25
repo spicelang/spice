@@ -21,14 +21,14 @@ public type Vector<T> struct {
     unsigned int itemSize   // Size of a single item
 }
 
-public p Vector.constructor() {
+public p Vector.ctor<T>(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
-    this.itemSize = sizeof(type this.itemSize);
-    this.contents = malloc(this.itemSize * INITIAL_ALLOC_COUNT);
+    this.itemSize = sizeof(type T);
+    this.contents = malloc(this.itemSize * initAllocItems);
     this.capacity = INITIAL_ALLOC_COUNT;
 }
 
-/*public p Vector.destructor() {
+/*public p Vector.dtor() {
     // Free all the memory
     free(this.contents);
 }*/

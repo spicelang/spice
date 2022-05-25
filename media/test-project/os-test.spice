@@ -36,8 +36,9 @@ f<int> main() {
 import "std/data/vector" as vec;
 
 f<int> main() {
-    vec.Vector<int> v1 = vec.Vector<int>{};
-    //v1.constructor();
-
-    //v1.destructor();
+    dyn v1 = vec.Vector<int>{};
+    v1.ctor(3);
+    //v1.pushBack(123);
+    //v1.pushBack(90);
+    //v1.dtor();
 }

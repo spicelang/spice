@@ -21,16 +21,16 @@ public type Stack<T> struct {
     unsigned int itemSize   // Size of a single item
 }
 
-public p Stack.constructor() {
+public p Stack.ctor(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
-    this.itemSize = sizeof(*this.itemSize);
-    this.contents = malloc(this.itemSize * INITIAL_ALLOC_COUNT);
+    this.itemSize = sizeof(type T);
+    this.contents = malloc(this.itemSize * initAllocItems);
     this.capacity = INITIAL_ALLOC_COUNT;
     this.idxFront = 0l;
     this.idxBack = 0l;
 }
 
-public p Stack.destructor() {
+public p Stack.dtor() {
     // Free all the memory
     free(this.contents);
 }
