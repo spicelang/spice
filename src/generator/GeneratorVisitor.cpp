@@ -1145,15 +1145,7 @@ std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) 
     llvm::Type *valueTy = value->getType();
 
     // Calculate size at compile-time
-    if (valueTy->isArrayTy()) {
-      size = valueTy->getArrayNumElements() * valueTy->getArrayElementType()->getScalarSizeInBits();
-    } else if (valueTy->isStructTy()) {
-      size = valueTy->getScalarSizeInBits();
-    } else if (valueTy->isPointerTy()) {
-      size = module->getDataLayout().getPointerSizeInBits();
-    } else {
-      size = valueTy->getScalarSizeInBits();
-    }
+    size = getSizeOfType(valueTy);
   } else { // Type
     auto llvmType = std::any_cast<llvm::Type *>(visit(ctx->dataType()));
     size = llvmType->getScalarSizeInBits();
@@ -2522,6 +2514,22 @@ bool GeneratorVisitor::compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs) {
   if (lhs->getTypeID() == llvm::Type::ArrayTyID)
     return compareLLVMTypes(lhs->getArrayElementType(), rhs->getArrayElementType());
   return true;
+}
+
+unsigned int GeneratorVisitor::getSizeOfType(llvm::Type* llvmType) {
+  if (llvmType->isArrayTy()) {
+    return llvmType->getArrayNumElements() * llvmType->getArrayElementType()->getScalarSizeInBits();
+  } else if (llvmType->isStructTy()) {
+    unsigned int size = 0;
+    for (int i = 0; i < llvmType->getNumContainedTypes(); ++i) {
+      llvm::Type *containedType = llvmType->getContainedType(i);
+      size += getSizeOfType(containedType);
+    }
+    return size;
+  } else if (llvmType->isPointerTy()) {
+    return module->getDataLayout().getPointerSizeInBits();
+  }
+  return llvmType->getScalarSizeInBits();
 }
 
 llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *srcValue, llvm::Type *dstType) {

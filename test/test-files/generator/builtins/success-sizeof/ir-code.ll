@@ -100,7 +100,7 @@ entry:
   %57 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @5, i32 0, i32 0), i32 %56)
   store i8* getelementptr inbounds ([13 x i8], [13 x i8]* @7, i32 0, i32 0), i8** %14, align 8
   %58 = load i8*, i8** %14, align 8
-  store i32 8, i32* %15, align 4
+  store i32 64, i32* %15, align 4
   %59 = load i32, i32* %15, align 4
   %60 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([20 x i8], [20 x i8]* @6, i32 0, i32 0), i32 %59)
   store i1 false, i1* %16, align 1
@@ -126,7 +126,7 @@ entry:
   store i32* %intVariable, i32** %27, align 8
   store i32* %intVariable, i32** %27, align 8
   %69 = load i32*, i32** %27, align 8
-  store i32 32, i32* %28, align 4
+  store i32 64, i32* %28, align 4
   %70 = load i32, i32* %28, align 4
   %71 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @10, i32 0, i32 0), i32 %70)
   store i32 5, i32* %30, align 4
@@ -142,7 +142,7 @@ entry:
   %77 = getelementptr inbounds %_s_Struct_int_bool_string, %_s_Struct_int_bool_string* %29, i32 0, i32 2
   store i8* %76, i8** %77, align 8
   %78 = load %_s_Struct_int_bool_string, %_s_Struct_int_bool_string* %29, align 8
-  store i32 3, i32* %33, align 4
+  store i32 97, i32* %33, align 4
   %79 = load i32, i32* %33, align 4
   %80 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([29 x i8], [29 x i8]* @11, i32 0, i32 0), i32 %79)
   %81 = load i32, i32* %result, align 4
