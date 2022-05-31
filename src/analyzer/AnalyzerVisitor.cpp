@@ -1618,9 +1618,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
       functionEntry->setUsed(); // Set the function to used
 
       // Check if the function entry has sufficient visibility
-      bool isImported = functionParentScope->isImported() ||
-                        (functionParentScope->getParent() && functionParentScope->getParent()->isImported());
-      if (isImported && !functionEntry->getSpecifiers().isPublic())
+      if (functionParentScope->isImported(currentScope) && !functionEntry->getSpecifiers().isPublic())
         throw err->get(*token->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access function/procedure '" + currentVarName + "' due to its private visibility");
 
@@ -1633,7 +1631,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
         assert(returnValueEntry != nullptr);
         SymbolType returnType = spiceFunc->getReturnType();
         // Structs from outside the module require more initialization
-        if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported())
+        if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported(currentScope))
           return initExtStruct(*ctx->start, scopePath.getCurrentScope(), accessScopePrefix + ".", returnType.getSubType(),
                                thisType.getTemplateTypes());
         lhs = returnType;
@@ -1703,7 +1701,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     if (!entry)
       return SymbolType(TY_INVALID);
 
-    if (accessScope->isImported()) {
+    if (accessScope->isImported(currentScope)) {
       // Check if the entry is public if it is imported
       if (!entry->getSpecifiers().isPublic())
         throw err->get(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
@@ -1733,11 +1731,12 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
       currentThisType.setTemplateTypes(entry->getType().getTemplateTypes());
 
       // Check if the entry is public if it is imported
-      if (structCapture && !structCapture->getEntry()->getSpecifiers().isPublic() && accessScope->getParent()->isImported())
+      if (structCapture && !structCapture->getEntry()->getSpecifiers().isPublic() &&
+          accessScope->getParent()->isImported(currentScope))
         throw err->get(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access '" + structSignature + "' due to its private visibility");
     }
-    assert(accessScope);
+    assert(accessScope != nullptr);
 
     // Otherwise, push the retrieved scope to the scope path
     scopePath.pushFragment(currentVarName, accessScope);
@@ -1778,7 +1777,7 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
                          "Struct '" + accessScopePrefix + structName + "' was used before defined");
         std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
         accessScope = accessScope->lookupTable(tableName);
-        if (accessScope->isImported())
+        if (accessScope->isImported(currentScope))
           structIsImported = true;
       }
     }
@@ -1976,7 +1975,7 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
 
     std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
     accessScope = accessScope->lookupTable(tableName);
-    if (accessScope->isImported())
+    if (accessScope->isImported(currentScope))
       structIsImported = true;
   }
 

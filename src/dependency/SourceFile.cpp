@@ -39,7 +39,7 @@ SourceFile::SourceFile(CliOptions *options, SourceFile *parent, std::string name
   antlrCtx.parser->removeParseListeners();
 
   // Create symbol table
-  symbolTable = std::make_shared<SymbolTable>(nullptr, parent == nullptr);
+  symbolTable = std::make_shared<SymbolTable>(nullptr, parent == nullptr, true);
 }
 
 void SourceFile::preAnalyze(CliOptions *options) {
@@ -61,7 +61,6 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
     sourceFile.first->analyze(context, builder, threadFactory);
 
     // Mount symbol table to the current one
-    sourceFile.first->symbolTable->setImported();
     sourceFile.first->symbolTable->setParent(symbolTable.get());
     symbolTable->mountChildBlock(importName, sourceFile.first->symbolTable.get());
 

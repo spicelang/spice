@@ -1807,7 +1807,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
             SymbolType returnSymbolType = spiceFunc->getReturnType();
             // Check if the return type is an imported struct. Due to not supporting pointers as return values, we do
             // not have to check for nested structs in pointers here.
-            if (accessScope->isImported() && returnSymbolType.is(TY_STRUCT)) {
+            if (accessScope->isImported(currentScope) && returnSymbolType.is(TY_STRUCT)) {
               // If the return type is an imported struct, initialize it first
               returnSymbolType = SymbolType(TY_STRUCT, accessScopePrefix + "." + returnSymbolType.getSubType());
             }
@@ -1818,7 +1818,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
             // Get argument types
             for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
-              if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))
+              if (accessScope->isImported(currentScope) && argType.isBaseType(TY_STRUCT))
                 argType = argType.replaceBaseSubType(scopePrefix);
               // Retrieve the LLVM type of the symbol type
               llvm::Type *llvmType = getTypeForSymbolType(argType);
@@ -1834,7 +1834,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
             // Get argument types
             for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
-              if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))
+              if (accessScope->isImported(currentScope) && argType.isBaseType(TY_STRUCT))
                 argType = argType.replaceBaseSubType(scopePrefix);
               // Retrieve the LLVM type of the symbol type
               llvm::Type *llvmType = getTypeForSymbolType(argType);
@@ -1937,7 +1937,7 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
       return static_cast<llvm::Value *>(nullptr);
 
     // Check if this an external global var
-    if (accessScope->isImported() && entry->isGlobal())
+    if (accessScope->isImported(currentScope) && entry->isGlobal())
       entry = initExtGlobal(currentVarName, scopePrefix);
 
     llvm::Value *memAddress = entry->getAddress();

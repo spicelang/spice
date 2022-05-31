@@ -3,10 +3,10 @@ const unsigned int INITIAL_ALLOC_COUNT = 5;
 const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
-ext<char*> malloc(int);
-ext<char*> realloc(char*, int);
-ext free(char*);
-ext<char*> memcpy(char*, char*, int);
+ext<byte*> malloc(int);
+ext<byte*> realloc(byte*, int);
+ext free(byte*);
+ext<byte*> memcpy(byte*, byte*, int);
 
 // Add generic type definition
 type T dyn;
@@ -24,14 +24,14 @@ public type Vector<T> struct {
 public p Vector.ctor<T>(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     this.itemSize = sizeof(type T);
-    this.contents = malloc(this.itemSize * initAllocItems);
-    this.capacity = INITIAL_ALLOC_COUNT;
+    this.contents = (T*) malloc(this.itemSize * initAllocItems);
+    this.capacity = (long) initAllocItems;
 }
 
-/*public p Vector.dtor() {
+public p Vector.dtor() {
     // Free all the memory
     free(this.contents);
-}*/
+}
 
 /**
  * Add an item at the end of the vector
@@ -39,8 +39,7 @@ public p Vector.ctor<T>(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
 /*public p Vector.pushBack<T>(T item) {
     // Check if we need to re-allocate memory
     if this.isFull() {
-        this.capacity *= RESIZE_FACTOR;
-        this.contents = malloc(this.itemSize * this.capacity);
+        resize(this.capacity * RESIZE_FACTOR);
     }
 
     // Insert the element at the back

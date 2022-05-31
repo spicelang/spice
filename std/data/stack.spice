@@ -3,10 +3,10 @@ const unsigned int INITIAL_ALLOC_COUNT = 5;
 const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
-ext<char*> malloc(int);
-ext<char*> realloc(char*, int);
-ext free(char*);
-ext<char*> memcpy(char*, char*, int);
+ext<byte*> malloc(int);
+ext<byte*> realloc(byte*, int);
+ext free(byte*);
+ext<byte*> memcpy(byte*, byte*, int);
 
 // Add generic type definition
 type T dyn;
@@ -24,8 +24,8 @@ public type Stack<T> struct {
 public p Stack.ctor(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     this.itemSize = sizeof(type T);
-    this.contents = malloc(this.itemSize * initAllocItems);
-    this.capacity = INITIAL_ALLOC_COUNT;
+    this.contents = (T*) malloc(this.itemSize * initAllocItems);
+    this.capacity = (long) initAllocItems;
     this.idxFront = 0l;
     this.idxBack = 0l;
 }
@@ -41,8 +41,7 @@ public p Stack.dtor() {
 public p Stack.push(T item) {
     // Check if we need to re-allocate memory
     if this.isFull() {
-        this.capacity *= RESIZE_FACTOR;
-        this.contents = malloc(this.itemSize * this.capacity);
+        resize(this.capacity * RESIZE_FACTOR);
     }
 
     // Insert the element at the back

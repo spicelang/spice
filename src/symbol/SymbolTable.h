@@ -23,7 +23,8 @@
 class SymbolTable {
 public:
   // Constructors
-  explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile) : parent(parent), isMainSourceFile(inMainSourceFile){};
+  explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile = false, bool isSourceFileRoot = false)
+      : parent(parent), isMainSourceFile(inMainSourceFile), isSourceFileRootScope(isSourceFileRoot) {};
 
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
@@ -70,12 +71,11 @@ public:
   void printCompilerWarnings();
   void disableCompilerWarnings();
 
-  [[nodiscard]] nlohmann::json toJSON() const;
-
-  void setImported();
-  [[nodiscard]] bool isImported() const;
+  [[nodiscard]] bool isImported(const SymbolTable *askingScope) const;
 
   void setCapturingRequired();
+
+  [[nodiscard]] nlohmann::json toJSON() const;
 
 private:
   // Members
@@ -89,7 +89,7 @@ private:
   std::map<std::string, std::shared_ptr<std::map<std::string, Struct>>> structs; // <code-loc, vector-of-representations>
   std::queue<Struct *> structAccessPointers;
   bool isMainSourceFile;
-  bool imported = false;
+  bool isSourceFileRootScope = false;
   bool compilerWarningsEnabled = true;
   bool requiresCapturing = false;
 };

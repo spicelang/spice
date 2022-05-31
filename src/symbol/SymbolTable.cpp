@@ -108,7 +108,7 @@ SymbolTableEntry *SymbolTable::lookupGlobal(const std::string &globalName, bool 
   }
   // Loop through all children to find the global var
   for (const auto &[scopeName, childScope] : children) {
-    if (childScope->isImported()) { // Only consider if it is an imported module scope
+    if (childScope->isImported(this)) { // Only consider if it is an imported module scope
       SymbolTableEntry *globalSymbol = childScope->lookupGlobal(globalName);
       if (globalSymbol)
         return globalSymbol;
@@ -606,11 +606,6 @@ void SymbolTable::purgeSubstantiationRemnants() {
 }
 
 /**
- * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
- */
-void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
-
-/**
  * Insert a substantiated struct into the struct list. If the list already contains a struct with the same signature,
  * an exception will be thrown
  *
@@ -673,6 +668,32 @@ void SymbolTable::disableCompilerWarnings() {
 }
 
 /**
+ * Checks if this symbol table is imported
+ *
+ * @param askingScope Symbol table, which asks whether the current one is imported from its point of view or not
+ *
+ * @return Imported / not imported
+ */
+bool SymbolTable::isImported(const SymbolTable *askingScope) const {
+  // Get root scope of the source file where askingScope scope lives
+  const SymbolTable *askingRootScope = askingScope;
+  while (!askingRootScope->isSourceFileRootScope && askingRootScope->getParent())
+    askingRootScope = askingRootScope->getParent();
+
+  // Get root scope of the source file where the current scope lives
+  const SymbolTable *thisRootScope = this;
+  while (!thisRootScope->isSourceFileRootScope && thisRootScope->getParent())
+    thisRootScope = thisRootScope->getParent();
+
+  return askingRootScope != thisRootScope;
+}
+
+/**
+ * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
+ */
+void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
+
+/**
  * Stringify a symbol table to a human-readable form. This is used to realize dumps of symbol tables
  *
  * Example:
@@ -717,15 +738,3 @@ nlohmann::json SymbolTable::toJSON() const {
   result["children"] = jsonChildren;
   return result;
 }
-
-/**
- * Marks this symbol table as imported. This means, that it is a nested symbol table in the main symbol table
- */
-void SymbolTable::setImported() { imported = true; }
-
-/**
- * Checks if this symbol table is imported
- *
- * @return Imported / not imported
- */
-bool SymbolTable::isImported() const { return imported; }
