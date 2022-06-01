@@ -116,12 +116,26 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
 
-    // Get template types
+    // Get 'this' type
     bool isGeneric = false;
     std::vector<GenericType> templateTypes;
+    SymbolType thisType = SymbolType(TY_DYN);
+    SymbolType thisTypePtr = thisType;
+    if (isMethod) {
+      std::string structName = ctx->IDENTIFIER().front()->toString();
+      SymbolTableEntry *structEntry = currentScope->lookup(structName);
+      thisType = structEntry->getType();
+      thisTypePtr = thisType.toPointer(err.get(), *ctx->start);
+      if (!thisType.getTemplateTypes().empty()) {
+        isGeneric = true;
+        for (const auto &templateType : thisType.getTemplateTypes())
+          templateTypes.emplace_back(templateType);
+      }
+    }
+
+    // Get template types
     if (ctx->typeLst()) {
       isGeneric = true;
-      needsReAnalyze = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
         auto templateType = any_cast<SymbolType>(visit(dataType));
         if (!templateType.is(TY_GENERIC))
@@ -131,6 +145,8 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
         templateTypes.push_back(*genericType);
       }
     }
+    if (isGeneric)
+      needsReAnalyze = true;
 
     // Visit arguments in new scope
     argumentMode = true;
@@ -157,15 +173,8 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     argumentMode = false;
 
     // Declare 'this' variable in new scope
-    SymbolType thisType = SymbolType(TY_DYN);
-    SymbolType thisTypePtr = thisType;
-    SymbolSpecifiers thisTypeSpecifiers(thisType);
     if (isMethod) {
-      std::string structName = ctx->IDENTIFIER().front()->toString();
-      SymbolTableEntry *structEntry = currentScope->lookup(structName);
-      thisType = structEntry->getType();
-      thisTypePtr = thisType.toPointer(err.get(), *ctx->start);
-      thisTypeSpecifiers = SymbolSpecifiers(thisTypePtr);
+      SymbolSpecifiers thisTypeSpecifiers(thisTypePtr);
       thisTypeSpecifiers.setConst(true);
       currentScope->insert(THIS_VARIABLE_NAME, thisTypePtr, thisTypeSpecifiers, INITIALIZED, *ctx->start);
     }
@@ -328,12 +337,26 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId);
 
-    // Get template types
+    // Get 'this' type
     bool isGeneric = false;
     std::vector<GenericType> templateTypes;
+    SymbolType thisType = SymbolType(TY_DYN);
+    SymbolType thisTypePtr = thisType;
+    if (isMethod) {
+      std::string structName = ctx->IDENTIFIER().front()->toString();
+      SymbolTableEntry *structEntry = currentScope->lookup(structName);
+      thisType = structEntry->getType();
+      thisTypePtr = thisType.toPointer(err.get(), *ctx->start);
+      if (!thisType.getTemplateTypes().empty()) {
+        isGeneric = true;
+        for (const auto &templateType : thisType.getTemplateTypes())
+          templateTypes.emplace_back(templateType);
+      }
+    }
+
+    // Get template types
     if (ctx->typeLst()) {
       isGeneric = true;
-      needsReAnalyze = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
         auto templateType = any_cast<SymbolType>(visit(dataType));
         if (!templateType.is(TY_GENERIC))
@@ -343,6 +366,8 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
         templateTypes.push_back(*genericType);
       }
     }
+    if (isGeneric)
+      needsReAnalyze = true;
 
     // Visit arguments in new scope
     argumentMode = true;
@@ -369,15 +394,10 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     argumentMode = false;
 
     // Declare 'this' variable in new scope
-    SymbolType thisType = SymbolType(TY_DYN);
     if (isMethod) {
-      std::string structName = ctx->IDENTIFIER().front()->toString();
-      SymbolTableEntry *structEntry = currentScope->lookup(structName);
-      SymbolType curThisType = thisType = structEntry->getType();
-      curThisType = curThisType.toPointer(err.get(), *ctx->start);
-      auto thisSymbolSpecifiers = SymbolSpecifiers(curThisType);
+      auto thisSymbolSpecifiers = SymbolSpecifiers(thisTypePtr);
       thisSymbolSpecifiers.setConst(true);
-      currentScope->insert(THIS_VARIABLE_NAME, curThisType, thisSymbolSpecifiers, INITIALIZED, *ctx->start);
+      currentScope->insert(THIS_VARIABLE_NAME, thisTypePtr, thisSymbolSpecifiers, INITIALIZED, *ctx->start);
     }
 
     // Return to old scope

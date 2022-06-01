@@ -333,7 +333,8 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         for (const auto &functionThisTypeTemplateType : fctThisTypeTemplateTypes) {
           for (int i = 0; i < fctTemplateTypes.size(); i++) {
             GenericType functionTemplateType = fctTemplateTypes[i];
-            if (functionTemplateType == functionThisTypeTemplateType && functionTemplateType.meetsConditions(templateTypes[i])) {
+            if (functionTemplateType == functionThisTypeTemplateType &&
+                functionTemplateType.checkConditionsOf(templateTypes[i])) {
               fctConcreteThisTypeTemplateTypes.push_back(templateTypes[i]);
             } else {
               continue;
@@ -375,7 +376,7 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
         for (int i = 0; i < templateTypes.size(); i++) {
           const SymbolType &concreteTemplateType = templateTypes[i];
 
-          if (!fctTemplateTypes[i].meetsConditions(concreteTemplateType)) {
+          if (!fctTemplateTypes[i].checkConditionsOf(concreteTemplateType)) {
             differentTemplateTypes = true;
             break;
           }
@@ -505,7 +506,7 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
         std::vector<SymbolType> concreteTemplateTypes;
         bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
         for (int i = 0; i < templateTypes.size(); i++) {
-          if (!curTemplateTypes[i].meetsConditions(templateTypes[i])) {
+          if (!curTemplateTypes[i].checkConditionsOf(templateTypes[i])) {
             differentTemplateTypes = true;
             break;
           }

@@ -16,14 +16,14 @@ GenericType::GenericType(const std::string &name) { this->typeChain.push({TY_GEN
  *
  * @return True or false
  */
-bool GenericType::meetsConditions(const SymbolType &symbolType) const { return meetsTypeConditions(symbolType); }
+bool GenericType::checkConditionsOf(const SymbolType &symbolType) const { return checkTypeConditionOf(symbolType); }
 
 /**
  * Checks if the given symbol type matches all type conditions to get a manifestation of the current generic type
  *
  * @return True or false
  */
-bool GenericType::meetsTypeConditions(const SymbolType &symbolType) const {
+bool GenericType::checkTypeConditionOf(const SymbolType &symbolType) const {
   // Check type conditions
   for (const auto &typeCondition : typeConditions) {
     if (typeCondition.is(TY_DYN) || typeCondition == symbolType)
