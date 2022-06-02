@@ -237,8 +237,10 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     if (isMethod)
       currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
 
+    // Get manifestations of that function
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
 
+    // Leave the struct scope
     if (isMethod)
       currentScope = currentScope->getParent();
 
@@ -311,13 +313,13 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
 
         // Leave the function scope
         currentScope = currentScope->getParent();
+
+        // Leave the struct scope
+        if (isMethod)
+          currentScope = currentScope->getParent();
       }
     }
   }
-
-  // Leave the struct scope
-  if (isMethod)
-    currentScope = currentScope->getParent();
 
   return nullptr;
 }
@@ -442,12 +444,14 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       currentScope = currentScope->getParent();
     }
   } else { // Second run
-    // Change to the struct scope
+    // Enter the struct scope
     if (isMethod)
       currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
 
+    // Get manifestations of that procedure
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
 
+    // Leave the struct scope
     if (isMethod)
       currentScope = currentScope->getParent();
 
@@ -506,13 +510,13 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
 
         // Leave the function scope
         currentScope = currentScope->getParent();
+
+        // Leave the struct scope
+        if (isMethod)
+          currentScope = currentScope->getParent();
       }
     }
   }
-
-  // Leave the struct scope
-  if (isMethod)
-    currentScope = currentScope->getParent();
 
   return nullptr;
 }
@@ -648,7 +652,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
     std::string fieldName = field->IDENTIFIER()->toString();
     auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
 
-    if (fieldType.getBaseType().is(TY_GENERIC)) { // Check if the type is present in the template for generic types
+    if (fieldType.isBaseType(TY_GENERIC)) { // Check if the type is present in the template for generic types
       if (std::none_of(genericTemplateTypes.begin(), genericTemplateTypes.end(),
                        [&](const GenericType &t) { return t == fieldType.getBaseType(); }))
         throw err->get(*field->dataType()->start, GENERIC_TYPE_NOT_IN_TEMPLATE,

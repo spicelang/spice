@@ -95,7 +95,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
     SymbolTableEntry *fieldEntry = structScope->lookupByIndex(i);
     if (fieldTypes[i].isBaseType(TY_GENERIC)) {        // We have to replace it only if it is a generic type
       for (int j = 0; j < templateTypes.size(); j++) { // Go through all template types and get the respective concrete type
-        if (fieldTypes[i] == templateTypes[j]) {
+        if (fieldTypes[i].getBaseType() == templateTypes[j]) {
           const SymbolType &newFieldType =
               fieldTypes[i].replaceBaseType(concreteTemplateTypes[j]); // Use the concrete type instead of the generic one
           fieldEntry->updateType(newFieldType, true);
@@ -103,6 +103,8 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
           break;
         }
       }
+    } else {
+      currentFieldTypes.push_back(fieldEntry->getType());
     }
   }
 
@@ -117,7 +119,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
  */
 bool Struct::hasSubstantiatedGenerics() const {
   return std::none_of(templateTypes.begin(), templateTypes.end(),
-                      [](const GenericType &genericType) { return genericType.is(TY_GENERIC); });
+                      [](const GenericType &genericType) { return genericType.isBaseType(TY_GENERIC); });
 }
 
 /**

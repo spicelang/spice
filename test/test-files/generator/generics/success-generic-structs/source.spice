@@ -1,0 +1,12 @@
+type T dyn;
+
+type Vector<T> struct {
+    T* contents
+    int cap
+}
+
+f<int> main() {
+    double dbl = 3.467;
+    Vector<double> doubleVec = Vector<double>{&dbl, 1};
+    printf("Capacity of vector: %d\n", doubleVec.cap);
+}
