@@ -648,9 +648,9 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
     std::string fieldName = field->IDENTIFIER()->toString();
     auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
 
-    if (fieldType.is(TY_GENERIC)) { // Check if the type is present in the template for generic types
+    if (fieldType.getBaseType().is(TY_GENERIC)) { // Check if the type is present in the template for generic types
       if (std::none_of(genericTemplateTypes.begin(), genericTemplateTypes.end(),
-                       [&](const GenericType &t) { return t == fieldType; }))
+                       [&](const GenericType &t) { return t == fieldType.getBaseType(); }))
         throw err->get(*field->dataType()->start, GENERIC_TYPE_NOT_IN_TEMPLATE,
                        "Generic field type not included in struct template");
     }
@@ -1586,11 +1586,15 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
       SymbolType thisType = currentThisType;
 
       // Get template types
-      std::vector<SymbolType> concreteTypes;
+      std::vector<SymbolType> concreteTemplateTypes;
+      // Consider template types from parent thisType
+      for (const auto &concreteTemplateType : thisType.getTemplateTypes())
+        concreteTemplateTypes.push_back(concreteTemplateType);
+      // Consider template types from template type list
       auto typeLst = dynamic_cast<SpiceParser::TypeLstContext *>(ctx->children[tokenCounter]);
       if (typeLst != nullptr) {
         for (const auto &dataType : typeLst->dataType())
-          concreteTypes.push_back(any_cast<SymbolType>(visit(dataType)));
+          concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
         tokenCounter += 3; // Consume typeLst, GREATER and LPAREN
       }
 
@@ -1612,8 +1616,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
 
       // Match a function onto the requirements of the call
       SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
-      Function *spiceFunc =
-          functionParentScope->matchFunction(functionName, thisType, argTypes, concreteTypes, err.get(), *token->getSymbol());
+      Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, concreteTemplateTypes, err.get(),
+                                                               *token->getSymbol());
       if (!spiceFunc) {
         // Build function to get a better error message
         std::vector<std::pair<SymbolType, bool>> argTypesWithOptional;
