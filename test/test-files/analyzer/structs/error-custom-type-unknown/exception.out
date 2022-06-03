@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/structs/error-custom-type-unknown/source.spice at 8:5: Unknown datatype: Unknown datatype 'NonExisting'
+Semantic error in ./test-files/analyzer/structs/error-custom-type-unknown/source.spice at 8:5: Unknown datatype: Unknown symbol 'NonExisting'

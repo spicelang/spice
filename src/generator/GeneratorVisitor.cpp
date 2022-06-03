@@ -2337,14 +2337,12 @@ std::any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *c
 }
 
 std::any GeneratorVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
-  // Get type name in format: a.b.c
-  std::string typeName = ctx->IDENTIFIER()[0]->toString();
-  for (size_t i = 1; i < ctx->IDENTIFIER().size(); i++)
-    typeName += "." + ctx->IDENTIFIER()[i]->toString();
+  // Get type name in format: a.b.c<d>
+  std::string typeName = ctx->getText();
 
   // Search in symbol for a struct
   SymbolTableEntry *typeEntry = currentScope->lookup(typeName);
-  if (typeEntry)
+  if (typeEntry != nullptr)
     return SymbolType(TY_STRUCT, typeName);
 
   // Search in generic types
@@ -2516,7 +2514,7 @@ bool GeneratorVisitor::compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs) {
   return true;
 }
 
-unsigned int GeneratorVisitor::getSizeOfType(llvm::Type* llvmType) {
+unsigned int GeneratorVisitor::getSizeOfType(llvm::Type *llvmType) {
   if (llvmType->isArrayTy()) {
     return llvmType->getArrayNumElements() * llvmType->getArrayElementType()->getScalarSizeInBits();
   } else if (llvmType->isStructTy()) {

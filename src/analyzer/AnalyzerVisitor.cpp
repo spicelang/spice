@@ -232,6 +232,10 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       // Leave the function scope
       currentScope = currentScope->getParent();
     }
+
+    // Leave the struct scope
+    if (isMethod)
+      currentScope = currentScope->getParent();
   } else { // Second run
     // Change to the struct scope
     if (isMethod)
@@ -443,6 +447,10 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       // Leave the function scope
       currentScope = currentScope->getParent();
     }
+
+    // Leave the struct scope
+    if (isMethod)
+      currentScope = currentScope->getParent();
   } else { // Second run
     // Enter the struct scope
     if (isMethod)
@@ -1798,11 +1806,11 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
       structName = ctx->IDENTIFIER()[i]->toString();
       if (i < ctx->IDENTIFIER().size() - 1) {
-        accessScopePrefix += structName + ".";
         SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
         if (!symbolEntry)
           throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                         "Struct '" + accessScopePrefix + structName + "' was used before defined");
+                         "Symbol '" + accessScopePrefix + structName + "' was used before defined");
+        accessScopePrefix += structName + ".";
         std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
         accessScope = accessScope->lookupTable(tableName);
         if (accessScope->isImported(currentScope))
@@ -1999,7 +2007,7 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
       accessScopePrefix += structName + ".";
     SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
     if (!symbolEntry)
-      throw err->get(*ctx->IDENTIFIER()[0]->getSymbol(), UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+      throw err->get(*ctx->IDENTIFIER()[0]->getSymbol(), UNKNOWN_DATATYPE, "Unknown symbol '" + structName + "'");
 
     std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
     accessScope = accessScope->lookupTable(tableName);
@@ -2016,6 +2024,11 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
     }
   }
 
+  // Set the struct instance to used
+  Struct *externalSpiceStruct = accessScope->matchStruct(structName, concreteTemplateTypes, err.get(), *ctx->start);
+  assert(externalSpiceStruct);
+  externalSpiceStruct->setUsed();
+
   if (structIsImported) // Imported struct
     return initExtStruct(*ctx->start, accessScope, accessScopePrefix, structName, concreteTemplateTypes);
 
@@ -2025,12 +2038,7 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
     throw err->get(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
   structSymbol->setUsed();
 
-  // Set the struct instance to used
-  Struct *externalSpiceStruct = accessScope->matchStruct(structName, concreteTemplateTypes, err.get(), *ctx->start);
-  assert(externalSpiceStruct);
-  externalSpiceStruct->setUsed();
-
-  return SymbolType(TY_STRUCT, structName);
+  return SymbolType(TY_STRUCT, structName, concreteTemplateTypes);
 }
 
 SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTable *sourceScope,
@@ -2041,6 +2049,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
 
   // Create new struct type
   SymbolType newStructTy = SymbolType(TY_STRUCT, newStructName);
+  newStructTy.setTemplateTypes(templateTypes);
 
   // Check if the struct is imported already
   std::string newStructSignature = Struct::getSignature(newStructName, templateTypes);

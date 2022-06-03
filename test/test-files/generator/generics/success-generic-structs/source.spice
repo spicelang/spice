@@ -1,4 +1,4 @@
-type T dyn;
+type T double|int;
 
 type Vector<T> struct {
     T* contents

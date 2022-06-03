@@ -323,6 +323,8 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
       if (f.getName() != functionName)
         continue;
 
+      std::map<std::string, SymbolType> concreteGenericTypes;
+
       // Check this type requirement
       SymbolType concreteThisType = thisType;
       SymbolType fctThisType = f.getThisType();
