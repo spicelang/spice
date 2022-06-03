@@ -33,17 +33,10 @@ f<int> main() {
     v.push(2);
 }*/
 
-//import "std/data/vector" as vec;
-import "os-test2" as ot2;
+import "std/data/vector" as vec;
 
 f<int> main() {
-    dyn v = ot2.Vector<int>{};
-    v.setData(12);
-    printf("Data: %d\n", v.data);
-    v.setData(1.5);
-    printf("Data: %d\n", v.data);
-
-    //vec.Vector<int> v1 = vec.Vector<int>{};
+    vec.Vector<int> v1 = vec.Vector<int>{};
     //v1.ctor();
     //v1.pushBack(123);
     //v1.pushBack(90);

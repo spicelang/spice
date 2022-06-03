@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [17 x i8] c"Results: %d, %d\0A\00", align 1
 
 ; Function Attrs: nounwind
-define internal i32 @"_f_sumNumbers_long*_int"(i64* %0, i32 %1) #0 {
+define internal i32 @"_f_sumNumbers_long[]_int"(i64* %0, i32 %1) #0 {
 entry:
   %numberArray = alloca i64*, align 8
   %arrayLength = alloca i32, align 4
@@ -61,7 +61,7 @@ for.end:                                          ; preds = %for.cond
 }
 
 ; Function Attrs: nounwind
-define internal i32 @"_f_sumNumbers_short*_int"(i16* %0, i32 %1) #0 {
+define internal i32 @"_f_sumNumbers_short[]_int"(i16* %0, i32 %1) #0 {
 entry:
   %numberArray = alloca i16*, align 8
   %arrayLength = alloca i32, align 4
@@ -113,16 +113,16 @@ for.end:                                          ; preds = %for.cond
 }
 
 ; Function Attrs: nounwind
-define internal void @"_p_printData_int_int[]"(i32 %0, i32* %1) #0 {
+define internal void @"_p_printData_int_int[]"(i32 %0, [2 x i32] %1) #0 {
 entry:
   %arrayLength = alloca i32, align 4
-  %list = alloca i32*, align 8
+  %list = alloca [2 x i32], align 4
   %i = alloca i32, align 4
   %2 = alloca i32, align 4
   %3 = alloca i1, align 1
   %4 = alloca i32, align 4
   store i32 %0, i32* %arrayLength, align 4
-  store i32* %1, i32** %list, align 8
+  store [2 x i32] %1, [2 x i32]* %list, align 4
   store i32 0, i32* %2, align 4
   %5 = load i32, i32* %2, align 4
   store i32 %5, i32* %i, align 4
@@ -137,9 +137,9 @@ for.cond:                                         ; preds = %for.post, %entry
   br i1 %9, label %for, label %for.end
 
 for:                                              ; preds = %for.cond
-  %10 = load i32*, i32** %list, align 8
+  %10 = load [2 x i32], [2 x i32]* %list, align 4
   %11 = load i32, i32* %i, align 4
-  %12 = getelementptr inbounds i32, i32* %10, i32 %11
+  %12 = getelementptr inbounds [2 x i32], [2 x i32]* %list, i32 0, i32 %11
   %13 = load i32, i32* %12, align 4
   %14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %13)
   br label %for.post
@@ -197,7 +197,7 @@ entry:
   %19 = load [7 x i16], [7 x i16]* %numberList1, align 2
   store i32 7, i32* %7, align 4
   %20 = load i32, i32* %7, align 4
-  %21 = call i32 @"_f_sumNumbers_short*_int"(i16* %18, i32 %20)
+  %21 = call i32 @"_f_sumNumbers_short[]_int"(i16* %18, i32 %20)
   store i32 %21, i32* %8, align 4
   %22 = load i32, i32* %8, align 4
   store i32 %22, i32* %result1, align 4
@@ -211,7 +211,7 @@ entry:
   %25 = load [4 x i64], [4 x i64]* %numberList2, align 8
   store i32 4, i32* %13, align 4
   %26 = load i32, i32* %13, align 4
-  %27 = call i32 @"_f_sumNumbers_long*_int"(i64* %24, i32 %26)
+  %27 = call i32 @"_f_sumNumbers_long[]_int"(i64* %24, i32 %26)
   store i32 %27, i32* %14, align 4
   %28 = load i32, i32* %14, align 4
   store i32 %28, i32* %result2, align 4
@@ -226,8 +226,8 @@ entry:
   %34 = load [2 x i32], [2 x i32]* %resultList, align 4
   store i32 2, i32* %15, align 4
   %35 = load i32, i32* %15, align 4
-  %36 = getelementptr inbounds [2 x i32], [2 x i32]* %resultList, i32 0, i32 0
-  call void @"_p_printData_int_int[]"(i32 %35, i32* %36)
+  %36 = load [2 x i32], [2 x i32]* %resultList, align 4
+  call void @"_p_printData_int_int[]"(i32 %35, [2 x i32] %36)
   store i1 true, i1* %16, align 1
   %37 = load i32, i32* %result1, align 4
   %38 = load i32, i32* %result2, align 4

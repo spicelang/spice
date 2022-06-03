@@ -301,17 +301,15 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
  * Check if there is a function in this scope, fulfilling all given requirements and if found, return it.
  * If more than one function matches the requirement, an error gets thrown
  *
- * @param functionName Function name requirement
- * @param thisType This type requirement
- * @param argTypes Argument types requirement
- * @param templateTypes Template types requirement
+ * @param callFunctionName Function name requirement
+ * @param callThisType This type requirement
+ * @param callArgTypes Argument types requirement
  * @param err Error Factory
  * @param token Definition token for the error message
  * @return Matched function or nullptr
  */
-Function *SymbolTable::matchFunction(const std::string &functionName, const SymbolType &thisType,
-                                     const std::vector<SymbolType> &argTypes, const std::vector<SymbolType> &templateTypes,
-                                     ErrorFactory *err, const antlr4::Token &token) {
+Function *SymbolTable::matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
+                                     const std::vector<SymbolType> &callArgTypes, ErrorFactory *err, const antlr4::Token &token) {
   std::vector<Function *> matches;
 
   // Loop through function and add any matches to the matches vector
@@ -320,84 +318,78 @@ Function *SymbolTable::matchFunction(const std::string &functionName, const Symb
     auto oldManifestations = *manifestations;
     for (auto &[mangledName, f] : oldManifestations) {
       // Check name requirement
-      if (f.getName() != functionName)
+      if (f.getName() != callFunctionName)
         continue;
 
+      // Initialize mapping from generic type name to concrete symbol type
       std::map<std::string, SymbolType> concreteGenericTypes;
 
-      // Check this type requirement
-      SymbolType concreteThisType = thisType;
+      // Check 'this' type requirement
       SymbolType fctThisType = f.getThisType();
-      std::vector<SymbolType> fctThisTypeTemplateTypes = fctThisType.getTemplateTypes();
-      std::vector<GenericType> fctTemplateTypes = f.getTemplateTypes();
-      if (!fctThisTypeTemplateTypes.empty()) { // Has generic this type => Check if requirements match
-        std::vector<SymbolType> fctConcreteThisTypeTemplateTypes;
-        for (const auto &functionThisTypeTemplateType : fctThisTypeTemplateTypes) {
-          for (int i = 0; i < fctTemplateTypes.size(); i++) {
-            GenericType functionTemplateType = fctTemplateTypes[i];
-            if (functionTemplateType == functionThisTypeTemplateType &&
-                functionTemplateType.checkConditionsOf(templateTypes[i])) {
-              fctConcreteThisTypeTemplateTypes.push_back(templateTypes[i]);
-            } else {
-              continue;
-            }
-          }
-        }
-        concreteThisType.setTemplateTypes(fctConcreteThisTypeTemplateTypes);
-        // Check if there exists a struct with that particular manifestation
-        std::string structSignature = Struct::getSignature(concreteThisType.getSubType(), concreteThisType.getTemplateTypes());
-        if (!parent->lookupStrict(structSignature))
+      if (fctThisType.getTemplateTypes().empty()) { // The 'this' type is a non-generic struct
+        if (fctThisType != callThisType)            // Check for equality
           continue;
-      } else if (fctThisType != thisType) { // Check for equality
-        continue;
+      } else { // The 'this' type is a generic struct
+        for (int i = 0; i < fctThisType.getTemplateTypes().size(); i++) {
+          SymbolType genericType = fctThisType.getTemplateTypes()[i];
+          SymbolType concreteGenericType = callThisType.getTemplateTypes()[i];
+          concreteGenericTypes.insert({genericType.getSubType(), concreteGenericType});
+        }
       }
 
       // Check arg types requirement
-      std::vector<SymbolType> curArgTypes = f.getArgTypes();
-      if (curArgTypes.size() != argTypes.size())
+      auto argList = f.getArgList();
+      if (argList.size() != callArgTypes.size())
         continue;
       bool differentArgTypes = false; // Note: This is a workaround for a break from an inner loop
-      for (int i = 0; i < argTypes.size(); i++) {
-        if (!curArgTypes[i].is(TY_GENERIC) && !equalsIgnoreArraySizes(curArgTypes[i], argTypes[i])) {
-          differentArgTypes = true;
-          break;
+      for (int i = 0; i < argList.size(); i++) {
+        if (argList[i].first.isBaseType(TY_GENERIC)) { // Resolve concrete type for arguments with generic type
+          std::string genericTypeName = argList[i].first.getBaseType().getSubType();
+          if (concreteGenericTypes.contains(genericTypeName)) { // This generic type was already resolved => check if it matches
+            if (concreteGenericTypes.at(genericTypeName) != callArgTypes[i].getBaseType()) {
+              differentArgTypes = true;
+              break;
+            }
+          } else { // This generic type was not resolved yet => resolve it and add it to the list
+            // De-assemble the concrete type to match the generic type
+            SymbolType curGenericType = argList[i].first;
+            SymbolType curArgType = callArgTypes[i];
+            while (curGenericType.isArray() || curGenericType.isPointer()) {
+              if ((curGenericType.isArray() && curArgType.isArray()) || (curGenericType.isPointer() && curArgType.isPointer())) {
+                curArgType = curArgType.getContainedTy();
+                curGenericType = curGenericType.getContainedTy();
+              } else {
+                break;
+              }
+            }
+
+            if (!lookupGenericType(genericTypeName)->checkConditionsOf(curArgType)) {
+              differentArgTypes = true;
+              break;
+            }
+            concreteGenericTypes.insert({genericTypeName, curArgType});
+          }
+          argList[i].first = argList[i].first.replaceBaseType(concreteGenericTypes.at(genericTypeName));
+        } else { // For arguments with non-generic type, check if the candidate type matches with the call
+          if (!equalsIgnoreArraySizes(argList[i].first, callArgTypes[i])) {
+            differentArgTypes = true;
+            break;
+          }
         }
       }
       if (differentArgTypes)
         continue;
 
-      // Check template types requirement
-      if (fctTemplateTypes.size() != templateTypes.size())
-        continue;
-      if (fctTemplateTypes.empty()) {
-        // It's a match!
-        matches.push_back(&functions.at(codeLoc)->at(f.getMangledName()));
-      } else {
-        std::vector<SymbolType> concreteTemplateTypes;
-        bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
-        for (int i = 0; i < templateTypes.size(); i++) {
-          const SymbolType &concreteTemplateType = templateTypes[i];
-
-          if (!fctTemplateTypes[i].checkConditionsOf(concreteTemplateType)) {
-            differentTemplateTypes = true;
-            break;
-          }
-          concreteTemplateTypes.push_back(concreteTemplateType);
-        }
-        if (differentTemplateTypes)
-          continue;
-
-        // Duplicate function
-        Function newFunction = f.substantiateGenerics(concreteTemplateTypes, concreteThisType);
-        if (!getChild(newFunction.getSignature())) { // Insert function
-          insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
-          copyChildBlock(f.getSignature(), newFunction.getSignature());
-        }
-
-        assert(functions.contains(codeLoc) && functions.at(codeLoc)->contains(newFunction.getMangledName()));
-        matches.push_back(&functions.at(codeLoc)->at(newFunction.getMangledName()));
-        break;
+      // Duplicate function
+      Function newFunction = f.substantiateGenerics(argList, callThisType, concreteGenericTypes);
+      if (!getChild(newFunction.getSignature())) { // Insert function
+        insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
+        copyChildBlock(f.getSignature(), newFunction.getSignature());
       }
+
+      assert(functions.contains(codeLoc) && functions.at(codeLoc)->contains(newFunction.getMangledName()));
+      matches.push_back(&functions.at(codeLoc)->at(newFunction.getMangledName()));
+      break;
     }
   }
 

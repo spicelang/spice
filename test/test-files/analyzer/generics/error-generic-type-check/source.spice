@@ -6,6 +6,6 @@ f<int> print<T>(T g) {
 }
 
 f<int> main() {
-    print<int>(1);
-    print<string>("string");
+    print(1);
+    print("string");
 }

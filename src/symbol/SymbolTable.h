@@ -24,7 +24,7 @@ class SymbolTable {
 public:
   // Constructors
   explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile = false, bool isSourceFileRoot = false)
-      : parent(parent), isMainSourceFile(inMainSourceFile), isSourceFileRootScope(isSourceFileRoot) {};
+      : parent(parent), isMainSourceFile(inMainSourceFile), isSourceFileRootScope(isSourceFileRoot){};
 
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
@@ -52,8 +52,8 @@ public:
   std::map<std::string, Capture> &getCaptures();
 
   void insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
-  Function *matchFunction(const std::string &functionName, const SymbolType &thisType, const std::vector<SymbolType> &argTypes,
-                          const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
+  Function *matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
+                          const std::vector<SymbolType> &callArgTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const antlr4::Token &defToken) const;
   Function *popFunctionAccessPointer();
   void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,

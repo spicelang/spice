@@ -39,17 +39,17 @@ SymbolType Function::getReturnType() const { return returnType; }
  */
 std::vector<SymbolType> Function::getArgTypes() const {
   std::vector<SymbolType> newArgTypes;
-  for (const auto &argType : argTypes)
+  for (const auto &argType : argList)
     newArgTypes.push_back(argType.first);
   return newArgTypes;
 }
 
 /**
- * Retrieve the template types of the current function
+ * Retrieve the argument list of the current function
  *
- * @return Vector of template types
+ * @return Argument list
  */
-std::vector<GenericType> Function::getTemplateTypes() const { return templateTypes; }
+ArgList Function::getArgList() const { return argList; }
 
 /**
  * Mange the function and return the mangled string
@@ -74,18 +74,18 @@ std::string Function::getMangledName() const {
 
   // Arg type string
   std::string argTyStr;
-  for (const auto &argType : argTypes) {
+  for (const auto &argType : argList) {
     argTyStr += "_" + argType.first.getName();
     if (argType.second)
       argTyStr += "?";
   }
 
   // Template type string
-  std::string templateTyStr;
+  /*std::string templateTyStr;
   for (const auto &templateType : templateTypes)
-    templateTyStr += "_" + templateType.getName();
+    templateTyStr += "_" + templateType.getName();*/
 
-  return "_" + functionTyStr + thisTyStr + templateTyStr + "_" + name + argTyStr;
+  return "_" + functionTyStr + thisTyStr /* + templateTyStr*/ + "_" + name + argTyStr;
 }
 
 /**
@@ -105,7 +105,7 @@ std::string Function::getSignature() const {
 
   // Argument type string
   std::string argTyStr;
-  for (const auto &argType : argTypes) {
+  for (const auto &argType : argList) {
     if (!argTyStr.empty())
       argTyStr += ",";
     argTyStr += argType.first.getName();
@@ -172,7 +172,7 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
   std::vector<std::pair<SymbolType, bool>> currentFunctionArgTypes;
   bool metFirstOptionalArg = false;
 
-  for (const auto &argType : argTypes) {
+  for (const auto &argType : argList) {
     if (argType.second) {         // Met optional argument
       if (!metFirstOptionalArg) { // Add substantiation without the optional argument
         definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
@@ -200,38 +200,12 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
  *
  * @return Substantiated function with concrete arg types and without template types
  */
-Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes,
-                                        const SymbolType &concreteThisType) const {
-  std::vector<std::pair<SymbolType, bool>> newArgTypes;
-
-  // Substantiate arg types
-  for (const auto &argType : argTypes) {
-    assert(!argType.second); // Optional args need to be substantiated at this point
-    SymbolType newArgType = argType.first;
-    SymbolType newArgBaseType = newArgType.getBaseType();
-    if (newArgBaseType.is(TY_GENERIC)) {               // We have to replace it only if it is a generic type
-      for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
-        if (newArgBaseType == templateTypes[i]) {
-          newArgType = newArgType.replaceBaseType(concreteTemplateTypes[i]); // Use the concrete type instead of the generic one
-          break;
-        }
-      }
-    }
-    newArgTypes.emplace_back(newArgType, false);
-  }
-
+Function Function::substantiateGenerics(const ArgList &concreteArgList, const SymbolType &concreteThisType,
+                                        const std::map<std::string, SymbolType> &concreteGenericTypes) const {
   // Substantiate return type
-  SymbolType newReturnType = returnType;
-  if (newReturnType.is(TY_GENERIC)) {
-    for (int i = 0; i < templateTypes.size(); i++) { // Go through all template types and get the respective concrete type
-      if (newReturnType == templateTypes[i]) {
-        newReturnType = concreteTemplateTypes[i]; // Use the concrete type instead of the generic one
-        break;
-      }
-    }
-  }
+  SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
 
-  return Function(name, specifiers, concreteThisType, newReturnType, newArgTypes, {}, definitionCodeLoc);
+  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, definitionCodeLoc);
 }
 
 /**
@@ -241,7 +215,7 @@ Function Function::substantiateGenerics(const std::vector<SymbolType> &concreteT
  * @return Substantiated args or not
  */
 bool Function::hasSubstantiatedArgs() const {
-  return std::none_of(argTypes.begin(), argTypes.end(), [](auto t) { return t.second; });
+  return std::none_of(argList.begin(), argList.end(), [](auto t) { return t.second; });
 }
 
 /**

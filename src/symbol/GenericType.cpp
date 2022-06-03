@@ -26,7 +26,7 @@ bool GenericType::checkConditionsOf(const SymbolType &symbolType) const { return
 bool GenericType::checkTypeConditionOf(const SymbolType &symbolType) const {
   // Check type conditions
   for (const auto &typeCondition : typeConditions) {
-    if (typeCondition.is(TY_DYN) || typeCondition == symbolType)
+    if (typeCondition.is(TY_DYN) || equalsIgnoreArraySizes(typeCondition, symbolType))
       return true;
   }
   return false;

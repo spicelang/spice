@@ -1771,10 +1771,6 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         // Retrieve the access scope
         SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
 
-        // Consume template list
-        if (symbolType == SpiceParser::LESS)
-          tokenCounter += 3; // Consume typeLst, GREATER and LPAREN
-
         // Get function by signature
         Function *spiceFunc = accessScope->popFunctionAccessPointer();
         // Check if function exists in the current module

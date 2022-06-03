@@ -995,9 +995,6 @@ std::any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
       throw err->get(*ctx->dataType()->start, ARRAY_SIZE_INVALID, "The declaration of an array type must have a size attached");
   }
 
-  if (argumentMode && symbolType.isArray()) // Change array type to pointer type for function/procedure arguments
-    symbolType = symbolType.getContainedTy().toPointer(err.get(), *ctx->dataType()->start);
-
   // Build symbol specifiers
   auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
   if (ctx->declSpecifiers()) {
@@ -1597,29 +1594,12 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
       ScopePath scopePathBackup = scopePath;
       SymbolType thisType = currentThisType;
 
-      // Get template types
-      std::vector<SymbolType> concreteTemplateTypes;
-      // Consider template types from parent thisType
-      for (const auto &concreteTemplateType : thisType.getTemplateTypes())
-        concreteTemplateTypes.push_back(concreteTemplateType);
-      // Consider template types from template type list
-      auto typeLst = dynamic_cast<SpiceParser::TypeLstContext *>(ctx->children[tokenCounter]);
-      if (typeLst != nullptr) {
-        for (const auto &dataType : typeLst->dataType())
-          concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
-        tokenCounter += 3; // Consume typeLst, GREATER and LPAREN
-      }
-
       // Visit args
       std::vector<SymbolType> argTypes;
       auto argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
       if (argLst != nullptr) {
-        for (const auto &arg : argLst->assignExpr()) {
-          auto argType = any_cast<SymbolType>(visit(arg));
-          if (argType.isArray())
-            argType = argType.getContainedTy().toPointer(err.get(), *arg->start);
-          argTypes.push_back(argType);
-        }
+        for (const auto &arg : argLst->assignExpr())
+          argTypes.push_back(any_cast<SymbolType>(visit(arg)));
       }
       tokenCounter++; // Consume argLst
 
@@ -1628,8 +1608,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
 
       // Match a function onto the requirements of the call
       SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
-      Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, concreteTemplateTypes, err.get(),
-                                                               *token->getSymbol());
+      Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err.get(), *token->getSymbol());
       if (!spiceFunc) {
         // Build function to get a better error message
         std::vector<std::pair<SymbolType, bool>> argTypesWithOptional;
