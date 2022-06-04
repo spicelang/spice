@@ -81,11 +81,11 @@ std::string Function::getMangledName() const {
   }
 
   // Template type string
-  /*std::string templateTyStr;
+  std::string templateTyStr;
   for (const auto &templateType : templateTypes)
-    templateTyStr += "_" + templateType.getName();*/
+    templateTyStr += "_" + templateType.getName();
 
-  return "_" + functionTyStr + thisTyStr /* + templateTyStr*/ + "_" + name + argTyStr;
+  return "_" + functionTyStr + thisTyStr + templateTyStr + "_" + name + argTyStr;
 }
 
 /**

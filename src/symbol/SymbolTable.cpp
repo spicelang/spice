@@ -445,14 +445,15 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
   // Check if the function exists already
+  std::string mangledFctName = function.getMangledName();
   for (const auto &[_, manifestations] : functions) {
-    if (manifestations->contains(function.getMangledName()))
+    if (manifestations->contains(mangledFctName))
       throw err->get(token, FUNCTION_DECLARED_TWICE,
                      "The function/procedure '" + function.getSignature() + "' is declared twice");
   }
   // Add function to function list
   assert(functions.contains(codeLoc));
-  functions.at(codeLoc)->insert({function.getMangledName(), function});
+  functions.at(codeLoc)->insert({mangledFctName, function});
   // Add symbol table entry for the function
   insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, token);
 }
