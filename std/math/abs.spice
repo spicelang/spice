@@ -1,15 +1,5 @@
-public f<double> abs(double input) {
-    return input < 0 ? -input : input;
-}
+type Number double|int|short|long;
 
-public f<int> abs(int input) {
-    return input < 0 ? -input : input;
-}
-
-public f<short> abs(short input) {
-    return input < 0 ? -input : input;
-}
-
-public f<long> abs(long input) {
+public f<Number> abs<Number>(Number input) {
     return input < 0 ? -input : input;
 }

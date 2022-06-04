@@ -4,8 +4,8 @@ Size of short: 16
 Size of long: 64
 Size of byte: 8
 Size of char: 8
-Size of string: 8
+Size of string: 64
 Size of bool: 1
 Size of int[]: 224
-Size of int*: 32
-Size of struct instance: 3
+Size of int*: 64
+Size of struct instance: 97

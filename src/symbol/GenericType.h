@@ -18,12 +18,12 @@ public:
   explicit GenericType(const std::string &name);
 
   // Public methods
-  [[nodiscard]] bool meetsConditions(const SymbolType &symbolType) const;
+  [[nodiscard]] bool checkConditionsOf(const SymbolType &symbolType) const;
 
 private:
   // Members
   std::vector<SymbolType> typeConditions = {SymbolType(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] bool meetsTypeConditions(const SymbolType &symbolType) const;
+  [[nodiscard]] bool checkTypeConditionOf(const SymbolType &symbolType) const;
 };

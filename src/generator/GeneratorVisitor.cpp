@@ -1137,22 +1137,21 @@ std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
-  // Visit the argument
-  auto valuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
-  llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
-  llvm::Type *valueTy = value->getType();
+  unsigned int size;
+  if (ctx->assignExpr()) { // Assign expression
+    // Visit the argument
+    auto valuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
+    llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    llvm::Type *valueTy = value->getType();
 
-  // Unpack pointer types
-  while (valueTy->isPointerTy())
-    valueTy = valueTy->getPointerElementType();
-
-  // Calculate size at compile-time
-  unsigned int size = valueTy->getScalarSizeInBits();
-  if (valueTy->isArrayTy()) {
-    size = valueTy->getArrayNumElements() * valueTy->getArrayElementType()->getScalarSizeInBits();
-  } else if (valueTy->isStructTy()) {
-    size = valueTy->getStructNumElements();
+    // Calculate size at compile-time
+    size = getSizeOfType(valueTy);
+  } else { // Type
+    auto llvmType = std::any_cast<llvm::Type *>(visit(ctx->dataType()));
+    size = llvmType->getScalarSizeInBits();
   }
+
+  // Save size
   llvm::Value *resultPtr = insertAlloca(builder->getInt32Ty());
   builder->CreateStore(builder->getInt32(size), resultPtr);
 
@@ -1772,10 +1771,6 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         // Retrieve the access scope
         SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
 
-        // Consume template list
-        if (symbolType == SpiceParser::LESS)
-          tokenCounter += 3; // Consume typeLst, GREATER and LPAREN
-
         // Get function by signature
         Function *spiceFunc = accessScope->popFunctionAccessPointer();
         // Check if function exists in the current module
@@ -1808,7 +1803,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
             SymbolType returnSymbolType = spiceFunc->getReturnType();
             // Check if the return type is an imported struct. Due to not supporting pointers as return values, we do
             // not have to check for nested structs in pointers here.
-            if (accessScope->isImported() && returnSymbolType.is(TY_STRUCT)) {
+            if (accessScope->isImported(currentScope) && returnSymbolType.is(TY_STRUCT)) {
               // If the return type is an imported struct, initialize it first
               returnSymbolType = SymbolType(TY_STRUCT, accessScopePrefix + "." + returnSymbolType.getSubType());
             }
@@ -1819,7 +1814,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
             // Get argument types
             for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
-              if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))
+              if (accessScope->isImported(currentScope) && argType.isBaseType(TY_STRUCT))
                 argType = argType.replaceBaseSubType(scopePrefix);
               // Retrieve the LLVM type of the symbol type
               llvm::Type *llvmType = getTypeForSymbolType(argType);
@@ -1835,7 +1830,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
             // Get argument types
             for (auto &argType : spiceFunc->getArgTypes()) {
               // Check if it is an imported struct. If so, replace the subtype with the scope prefix
-              if (accessScope->isImported() && argType.isBaseType(TY_STRUCT))
+              if (accessScope->isImported(currentScope) && argType.isBaseType(TY_STRUCT))
                 argType = argType.replaceBaseSubType(scopePrefix);
               // Retrieve the LLVM type of the symbol type
               llvm::Type *llvmType = getTypeForSymbolType(argType);
@@ -1938,7 +1933,7 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
       return static_cast<llvm::Value *>(nullptr);
 
     // Check if this an external global var
-    if (accessScope->isImported() && entry->isGlobal())
+    if (accessScope->isImported(currentScope) && entry->isGlobal())
       entry = initExtGlobal(currentVarName, scopePrefix);
 
     llvm::Value *memAddress = entry->getAddress();
@@ -2338,14 +2333,12 @@ std::any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *c
 }
 
 std::any GeneratorVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
-  // Get type name in format: a.b.c
-  std::string typeName = ctx->IDENTIFIER()[0]->toString();
-  for (size_t i = 1; i < ctx->IDENTIFIER().size(); i++)
-    typeName += "." + ctx->IDENTIFIER()[i]->toString();
+  // Get type name in format: a.b.c<d>
+  std::string typeName = ctx->getText();
 
   // Search in symbol for a struct
   SymbolTableEntry *typeEntry = currentScope->lookup(typeName);
-  if (typeEntry)
+  if (typeEntry != nullptr)
     return SymbolType(TY_STRUCT, typeName);
 
   // Search in generic types
@@ -2515,6 +2508,22 @@ bool GeneratorVisitor::compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs) {
   if (lhs->getTypeID() == llvm::Type::ArrayTyID)
     return compareLLVMTypes(lhs->getArrayElementType(), rhs->getArrayElementType());
   return true;
+}
+
+unsigned int GeneratorVisitor::getSizeOfType(llvm::Type *llvmType) {
+  if (llvmType->isArrayTy()) {
+    return llvmType->getArrayNumElements() * llvmType->getArrayElementType()->getScalarSizeInBits();
+  } else if (llvmType->isStructTy()) {
+    unsigned int size = 0;
+    for (int i = 0; i < llvmType->getNumContainedTypes(); ++i) {
+      llvm::Type *containedType = llvmType->getContainedType(i);
+      size += getSizeOfType(containedType);
+    }
+    return size;
+  } else if (llvmType->isPointerTy()) {
+    return module->getDataLayout().getPointerSizeInBits();
+  }
+  return llvmType->getScalarSizeInBits();
 }
 
 llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *srcValue, llvm::Type *dstType) {

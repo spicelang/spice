@@ -10,6 +10,6 @@ f<double> genericFunction<T, U>(T arg1, U arg2, T arg3) {
 }
 
 f<int> main() {
-    printf("%f\n", genericFunction<int, double>(1, 2.4));
-    printf("%f\n", genericFunction<long, double>(12l, 2.0));
+    printf("%f\n", genericFunction(1, 2.4));
+    printf("%f\n", genericFunction(12l, 2.0));
 }

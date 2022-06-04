@@ -116,6 +116,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Argument of join builtin must be a tid";
   case EXPECTED_GENERIC_TYPE:
     return "Expected a generic type";
+  case EXPECTED_TYPE:
+    return "Expected type";
   case RESERVED_KEYWORD:
     return "Reserved keyword used as identifier";
   case COMING_SOON_SA:

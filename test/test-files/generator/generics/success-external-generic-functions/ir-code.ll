@@ -28,14 +28,15 @@ entry:
   store i1 true, i1* %3, align 1
   store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8** %4, align 8
   store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8** %5, align 8
-  call void @"_p_printFormat_string[]"(i8** getelementptr inbounds ([2 x i8*], [2 x i8*]* @anonymous.0, i32 0, i32 0))
+  %9 = load [2 x i8*], [2 x i8*]* @anonymous.0, align 8
+  call void @"_p_printFormat_string[]"([2 x i8*] %9)
   store i1 true, i1* %6, align 1
-  %9 = load i32, i32* %result, align 4
-  ret i32 %9
+  %10 = load i32, i32* %result, align 4
+  ret i32 %10
 }
 
 declare void @_p_printFormat_double(double)
 
 declare void @_p_printFormat_int(i32)
 
-declare void @"_p_printFormat_string[]"(i8**)
+declare void @"_p_printFormat_string[]"([2 x i8*])

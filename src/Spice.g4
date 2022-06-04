@@ -40,7 +40,7 @@ continueStmt: CONTINUE INTEGER?;
 // Builtin functions
 builtinCall: printfCall | sizeOfCall | lenCall | tidCall | joinCall;
 printfCall: PRINTF LPAREN STRING_LITERAL (COMMA assignExpr)* RPAREN;
-sizeOfCall: SIZEOF LPAREN assignExpr RPAREN;
+sizeOfCall: SIZEOF LPAREN (assignExpr | TYPE dataType) RPAREN;
 lenCall: LEN LPAREN assignExpr RPAREN;
 tidCall: TID LPAREN RPAREN;
 joinCall: JOIN LPAREN assignExpr (COMMA assignExpr)* RPAREN;
@@ -60,7 +60,7 @@ additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: prefixUnaryExpr | LPAREN dataType RPAREN prefixUnaryExpr;
 prefixUnaryExpr: prefixUnaryOp* postfixUnaryExpr;
-postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | (LESS typeLst GREATER)? LPAREN argLst? RPAREN | DOT postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
+postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | LPAREN argLst? RPAREN | DOT postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
 atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types

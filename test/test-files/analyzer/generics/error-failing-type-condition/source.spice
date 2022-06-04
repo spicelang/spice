@@ -5,6 +5,6 @@ f<T> max<T>(T a, T b) {
 }
 
 f<int> main() {
-    dyn test = max<short>(1s, 2s);
+    dyn test = max(1s, 2s);
     printf("Output: %d\n", test);
 }

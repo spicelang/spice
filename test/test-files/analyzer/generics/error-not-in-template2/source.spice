@@ -6,5 +6,5 @@ p printDyn<T>(T a1, U a2) {
 }
 
 f<int> main() {
-    printDyn<double, int>(1.3, 4);
+    printDyn(1.3, 4);
 }

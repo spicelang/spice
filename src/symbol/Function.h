@@ -17,7 +17,7 @@ public:
   explicit Function(std::string name, SymbolSpecifiers specifiers, const SymbolType &thisType, const SymbolType &returnType,
                     std::vector<std::pair<SymbolType, bool>> argTypes, std::vector<GenericType> templateTypes,
                     std::string definitionCodeLoc)
-      : name(std::move(name)), specifiers(specifiers), thisType(thisType), returnType(returnType), argTypes(std::move(argTypes)),
+      : name(std::move(name)), specifiers(specifiers), thisType(thisType), returnType(returnType), argList(std::move(argTypes)),
         templateTypes(std::move(templateTypes)), definitionCodeLoc(std::move(definitionCodeLoc)) {}
 
   // Public methods
@@ -26,7 +26,7 @@ public:
   [[nodiscard]] SymbolType getThisType() const;
   [[nodiscard]] SymbolType getReturnType() const;
   [[nodiscard]] std::vector<SymbolType> getArgTypes() const;
-  [[nodiscard]] std::vector<GenericType> getTemplateTypes() const;
+  [[nodiscard]] ArgList getArgList() const;
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] std::string getSignature() const;
   [[nodiscard]] bool isFunction() const;
@@ -35,8 +35,8 @@ public:
   [[nodiscard]] bool isMethodProcedure() const;
   [[nodiscard]] SymbolType getSymbolType() const;
   [[nodiscard]] std::vector<Function> substantiateOptionalArgs() const;
-  [[nodiscard]] Function substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes,
-                                              const SymbolType &concreteThisType) const;
+  [[nodiscard]] Function substantiateGenerics(const ArgList &concreteArgList, const SymbolType &concreteThisType,
+                                              const std::map<std::string, SymbolType> &concreteGenericTypes) const;
   [[nodiscard]] bool hasSubstantiatedArgs() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
@@ -50,7 +50,7 @@ private:
   SymbolSpecifiers specifiers;
   SymbolType thisType = SymbolType(TY_DYN);
   SymbolType returnType = SymbolType(TY_DYN);
-  std::vector<std::pair<SymbolType, bool>> argTypes;
+  std::vector<std::pair<SymbolType, bool>> argList;
   std::vector<GenericType> templateTypes;
   std::string definitionCodeLoc;
   bool used = false;

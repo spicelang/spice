@@ -23,7 +23,8 @@
 class SymbolTable {
 public:
   // Constructors
-  explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile) : parent(parent), isMainSourceFile(inMainSourceFile){};
+  explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile = false, bool isSourceFileRoot = false)
+      : parent(parent), isMainSourceFile(inMainSourceFile), isSourceFileRootScope(isSourceFileRoot){};
 
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
@@ -37,7 +38,7 @@ public:
   Capture *lookupCaptureStrict(const std::string &symbolName);
   SymbolTable *lookupTable(const std::string &tableName);
   SymbolTable *createChildBlock(const std::string &childBlockName);
-  void insertGenericType(const std::string &typeName, GenericType &genericType);
+  void insertGenericType(const std::string &typeName, const GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
   void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable, bool alterParent = true);
   void renameChildBlock(const std::string &oldName, const std::string &newName);
@@ -51,8 +52,8 @@ public:
   std::map<std::string, Capture> &getCaptures();
 
   void insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
-  Function *matchFunction(const std::string &functionName, const SymbolType &thisType, const std::vector<SymbolType> &argTypes,
-                          const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
+  Function *matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
+                          const std::vector<SymbolType> &callArgTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const antlr4::Token &defToken) const;
   Function *popFunctionAccessPointer();
   void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
@@ -70,12 +71,11 @@ public:
   void printCompilerWarnings();
   void disableCompilerWarnings();
 
-  [[nodiscard]] nlohmann::json toJSON() const;
-
-  void setImported();
-  [[nodiscard]] bool isImported() const;
+  [[nodiscard]] bool isImported(const SymbolTable *askingScope) const;
 
   void setCapturingRequired();
+
+  [[nodiscard]] nlohmann::json toJSON() const;
 
 private:
   // Members
@@ -89,7 +89,7 @@ private:
   std::map<std::string, std::shared_ptr<std::map<std::string, Struct>>> structs; // <code-loc, vector-of-representations>
   std::queue<Struct *> structAccessPointers;
   bool isMainSourceFile;
-  bool imported = false;
+  bool isSourceFileRootScope = false;
   bool compilerWarningsEnabled = true;
   bool requiresCapturing = false;
 };
