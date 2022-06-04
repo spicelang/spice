@@ -38,7 +38,7 @@ public:
   Capture *lookupCaptureStrict(const std::string &symbolName);
   SymbolTable *lookupTable(const std::string &tableName);
   SymbolTable *createChildBlock(const std::string &childBlockName);
-  void insertGenericType(const std::string &typeName, GenericType &genericType);
+  void insertGenericType(const std::string &typeName, const GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
   void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable, bool alterParent = true);
   void renameChildBlock(const std::string &oldName, const std::string &newName);

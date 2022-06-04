@@ -182,7 +182,7 @@ SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName) {
  * @param typeName Name of the generic type
  * @param genericType Generic type itself
  */
-void SymbolTable::insertGenericType(const std::string &typeName, GenericType &genericType) {
+void SymbolTable::insertGenericType(const std::string &typeName, const GenericType &genericType) {
   genericTypes.insert({typeName, genericType});
 }
 
@@ -385,6 +385,11 @@ Function *SymbolTable::matchFunction(const std::string &callFunctionName, const 
       if (!getChild(newFunction.getSignature())) { // Insert function
         insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
         copyChildBlock(f.getSignature(), newFunction.getSignature());
+
+        // Insert symbols for generic type names with concrete types into the child block
+        SymbolTable *childBlock = getChild(newFunction.getSignature());
+        for (const auto &[typeName, symbolType] : concreteGenericTypes)
+          childBlock->insertGenericType(typeName, GenericType(symbolType));
       }
 
       assert(functions.contains(codeLoc) && functions.at(codeLoc)->contains(newFunction.getMangledName()));

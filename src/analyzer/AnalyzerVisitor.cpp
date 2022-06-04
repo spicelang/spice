@@ -1971,7 +1971,7 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   std::string firstFragment = ctx->IDENTIFIER()[0]->toString();
   SymbolTableEntry *entry = currentScope->lookup(firstFragment);
   if (ctx->IDENTIFIER().size() == 1 && !entry && currentScope->lookupGenericType(firstFragment))
-    return SymbolType(TY_GENERIC, firstFragment);
+    return *static_cast<SymbolType *>(currentScope->lookupGenericType(firstFragment));
 
   // It is a struct type -> get the access scope
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
