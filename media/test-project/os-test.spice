@@ -33,7 +33,7 @@ f<int> main() {
     v.push(2);
 }*/
 
-import "std/data/vector" as vec;
+/*import "std/data/vector" as vec;
 
 f<int> main() {
     vec.Vector<int> v1 = vec.Vector<int>{};
@@ -41,4 +41,11 @@ f<int> main() {
     //v1.pushBack(123);
     //v1.pushBack(90);
     //v1.dtor();
+}*/
+
+f<int> main() {
+    int offset = 4;
+    unsafe {
+
+    }
 }

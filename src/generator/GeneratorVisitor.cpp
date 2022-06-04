@@ -707,7 +707,21 @@ std::any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   return pthread;
 }
 
-std::any GeneratorVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {}
+std::any GeneratorVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
+  // Change scope
+  std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+  currentScope = currentScope->getChild(scopeId);
+  assert(currentScope != nullptr);
+
+  // Visit instructions in the block
+  visit(ctx->stmtLst());
+
+  // Change scope back
+  currentScope = currentScope->getParent();
+  assert(currentScope != nullptr);
+
+  return nullptr;
+}
 
 std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto head = ctx->forHead();

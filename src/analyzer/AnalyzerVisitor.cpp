@@ -795,7 +795,25 @@ std::any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   return SymbolType(TY_BYTE).toPointer(err.get(), *ctx->start);
 }
 
-std::any AnalyzerVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {}
+std::any AnalyzerVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
+  // Enable unsafe operations
+  allowUnsafeOperations = true;
+
+  // Create a new scope
+  std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+  currentScope = currentScope->createChildBlock(scopeId);
+
+  // Visit statement list in new scope
+  visit(ctx->stmtLst());
+
+  // Return to old scope
+  currentScope = currentScope->getParent();
+
+  // Disable unsafe operations again
+  allowUnsafeOperations = false;
+
+  return nullptr;
+}
 
 std::any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto head = ctx->forHead();
