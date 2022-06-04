@@ -45,7 +45,10 @@ f<int> main() {
 
 f<int> main() {
     int offset = 4;
+    string data = "Test";
+    string* dataPtr = &data;
     unsafe {
-
+        dataPtr += sizeof(type char);
     }
+    printf("Modified data: %d\n", *dataPtr);
 }
