@@ -795,6 +795,8 @@ std::any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   return SymbolType(TY_BYTE).toPointer(err.get(), *ctx->start);
 }
 
+std::any AnalyzerVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {}
+
 std::any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto head = ctx->forHead();
 

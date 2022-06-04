@@ -48,6 +48,7 @@ public:
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
   std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
+  std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override;
   std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
   std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override;
   std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
@@ -132,7 +133,7 @@ private:
   llvm::Constant *getDefaultValueForType(llvm::Type *type);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);
-  unsigned int getSizeOfType(llvm::Type* structType);
+  unsigned int getSizeOfType(llvm::Type *structType);
   llvm::Value *doImplicitCast(llvm::Value *lhs, llvm::Type *rhs);
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

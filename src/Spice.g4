@@ -12,6 +12,7 @@ genericTypeDef: declSpecifiers? TYPE IDENTIFIER typeAlts SEMICOLON;
 structDef: declSpecifiers? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT LBRACE field* RBRACE;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
 threadDef: THREAD LBRACE stmtLst RBRACE;
+unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;
 forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
 forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
@@ -21,7 +22,7 @@ ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
 elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | threadDef)*;
+stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | threadDef | unsafeBlockDef)*;
 field: declSpecifiers? dataType IDENTIFIER;
 typeLst: dataType (COMMA dataType)*;
 typeLstEllipsis: typeLst ELLIPSIS?;
@@ -104,6 +105,7 @@ AS: 'as';
 STRUCT: 'struct';
 TYPE: 'type';
 THREAD: 'thread';
+UNSAFE: 'unsafe';
 //NEW: 'new';
 NIL: 'nil';
 MAIN: 'main';

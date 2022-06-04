@@ -707,6 +707,8 @@ std::any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   return pthread;
 }
 
+std::any GeneratorVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {}
+
 std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto head = ctx->forHead();
 
