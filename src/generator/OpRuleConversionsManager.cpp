@@ -1293,8 +1293,6 @@ llvm::Value *OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value *lhs)
     return builder->CreateSub(lhs, builder->getInt16(1));
   case P_TY_LONG:
     return builder->CreateSub(lhs, builder->getInt64(1));
-  default:
-    break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }

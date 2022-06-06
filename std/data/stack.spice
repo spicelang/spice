@@ -24,7 +24,9 @@ public type Stack<T> struct {
 public p Stack.ctor(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     this.itemSize = sizeof(type T);
-    this.contents = (T*) malloc(this.itemSize * initAllocItems);
+    unsafe {
+        this.contents = (T*) malloc(this.itemSize * initAllocItems);
+    }
     this.capacity = (long) initAllocItems;
     this.idxFront = 0l;
     this.idxBack = 0l;
