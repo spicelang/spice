@@ -38,17 +38,7 @@ import "std/data/vector" as vec;
 f<int> main() {
     vec.Vector<int> v1 = vec.Vector<int>{};
     v1.ctor();
-    v1.pushBack(123);
+    //v1.pushBack(123);
     //v1.pushBack(90);
-    //v1.dtor();
+    v1.dtor();
 }
-
-/*f<int> main() {
-    int[5] data = {1, 2, 3, 4, 5};
-    int[5]* dataPtr = &data;
-    int[5]* modPtr;
-    unsafe {
-        modPtr = dataPtr + 1;
-    }
-    printf("Modified data: %d\n", (*modPtr)[1]);
-}*/
