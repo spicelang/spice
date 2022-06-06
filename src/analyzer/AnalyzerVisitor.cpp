@@ -568,6 +568,9 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
     Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, codeLoc);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
+
+    // Add empty scope for function body
+    currentScope->createChildBlock(spiceProc.getSignature());
   }
 
   return nullptr;

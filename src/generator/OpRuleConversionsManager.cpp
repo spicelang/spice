@@ -1381,7 +1381,10 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Type *lhsTy, llvm::Valu
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_LONG):
     return builder->CreateIntCast(rhs, lhsTy, false);
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR): // fallthrough
-  case COMB(P_TY_STRING, P_TY_STRING):             // fallthrough
+  case COMB(P_TY_STRING, P_TY_STRING):
+    return rhs;
+  case COMB(P_TY_STRING, P_TY_PTR):
+    return builder->CreatePointerCast(rhs, lhsTy);
   case COMB(P_TY_BOOL, P_TY_BOOL):
     return rhs;
   case COMB(P_TY_PTR, P_TY_STRING): // fallthrough (string corresponds to byte* or char*)

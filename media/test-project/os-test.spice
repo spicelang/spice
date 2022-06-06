@@ -38,7 +38,7 @@ import "std/data/vector" as vec;
 f<int> main() {
     vec.Vector<int> v1 = vec.Vector<int>{};
     v1.ctor();
-    //v1.pushBack(123);
-    //v1.pushBack(90);
+    v1.pushBack(123);
+    v1.pushBack(90);
     v1.dtor();
 }

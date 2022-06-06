@@ -36,7 +36,11 @@ public p Queue.ctor(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
 
 public p Queue.dtor() {
     // Free all the memory
-    free(this.contents);
+    byte* memoryAddress;
+    unsafe {
+        memoryAddress = (byte*) this.contents;
+    }
+    free(memoryAddress);
 }
 
 /**
