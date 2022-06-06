@@ -1590,6 +1590,11 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
         throw err->get(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                        "Can only apply subscript operator on array type, got " + lhs.getName(true));
 
+      if (lhs.is(TY_PTR) && !allowUnsafeOperations)
+        throw err->get(
+            *ctx->start, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
+            "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.");
+
       // Get array item type
       lhs = lhs.getContainedTy();
 
