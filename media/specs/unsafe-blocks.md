@@ -3,7 +3,7 @@
 ## Implementation steps:
 
 - [x] 1. Support unsafe blocks in the code
-- [ ] 2. Decide for each operator/type combination if unsafe
+- [x] 2. Decide for each operator/type combination if unsafe
 
 ## Syntax
 
