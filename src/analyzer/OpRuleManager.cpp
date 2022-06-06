@@ -235,6 +235,13 @@ SymbolType OpRuleManager::getCastResultType(const antlr4::Token &token, const Sy
   // Allow casts char* -> string and char[] -> string
   if (lhs.is(TY_STRING) && rhs.isOneOf({TY_PTR, TY_ARRAY}) && rhs.getContainedTy().is(TY_CHAR))
     return lhs;
+  // Allow casts any* -> any*
+  if (lhs.isPointer() && rhs.isPointer()) {
+    if (withinUnsafeBlock)
+      return lhs;
+    else
+      throw printErrorMessageUnsafe(token, "(cast)", lhs, rhs);
+  }
   // Check primitive type combinations
   return validateBinaryOperation(token, CAST_OP_RULES, "(cast)", lhs, rhs);
 }

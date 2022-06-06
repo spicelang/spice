@@ -9,7 +9,7 @@
 
 #include <exception/ErrorFactory.h>
 
-enum PrimitiveType { P_TY_DOUBLE, P_TY_INT, P_TY_SHORT, P_TY_LONG, P_TY_BYTE_OR_CHAR, P_TY_STRING, P_TY_BOOL, P_TY_PTR };
+enum OpRuleType { P_TY_DOUBLE, P_TY_INT, P_TY_SHORT, P_TY_LONG, P_TY_BYTE_OR_CHAR, P_TY_STRING, P_TY_BOOL, P_TY_PTR };
 
 #define COMB(en1, en2) ((en1) | ((en2) << 16))
 
@@ -68,5 +68,5 @@ private:
   std::shared_ptr<llvm::IRBuilder<>> builder;
 
   // Private methods
-  static PrimitiveType getPrimitiveTypeFromLLVMType(llvm::Type *llvmType);
+  static OpRuleType getSymbolTypeFromLLVMType(llvm::Type *ty);
 };
