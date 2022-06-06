@@ -33,7 +33,7 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &conte
   this->err = std::make_unique<ErrorFactory>(sourceFile->filePath);
 
   // Create OpRuleManager
-  opRuleManager = std::make_unique<OpRuleManager>(err.get());
+  opRuleManager = std::make_unique<OpRuleManager>(err.get(), allowUnsafeOperations);
 }
 
 std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {

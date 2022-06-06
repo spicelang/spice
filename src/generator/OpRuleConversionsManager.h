@@ -9,14 +9,14 @@
 
 #include <exception/ErrorFactory.h>
 
-enum PrimitiveType { P_TY_DOUBLE, P_TY_INT, P_TY_SHORT, P_TY_LONG, P_TY_BYTE_OR_CHAR, P_TY_STRING, P_TY_BOOL };
+enum PrimitiveType { P_TY_DOUBLE, P_TY_INT, P_TY_SHORT, P_TY_LONG, P_TY_BYTE_OR_CHAR, P_TY_STRING, P_TY_BOOL, P_TY_PTR };
 
 #define COMB(en1, en2) ((en1) | ((en2) << 16))
 
 class OpRuleConversionsManager {
 public:
   explicit OpRuleConversionsManager(std::shared_ptr<llvm::IRBuilder<>> builder, const ErrorFactory *errorFactory)
-      : builder(std::move(builder)), err(errorFactory) {}
+      : err(errorFactory), builder(std::move(builder)) {}
 
   // Public methods
   llvm::Value *getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token);
@@ -60,6 +60,7 @@ public:
   static bool isByteOrChar(llvm::Type *llvmType);
   static bool isString(llvm::Type *llvmType);
   static bool isBool(llvm::Type *llvmType);
+  static bool isPtr(llvm::Type *ty);
 
 private:
   // Members

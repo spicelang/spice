@@ -23,9 +23,9 @@ unsafe {
 In general, all pointer-modifying operations should be marked as unsafe and
 should only be available within `unsafe` blocks.
 
-Following operations should be marked unsafe:
+Following operations should be (introduced and) marked unsafe:
 
-- [ ] Operators `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `<<=`, `>>=`, `&=`, `|=` `^=` with pointer lhs
+- [ ] Operators `+=`, `-=`, `+` and `-` with pointer lhs
 - [ ] Cast from any pointer type to any other pointer type
 
 ## External function calls unsafe (no decision yet)

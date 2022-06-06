@@ -42,10 +42,13 @@ llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::
   case COMB(P_TY_STRING, P_TY_BYTE_OR_CHAR):
     // ToDo(@marcauberer): Insert call to appendChar in the runtime lib
     throw err->get(token, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
-  case COMB(P_TY_STRING, P_TY_STRING): {
+  case COMB(P_TY_STRING, P_TY_STRING):
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
     throw err->get(token, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");
-  }
+  case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
+  case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
+  case COMB(P_TY_PTR, P_TY_LONG):
+    return builder->CreateGEP(lhsTy->getPointerElementType(), lhs, rhs);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
@@ -83,6 +86,10 @@ llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhs, llvm:
   case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
     return builder->CreateSub(lhs, rhs);
+  case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
+  case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
+  case COMB(P_TY_PTR, P_TY_LONG):
+    return builder->CreateGEP(lhsTy->getPointerElementType(), lhs, rhs);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
@@ -170,21 +177,21 @@ llvm::Value *OpRuleConversionsManager::getRemEqualInst(llvm::Value *lhs, llvm::V
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFRem(lhs, rhs);
   case COMB(P_TY_INT, P_TY_INT):
-    return builder->CreateSDiv(lhs, rhs);
+    return builder->CreateSRem(lhs, rhs);
   case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
   case COMB(P_TY_INT, P_TY_LONG): {
     llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsInt);
+    return builder->CreateSRem(lhs, rhsInt);
   }
   case COMB(P_TY_SHORT, P_TY_INT): {
     llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsShort);
+    return builder->CreateSRem(lhs, rhsShort);
   }
   case COMB(P_TY_SHORT, P_TY_SHORT):
     return builder->CreateSRem(lhs, rhs);
   case COMB(P_TY_SHORT, P_TY_LONG): {
     llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsShort);
+    return builder->CreateSRem(lhs, rhsShort);
   }
   case COMB(P_TY_LONG, P_TY_INT): // fallthrough
   case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -919,6 +926,8 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateAdd(lhsLong, rhs);
   }
+  case COMB(P_TY_INT, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_SHORT, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
     return builder->CreateFAdd(lhsFP, rhs);
@@ -933,6 +942,8 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateAdd(lhsLong, rhs);
   }
+  case COMB(P_TY_SHORT, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_LONG, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
     return builder->CreateFAdd(lhsFP, rhs);
@@ -945,13 +956,19 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
     return builder->CreateAdd(lhs, rhsLong);
   }
-  case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
+  case COMB(P_TY_LONG, P_TY_LONG):
+    return builder->CreateAdd(lhs, rhs);
+  case COMB(P_TY_LONG, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
     return builder->CreateAdd(lhs, rhs);
-  case COMB(P_TY_STRING, P_TY_STRING): {
+  case COMB(P_TY_STRING, P_TY_STRING):
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
     throw err->get(token, COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
-  }
+  case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
+  case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
+  case COMB(P_TY_PTR, P_TY_LONG):
+    return builder->CreateGEP(lhsTy->getPointerElementType(), lhs, rhs);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
@@ -984,6 +1001,8 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Valu
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateSub(lhsLong, rhs);
   }
+  case COMB(P_TY_INT, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_SHORT, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
     return builder->CreateFSub(lhsFP, rhs);
@@ -998,6 +1017,8 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Valu
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateSub(lhsLong, rhs);
   }
+  case COMB(P_TY_SHORT, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_LONG, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
     return builder->CreateFSub(lhsFP, rhs);
@@ -1010,9 +1031,16 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Valu
     llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
     return builder->CreateSub(lhs, rhsLong);
   }
-  case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
+  case COMB(P_TY_LONG, P_TY_LONG):
+    return builder->CreateSub(lhs, rhs);
+  case COMB(P_TY_LONG, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
     return builder->CreateSub(lhs, rhs);
+  case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
+  case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
+  case COMB(P_TY_PTR, P_TY_LONG):
+    return builder->CreateGEP(lhsTy->getPointerElementType(), lhs, rhs);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
@@ -1377,6 +1405,8 @@ PrimitiveType OpRuleConversionsManager::getPrimitiveTypeFromLLVMType(llvm::Type 
     return P_TY_STRING;
   if (isBool(ty))
     return P_TY_BOOL;
+  if (isPtr(ty))
+    return P_TY_PTR;
   throw std::runtime_error("Internal compiler error: Cannot find primitive type of llvm type"); // GCOV_EXCL_LINE
 }
 
@@ -1395,3 +1425,5 @@ bool OpRuleConversionsManager::isString(llvm::Type *ty) {
 }
 
 bool OpRuleConversionsManager::isBool(llvm::Type *ty) { return ty->isIntegerTy(1); }
+
+bool OpRuleConversionsManager::isPtr(llvm::Type *ty) { return ty->isPointerTy(); }

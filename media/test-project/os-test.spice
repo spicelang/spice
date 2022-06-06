@@ -44,11 +44,11 @@ f<int> main() {
 }*/
 
 f<int> main() {
-    int offset = 4;
-    string data = "Test";
-    string* dataPtr = &data;
+    int[5] data = {1, 2, 3, 4, 5};
+    int[5]* dataPtr = &data;
+    int[5]* modPtr;
     unsafe {
-        dataPtr += sizeof(type char);
+        modPtr = dataPtr + 1;
     }
-    printf("Modified data: %d\n", *dataPtr);
+    printf("Modified data: %d\n", (*modPtr)[1]);
 }
