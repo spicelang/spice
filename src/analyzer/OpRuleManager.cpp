@@ -20,10 +20,24 @@ SymbolType OpRuleManager::getAssignResultType(const antlr4::Token &token, const 
 }
 
 SymbolType OpRuleManager::getPlusEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs) {
+  if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
+    if (withinUnsafeBlock)
+      return lhs;
+    else
+      throw printErrorMessageUnsafe(token, "+=", lhs, rhs);
+  }
+
   return validateBinaryOperation(token, PLUS_EQUAL_OP_RULES, "+=", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getMinusEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs) {
+  if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
+    if (withinUnsafeBlock)
+      return lhs;
+    else
+      throw printErrorMessageUnsafe(token, "-=", lhs, rhs);
+  }
+
   return validateBinaryOperation(token, MINUS_EQUAL_OP_RULES, "-=", lhs, rhs);
 }
 
@@ -80,10 +94,10 @@ SymbolType OpRuleManager::getBitwiseXorResultType(const antlr4::Token &token, co
 }
 
 SymbolType OpRuleManager::getEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs) {
-  // Allow pointer = pointer straight away
+  // Allow 'pointer == pointer' straight away
   if (lhs.isPointer() && rhs.isPointer())
     return SymbolType(TY_BOOL);
-  // Allow pointer = byte straight away
+  // Allow 'pointer == byte' straight away
   if (lhs.isPointer() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
   // Check primitive type combinations
@@ -91,10 +105,10 @@ SymbolType OpRuleManager::getEqualResultType(const antlr4::Token &token, const S
 }
 
 SymbolType OpRuleManager::getNotEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs) {
-  // Allow pointers straight away
+  // Allow 'pointer != pointer' straight away
   if (lhs.isPointer() && rhs.isPointer())
     return SymbolType(TY_BOOL);
-  // Allow pointer = byte straight away
+  // Allow 'pointer != byte' straight away
   if (lhs.isPointer() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
   // Check primitive type combinations
@@ -126,10 +140,40 @@ SymbolType OpRuleManager::getShiftRightResultType(const antlr4::Token &token, co
 }
 
 SymbolType OpRuleManager::getPlusResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs) {
+  // Allow any* + <int/long/short>
+  if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
+    if (withinUnsafeBlock)
+      return lhs;
+    else
+      throw printErrorMessageUnsafe(token, "+", lhs, rhs);
+  }
+  // Allow <int/long/short> + any*
+  if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
+    if (withinUnsafeBlock)
+      return rhs;
+    else
+      throw printErrorMessageUnsafe(token, "+", lhs, rhs);
+  }
+
   return validateBinaryOperation(token, PLUS_OP_RULES, "+", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getMinusResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs) {
+  // Allow any* - <int/long/short>
+  if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
+    if (withinUnsafeBlock)
+      return lhs;
+    else
+      throw printErrorMessageUnsafe(token, "-", lhs, rhs);
+  }
+  // Allow <int/long/short> - any*
+  if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
+    if (withinUnsafeBlock)
+      return rhs;
+    else
+      throw printErrorMessageUnsafe(token, "-", lhs, rhs);
+  }
+
   return validateBinaryOperation(token, MINUS_OP_RULES, "-", lhs, rhs);
 }
 
@@ -183,7 +227,7 @@ SymbolType OpRuleManager::getPostfixMinusMinusResultType(const antlr4::Token &to
   return validateUnaryOperation(token, POSTFIX_MINUS_MINUS_OP_RULES, "--", lhs);
 }
 
-SymbolType OpRuleManager::getCastResultType(const antlr4::Token &token, SymbolType lhs,
+SymbolType OpRuleManager::getCastResultType(const antlr4::Token &token, const SymbolType &lhs,
                                             const SymbolType &rhs) { // double dbl = (double) 10;
   // Allow casts string -> char*  and string -> char[]
   if (lhs.isOneOf({TY_PTR, TY_ARRAY}) && lhs.getContainedTy().is(TY_CHAR) && rhs.is(TY_STRING))
@@ -191,6 +235,13 @@ SymbolType OpRuleManager::getCastResultType(const antlr4::Token &token, SymbolTy
   // Allow casts char* -> string and char[] -> string
   if (lhs.is(TY_STRING) && rhs.isOneOf({TY_PTR, TY_ARRAY}) && rhs.getContainedTy().is(TY_CHAR))
     return lhs;
+  // Allow casts any* -> any*
+  if (lhs.isPointer() && rhs.isPointer()) {
+    if (withinUnsafeBlock)
+      return lhs;
+    else
+      throw printErrorMessageUnsafe(token, "(cast)", lhs, rhs);
+  }
   // Check primitive type combinations
   return validateBinaryOperation(token, CAST_OP_RULES, "(cast)", lhs, rhs);
 }
@@ -207,8 +258,8 @@ SymbolType OpRuleManager::validateBinaryOperation(const antlr4::Token &token, co
 SymbolType OpRuleManager::validateUnaryOperation(const antlr4::Token &token, const std::vector<UnaryOpRule> &opRules,
                                                  const std::string &opName, const SymbolType &lhs) {
   for (const auto &rule : opRules) {
-    if (rule.first == lhs)
-      return rule.second;
+    if (std::get<0>(rule) == lhs)
+      return std::get<1>(rule);
   }
   throw printErrorMessageUnary(token, opName, lhs);
 }
@@ -222,4 +273,11 @@ SemanticError OpRuleManager::printErrorMessageBinary(const antlr4::Token &token,
 SemanticError OpRuleManager::printErrorMessageUnary(const antlr4::Token &token, const std::string &operatorName,
                                                     const SymbolType &lhs) {
   return err->get(token, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + operatorName + "' operator on type " + lhs.getName(true));
+}
+
+SemanticError OpRuleManager::printErrorMessageUnsafe(const antlr4::Token &token, const std::string &operatorName,
+                                                     const SymbolType &lhs, const SymbolType &rhs) {
+  return err->get(token, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
+                  "Cannot apply '" + operatorName + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
+                      " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing.");
 }

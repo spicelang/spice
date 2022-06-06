@@ -55,6 +55,7 @@ public:
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
   std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
+  std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override;
   std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
   std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override;
   std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
@@ -116,6 +117,7 @@ private:
   SymbolTableEntry *currentEntry = nullptr;
   SymbolType expectedType = SymbolType(TY_DYN);
   SymbolType currentThisType = SymbolType(TY_DYN);
+  bool allowUnsafeOperations = false;
 
   // Private methods
   SymbolType initExtStruct(const antlr4::Token &token, SymbolTable *sourceScope, const std::string &structScopePrefix,

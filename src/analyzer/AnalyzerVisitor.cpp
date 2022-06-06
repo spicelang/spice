@@ -33,7 +33,7 @@ AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &conte
   this->err = std::make_unique<ErrorFactory>(sourceFile->filePath);
 
   // Create OpRuleManager
-  opRuleManager = std::make_unique<OpRuleManager>(err.get());
+  opRuleManager = std::make_unique<OpRuleManager>(err.get(), allowUnsafeOperations);
 }
 
 std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
@@ -793,6 +793,26 @@ std::any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   currentScope = currentScope->getParent();
 
   return SymbolType(TY_BYTE).toPointer(err.get(), *ctx->start);
+}
+
+std::any AnalyzerVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
+  // Enable unsafe operations
+  allowUnsafeOperations = true;
+
+  // Create a new scope
+  std::string scopeId = ScopeIdUtil::getScopeId(ctx);
+  currentScope = currentScope->createChildBlock(scopeId);
+
+  // Visit statement list in new scope
+  visit(ctx->stmtLst());
+
+  // Return to old scope
+  currentScope = currentScope->getParent();
+
+  // Disable unsafe operations again
+  allowUnsafeOperations = false;
+
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {

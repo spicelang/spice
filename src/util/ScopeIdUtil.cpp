@@ -13,6 +13,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::MainFunctionDefContext *) { ret
 /**
  * Get scope id for the FunctionDef AST node
  *
+ * @param ctx Parser context
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::FunctionDefContext *ctx) {
@@ -26,6 +27,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::FunctionDefContext *ctx) {
 /**
  * Get scope id for the ProcedureDef AST node
  *
+ * @param ctx Parser context
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::ProcedureDefContext *ctx) {
@@ -39,6 +41,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::ProcedureDefContext *ctx) {
 /**
  * Get scope id for the StructDef AST node
  *
+ * @param ctx Parser context
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::StructDefContext *ctx) {
@@ -48,6 +51,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::StructDefContext *ctx) {
 /**
  * Get scope id for the ThreadDef AST node
  *
+ * @param ctx Parser context
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::ThreadDefContext *ctx) {
@@ -56,8 +60,20 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::ThreadDefContext *ctx) {
 }
 
 /**
+ * Get scope id for the UnsafeBlockDefContext AST node
+ *
+ * @param ctx Parser context
+ * @return Scope id
+ */
+std::string ScopeIdUtil::getScopeId(SpiceParser::UnsafeBlockDefContext *ctx) {
+  auto symbol = ctx->UNSAFE()->getSymbol();
+  return "unsafe:" + std::to_string(symbol->getLine()) + ":" + std::to_string(symbol->getCharPositionInLine());
+}
+
+/**
  * Get scope id for the ForLoop AST node
  *
+ * @param ctx Parser context
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::ForLoopContext *ctx) {
@@ -68,6 +84,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::ForLoopContext *ctx) {
 /**
  * Get scope id for the ForeachLoop AST node
  *
+ * @param ctx Parser context
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::ForeachLoopContext *ctx) {
@@ -78,6 +95,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::ForeachLoopContext *ctx) {
 /**
  * Get scope id for the WhileLoop AST node
  *
+ * @param ctx Parser context
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::WhileLoopContext *ctx) {
@@ -88,6 +106,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::WhileLoopContext *ctx) {
 /**
  * Get scope id for the IfStmt AST node
  *
+ * @param ctx Parser context
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::IfStmtContext *ctx) {
@@ -98,6 +117,7 @@ std::string ScopeIdUtil::getScopeId(SpiceParser::IfStmtContext *ctx) {
 /**
  * Get scope id for the ElseStmt AST node
  *
+ * @param ctx Parser context
  * @return Scope id
  */
 std::string ScopeIdUtil::getScopeId(SpiceParser::ElseStmtContext *ctx) {

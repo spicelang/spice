@@ -9,8 +9,8 @@
 llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFAdd(lhs, rhs);
@@ -42,10 +42,13 @@ llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::
   case COMB(P_TY_STRING, P_TY_BYTE_OR_CHAR):
     // ToDo(@marcauberer): Insert call to appendChar in the runtime lib
     throw err->get(token, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
-  case COMB(P_TY_STRING, P_TY_STRING): {
+  case COMB(P_TY_STRING, P_TY_STRING):
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
     throw err->get(token, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");
-  }
+  case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
+  case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
+  case COMB(P_TY_PTR, P_TY_LONG):
+    return builder->CreateGEP(lhsTy->getPointerElementType(), lhs, rhs);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
@@ -53,8 +56,8 @@ llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::
 llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFSub(lhs, rhs);
@@ -83,6 +86,10 @@ llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhs, llvm:
   case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
     return builder->CreateSub(lhs, rhs);
+  case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
+  case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
+  case COMB(P_TY_PTR, P_TY_LONG):
+    return builder->CreateGEP(lhsTy->getPointerElementType(), lhs, rhs);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
@@ -90,8 +97,8 @@ llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhs, llvm:
 llvm::Value *OpRuleConversionsManager::getMulEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFMul(lhs, rhs);
@@ -127,8 +134,8 @@ llvm::Value *OpRuleConversionsManager::getMulEqualInst(llvm::Value *lhs, llvm::V
 llvm::Value *OpRuleConversionsManager::getDivEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFDiv(lhs, rhs);
@@ -164,27 +171,27 @@ llvm::Value *OpRuleConversionsManager::getDivEqualInst(llvm::Value *lhs, llvm::V
 llvm::Value *OpRuleConversionsManager::getRemEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFRem(lhs, rhs);
   case COMB(P_TY_INT, P_TY_INT):
-    return builder->CreateSDiv(lhs, rhs);
+    return builder->CreateSRem(lhs, rhs);
   case COMB(P_TY_INT, P_TY_SHORT): // fallthrough
   case COMB(P_TY_INT, P_TY_LONG): {
     llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsInt);
+    return builder->CreateSRem(lhs, rhsInt);
   }
   case COMB(P_TY_SHORT, P_TY_INT): {
     llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsShort);
+    return builder->CreateSRem(lhs, rhsShort);
   }
   case COMB(P_TY_SHORT, P_TY_SHORT):
     return builder->CreateSRem(lhs, rhs);
   case COMB(P_TY_SHORT, P_TY_LONG): {
     llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsShort);
+    return builder->CreateSRem(lhs, rhsShort);
   }
   case COMB(P_TY_LONG, P_TY_INT): // fallthrough
   case COMB(P_TY_LONG, P_TY_SHORT): {
@@ -201,8 +208,8 @@ llvm::Value *OpRuleConversionsManager::getRemEqualInst(llvm::Value *lhs, llvm::V
 llvm::Value *OpRuleConversionsManager::getSHLEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):
     return builder->CreateShl(lhs, rhs);
@@ -230,8 +237,8 @@ llvm::Value *OpRuleConversionsManager::getSHLEqualInst(llvm::Value *lhs, llvm::V
 llvm::Value *OpRuleConversionsManager::getSHREqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):
     return builder->CreateLShr(lhs, rhs);
@@ -259,8 +266,8 @@ llvm::Value *OpRuleConversionsManager::getSHREqualInst(llvm::Value *lhs, llvm::V
 llvm::Value *OpRuleConversionsManager::getAndEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):
     return builder->CreateAnd(lhs, rhs);
@@ -288,8 +295,8 @@ llvm::Value *OpRuleConversionsManager::getAndEqualInst(llvm::Value *lhs, llvm::V
 llvm::Value *OpRuleConversionsManager::getOrEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):
     return builder->CreateOr(lhs, rhs);
@@ -317,8 +324,8 @@ llvm::Value *OpRuleConversionsManager::getOrEqualInst(llvm::Value *lhs, llvm::Va
 llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):
     return builder->CreateXor(lhs, rhs);
@@ -346,8 +353,8 @@ llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhs, llvm::V
 llvm::Value *OpRuleConversionsManager::getBitwiseAndInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):     // fallthrough
   case COMB(P_TY_SHORT, P_TY_SHORT): // fallthrough
@@ -361,8 +368,8 @@ llvm::Value *OpRuleConversionsManager::getBitwiseAndInst(llvm::Value *lhs, llvm:
 llvm::Value *OpRuleConversionsManager::getBitwiseOrInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):     // fallthrough
   case COMB(P_TY_SHORT, P_TY_SHORT): // fallthrough
@@ -376,8 +383,8 @@ llvm::Value *OpRuleConversionsManager::getBitwiseOrInst(llvm::Value *lhs, llvm::
 llvm::Value *OpRuleConversionsManager::getBitwiseXorInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):     // fallthrough
   case COMB(P_TY_SHORT, P_TY_SHORT): // fallthrough
@@ -403,8 +410,8 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Valu
   }
 
   // Check for primitive type combinations
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFCmpOEQ(lhs, rhs);
@@ -502,8 +509,8 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::V
     return builder->CreateICmpNE(lhsInt, rhs);
   }
 
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFCmpONE(lhs, rhs);
@@ -590,8 +597,8 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::V
 llvm::Value *OpRuleConversionsManager::getLessInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFCmpOLT(lhs, rhs);
@@ -648,8 +655,8 @@ llvm::Value *OpRuleConversionsManager::getLessInst(llvm::Value *lhs, llvm::Value
 llvm::Value *OpRuleConversionsManager::getGreaterInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFCmpOGT(lhs, rhs);
@@ -706,8 +713,8 @@ llvm::Value *OpRuleConversionsManager::getGreaterInst(llvm::Value *lhs, llvm::Va
 llvm::Value *OpRuleConversionsManager::getLessEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFCmpOLE(lhs, rhs);
@@ -764,8 +771,8 @@ llvm::Value *OpRuleConversionsManager::getLessEqualInst(llvm::Value *lhs, llvm::
 llvm::Value *OpRuleConversionsManager::getGreaterEqualInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFCmpOGE(lhs, rhs);
@@ -822,8 +829,8 @@ llvm::Value *OpRuleConversionsManager::getGreaterEqualInst(llvm::Value *lhs, llv
 llvm::Value *OpRuleConversionsManager::getShiftLeftInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):
     return builder->CreateShl(lhs, rhs);
@@ -858,8 +865,8 @@ llvm::Value *OpRuleConversionsManager::getShiftLeftInst(llvm::Value *lhs, llvm::
 llvm::Value *OpRuleConversionsManager::getShiftRightInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_INT, P_TY_INT):
     return builder->CreateLShr(lhs, rhs);
@@ -894,8 +901,8 @@ llvm::Value *OpRuleConversionsManager::getShiftRightInst(llvm::Value *lhs, llvm:
 llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFAdd(lhs, rhs);
@@ -919,6 +926,8 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateAdd(lhsLong, rhs);
   }
+  case COMB(P_TY_INT, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_SHORT, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
     return builder->CreateFAdd(lhsFP, rhs);
@@ -933,6 +942,8 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateAdd(lhsLong, rhs);
   }
+  case COMB(P_TY_SHORT, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_LONG, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
     return builder->CreateFAdd(lhsFP, rhs);
@@ -945,13 +956,19 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
     return builder->CreateAdd(lhs, rhsLong);
   }
-  case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
+  case COMB(P_TY_LONG, P_TY_LONG):
+    return builder->CreateAdd(lhs, rhs);
+  case COMB(P_TY_LONG, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
     return builder->CreateAdd(lhs, rhs);
-  case COMB(P_TY_STRING, P_TY_STRING): {
+  case COMB(P_TY_STRING, P_TY_STRING):
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
     throw err->get(token, COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
-  }
+  case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
+  case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
+  case COMB(P_TY_PTR, P_TY_LONG):
+    return builder->CreateGEP(lhsTy->getPointerElementType(), lhs, rhs);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
@@ -959,8 +976,8 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
 llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFSub(lhs, rhs);
@@ -984,6 +1001,8 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Valu
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateSub(lhsLong, rhs);
   }
+  case COMB(P_TY_INT, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_SHORT, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
     return builder->CreateFSub(lhsFP, rhs);
@@ -998,6 +1017,8 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Valu
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateSub(lhsLong, rhs);
   }
+  case COMB(P_TY_SHORT, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_LONG, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
     return builder->CreateFSub(lhsFP, rhs);
@@ -1010,9 +1031,16 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Valu
     llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
     return builder->CreateSub(lhs, rhsLong);
   }
-  case COMB(P_TY_LONG, P_TY_LONG): // fallthrough
+  case COMB(P_TY_LONG, P_TY_LONG):
+    return builder->CreateSub(lhs, rhs);
+  case COMB(P_TY_LONG, P_TY_PTR):
+    return builder->CreateGEP(rhsTy->getPointerElementType(), rhs, lhs);
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
     return builder->CreateSub(lhs, rhs);
+  case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
+  case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
+  case COMB(P_TY_PTR, P_TY_LONG):
+    return builder->CreateGEP(lhsTy->getPointerElementType(), lhs, rhs);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
@@ -1020,8 +1048,8 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Valu
 llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFMul(lhs, rhs);
@@ -1127,8 +1155,8 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
 llvm::Value *OpRuleConversionsManager::getDivInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFDiv(lhs, rhs);
@@ -1185,8 +1213,8 @@ llvm::Value *OpRuleConversionsManager::getDivInst(llvm::Value *lhs, llvm::Value 
 llvm::Value *OpRuleConversionsManager::getRemInst(llvm::Value *lhs, llvm::Value *rhs) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE):
     return builder->CreateFRem(lhs, rhs);
@@ -1223,7 +1251,7 @@ llvm::Value *OpRuleConversionsManager::getRemInst(llvm::Value *lhs, llvm::Value 
 
 llvm::Value *OpRuleConversionsManager::getPrefixMinusInst(llvm::Value *lhs) {
   llvm::Type *lhsTy = lhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
   switch (lhsPTy) {
   case P_TY_DOUBLE:
     return builder->CreateFMul(lhs, llvm::ConstantFP::get(builder->getContext(), llvm::APFloat(double(-1))));
@@ -1241,7 +1269,7 @@ llvm::Value *OpRuleConversionsManager::getPrefixMinusInst(llvm::Value *lhs) {
 
 llvm::Value *OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value *lhs) {
   llvm::Type *lhsTy = lhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
   switch (lhsPTy) {
   case P_TY_INT:
     return builder->CreateAdd(lhs, builder->getInt32(1));
@@ -1257,7 +1285,7 @@ llvm::Value *OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value *lhs) {
 
 llvm::Value *OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value *lhs) {
   llvm::Type *lhsTy = lhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
   switch (lhsPTy) {
   case P_TY_INT:
     return builder->CreateSub(lhs, builder->getInt32(1));
@@ -1265,15 +1293,13 @@ llvm::Value *OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value *lhs)
     return builder->CreateSub(lhs, builder->getInt16(1));
   case P_TY_LONG:
     return builder->CreateSub(lhs, builder->getInt64(1));
-  default:
-    break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionsManager::getPrefixNotInst(llvm::Value *lhs) {
   llvm::Type *lhsTy = lhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
   switch (lhsPTy) {
   case P_TY_BOOL:
     return builder->CreateNot(lhs);
@@ -1285,7 +1311,7 @@ llvm::Value *OpRuleConversionsManager::getPrefixNotInst(llvm::Value *lhs) {
 
 llvm::Value *OpRuleConversionsManager::getPrefixBitwiseNotInst(llvm::Value *lhs) {
   llvm::Type *lhsTy = lhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
   switch (lhsPTy) {
   case P_TY_INT:   // fallthrough
   case P_TY_SHORT: // fallthrough
@@ -1299,7 +1325,7 @@ llvm::Value *OpRuleConversionsManager::getPrefixBitwiseNotInst(llvm::Value *lhs)
 
 llvm::Value *OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value *lhs) {
   llvm::Type *lhsTy = lhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
   switch (lhsPTy) {
   case P_TY_INT:
     return builder->CreateAdd(lhs, builder->getInt32(1));
@@ -1315,7 +1341,7 @@ llvm::Value *OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value *lhs) 
 
 llvm::Value *OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value *lhs) {
   llvm::Type *lhsTy = lhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
   switch (lhsPTy) {
   case P_TY_INT:
     return builder->CreateSub(lhs, builder->getInt32(1));
@@ -1331,8 +1357,8 @@ llvm::Value *OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value *lhs
 
 llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Type *lhsTy, llvm::Value *rhs) {
   llvm::Type *rhsTy = rhs->getType();
-  PrimitiveType lhsPTy = getPrimitiveTypeFromLLVMType(lhsTy);
-  PrimitiveType rhsPTy = getPrimitiveTypeFromLLVMType(rhsTy);
+  OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
+  OpRuleType rhsPTy = getSymbolTypeFromLLVMType(rhsTy);
   switch (COMB(lhsPTy, rhsPTy)) {
   case COMB(P_TY_DOUBLE, P_TY_DOUBLE): // fallthrough
   case COMB(P_TY_INT, P_TY_INT):
@@ -1358,11 +1384,14 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Type *lhsTy, llvm::Valu
   case COMB(P_TY_STRING, P_TY_STRING):             // fallthrough
   case COMB(P_TY_BOOL, P_TY_BOOL):
     return rhs;
+  case COMB(P_TY_PTR, P_TY_STRING): // fallthrough (string corresponds to byte* or char*)
+  case COMB(P_TY_PTR, P_TY_PTR):
+    return builder->CreatePointerCast(rhs, lhsTy);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
 }
 
-PrimitiveType OpRuleConversionsManager::getPrimitiveTypeFromLLVMType(llvm::Type *ty) {
+OpRuleType OpRuleConversionsManager::getSymbolTypeFromLLVMType(llvm::Type *ty) {
   if (isDouble(ty))
     return P_TY_DOUBLE;
   if (isInt(ty))
@@ -1377,6 +1406,8 @@ PrimitiveType OpRuleConversionsManager::getPrimitiveTypeFromLLVMType(llvm::Type 
     return P_TY_STRING;
   if (isBool(ty))
     return P_TY_BOOL;
+  if (isPtr(ty))
+    return P_TY_PTR;
   throw std::runtime_error("Internal compiler error: Cannot find primitive type of llvm type"); // GCOV_EXCL_LINE
 }
 
@@ -1395,3 +1426,5 @@ bool OpRuleConversionsManager::isString(llvm::Type *ty) {
 }
 
 bool OpRuleConversionsManager::isBool(llvm::Type *ty) { return ty->isIntegerTy(1); }
+
+bool OpRuleConversionsManager::isPtr(llvm::Type *ty) { return ty->isPointerTy(); }
