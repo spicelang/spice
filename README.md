@@ -33,7 +33,7 @@ cd spice
 ```
 
 #### Setup dev environment
-There is a batch / sh script to help you with that. It will do the following things:
+There is a batch/shell script called `dev-setup` to help you with that. It will do the following things:
 
 - Make sure you have all dependencies
 - Clone and build the required LLVM version to the `llvm` subdirectory
@@ -53,7 +53,7 @@ Use this command to run it:
 ```
 
 #### Re-build Spice
-To re-build Spice there is also a bat/sh file to help you with that. Use the following command to run it:
+To re-build Spice there is also a batch/shell script to help you with that. Use the following command to run it:
 
 **Linux:** <br>
 ```sh
@@ -68,7 +68,7 @@ To re-build Spice there is also a bat/sh file to help you with that. Use the fol
 You can find the build output in the `bin` subdirectory.
 
 ## Grammar
-The Spice grammar can be found [here](./src/grammar/Spice.g4) as a ANTLR grammar configuration file.
+The Spice grammar can be found [here](./src/Spice.g4) as a ANTLR grammar configuration file.
 
 ## Available target platforms
 Currently, Spice only offers stable support for x86_64/windows and x86_64/linux. But you can try to compile to the following architectures without any stability promises:
