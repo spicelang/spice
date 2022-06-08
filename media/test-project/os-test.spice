@@ -40,5 +40,6 @@ f<int> main() {
     v1.ctor();
     v1.pushBack(123);
     v1.pushBack(90);
+    printf("Vector size: %d\n", v1.getSize());
     v1.dtor();
 }

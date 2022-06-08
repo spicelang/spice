@@ -1636,7 +1636,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
 
       // Match a function onto the requirements of the call
       SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
-      Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err.get(), *token->getSymbol());
+      Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err.get(), *ctx->start);
       if (!spiceFunc) {
         // Build function to get a better error message
         std::vector<std::pair<SymbolType, bool>> argTypesWithOptional;

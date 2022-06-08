@@ -100,7 +100,7 @@ public f<T> Queue.back() {
  *
  * @return Current size of the queue
  */
-public f<long> Queue.size() {
+public f<long> Queue.getSize() {
     return this.size;
 }
 
@@ -148,7 +148,8 @@ p Queue.resize(unsigned long itemCount) {
     // Allocate the new memory
     unsafe {
         byte* oldAddress = (byte*) this.contents;
-        T* newMemory = (T*) realloc(oldAddress, (int) (this.itemSize * itemCount));
+        int newSize = (int) (this.itemSize * itemCount);
+        T* newMemory = (T*) realloc(oldAddress, newSize);
         this.contents = newMemory;
     }
     // Set new capacity

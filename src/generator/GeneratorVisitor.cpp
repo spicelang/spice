@@ -1788,7 +1788,8 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
 
         // Get function by signature
-        Function *spiceFunc = accessScope->popFunctionAccessPointer();
+        std::string functionCodeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+        Function *spiceFunc = accessScope->getFunctionAccessPointer(functionCodeLoc);
         // Check if function exists in the current module
         bool functionFound = false;
         std::string fctIdentifier = spiceFunc->getMangledName();
@@ -2081,7 +2082,8 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     }
 
     // Get struct from struct access pointer
-    Struct *spiceStruct = structScope->popStructAccessPointer();
+    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    Struct *spiceStruct = structScope->getStructAccessPointer(codeLoc);
     assert(spiceStruct);
 
     // Check if the struct is defined
