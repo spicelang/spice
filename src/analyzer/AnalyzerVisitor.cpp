@@ -799,21 +799,21 @@ std::any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
 }
 
 std::any AnalyzerVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
-  // Enable unsafe operations
-  allowUnsafeOperations = true;
-
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
 
+  // Enable unsafe operations
+  allowUnsafeOperations = true;
+
   // Visit statement list in new scope
   visit(ctx->stmtLst());
 
-  // Return to old scope
-  currentScope = currentScope->getParent();
-
   // Disable unsafe operations again
   allowUnsafeOperations = false;
+
+  // Return to old scope
+  currentScope = currentScope->getParent();
 
   return nullptr;
 }

@@ -21,6 +21,21 @@ public type Vector<T> struct {
     unsigned int itemSize   // Size of a single item
 }
 
+/**
+ * Re-allocates heap space for the queue contents
+ */
+p Vector.resize(unsigned long itemCount) {
+    // Allocate the new memory
+    unsafe {
+        byte* oldAddress = (byte*) this.contents;
+        int newSize = (int) (this.itemSize * itemCount);
+        T* newMemory = (T*) realloc(oldAddress, newSize);
+        this.contents = newMemory;
+    }
+    // Set new capacity
+    this.capacity = itemCount;
+}
+
 public p Vector.ctor(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     this.itemSize = sizeof(type T);
@@ -35,6 +50,24 @@ public p Vector.dtor() {
     unsafe {
         free((byte*) this.contents);
     }
+}
+
+/**
+ * Checks if the queue contains any items at the moment
+ *
+ * @return Empty or not empty
+ */
+public f<bool> Vector.isEmpty() {
+    return this.size == 0l;
+}
+
+/**
+ * Checks if the queue exhausts its capacity and needs to resize at the next call of push
+ *
+ * @return Full or not full
+ */
+public f<bool> Vector.isFull() {
+    return this.size == this.capacity;
 }
 
 /**
@@ -69,24 +102,6 @@ public f<long> Vector.getSize() {
 }
 
 /**
- * Checks if the queue contains any items at the moment
- *
- * @return Empty or not empty
- */
-public f<bool> Vector.isEmpty() {
-    return this.size == 0l;
-}
-
-/**
- * Checks if the queue exhausts its capacity and needs to resize at the next call of push
- *
- * @return Full or not full
- */
-public f<bool> Vector.isFull() {
-    return this.size == this.capacity;
-}
-
-/**
  * Frees allocated memory that is not used by the queue
  */
 public p Vector.pack() {
@@ -94,19 +109,4 @@ public p Vector.pack() {
     if this.isFull() { return; }
     // Pack the array
     this.resize(this.size);
-}
-
-/**
- * Re-allocates heap space for the queue contents
- */
-p Vector.resize(unsigned long itemCount) {
-    // Allocate the new memory
-    unsafe {
-        byte* oldAddress = (byte*) this.contents;
-        int newSize = (int) (this.itemSize * itemCount);
-        T* newMemory = (T*) realloc(oldAddress, newSize);
-        this.contents = newMemory;
-    }
-    // Set new capacity
-    this.capacity = itemCount;
 }
