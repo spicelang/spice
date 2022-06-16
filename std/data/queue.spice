@@ -1,9 +1,9 @@
 // Constants
-const unsigned int INITIAL_ALLOC_COUNT = 5;
+const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
-ext<byte*> malloc(int);
+ext<byte*> malloc(long);
 ext<byte*> realloc(byte*, int);
 ext free(byte*);
 ext<byte*> memcpy(byte*, byte*, int);
@@ -23,13 +23,13 @@ public type Queue<T> struct {
     unsigned int itemSize   // Size of a single item
 }
 
-public p Queue.ctor(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
+public p Queue.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     this.itemSize = sizeof(type T);
     unsafe {
         this.contents = (T*) malloc(this.itemSize * initAllocItems);
     }
-    this.capacity = (long) initAllocItems;
+    this.capacity = initAllocItems;
     this.idxFront = 0l;
     this.idxBack = 0l;
 }
@@ -110,7 +110,7 @@ public f<long> Queue.getSize() {
  * @return Empty or not empty
  */
 public f<bool> Queue.isEmpty() {
-    return this.size == 0l;
+    return this.size == 0;
 }
 
 /**

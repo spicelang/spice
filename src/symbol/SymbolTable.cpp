@@ -390,6 +390,13 @@ Function *SymbolTable::matchFunction(const std::string &callFunctionName, const 
         SymbolTable *childBlock = getChild(newFunction.getSignature());
         for (const auto &[typeName, symbolType] : concreteGenericTypes)
           childBlock->insertGenericType(typeName, GenericType(symbolType));
+
+        // Replace this type with concrete one
+        if ((f.isMethodFunction() || f.isMethodProcedure()) && !fctThisType.getTemplateTypes().empty()) {
+          SymbolTableEntry *thisEntry = childBlock->lookup(THIS_VARIABLE_NAME);
+          assert(thisEntry != nullptr);
+          thisEntry->updateType(callThisType.toPointer(err, token), true);
+        }
       }
 
       assert(functions.contains(codeLoc) && functions.at(codeLoc)->contains(newFunction.getMangledName()));

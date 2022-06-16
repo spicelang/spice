@@ -1,9 +1,9 @@
 // Constants
-const unsigned int INITIAL_ALLOC_COUNT = 5;
+const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
-ext<byte*> malloc(int);
+ext<byte*> malloc(long);
 ext<byte*> realloc(byte*, int);
 ext free(byte*);
 ext<byte*> memcpy(byte*, byte*, int);
@@ -21,28 +21,13 @@ public type Vector<T> struct {
     unsigned int itemSize   // Size of a single item
 }
 
-/**
- * Re-allocates heap space for the queue contents
- */
-p Vector.resize(unsigned long itemCount) {
-    // Allocate the new memory
-    unsafe {
-        byte* oldAddress = (byte*) this.contents;
-        int newSize = (int) (this.itemSize * itemCount);
-        T* newMemory = (T*) realloc(oldAddress, newSize);
-        this.contents = newMemory;
-    }
-    // Set new capacity
-    this.capacity = itemCount;
-}
-
-public p Vector.ctor(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
+public p Vector.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     this.itemSize = sizeof(type T);
     unsafe {
         this.contents = (T*) malloc(this.itemSize * initAllocItems);
     }
-    this.capacity = (long) initAllocItems;
+    this.capacity = initAllocItems;
 }
 
 public p Vector.dtor() {
@@ -58,7 +43,7 @@ public p Vector.dtor() {
  * @return Empty or not empty
  */
 public f<bool> Vector.isEmpty() {
-    return this.size == 0l;
+    return this.size == 0;
 }
 
 /**
@@ -109,4 +94,19 @@ public p Vector.pack() {
     if this.isFull() { return; }
     // Pack the array
     this.resize(this.size);
+}
+
+/**
+ * Re-allocates heap space for the queue contents
+ */
+p Vector.resize(unsigned long itemCount) {
+    // Allocate the new memory
+    unsafe {
+        byte* oldAddress = (byte*) this.contents;
+        int newSize = (int) (this.itemSize * itemCount);
+        T* newMemory = (T*) realloc(oldAddress, newSize);
+        this.contents = newMemory;
+    }
+    // Set new capacity
+    this.capacity = itemCount;
 }

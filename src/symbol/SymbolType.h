@@ -47,8 +47,8 @@ public:
 
   // Public methods
   [[nodiscard]] TypeChain getTypeChain() const;
-  SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token);
-  SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size = 0);
+  SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token) const;
+  SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;

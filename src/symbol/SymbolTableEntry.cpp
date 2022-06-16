@@ -23,10 +23,10 @@ const SymbolType &SymbolTableEntry::getType() const { return type; }
  *
  * @param newType New type of the current symbol
  */
-void SymbolTableEntry::updateType(SymbolType newType, bool force) {
+void SymbolTableEntry::updateType(const SymbolType &newType, bool force) {
   if (!force && type != SymbolType(TY_DYN))                                             // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn"); // GCOV_EXCL_LINE
-  type = std::move(newType);
+  type = newType;
 }
 
 /**
