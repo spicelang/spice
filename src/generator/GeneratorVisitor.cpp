@@ -284,7 +284,9 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
 
       // Create function itself
       llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
-      llvm::Function *fct = llvm::Function::Create(fctType, linkage, mangledName, module.get());
+      module->getOrInsertFunction(mangledName, fctType);
+      llvm::Function *fct = module->getFunction(mangledName);
+      fct->setLinkage(linkage);
       if (explicitInlined)
         fct->addFnAttr(llvm::Attribute::AlwaysInline);
 
@@ -421,7 +423,9 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
 
       // Create procedure itself
       llvm::FunctionType *procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), argTypes, false);
-      llvm::Function *proc = llvm::Function::Create(procType, linkage, mangledName, module.get());
+      module->getOrInsertFunction(mangledName, procType);
+      llvm::Function *proc = module->getFunction(mangledName);
+      proc->setLinkage(linkage);
       if (explicitInlined)
         proc->addFnAttr(llvm::Attribute::AlwaysInline);
 
