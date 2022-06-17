@@ -39,7 +39,7 @@ f<int> main() {
     vec.Vector<int> v1 = vec.Vector<int>{};
     v1.ctor();
     v1.pushBack(123);
-    //v1.pushBack(90);
+    v1.pushBack(90);
     //printf("Vector size: %d\n", v1.getSize());
-    //v1.dtor();
+    v1.dtor();
 }
