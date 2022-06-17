@@ -27,6 +27,7 @@ public p Vector.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     unsafe {
         this.contents = (T*) malloc(this.itemSize * initAllocItems);
     }
+    this.size = 0l;
     this.capacity = initAllocItems;
 }
 
@@ -71,6 +72,30 @@ public p Vector.pushBack<T>(T item) {
 }
 
 /**
+ * Get an item at a certain index
+ *
+ * @return item at index
+ */
+public f<T> Vector.get(long index) {
+    return this.get((int) index);
+}
+
+/**
+ * Get an item at a certain index
+ *
+ * @return item at index
+ */
+public f<T> Vector.get(int index) {
+    // Check if index exists
+    if (index <= this.size) {
+        unsafe {
+            return this.contents[index];
+        }
+    }
+    return nil<T>;
+}
+
+/**
  * Removes all items from the vector
  */
 public p Vector.clear() {
@@ -109,6 +134,7 @@ public p Vector.pack() {
  * Re-allocates heap space for the queue contents
  */
 p Vector.resize(unsigned long itemCount) {
+    printf("Resize!\n");
     // Allocate the new memory
     unsafe {
         byte* oldAddress = (byte*) this.contents;

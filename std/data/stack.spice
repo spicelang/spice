@@ -27,6 +27,7 @@ public p Stack.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     unsafe {
         this.contents = (T*) malloc(this.itemSize * initAllocItems);
     }
+    this.size = 0l;
     this.capacity = initAllocItems;
     this.idxFront = 0l;
     this.idxBack = 0l;

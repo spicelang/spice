@@ -40,7 +40,12 @@ f<int> main() {
     v1.ctor();
     v1.pushBack(123);
     v1.pushBack(90);
+    v1.pushBack(-91);
+    v1.pushBack(98);
+    v1.pushBack(9);
+    v1.pushBack(-12);
     printf("Vector size: %d\n", v1.getSize());
     printf("Vector capacity: %d\n", v1.getCapacity());
+    printf("Vector item at idx 3: %d\n", v1.get(5));
     v1.dtor();
 }
