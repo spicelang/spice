@@ -52,9 +52,8 @@ public p Queue.push(T item) {
     }
 
     // Insert the element at the back
-    this.idxBack++;
     unsafe {
-        this.contents[(int) this.idxBack] = item;
+        this.contents[(int) this.idxBack++] = item;
     }
 
     // Increase size
@@ -67,9 +66,11 @@ public p Queue.push(T item) {
  * @return First item
  */
 public f<T> Queue.pop() {
-    T item = this.contents[this.idxFront];
-    this.idxFront++;
-    return item;
+    this.size--;
+    unsafe {
+        return this.contents[(int) this.idxFront++];
+    }
+    return nil<T>;
 }
 
 /**
@@ -78,10 +79,13 @@ public f<T> Queue.pop() {
  * @return First item
  */
 public f<T> Queue.front() {
-    // Return nil if the queue is empty
-    if this.isEmpty() { return nil<T>; }
-    // Otherwise, return item
-    return this.contents[this.idxFront];
+    // Check if the queue is empty
+    if !this.isEmpty() {
+        unsafe {
+            return this.contents[(int) this.idxFront];
+        }
+    }
+    return nil<T>;
 }
 
 /**
@@ -90,10 +94,13 @@ public f<T> Queue.front() {
  * @return Last item
  */
 public f<T> Queue.back() {
-    // Return nil if the queue is empty
-    if this.isEmpty() { return nil<T>; }
-    // Otherwise, return item
-    return this.contents[this.idxBack];
+    // Check if the queue is empty
+    if !this.isEmpty() {
+        unsafe {
+            return this.contents[(int) this.idxBack];
+        }
+    }
+    return nil<T>;
 }
 
 /**
