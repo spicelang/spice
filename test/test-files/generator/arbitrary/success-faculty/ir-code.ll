@@ -5,8 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 1
 
-; Function Attrs: nounwind
-define internal i32 @_f_faculty_int(i32 %0) #0 {
+define internal i32 @_f_faculty_int(i32 %0) {
 entry:
   %input = alloca i32, align 4
   %result = alloca i32, align 4
@@ -74,5 +73,3 @@ entry:
 }
 
 declare i32 @printf(i8*, ...)
-
-attributes #0 = { nounwind }

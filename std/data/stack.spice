@@ -63,13 +63,22 @@ public f<T> Stack.pop() {
 }
 
 /**
- * Retrieve the current size of the queue
+ * Retrieve the current size of the stack
  *
- * @return Current size of the queue
+ * @return Current size of the stack
  */
 public f<long> Stack.getSize() {
     return this.size;
 }
+
+/**
+ * Retrieve the current capacity of the stack
+ *
+ * @return Current capacity of the stack
+ */
+ public f<long> Stack.getCapacity() {
+     return this.capacity;
+ }
 
 /**
  * Checks if the queue contains any items at the moment

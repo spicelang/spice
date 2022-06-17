@@ -11,8 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 @3 = private unnamed_addr constant [25 x i8] c"Age before birthday: %d\0A\00", align 1
 @4 = private unnamed_addr constant [24 x i8] c"Age after birthday: %d\0A\00", align 1
 
-; Function Attrs: nounwind
-define internal void @"_p_birthday_struct(Person)*"(%_s_Person_string_string_int* %0) #0 {
+define internal void @"_p_birthday_struct(Person)*"(%_s_Person_string_string_int* %0) {
 entry:
   %person = alloca %_s_Person_string_string_int*, align 8
   %1 = alloca i32, align 4
@@ -78,5 +77,3 @@ entry:
 }
 
 declare i32 @printf(i8*, ...)
-
-attributes #0 = { nounwind }

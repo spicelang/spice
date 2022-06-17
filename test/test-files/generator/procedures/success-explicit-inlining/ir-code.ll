@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [14 x i8] c"Before value\0A\00", align 1
 @2 = private unnamed_addr constant [13 x i8] c"After value\0A\00", align 1
 
-; Function Attrs: alwaysinline nounwind
+; Function Attrs: alwaysinline
 define internal void @_p_printAValue() #0 {
 entry:
   %0 = alloca i32, align 4
@@ -32,4 +32,4 @@ entry:
   ret i32 %3
 }
 
-attributes #0 = { alwaysinline nounwind }
+attributes #0 = { alwaysinline }

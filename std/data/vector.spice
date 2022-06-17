@@ -78,13 +78,22 @@ public p Vector.clear() {
 }
 
 /**
- * Retrieve the current size of the queue
+ * Retrieve the current size of the vector
  *
- * @return Current size of the queue
+ * @return Current size of the vector
  */
 public f<long> Vector.getSize() {
     return this.size;
 }
+
+/**
+ * Retrieve the current capacity of the vector
+ *
+ * @return Current capacity of the vector
+ */
+ public f<long> Vector.getCapacity() {
+     return this.capacity;
+ }
 
 /**
  * Frees allocated memory that is not used by the queue

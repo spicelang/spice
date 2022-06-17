@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [19 x i8] c"Inlined value: %d\0A\00", align 1
 
-; Function Attrs: alwaysinline nounwind
+; Function Attrs: alwaysinline
 define internal i64 @_f_getInlinedValue() #0 {
 entry:
   %result = alloca i64, align 8
@@ -30,4 +30,4 @@ entry:
 
 declare i32 @printf(i8*, ...)
 
-attributes #0 = { alwaysinline nounwind }
+attributes #0 = { alwaysinline }

@@ -8,8 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @2 = private unnamed_addr constant [30 x i8] c"Logical and evaluated to: %d\0A\00", align 1
 @3 = private unnamed_addr constant [29 x i8] c"Logical or evaluated to: %d\0A\00", align 1
 
-; Function Attrs: nounwind
-define internal i1 @_f_functionTrue() #0 {
+define internal i1 @_f_functionTrue() {
 entry:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
@@ -21,8 +20,7 @@ entry:
 
 declare i32 @printf(i8*, ...)
 
-; Function Attrs: nounwind
-define internal i1 @_f_functionFalse() #0 {
+define internal i1 @_f_functionFalse() {
 entry:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
@@ -79,5 +77,3 @@ lor.end:                                          ; preds = %lor.1, %land.end
   %20 = load i32, i32* %result, align 4
   ret i32 %20
 }
-
-attributes #0 = { nounwind }

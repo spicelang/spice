@@ -105,6 +105,15 @@ public f<long> Queue.getSize() {
 }
 
 /**
+ * Retrieve the current capacity of the queue
+ *
+ * @return Current capacity of the queue
+ */
+ public f<long> Queue.getCapacity() {
+     return this.capacity;
+ }
+
+/**
  * Checks if the queue contains any items at the moment
  *
  * @return Empty or not empty

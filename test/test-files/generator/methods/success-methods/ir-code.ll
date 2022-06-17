@@ -9,8 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
 @2 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 1
 
-; Function Attrs: nounwind
-define internal i8* @_mf_Letter_getContent(%_s_Letter_string* %0) #0 {
+define internal i8* @_mf_Letter_getContent(%_s_Letter_string* %0) {
 entry:
   %this = alloca %_s_Letter_string*, align 8
   %result = alloca i8*, align 8
@@ -22,8 +21,7 @@ entry:
   ret i8* %4
 }
 
-; Function Attrs: nounwind
-define internal void @_mp_Letter_setContent_string(%_s_Letter_string* %0, i8* %1) #0 {
+define internal void @_mp_Letter_setContent_string(%_s_Letter_string* %0, i8* %1) {
 entry:
   %this = alloca %_s_Letter_string*, align 8
   %text = alloca i8*, align 8
@@ -68,5 +66,3 @@ entry:
 }
 
 declare i32 @printf(i8*, ...)
-
-attributes #0 = { nounwind }

@@ -10,8 +10,7 @@ target triple = "x86_64-w64-windows-gnu"
 @intArray = constant [4 x i32] [i32 1, i32 2, i32 3, i32 4]
 @4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 1
 
-; Function Attrs: nounwind
-define internal void @"_p_testProc_int[]***"(i32**** %0) #0 {
+define internal void @"_p_testProc_int[]***"(i32**** %0) {
 entry:
   %nums = alloca i32****, align 8
   %nums1 = alloca i32**, align 8
@@ -116,5 +115,3 @@ entry:
   %23 = load i32, i32* %result, align 4
   ret i32 %23
 }
-
-attributes #0 = { nounwind }
