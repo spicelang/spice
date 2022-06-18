@@ -390,6 +390,13 @@ Function *SymbolTable::matchFunction(const std::string &callFunctionName, const 
         SymbolTable *childBlock = getChild(newFunction.getSignature());
         for (const auto &[typeName, symbolType] : concreteGenericTypes)
           childBlock->insertGenericType(typeName, GenericType(symbolType));
+
+        // Replace this type with concrete one
+        if ((f.isMethodFunction() || f.isMethodProcedure()) && !fctThisType.getTemplateTypes().empty()) {
+          SymbolTableEntry *thisEntry = childBlock->lookup(THIS_VARIABLE_NAME);
+          assert(thisEntry != nullptr);
+          thisEntry->updateType(callThisType.toPointer(err, token), true);
+        }
       }
 
       assert(functions.contains(codeLoc) && functions.at(codeLoc)->contains(newFunction.getMangledName()));
@@ -408,7 +415,7 @@ Function *SymbolTable::matchFunction(const std::string &callFunctionName, const 
         "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
-  functionAccessPointers.push(matches.front());
+  functionAccessPointers.insert({FileUtil::tokenToCodeLoc(token), matches.front()});
 
   return matches.front();
 }
@@ -424,16 +431,14 @@ std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const an
 }
 
 /**
- * Get the next function access in order of visiting
+ * Get the function access pointer by code location
  *
  * @return Function pointer for the function access
  */
-Function *SymbolTable::popFunctionAccessPointer() {
-  if (functionAccessPointers.empty())
-    throw std::runtime_error("Internal compiler error: Could not pop function access");
-  Function *function = functionAccessPointers.front();
-  functionAccessPointers.pop();
-  return function;
+Function *SymbolTable::getFunctionAccessPointer(const std::string &codeLoc) {
+  if (!functionAccessPointers.contains(codeLoc))
+    throw std::runtime_error("Internal compiler error: Could not get function access pointer");
+  return functionAccessPointers.at(codeLoc);
 }
 
 /**
@@ -543,7 +548,7 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
         "More than one struct matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
-  structAccessPointers.push(matches.front());
+  structAccessPointers.insert({FileUtil::tokenToCodeLoc(token), matches.front()});
 
   return matches.front();
 }
@@ -565,12 +570,10 @@ std::map<std::string, Struct> *SymbolTable::getStructManifestations(const antlr4
  *
  * @return Struct pointer for the struct access
  */
-Struct *SymbolTable::popStructAccessPointer() {
-  if (structAccessPointers.empty())
-    throw std::runtime_error("Internal compiler error: Could not pop struct access");
-  Struct *s = structAccessPointers.front();
-  structAccessPointers.pop();
-  return s;
+Struct *SymbolTable::getStructAccessPointer(const std::string &codeLoc) {
+  if (!structAccessPointers.contains(codeLoc))
+    throw std::runtime_error("Internal compiler error: Could not get struct access pointer");
+  return structAccessPointers.at(codeLoc);
 }
 
 /**

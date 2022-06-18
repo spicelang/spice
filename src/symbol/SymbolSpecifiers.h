@@ -32,7 +32,7 @@ const unsigned short SPECIFIER_DEFAULTS_PTR = 0b000;
 // Defaults: Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_ARRAY = 0b000;
 // Defaults: Const: 1, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_GENERIC = 0b100;
+const unsigned short SPECIFIER_DEFAULTS_GENERIC = 0b000;
 // Defaults: Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_STRUCT = 0b000;
 // Defaults: Const: 1, Signed: 0, Public: 0

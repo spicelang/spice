@@ -284,8 +284,9 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
 
       // Create function itself
       llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
-      llvm::Function *fct = llvm::Function::Create(fctType, linkage, mangledName, module.get());
-      fct->addFnAttr(llvm::Attribute::NoUnwind);
+      module->getOrInsertFunction(mangledName, fctType);
+      llvm::Function *fct = module->getFunction(mangledName);
+      fct->setLinkage(linkage);
       if (explicitInlined)
         fct->addFnAttr(llvm::Attribute::AlwaysInline);
 
@@ -422,8 +423,9 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
 
       // Create procedure itself
       llvm::FunctionType *procType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), argTypes, false);
-      llvm::Function *proc = llvm::Function::Create(procType, linkage, mangledName, module.get());
-      proc->addFnAttr(llvm::Attribute::NoUnwind);
+      module->getOrInsertFunction(mangledName, procType);
+      llvm::Function *proc = module->getFunction(mangledName);
+      proc->setLinkage(linkage);
       if (explicitInlined)
         proc->addFnAttr(llvm::Attribute::AlwaysInline);
 
@@ -1784,11 +1786,17 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         std::string functionName = isMethod ? scopePrefix : currentVarName;
         std::string accessScopePrefix = scopePath.getScopeName();
 
+        // Load the 'this' value if it is a pointer
+        llvm::Value *loadedThisValue = currentThisValue;
+        if (isMethod && loadedThisValue->getType()->getPointerElementType()->isPointerTy())
+          loadedThisValue = builder->CreateLoad(loadedThisValue->getType()->getPointerElementType(), loadedThisValue);
+
         // Retrieve the access scope
         SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
 
         // Get function by signature
-        Function *spiceFunc = accessScope->popFunctionAccessPointer();
+        std::string functionCodeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+        Function *spiceFunc = accessScope->getFunctionAccessPointer(functionCodeLoc);
         // Check if function exists in the current module
         bool functionFound = false;
         std::string fctIdentifier = spiceFunc->getMangledName();
@@ -1811,7 +1819,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
           // Add this type to argument types
           std::vector<llvm::Type *> argTypes;
           if (isMethod)
-            argTypes.push_back(currentThisValue->getType());
+            argTypes.push_back(loadedThisValue->getType());
 
           // Check if it is a function or a procedure
           if (spiceFunc->isFunction() || spiceFunc->isMethodFunction()) { // Function
@@ -1864,13 +1872,14 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
 
         // Get the declared function and its type
         llvm::Function *fct = module->getFunction(fctIdentifier);
+        assert(fct != nullptr);
         llvm::FunctionType *fctType = fct->getFunctionType();
 
         // Fill argument list
         int argIndex = 0;
         std::vector<llvm::Value *> argValues;
         if (isMethod) { // If it is a method, pass 'this' as implicit first argument
-          argValues.push_back(currentThisValue);
+          argValues.push_back(loadedThisValue);
           argIndex++;
         }
         auto argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
@@ -2081,7 +2090,8 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     }
 
     // Get struct from struct access pointer
-    Struct *spiceStruct = structScope->popStructAccessPointer();
+    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    Struct *spiceStruct = structScope->getStructAccessPointer(codeLoc);
     assert(spiceStruct);
 
     // Check if the struct is defined

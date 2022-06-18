@@ -224,7 +224,9 @@ bool Function::hasSubstantiatedArgs() const {
  *
  * @return Substantiated generics or not
  */
-bool Function::hasSubstantiatedGenerics() const { return templateTypes.empty(); }
+bool Function::hasSubstantiatedGenerics() const {
+  return templateTypes.empty() && !thisType.isBaseType(TY_GENERIC) && !returnType.isBaseType(TY_GENERIC);
+}
 
 /**
  * Checks if a function contains optional arguments or has generic types present.

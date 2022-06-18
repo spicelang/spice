@@ -6,8 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
 @1 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 1
 
-; Function Attrs: nounwind
-define internal i8* @_f_getTestString_int_double_bool(i32 %0, double %1, i1 %2) #0 {
+define internal i8* @_f_getTestString_int_double_bool(i32 %0, double %1, i1 %2) {
 entry:
   %arg0 = alloca i32, align 4
   %arg1 = alloca double, align 8
@@ -50,5 +49,3 @@ entry:
 }
 
 declare i32 @printf(i8*, ...)
-
-attributes #0 = { nounwind }

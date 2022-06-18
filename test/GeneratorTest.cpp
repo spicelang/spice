@@ -309,7 +309,7 @@ TEST_P(GeneratorStructTests, StructTests) { executeTest(GetParam()); } // NOLINT
 
 TEST_P(GeneratorThreadTests, TheadTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
-TEST_P(GeneratorUnsafeTests, TheadTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
+TEST_P(GeneratorUnsafeTests, UnsafeTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 TEST_P(GeneratorVariableTests, VariableTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 

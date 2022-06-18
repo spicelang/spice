@@ -1,9 +1,9 @@
 // Constants
-const unsigned int INITIAL_ALLOC_COUNT = 5;
+const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
-ext<byte*> malloc(int);
+ext<byte*> malloc(long);
 ext<byte*> realloc(byte*, int);
 ext free(byte*);
 ext<byte*> memcpy(byte*, byte*, int);
@@ -21,20 +21,21 @@ public type Stack<T> struct {
     unsigned int itemSize   // Size of a single item
 }
 
-public p Stack.ctor(unsigned int initAllocItems = INITIAL_ALLOC_COUNT) {
+public p Stack.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     this.itemSize = sizeof(type T);
     unsafe {
         this.contents = (T*) malloc(this.itemSize * initAllocItems);
     }
-    this.capacity = (long) initAllocItems;
-    this.idxFront = 0l;
-    this.idxBack = 0l;
+    this.size = 0l;
+    this.capacity = initAllocItems;
 }
 
 public p Stack.dtor() {
     // Free all the memory
-    free(this.contents);
+    unsafe {
+        free((byte*) this.contents);
+    }
 }
 
 /**
@@ -43,11 +44,13 @@ public p Stack.dtor() {
 public p Stack.push(T item) {
     // Check if we need to re-allocate memory
     if this.isFull() {
-        resize(this.capacity * RESIZE_FACTOR);
+        this.resize(this.capacity * RESIZE_FACTOR);
     }
 
     // Insert the element at the back
-    this.contents[this.size++] = item;
+    unsafe {
+        this.contents[(int) this.size++] = item;
+    }
 }
 
 /**
@@ -55,17 +58,29 @@ public p Stack.push(T item) {
  */
 public f<T> Stack.pop() {
     // Pop the element from the stack
-    return this.contents[--this.size];
+    unsafe {
+        return this.contents[(int) --this.size];
+    }
+    return nil<T>;
 }
 
 /**
- * Retrieve the current size of the queue
+ * Retrieve the current size of the stack
  *
- * @return Current size of the queue
+ * @return Current size of the stack
  */
-public f<long> Stack.size() {
+public f<long> Stack.getSize() {
     return this.size;
 }
+
+/**
+ * Retrieve the current capacity of the stack
+ *
+ * @return Current capacity of the stack
+ */
+ public f<long> Stack.getCapacity() {
+     return this.capacity;
+ }
 
 /**
  * Checks if the queue contains any items at the moment
@@ -73,7 +88,7 @@ public f<long> Stack.size() {
  * @return Empty or not empty
  */
 public f<bool> Stack.isEmpty() {
-    return this.size == 0l;
+    return this.size == 0;
 }
 
 /**
@@ -100,8 +115,12 @@ public p Stack.pack() {
  */
 p Stack.resize(unsigned long itemCount) {
     // Allocate the new memory
-    T* newMemory = realloc(this.itemSize * itemCount);
-    // Set new memory to contents array
-    this.contents = newMemory;
+    unsafe {
+        byte* oldAddress = (byte*) this.contents;
+        int newSize = (int) (this.itemSize * itemCount);
+        T* newMemory = (T*) realloc(oldAddress, newSize);
+        this.contents = newMemory;
+    }
+    // Set new capacity
     this.capacity = itemCount;
 }

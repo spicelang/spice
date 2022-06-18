@@ -1,0 +1,15 @@
+import "std/data/stack" as stc;
+
+f<int> main() {
+    stc.Stack<int> s1 = stc.Stack<int>{};
+    s1.ctor();
+    s1.push(123);
+    s1.push(456);
+    s1.push(789);
+    printf("Stack size: %d\n", s1.getSize());
+    printf("Stack capacity: %d\n", s1.getCapacity());
+    printf("Stack item 3: %d\n", s1.pop());
+    printf("Stack item 2: %d\n", s1.pop());
+    printf("Stack item 1: %d\n", s1.pop());
+    s1.dtor();
+}

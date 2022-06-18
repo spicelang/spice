@@ -55,7 +55,7 @@ public:
   Function *matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
                           const std::vector<SymbolType> &callArgTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const antlr4::Token &defToken) const;
-  Function *popFunctionAccessPointer();
+  Function *getFunctionAccessPointer(const std::string &codeLoc);
   void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
                                    const std::string &codeLoc);
 
@@ -63,7 +63,7 @@ public:
   Struct *matchStruct(const std::string &structName, const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory,
                       const antlr4::Token &token);
   [[nodiscard]] std::map<std::string, Struct> *getStructManifestations(const antlr4::Token &defToken) const;
-  Struct *popStructAccessPointer();
+  Struct *getStructAccessPointer(const std::string &codeLoc);
   void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token, const std::string &codeLoc);
 
   void purgeSubstantiationRemnants();
@@ -85,9 +85,9 @@ private:
   std::map<std::string, Capture> captures;
   std::map<std::string, GenericType> genericTypes;
   std::map<std::string, std::shared_ptr<std::map<std::string, Function>>> functions; // <code-loc, vector-of-representations>
-  std::queue<Function *> functionAccessPointers;
+  std::map<std::string, Function *> functionAccessPointers;
   std::map<std::string, std::shared_ptr<std::map<std::string, Struct>>> structs; // <code-loc, vector-of-representations>
-  std::queue<Struct *> structAccessPointers;
+  std::map<std::string, Struct *> structAccessPointers;
   bool isMainSourceFile;
   bool isSourceFileRootScope = false;
   bool compilerWarningsEnabled = true;

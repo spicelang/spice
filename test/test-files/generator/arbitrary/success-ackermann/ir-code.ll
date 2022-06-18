@@ -5,8 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
 
-; Function Attrs: nounwind
-define internal i32 @_f_ack_int_int(i32 %0, i32 %1) #0 {
+define internal i32 @_f_ack_int_int(i32 %0, i32 %1) {
 entry:
   %m = alloca i32, align 4
   %n = alloca i32, align 4
@@ -120,5 +119,3 @@ entry:
 }
 
 declare i32 @printf(i8*, ...)
-
-attributes #0 = { nounwind }

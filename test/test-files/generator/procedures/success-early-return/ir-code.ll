@@ -5,8 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [16 x i8] c"Input was false\00", align 1
 
-; Function Attrs: nounwind
-define internal void @_p_executeAction_bool(i1 %0) #0 {
+define internal void @_p_executeAction_bool(i1 %0) {
 entry:
   %input = alloca i1, align 1
   store i1 %0, i1* %input, align 1
@@ -36,5 +35,3 @@ entry:
   %3 = load i32, i32* %result, align 4
   ret i32 %3
 }
-
-attributes #0 = { nounwind }

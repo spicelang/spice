@@ -106,12 +106,11 @@ private:
   bool hasMainFunction = false;
   bool isStdFile = false;
   bool secondRun = false;
-  bool needsReAnalyze;
+  bool needsReAnalyze = false;
   SymbolTable *currentScope = nullptr;
   SymbolTable *rootScope = nullptr;
   ScopePath scopePath;
   std::string scopePrefix;
-  bool argumentMode = false;
   int nestedLoopCounter = 0;
   std::string currentVarName;
   SymbolTableEntry *currentEntry = nullptr;

@@ -6,8 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [13 x i8] c"Test func 1\0A\00", align 1
 @1 = private unnamed_addr constant [12 x i8] c"Result: %d\0A\00", align 1
 
-; Function Attrs: nounwind
-define internal i32 @_f_testFunc() #0 {
+define internal i32 @_f_testFunc() {
 entry:
   %result = alloca i32, align 4
   %0 = alloca i32, align 4
@@ -34,5 +33,3 @@ entry:
   %5 = load i32, i32* %result, align 4
   ret i32 %5
 }
-
-attributes #0 = { nounwind }

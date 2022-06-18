@@ -82,10 +82,8 @@ std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefConte
   currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
 
   // Visit arguments in new scope
-  argumentMode = true;
   if (ctx->argLstDef())
     visit(ctx->argLstDef());
-  argumentMode = false;
 
   // Visit statements in new scope
   visit(ctx->stmtLst());
@@ -149,7 +147,6 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       needsReAnalyze = true;
 
     // Visit arguments in new scope
-    argumentMode = true;
     std::vector<std::string> argNames;
     ArgList argTypes;
     if (ctx->argLstDef()) {
@@ -170,7 +167,6 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
         argTypes.push_back({argType, argOptional});
       }
     }
-    argumentMode = false;
 
     // Declare 'this' variable in new scope
     if (isMethod) {
@@ -376,7 +372,6 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       needsReAnalyze = true;
 
     // Visit arguments in new scope
-    argumentMode = true;
     std::vector<std::string> argNames;
     ArgList argTypes;
     if (ctx->argLstDef()) {
@@ -397,7 +392,6 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
         argTypes.push_back({argType, argOptional});
       }
     }
-    argumentMode = false;
 
     // Declare 'this' variable in new scope
     if (isMethod) {
@@ -568,6 +562,9 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
     Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, codeLoc);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
+
+    // Add empty scope for function body
+    currentScope->createChildBlock(spiceProc.getSignature());
   }
 
   return nullptr;
@@ -796,21 +793,21 @@ std::any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
 }
 
 std::any AnalyzerVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
-  // Enable unsafe operations
-  allowUnsafeOperations = true;
-
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->createChildBlock(scopeId);
 
+  // Enable unsafe operations
+  allowUnsafeOperations = true;
+
   // Visit statement list in new scope
   visit(ctx->stmtLst());
 
-  // Return to old scope
-  currentScope = currentScope->getParent();
-
   // Disable unsafe operations again
   allowUnsafeOperations = false;
+
+  // Return to old scope
+  currentScope = currentScope->getParent();
 
   return nullptr;
 }
@@ -1209,7 +1206,7 @@ std::any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
 std::any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   if (ctx->assignExpr()) {
     // Check if the assignExpr is a type when the type keyword is present
-    SymbolType symbolType = any_cast<SymbolType>(visit(ctx->assignExpr()));
+    auto symbolType = any_cast<SymbolType>(visit(ctx->assignExpr()));
     if (ctx->TYPE() && !symbolType.isOneOf({TY_STRUCT, TY_GENERIC}))
       throw err->get(*ctx->assignExpr()->start, EXPECTED_TYPE, "This identifier does not correspond to a type");
   }
@@ -1217,7 +1214,7 @@ std::any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
 }
 
 std::any AnalyzerVisitor::visitLenCall(SpiceParser::LenCallContext *ctx) {
-  SymbolType argType = any_cast<SymbolType>(visit(ctx->assignExpr()));
+  auto argType = any_cast<SymbolType>(visit(ctx->assignExpr()));
 
   // Check if arg is of type array
   if (!argType.isArray())
@@ -1587,6 +1584,11 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
         throw err->get(*ctx->start, OPERATOR_WRONG_DATA_TYPE,
                        "Can only apply subscript operator on array type, got " + lhs.getName(true));
 
+      if (lhs.is(TY_PTR) && !allowUnsafeOperations)
+        throw err->get(
+            *ctx->start, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
+            "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.");
+
       // Get array item type
       lhs = lhs.getContainedTy();
 
@@ -1628,7 +1630,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
 
       // Match a function onto the requirements of the call
       SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
-      Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err.get(), *token->getSymbol());
+      Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err.get(), *ctx->start);
       if (!spiceFunc) {
         // Build function to get a better error message
         std::vector<std::pair<SymbolType, bool>> argTypesWithOptional;

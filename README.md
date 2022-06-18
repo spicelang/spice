@@ -5,8 +5,8 @@
   <p align="center">
     <a target="_blank" href="https://github.com/spicelang/spice/releases/latest"><img src="https://img.shields.io/github/v/release/spicelang/spice?include_prereleases"></a>
     <a target="_blank" href="https://hub.docker.com/r/chillibits/spice"><img src="https://img.shields.io/docker/pulls/chillibits/spice"></a>
-	<a target="_blank" href="./.github/workflows/ci-cpp.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
-	<a target="_blank" href="./.github/workflows/codeql-analysis.yml"><img src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
+	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
+	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml"><img src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
     <a target="_blank" href="https://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
     <a target="_blank" href="./LICENSE.md"><img src="https://img.shields.io/github/license/spicelang/spice"></a>
   </p>
@@ -33,7 +33,7 @@ cd spice
 ```
 
 #### Setup dev environment
-There is a batch / sh script to help you with that. It will do the following things:
+There is a batch/shell script called `dev-setup` to help you with that. It will do the following things:
 
 - Make sure you have all dependencies
 - Clone and build the required LLVM version to the `llvm` subdirectory
@@ -53,7 +53,7 @@ Use this command to run it:
 ```
 
 #### Re-build Spice
-To re-build Spice there is also a bat/sh file to help you with that. Use the following command to run it:
+To re-build Spice there is also a batch/shell script to help you with that. Use the following command to run it:
 
 **Linux:** <br>
 ```sh
@@ -68,7 +68,7 @@ To re-build Spice there is also a bat/sh file to help you with that. Use the fol
 You can find the build output in the `bin` subdirectory.
 
 ## Grammar
-The Spice grammar can be found [here](./src/grammar/Spice.g4) as a ANTLR grammar configuration file.
+The Spice grammar can be found [here](./src/Spice.g4) as a ANTLR grammar configuration file.
 
 ## Available target platforms
 Currently, Spice only offers stable support for x86_64/windows and x86_64/linux. But you can try to compile to the following architectures without any stability promises:

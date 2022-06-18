@@ -8,8 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @numberList2 = constant [4 x i64] [i64 10, i64 12, i64 14, i64 16]
 @1 = private unnamed_addr constant [17 x i8] c"Results: %d, %d\0A\00", align 1
 
-; Function Attrs: nounwind
-define internal i32 @"_f_sumNumbers_long[]_int"(i64* %0, i32 %1) #0 {
+define internal i32 @"_f_sumNumbers_long[]_int"(i64* %0, i32 %1) {
 entry:
   %numberArray = alloca i64*, align 8
   %arrayLength = alloca i32, align 4
@@ -60,8 +59,7 @@ for.end:                                          ; preds = %for.cond
   ret i32 %21
 }
 
-; Function Attrs: nounwind
-define internal i32 @"_f_sumNumbers_short[]_int"(i16* %0, i32 %1) #0 {
+define internal i32 @"_f_sumNumbers_short[]_int"(i16* %0, i32 %1) {
 entry:
   %numberArray = alloca i16*, align 8
   %arrayLength = alloca i32, align 4
@@ -112,8 +110,7 @@ for.end:                                          ; preds = %for.cond
   ret i32 %21
 }
 
-; Function Attrs: nounwind
-define internal void @"_p_printData_int_int[]"(i32 %0, [2 x i32] %1) #0 {
+define internal void @"_p_printData_int_int[]"(i32 %0, [2 x i32] %1) {
 entry:
   %arrayLength = alloca i32, align 4
   %list = alloca [2 x i32], align 4
@@ -235,5 +232,3 @@ entry:
   %40 = load i32, i32* %result, align 4
   ret i32 %40
 }
-
-attributes #0 = { nounwind }
