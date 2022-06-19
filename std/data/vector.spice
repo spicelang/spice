@@ -103,6 +103,15 @@ public p Vector.clear() {
 }
 
 /**
+ * Reserves `itemCount` items
+ */
+public p Vector.reserve(unsigned long itemCount) {
+    if itemCount > this.capacity {
+        this.resize(itemCount);
+    }
+}
+
+/**
  * Retrieve the current size of the vector
  *
  * @return Current size of the vector

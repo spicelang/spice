@@ -1,76 +1,141 @@
 import "std/type/string" as str;
 
-ext<char*> malloc(int);
-ext free(char*);
-ext<char*> memcpy(char*, char*, int);
+// Constants
+const unsigned long INITIAL_ALLOC_COUNT = 5l;
+const unsigned int RESIZE_FACTOR = 2;
 
-type StringStruct struct {
-    char* value
-    int len
-    int maxLen
-    int growthFactor
+// Link external functions
+ext<byte*> malloc(long);
+ext<byte*> realloc(byte*, int);
+ext free(byte*);
+ext<byte*> memcpy(byte*, byte*, int);
+
+/**
+ * String wrapper for enriching raw strings with information and make them mutable
+ */
+public type String struct {
+    char* contents   // Pointer to the first char
+    int capacity     // Allocated number of chars
+    int length       // Current number of chars
 }
 
-p StringStruct.constructor() {
-    this.value = nil<char*>;
-    this.len = 0;
-    this.maxLen = 0;
-    this.growthFactor = 16;
+public p String.ctor(string value = "") {
+    // Allocate space for the initial number of elements
+    int itemSize = sizeof(type char);
+    unsafe {
+        this.contents = (char*) malloc(itemSize * initAllocItems);
+    }
+    this.length = len(value);
+    this.capacity = INITIAL_ALLOC_COUNT;
 }
 
-p StringStruct.destructor() {
-    if this.maxLen > 0 {
-        // Free the allocated heap space
-        free(this.value);
-        printf("Destructor called with free!");
+public p String.dtor() {
+    // Free all the memory
+    unsafe {
+        free((byte*) this.contents);
     }
 }
 
-p StringStruct.resize(int newLen) {
-    printf("Called resize with new len %d\n", newLen);
-    char* newAddr = malloc(newLen +1); // Lenth + the \0 character
-    char* oldAddr = this.value;
-    int length = this.len;
-    memcpy(newAddr, oldAddr, length);
-    free(oldAddr);
-    this.value = newAddr;
-    this.maxLen = newLen;
+/**
+ * Appends the given string wrapper to the current one
+ *
+ * @param appendix String wrapper to be appended
+ */
+public p String.append(String appendix) {
+    for int i = 0; i < appendix.length; i++ {
+        char charToAppend;
+        unsafe {
+            charToAppend = appendix.contents[i];
+        }
+        this.appendChar(charToAppend);
+    }
 }
 
-p StringStruct.appendChar(char c) {
-    int length = this.len;
-    int maxLength = this.maxLen;
-
-    if length == maxLength { // Sting needs to be grown
-        this.resize(maxLength + this.growthFactor);
+/**
+ * Appends the given char to the string and resize it if needed
+ *
+ * @param c Char to append
+ */
+public p String.appendChar(char c) {
+    // Check if we need to re-allocate memory
+    if this.length == this.capacity {
+        this.resize(this.capacity * RESIZE_FACTOR);
     }
 
-    //this.value[length] = c;
-    this.len++;
-}
-
-p StringStruct.clear() {
-    this.value = nil<char*>;
-    this.len = 0;
-}
-
-f<string> concat(string a, string b) {
-    // Return b if a is empty
-    int aLen = str.len(a);
-    if aLen == 0 { return b; }
-
-    // Return a if b is empty
-    int bLen = str.len(b);
-    if bLen == 0 { return a; }
-    
-    // Create a new string
-    int size = aLen + bLen;
-    result = "";
-    /*foreach char n : a {
-        result += n;
+    // Insert the char at the right position
+    unsafe {
+        this.value[length++] = c;
     }
-    foreach char n : b {
-        result += n;
-    }*/
-    return "";
+}
+
+/**
+ * Get the raw and immutable string from this container instance
+ *
+ * @return Raw immutable string
+ */
+public f<char*> String.getRaw() {
+    return this.contents;
+}
+
+/**
+ * Retrieve the current length of the string
+ *
+ * @return Current length of the string
+ */
+public f<int> String.getLength() {
+    return this.length;
+}
+
+/**
+ * Retrieve the current capacity of the string
+ *
+ * @return Current capacity of the string
+ */
+ public f<int> String.getCapacity() {
+     return this.capacity;
+ }
+
+/**
+ * Checks if the string exhausts its capacity
+ *
+ * @return Full or not full
+ */
+public f<bool> String.isFull() {
+    return this.length == this.capacity;
+}
+
+/**
+ * Replaces the current contents of the string with an empty string
+ */
+public p String.clear() {
+    unsafe {
+        this.contents = 0;
+    }
+    this.length = 0;
+}
+
+/**
+ * Reserves `charCount` items
+ */
+public p Queue.reserve(unsigned int charCount) {
+    if charCount > this.capacity {
+        this.resize(charCount);
+    }
+}
+
+/**
+ * Re-allocates heap space for the string contents
+ *
+ * @param newLength new length of the string after resizing
+ */
+p String.resize(unsigned long newLength) {
+    // Allocate the new memory
+    unsafe {
+        byte* oldAddress = (byte*) this.contents;
+        int newSize = (int) (sizeof(type char) * newLength);
+        char* newMemory = (char*) realloc(oldAddress, newSize);
+        this.contents = newMemory;
+    }
+    // Set new capacity
+    this.capacity = newLength;
 }

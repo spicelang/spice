@@ -9,3 +9,21 @@ public p assert(bool condition, string message = "<no-message>") {
 
     }
 }
+
+/**
+ * Concatenate two strings and return the concatenated result
+ *
+ * @param a part 1 of the result
+ * @param b part 2 of the result
+ *
+ * @return Concatenated string
+ */
+public f<string> concat(string a, string b) {
+    // Get wrapped instances of the raw strings
+    String aWrapped = String(a);
+    String bWrapped = String(b);
+    // Append b to a
+    aWrapped.append(bWrapped);
+    // Return the raw outcome
+    return aWrapped.getRaw();
+}

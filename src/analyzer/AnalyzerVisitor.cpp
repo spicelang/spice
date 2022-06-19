@@ -1815,13 +1815,14 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
         accessScopePrefix += structName + ".";
         std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
         accessScope = accessScope->lookupTable(tableName);
+        assert(accessScope != nullptr);
         if (accessScope->isImported(currentScope))
           structIsImported = true;
       }
     }
 
     // Set current variable name to 'ctor' to make constructor calls possible
-    currentVarName = CTOR_VARIABLE_NAME;
+    // currentVarName = CTOR_VARIABLE_NAME;
 
     // Get the concrete template types
     std::vector<SymbolType> concreteTemplateTypes;
