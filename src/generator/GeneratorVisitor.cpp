@@ -1777,135 +1777,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         currentVarName = arrayName;  // Restore current var name
         scopePath = scopePathBackup; // Restore scope path
 
-        lhs = nullptr;                                                                   // Set lhs to nullptr to prevent a store
-      } else if (symbolType == SpiceParser::LPAREN || symbolType == SpiceParser::LESS) { // Consider function call
-        tokenCounter++;                                                                  // Consume LPAREN or LESS
-
-        // Check if the function is a method and retrieve the function name based on that
-        bool isMethod = currentThisValue != nullptr;
-        std::string functionName = isMethod ? scopePrefix : currentVarName;
-        std::string accessScopePrefix = scopePath.getScopeName();
-
-        // Load the 'this' value if it is a pointer
-        llvm::Value *loadedThisValue = currentThisValue;
-        if (isMethod && loadedThisValue->getType()->getPointerElementType()->isPointerTy())
-          loadedThisValue = builder->CreateLoad(loadedThisValue->getType()->getPointerElementType(), loadedThisValue);
-
-        // Retrieve the access scope
-        SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
-
-        // Get function by signature
-        std::string functionCodeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-        Function *spiceFunc = accessScope->getFunctionAccessPointer(functionCodeLoc);
-        // Check if function exists in the current module
-        bool functionFound = false;
-        std::string fctIdentifier = spiceFunc->getMangledName();
-        for (const auto &function : module->getFunctionList()) { // Search for function definition
-          if (function.getName() == spiceFunc->getMangledName()) {
-            functionFound = true;
-            break;
-          } else if (function.getName() == spiceFunc->getName()) {
-            functionFound = true;
-            fctIdentifier = spiceFunc->getName();
-            break;
-          }
-        }
-
-        if (!functionFound) { // Not found => Declare function, which will be linked in
-          // Get the symbol table of the module where the function is defined
-          SymbolTable *table = accessScope->lookupTable(spiceFunc->getSignature());
-          assert(table != nullptr);
-
-          // Add this type to argument types
-          std::vector<llvm::Type *> argTypes;
-          if (isMethod)
-            argTypes.push_back(loadedThisValue->getType());
-
-          // Check if it is a function or a procedure
-          if (spiceFunc->isFunction() || spiceFunc->isMethodFunction()) { // Function
-            // Get return type
-            SymbolType returnSymbolType = spiceFunc->getReturnType();
-            // Check if the return type is an imported struct. Due to not supporting pointers as return values, we do
-            // not have to check for nested structs in pointers here.
-            if (accessScope->isImported(currentScope) && returnSymbolType.is(TY_STRUCT)) {
-              // If the return type is an imported struct, initialize it first
-              returnSymbolType = SymbolType(TY_STRUCT, accessScopePrefix + "." + returnSymbolType.getSubType());
-            }
-            llvm::Type *returnType = getTypeForSymbolType(returnSymbolType);
-            if (!returnType)
-              throw std::runtime_error("Internal compiler error: Could not find return type of function call");
-
-            // Get argument types
-            for (auto &argType : spiceFunc->getArgTypes()) {
-              // Check if it is an imported struct. If so, replace the subtype with the scope prefix
-              if (accessScope->isImported(currentScope) && argType.isBaseType(TY_STRUCT))
-                argType = argType.replaceBaseSubType(scopePrefix);
-              // Retrieve the LLVM type of the symbol type
-              llvm::Type *llvmType = getTypeForSymbolType(argType);
-              if (!llvmType)
-                throw std::runtime_error("Internal compiler error: Could not get argument type of function call");
-              argTypes.push_back(llvmType);
-            }
-
-            // Declare the function
-            llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
-            module->getOrInsertFunction(fctIdentifier, fctType);
-          } else if (spiceFunc->isProcedure() || spiceFunc->isMethodProcedure()) { // Procedure
-            // Get argument types
-            for (auto &argType : spiceFunc->getArgTypes()) {
-              // Check if it is an imported struct. If so, replace the subtype with the scope prefix
-              if (accessScope->isImported(currentScope) && argType.isBaseType(TY_STRUCT))
-                argType = argType.replaceBaseSubType(scopePrefix);
-              // Retrieve the LLVM type of the symbol type
-              llvm::Type *llvmType = getTypeForSymbolType(argType);
-              if (!llvmType)
-                throw std::runtime_error("Internal compiler error");
-              argTypes.push_back(llvmType);
-            }
-
-            // Declare the procedure
-            llvm::Type *returnType = llvm::Type::getVoidTy(*context);
-            llvm::FunctionType *procType = llvm::FunctionType::get(returnType, argTypes, false);
-            module->getOrInsertFunction(fctIdentifier, procType);
-          }
-        }
-
-        // Get the declared function and its type
-        llvm::Function *fct = module->getFunction(fctIdentifier);
-        assert(fct != nullptr);
-        llvm::FunctionType *fctType = fct->getFunctionType();
-
-        // Fill argument list
-        int argIndex = 0;
-        std::vector<llvm::Value *> argValues;
-        if (isMethod) { // If it is a method, pass 'this' as implicit first argument
-          argValues.push_back(loadedThisValue);
-          argIndex++;
-        }
-        auto argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
-        if (argLst != nullptr) {
-          for (const auto &arg : argLst->assignExpr()) {
-            // Get expected arg type
-            llvm::Type *expectedArgType = fctType->getParamType(argIndex);
-            // Get the actual arg value
-            auto actualArgPtr = any_cast<llvm::Value *>(visit(arg));
-            if (!compareLLVMTypes(actualArgPtr->getType()->getPointerElementType(), expectedArgType)) {
-              argValues.push_back(doImplicitCast(actualArgPtr, expectedArgType));
-            } else {
-              argValues.push_back(builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr));
-            }
-            argIndex++;
-          }
-        }
-        tokenCounter++; // Consume argLst
-
-        // Create the function call
-        lhs = builder->CreateCall(fct, argValues);
-        if (!lhs->getType()->isSized())
-          lhs = builder->getTrue();
-
-        // Insert alloca
-        lhsPtr = insertAlloca(lhs->getType());
+        lhs = nullptr;                             // Set lhs to nullptr to prevent a store
       } else if (symbolType == SpiceParser::DOT) { // Consider member access
         tokenCounter++;                            // Consume dot
         scopePrefix += ".";
@@ -1946,45 +1818,9 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
   if (ctx->value())
     return visit(ctx->value());
   allArgsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
-  if (ctx->builtinCall())
-    return visit(ctx->builtinCall());
-  return visit(ctx->assignExpr());
-}
-
-std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
-  if (ctx->primitiveValue()) { // Primitive value
-    // Visit the primitive value
-    currentConstValue = any_cast<llvm::Constant *>(visit(ctx->primitiveValue()));
-
-    // If global variable value, return value immediately, because it is already a pointer
-    if (currentScope == rootScope)
-      return currentConstValue;
-
-    // Store the value to a tmp variable
-    llvm::Value *llvmValuePtr = insertAlloca(currentConstValue->getType());
-    builder->CreateStore(currentConstValue, llvmValuePtr);
-    return llvmValuePtr;
-  }
-
-  if (ctx->NIL()) { // Value is nil
-    auto nilType = any_cast<llvm::Type *>(visit(ctx->dataType()));
-    currentConstValue = llvm::Constant::getNullValue(nilType);
-
-    // If global variable value, return value immediately, because it is already a pointer
-    if (currentScope == rootScope)
-      return currentConstValue;
-
-    // Store the value to a tmp variable
-    llvm::Value *llvmValuePtr = insertAlloca(currentConstValue->getType());
-    builder->CreateStore(currentConstValue, llvmValuePtr);
-    return llvmValuePtr;
-  }
-
-  if (ctx->IDENTIFIER().size() == 1) { // Variable usage
-    currentVarName = ctx->IDENTIFIER()[0]->toString();
+  if (ctx->IDENTIFIER()) {
+    currentVarName = ctx->IDENTIFIER()->toString();
     scopePrefix += currentVarName;
-
-    allArgsHardcoded = false;
 
     // Load symbol table entry
     SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
@@ -2065,157 +1901,195 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 
     return memAddress;
   }
+  if (ctx->builtinCall())
+    return visit(ctx->builtinCall());
+  return visit(ctx->assignExpr());
+}
 
-  if (ctx->IDENTIFIER().size() > 1) { // Struct instantiation
-    std::string variableName = currentVarName = ctx->IDENTIFIER()[0]->toString();
+std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+  // Primitive value
+  if (ctx->primitiveValue()) {
+    // Visit the primitive value
+    currentConstValue = any_cast<llvm::Constant *>(visit(ctx->primitiveValue()));
 
-    // Get struct name in format a.b.c and struct scope
-    std::string structName;
-    SymbolTable *structScope = currentScope;
-    for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
-      std::string identifier = ctx->IDENTIFIER()[i]->toString();
-      structName += structName.empty() ? identifier : "." + identifier;
-      if (i < ctx->IDENTIFIER().size() - 1) {
-        SymbolTableEntry *entry = structScope->lookup(identifier);
-        if (!entry)
-          throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                         "Struct '" + structName + "' was used before defined");
-        if (entry->getType().is(TY_IMPORT)) {
-          structScope = structScope->lookupTable(identifier);
-        } else if (entry->getType().is(TY_STRUCT)) {
-          structScope = structScope->lookupTable(STRUCT_SCOPE_PREFIX + identifier);
-        } else {
-          throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                         "The variable '" + identifier + "' is of type " + entry->getType().getName(false) +
-                             ". Expected struct or import");
-        }
-      }
-    }
+    // If global variable value, return value immediately, because it is already a pointer
+    if (currentScope == rootScope)
+      return currentConstValue;
 
-    // Get struct from struct access pointer
-    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-    Struct *spiceStruct = structScope->getStructAccessPointer(codeLoc);
-    assert(spiceStruct);
-
-    // Check if the struct is defined
-    SymbolTableEntry *structSymbol = structScope->lookup(spiceStruct->getSignature());
-    assert(structSymbol);
-    llvm::Type *structType = structSymbol->getLLVMType();
-
-    // Allocate space for the struct in memory
-    assert(!currentVarName.empty()); // Empty var names cause problems
-    llvm::Value *structAddress = insertAlloca(structType);
-    SymbolTableEntry *variableSymbol = currentScope->lookup(variableName);
-    variableSymbol->updateAddress(structAddress);
-    variableSymbol->updateLLVMType(structType);
-
-    // Get struct table
-    SymbolTable *structTable = structScope->lookupTable(STRUCT_SCOPE_PREFIX + spiceStruct->getSignature());
-    assert(structTable);
-
-    // Fill the struct with the stated values
-    if (ctx->argLst()) {
-      for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
-        // Set address to the struct instance field
-        SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
-        assert(fieldEntry);
-        // Visit assignment
-        auto assignmentPtr = any_cast<llvm::Value *>(visit(ctx->argLst()->assignExpr()[i]));
-        llvm::Value *assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
-        // Get pointer to struct element
-        llvm::Value *fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
-        fieldEntry->updateAddress(fieldAddress);
-        // Store value to address
-        builder->CreateStore(assignment, fieldAddress);
-      }
-    }
-
-    return structAddress;
+    // Store the value to a tmp variable
+    llvm::Value *llvmValuePtr = insertAlloca(currentConstValue->getType());
+    builder->CreateStore(currentConstValue, llvmValuePtr);
+    return llvmValuePtr;
   }
 
-  if (ctx->LBRACE()) { // Array initialization
-    // Get data type
-    size_t actualItemCount = ctx->argLst() ? ctx->argLst()->assignExpr().size() : 0;
-    size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
-    auto arrayType = static_cast<llvm::ArrayType *>(lhsType);
+  // Function call
+  if (ctx->functionCall())
+    return visit(ctx->functionCall());
 
-    // Fill items with the stated values
-    if (ctx->argLst()) {
-      // Visit all args to check if they are hardcoded or not
-      std::vector<llvm::Value *> itemValuePointers;
-      std::vector<llvm::Constant *> itemConstants;
-      allArgsHardcoded = true;
-      for (size_t i = 0; i < std::min(ctx->argLst()->assignExpr().size(), arraySize); i++) {
-        auto itemValuePtr = any_cast<llvm::Value *>(visit(ctx->argLst()->assignExpr()[i]));
-        itemValuePointers.push_back(itemValuePtr);
-        itemConstants.push_back(currentConstValue);
-      }
+  // Array initialization
+  if (ctx->arrayInitialization())
+    return visit(ctx->arrayInitialization());
 
-      llvm::Type *itemType;
-      if (arrayType == nullptr) {
-        itemType = itemValuePointers[0]->getType()->getPointerElementType();
-        arrayType = llvm::ArrayType::get(itemType, arraySize);
-      } else {
-        itemType = arrayType->getArrayElementType();
-      }
-
-      // Decide if the array can be defined globally
-      llvm::Value *arrayAddress;
-      if (!itemType->isStructTy() && allArgsHardcoded) { // All args hardcoded => array can be defined globally
-        // Fill up the rest of the items
-        if (itemConstants.size() < arraySize) {
-          llvm::Constant *constantValue = getDefaultValueForType(itemType);
-          for (size_t i = itemConstants.size(); i < arraySize; i++)
-            itemConstants.push_back(constantValue);
-        }
-
-        // Create hardcoded array
-        llvm::Constant *constArray = llvm::ConstantArray::get(arrayType, itemConstants);
-        // Create global variable
-        std::string globalVarName = lhsVarName;
-        if (globalVarName.empty()) { // Get unused anonymous global var name
-          unsigned int suffixNumber = 0;
-          do {
-            globalVarName = "anonymous." + std::to_string(suffixNumber);
-            suffixNumber++;
-          } while (module->getNamedGlobal(globalVarName) != nullptr);
-        }
-        arrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
-        // Set some attributes to it
-        llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
-        global->setConstant(true);
-        global->setInitializer(constArray);
-      } else { // Some args are not hardcoded => fallback to individual indexing
-        // Allocate array
-        arrayAddress = insertAlloca(arrayType, currentVarName);
-
-        // Insert all given values
-        size_t valueIndex = 0;
-        for (; valueIndex < std::min(ctx->argLst()->assignExpr().size(), arraySize); valueIndex++) {
-          llvm::Value *itemValuePtr = itemValuePointers[valueIndex];
-          llvm::Value *itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
-          // Calculate item address
-          llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
-          llvm::Value *itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
-          // Store value to item address
-          builder->CreateStore(itemValue, itemAddress);
-        }
-
-        // Fill up the rest of the values with default values
-        for (; valueIndex < arraySize; valueIndex++) {
-          // ToDo: Fill up with default values
-        }
-      }
-      return arrayAddress;
-    }
-
-    // Empty array: '{}'
-    assert(arrayType != nullptr);
-    // assert(!currentVarName.empty()); // Empty var names cause problems
-    return insertAlloca(arrayType, currentVarName);
-  }
+  // Struct instantiation
+  if (ctx->structInstantiation())
+    return visit(ctx->structInstantiation());
 
   return nullptr;
+}
+
+std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
+  // ToDo: Implement
+
+  return nullptr;
+}
+
+std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
+  // Get data type
+  size_t actualItemCount = ctx->argLst() ? ctx->argLst()->assignExpr().size() : 0;
+  size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
+  auto arrayType = static_cast<llvm::ArrayType *>(lhsType);
+
+  // Fill items with the stated values
+  if (ctx->argLst()) {
+    // Visit all args to check if they are hardcoded or not
+    std::vector<llvm::Value *> itemValuePointers;
+    std::vector<llvm::Constant *> itemConstants;
+    allArgsHardcoded = true;
+    for (size_t i = 0; i < std::min(ctx->argLst()->assignExpr().size(), arraySize); i++) {
+      auto itemValuePtr = any_cast<llvm::Value *>(visit(ctx->argLst()->assignExpr()[i]));
+      itemValuePointers.push_back(itemValuePtr);
+      itemConstants.push_back(currentConstValue);
+    }
+
+    llvm::Type *itemType;
+    if (arrayType == nullptr) {
+      itemType = itemValuePointers[0]->getType()->getPointerElementType();
+      arrayType = llvm::ArrayType::get(itemType, arraySize);
+    } else {
+      itemType = arrayType->getArrayElementType();
+    }
+
+    // Decide if the array can be defined globally
+    llvm::Value *arrayAddress;
+    if (!itemType->isStructTy() && allArgsHardcoded) { // All args hardcoded => array can be defined globally
+      // Fill up the rest of the items
+      if (itemConstants.size() < arraySize) {
+        llvm::Constant *constantValue = getDefaultValueForType(itemType);
+        for (size_t i = itemConstants.size(); i < arraySize; i++)
+          itemConstants.push_back(constantValue);
+      }
+
+      // Create hardcoded array
+      llvm::Constant *constArray = llvm::ConstantArray::get(arrayType, itemConstants);
+      // Create global variable
+      std::string globalVarName = lhsVarName;
+      if (globalVarName.empty()) { // Get unused anonymous global var name
+        unsigned int suffixNumber = 0;
+        do {
+          globalVarName = "anonymous." + std::to_string(suffixNumber);
+          suffixNumber++;
+        } while (module->getNamedGlobal(globalVarName) != nullptr);
+      }
+      arrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
+      // Set some attributes to it
+      llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
+      global->setConstant(true);
+      global->setInitializer(constArray);
+    } else { // Some args are not hardcoded => fallback to individual indexing
+      // Allocate array
+      arrayAddress = insertAlloca(arrayType, currentVarName);
+
+      // Insert all given values
+      size_t valueIndex = 0;
+      for (; valueIndex < std::min(ctx->argLst()->assignExpr().size(), arraySize); valueIndex++) {
+        llvm::Value *itemValuePtr = itemValuePointers[valueIndex];
+        llvm::Value *itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
+        // Calculate item address
+        llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
+        llvm::Value *itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
+        // Store value to item address
+        builder->CreateStore(itemValue, itemAddress);
+      }
+
+      // Fill up the rest of the values with default values
+      for (; valueIndex < arraySize; valueIndex++) {
+        // ToDo: Fill up with default values
+      }
+    }
+    return arrayAddress;
+  }
+
+  // Empty array: '{}'
+  assert(arrayType != nullptr);
+  // assert(!currentVarName.empty()); // Empty var names cause problems
+  return insertAlloca(arrayType, currentVarName);
+}
+
+std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
+  std::string variableName = currentVarName = ctx->IDENTIFIER()[0]->toString();
+
+  // Get struct name in format a.b.c and struct scope
+  std::string structName;
+  SymbolTable *structScope = currentScope;
+  for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
+    std::string identifier = ctx->IDENTIFIER()[i]->toString();
+    structName += structName.empty() ? identifier : "." + identifier;
+    if (i < ctx->IDENTIFIER().size() - 1) {
+      SymbolTableEntry *entry = structScope->lookup(identifier);
+      if (!entry)
+        throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                       "Struct '" + structName + "' was used before defined");
+      if (entry->getType().is(TY_IMPORT)) {
+        structScope = structScope->lookupTable(identifier);
+      } else if (entry->getType().is(TY_STRUCT)) {
+        structScope = structScope->lookupTable(STRUCT_SCOPE_PREFIX + identifier);
+      } else {
+        throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                       "The variable '" + identifier + "' is of type " + entry->getType().getName(false) +
+                           ". Expected struct or import");
+      }
+    }
+  }
+
+  // Get struct from struct access pointer
+  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+  Struct *spiceStruct = structScope->getStructAccessPointer(codeLoc);
+  assert(spiceStruct);
+
+  // Check if the struct is defined
+  SymbolTableEntry *structSymbol = structScope->lookup(spiceStruct->getSignature());
+  assert(structSymbol);
+  llvm::Type *structType = structSymbol->getLLVMType();
+
+  // Allocate space for the struct in memory
+  assert(!currentVarName.empty()); // Empty var names cause problems
+  llvm::Value *structAddress = insertAlloca(structType);
+  SymbolTableEntry *variableSymbol = currentScope->lookup(variableName);
+  variableSymbol->updateAddress(structAddress);
+  variableSymbol->updateLLVMType(structType);
+
+  // Get struct table
+  SymbolTable *structTable = structScope->lookupTable(STRUCT_SCOPE_PREFIX + spiceStruct->getSignature());
+  assert(structTable);
+
+  // Fill the struct with the stated values
+  if (ctx->argLst()) {
+    for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
+      // Set address to the struct instance field
+      SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
+      assert(fieldEntry);
+      // Visit assignment
+      auto assignmentPtr = any_cast<llvm::Value *>(visit(ctx->argLst()->assignExpr()[i]));
+      llvm::Value *assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
+      // Get pointer to struct element
+      llvm::Value *fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
+      fieldEntry->updateAddress(fieldAddress);
+      // Store value to address
+      builder->CreateStore(assignment, fieldAddress);
+    }
+  }
+
+  return structAddress;
 }
 
 std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
