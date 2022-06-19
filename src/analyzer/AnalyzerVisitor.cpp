@@ -1717,8 +1717,24 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
 std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   if (ctx->value())
     return visit(ctx->value());
-  if (ctx->IDENTIFIER()) {
-    currentVarName = ctx->IDENTIFIER()->toString();
+  if (ctx->builtinCall())
+    return visit(ctx->builtinCall());
+  return visit(ctx->assignExpr());
+}
+
+std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+  if (ctx->primitiveValue())
+    return visit(ctx->primitiveValue());
+
+  if (ctx->NIL()) {
+    auto nilType = any_cast<SymbolType>(visit(ctx->dataType()));
+    if (nilType.is(TY_DYN))
+      throw err->get(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA, "Nil must have an explicit type");
+    return nilType;
+  }
+
+  if (ctx->IDENTIFIER().size() == 1) { // Variable usage
+    currentVarName = ctx->IDENTIFIER()[0]->toString();
     std::string oldScopePrefix = scopePrefix;
     scopePrefix += currentVarName;
 
@@ -1741,12 +1757,12 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     if (accessScope->isImported(currentScope)) {
       // Check if the entry is public if it is imported
       if (!entry->getSpecifiers().isPublic())
-        throw err->get(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
+        throw err->get(*ctx->IDENTIFIER()[0]->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access '" + currentVarName + "' due to its private visibility");
 
       // Check if the entry is an external global variable and needs to be imported
       if (entry->isGlobal() && !entry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT}))
-        initExtGlobal(*ctx->IDENTIFIER()->getSymbol(), accessScope, oldScopePrefix, entry->getName());
+        initExtGlobal(*ctx->IDENTIFIER()[0]->getSymbol(), accessScope, oldScopePrefix, entry->getName());
     }
 
     // Set symbol to used
@@ -1770,7 +1786,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
       // Check if the entry is public if it is imported
       if (structCapture && !structCapture->getEntry()->getSpecifiers().isPublic() &&
           accessScope->getParent()->isImported(currentScope))
-        throw err->get(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
+        throw err->get(*ctx->IDENTIFIER()[0]->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access '" + structSignature + "' due to its private visibility");
     }
     assert(accessScope != nullptr);
@@ -1780,23 +1796,8 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 
     return entry->getType();
   }
-  if (ctx->builtinCall())
-    return visit(ctx->builtinCall());
-  return visit(ctx->assignExpr());
-}
 
-std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
-  if (ctx->primitiveValue())
-    return visit(ctx->primitiveValue());
-
-  if (ctx->NIL()) {
-    auto nilType = any_cast<SymbolType>(visit(ctx->dataType()));
-    if (nilType.is(TY_DYN))
-      throw err->get(*ctx->dataType()->start, UNEXPECTED_DYN_TYPE_SA, "Nil must have an explicit type");
-    return nilType;
-  }
-
-  if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
+  if (ctx->IDENTIFIER().size() > 1) { // Struct instantiation
     // Get the access scope
     SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
@@ -1818,6 +1819,9 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
           structIsImported = true;
       }
     }
+
+    // Set current variable name to 'ctor' to make constructor calls possible
+    currentVarName = CTOR_VARIABLE_NAME;
 
     // Get the concrete template types
     std::vector<SymbolType> concreteTemplateTypes;

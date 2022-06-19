@@ -62,10 +62,10 @@ multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: prefixUnaryExpr | LPAREN dataType RPAREN prefixUnaryExpr;
 prefixUnaryExpr: prefixUnaryOp* postfixUnaryExpr;
 postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | LPAREN argLst? RPAREN | DOT postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
-atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
+atomicExpr: value | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
-value: primitiveValue | LBRACE argLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE | NIL LESS dataType GREATER;
+value: primitiveValue | LBRACE argLst? RBRACE | IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? (LBRACE argLst? RBRACE)? | NIL LESS dataType GREATER;
 primitiveValue: DOUBLE | INTEGER | SHORT | LONG | CHAR_LITERAL | STRING_LITERAL | TRUE | FALSE;
 dataType: baseDataType (MUL | LBRACKET INTEGER? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType;

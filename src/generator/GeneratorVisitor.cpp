@@ -1946,9 +1946,45 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
   if (ctx->value())
     return visit(ctx->value());
   allArgsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
-  if (ctx->IDENTIFIER()) {
-    currentVarName = ctx->IDENTIFIER()->toString();
+  if (ctx->builtinCall())
+    return visit(ctx->builtinCall());
+  return visit(ctx->assignExpr());
+}
+
+std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+  if (ctx->primitiveValue()) { // Primitive value
+    // Visit the primitive value
+    currentConstValue = any_cast<llvm::Constant *>(visit(ctx->primitiveValue()));
+
+    // If global variable value, return value immediately, because it is already a pointer
+    if (currentScope == rootScope)
+      return currentConstValue;
+
+    // Store the value to a tmp variable
+    llvm::Value *llvmValuePtr = insertAlloca(currentConstValue->getType());
+    builder->CreateStore(currentConstValue, llvmValuePtr);
+    return llvmValuePtr;
+  }
+
+  if (ctx->NIL()) { // Value is nil
+    auto nilType = any_cast<llvm::Type *>(visit(ctx->dataType()));
+    currentConstValue = llvm::Constant::getNullValue(nilType);
+
+    // If global variable value, return value immediately, because it is already a pointer
+    if (currentScope == rootScope)
+      return currentConstValue;
+
+    // Store the value to a tmp variable
+    llvm::Value *llvmValuePtr = insertAlloca(currentConstValue->getType());
+    builder->CreateStore(currentConstValue, llvmValuePtr);
+    return llvmValuePtr;
+  }
+
+  if (ctx->IDENTIFIER().size() == 1) { // Variable usage
+    currentVarName = ctx->IDENTIFIER()[0]->toString();
     scopePrefix += currentVarName;
+
+    allArgsHardcoded = false;
 
     // Load symbol table entry
     SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
@@ -2029,41 +2065,8 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
 
     return memAddress;
   }
-  if (ctx->builtinCall())
-    return visit(ctx->builtinCall());
-  return visit(ctx->assignExpr());
-}
 
-std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
-  if (ctx->primitiveValue()) { // Primitive value
-    // Visit the primitive value
-    currentConstValue = any_cast<llvm::Constant *>(visit(ctx->primitiveValue()));
-
-    // If global variable value, return value immediately, because it is already a pointer
-    if (currentScope == rootScope)
-      return currentConstValue;
-
-    // Store the value to a tmp variable
-    llvm::Value *llvmValuePtr = insertAlloca(currentConstValue->getType());
-    builder->CreateStore(currentConstValue, llvmValuePtr);
-    return llvmValuePtr;
-  }
-
-  if (ctx->NIL()) { // Value is nil
-    auto nilType = any_cast<llvm::Type *>(visit(ctx->dataType()));
-    currentConstValue = llvm::Constant::getNullValue(nilType);
-
-    // If global variable value, return value immediately, because it is already a pointer
-    if (currentScope == rootScope)
-      return currentConstValue;
-
-    // Store the value to a tmp variable
-    llvm::Value *llvmValuePtr = insertAlloca(currentConstValue->getType());
-    builder->CreateStore(currentConstValue, llvmValuePtr);
-    return llvmValuePtr;
-  }
-
-  if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
+  if (ctx->IDENTIFIER().size() > 1) { // Struct instantiation
     std::string variableName = currentVarName = ctx->IDENTIFIER()[0]->toString();
 
     // Get struct name in format a.b.c and struct scope
