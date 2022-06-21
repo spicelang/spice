@@ -41,9 +41,9 @@ import "std/data/vector" as vec;
 }*/
 
 f<int> main() {
-    //vec.Vector<double> myVector = vec.Vector<double>();
-    vec.Vector<double> myVector = vec.Vector<double>{};
-    myVector.ctor();
+    vec.Vector<double> myVector = vec.Vector<double>();
+    //vec.Vector<double> myVector = vec.Vector<double>{};
+    //myVector.ctor();
     //printMetadata(&myVector);
     myVector.reserve(14);
     //printMetadata(&myVector);

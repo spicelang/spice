@@ -115,7 +115,6 @@ private:
   SymbolTable *currentScope = nullptr;
   SymbolTable *rootScope = nullptr;
   ScopePath scopePath;
-  std::string scopePrefix;
   int nestedLoopCounter = 0;
   std::string currentVarName;
   SymbolTableEntry *currentEntry = nullptr;

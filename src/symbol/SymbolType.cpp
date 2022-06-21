@@ -350,7 +350,7 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
       }
       templateStr = "<" + templateStr + ">";
     }
-    return "struct" + templateStr + "(" + std::get<1>(chainElement) + ")";
+    return std::get<1>(chainElement) + templateStr;
   }
   case TY_DYN:
     return "dyn";

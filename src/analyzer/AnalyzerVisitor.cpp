@@ -1509,7 +1509,6 @@ std::any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
 
 std::any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
   currentVarName = "";                  // Reset the current variable name
-  scopePrefix = "";                     // Reset scope prefix
   scopePath.clear();                    // Clear the scope path
   currentThisType = SymbolType(TY_DYN); // Reset this type
 
@@ -1572,7 +1571,6 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
 
       std::string arrayName = currentVarName; // Save array name
       ScopePath scopePathBackup = scopePath;  // Save scope path
-      scopePrefix += "[idx]";
 
       auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter]);
       auto indexType = any_cast<SymbolType>(visit(rule));
@@ -1608,7 +1606,6 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
       }
     } else if (tokenType == SpiceParser::DOT) { // Consider member access
       tokenCounter++;                           // Consume dot
-      scopePrefix += ".";
       // Visit rhs
       auto postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(ctx->children[tokenCounter]);
       lhs = any_cast<SymbolType>(visit(postfixUnary));
@@ -1651,8 +1648,6 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 
   if (ctx->IDENTIFIER()) {
     currentVarName = ctx->IDENTIFIER()->toString();
-    std::string oldScopePrefix = scopePrefix;
-    scopePrefix += currentVarName;
 
     // Check if this is a reserved keyword
     if (std::find(RESERVED_KEYWORDS.begin(), RESERVED_KEYWORDS.end(), currentVarName) != RESERVED_KEYWORDS.end())
@@ -1663,6 +1658,8 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     // Load symbol table entry
     SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
     assert(accessScope);
+
+    // Load symbol table entry
     SymbolTableEntry *entry = currentEntry = accessScope->lookup(currentVarName);
 
     // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
@@ -1678,7 +1675,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 
       // Check if the entry is an external global variable and needs to be imported
       if (entry->isGlobal() && !entry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT}))
-        initExtGlobal(*ctx->IDENTIFIER()->getSymbol(), accessScope, oldScopePrefix, entry->getName());
+        initExtGlobal(*ctx->IDENTIFIER()->getSymbol(), accessScope, scopePath.getScopePrefix(), entry->getName());
     }
 
     // Set symbol to used
@@ -1748,9 +1745,99 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 }
 
 std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
-  // ToDo: Implement
+  // Get the access scope
+  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
-  return nullptr;
+  std::string functionName;
+  SymbolType thisType;
+  bool constructorCall = false;
+  for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
+    std::string identifier = ctx->IDENTIFIER()[i]->toString();
+    SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
+
+    if (i < ctx->IDENTIFIER().size() - 1) {
+      if (!symbolEntry)
+        throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_FUNCTION,
+                       "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
+    } else if (symbolEntry->getType().is(TY_STRUCT)) {
+      // Get the concrete template types
+      std::string templateString;
+      if (ctx->typeLst()) {
+        templateString += "<";
+        for (const auto &dataType : ctx->typeLst()->dataType()) {
+          auto templateType = any_cast<SymbolType>(visit(dataType));
+          templateString += templateType.getName();
+        }
+        templateString += ">";
+      }
+      symbolEntry = accessScope->lookup(identifier + templateString);
+      functionName = CTOR_VARIABLE_NAME;
+      constructorCall = true;
+    } else {
+      functionName = identifier;
+      continue;
+    }
+
+    thisType = symbolEntry->getType();
+    std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + thisType.getName();
+    accessScope = accessScope->lookupTable(tableName);
+    assert(accessScope != nullptr);
+    scopePath.pushFragment(identifier, accessScope);
+  }
+  assert(accessScope != nullptr);
+
+  // Visit args
+  std::vector<SymbolType> argTypes;
+  if (ctx->argLst()) {
+    for (const auto &arg : ctx->argLst()->assignExpr())
+      argTypes.push_back(any_cast<SymbolType>(visit(arg)));
+  }
+
+  // Get the function/procedure instance
+  antlr4::Token *token = ctx->IDENTIFIER().back()->getSymbol();
+  Function *spiceFunc = accessScope->matchFunction(functionName, thisType, argTypes, err.get(), *token);
+  if (!spiceFunc) {
+    // Build dummy function to get a better error message
+    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+
+    ArgList errArgTypes;
+    for (auto &argType : argTypes)
+      errArgTypes.emplace_back(argType, false);
+
+    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, codeLoc);
+
+    throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION, "Function '" + f.getSignature() + "' could not be found");
+  }
+  spiceFunc->setUsed();
+
+  // Get function entry
+  SymbolTableEntry *functionEntry = accessScope->lookup(spiceFunc->getSignature());
+  assert(functionEntry != nullptr);
+  functionEntry->setUsed(); // Set the function to used
+
+  // Check if the function entry has sufficient visibility
+  if (accessScope->isImported(currentScope) && !functionEntry->getSpecifiers().isPublic())
+    throw err->get(*token, INSUFFICIENT_VISIBILITY,
+                   "Cannot access function/procedure '" + currentVarName + "' due to its private visibility");
+
+  // Return struct type on constructor call
+  if (constructorCall)
+    return thisType;
+
+  // If the callee is a procedure, return type bool
+  if (spiceFunc->isProcedure() || spiceFunc->getReturnType().is(TY_DYN))
+    return SymbolType(TY_BOOL);
+
+  // Retrieve the return type of the function
+  SymbolType returnType = spiceFunc->getReturnType();
+
+  // If the return type is an external struct, initialize it
+  if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported(currentScope))
+    return initExtStruct(*ctx->start, scopePath.getCurrentScope(), scopePath.getScopePrefix() + ".", returnType.getSubType(),
+                         thisType.getTemplateTypes());
+
+  return returnType;
 }
 
 std::any AnalyzerVisitor::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
@@ -1808,6 +1895,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(SpiceParser::StructInstantiat
         structIsImported = true;
     }
   }
+  assert(accessScope != nullptr);
 
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
@@ -1973,10 +2061,8 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
   if (ctx->typeLst()) {
-    for (const auto &dataType : ctx->typeLst()->dataType()) {
-      auto templateType = any_cast<SymbolType>(visit(dataType));
-      concreteTemplateTypes.push_back(templateType);
-    }
+    for (const auto &dataType : ctx->typeLst()->dataType())
+      concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
   }
 
   // Set the struct instance to used

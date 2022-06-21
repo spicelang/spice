@@ -29,7 +29,7 @@ SymbolTable *ScopePath::getCurrentScope() const {
 }
 
 /**
- * Retrieve the fully qualified name of a scope, e.g.: a.b.C
+ * Retrieve the fully qualified name of a scope, e.g.: "a.b.C"
  *
  * @return Scope name
  */
@@ -40,5 +40,22 @@ std::string ScopePath::getScopeName() const {
       fqn += ".";
     fqn += fragments[i].first;
   }
+  return fqn;
+}
+
+/**
+ * Retrieve the fully qualified prefix of a scope, e.g.: "a.b." for "a.b.C"
+ *
+ * @return Scope prefix
+ */
+std::string ScopePath::getScopePrefix() const {
+  // Early return when there is no path
+  if (fragments.empty())
+    return "";
+
+  // Join prefix together
+  std::string fqn;
+  for (int i = 0; i < fragments.size() - 1; i++)
+    fqn += fragments[i].first + ".";
   return fqn;
 }
