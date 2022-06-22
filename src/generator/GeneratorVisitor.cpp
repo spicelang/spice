@@ -2187,7 +2187,7 @@ std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantia
   }
 
   // Get struct from struct access pointer
-  Struct *spiceStruct = structScope->getStructAccessPointer(*ctx->start);
+  Struct *spiceStruct = currentScope->getStructAccessPointer(*ctx->start);
   assert(spiceStruct);
 
   // Check if the struct is defined
