@@ -1764,13 +1764,17 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
       // Get the concrete template types
       std::vector<SymbolType> concreteTemplateTypes;
       if (ctx->typeLst()) {
-        for (const auto &dataType : ctx->typeLst()->dataType()) {
-          auto templateType = any_cast<SymbolType>(visit(dataType));
-          concreteTemplateTypes.push_back(templateType);
-        }
+        for (const auto &dataType : ctx->typeLst()->dataType())
+          concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
       }
       std::string structSignature = Struct::getSignature(identifier, concreteTemplateTypes);
       symbolEntry = accessScope->lookup(structSignature);
+
+      // Get the struct instance
+      Struct *spiceStruct = accessScope->matchStruct(currentScope, identifier, concreteTemplateTypes, err.get(), *ctx->start);
+      if (!spiceStruct)
+        throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
+      spiceStruct->setUsed();
 
       // Import struct if necessary
       if (accessScope->isImported(currentScope))
@@ -1806,7 +1810,7 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
 
   // Get the function/procedure instance
   antlr4::Token *token = ctx->IDENTIFIER().back()->getSymbol();
-  Function *spiceFunc = accessScope->matchFunction(functionName, thisType, argTypes, err.get(), *token);
+  Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, thisType, argTypes, err.get(), *token);
   if (!spiceFunc) {
     // Build dummy function to get a better error message
     std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
@@ -1911,19 +1915,15 @@ std::any AnalyzerVisitor::visitStructInstantiation(SpiceParser::StructInstantiat
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
   if (ctx->typeLst()) {
-    for (const auto &dataType : ctx->typeLst()->dataType()) {
-      auto templateType = any_cast<SymbolType>(visit(dataType));
-      concreteTemplateTypes.push_back(templateType);
-    }
+    for (const auto &dataType : ctx->typeLst()->dataType())
+      concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
   }
 
   // Get the struct instance
-  Struct *spiceStruct = accessScope->matchStruct(structName, concreteTemplateTypes, err.get(), *ctx->start);
+  Struct *spiceStruct = accessScope->matchStruct(currentScope, structName, concreteTemplateTypes, err.get(), *ctx->start);
   if (!spiceStruct) {
-    // Build struct to get a better error message
-    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-    Struct s(structName, SymbolSpecifiers(SymbolType(TY_STRUCT)), {}, {}, codeLoc);
-    throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + s.getSignature() + "' could not be found");
+    std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
+    throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
   }
   spiceStruct->setUsed();
 
@@ -2077,8 +2077,8 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   }
 
   // Set the struct instance to used
-  Struct *externalSpiceStruct = accessScope->matchStruct(structName, concreteTemplateTypes, err.get(), *ctx->start);
-  assert(externalSpiceStruct);
+  Struct *externalSpiceStruct = accessScope->matchStruct(nullptr, structName, concreteTemplateTypes, err.get(), *ctx->start);
+  assert(externalSpiceStruct != nullptr);
   externalSpiceStruct->setUsed();
 
   if (structIsImported) // Imported struct
@@ -2137,7 +2137,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   externalStructSymbol->setUsed();
 
   // Set the struct instance to used
-  Struct *externalSpiceStruct = sourceScope->matchStruct(structName, templateTypes, err.get(), token);
+  Struct *externalSpiceStruct = sourceScope->matchStruct(nullptr, structName, templateTypes, err.get(), token);
   assert(externalSpiceStruct);
   externalSpiceStruct->setUsed();
 

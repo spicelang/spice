@@ -35,15 +35,15 @@ f<int> main() {
 
 import "std/data/vector" as vec;
 
-/*p printMetadata(vec.Vector<double>* vector) {
-    //printf("Current size: %d\n", vector.getSize());
-    //printf("Current capacity: %d\n", vector.getCapacity());
-}*/
+p printMetadata(vec.Vector<double>* vector) {
+    printf("Current size: %d\n", vector.getSize());
+    printf("Current capacity: %d\n", vector.getCapacity());
+}
 
 f<int> main() {
     vec.Vector<double> myVector = vec.Vector<double>();
-    //printMetadata(&myVector);
+    printMetadata(&myVector);
     myVector.reserve(14);
-    //printMetadata(&myVector);
+    printMetadata(&myVector);
     myVector.dtor();
 }

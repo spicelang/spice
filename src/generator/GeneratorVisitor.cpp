@@ -1938,9 +1938,146 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
-  // ToDo: Implement
+  // Get the access scope
+  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
-  return nullptr;
+  // Get function access pointer
+  Function *spiceFunc = currentScope->getFunctionAccessPointer(*ctx->IDENTIFIER().back()->getSymbol());
+  assert(spiceFunc != nullptr);
+  bool isMethod = spiceFunc->isMethodFunction() || spiceFunc->isMethodProcedure();
+  bool constructorCall = false;
+
+  // Load the 'this' value if it is a pointer
+  llvm::Value *thisValue;
+  if (isMethod) {
+    llvm::Value *thisValuePtr;
+    for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
+      std::string identifier = ctx->IDENTIFIER()[i]->toString();
+      SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
+
+      if (i < ctx->IDENTIFIER().size() - 1) {
+        if (!symbolEntry)
+          throw err->get(*ctx->IDENTIFIER()[i]->getSymbol(), REFERENCED_UNDEFINED_FUNCTION,
+                         "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
+        thisValuePtr = symbolEntry->getAddress();
+      } else if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
+        Struct *spiceStruct = currentScope->getStructAccessPointer(*ctx->start);
+        assert(spiceStruct != nullptr);
+
+        // Check if the struct is defined
+        symbolEntry = accessScope->lookup(spiceStruct->getSignature());
+        assert(symbolEntry);
+        llvm::Type *structType = symbolEntry->getLLVMType();
+
+        // Allocate space for the struct in memory
+        thisValuePtr = insertAlloca(structType);
+
+        // Get struct table
+        SymbolTable *structTable = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + spiceStruct->getSignature());
+        assert(structTable);
+
+        // Fill the struct with the stated values
+        if (ctx->argLst()) {
+          for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
+            // Set address to the struct instance field
+            SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
+            assert(fieldEntry);
+            // Visit assignment
+            auto assignmentPtr = any_cast<llvm::Value *>(visit(ctx->argLst()->assignExpr()[i]));
+            llvm::Value *assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
+            // Get pointer to struct element
+            llvm::Value *fieldAddress = builder->CreateStructGEP(structType, thisValuePtr, i);
+            fieldEntry->updateAddress(fieldAddress);
+            // Store value to address
+            builder->CreateStore(assignment, fieldAddress);
+          }
+        }
+
+        constructorCall = true;
+      } else {
+        continue;
+      }
+
+      std::string tableName =
+          symbolEntry->getType().is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + symbolEntry->getType().getName();
+      accessScope = accessScope->lookupTable(tableName);
+      scopePath.pushFragment(identifier, accessScope);
+    }
+    thisValue = builder->CreateLoad(thisValuePtr->getType()->getPointerElementType(), thisValuePtr);
+  }
+
+  // Check if function exists in the current module
+  bool functionFound = false;
+  std::string fctIdentifier = spiceFunc->getMangledName();
+  for (const auto &function : module->getFunctionList()) { // Search for function definition
+    if (function.getName() == fctIdentifier) {
+      functionFound = true;
+      break;
+    } else if (function.getName() == spiceFunc->getName()) {
+      functionFound = true;
+      fctIdentifier = spiceFunc->getName();
+      break;
+    }
+  }
+
+  if (!functionFound) { // Not found => Declare function, which will be linked in
+    SymbolType returnSymbolType = spiceFunc->getReturnType();
+    std::vector<SymbolType> argSymbolTypes = spiceFunc->getArgTypes();
+
+    llvm::Type *returnType =
+        returnSymbolType.is(TY_DYN) ? llvm::Type::getVoidTy(*context) : getTypeForSymbolType(returnSymbolType);
+
+    std::vector<llvm::Type *> argTypes;
+    if (isMethod)
+      argTypes.push_back(thisValue->getType());
+    for (auto &argSymbolType : argSymbolTypes)
+      argTypes.push_back(getTypeForSymbolType(argSymbolType));
+
+    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
+    module->getOrInsertFunction(fctIdentifier, fctType);
+  }
+
+  // Get the declared function and its type
+  llvm::Function *fct = module->getFunction(fctIdentifier);
+  assert(fct != nullptr);
+  llvm::FunctionType *fctType = fct->getFunctionType();
+
+  // Fill argument list
+  int argIndex = 0;
+  std::vector<llvm::Value *> argValues;
+  if (isMethod) { // If it is a method, pass 'this' as implicit first argument
+    argValues.push_back(thisValue);
+    argIndex++;
+  }
+  if (ctx->argLst()) {
+    for (const auto &arg : ctx->argLst()->assignExpr()) {
+      // Get expected arg type
+      llvm::Type *expectedArgType = fctType->getParamType(argIndex);
+      // Get the actual arg value
+      auto actualArgPtr = any_cast<llvm::Value *>(visit(arg));
+      if (!compareLLVMTypes(actualArgPtr->getType()->getPointerElementType(), expectedArgType)) {
+        argValues.push_back(doImplicitCast(actualArgPtr, expectedArgType));
+      } else {
+        argValues.push_back(builder->CreateLoad(actualArgPtr->getType()->getPointerElementType(), actualArgPtr));
+      }
+      argIndex++;
+    }
+  }
+
+  // Create the function call
+  llvm::Value *resultValue = builder->CreateCall(fct, argValues);
+
+  // Consider constructor calls
+  if (constructorCall) {
+    resultValue = thisValue;
+  } else if (!resultValue->getType()->isSized()) {
+    // Set return type bool for procedures
+    resultValue = builder->getTrue();
+  }
+
+  llvm::Value *resultPtr = insertAlloca(resultValue->getType());
+  builder->CreateStore(resultValue, resultPtr);
+  return resultPtr;
 }
 
 std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
@@ -2026,8 +2163,6 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
 }
 
 std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
-  std::string variableName = currentVarName = ctx->IDENTIFIER()[0]->toString();
-
   // Get struct name in format a.b.c and struct scope
   std::string structName;
   SymbolTable *structScope = currentScope;
@@ -2052,8 +2187,7 @@ std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantia
   }
 
   // Get struct from struct access pointer
-  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-  Struct *spiceStruct = structScope->getStructAccessPointer(codeLoc);
+  Struct *spiceStruct = structScope->getStructAccessPointer(*ctx->start);
   assert(spiceStruct);
 
   // Check if the struct is defined
@@ -2062,11 +2196,7 @@ std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantia
   llvm::Type *structType = structSymbol->getLLVMType();
 
   // Allocate space for the struct in memory
-  assert(!currentVarName.empty()); // Empty var names cause problems
   llvm::Value *structAddress = insertAlloca(structType);
-  SymbolTableEntry *variableSymbol = currentScope->lookup(variableName);
-  variableSymbol->updateAddress(structAddress);
-  variableSymbol->updateLLVMType(structType);
 
   // Get struct table
   SymbolTable *structTable = structScope->lookupTable(STRUCT_SCOPE_PREFIX + spiceStruct->getSignature());

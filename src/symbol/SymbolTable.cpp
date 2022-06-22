@@ -308,11 +308,12 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
  * @param token Definition token for the error message
  * @return Matched function or nullptr
  */
-Function *SymbolTable::matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
-                                     const std::vector<SymbolType> &callArgTypes, ErrorFactory *err, const antlr4::Token &token) {
+Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::string &callFunctionName,
+                                     const SymbolType &callThisType, const std::vector<SymbolType> &callArgTypes,
+                                     ErrorFactory *err, const antlr4::Token &token) {
   std::vector<Function *> matches;
 
-  // Loop through function and add any matches to the matches vector
+  // Loop through functions and add any matches to the matches vector
   auto oldFunctionsList = functions;
   for (const auto &[codeLoc, manifestations] : oldFunctionsList) {
     auto oldManifestations = *manifestations;
@@ -415,7 +416,8 @@ Function *SymbolTable::matchFunction(const std::string &callFunctionName, const 
         "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
-  functionAccessPointers.insert({FileUtil::tokenToCodeLoc(token), matches.front()});
+  if (currentScope != nullptr)
+    currentScope->insertFunctionAccessPointer(token, matches.front());
 
   return matches.front();
 }
@@ -431,11 +433,22 @@ std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const an
 }
 
 /**
+ * Add function access pointer to the current scope
+ *
+ * @param token Call token
+ * @param spiceFunc Function
+ */
+void SymbolTable::insertFunctionAccessPointer(const antlr4::Token &token, Function *spiceFunc) {
+  functionAccessPointers.insert({FileUtil::tokenToCodeLoc(token), spiceFunc});
+}
+
+/**
  * Get the function access pointer by code location
  *
  * @return Function pointer for the function access
  */
-Function *SymbolTable::getFunctionAccessPointer(const std::string &codeLoc) {
+Function *SymbolTable::getFunctionAccessPointer(const antlr4::Token &token) {
+  std::string codeLoc = FileUtil::tokenToCodeLoc(token);
   if (!functionAccessPointers.contains(codeLoc))
     throw std::runtime_error("Internal compiler error: Could not get function access pointer");
   return functionAccessPointers.at(codeLoc);
@@ -487,11 +500,11 @@ void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4:
  * @param token Definition token for the error message
  * @return Matched struct or nullptr
  */
-Struct *SymbolTable::matchStruct(const std::string &structName, const std::vector<SymbolType> &templateTypes, ErrorFactory *err,
-                                 const antlr4::Token &token) {
+Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &structName,
+                                 const std::vector<SymbolType> &templateTypes, ErrorFactory *err, const antlr4::Token &token) {
   std::vector<Struct *> matches;
 
-  // Loop through function and add any matches to the matches vector
+  // Loop through structs and add any matches to the matches vector
   auto oldStructList = structs;
   for (const auto &[codeLoc, manifestations] : oldStructList) {
     auto oldManifestations = *manifestations;
@@ -536,19 +549,20 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
   }
 
   if (matches.empty() && parent)
-    matches.push_back(parent->matchStruct(structName, templateTypes, err, token));
+    matches.push_back(parent->matchStruct(currentScope, structName, templateTypes, err, token));
 
   if (matches.empty())
     return nullptr;
 
-  // Throw error if more than one function matches the criteria
+  // Throw error if more than one struct matches the criteria
   if (matches.size() > 1)
     throw err->get(
         token, STRUCT_AMBIGUITY,
         "More than one struct matches your requested signature criteria. Please try to specify the return type explicitly");
 
-  // Add function access pointer for function call
-  structAccessPointers.insert({FileUtil::tokenToCodeLoc(token), matches.front()});
+  // Add struct access pointer for struct reference
+  if (currentScope != nullptr)
+    currentScope->insertStructAccessPointer(token, matches.front());
 
   return matches.front();
 }
@@ -566,11 +580,22 @@ std::map<std::string, Struct> *SymbolTable::getStructManifestations(const antlr4
 }
 
 /**
+ * Add struct access pointer to the current scope
+ *
+ * @param token Reference token
+ * @param struct Struct
+ */
+void SymbolTable::insertStructAccessPointer(const antlr4::Token &token, Struct *spiceStruct) {
+  structAccessPointers.insert({FileUtil::tokenToCodeLoc(token), spiceStruct});
+}
+
+/**
  * Get the next struct access in order of visiting
  *
  * @return Struct pointer for the struct access
  */
-Struct *SymbolTable::getStructAccessPointer(const std::string &codeLoc) {
+Struct *SymbolTable::getStructAccessPointer(const antlr4::Token &token) {
+  std::string codeLoc = FileUtil::tokenToCodeLoc(token);
   if (!structAccessPointers.contains(codeLoc))
     throw std::runtime_error("Internal compiler error: Could not get struct access pointer");
   return structAccessPointers.at(codeLoc);

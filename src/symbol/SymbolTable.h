@@ -52,19 +52,21 @@ public:
   std::map<std::string, Capture> &getCaptures();
 
   void insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token);
-  Function *matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
+  Function *matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,
                           const std::vector<SymbolType> &callArgTypes, ErrorFactory *errorFactory, const antlr4::Token &token);
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const antlr4::Token &defToken) const;
-  Function *getFunctionAccessPointer(const std::string &codeLoc);
+  void insertFunctionAccessPointer(const antlr4::Token &token, Function *spiceFunc);
+  Function *getFunctionAccessPointer(const antlr4::Token &token);
   void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
                                    const std::string &codeLoc);
 
   void insertStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token);
-  Struct *matchStruct(const std::string &structName, const std::vector<SymbolType> &templateTypes, ErrorFactory *errorFactory,
-                      const antlr4::Token &token);
+  Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
+                      ErrorFactory *errorFactory, const antlr4::Token &token);
   [[nodiscard]] std::map<std::string, Struct> *getStructManifestations(const antlr4::Token &defToken) const;
-  Struct *getStructAccessPointer(const std::string &codeLoc);
+  Struct *getStructAccessPointer(const antlr4::Token &token);
   void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token, const std::string &codeLoc);
+  void insertStructAccessPointer(const antlr4::Token &token, Struct *spiceStruct);
 
   void purgeSubstantiationRemnants();
 
