@@ -1749,7 +1749,7 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
   std::string functionName;
-  SymbolType thisType;
+  SymbolType thisType = SymbolType(TY_DYN);
   bool constructorCall = false;
   for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
     std::string identifier = ctx->IDENTIFIER()[i]->toString();
@@ -1757,20 +1757,28 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
 
     if (i < ctx->IDENTIFIER().size() - 1) {
       if (!symbolEntry)
-        throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_FUNCTION,
+        throw err->get(*ctx->IDENTIFIER()[i]->getSymbol(), REFERENCED_UNDEFINED_FUNCTION,
                        "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
-    } else if (symbolEntry->getType().is(TY_STRUCT)) {
+      thisType = symbolEntry->getType();
+    } else if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
       // Get the concrete template types
-      std::string templateString;
+      std::vector<SymbolType> concreteTemplateTypes;
       if (ctx->typeLst()) {
-        templateString += "<";
         for (const auto &dataType : ctx->typeLst()->dataType()) {
           auto templateType = any_cast<SymbolType>(visit(dataType));
-          templateString += templateType.getName();
+          concreteTemplateTypes.push_back(templateType);
         }
-        templateString += ">";
       }
-      symbolEntry = accessScope->lookup(identifier + templateString);
+      std::string structSignature = Struct::getSignature(identifier, concreteTemplateTypes);
+      symbolEntry = accessScope->lookup(structSignature);
+
+      // Import struct if necessary
+      if (accessScope->isImported(currentScope))
+        thisType = initExtStruct(*ctx->IDENTIFIER()[i]->getSymbol(), accessScope, scopePath.getScopePrefix(true), identifier,
+                                 concreteTemplateTypes);
+      else
+        thisType = symbolEntry->getType();
+
       functionName = CTOR_VARIABLE_NAME;
       constructorCall = true;
     } else {
@@ -1778,7 +1786,6 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
       continue;
     }
 
-    thisType = symbolEntry->getType();
     std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + thisType.getName();
     accessScope = accessScope->lookupTable(tableName);
     assert(accessScope != nullptr);
@@ -1792,6 +1799,10 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
     for (const auto &arg : ctx->argLst()->assignExpr())
       argTypes.push_back(any_cast<SymbolType>(visit(arg)));
   }
+
+  // Set to root scope if it did not change
+  if (accessScope == currentScope)
+    accessScope = rootScope;
 
   // Get the function/procedure instance
   antlr4::Token *token = ctx->IDENTIFIER().back()->getSymbol();

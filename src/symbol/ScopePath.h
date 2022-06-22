@@ -15,7 +15,7 @@ public:
   void clear();
   [[nodiscard]] SymbolTable *getCurrentScope() const;
   [[nodiscard]] std::string getScopeName() const;
-  [[nodiscard]] std::string getScopePrefix() const;
+  [[nodiscard]] std::string getScopePrefix(bool includeLast = false) const;
 
 private:
   std::vector<std::pair<std::string, SymbolTable *>> fragments;

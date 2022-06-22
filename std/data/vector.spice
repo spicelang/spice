@@ -116,7 +116,7 @@ public p Vector.reserve(unsigned long itemCount) {
  */
 public p Vector.reserve(unsigned int itemCount) {
     if itemCount > this.capacity {
-        this.resize(itemCount);
+        this.resize((long) itemCount);
     }
 }
 

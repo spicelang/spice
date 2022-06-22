@@ -48,14 +48,15 @@ std::string ScopePath::getScopeName() const {
  *
  * @return Scope prefix
  */
-std::string ScopePath::getScopePrefix() const {
+std::string ScopePath::getScopePrefix(bool includeLast) const {
   // Early return when there is no path
   if (fragments.empty())
     return "";
 
   // Join prefix together
   std::string fqn;
-  for (int i = 0; i < fragments.size() - 1; i++)
+  int offset = includeLast ? 0 : 1;
+  for (int i = 0; i < fragments.size() - offset; i++)
     fqn += fragments[i].first + ".";
   return fqn;
 }
