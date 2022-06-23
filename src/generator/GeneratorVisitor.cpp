@@ -1970,7 +1970,7 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
         throw err->get(*ctx->IDENTIFIER()[i]->getSymbol(), REFERENCED_UNDEFINED_FUNCTION,
                        "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
       thisValuePtr = symbolEntry->getAddress();
-    } else if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
+    } else if (symbolEntry != nullptr && symbolEntry->getType().getBaseType().is(TY_STRUCT)) {
       Struct *spiceStruct = currentScope->getStructAccessPointer(*ctx->start);
       assert(spiceStruct != nullptr);
 
@@ -2012,8 +2012,9 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
     }
 
     std::string tableName =
-        symbolEntry->getType().is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + symbolEntry->getType().getName();
+        symbolEntry->getType().is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + symbolEntry->getType().getBaseType().getName();
     accessScope = accessScope->lookupTable(tableName);
+    assert(accessScope != nullptr);
     scopePath.pushFragment(identifier, accessScope);
   }
 

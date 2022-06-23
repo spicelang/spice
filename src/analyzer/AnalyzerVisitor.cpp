@@ -1768,8 +1768,8 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
       if (!symbolEntry)
         throw err->get(*ctx->IDENTIFIER()[i]->getSymbol(), REFERENCED_UNDEFINED_FUNCTION,
                        "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
-      thisType = symbolEntry->getType();
-    } else if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
+      thisType = symbolEntry->getType().getBaseType();
+    } else if (symbolEntry != nullptr && symbolEntry->getType().getBaseType().is(TY_STRUCT)) {
       // Get the concrete template types
       std::vector<SymbolType> concreteTemplateTypes;
       if (ctx->typeLst()) {
@@ -1792,7 +1792,7 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
         thisType = initExtStruct(*ctx->IDENTIFIER()[i]->getSymbol(), accessScope, scopePath.getScopePrefix(true), identifier,
                                  concreteTemplateTypes);
       else
-        thisType = symbolEntry->getType();
+        thisType = symbolEntry->getType().getBaseType();
 
       functionName = CTOR_VARIABLE_NAME;
       constructorCall = true;

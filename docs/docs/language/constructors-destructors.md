@@ -5,7 +5,7 @@ title: Constructors and destructors
 Sometimes you want to initialize the field of a struct or execute some action right after creating an instance of it. Spice enables you doing that, by supporting constructors. To clean up a struct instance, destructors can be used.
 
 ## Constructors
-Whenever you create a struct instance like this, Spice will automatically call the `ctor` procedure of this struct:
+Whenever you create a struct instance like this, Spice will automatically call the `ctor` method of this struct:
 
 ```spice
 type ExampleStruct struct {
@@ -19,7 +19,7 @@ p ExampleStruct.ctor() {
 }
 
 f<int> main() {
-	// Note the parentheses instead of the curly braces of a normal struct instantiation
+	// Note the parentheses instead of the braces of a normal struct instantiation
 	ExampleStruct es = ExampleStruct();
 	// Do something with 'es' ...
 }
@@ -28,10 +28,7 @@ f<int> main() {
 Constructors can also have arguments to pass some information from the caller to the constructor of the struct:
 
 ```spice
-type ExampleStruct struct {
-	string message
-	bool showMessage
-}
+// Struct definition ...
 
 p ExampleStruct.ctor(string msg = "Hello World!") {
 	this.message = msg;
@@ -43,6 +40,8 @@ f<int> main() {
 	// Do something with 'es' ...
 }
 ```
+
+The `ctor` method can also be called manually like calling [other methods](./methods.md).
 
 ## Destructors
 *Feature to come ...*
