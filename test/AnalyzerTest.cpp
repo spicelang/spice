@@ -85,7 +85,6 @@ void executeTest(const AnalyzerTestCase &testCase) {
     SpiceParser parser(&tokens);
     parser.removeErrorListeners();
     parser.addErrorListener(&parserErrorHandler);
-    antlr4::tree::ParseTree *tree = parser.entry();
 
     // Prepare global LLVM assets
     std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
