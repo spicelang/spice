@@ -33,7 +33,7 @@ f<int> main() {
     v.push(2);
 }*/
 
-import "std/data/vector" as vec;
+/*import "std/data/vector" as vec;
 
 p printMetadata(vec.Vector<double>* vector) {
     printf("Current size: %d\n", vector.getSize());
@@ -46,4 +46,13 @@ f<int> main() {
     myVector.reserve(14);
     printMetadata(&myVector);
     myVector.dtor();
+}*/
+
+import "os-test2" as socket;
+
+f<int> main() {
+    socket.Socket s = socket.openServerSocket(8080s);
+    //socket.NestedSocket n = s.nested;
+    //printf("Test string: %s", n.testString);
+    printf("Socket: %d", s.sock);
 }

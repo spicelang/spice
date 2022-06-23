@@ -1675,7 +1675,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 
       // Check if the entry is an external global variable and needs to be imported
       if (entry->isGlobal() && !entry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT}))
-        initExtGlobal(*ctx->IDENTIFIER()->getSymbol(), accessScope, scopePath.getScopePrefix(), entry->getName());
+        initExtGlobal(*ctx->IDENTIFIER()->getSymbol(), accessScope, scopePath.getScopePrefix(true), entry->getName());
     }
 
     // Set symbol to used
@@ -1799,6 +1799,8 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   }
   assert(accessScope != nullptr);
 
+  ScopePath scopePathBackup = scopePath;
+
   // Visit args
   std::vector<SymbolType> argTypes;
   if (ctx->argLst()) {
@@ -1809,6 +1811,10 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   // Set to root scope if it did not change
   if (accessScope == currentScope)
     accessScope = rootScope;
+
+  // Avoid this type import
+  if (thisType.is(TY_IMPORT))
+    thisType = SymbolType(TY_DYN);
 
   // Get the function/procedure instance
   antlr4::Token *token = ctx->IDENTIFIER().back()->getSymbol();
@@ -1824,7 +1830,8 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
 
     Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, codeLoc);
 
-    throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION, "Function '" + f.getSignature() + "' could not be found");
+    throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
+                   "Function/Procedure '" + f.getSignature() + "' could not be found");
   }
   spiceFunc->setUsed();
 
@@ -1836,7 +1843,7 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   // Check if the function entry has sufficient visibility
   if (accessScope->isImported(currentScope) && !functionEntry->getSpecifiers().isPublic())
     throw err->get(*token, INSUFFICIENT_VISIBILITY,
-                   "Cannot access function/procedure '" + currentVarName + "' due to its private visibility");
+                   "Cannot access function/procedure '" + spiceFunc->getSignature() + "' due to its private visibility");
 
   // Return struct type on constructor call
   if (constructorCall)
@@ -1850,9 +1857,9 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   SymbolType returnType = spiceFunc->getReturnType();
 
   // If the return type is an external struct, initialize it
-  if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported(currentScope))
-    return initExtStruct(*ctx->start, scopePath.getCurrentScope(), scopePath.getScopePrefix() + ".", returnType.getSubType(),
-                         thisType.getTemplateTypes());
+  if (returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope))
+    return initExtStruct(*ctx->start, scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true),
+                         returnType.getSubType(), thisType.getTemplateTypes());
 
   return returnType;
 }
