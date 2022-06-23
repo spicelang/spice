@@ -1948,9 +1948,8 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
   bool constructorCall = false;
 
   // Load the 'this' value if it is a pointer
-  llvm::Value *thisValue;
+  llvm::Value *thisValuePtr;
   if (isMethod) {
-    llvm::Value *thisValuePtr;
     for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
       std::string identifier = ctx->IDENTIFIER()[i]->toString();
       SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
@@ -2003,7 +2002,6 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
       accessScope = accessScope->lookupTable(tableName);
       scopePath.pushFragment(identifier, accessScope);
     }
-    thisValue = builder->CreateLoad(thisValuePtr->getType()->getPointerElementType(), thisValuePtr);
   }
 
   // Check if function exists in the current module
@@ -2029,7 +2027,7 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
 
     std::vector<llvm::Type *> argTypes;
     if (isMethod)
-      argTypes.push_back(thisValue->getType());
+      argTypes.push_back(thisValuePtr->getType());
     for (auto &argSymbolType : argSymbolTypes)
       argTypes.push_back(getTypeForSymbolType(argSymbolType));
 
@@ -2046,7 +2044,7 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
   int argIndex = 0;
   std::vector<llvm::Value *> argValues;
   if (isMethod) { // If it is a method, pass 'this' as implicit first argument
-    argValues.push_back(thisValue);
+    argValues.push_back(thisValuePtr);
     argIndex++;
   }
   if (ctx->argLst()) {
@@ -2069,7 +2067,7 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
 
   // Consider constructor calls
   if (constructorCall) {
-    resultValue = thisValue;
+    return thisValuePtr;
   } else if (!resultValue->getType()->isSized()) {
     // Set return type bool for procedures
     resultValue = builder->getTrue();

@@ -1,7 +1,8 @@
 import "std/data/queue" as que;
 
 f<int> main() {
-    dyn q1 = que.Queue<char>();
+    dyn q1 = que.Queue<char>{};
+    q1.ctor();
     q1.push('H');
     q1.push('e');
     q1.push('l');
