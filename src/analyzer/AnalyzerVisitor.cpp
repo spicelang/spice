@@ -106,7 +106,11 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
   if (ctx->IDENTIFIER().size() > 1) { // Method
     isMethod = true;
     // Change to the struct scope
-    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+    std::string structName = ctx->IDENTIFIER().front()->toString();
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
+    if (!currentScope)
+      throw err->get(*ctx->IDENTIFIER().front()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                     "Struct '" + structName + "' could not be found");
   }
 
   if (!secondRun) { // First run
@@ -235,7 +239,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
   } else { // Second run
     // Change to the struct scope
     if (isMethod)
-      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
 
     // Get manifestations of that function
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
@@ -332,8 +336,13 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
 
   if (!secondRun) { // First run
     // Change to the struct scope
-    if (isMethod)
-      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+    if (isMethod) {
+      std::string structName = ctx->IDENTIFIER().front()->toString();
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
+      if (!currentScope)
+        throw err->get(*ctx->IDENTIFIER().front()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                       "Struct '" + structName + "' could not be found");
+    }
 
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -448,7 +457,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
   } else { // Second run
     // Enter the struct scope
     if (isMethod)
-      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
 
     // Get manifestations of that procedure
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);

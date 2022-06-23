@@ -72,9 +72,8 @@ std::string Function::getMangledName() const {
   if (!thisType.is(TY_DYN)) {
     std::string baseSubType = thisType.getBaseType().getSubType();
     size_t startPos = baseSubType.find_last_of('.');
-    if (startPos == std::string::npos)
-      startPos = 0;
-    thisTyStr = baseSubType.substr(startPos + 1);
+    startPos = startPos == std::string::npos ? 0 : startPos + 1;
+    thisTyStr = baseSubType.substr(startPos);
     for (auto &templateType : thisType.getTemplateTypes())
       thisTyStr += "_" + templateType.getName(false, true);
   }

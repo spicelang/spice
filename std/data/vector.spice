@@ -99,7 +99,7 @@ public f<T> Vector.get(int index) {
  * Removes all items from the vector
  */
 public p Vector.clear() {
-    this.size = 0;
+    this.size = 0l;
 }
 
 /**

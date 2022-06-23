@@ -64,9 +64,9 @@ public:
   Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
                       ErrorFactory *errorFactory, const antlr4::Token &token);
   [[nodiscard]] std::map<std::string, Struct> *getStructManifestations(const antlr4::Token &defToken) const;
+  void insertStructAccessPointer(const antlr4::Token &token, Struct *spiceStruct);
   Struct *getStructAccessPointer(const antlr4::Token &token);
   void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token, const std::string &codeLoc);
-  void insertStructAccessPointer(const antlr4::Token &token, Struct *spiceStruct);
 
   void purgeSubstantiationRemnants();
 
