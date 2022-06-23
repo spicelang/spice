@@ -67,7 +67,7 @@ public:
   [[nodiscard]] SymbolType getBaseType() const;
   void setTemplateTypes(TemplateTypes templateTypes);
   [[nodiscard]] TemplateTypes getTemplateTypes() const;
-  [[nodiscard]] std::string getName(bool withSize = false) const;
+  [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] unsigned int getArraySize() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
@@ -82,5 +82,5 @@ protected:
 
 private:
   // Private methods
-  [[nodiscard]] static std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize);
+  [[nodiscard]] static std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName);
 };

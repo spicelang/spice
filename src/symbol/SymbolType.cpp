@@ -251,12 +251,12 @@ SymbolType::TemplateTypes SymbolType::getTemplateTypes() const { return std::get
  * @param withSize Include the array size for sized types
  * @return Symbol type name
  */
-std::string SymbolType::getName(bool withSize) const {
+std::string SymbolType::getName(bool withSize, bool mangledName) const {
   std::string name;
   TypeChain chain = typeChain;
   for (int i = 0; i < typeChain.size(); i++) {
     TypeChainElement chainElement = chain.top();
-    name.insert(0, getNameFromChainElement(chainElement, withSize));
+    name.insert(0, getNameFromChainElement(chainElement, withSize, mangledName));
     chain.pop();
   }
   return name;
@@ -317,12 +317,15 @@ void SymbolType::setSubType(const std::string &newSubType) { std::get<1>(typeCha
  * @param withSize Include size in string
  * @return Type chain element name
  */
-std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize) {
+std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName) {
   switch (std::get<0>(chainElement)) {
   case TY_PTR:
-    return "*";
-  case TY_ARRAY:
+    return mangledName ? "ptr" : "*";
+  case TY_ARRAY: {
+    if (mangledName)
+      return "array";
     return !withSize || std::get<1>(chainElement) == "0" ? "[]" : "[" + std::get<1>(chainElement) + "]";
+  }
   case TY_DOUBLE:
     return "double";
   case TY_INT:

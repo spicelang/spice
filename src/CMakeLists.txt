@@ -52,6 +52,8 @@ set(SOURCES
         exception/LexerParserError.h
         exception/AntlrThrowingErrorListener.cpp
         exception/AntlrThrowingErrorListener.h
+        util/CommonUtil.cpp
+        util/CommonUtil.h
         util/ScopeIdUtil.cpp
         util/ScopeIdUtil.h
         util/ThreadFactory.cpp

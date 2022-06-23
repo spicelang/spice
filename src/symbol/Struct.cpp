@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "Struct.h"
+#include "util/CommonUtil.h"
 
 #include <symbol/SymbolTable.h>
 
@@ -41,14 +42,15 @@ std::string Struct::getMangledName() const {
   // Field type string
   std::string fieldTyStr;
   for (const auto &fieldType : fieldTypes)
-    fieldTyStr += "_" + fieldType.getName();
+    fieldTyStr += "_" + fieldType.getName(false, true);
 
   // Template type string
   std::string templateTyStr;
-  for (const auto &templateType : templateTypes)
-    templateTyStr += "_" + templateType.getName();
+  for (const auto &templateType : templateTypes) {
+    templateTyStr += "_" + templateType.getName(false, true);
+  }
 
-  return "_s" + templateTyStr + "_" + name + fieldTyStr;
+  return "_s" + templateTyStr + "__" + name + "_" + fieldTyStr;
 }
 
 /**

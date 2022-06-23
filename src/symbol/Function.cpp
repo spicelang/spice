@@ -69,13 +69,20 @@ std::string Function::getMangledName() const {
 
   // This type string
   std::string thisTyStr;
-  if (!thisType.is(TY_DYN))
-    thisTyStr = "_" + thisType.getBaseType().getSubType();
+  if (!thisType.is(TY_DYN)) {
+    std::string baseSubType = thisType.getBaseType().getSubType();
+    size_t startPos = baseSubType.find_last_of('.');
+    if (startPos == std::string::npos)
+      startPos = 0;
+    thisTyStr = "_" + baseSubType.substr(startPos + 1);
+    for (auto &templateType : thisType.getTemplateTypes())
+      thisTyStr += "_" + templateType.getName(false, true);
+  }
 
   // Arg type string
   std::string argTyStr;
   for (const auto &argType : argList) {
-    argTyStr += "_" + argType.first.getName();
+    argTyStr += "_" + argType.first.getName(false, true);
     if (argType.second)
       argTyStr += "?";
   }
@@ -83,9 +90,9 @@ std::string Function::getMangledName() const {
   // Template type string
   std::string templateTyStr;
   for (const auto &templateType : templateTypes)
-    templateTyStr += "_" + templateType.getName();
+    templateTyStr += "_" + templateType.getName(false, true);
 
-  return "_" + functionTyStr + thisTyStr + templateTyStr + "_" + name + argTyStr;
+  return "_" + functionTyStr + "_" + thisTyStr + "_" + templateTyStr + "_" + name + argTyStr;
 }
 
 /**

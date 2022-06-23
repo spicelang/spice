@@ -1768,13 +1768,15 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
           concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
       }
       std::string structSignature = Struct::getSignature(identifier, concreteTemplateTypes);
-      symbolEntry = accessScope->lookup(structSignature);
 
       // Get the struct instance
       Struct *spiceStruct = accessScope->matchStruct(currentScope, identifier, concreteTemplateTypes, err.get(), *ctx->start);
       if (!spiceStruct)
         throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
       spiceStruct->setUsed();
+
+      symbolEntry = accessScope->lookup(structSignature);
+      assert(symbolEntry != nullptr);
 
       // Import struct if necessary
       if (accessScope->isImported(currentScope))
