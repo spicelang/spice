@@ -1019,14 +1019,14 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   SymbolTableEntry *entry = currentScope->lookup(lhsVarName);
   assert(entry != nullptr);
   llvm::Value *memAddress = insertAlloca(varType, lhsVarName);
+  entry->updateAddress(memAddress);
+  entry->updateLLVMType(varType);
   if (ctx->assignExpr()) {
     // Visit right side
     auto rhsPtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
     llvm::Value *rhs = builder->CreateLoad(rhsPtr->getType()->getPointerElementType(), rhsPtr);
     builder->CreateStore(rhs, memAddress, entry->isVolatile());
   }
-  entry->updateAddress(memAddress);
-  entry->updateLLVMType(varType);
 
   lhsType = nullptr; // Reset nullptr
 
@@ -1934,6 +1934,20 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   if (ctx->structInstantiation())
     return visit(ctx->structInstantiation());
 
+  if (ctx->NIL()) {
+    auto nilType = any_cast<llvm::Type *>(visit(ctx->dataType()));
+    currentConstValue = llvm::Constant::getNullValue(nilType);
+
+    // If global variable value, return value immediately, because it is already a pointer
+    if (currentScope == rootScope)
+      return currentConstValue;
+
+    // Store the value to a tmp variable
+    llvm::Value *llvmValuePtr = insertAlloca(currentConstValue->getType());
+    builder->CreateStore(currentConstValue, llvmValuePtr);
+    return llvmValuePtr;
+  }
+
   return nullptr;
 }
 
@@ -1965,15 +1979,18 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
 
         // Check if the struct is defined
         symbolEntry = accessScope->lookup(spiceStruct->getSignature());
-        assert(symbolEntry);
+        assert(symbolEntry != nullptr);
         llvm::Type *structType = symbolEntry->getLLVMType();
 
-        // Allocate space for the struct in memory
-        thisValuePtr = insertAlloca(structType);
+        // Get address of variable in memory
+        assert(!lhsVarName.empty());
+        SymbolTableEntry *assignVarEntry = currentScope->lookup(lhsVarName);
+        assert(assignVarEntry != nullptr);
+        thisValuePtr = assignVarEntry->getAddress();
 
         // Get struct table
         SymbolTable *structTable = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + spiceStruct->getSignature());
-        assert(structTable);
+        assert(structTable != nullptr);
 
         // Fill the struct with the stated values
         if (ctx->argLst()) {
@@ -2003,6 +2020,10 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
       scopePath.pushFragment(identifier, accessScope);
     }
   }
+
+  // Load this value ptr if necessary
+  if (isMethod && thisValuePtr->getType()->getPointerElementType()->isPointerTy())
+    thisValuePtr = builder->CreateLoad(thisValuePtr->getType()->getPointerElementType(), thisValuePtr);
 
   // Check if function exists in the current module
   bool functionFound = false;

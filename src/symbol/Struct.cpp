@@ -41,16 +41,28 @@ std::vector<GenericType> Struct::getTemplateTypes() const { return templateTypes
 std::string Struct::getMangledName() const {
   // Field type string
   std::string fieldTyStr;
-  for (const auto &fieldType : fieldTypes)
-    fieldTyStr += "_" + fieldType.getName(false, true);
+  for (const auto &fieldType : fieldTypes) {
+    if (!fieldTyStr.empty())
+      fieldTyStr += "_";
+    fieldTyStr += fieldType.getName(false, true);
+  }
 
   // Template type string
   std::string templateTyStr;
   for (const auto &templateType : templateTypes) {
-    templateTyStr += "_" + templateType.getName(false, true);
+    if (!templateTyStr.empty())
+      templateTyStr += "_";
+    templateTyStr += templateType.getName(false, true);
   }
 
-  return "_s" + templateTyStr + "__" + name + "_" + fieldTyStr;
+  // Construct mangled name
+  std::string mangledName = "_s";
+  if (!templateTyStr.empty())
+    mangledName += "__" + templateTyStr;
+  mangledName += "__" + name;
+  if (!fieldTyStr.empty())
+    mangledName += "__" + fieldTyStr;
+  return mangledName;
 }
 
 /**
