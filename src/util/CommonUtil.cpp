@@ -18,6 +18,17 @@ void CommonUtil::replaceAll(std::string &haystack, const std::string &needle, co
 }
 
 /**
+ * Split the given haystack by the needle and return the last fragment
+ *
+ * @param haystack Input string
+ * @param needle String to search
+ * @return Last fragment
+ */
+std::string CommonUtil::getLastFragment(const std::string &haystack, const std::string &needle) {
+  return haystack.substr(haystack.find(needle) + needle.length());
+}
+
+/**
  * Generate a code loc string with for a token
  *
  * @param token Token

@@ -1827,7 +1827,8 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
 
   // Get the function/procedure instance
   antlr4::Token *token = ctx->IDENTIFIER().back()->getSymbol();
-  Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, thisType, argTypes, err.get(), *token);
+  SymbolType origThisType = thisType.replaceBaseSubType(CommonUtil::getLastFragment(thisType.getBaseType().getSubType(), "."));
+  Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, origThisType, argTypes, err.get(), *token);
   if (!spiceFunc) {
     // Build dummy function to get a better error message
     std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);

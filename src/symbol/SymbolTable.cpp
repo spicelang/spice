@@ -333,7 +333,10 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
 
       // Check 'this' type requirement
       SymbolType fctThisType = f.getThisType();
-      if (!fctThisType.getTemplateTypes().empty()) { // The 'this' type is a generic struct
+      if (fctThisType.getTemplateTypes().empty()) { // The 'this' type is a non-generic struct
+        if (callThisType != fctThisType)
+          continue;
+      } else { // The 'this' type is a generic struct
         for (int i = 0; i < fctThisType.getTemplateTypes().size(); i++) {
           SymbolType genericType = fctThisType.getTemplateTypes()[i];
           SymbolType concreteGenericType = callThisType.getTemplateTypes()[i];
