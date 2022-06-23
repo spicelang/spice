@@ -7,8 +7,8 @@
 #include <exception/SemanticError.h>
 #include <symbol/GenericType.h>
 #include <symbol/SymbolSpecifiers.h>
+#include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
-#include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
 
 AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
@@ -207,7 +207,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     }
 
     // Insert function into the symbol table
-    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
     Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, codeLoc);
     currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
@@ -428,7 +428,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     }
 
     // Insert function into the symbol table
-    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
     Function spiceProc =
         Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, codeLoc);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
@@ -537,7 +537,7 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     return nullptr;
 
   std::string functionName = ctx->IDENTIFIER()->toString();
-  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
 
   ArgList argTypes;
   if (ctx->typeLstEllipsis()) {
@@ -704,7 +704,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   currentScope = currentScope->getParent();
 
   // Add the struct to the symbol table
-  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
   Struct s(structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, codeLoc);
   s.setSymbolTable(structScope);
   currentScope->insertStruct(s, err.get(), *ctx->start);
@@ -1830,7 +1830,7 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, thisType, argTypes, err.get(), *token);
   if (!spiceFunc) {
     // Build dummy function to get a better error message
-    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
 
     ArgList errArgTypes;

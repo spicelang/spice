@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Token.h"
 #include <string>
 
 /**
@@ -10,4 +11,5 @@
 class CommonUtil {
 public:
   static void replaceAll(std::string &haystack, const std::string &needle, const std::string &replacement);
+  static std::string tokenToCodeLoc(const antlr4::Token &token);
 };

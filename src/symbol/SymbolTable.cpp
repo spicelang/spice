@@ -2,6 +2,7 @@
 
 #include "symbol/SymbolTable.h"
 #include "GenericType.h"
+#include "util/CommonUtil.h"
 #include "util/FileUtil.h"
 
 #include <stdexcept>
@@ -287,18 +288,18 @@ std::map<std::string, Capture> &SymbolTable::getCaptures() { return captures; }
  */
 void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  std::string accessId = FileUtil::tokenToCodeLoc(token);
+  std::string accessId = CommonUtil::tokenToCodeLoc(token);
   functions.insert({accessId, std::make_shared<std::map<std::string, Function>>()});
 
   // Check if function is already substantiated
   if (function.hasSubstantiatedArgs()) {
-    insertSubstantiatedFunction(function, err, token, FileUtil::tokenToCodeLoc(token));
+    insertSubstantiatedFunction(function, err, token, accessId);
     return;
   }
 
   // Substantiate the function and insert the substantiated instances
   for (const auto &fct : function.substantiateOptionalArgs())
-    insertSubstantiatedFunction(fct, err, token, FileUtil::tokenToCodeLoc(token));
+    insertSubstantiatedFunction(fct, err, token, accessId);
 }
 
 /**
@@ -430,7 +431,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
  * @return Function manifestations
  */
 std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
-  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
+  std::string accessId = CommonUtil::tokenToCodeLoc(defToken);
   return functions.contains(accessId) ? functions.at(accessId).get() : nullptr;
 }
 
@@ -441,7 +442,7 @@ std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const an
  * @param spiceFunc Function
  */
 void SymbolTable::insertFunctionAccessPointer(const antlr4::Token &token, Function *spiceFunc) {
-  functionAccessPointers.insert({FileUtil::tokenToCodeLoc(token), spiceFunc});
+  functionAccessPointers.insert({CommonUtil::tokenToCodeLoc(token), spiceFunc});
 }
 
 /**
@@ -450,7 +451,7 @@ void SymbolTable::insertFunctionAccessPointer(const antlr4::Token &token, Functi
  * @return Function pointer for the function access
  */
 Function *SymbolTable::getFunctionAccessPointer(const antlr4::Token &token) {
-  std::string codeLoc = FileUtil::tokenToCodeLoc(token);
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
   if (!functionAccessPointers.contains(codeLoc))
     throw std::runtime_error("Internal compiler error: Could not get function access pointer");
   return functionAccessPointers.at(codeLoc);
@@ -493,8 +494,9 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
  */
 void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  structs.insert({FileUtil::tokenToCodeLoc(token), std::make_shared<std::map<std::string, Struct>>()});
-  insertSubstantiatedStruct(s, err, token, FileUtil::tokenToCodeLoc(token));
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
+  structs.insert({codeLoc, std::make_shared<std::map<std::string, Struct>>()});
+  insertSubstantiatedStruct(s, err, token, codeLoc);
 }
 
 /**
@@ -581,7 +583,7 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
  * @return Struct manifestations
  */
 std::map<std::string, Struct> *SymbolTable::getStructManifestations(const antlr4::Token &defToken) const {
-  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
+  std::string accessId = CommonUtil::tokenToCodeLoc(defToken);
   if (!structs.contains(accessId))
     throw std::runtime_error("Internal compiler error: Cannot get struct manifestations at " + accessId);
   return structs.at(accessId).get();
@@ -594,7 +596,7 @@ std::map<std::string, Struct> *SymbolTable::getStructManifestations(const antlr4
  * @param struct Struct
  */
 void SymbolTable::insertStructAccessPointer(const antlr4::Token &token, Struct *spiceStruct) {
-  structAccessPointers.insert({FileUtil::tokenToCodeLoc(token), spiceStruct});
+  structAccessPointers.insert({CommonUtil::tokenToCodeLoc(token), spiceStruct});
 }
 
 /**
@@ -603,7 +605,7 @@ void SymbolTable::insertStructAccessPointer(const antlr4::Token &token, Struct *
  * @return Struct pointer for the struct access
  */
 Struct *SymbolTable::getStructAccessPointer(const antlr4::Token &token) {
-  std::string codeLoc = FileUtil::tokenToCodeLoc(token);
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
   if (!structAccessPointers.contains(codeLoc))
     throw std::runtime_error("Internal compiler error: Could not get struct access pointer");
   return structAccessPointers.at(codeLoc);
