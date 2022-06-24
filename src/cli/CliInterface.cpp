@@ -112,6 +112,11 @@ void CliInterface::enrich() {
     cliOptions.targetVendor = triple.getVendorName();
     cliOptions.targetOs = triple.getOSName();
   }
+  // Dump IR as well as symbol table if all debug output is enabled
+  if (cliOptions.printDebugOutput) {
+    cliOptions.dumpIR = true;
+    cliOptions.dumpSymbolTables = true;
+  }
 }
 
 /**
@@ -129,6 +134,10 @@ void CliInterface::addBuildSubcommand() {
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-symtab
+  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
 
   // --target-triple
   subCmd->add_option<std::string>("--target,-t,--target-triple", cliOptions.targetTriple,
@@ -182,6 +191,10 @@ void CliInterface::addRunSubcommand() {
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-symtab
+  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
 
   // --output
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
@@ -221,6 +234,10 @@ void CliInterface::addInstallSubcommand() {
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-symtab
+  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
 
   // --output
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");

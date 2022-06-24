@@ -92,7 +92,7 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
 
   // Dump symbol table
-  if (options->printDebugOutput) { // GCOV_EXCL_START
+  if (options->dumpSymbolTables) { // GCOV_EXCL_START
     std::cout << "\nSymbol table of file " << filePath << ":\n\n";
     std::cout << compilerOutput.symbolTableString << "\n";
   } // GCOV_EXCL_STOP
@@ -112,8 +112,8 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   compilerOutput.irString = generator->getIRString();
 
   // Dump unoptimized IR code
-  if (options->printDebugOutput) { // GCOV_EXCL_START
-    std::cout << "\nIR code:\n";
+  if (options->dumpIR) { // GCOV_EXCL_START
+    std::cout << "\nUnoptimized IR code:\n";
     generator->dumpIR();
   } // GCOV_EXCL_STOP
 
@@ -125,7 +125,7 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
     compilerOutput.irOptString = generator->getIRString();
 
     // Dump optimized IR code
-    if (options->printDebugOutput) { // GCOV_EXCL_START
+    if (options->dumpIR) { // GCOV_EXCL_START
       std::cout << "\nOptimized IR code:\n";
       generator->dumpIR();
     } // GCOV_EXCL_STOP
