@@ -169,6 +169,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
 
 class AnalyzerArbitraryTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerArrayTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
+class AnalyzerAssertionTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerBuiltinTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerComingSoonTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
 class AnalyzerForLoopTests : public ::testing::TestWithParam<AnalyzerTestCase> {};
@@ -196,6 +197,8 @@ class AnalyzerWhileLoopTests : public ::testing::TestWithParam<AnalyzerTestCase>
 TEST_P(AnalyzerArbitraryTests, ArbitraryTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 TEST_P(AnalyzerArrayTests, ArrayTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
+
+TEST_P(AnalyzerAssertionTests, AssertionTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 TEST_P(AnalyzerBuiltinTests, BuiltinTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
@@ -258,67 +261,70 @@ INSTANTIATE_TEST_SUITE_P(AnalyzerArbitraryTests, AnalyzerArbitraryTests, // NOLI
 INSTANTIATE_TEST_SUITE_P(AnalyzerArrayTests, AnalyzerArrayTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[1]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerBuiltinTests, AnalyzerBuiltinTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerAssertionTests, AnalyzerAssertionTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[2]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerComingSoonTests, AnalyzerComingSoonTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerBuiltinTests, AnalyzerBuiltinTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[3]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerForLoopTests, AnalyzerForLoopTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerComingSoonTests, AnalyzerComingSoonTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[4]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerForEachLoopTests, AnalyzerForEachLoopTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerForLoopTests, AnalyzerForLoopTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[5]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerFunctionCallTests, AnalyzerFunctionCallTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerForEachLoopTests, AnalyzerForEachLoopTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[6]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerFunctionTests, AnalyzerFunctionTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerFunctionCallTests, AnalyzerFunctionCallTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[7]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerGenericsTests, AnalyzerGenericsTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerFunctionTests, AnalyzerFunctionTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[8]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerIfStatementTests, AnalyzerIfStatementTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerGenericsTests, AnalyzerGenericsTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[9]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerImportTests, AnalyzerImportTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerIfStatementTests, AnalyzerIfStatementTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[10]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerLexerTests, AnalyzerLexerTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerImportTests, AnalyzerImportTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[11]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerLoopCtlInstTests, AnalyzerLoopCtlInstTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerLexerTests, AnalyzerLexerTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[12]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerMethodTests, AnalyzerMethodTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerLoopCtlInstTests, AnalyzerLoopCtlInstTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[13]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerOperatorTests, AnalyzerOperatorTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerMethodTests, AnalyzerMethodTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[14]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerParserTests, AnalyzerParserTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerOperatorTests, AnalyzerOperatorTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[15]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerProcedureTests, AnalyzerProcedureTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerParserTests, AnalyzerParserTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[16]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerStructTests, AnalyzerStructTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerProcedureTests, AnalyzerProcedureTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[17]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerTernaryTests, AnalyzerTernaryTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerStructTests, AnalyzerStructTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[18]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerTheadTests, AnalyzerThreadTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerTernaryTests, AnalyzerTernaryTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[19]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerUnsafeTests, AnalyzerUnsafeTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerTheadTests, AnalyzerThreadTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[20]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerVariableTests, AnalyzerVariableTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerUnsafeTests, AnalyzerUnsafeTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[21]), NameResolver());
 
-INSTANTIATE_TEST_SUITE_P(AnalyzerWhileLoopTests, AnalyzerWhileLoopTests, // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(AnalyzerVariableTests, AnalyzerVariableTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[22]), NameResolver());
+
+INSTANTIATE_TEST_SUITE_P(AnalyzerWhileLoopTests, AnalyzerWhileLoopTests, // NOLINT(cert-err58-cpp)
+                         ::testing::ValuesIn(testSuites[23]), NameResolver());
 
 // GCOV_EXCL_STOP

@@ -1,0 +1,4 @@
+f<int> main() {
+    assert "Test";
+    printf("Unreachable");
+}
