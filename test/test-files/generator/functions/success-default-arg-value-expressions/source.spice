@@ -1,0 +1,11 @@
+f<double> getArg() {
+    return 4.3;
+}
+
+f<double> test(double arg = getArg() + 1.2) {
+    return arg;
+}
+
+f<int> main() {
+    printf("Test: %f\n", test());
+}
