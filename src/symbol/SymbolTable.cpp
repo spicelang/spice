@@ -2,6 +2,7 @@
 
 #include "symbol/SymbolTable.h"
 #include "GenericType.h"
+#include "util/CommonUtil.h"
 #include "util/FileUtil.h"
 
 #include <stdexcept>
@@ -280,27 +281,32 @@ std::map<std::string, Capture> &SymbolTable::getCaptures() { return captures; }
 
 /**
  * Insert a function object into this symbol table scope
+ *
+ * @param function Function object
+ * @param err Error factory
+ * @param token Function definition token
  */
 void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  std::string accessId = FileUtil::tokenToCodeLoc(token);
+  std::string accessId = CommonUtil::tokenToCodeLoc(token);
   functions.insert({accessId, std::make_shared<std::map<std::string, Function>>()});
 
   // Check if function is already substantiated
   if (function.hasSubstantiatedArgs()) {
-    insertSubstantiatedFunction(function, err, token, FileUtil::tokenToCodeLoc(token));
+    insertSubstantiatedFunction(function, err, token, accessId);
     return;
   }
 
   // Substantiate the function and insert the substantiated instances
   for (const auto &fct : function.substantiateOptionalArgs())
-    insertSubstantiatedFunction(fct, err, token, FileUtil::tokenToCodeLoc(token));
+    insertSubstantiatedFunction(fct, err, token, accessId);
 }
 
 /**
  * Check if there is a function in this scope, fulfilling all given requirements and if found, return it.
  * If more than one function matches the requirement, an error gets thrown
  *
+ * @param currentScope Current scope
  * @param callFunctionName Function name requirement
  * @param callThisType This type requirement
  * @param callArgTypes Argument types requirement
@@ -308,11 +314,12 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
  * @param token Definition token for the error message
  * @return Matched function or nullptr
  */
-Function *SymbolTable::matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
-                                     const std::vector<SymbolType> &callArgTypes, ErrorFactory *err, const antlr4::Token &token) {
+Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::string &callFunctionName,
+                                     const SymbolType &callThisType, const std::vector<SymbolType> &callArgTypes,
+                                     ErrorFactory *err, const antlr4::Token &token) {
   std::vector<Function *> matches;
 
-  // Loop through function and add any matches to the matches vector
+  // Loop through functions and add any matches to the matches vector
   auto oldFunctionsList = functions;
   for (const auto &[codeLoc, manifestations] : oldFunctionsList) {
     auto oldManifestations = *manifestations;
@@ -327,7 +334,7 @@ Function *SymbolTable::matchFunction(const std::string &callFunctionName, const 
       // Check 'this' type requirement
       SymbolType fctThisType = f.getThisType();
       if (fctThisType.getTemplateTypes().empty()) { // The 'this' type is a non-generic struct
-        if (fctThisType != callThisType)            // Check for equality
+        if (callThisType != fctThisType)
           continue;
       } else { // The 'this' type is a generic struct
         for (int i = 0; i < fctThisType.getTemplateTypes().size(); i++) {
@@ -415,7 +422,8 @@ Function *SymbolTable::matchFunction(const std::string &callFunctionName, const 
         "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
-  functionAccessPointers.insert({FileUtil::tokenToCodeLoc(token), matches.front()});
+  if (currentScope != nullptr)
+    currentScope->insertFunctionAccessPointer(token, matches.front());
 
   return matches.front();
 }
@@ -426,8 +434,18 @@ Function *SymbolTable::matchFunction(const std::string &callFunctionName, const 
  * @return Function manifestations
  */
 std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
-  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
+  std::string accessId = CommonUtil::tokenToCodeLoc(defToken);
   return functions.contains(accessId) ? functions.at(accessId).get() : nullptr;
+}
+
+/**
+ * Add function access pointer to the current scope
+ *
+ * @param token Call token
+ * @param spiceFunc Function
+ */
+void SymbolTable::insertFunctionAccessPointer(const antlr4::Token &token, Function *spiceFunc) {
+  functionAccessPointers.insert({CommonUtil::tokenToCodeLoc(token), spiceFunc});
 }
 
 /**
@@ -435,7 +453,8 @@ std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const an
  *
  * @return Function pointer for the function access
  */
-Function *SymbolTable::getFunctionAccessPointer(const std::string &codeLoc) {
+Function *SymbolTable::getFunctionAccessPointer(const antlr4::Token &token) {
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
   if (!functionAccessPointers.contains(codeLoc))
     throw std::runtime_error("Internal compiler error: Could not get function access pointer");
   return functionAccessPointers.at(codeLoc);
@@ -448,6 +467,7 @@ Function *SymbolTable::getFunctionAccessPointer(const std::string &codeLoc) {
  * @param function Substantiated function
  * @param err Error factory
  * @param token Token, where the function is declared
+ * @param codeLoc Code location
  */
 void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token,
                                               const std::string &codeLoc) {
@@ -470,28 +490,34 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
 
 /**
  * Insert a struct object into this symbol table scope
+ *
+ * @param s Struct object
+ * @param err Error factory
+ * @param token Struct definition token
  */
 void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  structs.insert({FileUtil::tokenToCodeLoc(token), std::make_shared<std::map<std::string, Struct>>()});
-  insertSubstantiatedStruct(s, err, token, FileUtil::tokenToCodeLoc(token));
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
+  structs.insert({codeLoc, std::make_shared<std::map<std::string, Struct>>()});
+  insertSubstantiatedStruct(s, err, token, codeLoc);
 }
 
 /**
  * Check if there is a struct in this scope, fulfilling all given requirements and if found, return it.
  * If more than one struct matches the requirement, an error gets thrown
  *
+ * @param currentScope Current scope
  * @param structName Struct name
  * @param templateTypes Template type requirements
  * @param errorFactory Error factory
  * @param token Definition token for the error message
  * @return Matched struct or nullptr
  */
-Struct *SymbolTable::matchStruct(const std::string &structName, const std::vector<SymbolType> &templateTypes, ErrorFactory *err,
-                                 const antlr4::Token &token) {
+Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &structName,
+                                 const std::vector<SymbolType> &templateTypes, ErrorFactory *err, const antlr4::Token &token) {
   std::vector<Struct *> matches;
 
-  // Loop through function and add any matches to the matches vector
+  // Loop through structs and add any matches to the matches vector
   auto oldStructList = structs;
   for (const auto &[codeLoc, manifestations] : oldStructList) {
     auto oldManifestations = *manifestations;
@@ -536,19 +562,20 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
   }
 
   if (matches.empty() && parent)
-    matches.push_back(parent->matchStruct(structName, templateTypes, err, token));
+    matches.push_back(parent->matchStruct(currentScope, structName, templateTypes, err, token));
 
   if (matches.empty())
     return nullptr;
 
-  // Throw error if more than one function matches the criteria
+  // Throw error if more than one struct matches the criteria
   if (matches.size() > 1)
     throw err->get(
         token, STRUCT_AMBIGUITY,
         "More than one struct matches your requested signature criteria. Please try to specify the return type explicitly");
 
-  // Add function access pointer for function call
-  structAccessPointers.insert({FileUtil::tokenToCodeLoc(token), matches.front()});
+  // Add struct access pointer for struct reference
+  if (currentScope != nullptr)
+    currentScope->insertStructAccessPointer(token, matches.front());
 
   return matches.front();
 }
@@ -559,10 +586,20 @@ Struct *SymbolTable::matchStruct(const std::string &structName, const std::vecto
  * @return Struct manifestations
  */
 std::map<std::string, Struct> *SymbolTable::getStructManifestations(const antlr4::Token &defToken) const {
-  std::string accessId = FileUtil::tokenToCodeLoc(defToken);
+  std::string accessId = CommonUtil::tokenToCodeLoc(defToken);
   if (!structs.contains(accessId))
     throw std::runtime_error("Internal compiler error: Cannot get struct manifestations at " + accessId);
   return structs.at(accessId).get();
+}
+
+/**
+ * Add struct access pointer to the current scope
+ *
+ * @param token Reference token
+ * @param struct Struct
+ */
+void SymbolTable::insertStructAccessPointer(const antlr4::Token &token, Struct *spiceStruct) {
+  structAccessPointers.insert({CommonUtil::tokenToCodeLoc(token), spiceStruct});
 }
 
 /**
@@ -570,10 +607,34 @@ std::map<std::string, Struct> *SymbolTable::getStructManifestations(const antlr4
  *
  * @return Struct pointer for the struct access
  */
-Struct *SymbolTable::getStructAccessPointer(const std::string &codeLoc) {
+Struct *SymbolTable::getStructAccessPointer(const antlr4::Token &token) {
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
   if (!structAccessPointers.contains(codeLoc))
     throw std::runtime_error("Internal compiler error: Could not get struct access pointer");
   return structAccessPointers.at(codeLoc);
+}
+
+/**
+ * Insert a substantiated struct into the struct list. If the list already contains a struct with the same signature,
+ * an exception will be thrown
+ *
+ * @param s Substantiated struct
+ * @param err Error factory
+ * @param token Token, where the struct is declared
+ * @param codeLoc Code location
+ */
+void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token,
+                                            const std::string &codeLoc) {
+  // Check if the struct exists already
+  for (const auto &[_, manifestations] : structs) {
+    if (manifestations->contains(s.getMangledName()))
+      throw err->get(token, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
+  }
+  // Add struct to struct list
+  assert(structs.at(codeLoc) != nullptr);
+  structs.at(codeLoc)->insert({s.getMangledName(), s});
+  // Add symbol table entry for the struct
+  insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, token);
 }
 
 /**
@@ -607,28 +668,6 @@ void SymbolTable::purgeSubstantiationRemnants() {
   // Recursion
   for (const auto &[_, child] : children)
     child->purgeSubstantiationRemnants();
-}
-
-/**
- * Insert a substantiated struct into the struct list. If the list already contains a struct with the same signature,
- * an exception will be thrown
- *
- * @param s Substantiated struct
- * @param err Error factory
- * @param token Token, where the struct is declared
- */
-void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token,
-                                            const std::string &codeLoc) {
-  // Check if the struct exists already
-  for (const auto &[_, manifestations] : structs) {
-    if (manifestations->contains(s.getMangledName()))
-      throw err->get(token, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
-  }
-  // Add struct to struct list
-  assert(structs.at(codeLoc) != nullptr);
-  structs.at(codeLoc)->insert({s.getMangledName(), s});
-  // Add symbol table entry for the struct
-  insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, token);
 }
 
 /**

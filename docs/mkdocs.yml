@@ -85,6 +85,7 @@ nav:
     - language/pointers.md
     - language/structs.md
     - language/methods.md
+    - language/constructors-destructors.md
     #- language/generics.md
     #- language/threads.md
     - language/operator-precedence.md

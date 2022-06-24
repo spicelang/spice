@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "Struct.h"
+#include "util/CommonUtil.h"
 
 #include <symbol/SymbolTable.h>
 
@@ -40,15 +41,28 @@ std::vector<GenericType> Struct::getTemplateTypes() const { return templateTypes
 std::string Struct::getMangledName() const {
   // Field type string
   std::string fieldTyStr;
-  for (const auto &fieldType : fieldTypes)
-    fieldTyStr += "_" + fieldType.getName();
+  for (const auto &fieldType : fieldTypes) {
+    if (!fieldTyStr.empty())
+      fieldTyStr += "_";
+    fieldTyStr += fieldType.getName(false, true);
+  }
 
   // Template type string
   std::string templateTyStr;
-  for (const auto &templateType : templateTypes)
-    templateTyStr += "_" + templateType.getName();
+  for (const auto &templateType : templateTypes) {
+    if (!templateTyStr.empty())
+      templateTyStr += "_";
+    templateTyStr += templateType.getName(false, true);
+  }
 
-  return "_s" + templateTyStr + "_" + name + fieldTyStr;
+  // Construct mangled name
+  std::string mangledName = "_s";
+  if (!templateTyStr.empty())
+    mangledName += "__" + templateTyStr;
+  mangledName += "__" + name;
+  if (!fieldTyStr.empty())
+    mangledName += "__" + fieldTyStr;
+  return mangledName;
 }
 
 /**

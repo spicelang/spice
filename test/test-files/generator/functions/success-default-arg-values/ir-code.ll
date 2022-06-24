@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
 @1 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 1
 
-define internal i8* @_f_getTestString_int_double_bool(i32 %0, double %1, i1 %2) {
+define internal i8* @_f__void__getTestString__int_double_bool(i32 %0, double %1, i1 %2) {
 entry:
   %arg0 = alloca i32, align 4
   %arg1 = alloca double, align 8
@@ -40,7 +40,7 @@ entry:
   %5 = load double, double* %1, align 8
   store i1 true, i1* %2, align 1
   %6 = load i1, i1* %2, align 1
-  %7 = call i8* @_f_getTestString_int_double_bool(i32 %4, double %5, i1 %6)
+  %7 = call i8* @_f__void__getTestString__int_double_bool(i32 %4, double %5, i1 %6)
   store i8* %7, i8** %3, align 8
   %8 = load i8*, i8** %3, align 8
   %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @1, i32 0, i32 0), i8* %8)

@@ -33,20 +33,17 @@ f<int> main() {
     v.push(2);
 }*/
 
-import "std/data/queue" as que;
+import "std/data/vector" as vec;
+
+p printMetadata(vec.Vector<double>* vector) {
+    printf("Current size: %d\n", vector.getSize());
+    printf("Current capacity: %d\n", vector.getCapacity());
+}
 
 f<int> main() {
-    dyn q1 = que.Queue<char>{};
-    q1.ctor();
-    q1.push('H');
-    q1.push('e');
-    q1.push('l');
-    q1.push('l');
-    q1.push('o');
-    q1.push('!');
-    printf("Size: %d, Capacity: %d\n", q1.getSize(), q1.getCapacity());
-    while (!q1.isEmpty()) {
-        printf("%c", q1.pop());
-    }
-    q1.dtor();
+    vec.Vector<double> myVector = vec.Vector<double>();
+    printMetadata(&myVector);
+    myVector.reserve(14);
+    printMetadata(&myVector);
+    myVector.dtor();
 }

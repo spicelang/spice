@@ -1,9 +1,8 @@
-type T int|double;
-
-public type Vector<T> struct {
-    public T data
+public type Vec struct {
+    int f1
+    bool f2
 }
 
-public p Vector.setData(T data) {
-    this.data = data;
+public p Vec.print() {
+    printf("Test: %d, %d", this.f1, this.f2);
 }

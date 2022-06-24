@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [16 x i8] c"Input was false\00", align 1
 
-define internal void @_p_executeAction_bool(i1 %0) {
+define internal void @_p__void__executeAction__bool(i1 %0) {
 entry:
   %input = alloca i1, align 1
   store i1 %0, i1* %input, align 1
@@ -30,7 +30,7 @@ entry:
   store i32 0, i32* %result, align 4
   store i1 false, i1* %0, align 1
   %2 = load i1, i1* %0, align 1
-  call void @_p_executeAction_bool(i1 %2)
+  call void @_p__void__executeAction__bool(i1 %2)
   store i1 true, i1* %1, align 1
   %3 = load i32, i32* %result, align 4
   ret i32 %3

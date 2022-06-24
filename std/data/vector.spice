@@ -99,7 +99,25 @@ public f<T> Vector.get(int index) {
  * Removes all items from the vector
  */
 public p Vector.clear() {
-    this.size = 0;
+    this.size = 0l;
+}
+
+/**
+ * Reserves `itemCount` items
+ */
+public p Vector.reserve(unsigned long itemCount) {
+    if itemCount > this.capacity {
+        this.resize(itemCount);
+    }
+}
+
+/**
+ * Reserves `itemCount` items
+ */
+public p Vector.reserve(unsigned int itemCount) {
+    if itemCount > this.capacity {
+        this.resize((long) itemCount);
+    }
 }
 
 /**

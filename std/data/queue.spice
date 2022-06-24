@@ -144,7 +144,7 @@ public f<bool> Queue.isFull() {
  */
 public p Queue.reserve(unsigned long itemCount) {
     if itemCount > this.capacity {
-        resize(itemCount);
+        this.resize(itemCount);
     }
 }
 

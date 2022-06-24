@@ -7,8 +7,8 @@
 #include <exception/SemanticError.h>
 #include <symbol/GenericType.h>
 #include <symbol/SymbolSpecifiers.h>
+#include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
-#include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
 
 AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
@@ -106,7 +106,11 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
   if (ctx->IDENTIFIER().size() > 1) { // Method
     isMethod = true;
     // Change to the struct scope
-    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+    std::string structName = ctx->IDENTIFIER().front()->toString();
+    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
+    if (!currentScope)
+      throw err->get(*ctx->IDENTIFIER().front()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                     "Struct '" + structName + "' could not be found");
   }
 
   if (!secondRun) { // First run
@@ -203,7 +207,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     }
 
     // Insert function into the symbol table
-    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
     Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, codeLoc);
     currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
@@ -235,7 +239,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
   } else { // Second run
     // Change to the struct scope
     if (isMethod)
-      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
 
     // Get manifestations of that function
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
@@ -332,8 +336,13 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
 
   if (!secondRun) { // First run
     // Change to the struct scope
-    if (isMethod)
-      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+    if (isMethod) {
+      std::string structName = ctx->IDENTIFIER().front()->toString();
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
+      if (!currentScope)
+        throw err->get(*ctx->IDENTIFIER().front()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                       "Struct '" + structName + "' could not be found");
+    }
 
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -419,7 +428,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     }
 
     // Insert function into the symbol table
-    std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
     Function spiceProc =
         Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, codeLoc);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
@@ -448,7 +457,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
   } else { // Second run
     // Enter the struct scope
     if (isMethod)
-      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+      currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
 
     // Get manifestations of that procedure
     std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
@@ -528,7 +537,7 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     return nullptr;
 
   std::string functionName = ctx->IDENTIFIER()->toString();
-  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
 
   ArgList argTypes;
   if (ctx->typeLstEllipsis()) {
@@ -695,7 +704,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   currentScope = currentScope->getParent();
 
   // Add the struct to the symbol table
-  std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
+  std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
   Struct s(structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, codeLoc);
   s.setSymbolTable(structScope);
   currentScope->insertStruct(s, err.get(), *ctx->start);
@@ -1509,7 +1518,6 @@ std::any AnalyzerVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
 
 std::any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
   currentVarName = "";                  // Reset the current variable name
-  scopePrefix = "";                     // Reset scope prefix
   scopePath.clear();                    // Clear the scope path
   currentThisType = SymbolType(TY_DYN); // Reset this type
 
@@ -1572,7 +1580,6 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
 
       std::string arrayName = currentVarName; // Save array name
       ScopePath scopePathBackup = scopePath;  // Save scope path
-      scopePrefix += "[idx]";
 
       auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter]);
       auto indexType = any_cast<SymbolType>(visit(rule));
@@ -1606,78 +1613,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
         // Push the retrieved scope to the scope path
         scopePath.pushFragment("[idx]", newAccessScope);
       }
-    } else if (tokenType == SpiceParser::LPAREN || tokenType == SpiceParser::LESS) { // Consider function call
-      tokenCounter++;                                                                // Consume LPAREN or LESS
-
-      std::string functionName = currentVarName;
-      std::string accessScopePrefix = scopePath.getScopeName();
-
-      // Save the scope path to restore it after visiting the args
-      ScopePath scopePathBackup = scopePath;
-      SymbolType thisType = currentThisType;
-
-      // Visit args
-      std::vector<SymbolType> argTypes;
-      auto argLst = dynamic_cast<SpiceParser::ArgLstContext *>(ctx->children[tokenCounter]);
-      if (argLst != nullptr) {
-        for (const auto &arg : argLst->assignExpr())
-          argTypes.push_back(any_cast<SymbolType>(visit(arg)));
-      }
-      tokenCounter++; // Consume argLst
-
-      // Restore scope path
-      scopePath = scopePathBackup;
-
-      // Match a function onto the requirements of the call
-      SymbolTable *functionParentScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : rootScope;
-      Function *spiceFunc = functionParentScope->matchFunction(functionName, thisType, argTypes, err.get(), *ctx->start);
-      if (!spiceFunc) {
-        // Build function to get a better error message
-        std::vector<std::pair<SymbolType, bool>> argTypesWithOptional;
-        argTypesWithOptional.reserve(argTypes.size());
-        for (auto &argType : argTypes)
-          argTypesWithOptional.emplace_back(argType, false);
-        std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-        Function function(functionName, SymbolSpecifiers(SymbolType(TY_FUNCTION)), thisType, SymbolType(TY_DYN),
-                          argTypesWithOptional, {}, codeLoc);
-        throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
-                       "Function/Procedure '" + function.getSignature() + "' could not be found");
-      }
-      spiceFunc->setUsed();
-
-      // Get function scope
-      scopePath.pushFragment(spiceFunc->getSignature(), functionParentScope);
-      currentVarName = spiceFunc->getSignature();
-
-      // Get function entry
-      SymbolTableEntry *functionEntry = functionParentScope->lookup(spiceFunc->getSignature());
-      assert(functionEntry != nullptr);
-      functionEntry->setUsed(); // Set the function to used
-
-      // Check if the function entry has sufficient visibility
-      if (functionParentScope->isImported(currentScope) && !functionEntry->getSpecifiers().isPublic())
-        throw err->get(*token->getSymbol(), INSUFFICIENT_VISIBILITY,
-                       "Cannot access function/procedure '" + currentVarName + "' due to its private visibility");
-
-      // Search for symbol table of called function/procedure to read arguments
-      if (functionEntry->getType().is(TY_FUNCTION)) {
-        SymbolTable *functionTable = functionParentScope->getChild(spiceFunc->getSignature());
-        assert(functionTable != nullptr);
-        // Get return type of called function
-        SymbolTableEntry *returnValueEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
-        assert(returnValueEntry != nullptr);
-        SymbolType returnType = spiceFunc->getReturnType();
-        // Structs from outside the module require more initialization
-        if (returnType.is(TY_STRUCT) && scopePath.getCurrentScope()->isImported(currentScope))
-          return initExtStruct(*ctx->start, scopePath.getCurrentScope(), accessScopePrefix + ".", returnType.getSubType(),
-                               thisType.getTemplateTypes());
-        lhs = returnType;
-      } else {
-        lhs = SymbolType(TY_BOOL);
-      }
     } else if (tokenType == SpiceParser::DOT) { // Consider member access
       tokenCounter++;                           // Consume dot
-      scopePrefix += ".";
       // Visit rhs
       auto postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(ctx->children[tokenCounter]);
       lhs = any_cast<SymbolType>(visit(postfixUnary));
@@ -1717,10 +1654,9 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
 std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   if (ctx->value())
     return visit(ctx->value());
+
   if (ctx->IDENTIFIER()) {
     currentVarName = ctx->IDENTIFIER()->toString();
-    std::string oldScopePrefix = scopePrefix;
-    scopePrefix += currentVarName;
 
     // Check if this is a reserved keyword
     if (std::find(RESERVED_KEYWORDS.begin(), RESERVED_KEYWORDS.end(), currentVarName) != RESERVED_KEYWORDS.end())
@@ -1731,6 +1667,8 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     // Load symbol table entry
     SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
     assert(accessScope);
+
+    // Load symbol table entry
     SymbolTableEntry *entry = currentEntry = accessScope->lookup(currentVarName);
 
     // Check if symbol exists. If it does not exist, just return because it could be the function name of a function call
@@ -1746,7 +1684,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 
       // Check if the entry is an external global variable and needs to be imported
       if (entry->isGlobal() && !entry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT}))
-        initExtGlobal(*ctx->IDENTIFIER()->getSymbol(), accessScope, oldScopePrefix, entry->getName());
+        initExtGlobal(*ctx->IDENTIFIER()->getSymbol(), accessScope, scopePath.getScopePrefix(true), entry->getName());
     }
 
     // Set symbol to used
@@ -1780,15 +1718,31 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 
     return entry->getType();
   }
+
   if (ctx->builtinCall())
     return visit(ctx->builtinCall());
+
   return visit(ctx->assignExpr());
 }
 
 std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+  // Primitive value
   if (ctx->primitiveValue())
     return visit(ctx->primitiveValue());
 
+  // Function call
+  if (ctx->functionCall())
+    return visit(ctx->functionCall());
+
+  // Array initialization
+  if (ctx->arrayInitialization())
+    return visit(ctx->arrayInitialization());
+
+  // Struct instantiation
+  if (ctx->structInstantiation())
+    return visit(ctx->structInstantiation());
+
+  // Typed nil
   if (ctx->NIL()) {
     auto nilType = any_cast<SymbolType>(visit(ctx->dataType()));
     if (nilType.is(TY_DYN))
@@ -1796,130 +1750,248 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     return nilType;
   }
 
-  if (!ctx->IDENTIFIER().empty()) { // Struct instantiation
-    // Get the access scope
-    SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
-
-    // Retrieve fully qualified struct name and the scope where to search it
-    std::string accessScopePrefix;
-    std::string structName;
-    bool structIsImported = false;
-    for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
-      structName = ctx->IDENTIFIER()[i]->toString();
-      if (i < ctx->IDENTIFIER().size() - 1) {
-        SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
-        if (!symbolEntry)
-          throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                         "Symbol '" + accessScopePrefix + structName + "' was used before defined");
-        accessScopePrefix += structName + ".";
-        std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
-        accessScope = accessScope->lookupTable(tableName);
-        if (accessScope->isImported(currentScope))
-          structIsImported = true;
-      }
-    }
-
-    // Get the concrete template types
-    std::vector<SymbolType> concreteTemplateTypes;
-    if (ctx->typeLst()) {
-      for (const auto &dataType : ctx->typeLst()->dataType()) {
-        auto templateType = any_cast<SymbolType>(visit(dataType));
-        concreteTemplateTypes.push_back(templateType);
-      }
-    }
-
-    // Get the struct instance
-    Struct *spiceStruct = accessScope->matchStruct(structName, concreteTemplateTypes, err.get(), *ctx->start);
-    if (!spiceStruct) {
-      // Build struct to get a better error message
-      std::string codeLoc = FileUtil::tokenToCodeLoc(*ctx->start);
-      Struct s(structName, SymbolSpecifiers(SymbolType(TY_STRUCT)), {}, {}, codeLoc);
-      throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + s.getSignature() + "' could not be found");
-    }
-    spiceStruct->setUsed();
-
-    SymbolType structType;
-    if (structIsImported) { // Imported struct
-      structType = initExtStruct(*ctx->IDENTIFIER()[0]->getSymbol(), accessScope, accessScopePrefix,
-                                 ctx->IDENTIFIER().back()->toString(), concreteTemplateTypes);
-    } else { // Not imported
-      SymbolTableEntry *structSymbol =
-          currentScope->lookup(accessScopePrefix + Struct::getSignature(structName, concreteTemplateTypes));
-      if (!structSymbol)
-        throw err->get(*ctx->IDENTIFIER().front()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
-                       "Could not find struct '" + accessScopePrefix + structName + "'");
-      structType = structSymbol->getType();
-    }
-
-    // Set template types to the struct
-    std::vector<GenericType> genericTemplateTypes = spiceStruct->getTemplateTypes();
-    std::vector<SymbolType> templateTypes;
-    for (auto &genericType : genericTemplateTypes)
-      templateTypes.emplace_back(genericType.getTypeChain());
-    structType.setTemplateTypes(templateTypes);
-
-    // Check if the number of fields matches
-    SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + accessScopePrefix + structName);
-    std::vector<SymbolType> fieldTypes;
-    if (ctx->argLst()) { // Check if any fields are passed. Empty braces are also allowed
-      if (spiceStruct->getFieldTypes().size() != ctx->argLst()->assignExpr().size())
-        throw err->get(*ctx->argLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
-                       "You've passed too less/many field values. Pass either none or all of them");
-
-      // Check if the field types are matching
-      for (int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
-        // Get actual type
-        auto assignExpr = ctx->argLst()->assignExpr()[i];
-        auto actualType = any_cast<SymbolType>(visit(assignExpr));
-        // Get expected type
-        SymbolTableEntry *expectedField = structTable->lookupByIndex(i);
-        assert(expectedField != nullptr);
-        SymbolType expectedFieldType = expectedField->getType();
-        // Check if type matches declaration
-        if (actualType != expectedFieldType)
-          throw err->get(*assignExpr->start, FIELD_TYPE_NOT_MATCHING,
-                         "Expected type " + expectedFieldType.getName(false) + " for the field '" + expectedField->getName() +
-                             "', but got " + actualType.getName(false));
-      }
-    }
-
-    return structType;
-  }
-
-  if (ctx->LBRACE()) { // Array initialization
-    // Check if all values have the same type
-    unsigned int actualSize = 0;
-    SymbolType actualItemType = SymbolType(TY_DYN);
-    if (ctx->argLst()) {
-      for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
-        auto itemType = any_cast<SymbolType>(visit(ctx->argLst()->assignExpr()[i]));
-        if (actualItemType.is(TY_DYN)) {
-          actualItemType = itemType;
-        } else if (itemType != actualItemType) {
-          throw err->get(*ctx->argLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
-                         "All provided values have to be of the same data type. You provided " + actualItemType.getName(false) +
-                             " and " + itemType.getName(false));
-        }
-        actualSize++;
-      }
-    }
-
-    // Override actual array size if the expected type has a fixed size
-    actualSize = expectedType.isArray() ? expectedType.getArraySize() : actualSize;
-
-    // Check if actual item type is known now
-    if (actualItemType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
-      if (expectedType.is(TY_DYN))
-        throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
-      if (expectedType.is(TY_DYN))
-        throw err->get(*ctx->start, ARRAY_ITEM_TYPE_NOT_MATCHING, "Cannot assign an array to a primitive data type");
-      actualItemType = expectedType.getContainedTy();
-    }
-
-    return actualItemType.toArray(err.get(), *ctx->LBRACE()->getSymbol(), actualSize);
-  }
-
   return nullptr;
+}
+
+std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
+  // Get the access scope
+  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+
+  std::string functionName;
+  SymbolType thisType = SymbolType(TY_DYN);
+  bool constructorCall = false;
+  for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
+    std::string identifier = ctx->IDENTIFIER()[i]->toString();
+    SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
+
+    if (i < ctx->IDENTIFIER().size() - 1) {
+      if (!symbolEntry)
+        throw err->get(*ctx->IDENTIFIER()[i]->getSymbol(), REFERENCED_UNDEFINED_FUNCTION,
+                       "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
+      thisType = symbolEntry->getType().getBaseType();
+    } else if (symbolEntry != nullptr && symbolEntry->getType().getBaseType().is(TY_STRUCT)) {
+      // Get the concrete template types
+      std::vector<SymbolType> concreteTemplateTypes;
+      if (ctx->typeLst()) {
+        for (const auto &dataType : ctx->typeLst()->dataType())
+          concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
+      }
+      std::string structSignature = Struct::getSignature(identifier, concreteTemplateTypes);
+
+      // Get the struct instance
+      Struct *spiceStruct = accessScope->matchStruct(currentScope, identifier, concreteTemplateTypes, err.get(), *ctx->start);
+      if (!spiceStruct)
+        throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
+      spiceStruct->setUsed();
+
+      symbolEntry = accessScope->lookup(structSignature);
+      assert(symbolEntry != nullptr);
+
+      // Import struct if necessary
+      if (accessScope->isImported(currentScope))
+        thisType = initExtStruct(*ctx->IDENTIFIER()[i]->getSymbol(), accessScope, scopePath.getScopePrefix(true), identifier,
+                                 concreteTemplateTypes);
+      else
+        thisType = symbolEntry->getType().getBaseType();
+
+      functionName = CTOR_VARIABLE_NAME;
+      constructorCall = true;
+    } else {
+      functionName = identifier;
+      continue;
+    }
+
+    std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + thisType.getName();
+    accessScope = accessScope->lookupTable(tableName);
+    assert(accessScope != nullptr);
+    scopePath.pushFragment(identifier, accessScope);
+  }
+  assert(accessScope != nullptr);
+
+  ScopePath scopePathBackup = scopePath;
+
+  // Visit args
+  std::vector<SymbolType> argTypes;
+  if (ctx->argLst()) {
+    for (const auto &arg : ctx->argLst()->assignExpr())
+      argTypes.push_back(any_cast<SymbolType>(visit(arg)));
+  }
+
+  // Set to root scope if it did not change
+  if (accessScope == currentScope)
+    accessScope = rootScope;
+
+  // Avoid this type import
+  if (thisType.is(TY_IMPORT))
+    thisType = SymbolType(TY_DYN);
+
+  // Get the function/procedure instance
+  antlr4::Token *token = ctx->IDENTIFIER().back()->getSymbol();
+  SymbolType origThisType = thisType.replaceBaseSubType(CommonUtil::getLastFragment(thisType.getBaseType().getSubType(), "."));
+  Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, origThisType, argTypes, err.get(), *token);
+  if (!spiceFunc) {
+    // Build dummy function to get a better error message
+    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
+    SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+
+    ArgList errArgTypes;
+    for (auto &argType : argTypes)
+      errArgTypes.emplace_back(argType, false);
+
+    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, codeLoc);
+
+    throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
+                   "Function/Procedure '" + f.getSignature() + "' could not be found");
+  }
+  spiceFunc->setUsed();
+
+  // Get function entry
+  SymbolTableEntry *functionEntry = accessScope->lookup(spiceFunc->getSignature());
+  assert(functionEntry != nullptr);
+  functionEntry->setUsed(); // Set the function to used
+
+  // Check if the function entry has sufficient visibility
+  if (accessScope->isImported(currentScope) && !functionEntry->getSpecifiers().isPublic())
+    throw err->get(*token, INSUFFICIENT_VISIBILITY,
+                   "Cannot access function/procedure '" + spiceFunc->getSignature() + "' due to its private visibility");
+
+  // Return struct type on constructor call
+  if (constructorCall)
+    return thisType;
+
+  // If the callee is a procedure, return type bool
+  if (spiceFunc->isProcedure() || spiceFunc->getReturnType().is(TY_DYN))
+    return SymbolType(TY_BOOL);
+
+  // Retrieve the return type of the function
+  SymbolType returnType = spiceFunc->getReturnType();
+
+  // If the return type is an external struct, initialize it
+  if (returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope))
+    return initExtStruct(*ctx->start, scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true),
+                         returnType.getSubType(), thisType.getTemplateTypes());
+
+  return returnType;
+}
+
+std::any AnalyzerVisitor::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
+  // Check if all values have the same type
+  unsigned int actualSize = 0;
+  SymbolType actualItemType = SymbolType(TY_DYN);
+  if (ctx->argLst()) {
+    for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
+      auto itemType = any_cast<SymbolType>(visit(ctx->argLst()->assignExpr()[i]));
+      if (actualItemType.is(TY_DYN)) {
+        actualItemType = itemType;
+      } else if (itemType != actualItemType) {
+        throw err->get(*ctx->argLst()->assignExpr()[i]->start, ARRAY_ITEM_TYPE_NOT_MATCHING,
+                       "All provided values have to be of the same data type. You provided " + actualItemType.getName(false) +
+                           " and " + itemType.getName(false));
+      }
+      actualSize++;
+    }
+  }
+
+  // Override actual array size if the expected type has a fixed size
+  actualSize = expectedType.isArray() ? expectedType.getArraySize() : actualSize;
+
+  // Check if actual item type is known now
+  if (actualItemType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
+    if (expectedType.is(TY_DYN))
+      throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
+    if (expectedType.is(TY_DYN))
+      throw err->get(*ctx->start, ARRAY_ITEM_TYPE_NOT_MATCHING, "Cannot assign an array to a primitive data type");
+    actualItemType = expectedType.getContainedTy();
+  }
+
+  return actualItemType.toArray(err.get(), *ctx->LBRACE()->getSymbol(), actualSize);
+}
+
+std::any AnalyzerVisitor::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
+  // Get the access scope
+  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+
+  // Retrieve fully qualified struct name and the scope where to search it
+  std::string accessScopePrefix;
+  std::string structName;
+  bool structIsImported = false;
+  for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
+    structName = ctx->IDENTIFIER()[i]->toString();
+    if (i < ctx->IDENTIFIER().size() - 1) {
+      SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
+      if (!symbolEntry)
+        throw err->get(*ctx->IDENTIFIER()[1]->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                       "Symbol '" + accessScopePrefix + structName + "' was used before defined");
+      accessScopePrefix += structName + ".";
+      std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
+      accessScope = accessScope->lookupTable(tableName);
+      if (accessScope->isImported(currentScope))
+        structIsImported = true;
+    }
+  }
+  assert(accessScope != nullptr);
+
+  // Get the concrete template types
+  std::vector<SymbolType> concreteTemplateTypes;
+  if (ctx->typeLst()) {
+    for (const auto &dataType : ctx->typeLst()->dataType())
+      concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
+  }
+
+  // Get the struct instance
+  Struct *spiceStruct = accessScope->matchStruct(currentScope, structName, concreteTemplateTypes, err.get(), *ctx->start);
+  if (!spiceStruct) {
+    std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
+    throw err->get(*ctx->start, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
+  }
+  spiceStruct->setUsed();
+
+  SymbolType structType;
+  if (structIsImported) { // Imported struct
+    structType = initExtStruct(*ctx->IDENTIFIER()[0]->getSymbol(), accessScope, accessScopePrefix,
+                               ctx->IDENTIFIER().back()->toString(), concreteTemplateTypes);
+  } else { // Not imported
+    SymbolTableEntry *structSymbol =
+        currentScope->lookup(accessScopePrefix + Struct::getSignature(structName, concreteTemplateTypes));
+    if (!structSymbol)
+      throw err->get(*ctx->IDENTIFIER().front()->getSymbol(), REFERENCED_UNDEFINED_STRUCT,
+                     "Could not find struct '" + accessScopePrefix + structName + "'");
+    structType = structSymbol->getType();
+  }
+
+  // Set template types to the struct
+  std::vector<GenericType> genericTemplateTypes = spiceStruct->getTemplateTypes();
+  std::vector<SymbolType> templateTypes;
+  for (auto &genericType : genericTemplateTypes)
+    templateTypes.emplace_back(genericType.getTypeChain());
+  structType.setTemplateTypes(templateTypes);
+
+  // Check if the number of fields matches
+  SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + accessScopePrefix + structName);
+  std::vector<SymbolType> fieldTypes;
+  if (ctx->argLst()) { // Check if any fields are passed. Empty braces are also allowed
+    if (spiceStruct->getFieldTypes().size() != ctx->argLst()->assignExpr().size())
+      throw err->get(*ctx->argLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
+                     "You've passed too less/many field values. Pass either none or all of them");
+
+    // Check if the field types are matching
+    for (int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
+      // Get actual type
+      auto assignExpr = ctx->argLst()->assignExpr()[i];
+      auto actualType = any_cast<SymbolType>(visit(assignExpr));
+      // Get expected type
+      SymbolTableEntry *expectedField = structTable->lookupByIndex(i);
+      assert(expectedField != nullptr);
+      SymbolType expectedFieldType = expectedField->getType();
+      // Check if type matches declaration
+      if (actualType != expectedFieldType)
+        throw err->get(*assignExpr->start, FIELD_TYPE_NOT_MATCHING,
+                       "Expected type " + expectedFieldType.getName(false) + " for the field '" + expectedField->getName() +
+                           "', but got " + actualType.getName(false));
+    }
+  }
+
+  return structType;
 }
 
 std::any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
@@ -2019,15 +2091,13 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
   if (ctx->typeLst()) {
-    for (const auto &dataType : ctx->typeLst()->dataType()) {
-      auto templateType = any_cast<SymbolType>(visit(dataType));
-      concreteTemplateTypes.push_back(templateType);
-    }
+    for (const auto &dataType : ctx->typeLst()->dataType())
+      concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
   }
 
   // Set the struct instance to used
-  Struct *externalSpiceStruct = accessScope->matchStruct(structName, concreteTemplateTypes, err.get(), *ctx->start);
-  assert(externalSpiceStruct);
+  Struct *externalSpiceStruct = accessScope->matchStruct(nullptr, structName, concreteTemplateTypes, err.get(), *ctx->start);
+  assert(externalSpiceStruct != nullptr);
   externalSpiceStruct->setUsed();
 
   if (structIsImported) // Imported struct
@@ -2086,7 +2156,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   externalStructSymbol->setUsed();
 
   // Set the struct instance to used
-  Struct *externalSpiceStruct = sourceScope->matchStruct(structName, templateTypes, err.get(), token);
+  Struct *externalSpiceStruct = sourceScope->matchStruct(nullptr, structName, templateTypes, err.get(), token);
   assert(externalSpiceStruct);
   externalSpiceStruct->setUsed();
 

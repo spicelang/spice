@@ -1,0 +1,12 @@
+type TestStruct struct {
+    int field1
+    double field2
+}
+
+p TestStruct.ctor() {
+    field1 = 1;
+}
+
+f<int> main() {
+    dyn testStruct = TestStruct(345);
+}

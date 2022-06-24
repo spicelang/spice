@@ -14,7 +14,7 @@ public:
   void pushFragment(const std::string &fragment, SymbolTable *symbolTable);
   void clear();
   [[nodiscard]] SymbolTable *getCurrentScope() const;
-  [[nodiscard]] std::string getScopeName() const;
+  [[nodiscard]] std::string getScopePrefix(bool includeLast = false) const;
 
 private:
   std::vector<std::pair<std::string, SymbolTable *>> fragments;

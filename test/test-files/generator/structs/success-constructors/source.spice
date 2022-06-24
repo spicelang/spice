@@ -1,0 +1,14 @@
+type Vector struct {
+    bool field1
+    string field2
+}
+
+p Vector.ctor() {
+    this.field1 = false;
+    this.field2 = "Test string";
+}
+
+f<int> main() {
+    dyn vec = Vector();
+    printf("Fields: %d, %s", vec.field1, vec.field2);
+}

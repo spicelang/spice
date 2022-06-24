@@ -1,0 +1,9 @@
+type TestStruct struct {
+    int field1
+    double field2
+}
+
+f<int> main() {
+    TestStruct testStruct = TestStruct();
+    printf("Test: %f", testStruct.field2);
+}

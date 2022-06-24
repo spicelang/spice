@@ -68,24 +68,42 @@ std::string Function::getMangledName() const {
   }
 
   // This type string
-  std::string thisTyStr;
-  if (!thisType.is(TY_DYN))
-    thisTyStr = "_" + thisType.getBaseType().getSubType();
+  std::string thisTyStr = "void";
+  if (!thisType.is(TY_DYN)) {
+    std::string baseSubType = thisType.getBaseType().getSubType();
+    size_t startPos = baseSubType.find_last_of('.');
+    startPos = startPos == std::string::npos ? 0 : startPos + 1;
+    thisTyStr = baseSubType.substr(startPos);
+    for (auto &templateType : thisType.getTemplateTypes())
+      thisTyStr += "_" + templateType.getName(false, true);
+  }
 
   // Arg type string
   std::string argTyStr;
   for (const auto &argType : argList) {
-    argTyStr += "_" + argType.first.getName();
+    if (!argTyStr.empty())
+      argTyStr += "_";
+    argTyStr += argType.first.getName(false, true);
     if (argType.second)
       argTyStr += "?";
   }
 
   // Template type string
   std::string templateTyStr;
-  for (const auto &templateType : templateTypes)
-    templateTyStr += "_" + templateType.getName();
+  for (const auto &templateType : templateTypes) {
+    if (!templateTyStr.empty())
+      templateTyStr += "_";
+    templateTyStr += templateType.getName(false, true);
+  }
 
-  return "_" + functionTyStr + thisTyStr + templateTyStr + "_" + name + argTyStr;
+  // Construct mangled name
+  std::string mangledName = "_" + functionTyStr + "__" + thisTyStr;
+  if (!templateTyStr.empty())
+    mangledName += "__" + templateTyStr;
+  mangledName += "__" + name;
+  if (!argTyStr.empty())
+    mangledName += "__" + argTyStr;
+  return mangledName;
 }
 
 /**

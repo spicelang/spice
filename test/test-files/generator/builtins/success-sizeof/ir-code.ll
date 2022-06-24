@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%_s_Struct_int_bool_string = type { i32, i1, i8* }
+%_s__Struct__int_bool_string = type { i32, i1, i8* }
 
 @0 = private unnamed_addr constant [20 x i8] c"Size of double: %d\0A\00", align 1
 @1 = private unnamed_addr constant [17 x i8] c"Size of int: %d\0A\00", align 1
@@ -53,7 +53,7 @@ entry:
   %26 = alloca i32, align 4
   %27 = alloca i32*, align 8
   %28 = alloca i32, align 4
-  %29 = alloca %_s_Struct_int_bool_string, align 8
+  %29 = alloca %_s__Struct__int_bool_string, align 8
   %30 = alloca i32, align 4
   %31 = alloca i1, align 1
   %32 = alloca i8*, align 8
@@ -131,17 +131,17 @@ entry:
   %71 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @10, i32 0, i32 0), i32 %70)
   store i32 5, i32* %30, align 4
   %72 = load i32, i32* %30, align 4
-  %73 = getelementptr inbounds %_s_Struct_int_bool_string, %_s_Struct_int_bool_string* %29, i32 0, i32 0
+  %73 = getelementptr inbounds %_s__Struct__int_bool_string, %_s__Struct__int_bool_string* %29, i32 0, i32 0
   store i32 %72, i32* %73, align 4
   store i1 true, i1* %31, align 1
   %74 = load i1, i1* %31, align 1
-  %75 = getelementptr inbounds %_s_Struct_int_bool_string, %_s_Struct_int_bool_string* %29, i32 0, i32 1
+  %75 = getelementptr inbounds %_s__Struct__int_bool_string, %_s__Struct__int_bool_string* %29, i32 0, i32 1
   store i1 %74, i1* %75, align 1
   store i8* getelementptr inbounds ([15 x i8], [15 x i8]* @12, i32 0, i32 0), i8** %32, align 8
   %76 = load i8*, i8** %32, align 8
-  %77 = getelementptr inbounds %_s_Struct_int_bool_string, %_s_Struct_int_bool_string* %29, i32 0, i32 2
+  %77 = getelementptr inbounds %_s__Struct__int_bool_string, %_s__Struct__int_bool_string* %29, i32 0, i32 2
   store i8* %76, i8** %77, align 8
-  %78 = load %_s_Struct_int_bool_string, %_s_Struct_int_bool_string* %29, align 8
+  %78 = load %_s__Struct__int_bool_string, %_s__Struct__int_bool_string* %29, align 8
   store i32 97, i32* %33, align 4
   %79 = load i32, i32* %33, align 4
   %80 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([29 x i8], [29 x i8]* @11, i32 0, i32 0), i32 %79)

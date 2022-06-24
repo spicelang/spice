@@ -84,6 +84,9 @@ public:
   std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
   std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
   std::any visitValue(SpiceParser::ValueContext *ctx) override;
+  std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
+  std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override;
+  std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override;
   std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
@@ -108,7 +111,6 @@ private:
   ThreadFactory *threadFactory;
   std::unique_ptr<ErrorFactory> err;
   bool blockAlreadyTerminated = false;
-  llvm::Value *currentThisValue = nullptr;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
   std::stack<llvm::BasicBlock *> breakBlocks;
@@ -129,7 +131,7 @@ private:
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "", llvm::Value *arraySize = nullptr);
-  llvm::Type *getTypeForSymbolType(SymbolType symbolType);
+  llvm::Type *getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope);
   llvm::Constant *getDefaultValueForType(llvm::Type *type);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);

@@ -24,6 +24,8 @@ const std::string MAIN_FUNCTION_NAME = "main";
 const std::string RETURN_VARIABLE_NAME = "result";
 const std::string THIS_VARIABLE_NAME = "this";
 const std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
+const std::string CTOR_VARIABLE_NAME = "ctor";
+const std::string DTOR_VARIABLE_NAME = "dtor";
 const std::string STRUCT_SCOPE_PREFIX = "struct:";
 const std::string UNUSED_VARIABLE_NAME = "_";
 const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync"};
@@ -90,6 +92,9 @@ public:
   std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
   std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
   std::any visitValue(SpiceParser::ValueContext *ctx) override;
+  std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
+  std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override;
+  std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override;
   std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
@@ -110,7 +115,6 @@ private:
   SymbolTable *currentScope = nullptr;
   SymbolTable *rootScope = nullptr;
   ScopePath scopePath;
-  std::string scopePrefix;
   int nestedLoopCounter = 0;
   std::string currentVarName;
   SymbolTableEntry *currentEntry = nullptr;

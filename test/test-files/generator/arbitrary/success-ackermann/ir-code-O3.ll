@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
 
 ; Function Attrs: nofree nosync nounwind readnone
-define internal fastcc i32 @_f_ack_int_int(i32 %0, i32 %1) unnamed_addr #0 {
+define internal fastcc i32 @_f__void__ack__int_int(i32 %0, i32 %1) unnamed_addr #0 {
 entry:
   %2 = icmp eq i32 %0, 0
   br i1 %2, label %if.then, label %if.end
@@ -30,14 +30,14 @@ tailrecurse.backedge:                             ; preds = %if.end, %if.end2
 
 if.end2:                                          ; preds = %if.end
   %6 = add i32 %.tr2325, -1
-  %7 = tail call fastcc i32 @_f_ack_int_int(i32 %.tr24, i32 %6)
+  %7 = tail call fastcc i32 @_f__void__ack__int_int(i32 %.tr24, i32 %6)
   br label %tailrecurse.backedge
 }
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #1 {
 entry:
-  %0 = tail call fastcc i32 @_f_ack_int_int(i32 3, i32 12)
+  %0 = tail call fastcc i32 @_f__void__ack__int_int(i32 3, i32 12)
   %1 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([36 x i8], [36 x i8]* @0, i64 0, i64 0), i32 3, i32 12, i32 %0)
   ret i32 0
 }
