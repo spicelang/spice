@@ -94,7 +94,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
     ThreadFactory threadFactory = ThreadFactory();
 
     // Create instance of cli options
-    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, 0};
+    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, 0};
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
