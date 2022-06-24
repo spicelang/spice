@@ -101,7 +101,7 @@ void executeTest(const GeneratorTestCase &testCase) {
     ThreadFactory threadFactory = ThreadFactory();
 
     // Create instance of cli options
-    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, 0};
+    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, 0};
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
@@ -190,17 +190,17 @@ void executeTest(const GeneratorTestCase &testCase) {
 
     // Check if the optimized ir code matches the expected output
     if (options.optLevel > 0) {
-      std::string actualOptimizedIR = mainSourceFile.compilerOutput.irOptString;
+      std::string actualOptIR = mainSourceFile.compilerOutput.irOptString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(irCodeOptFileName, actualOptimizedIR);
+        TestUtil::setFileContent(irCodeOptFileName, actualOptIR);
       } else {
         // Cut of first n lines to have a target independent
         for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
           expectedOptIR.erase(0, expectedOptIR.find('\n') + 1);
-          actualOptimizedIR.erase(0, actualOptimizedIR.find('\n') + 1);
+          actualOptIR.erase(0, actualOptIR.find('\n') + 1);
         }
-        EXPECT_EQ(expectedOptIR, actualOptimizedIR);
+        EXPECT_EQ(expectedOptIR, actualOptIR);
       }
     }
 
