@@ -1876,6 +1876,7 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
       while (entry && !memAddress && accessScope->getParent() && !entry->getType().is(TY_IMPORT)) {
         accessScope = accessScope->getParent();
         entry = accessScope->lookup(currentVarName);
+        assert(entry != nullptr);
         memAddress = entry->getAddress();
       }
 
