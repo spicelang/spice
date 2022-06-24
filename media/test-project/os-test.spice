@@ -15,5 +15,6 @@ f<int> main() {
 }*/
 
 f<int> main() {
-    assert true;
+    assert 1 == 1;
+    printf("Unreachable");
 }

@@ -132,6 +132,8 @@ private:
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "", llvm::Value *arraySize = nullptr);
+  llvm::Function *retrievePrintfFct();
+  llvm::Function *retrieveExitFct();
   llvm::Type *getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope);
   llvm::Constant *getDefaultValueForType(llvm::Type *type);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
