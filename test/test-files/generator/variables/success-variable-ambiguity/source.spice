@@ -5,5 +5,5 @@ f<int> main() {
         int variable = 14;
         printf("Inner variable: %d\n", variable);
     }
-    printf("Outer variable: %d\n", variable);
+    printf("Outer variable: %d", variable);
 }

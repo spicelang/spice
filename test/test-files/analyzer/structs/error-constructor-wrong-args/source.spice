@@ -4,7 +4,7 @@ type TestStruct struct {
 }
 
 p TestStruct.ctor() {
-    field1 = 1;
+    this.field1 = 1;
 }
 
 f<int> main() {

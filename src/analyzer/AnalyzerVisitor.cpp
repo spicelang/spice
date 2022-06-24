@@ -75,7 +75,7 @@ std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefConte
   currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start);
 
   // Create the function scope
-  currentScope = currentScope->createChildBlock(mainSignature);
+  currentScope = currentScope->createChildBlock(mainSignature, SCOPE_FUNC_PROC_BODY);
 
   // Declare variable for the return value in the function scope
   SymbolType returnType = SymbolType(TY_INT);
@@ -117,7 +117,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
   if (!secondRun) { // First run
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->createChildBlock(scopeId);
+    currentScope = currentScope->createChildBlock(scopeId, SCOPE_FUNC_PROC_BODY);
 
     // Get 'this' type
     bool isGeneric = false;
@@ -347,7 +347,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
 
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->createChildBlock(scopeId);
+    currentScope = currentScope->createChildBlock(scopeId, SCOPE_FUNC_PROC_BODY);
 
     // Get 'this' type
     bool isGeneric = false;
@@ -564,7 +564,7 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
     // Add return symbol for function
-    SymbolTable *functionTable = currentScope->createChildBlock(spiceFunc.getSignature());
+    SymbolTable *functionTable = currentScope->createChildBlock(spiceFunc.getSignature(), SCOPE_FUNC_PROC_BODY);
     functionTable->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, *ctx->start);
     functionTable->lookup(RETURN_VARIABLE_NAME)->setUsed();
   } else { // Procedure
@@ -574,7 +574,7 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
 
     // Add empty scope for function body
-    currentScope->createChildBlock(spiceProc.getSignature());
+    currentScope->createChildBlock(spiceProc.getSignature(), SCOPE_FUNC_PROC_BODY);
   }
 
   return nullptr;
@@ -659,7 +659,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
 
   // Visit field list in a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  SymbolTable *structScope = currentScope = currentScope->createChildBlock(scopeId);
+  SymbolTable *structScope = currentScope = currentScope->createChildBlock(scopeId, SCOPE_STRUCT);
 
   // Insert a field for each field list entry
   std::vector<SymbolType> fieldTypes;
@@ -790,7 +790,7 @@ std::any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ct
 std::any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+  currentScope = currentScope->createChildBlock(scopeId, SCOPE_THREAD_BODY);
   currentScope->setCapturingRequired(); // Requires capturing because the LLVM IR will end up in a separate function
 
   // Visit statement list in new scope
@@ -805,7 +805,7 @@ std::any AnalyzerVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
 std::any AnalyzerVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+  currentScope = currentScope->createChildBlock(scopeId, SCOPE_UNSAFE_BODY);
 
   // Enable unsafe operations
   allowUnsafeOperations = true;
@@ -827,7 +827,7 @@ std::any AnalyzerVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+  currentScope = currentScope->createChildBlock(scopeId, SCOPE_FOR_BODY);
 
   // Visit loop variable declaration in new scope
   visit(head->declStmt());
@@ -855,7 +855,7 @@ std::any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx)
 
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+  currentScope = currentScope->createChildBlock(scopeId, SCOPE_FOREACH_BODY);
 
   // Check type of the array
   expectedType = SymbolType(TY_DYN);
@@ -919,7 +919,7 @@ std::any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx)
 std::any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+  currentScope = currentScope->createChildBlock(scopeId, SCOPE_WHILE_BODY);
 
   // Visit condition
   auto conditionType = any_cast<SymbolType>(visit(ctx->assignExpr()));
@@ -940,7 +940,7 @@ std::any AnalyzerVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
 std::any AnalyzerVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   // Create a new scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-  currentScope = currentScope->createChildBlock(scopeId);
+  currentScope = currentScope->createChildBlock(scopeId, SCOPE_IF_BODY);
 
   // Visit condition
   auto conditionType = any_cast<SymbolType>(visit(ctx->assignExpr()));
@@ -966,7 +966,7 @@ std::any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   } else { // Make a new scope in case of an else branch
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->createChildBlock(scopeId);
+    currentScope = currentScope->createChildBlock(scopeId, SCOPE_IF_BODY);
 
     // Visit statement list in new scope
     visit(ctx->stmtLst());
@@ -1711,6 +1711,11 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
           accessScope->getParent()->isImported(currentScope))
         throw err->get(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access '" + structSignature + "' due to its private visibility");
+    } else {
+      // Check if we have seen a 'this.' prefix, because the generator needs that
+      if (entry->getScope()->getScopeType() == SCOPE_STRUCT && currentThisType.is(TY_DYN))
+        throw err->get(*ctx->start, REFERENCED_UNDEFINED_VARIABLE,
+                       "The symbol '" + currentVarName + "' could not be found. Missing 'this.' prefix?");
     }
     assert(accessScope != nullptr);
 

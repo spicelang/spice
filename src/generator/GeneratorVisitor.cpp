@@ -1876,12 +1876,11 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
       while (entry && !memAddress && accessScope->getParent() && !entry->getType().is(TY_IMPORT)) {
         accessScope = accessScope->getParent();
         entry = accessScope->lookup(currentVarName);
-        assert(entry != nullptr);
+        if (!entry)
+          break;
         memAddress = entry->getAddress();
       }
-
-      if (!entry)
-        return static_cast<llvm::Value *>(nullptr);
+      assert(entry != nullptr);
     }
 
     // Retrieve scope for the new scope path fragment
