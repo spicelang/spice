@@ -215,15 +215,13 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
   bool isMethod = ctx->IDENTIFIER().size() > 1;
 
   // Change to the (potentially generic) struct scope
+  SymbolTable *accessScope = currentScope;
   if (isMethod)
-    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+    accessScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
+  assert(accessScope != nullptr);
 
   // Get all substantiated function which result from this function declaration
-  std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
-
-  // Change back to parent scope
-  if (isMethod)
-    currentScope = currentScope->getParent();
+  std::map<std::string, Function> *manifestations = accessScope->getFunctionManifestations(*ctx->start);
 
   if (manifestations) {
     for (const auto &[mangledName, spiceFunc] : *manifestations) {
@@ -357,15 +355,13 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
   bool isMethod = ctx->IDENTIFIER().size() > 1;
 
   // Change to the (potentially generic) struct scope
+  SymbolTable *accessScope = currentScope;
   if (isMethod)
-    currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER()[0]->toString());
+    accessScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
+  assert(accessScope != nullptr);
 
   // Get all substantiated function which result from this function declaration
-  std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
-
-  // Change back to parent scope
-  if (isMethod)
-    currentScope = currentScope->getParent();
+  std::map<std::string, Function> *manifestations = accessScope->getFunctionManifestations(*ctx->start);
 
   if (manifestations) {
     for (const auto &[mangledName, spiceProc] : *manifestations) {
@@ -1877,8 +1873,11 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
     } else {
       // For the case that in the current scope there is a variable with the same name, but it is initialized later, so the
       // symbol above in the hierarchy is meant to be used.
-      while (entry && !memAddress && !entry->getType().is(TY_IMPORT))
-        entry = accessScope->getParent()->lookup(currentVarName);
+      while (entry && !memAddress && accessScope->getParent() && !entry->getType().is(TY_IMPORT)) {
+        accessScope = accessScope->getParent();
+        entry = accessScope->lookup(currentVarName);
+        memAddress = entry->getAddress();
+      }
 
       if (!entry)
         return static_cast<llvm::Value *>(nullptr);

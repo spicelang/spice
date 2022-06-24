@@ -33,17 +33,23 @@ f<int> main() {
     v.push(2);
 }*/
 
-import "std/data/vector" as vec;
+type T dyn;
 
-p printMetadata(vec.Vector<double>* vector) {
-    printf("Current size: %d\n", vector.getSize());
-    printf("Current capacity: %d\n", vector.getCapacity());
+public type Vector<T> struct {
+    T* contents
+    unsigned long capacity
+    unsigned long size
+    unsigned int itemSize
+}
+
+public f<int> Vector.get(long index) {
+    if (index <= size) { // Note 'size' instead 'this.size'
+        return 1;
+    }
+    return 0;
 }
 
 f<int> main() {
-    vec.Vector<double> myVector = vec.Vector<double>();
-    printMetadata(&myVector);
-    myVector.reserve(14);
-    printMetadata(&myVector);
-    myVector.dtor();
+    dyn v = Vector<int>{};
+    int v0 = v.get(0l);
 }

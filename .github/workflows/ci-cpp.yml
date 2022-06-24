@@ -104,7 +104,7 @@ jobs:
           ./codecov -t ${{ secrets.CODECOV_TOKEN }}
 
 # Currently not working because the data layout and the target triple is present in the ir test refs
-#      - name: Check if test refs are up to date
+#      - name: Check if test refs are up-to-date
 #        env:
 #          SPICE_STD_DIR: /home/runner/work/spice/spice/std
 #        run: |

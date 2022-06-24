@@ -45,8 +45,9 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
 
   // --- Post traversing actions
   // Remove non-substantiated functions and structs
-  if (requiresMainFct && secondRun)
-    rootScope->purgeSubstantiationRemnants();
+  // Currently disabled because the generator relies on unsubstantiated structs in the main source file
+  // if (requiresMainFct && secondRun)
+  //  rootScope->purgeSubstantiationRemnants();
 
   // Check if the visitor got a main function
   if (requiresMainFct && !hasMainFunction)
