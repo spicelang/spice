@@ -977,6 +977,16 @@ std::any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   return SymbolType(TY_BOOL);
 }
 
+std::any AnalyzerVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
+  auto assertConditionType = std::any_cast<SymbolType>(visit(ctx->assignExpr()));
+
+  // Check if assertStmt evaluates to bool
+  if (!assertConditionType.is(TY_BOOL))
+    throw err->get(*ctx->assignExpr()->start, ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool");
+
+  return assertConditionType;
+}
+
 std::any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
   NamedArgList namedArgList;
   bool metOptional = false;

@@ -13,3 +13,8 @@ f<int> main() {
     StringStruct a = StringStruct {};
     a.appendChar('A');
 }*/
+
+f<int> main() {
+    assert 1 == 1;
+    printf("Unreachable");
+}

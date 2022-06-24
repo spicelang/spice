@@ -604,7 +604,7 @@ std::any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   // Create threaded function
   std::string threadedFctName = "_thread" + std::to_string(threadFactory->getNextFunctionSuffix());
   llvm::Type *voidPtrTy = builder->getInt8PtrTy();
-  llvm::FunctionType *threadFctTy = llvm::FunctionType::get(voidPtrTy, {voidPtrTy}, false);
+  llvm::FunctionType *threadFctTy = llvm::FunctionType::get(voidPtrTy, voidPtrTy, false);
   llvm::Function *threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage, threadedFctName, module.get());
 
   // Change scope
@@ -1007,6 +1007,43 @@ std::any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   return nullptr;
 }
 
+std::any GeneratorVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
+  // Only generate assertions with -O0
+  if (cliOptions->optLevel == 0) {
+    // Visit the assignExpr
+    auto condValuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
+    llvm::Value *condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
+    llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
+
+    // Create blocks
+    llvm::BasicBlock *bThen = llvm::BasicBlock::Create(*context, "if.then");
+    llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "if.end");
+
+    // Check if condition is fulfilled
+    createCondBr(condValue, bEnd, bThen);
+
+    // Fill then block
+    parentFct->getBasicBlockList().push_back(bThen);
+    moveInsertPointToBlock(bThen);
+    // Generate IR for assertion error
+    llvm::Function *printfFct = retrievePrintfFct();
+    std::string errorMsg = "Assertion failed: Condition '" + ctx->assignExpr()->getText() + "' evaluated to false.";
+    llvm::Value *templateString = builder->CreateGlobalStringPtr(errorMsg);
+    builder->CreateCall(printfFct, templateString);
+    // Generate call to exit
+    llvm::Function *exitFct = retrieveExitFct();
+    builder->CreateCall(exitFct, builder->getInt32(1));
+    // Create unreachable instruction
+    builder->CreateUnreachable();
+
+    // Fill end block
+    parentFct->getBasicBlockList().push_back(bEnd);
+    moveInsertPointToBlock(bEnd);
+  }
+
+  return nullptr;
+}
+
 std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   currentVarName = lhsVarName = ctx->IDENTIFIER()->toString();
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
@@ -1111,14 +1148,7 @@ std::any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx
 
 std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   // Declare if not declared already
-  std::string printfFctName = "printf";
-  llvm::Function *printfFct = module->getFunction(printfFctName);
-  if (!printfFct) {
-    llvm::FunctionType *printfFctTy =
-        llvm::FunctionType::get(llvm::Type::getInt32Ty(*context), llvm::Type::getInt8PtrTy(*context), true);
-    module->getOrInsertFunction(printfFctName, printfFctTy);
-    printfFct = module->getFunction(printfFctName);
-  }
+  llvm::Function *printfFct = retrievePrintfFct();
 
   std::vector<llvm::Value *> printfArgs;
   std::string stringTemplate = ctx->STRING_LITERAL()->toString();
@@ -2430,6 +2460,28 @@ llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::str
     builder->SetInsertPoint(currentBlock);
   }
   return static_cast<llvm::Value *>(allocaInsertInst);
+}
+
+llvm::Function *GeneratorVisitor::retrievePrintfFct() {
+  std::string printfFctName = "printf";
+  llvm::Function *printfFct = module->getFunction(printfFctName);
+  if (printfFct)
+    return printfFct;
+  // Not found -> declare it for linkage
+  llvm::FunctionType *printfFctTy = llvm::FunctionType::get(builder->getInt32Ty(), builder->getInt8PtrTy(), true);
+  module->getOrInsertFunction(printfFctName, printfFctTy);
+  return module->getFunction(printfFctName);
+}
+
+llvm::Function *GeneratorVisitor::retrieveExitFct() {
+  std::string exitFctName = "exit";
+  llvm::Function *exitFct = module->getFunction(exitFctName);
+  if (exitFct)
+    return exitFct;
+  // Not found -> declare it for linkage
+  llvm::FunctionType *exitFctTy = llvm::FunctionType::get(builder->getVoidTy(), builder->getInt32Ty(), false);
+  module->getOrInsertFunction(exitFctName, exitFctTy);
+  return module->getFunction(exitFctName);
 }
 
 llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope) {

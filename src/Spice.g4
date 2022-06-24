@@ -20,9 +20,10 @@ foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
 whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;
 ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
 elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
+assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | threadDef | unsafeBlockDef)*;
+stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef)*;
 field: declSpecifiers? dataType IDENTIFIER;
 typeLst: dataType (COMMA dataType)*;
 typeLstEllipsis: typeLst ELLIPSIS?;
@@ -97,6 +98,7 @@ F: 'f';
 P: 'p';
 IF: 'if';
 ELSE: 'else';
+ASSERT: 'assert';
 FOR: 'for';
 FOREACH: 'foreach';
 WHILE: 'while';

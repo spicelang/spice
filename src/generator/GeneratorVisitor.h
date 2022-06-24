@@ -56,6 +56,7 @@ public:
   std::any visitTypeAlts(SpiceParser::TypeAltsContext *ctx) override;
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
+  std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
   std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
@@ -131,6 +132,8 @@ private:
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "", llvm::Value *arraySize = nullptr);
+  llvm::Function *retrievePrintfFct();
+  llvm::Function *retrieveExitFct();
   llvm::Type *getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope);
   llvm::Constant *getDefaultValueForType(llvm::Type *type);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
