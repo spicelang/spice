@@ -1,0 +1,9 @@
+f<int> main() {
+    int variable = 12;
+    if (true) {
+        variable++;
+        int variable = 14;
+        printf("Inner variable: %d\n", variable);
+    }
+    printf("Outer variable: %d", variable);
+}

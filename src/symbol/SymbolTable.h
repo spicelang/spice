@@ -16,6 +16,18 @@
 
 #include "../../lib/json/json.hpp"
 
+enum ScopeType {
+  SCOPE_GLOBAL,
+  SCOPE_FUNC_PROC_BODY,
+  SCOPE_STRUCT,
+  SCOPE_IF_BODY,
+  SCOPE_WHILE_BODY,
+  SCOPE_FOR_BODY,
+  SCOPE_FOREACH_BODY,
+  SCOPE_THREAD_BODY,
+  SCOPE_UNSAFE_BODY
+};
+
 /**
  * Class for storing information about symbols of the AST. Symbol tables are meant to be arranged in a tree structure,
  * so that you can navigate with the getParent() and getChild() methods up and down the tree.
@@ -23,8 +35,9 @@
 class SymbolTable {
 public:
   // Constructors
-  explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile = false, bool isSourceFileRoot = false)
-      : parent(parent), isMainSourceFile(inMainSourceFile), isSourceFileRootScope(isSourceFileRoot){};
+  explicit SymbolTable(SymbolTable *parent, const ScopeType &scopeType, bool inMainSourceFile = false,
+                       bool isSourceFileRoot = false)
+      : parent(parent), scopeType(scopeType), isMainSourceFile(inMainSourceFile), isSourceFileRootScope(isSourceFileRoot){};
 
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
@@ -37,7 +50,7 @@ public:
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
   SymbolTable *lookupTable(const std::string &tableName);
-  SymbolTable *createChildBlock(const std::string &childBlockName);
+  SymbolTable *createChildBlock(const std::string &childBlockName, const ScopeType &scopeType);
   void insertGenericType(const std::string &typeName, const GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
   void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable, bool alterParent = true);
@@ -75,6 +88,8 @@ public:
 
   [[nodiscard]] bool isImported(const SymbolTable *askingScope) const;
 
+  [[nodiscard]] const ScopeType getScopeType() const;
+
   void setCapturingRequired();
 
   [[nodiscard]] nlohmann::json toJSON() const;
@@ -82,6 +97,7 @@ public:
 private:
   // Members
   SymbolTable *parent;
+  const ScopeType scopeType;
   std::map<std::string, SymbolTable *> children;
   std::map<std::string, SymbolTableEntry> symbols;
   std::map<std::string, Capture> captures;

@@ -39,7 +39,7 @@ SourceFile::SourceFile(CliOptions *options, SourceFile *parent, std::string name
   antlrCtx.parser->removeParseListeners();
 
   // Create symbol table
-  symbolTable = std::make_shared<SymbolTable>(nullptr, parent == nullptr, true);
+  symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
 }
 
 void SourceFile::preAnalyze(CliOptions *options) {

@@ -25,7 +25,7 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, Symbol
   bool isGlobal = parent == nullptr;
   unsigned int orderIndex = symbols.size();
   // Insert into symbols map
-  symbols.insert({name, SymbolTableEntry(name, type, specifiers, state, token, orderIndex, isGlobal)});
+  symbols.insert({name, SymbolTableEntry(name, type, this, specifiers, state, token, orderIndex, isGlobal)});
 }
 
 /**
@@ -172,8 +172,8 @@ SymbolTable *SymbolTable::lookupTable(const std::string &tableName) {
  * @param childBlockName Name of the child scope
  * @return Newly created child table
  */
-SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName) {
-  children.insert({childBlockName, new SymbolTable(this, isMainSourceFile)});
+SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName, const ScopeType &scopeType) {
+  children.insert({childBlockName, new SymbolTable(this, scopeType, isMainSourceFile)});
   return children.at(childBlockName);
 }
 
@@ -730,6 +730,13 @@ bool SymbolTable::isImported(const SymbolTable *askingScope) const {
 
   return askingRootScope != thisRootScope;
 }
+
+/**
+ * Retrieves the scope type of the current scope
+ *
+ * @return Scope type
+ */
+const ScopeType SymbolTable::getScopeType() const { return scopeType; }
 
 /**
  * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing

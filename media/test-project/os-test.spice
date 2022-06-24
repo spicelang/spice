@@ -13,37 +13,3 @@ f<int> main() {
     StringStruct a = StringStruct {};
     a.appendChar('A');
 }*/
-
-/*import "std/runtime/string_rt" as str;
-
-f<int> main() {
-    str.StringStruct a = str.StringStruct {};
-    a.constructor();
-    printf("String: %s\n", a.value);
-    a.appendChar('A');
-    printf("String: %s\n", a.value);
-    a.destructor();
-}*/
-
-/*import "std/data/vector" as vector;
-
-f<int> main() {
-    dyn v = vector.Vector<int>{};
-    v.push(4);
-    v.push(2);
-}*/
-
-import "std/data/vector" as vec;
-
-p printMetadata(vec.Vector<double>* vector) {
-    printf("Current size: %d\n", vector.getSize());
-    printf("Current capacity: %d\n", vector.getCapacity());
-}
-
-f<int> main() {
-    vec.Vector<double> myVector = vec.Vector<double>();
-    printMetadata(&myVector);
-    myVector.reserve(14);
-    printMetadata(&myVector);
-    myVector.dtor();
-}

@@ -30,6 +30,13 @@ void SymbolTableEntry::updateType(const SymbolType &newType, bool force) {
 }
 
 /**
+ * Get the parent symbol table
+ *
+ * @return Parent symbol table
+ */
+const SymbolTable *SymbolTableEntry::getScope() const { return scope; }
+
+/**
  * Retrieve the symbol specifiers of the current symbol
  *
  * @return Symbol Specifiers of the current symbol

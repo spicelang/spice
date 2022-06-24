@@ -1,0 +1,1 @@
+Semantic error in ./test-files/analyzer/methods/error-field-without-this/source.spice at 13:18: Referenced undefined variable: The symbol 'size' could not be found. Missing 'this.' prefix?

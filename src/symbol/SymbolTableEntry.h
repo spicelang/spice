@@ -15,6 +15,9 @@
 
 #include "../../lib/json/json.hpp"
 
+// Forward declaration of SymbolTable
+class SymbolTable;
+
 enum SymbolState { DECLARED, INITIALIZED };
 
 /**
@@ -23,15 +26,16 @@ enum SymbolState { DECLARED, INITIALIZED };
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
+  SymbolTableEntry(std::string name, const SymbolType &type, SymbolTable *scope, SymbolSpecifiers specifiers, SymbolState state,
                    const antlr4::Token &token, unsigned int orderIndex, const bool global)
-      : name(std::move(name)), type(type), specifiers(specifiers), state(state), definitionToken(token), orderIndex(orderIndex),
-        global(global){};
+      : name(std::move(name)), type(type), scope(scope), specifiers(specifiers), state(state), definitionToken(token),
+        orderIndex(orderIndex), global(global){};
 
   // Public methods
   [[nodiscard]] std::string getName() const;
   [[nodiscard]] const SymbolType &getType() const;
   void updateType(const SymbolType &newType, bool force);
+  [[nodiscard]] const SymbolTable *getScope() const;
   [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
   [[nodiscard]] SymbolState getState() const;
   void updateState(SymbolState newState, const ErrorFactory *errorFactory, const antlr4::Token &token);
@@ -54,6 +58,7 @@ private:
   // Members
   const std::string name;
   SymbolType type;
+  const SymbolTable *scope;
   SymbolSpecifiers specifiers;
   llvm::Type *llvmType = nullptr;
   SymbolState state;
