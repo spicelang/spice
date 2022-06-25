@@ -54,8 +54,6 @@ set(SOURCES
         exception/AntlrThrowingErrorListener.h
         debug/VisualizerVisitor.cpp
         debug/VisualizerVisitor.h
-        debug/StringSubstitutionHelper.cpp
-        debug/StringSubstitutionHelper.h
         util/CommonUtil.cpp
         util/CommonUtil.h
         util/ScopeIdUtil.cpp

@@ -16,13 +16,15 @@
  */
 class PreAnalyzerVisitor : public SpiceBaseVisitor {
 public:
-  explicit PreAnalyzerVisitor(const CliOptions &options, SourceFile *sourceFile);
+  // Constructors
+  explicit PreAnalyzerVisitor(const CliOptions &options, SourceFile &sourceFile);
 
   // Public methods
   std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
 
 private:
+  // Members
   const CliOptions &cliOptions;
   ErrorFactory err;
-  SourceFile *sourceFile;
+  SourceFile &sourceFile;
 };

@@ -581,8 +581,8 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
 class OpRuleManager {
 public:
   // Constructors
-  explicit OpRuleManager(const ErrorFactory *errorFactory, const bool &unsafeRef)
-      : err(errorFactory), withinUnsafeBlock(unsafeRef) {}
+  explicit OpRuleManager(const ErrorFactory *errorFactory, const bool &isUnsafe)
+      : err(errorFactory), withinUnsafeBlock(isUnsafe) {}
 
   // Public methods
   SymbolType getAssignResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);

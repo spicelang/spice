@@ -105,20 +105,20 @@ void executeTest(const StdTestCase &testCase) {
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
-    options = *cli.getOptions();
+    options = cli.getOptions();
 
     // Create linker interface
-    LinkerInterface linker = LinkerInterface(&err, &threadFactory, &options);
+    LinkerInterface linker = LinkerInterface(err, threadFactory, options);
 
     // Create main source file
-    SourceFile mainSourceFile = SourceFile(&options, nullptr, "root", sourceFile, false);
+    SourceFile mainSourceFile = SourceFile(options, nullptr, "root", sourceFile, false);
 
     // Execute pre-analyzer
-    mainSourceFile.preAnalyze(&options);
+    mainSourceFile.preAnalyze(options);
 
     // Execute semantic analysis
-    mainSourceFile.analyze(context, builder, &threadFactory);
-    mainSourceFile.reAnalyze(context, builder, &threadFactory);
+    mainSourceFile.analyze(context, builder, threadFactory);
+    mainSourceFile.reAnalyze(context, builder, threadFactory);
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + "/exception.out"))
@@ -168,7 +168,7 @@ void executeTest(const StdTestCase &testCase) {
     }
 
     // Execute generator
-    mainSourceFile.generate(context, builder, &threadFactory, &linker);
+    mainSourceFile.generate(context, builder, threadFactory, linker);
 
     // Check if the ir code matches the expected output
     std::string irCodeFileName = testCase.testPath + "/ir-code.ll";

@@ -26,23 +26,20 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
-                                   const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory *threadFactory,
-                                   LinkerInterface *linker, CliOptions *options, SourceFile *sourceFile,
-                                   const std::string &objectFile) {
-  this->context = context;
-  this->builder = builder;
-  this->threadFactory = threadFactory;
-  this->linker = linker;
-  this->cliOptions = options;
-  this->objectFile = objectFile;
-  this->requiresMainFct = sourceFile->parent == nullptr;
-  this->currentScope = this->rootScope = sourceFile->symbolTable.get();
+                                   const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory &threadFactory,
+                                   const LinkerInterface &linker, const CliOptions &cliOptions, const SourceFile &sourceFile,
+                                   const std::string &objectFile)
+    : objectFile(objectFile), cliOptions(cliOptions), linker(linker), context(context), builder(builder),
+      threadFactory(threadFactory) {
+  // Enrich options
+  this->requiresMainFct = sourceFile.parent == nullptr;
+  this->currentScope = this->rootScope = sourceFile.symbolTable.get();
 
   // Create error factory for this specific file
-  this->err = std::make_unique<ErrorFactory>(sourceFile->filePath);
+  this->err = std::make_unique<ErrorFactory>(sourceFile.filePath);
 
   // Create LLVM base components
-  module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile->filePath), *context);
+  module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile.filePath), *context);
   conversionsManager = std::make_unique<OpRuleConversionsManager>(builder, err.get());
 
   // Initialize LLVM
@@ -53,24 +50,24 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   llvm::InitializeAllAsmPrinters();
 
   // Configure output target
-  module->setTargetTriple(cliOptions->targetTriple);
+  module->setTargetTriple(cliOptions.targetTriple);
 
   // Search after selected target
   std::string error;
-  const llvm::Target *target = llvm::TargetRegistry::lookupTarget(cliOptions->targetTriple, error);
+  const llvm::Target *target = llvm::TargetRegistry::lookupTarget(cliOptions.targetTriple, error);
   if (!target)
     throw err->get(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
 
   llvm::TargetOptions opt;
   llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
-  targetMachine = target->createTargetMachine(cliOptions->targetTriple, "generic", "", opt, rm);
+  targetMachine = target->createTargetMachine(cliOptions.targetTriple, "generic", "", opt, rm);
 
   module->setDataLayout(targetMachine->createDataLayout());
 }
 
 void GeneratorVisitor::optimize() {
-  if (cliOptions->printDebugOutput)
-    std::cout << "\nOptimizing on level " + std::to_string(cliOptions->optLevel) << " ...\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput)
+    std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " ...\n"; // GCOV_EXCL_LINE
 
   llvm::LoopAnalysisManager loopAnalysisMgr;
   llvm::FunctionAnalysisManager functionAnalysisMgr;
@@ -95,8 +92,8 @@ void GeneratorVisitor::optimize() {
 
 void GeneratorVisitor::emit() {
   // GCOV_EXCL_START
-  if (cliOptions->printDebugOutput)
-    std::cout << "\nEmitting object file for triplet '" << cliOptions->targetTriple << "' to path: " << objectFile << "\n";
+  if (cliOptions.printDebugOutput)
+    std::cout << "\nEmitting object file for triplet '" << cliOptions.targetTriple << "' to path: " << objectFile << "\n";
   // GCOV_EXCL_STOP
 
   // Open file output stream
@@ -602,7 +599,7 @@ std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *c
 
 std::any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   // Create threaded function
-  std::string threadedFctName = "_thread" + std::to_string(threadFactory->getNextFunctionSuffix());
+  std::string threadedFctName = "_thread" + std::to_string(threadFactory.getNextFunctionSuffix());
   llvm::Type *voidPtrTy = builder->getInt8PtrTy();
   llvm::FunctionType *threadFctTy = llvm::FunctionType::get(voidPtrTy, voidPtrTy, false);
   llvm::Function *threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage, threadedFctName, module.get());
@@ -1009,7 +1006,7 @@ std::any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
 
 std::any GeneratorVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   // Only generate assertions with -O0
-  if (cliOptions->optLevel == 0) {
+  if (cliOptions.optLevel == 0) {
     // Visit the assignExpr
     auto condValuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
     llvm::Value *condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
@@ -2653,7 +2650,7 @@ llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *srcValue, llvm::Type 
 }
 
 llvm::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {
-  switch (cliOptions->optLevel) { // Get LLVM opt level from Spice opt level
+  switch (cliOptions.optLevel) { // Get LLVM opt level from Spice opt level
   case 1:
     return llvm::OptimizationLevel::O1;
   case 2:

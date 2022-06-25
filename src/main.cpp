@@ -15,7 +15,7 @@
  *
  * @param options Command line options
  */
-void compileProject(CliOptions *options) {
+void compileProject(CliOptions &options) {
   try {
     // Prepare global LLVM assets
     std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
@@ -26,23 +26,26 @@ void compileProject(CliOptions *options) {
     ErrorFactory err{};
 
     // Prepare linker interface
-    LinkerInterface linker = LinkerInterface(&err, &threadFactory, options);
-    linker.setOutputPath(options->outputPath);
+    LinkerInterface linker = LinkerInterface(err, threadFactory, options);
+    linker.setOutputPath(options.outputPath);
 
     // Create source file instance for main source file
-    SourceFile mainSourceFile = SourceFile(options, nullptr, "root", options->mainSourceFile, false);
+    SourceFile mainSourceFile = SourceFile(options, nullptr, "root", options.mainSourceFile, false);
 
     // Pre-analyze the project (collect imports, etc.)
     mainSourceFile.preAnalyze(options);
 
+    // Visualize the project (only runs in debug mode)
+    mainSourceFile.visualizeAST(options);
+
     // Analyze the project (semantic analysis, build symbol table, type inference, type checking, etc.)
-    mainSourceFile.analyze(context, builder, &threadFactory);
+    mainSourceFile.analyze(context, builder, threadFactory);
 
     // Re-analyze the project (resolve generic functions/procedures/structs, etc.)
-    mainSourceFile.reAnalyze(context, builder, &threadFactory);
+    mainSourceFile.reAnalyze(context, builder, threadFactory);
 
     // Generate the project (LLVM code gen, optimization, emitting object files, etc.)
-    mainSourceFile.generate(context, builder, &threadFactory, &linker);
+    mainSourceFile.generate(context, builder, threadFactory, linker);
 
     // Link the target executable (Link object files to executable)
     linker.link();

@@ -98,17 +98,17 @@ void executeTest(const AnalyzerTestCase &testCase) {
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
-    options = *cli.getOptions();
+    options = cli.getOptions();
 
     // Create main source file
-    SourceFile mainSourceFile = SourceFile(&options, nullptr, "root", sourceFile, false);
+    SourceFile mainSourceFile = SourceFile(options, nullptr, "root", sourceFile, false);
 
     // Execute pre-analyzer
-    mainSourceFile.preAnalyze(&options);
+    mainSourceFile.preAnalyze(options);
 
     // Execute semantic analysis
-    mainSourceFile.analyze(context, builder, &threadFactory);
-    mainSourceFile.reAnalyze(context, builder, &threadFactory);
+    mainSourceFile.analyze(context, builder, threadFactory);
+    mainSourceFile.reAnalyze(context, builder, threadFactory);
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + "/exception.out"))

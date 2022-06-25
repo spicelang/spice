@@ -45,7 +45,7 @@ public:
   int parse(int argc, char **argv);
   void validate() const;
   void enrich();
-  CliOptions *getOptions();
+  CliOptions &getOptions();
   [[nodiscard]] bool shouldCompile() const;
   [[nodiscard]] bool shouldRun() const;
   void runBinary() const;

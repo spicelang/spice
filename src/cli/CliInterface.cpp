@@ -295,7 +295,7 @@ void CliInterface::addUninstallSubcommand() {
  *
  * @return Cli options
  */
-CliOptions *CliInterface::getOptions() { return &cliOptions; }
+CliOptions &CliInterface::getOptions() { return cliOptions; }
 
 /**
  * Checks if compiling is necessary

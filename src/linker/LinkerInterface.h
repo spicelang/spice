@@ -12,8 +12,8 @@
 class LinkerInterface {
 public:
   // Constructors
-  explicit LinkerInterface(const ErrorFactory *errorFactory, ThreadFactory *threadFactory, CliOptions *options)
-      : err(errorFactory), threadFactory(threadFactory), cliOptions(options){};
+  explicit LinkerInterface(const ErrorFactory &errorFactory, const ThreadFactory &threadFactory, CliOptions &cliOptions)
+      : err(errorFactory), threadFactory(threadFactory), cliOptions(cliOptions){};
 
   // Public methods
   void link();
@@ -23,9 +23,9 @@ public:
 
 private:
   // Members
-  const ErrorFactory *err;
-  const ThreadFactory *threadFactory;
-  const CliOptions *cliOptions;
+  const ErrorFactory &err;
+  const ThreadFactory &threadFactory;
+  const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;
   std::vector<std::string> linkerFlags = {"-no-pie"};
   std::string outputPath;

@@ -5,7 +5,6 @@
 #include <SpiceBaseVisitor.h>
 
 #include <cli/CliInterface.h>
-#include <debug/StringSubstitutionHelper.h>
 
 /**
  * Visitor for debug purposes (is only executed in the compiler debug mode)
@@ -88,5 +87,4 @@ public:
 private:
   // Members
   const CliOptions &cliOptions;
-  StringSubstitutionHelper helper;
 };

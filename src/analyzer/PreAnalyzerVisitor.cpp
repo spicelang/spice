@@ -7,10 +7,10 @@
 
 #include <util/FileUtil.h>
 
-PreAnalyzerVisitor::PreAnalyzerVisitor(const CliOptions &options, SourceFile *sourceFile)
+PreAnalyzerVisitor::PreAnalyzerVisitor(const CliOptions &options, SourceFile &sourceFile)
     : cliOptions(options), sourceFile(sourceFile) {
   // Create error factory
-  this->err = ErrorFactory(sourceFile->filePath);
+  this->err = ErrorFactory(sourceFile.filePath);
 }
 
 std::any PreAnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
@@ -73,7 +73,7 @@ std::any PreAnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx
   }
 
   // Visit the imported file
-  sourceFile->addDependency(&err, *ctx->STRING_LITERAL()->getSymbol(), importName, importPath, isImportStd);
+  sourceFile.addDependency(&err, *ctx->STRING_LITERAL()->getSymbol(), importName, importPath, isImportStd);
 
   return nullptr;
 }
