@@ -1,17 +1,7 @@
-/*type StringStruct struct {
-    int len
-    char* value
-    int maxLen
-    int growthFactor
-}
-
-p StringStruct.appendChar(char c) {
-    this.value[1] = c;
-}
+/*import "std/runtime/string_rt" as str;
 
 f<int> main() {
-    StringStruct a = StringStruct {};
-    a.appendChar('A');
+    str.String s1 = str.String("Test string");
 }*/
 
 f<int> main() {
