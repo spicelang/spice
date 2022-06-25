@@ -2,9 +2,15 @@
 
 #include "VisualizerVisitor.h"
 
-std::any VisualizerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {}
+std::any VisualizerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
+  helper.set("contents", std::any_cast<std::string>(visit(ctx)));
+  return helper.getResult("digraph { <<contents>> }");
+}
 
-std::any VisualizerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {}
+std::any VisualizerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+  helper.set("stmts", "test");
+  return helper.getResult("subgraph { <<stmts>> }");
+}
 
 std::any VisualizerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {}
 

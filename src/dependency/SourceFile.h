@@ -38,7 +38,8 @@ public:
   explicit SourceFile(CliOptions *options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
 
   // Public methods
-  void preAnalyze(CliOptions *options);
+  void preAnalyze(const CliOptions &options);
+  void visualizeAST(const CliOptions &options);
   void analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                ThreadFactory *threadFactory);
   void reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,

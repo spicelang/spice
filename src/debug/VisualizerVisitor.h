@@ -5,7 +5,14 @@
 #include <SpiceBaseVisitor.h>
 
 #include <cli/CliInterface.h>
+#include <debug/StringSubstitutionHelper.h>
 
+/**
+ * Visitor for debug purposes (is only executed in the compiler debug mode)
+ *
+ * Jobs:
+ * - Visualize AST
+ */
 class VisualizerVisitor : public SpiceBaseVisitor {
 public:
   // Constructors
@@ -81,4 +88,5 @@ public:
 private:
   // Members
   const CliOptions &cliOptions;
+  StringSubstitutionHelper helper;
 };

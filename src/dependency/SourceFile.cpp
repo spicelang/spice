@@ -42,7 +42,7 @@ SourceFile::SourceFile(CliOptions *options, SourceFile *parent, std::string name
   symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
 }
 
-void SourceFile::preAnalyze(CliOptions *options) {
+void SourceFile::preAnalyze(const CliOptions &options) {
   // Pre-analyze this source file
   PreAnalyzerVisitor preAnalyzer = PreAnalyzerVisitor(options, this);
   preAnalyzer.visit(antlrCtx.parser->entry());
@@ -52,6 +52,8 @@ void SourceFile::preAnalyze(CliOptions *options) {
   for (auto &[importName, sourceFile] : dependencies)
     sourceFile.first->preAnalyze(options);
 }
+
+void SourceFile::visualizeAST(const CliOptions &options) {}
 
 void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                          ThreadFactory *threadFactory) {
