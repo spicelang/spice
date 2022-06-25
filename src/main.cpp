@@ -36,7 +36,7 @@ void compileProject(CliOptions &options) {
     mainSourceFile.preAnalyze(options);
 
     // Visualize the project (only runs in debug mode)
-    mainSourceFile.visualizeAST(options);
+    mainSourceFile.visualizeAST(options, nullptr);
 
     // Analyze the project (semantic analysis, build symbol table, type inference, type checking, etc.)
     mainSourceFile.analyze(context, builder, threadFactory);

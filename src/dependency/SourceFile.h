@@ -39,7 +39,7 @@ public:
 
   // Public methods
   void preAnalyze(const CliOptions &options);
-  std::string visualizeAST(const CliOptions &options);
+  void visualizeAST(const CliOptions &options, std::string *output);
   void analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                const ThreadFactory &threadFactory);
   void reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,

@@ -57,18 +57,17 @@ void CliInterface::createInterface() {
       cliOptions.mainSourceFile = "./" + cliOptions.mainSourceFile;
 
     // Set outputDir to <system-tmp-dir>/spice-output
-    char separator = FileUtil::getDirSeparator();
     uint64_t millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     cliOptions.outputDir = std::filesystem::temp_directory_path().string();
     if (cliOptions.outputDir.back() != '/' && cliOptions.outputDir.back() != '\\')
-      cliOptions.outputDir += separator;
+      cliOptions.outputDir += FileUtil::DIR_SEPARATOR;
     cliOptions.outputDir += "spice-output";
-    cliOptions.outputDir += separator;
+    cliOptions.outputDir += FileUtil::DIR_SEPARATOR;
     cliOptions.outputDir += std::to_string(millis);
 
     // Set output path to output dir if running is enabled
     if (run) {
-      cliOptions.outputPath = cliOptions.outputDir + FileUtil::getDirSeparator();
+      cliOptions.outputPath = cliOptions.outputDir + FileUtil::DIR_SEPARATOR;
       cliOptions.outputPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
     }
 
@@ -114,6 +113,7 @@ void CliInterface::enrich() {
   }
   // Dump IR as well as symbol table if all debug output is enabled
   if (cliOptions.printDebugOutput) {
+    cliOptions.dumpAST = true;
     cliOptions.dumpIR = true;
     cliOptions.dumpSymbolTables = true;
   }
@@ -134,6 +134,8 @@ void CliInterface::addBuildSubcommand() {
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
+  // --dump-ast
+  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
   // --dump-ir
   subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
   // --dump-symtab
@@ -191,6 +193,8 @@ void CliInterface::addRunSubcommand() {
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
+  // --dump-ast
+  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
   // --dump-ir
   subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
   // --dump-symtab
@@ -234,6 +238,8 @@ void CliInterface::addInstallSubcommand() {
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
+  // --dump-ast
+  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
   // --dump-ir
   subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
   // --dump-symtab
@@ -333,7 +339,7 @@ int CliInterface::parse(int argc, char **argv) {
 void CliInterface::runBinary() const {
   // Print status message
   if (cliOptions.printDebugOutput)
-    std::cout << "\nRunning executable ...\n";
+    std::cout << "Running executable ...\n";
 
   // Run executable
   std::system(cliOptions.outputPath.c_str());

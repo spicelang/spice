@@ -17,6 +17,7 @@
 #include <exception/SemanticError.h>
 #include <generator/GeneratorVisitor.h>
 #include <linker/LinkerInterface.h>
+#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
 #include "TestUtil.h"
@@ -38,7 +39,7 @@ std::vector<StdTestCase> detectStdTestCases(const std::string &suitePath) {
   testCases.reserve(subDirs.size());
   for (std::string &dirName : subDirs) {
     // Save test suite
-    testCases.push_back({dirName, suitePath + "/" + dirName});
+    testCases.push_back({dirName, suitePath + FileUtil::DIR_SEPARATOR + dirName});
   }
 
   return testCases;
@@ -50,14 +51,14 @@ std::vector<StdTestSuite> detectStdTestSuites(const std::string &testFilesPath) 
   std::vector<StdTestSuite> testSuites;
   testSuites.reserve(subDirs.size());
   for (std::string &dirName : subDirs)
-    testSuites.push_back(detectStdTestCases(testFilesPath + "/" + dirName));
+    testSuites.push_back(detectStdTestCases(testFilesPath + FileUtil::DIR_SEPARATOR + dirName));
 
   return testSuites;
 }
 
 void executeTest(const StdTestCase &testCase) {
   // Check if disabled
-  std::string disabledFile = testCase.testPath + "/disabled";
+  std::string disabledFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "disabled";
   if (FileUtil::fileExists(disabledFile))
     GTEST_SKIP();
 #ifdef SPICE_IS_GH_ACTIONS
@@ -67,7 +68,7 @@ void executeTest(const StdTestCase &testCase) {
 #endif
 
   // Read source file
-  std::string sourceFile = testCase.testPath + "/source.spice";
+  std::string sourceFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "source.spice";
   std::ifstream sourceStream;
   sourceStream.open(sourceFile);
   if (!sourceStream)
@@ -101,7 +102,7 @@ void executeTest(const StdTestCase &testCase) {
     ThreadFactory threadFactory = ThreadFactory();
 
     // Create instance of cli options
-    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, 0};
+    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, 0};
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
@@ -121,11 +122,11 @@ void executeTest(const StdTestCase &testCase) {
     mainSourceFile.reAnalyze(context, builder, threadFactory);
 
     // Fail if an error was expected
-    if (FileUtil::fileExists(testCase.testPath + "/exception.out"))
+    if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + "exception.out"))
       FAIL() << "Expected error, but got no error";
 
     // Check if the symbol table matches the expected output
-    std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
+    std::string symbolTableFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "symbol-table.json";
     if (FileUtil::fileExists(symbolTableFileName)) {
       std::string actualSymbolTable = mainSourceFile.symbolTable->toJSON().dump(2);
       if (TestUtil::isUpdateRefsEnabled()) {
@@ -138,11 +139,11 @@ void executeTest(const StdTestCase &testCase) {
     }
 
     // Determine the expected opt level
-    std::string irCodeO1FileName = testCase.testPath + "/ir-code-O1.ll";
-    std::string irCodeO2FileName = testCase.testPath + "/ir-code-O2.ll";
-    std::string irCodeO3FileName = testCase.testPath + "/ir-code-O3.ll";
-    std::string irCodeOsFileName = testCase.testPath + "/ir-code-Os.ll";
-    std::string irCodeOzFileName = testCase.testPath + "/ir-code-Oz.ll";
+    std::string irCodeO1FileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "ir-code-O1.ll";
+    std::string irCodeO2FileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "ir-code-O2.ll";
+    std::string irCodeO3FileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "ir-code-O3.ll";
+    std::string irCodeOsFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "ir-code-Os.ll";
+    std::string irCodeOzFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "ir-code-Oz.ll";
     std::string irCodeOptFileName;
     std::string expectedOptIR;
     if (FileUtil::fileExists(irCodeO1FileName)) {
@@ -171,7 +172,7 @@ void executeTest(const StdTestCase &testCase) {
     mainSourceFile.generate(context, builder, threadFactory, linker);
 
     // Check if the ir code matches the expected output
-    std::string irCodeFileName = testCase.testPath + "/ir-code.ll";
+    std::string irCodeFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "ir-code.ll";
     if (FileUtil::fileExists(irCodeFileName)) {
       std::string actualIR = mainSourceFile.compilerOutput.irString;
       if (TestUtil::isUpdateRefsEnabled()) {
@@ -205,12 +206,12 @@ void executeTest(const StdTestCase &testCase) {
     }
 
     // Check if the execution output matches the expected output
-    std::string outputFileName = testCase.testPath + "/cout.out";
+    std::string outputFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "cout.out";
     if (FileUtil::fileExists(outputFileName)) {
       // Prepare linker
       linker.setOutputPath(TestUtil::getDefaultExecutableName()); // Add output path
 
-      std::string linkerFlagsFile = testCase.testPath + "/linker-flags.txt";
+      std::string linkerFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "linker-flags.txt";
       std::string linkerFlags;
       if (FileUtil::fileExists(linkerFlagsFile)) {
         for (const auto &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
@@ -236,15 +237,19 @@ void executeTest(const StdTestCase &testCase) {
 
     SUCCEED();
   } catch (LexerParserError &error) {
-    FAIL() << "Hit lexer/parser error: " << error.what();
+    std::string errorWhat = error.what();
+    CommonUtil::replaceAll(errorWhat, "\\", "/");
+    FAIL() << "Hit lexer/parser error: " << errorWhat;
   } catch (SemanticError &error) {
     // Check if the exception message matches the expected output
-    std::string exceptionFile = testCase.testPath + "/exception.out";
+    std::string errorWhat = error.what();
+    CommonUtil::replaceAll(errorWhat, "\\", "/");
+    std::string exceptionFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "exception.out";
     if (FileUtil::fileExists(exceptionFile)) {
       std::string expectedException = TestUtil::getFileContent(exceptionFile);
-      EXPECT_EQ(std::string(error.what()), expectedException);
+      EXPECT_EQ(std::string(errorWhat), expectedException);
     } else {
-      FAIL() << "Expected no error, but got '" << error.what() << "'";
+      FAIL() << "Expected no error, but got '" << errorWhat << "'";
     }
   }
 }
@@ -274,7 +279,9 @@ struct NameResolver {
 
 // Instantiations
 
-const std::vector<StdTestSuite> testSuites = detectStdTestSuites("./test-files/std"); // NOLINT(cert-err58-cpp)
+const std::string dirSepString = std::string(1, FileUtil::DIR_SEPARATOR);                      // NOLINT(cert-err58-cpp)
+const std::string testRefsBasePath = "." + dirSepString + "test-files" + dirSepString + "std"; // NOLINT(cert-err58-cpp)
+const std::vector<StdTestSuite> testSuites = detectStdTestSuites(testRefsBasePath);            // NOLINT(cert-err58-cpp)
 
 INSTANTIATE_TEST_SUITE_P(StdDataTests, StdDataTests, ::testing::ValuesIn(testSuites[0]),
                          NameResolver()); // NOLINT(cert-err58-cpp)

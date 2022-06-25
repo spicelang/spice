@@ -30,8 +30,8 @@ std::any PreAnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx
       stdPath = "/usr/lib/spice/std/";
     } else if (FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
       stdPath = std::string(std::getenv("SPICE_STD_DIR"));
-      if (stdPath.rfind('/') != stdPath.size() - 1)
-        stdPath += "/";
+      if (stdPath.rfind(FileUtil::DIR_SEPARATOR) != stdPath.size() - 1)
+        stdPath += FileUtil::DIR_SEPARATOR;
     } else {
       throw err.get(*ctx->STRING_LITERAL()->getSymbol(), STD_NOT_FOUND,
                     "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
@@ -55,10 +55,10 @@ std::any PreAnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx
     // Check in module registry if the file can be imported
     std::string sourceFileDir = FileUtil::getFileDir(sourceFile.filePath);
     // Import file
-    std::string defaultPath = sourceFileDir + "/" + importIdentifier + ".spice";
-    std::string osPath = sourceFileDir + "/" + importIdentifier + "_" + cliOptions.targetOs + ".spice";
-    std::string osArchPath =
-        sourceFileDir + "/" + importIdentifier + "_" + cliOptions.targetOs + "_" + cliOptions.targetArch + ".spice";
+    std::string defaultPath = sourceFileDir + FileUtil::DIR_SEPARATOR + importIdentifier + ".spice";
+    std::string osPath = sourceFileDir + FileUtil::DIR_SEPARATOR + importIdentifier + "_" + cliOptions.targetOs + ".spice";
+    std::string osArchPath = sourceFileDir + FileUtil::DIR_SEPARATOR + importIdentifier + "_" + cliOptions.targetOs + "_" +
+                             cliOptions.targetArch + ".spice";
 
     if (FileUtil::fileExists(defaultPath)) {
       importPath = defaultPath;

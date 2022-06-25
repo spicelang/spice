@@ -12,7 +12,7 @@
 
 SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
     : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
-  this->objectFilePath = options.outputDir + "/" + FileUtil::getFileName(filePath) + ".o";
+  this->objectFilePath = options.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
 
   // Read from file
   std::ifstream fileInputStream(filePath);
@@ -51,19 +51,40 @@ void SourceFile::preAnalyze(const CliOptions &options) {
     sourceFile.first->preAnalyze(options);
 }
 
-std::string SourceFile::visualizeAST(const CliOptions &options) {
+void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
+  // Only execute if enabled
+  if (!options.dumpAST)
+    return;
+
   std::string dotCode = parent == nullptr ? "digraph {" : "subgraph { label=\"" + name + "\";";
 
   // Visualize the imported source files
-  /*for (auto &[_, sourceFile] : dependencies)
-    sourceFile.first->visualizeAST(options);
+  for (auto &[_, sourceFile] : dependencies)
+    sourceFile.first->visualizeAST(options, output);
 
   // Generate dot code for this source file
   VisualizerVisitor visualizerVisitor(options);
   dotCode += std::any_cast<std::string>(visualizerVisitor.visit(antlrCtx.parser->entry()));
-  antlrCtx.parser->reset();*/
+  antlrCtx.parser->reset();
 
-  return dotCode + "}";
+  dotCode += "}";
+
+  // If this is the root source file, output the serialized string and the SVG file
+  if (parent == nullptr) {
+    // Dump to console
+    std::cout << "\nSerialized AST:\n\n" << dotCode << "\n";
+
+    // Check if the dot command exists
+    if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
+      throw std::runtime_error("Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
+
+    // Generate SVG
+    std::cout << "\nGenerating SVG file ... ";
+    std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "ast";
+    FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
+    std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
+    std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
+  }
 }
 
 void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
@@ -141,6 +162,7 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
     if (options.dumpIR) { // GCOV_EXCL_START
       std::cout << "\nOptimized IR code:\n";
       generator->dumpIR();
+      std::cout << "\n";
     } // GCOV_EXCL_STOP
   }
 
