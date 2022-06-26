@@ -56,14 +56,15 @@ void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
   if (!options.dumpAST)
     return;
 
-  std::string dotCode = parent == nullptr ? "digraph {" : "subgraph { label=\"" + name + "\";";
+  std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
+  dotCode += " label=\"" + filePath + "\";\n ";
 
   // Visualize the imported source files
   for (auto &[_, sourceFile] : dependencies)
     sourceFile.first->visualizeAST(options, output);
 
   // Generate dot code for this source file
-  VisualizerVisitor visualizerVisitor(options);
+  VisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
   dotCode += std::any_cast<std::string>(visualizerVisitor.visit(antlrCtx.parser->entry()));
   antlrCtx.parser->reset();
 

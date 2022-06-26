@@ -2,9 +2,12 @@
 
 #pragma once
 
-#include <SpiceBaseVisitor.h>
+#include <SpiceLexer.h>
+#include <SpiceVisitor.h>
 
 #include <cli/CliInterface.h>
+
+#include <utility>
 
 /**
  * Visitor for debug purposes (is only executed in the compiler debug mode)
@@ -12,79 +15,87 @@
  * Jobs:
  * - Visualize AST
  */
-class VisualizerVisitor : public SpiceBaseVisitor {
+class VisualizerVisitor : public SpiceVisitor {
 public:
   // Constructors
-  explicit VisualizerVisitor(const CliOptions &cliOptions) : cliOptions(cliOptions) {}
+  explicit VisualizerVisitor(const std::shared_ptr<SpiceLexer> &lexer, const std::shared_ptr<SpiceParser> &parser)
+      : vocabulary(lexer->getVocabulary()), ruleNames(parser->getRuleNames()){};
 
   // Public methods
-  std::any visitEntry(SpiceParser::EntryContext *ctx) override;
-  std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
-  std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
-  std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
-  std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
-  std::any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override;
-  std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
-  std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
-  std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
-  std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override;
-  std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
-  std::any visitForHead(SpiceParser::ForHeadContext *ctx) override;
-  std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override;
-  std::any visitForeachHead(SpiceParser::ForeachHeadContext *ctx) override;
-  std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
-  std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
-  std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
-  std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
-  std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
-  std::any visitField(SpiceParser::FieldContext *ctx) override;
-  std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override;
-  std::any visitTypeLstEllipsis(SpiceParser::TypeLstEllipsisContext *ctx) override;
-  std::any visitTypeAlts(SpiceParser::TypeAltsContext *ctx) override;
-  std::any visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) override;
-  std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override;
-  std::any visitStmt(SpiceParser::StmtContext *ctx) override;
-  std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
-  std::any visitDeclSpecifiers(SpiceParser::DeclSpecifiersContext *ctx) override;
-  std::any visitDeclSpecifier(SpiceParser::DeclSpecifierContext *ctx) override;
-  std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
-  std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
-  std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
-  std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override;
-  std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override;
-  std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override;
-  std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override;
-  std::any visitLenCall(SpiceParser::LenCallContext *ctx) override;
-  std::any visitTidCall(SpiceParser::TidCallContext *ctx) override;
-  std::any visitJoinCall(SpiceParser::JoinCallContext *ctx) override;
-  std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override;
-  std::any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override;
-  std::any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override;
-  std::any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) override;
-  std::any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) override;
-  std::any visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) override;
-  std::any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) override;
-  std::any visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) override;
-  std::any visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) override;
-  std::any visitShiftExpr(SpiceParser::ShiftExprContext *ctx) override;
-  std::any visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) override;
-  std::any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) override;
-  std::any visitCastExpr(SpiceParser::CastExprContext *ctx) override;
-  std::any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) override;
-  std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
-  std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
-  std::any visitValue(SpiceParser::ValueContext *ctx) override;
-  std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
-  std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override;
-  std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override;
-  std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
-  std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
-  std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
-  std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;
-  std::any visitAssignOp(SpiceParser::AssignOpContext *ctx) override;
-  std::any visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) override;
+  std::any visitEntry(SpiceParser::EntryContext *ctx) override { return buildRule(ctx); };
+  std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override { return buildRule(ctx); };
+  std::any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitStructDef(SpiceParser::StructDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override { return buildRule(ctx); };
+  std::any visitForHead(SpiceParser::ForHeadContext *ctx) override { return buildRule(ctx); };
+  std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override { return buildRule(ctx); };
+  std::any visitForeachHead(SpiceParser::ForeachHeadContext *ctx) override { return buildRule(ctx); };
+  std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override { return buildRule(ctx); };
+  std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override { return buildRule(ctx); };
+  std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override { return buildRule(ctx); };
+  std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override { return buildRule(ctx); };
+  std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override { return buildRule(ctx); };
+  std::any visitField(SpiceParser::FieldContext *ctx) override { return buildRule(ctx); };
+  std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override { return buildRule(ctx); };
+  std::any visitTypeLstEllipsis(SpiceParser::TypeLstEllipsisContext *ctx) override { return buildRule(ctx); };
+  std::any visitTypeAlts(SpiceParser::TypeAltsContext *ctx) override { return buildRule(ctx); };
+  std::any visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override { return buildRule(ctx); };
+  std::any visitStmt(SpiceParser::StmtContext *ctx) override { return buildRule(ctx); };
+  std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override { return buildRule(ctx); };
+  std::any visitDeclSpecifiers(SpiceParser::DeclSpecifiersContext *ctx) override { return buildRule(ctx); };
+  std::any visitDeclSpecifier(SpiceParser::DeclSpecifierContext *ctx) override { return buildRule(ctx); };
+  std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override { return buildRule(ctx); };
+  std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override { return buildRule(ctx); };
+  std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override { return buildRule(ctx); };
+  std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override { return buildRule(ctx); };
+  std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override { return buildRule(ctx); };
+  std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override { return buildRule(ctx); };
+  std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override { return buildRule(ctx); };
+  std::any visitLenCall(SpiceParser::LenCallContext *ctx) override { return buildRule(ctx); };
+  std::any visitTidCall(SpiceParser::TidCallContext *ctx) override { return buildRule(ctx); };
+  std::any visitJoinCall(SpiceParser::JoinCallContext *ctx) override { return buildRule(ctx); };
+  std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitShiftExpr(SpiceParser::ShiftExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitCastExpr(SpiceParser::CastExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override { return buildRule(ctx); };
+  std::any visitValue(SpiceParser::ValueContext *ctx) override { return buildRule(ctx); };
+  std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override { return buildRule(ctx); };
+  std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override { return buildRule(ctx); };
+  std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override { return buildRule(ctx); };
+  std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override { return buildRule(ctx); };
+  std::any visitDataType(SpiceParser::DataTypeContext *ctx) override { return buildRule(ctx); };
+  std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override { return buildRule(ctx); };
+  std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override { return buildRule(ctx); };
+  std::any visitAssignOp(SpiceParser::AssignOpContext *ctx) override { return buildRule(ctx); };
+  std::any visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) override { return buildRule(ctx); };
 
 private:
   // Members
-  const CliOptions &cliOptions;
+  const antlr4::dfa::Vocabulary &vocabulary;
+  const std::vector<std::string> ruleNames;
+  int currentTabs = 1;
+  std::string parentNodeId;
+
+  // Private methods
+  std::string buildRule(antlr4::ParserRuleContext *ctx);
+  [[nodiscard]] std::string getCurrentTabCount() const;
 };
