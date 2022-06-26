@@ -3,6 +3,7 @@
 #include "SourceFile.h"
 
 #include <analyzer/PreAnalyzerVisitor.h>
+#include <util/CommonUtil.h>
 #include <visualizer/VisualizerVisitor.h>
 
 #include <algorithm>
@@ -57,7 +58,9 @@ void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
     return;
 
   std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
-  dotCode += " label=\"" + filePath + "\";\n ";
+  std::string replacedFilePath = filePath;
+  CommonUtil::replaceAll(replacedFilePath, "\\", "/");
+  dotCode += " label=\"" + replacedFilePath + "\";\n ";
 
   // Visualize the imported source files
   for (auto &[_, sourceFile] : dependencies)

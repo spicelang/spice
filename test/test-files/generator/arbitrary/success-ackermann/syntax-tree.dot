@@ -1,6 +1,6 @@
 digraph {
  rankdir="TB";
- label=".\test-files\generator\arbitrary\success-ackermann\source.spice";
+ label="./test-files/generator/arbitrary/success-ackermann/source.spice";
  L1C0_entry [color="lightgreen",label="entry"];
  L1C0_functionDef [color="lightgreen",label="functionDef"];
  L1C0_entry -> L1C0_functionDef;

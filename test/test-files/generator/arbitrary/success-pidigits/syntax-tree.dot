@@ -1,6 +1,6 @@
 digraph {
  rankdir="TB";
- label=".\test-files\generator\arbitrary\success-pidigits\source.spice";
+ label="./test-files/generator/arbitrary/success-pidigits/source.spice";
  L4C0_entry [color="lightgreen",label="entry"];
  L4C0_mainFunctionDef [color="lightgreen",label="mainFunctionDef"];
  L4C0_entry -> L4C0_mainFunctionDef;
