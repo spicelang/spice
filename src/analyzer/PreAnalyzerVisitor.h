@@ -7,7 +7,7 @@
 #include <exception/ErrorFactory.h>
 
 // Forward declarations
-class CliOptions;
+struct CliOptions;
 class SourceFile;
 class ErrorFactory;
 

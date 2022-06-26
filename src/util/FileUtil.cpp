@@ -8,6 +8,12 @@
 #include <memory>
 #include <sys/stat.h>
 
+#ifdef __unix__
+#define OS_UNIX
+#elif defined(_WIN32) || defined(WIN32)
+#define OS_WINDOWS
+#endif
+
 /**
  * Checks if a certain file exists on the file system
  *

@@ -18,7 +18,7 @@ class GeneratorVisitor;
 class AntlrThrowingErrorListener;
 class SymbolTable;
 class ErrorFactory;
-class CliOptions;
+struct CliOptions;
 class LinkerInterface;
 class ThreadFactory;
 

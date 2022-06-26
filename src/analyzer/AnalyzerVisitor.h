@@ -24,7 +24,7 @@ const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yi
 
 // Forward declarations
 class OpRuleManager;
-class CliOptions;
+struct CliOptions;
 class ErrorFactory;
 class ThreadFactory;
 class LinkerInterface;

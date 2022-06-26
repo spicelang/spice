@@ -6,7 +6,7 @@
 #include <vector>
 
 // Forward declarations
-class CliOptions;
+struct CliOptions;
 class ErrorFactory;
 class ThreadFactory;
 

@@ -12,10 +12,12 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
+#include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
+#include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 #include <util/ThreadFactory.h>
@@ -117,7 +119,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
       std::string actualAST = mainSourceFile.compilerOutput.astString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(astFileName, actualAST);
+        FileUtil::writeToFile(astFileName, actualAST);
       } else {
         std::string expectedAST = TestUtil::getFileContent(astFileName);
         EXPECT_EQ(expectedAST, mainSourceFile.compilerOutput.astString);
@@ -137,7 +139,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
     if (FileUtil::fileExists(symbolTableFileName)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(symbolTableFileName, mainSourceFile.compilerOutput.symbolTableString);
+        FileUtil::writeToFile(symbolTableFileName, mainSourceFile.compilerOutput.symbolTableString);
       } else {
         std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
         EXPECT_EQ(expectedSymbolTable, mainSourceFile.symbolTable->toJSON().dump(2));
@@ -153,7 +155,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
     if (FileUtil::fileExists(exceptionFile)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(exceptionFile, errorWhat);
+        FileUtil::writeToFile(exceptionFile, errorWhat);
       } else {
         std::string expectedException = TestUtil::getFileContent(exceptionFile);
         EXPECT_EQ(std::string(errorWhat), expectedException);
@@ -169,7 +171,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
     if (FileUtil::fileExists(exceptionFile)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(exceptionFile, errorWhat);
+        FileUtil::writeToFile(exceptionFile, errorWhat);
       } else {
         std::string expectedException = TestUtil::getFileContent(exceptionFile);
         EXPECT_EQ(std::string(errorWhat), expectedException);

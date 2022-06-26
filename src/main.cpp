@@ -1,7 +1,5 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include <stdexcept>
-
 #include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/IRError.h>

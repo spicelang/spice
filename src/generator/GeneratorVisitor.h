@@ -18,7 +18,7 @@
 class SourceFile;
 class ThreadFactory;
 class LinkerInterface;
-class CliOptions;
+struct CliOptions;
 class LinkerInterface;
 class OpRuleConversionsManager;
 class SymbolTable;
