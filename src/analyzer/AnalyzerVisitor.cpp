@@ -1271,7 +1271,8 @@ std::any AnalyzerVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
     auto rhsTy = any_cast<SymbolType>(visit(ctx->assignExpr()));
 
     // Visit the left side
-    currentVarName = ""; // Reset the current variable name
+    currentVarName = "";    // Reset the current variable name
+    currentEntry = nullptr; // Reset the current entry
     auto lhsTy = any_cast<SymbolType>(visit(ctx->prefixUnaryExpr()));
     std::string variableName = currentVarName;
 
@@ -1592,8 +1593,9 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
     if (tokenType == SpiceParser::LBRACKET) { // Subscript operator
       tokenCounter++;                         // Consume LBRACKET
 
-      std::string arrayName = currentVarName; // Save array name
-      ScopePath scopePathBackup = scopePath;  // Save scope path
+      std::string arrayName = currentVarName;              // Save array name
+      SymbolTableEntry *currentEntryBackup = currentEntry; // Save current entry
+      ScopePath scopePathBackup = scopePath;               // Save scope path
 
       auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter]);
       auto indexType = any_cast<SymbolType>(visit(rule));
@@ -1613,8 +1615,9 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
       // Get array item type
       lhs = lhs.getContainedTy();
 
-      currentVarName = arrayName;  // Restore array name
-      scopePath = scopePathBackup; // Restore scope path
+      currentVarName = arrayName;        // Restore array name
+      scopePath = scopePathBackup;       // Restore scope path
+      currentEntry = currentEntryBackup; // Restore current entry
 
       // Retrieve scope for the new scope path fragment
       if (lhs.isBaseType(TY_STRUCT)) { // Struct
