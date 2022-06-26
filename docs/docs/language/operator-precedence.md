@@ -16,8 +16,8 @@ The following table shows how Spice prioritizes the supported operators. The lis
 | 2          | `--a`    | Prefix decrement operator            | right to left | yes       |
 | 2          | `!`      | Logical not operator                 | right to left | no        |
 | 2          | `~`      | Bitwise not operator                 | right to left | no        |
-| 2          | `*`      | De-referencing operator              | right to left | no        |
-| 2          | `&`      | Referencing operator                 | right to left | no        |
+| 2          | `*`      | Indirection operator                 | right to left | no        |
+| 2          | `&`      | Address-of operator                  | right to left | no        |
 | 3          | `(type)` | Type cast operator                   | right to left | no        |
 | 4          | `*`      | Multiplication                       | left to right | no        |
 | 4          | `/`      | Division                             | left to right | no        |
