@@ -89,6 +89,12 @@ void CliInterface::validate() const {
     throw ErrorFactory::get(INCOMPLETE_TARGET_TRIPLE,
                             "You need to provide all three of --target-arch, --target-vendor and --target-os");
   }
+
+  // Error out when opt level > 0 and debug info enabled
+  if (cliOptions.optLevel > 0 && cliOptions.generateDebugInfo)
+    throw ErrorFactory::get(
+        OPT_DEBUG_INFO_INCOMPATIBILITY,
+        "Optimization does not work reliably when emitting debug info. The cli argument -g only works in combination with -O0.");
 }
 
 /**
@@ -219,6 +225,9 @@ void CliInterface::addRunSubcommand() {
       "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
   subCmd->add_flag_callback(
       "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
+
+  // --debug-info
+  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
 
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")

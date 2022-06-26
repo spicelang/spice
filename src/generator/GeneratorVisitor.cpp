@@ -69,6 +69,12 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   targetMachine = target->createTargetMachine(cliOptions.targetTriple, "generic", "", opt, rm);
 
   module->setDataLayout(targetMachine->createDataLayout());
+
+  // Initialize debug info generator
+  if (cliOptions.generateDebugInfo) {
+    module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
+    initializeDIBuilder(sourceFile.filePath);
+  }
 }
 
 void GeneratorVisitor::optimize() {
@@ -135,6 +141,10 @@ std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   if (llvm::verifyModule(*module, &oss))
     throw err->get(*ctx->start, INVALID_MODULE, oss.str());
 
+  // Finalize debug info generation
+  if (cliOptions.generateDebugInfo)
+    diBuilder->finalize();
+
   return result;
 }
 
@@ -163,10 +173,28 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
     llvm::Type *returnType = builder->getInt32Ty();
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
     llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module.get());
+
+    // Add debug info
+    if (cliOptions.generateDebugInfo) {
+      // Get arg types
+      std::vector<std::pair<SymbolType, bool>> argTypes;
+      for (auto &argName : argNames) {
+        SymbolTableEntry *argEntry = currentScope->lookup(argName);
+        assert(argEntry != nullptr);
+        argTypes.emplace_back(argEntry->getType(), true);
+      }
+      // Build spice function
+      SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+      Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argTypes, {}, *ctx->start);
+      // Add debug info
+      generateFunctionDebugInfo(fct, &spiceFunc);
+    }
+
+    // Create entry block
     llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
-    allocaInsertInst = nullptr;
     fct->getBasicBlockList().push_back(bEntry);
     moveInsertPointToBlock(bEntry);
+    allocaInsertInst = nullptr;
 
     // Store function arguments
     for (auto &arg : fct->args()) {
@@ -290,6 +318,10 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
       fct->setLinkage(linkage);
       if (explicitInlined)
         fct->addFnAttr(llvm::Attribute::AlwaysInline);
+
+      // Add debug info
+      if (cliOptions.generateDebugInfo)
+        generateFunctionDebugInfo(fct, &spiceFunc);
 
       // Create entry block
       llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
@@ -427,6 +459,10 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
       proc->setLinkage(linkage);
       if (explicitInlined)
         proc->addFnAttr(llvm::Attribute::AlwaysInline);
+
+      // Add debug info
+      if (cliOptions.generateDebugInfo)
+        generateFunctionDebugInfo(proc, &spiceProc);
 
       // Create entry block
       llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
@@ -2654,6 +2690,65 @@ llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *srcValue, llvm::Type 
     srcValue = newActualArg;
   }
   return srcValue;
+}
+
+void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName) {
+  // Create DIBuilder
+  diBuilder = std::make_unique<llvm::DIBuilder>(*module);
+  // Create compilation unit
+  debugInfo.diFile = diBuilder->createFile(sourceFileName, ".");
+  debugInfo.compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, "Spice Compiler", false, "", 0);
+  // Initialize primitive types
+  debugInfo.doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
+  debugInfo.intTy = diBuilder->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
+  debugInfo.uIntTy = diBuilder->createBasicType("unsigned int", 32, llvm::dwarf::DW_ATE_unsigned);
+  debugInfo.shortTy = diBuilder->createBasicType("short", 16, llvm::dwarf::DW_ATE_signed);
+  debugInfo.uShortTy = diBuilder->createBasicType("unsigned short", 16, llvm::dwarf::DW_ATE_unsigned);
+  debugInfo.longTy = diBuilder->createBasicType("long", 64, llvm::dwarf::DW_ATE_signed);
+  debugInfo.uLongTy = diBuilder->createBasicType("unsigned long", 64, llvm::dwarf::DW_ATE_unsigned);
+  debugInfo.byteTy = diBuilder->createBasicType("byte", 8, llvm::dwarf::DW_ATE_signed);
+  debugInfo.uByteTy = diBuilder->createBasicType("unsigned byte", 8, llvm::dwarf::DW_ATE_unsigned);
+  debugInfo.charTy = diBuilder->createBasicType("char", 8, llvm::dwarf::DW_ATE_signed_char);
+  debugInfo.uCharTy = diBuilder->createBasicType("unsigned char", 8, llvm::dwarf::DW_ATE_unsigned_char);
+  debugInfo.stringTy = diBuilder->createBasicType("string", 8, llvm::dwarf::DW_ATE_ASCII);
+  debugInfo.boolTy = diBuilder->createBasicType("bool", 1, llvm::dwarf::DW_ATE_boolean);
+}
+
+llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolType) const {
+  if (symbolType.isPointer()) {
+    llvm::DIType *pointeeTy = getDITypeForSymbolType(symbolType.getContainedTy());
+    unsigned int pointerWidth = module->getDataLayout().getPointerSizeInBits();
+    return diBuilder->createPointerType(pointeeTy, pointerWidth);
+  }
+
+  if (symbolType.isArray()) {
+  }
+
+  if (symbolType.is(TY_STRUCT)) {
+  }
+
+  // Primitive type
+
+  return nullptr;
+}
+
+void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) const {
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  size_t lineNumber = spiceFunc->getDefinitionToken().getLine();
+
+  // Create function type
+  std::vector<llvm::Metadata *> argTypes;
+  argTypes.push_back(getDITypeForSymbolType(spiceFunc->getReturnType())); // Add result type
+  for (auto &argType : spiceFunc->getArgTypes())                          // Add arg types
+    argTypes.push_back(getDITypeForSymbolType(argType));
+  llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
+
+  llvm::DISubprogram *subprogram =
+      diBuilder->createFunction(unit, spiceFunc->getName(), spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
+                                llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+
+  // Add debug info to LLVM function
+  llvmFunction->setSubprogram(subprogram);
 }
 
 llvm::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {

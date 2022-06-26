@@ -1,9 +1,7 @@
-/*import "std/os/cmd" as cmd;
 import "std/text/print" as print;
 
 f<int> main() {
     print.println("Testing all examples ...");
 
     print.println("Finished testing all examples.");
-    print.beep();
-}*/
+}

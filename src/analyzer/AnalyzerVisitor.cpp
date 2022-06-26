@@ -211,8 +211,8 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     }
 
     // Insert function into the symbol table
-    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
-    Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, codeLoc);
+    Function spiceFunc =
+        Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, *ctx->start);
     currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -435,9 +435,8 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     }
 
     // Insert function into the symbol table
-    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
     Function spiceProc =
-        Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, codeLoc);
+        Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, *ctx->start);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -546,7 +545,6 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     return nullptr;
 
   std::string functionName = ctx->IDENTIFIER()->toString();
-  std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
 
   ArgList argTypes;
   if (ctx->typeLstEllipsis()) {
@@ -568,7 +566,7 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
     // Insert function into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, codeLoc);
+    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, *ctx->start);
     currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
     // Add return symbol for function
@@ -578,7 +576,8 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   } else { // Procedure
     // Insert procedure into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
-    Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, codeLoc);
+    Function spiceProc =
+        Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, *ctx->start);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
 
     // Add empty scope for function body
@@ -1858,14 +1857,13 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, origThisType, argTypes, err.get(), *token);
   if (!spiceFunc) {
     // Build dummy function to get a better error message
-    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
 
     ArgList errArgTypes;
     for (auto &argType : argTypes)
       errArgTypes.emplace_back(argType, false);
 
-    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, codeLoc);
+    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, *ctx->start);
 
     throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
                    "Function/Procedure '" + f.getSignature() + "' could not be found");

@@ -16,9 +16,9 @@ public:
   // Constructors
   explicit Function(std::string name, SymbolSpecifiers specifiers, const SymbolType &thisType, const SymbolType &returnType,
                     std::vector<std::pair<SymbolType, bool>> argTypes, std::vector<GenericType> templateTypes,
-                    std::string definitionCodeLoc)
+                    const antlr4::Token &definitionToken)
       : name(std::move(name)), specifiers(specifiers), thisType(thisType), returnType(returnType), argList(std::move(argTypes)),
-        templateTypes(std::move(templateTypes)), definitionCodeLoc(std::move(definitionCodeLoc)) {}
+        templateTypes(std::move(templateTypes)), definitionToken(definitionToken) {}
 
   // Public methods
   [[nodiscard]] std::string getName() const;
@@ -42,7 +42,8 @@ public:
   [[nodiscard]] bool isFullySubstantiated() const;
   void setUsed();
   [[nodiscard]] bool isUsed() const;
-  [[nodiscard]] const std::string &getDefinitionCodeLoc() const;
+  [[nodiscard]] const antlr4::Token &getDefinitionToken() const;
+  [[nodiscard]] const std::string &getDefinitionCodeLoc();
 
 private:
   // Members
@@ -52,6 +53,7 @@ private:
   SymbolType returnType = SymbolType(TY_DYN);
   std::vector<std::pair<SymbolType, bool>> argList;
   std::vector<GenericType> templateTypes;
+  const antlr4::Token &definitionToken;
   std::string definitionCodeLoc;
   bool used = false;
 };
