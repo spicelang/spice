@@ -27,6 +27,7 @@ struct SourceFileAntlrCtx {
 };
 
 struct CompilerOutput {
+  std::string astString;
   std::string symbolTableString;
   std::string irString;
   std::string irOptString;

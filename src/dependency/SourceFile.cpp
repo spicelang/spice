@@ -3,7 +3,7 @@
 #include "SourceFile.h"
 
 #include <analyzer/PreAnalyzerVisitor.h>
-#include <debug/VisualizerVisitor.h>
+#include <visualizer/VisualizerVisitor.h>
 
 #include <algorithm>
 #include <utility>
@@ -53,7 +53,7 @@ void SourceFile::preAnalyze(const CliOptions &options) {
 
 void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
   // Only execute if enabled
-  if (!options.dumpAST)
+  if (!options.dumpAST && !options.testMode)
     return;
 
   std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
@@ -72,19 +72,23 @@ void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
 
   // If this is the root source file, output the serialized string and the SVG file
   if (parent == nullptr) {
-    // Dump to console
-    std::cout << "\nSerialized AST:\n\n" << dotCode << "\n";
+    compilerOutput.astString = dotCode;
 
-    // Check if the dot command exists
-    if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
-      throw std::runtime_error("Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
+    if (options.dumpAST) {
+      // Dump to console
+      std::cout << "\nSerialized AST:\n\n" << dotCode << "\n";
 
-    // Generate SVG
-    std::cout << "\nGenerating SVG file ... ";
-    std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "ast";
-    FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
-    std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
-    std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n\n";
+      // Check if the dot command exists
+      if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
+        throw std::runtime_error("Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
+
+      // Generate SVG
+      std::cout << "\nGenerating SVG file ... ";
+      std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "ast";
+      FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
+      std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
+      std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n\n";
+    }
   }
 }
 

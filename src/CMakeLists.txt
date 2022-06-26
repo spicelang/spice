@@ -52,8 +52,8 @@ set(SOURCES
         exception/LexerParserError.h
         exception/AntlrThrowingErrorListener.cpp
         exception/AntlrThrowingErrorListener.h
-        debug/VisualizerVisitor.cpp
-        debug/VisualizerVisitor.h
+        visualizer/VisualizerVisitor.cpp
+        visualizer/VisualizerVisitor.h
         util/CommonUtil.cpp
         util/CommonUtil.h
         util/ScopeIdUtil.cpp

@@ -102,7 +102,7 @@ void executeTest(const GeneratorTestCase &testCase) {
     ThreadFactory threadFactory = ThreadFactory();
 
     // Create instance of cli options
-    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, 0};
+    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, 0, true};
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
@@ -116,6 +116,22 @@ void executeTest(const GeneratorTestCase &testCase) {
 
     // Execute pre-analyzer
     mainSourceFile.preAnalyze(options);
+
+    // Check if the AST matches the expected output
+    std::string astFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "syntax-tree.dot";
+    if (FileUtil::fileExists(astFileName)) {
+      // Execute visualizer
+      mainSourceFile.visualizeAST(options, nullptr);
+
+      std::string actualAST = mainSourceFile.compilerOutput.astString;
+      if (TestUtil::isUpdateRefsEnabled()) {
+        // Update ref
+        TestUtil::setFileContent(astFileName, actualAST);
+      } else {
+        std::string expectedAST = TestUtil::getFileContent(astFileName);
+        EXPECT_EQ(expectedAST, mainSourceFile.compilerOutput.astString);
+      }
+    }
 
     // Execute semantic analysis
     mainSourceFile.analyze(context, builder, threadFactory);

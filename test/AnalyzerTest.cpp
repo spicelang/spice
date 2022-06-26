@@ -95,7 +95,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
     ThreadFactory threadFactory = ThreadFactory();
 
     // Create instance of cli options
-    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, 0};
+    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, 0, true};
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
@@ -107,6 +107,22 @@ void executeTest(const AnalyzerTestCase &testCase) {
     // Execute pre-analyzer
     mainSourceFile.preAnalyze(options);
 
+    // Check if the AST matches the expected output
+    std::string astFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "syntax-tree.dot";
+    if (FileUtil::fileExists(astFileName)) {
+      // Execute visualizer
+      mainSourceFile.visualizeAST(options, nullptr);
+
+      std::string actualAST = mainSourceFile.compilerOutput.astString;
+      if (TestUtil::isUpdateRefsEnabled()) {
+        // Update ref
+        TestUtil::setFileContent(astFileName, actualAST);
+      } else {
+        std::string expectedAST = TestUtil::getFileContent(astFileName);
+        EXPECT_EQ(expectedAST, mainSourceFile.compilerOutput.astString);
+      }
+    }
+
     // Execute semantic analysis
     mainSourceFile.analyze(context, builder, threadFactory);
     mainSourceFile.reAnalyze(context, builder, threadFactory);
@@ -114,13 +130,6 @@ void executeTest(const AnalyzerTestCase &testCase) {
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + "exception.out"))
       FAIL() << "Expected error, but got no error";
-
-    // Check if the AST matches the expected output
-    /*std::string astFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "syntax-tree.ast";
-    if (fileExists(astFileName)) {
-        std::string expectedSymbolTable = getFileContent(astFileName);
-        EXPECT_EQ(expectedSymbolTable, tree->toStringTree(true));
-    }*/
 
     // Check if the symbol table matches the expected output
     std::string symbolTableFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "symbol-table.json";

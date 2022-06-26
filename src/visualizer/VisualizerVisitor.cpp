@@ -26,7 +26,10 @@ std::string VisualizerVisitor::buildRule(antlr4::ParserRuleContext *ctx) {
     auto token = dynamic_cast<antlr4::tree::TerminalNode *>(child);
     if (token) { // Terminal node
       std::string terminalCodeLoc = CommonUtil::tokenToCodeLoc(*token->getSymbol());
-      std::string terminalName = std::string(vocabulary.getSymbolicName(token->getSymbol()->getType())) + ": " + token->getText();
+      std::string terminalText = token->getText();
+      CommonUtil::replaceAll(terminalText, "\\", "\\\\");
+      CommonUtil::replaceAll(terminalText, "\"", "\\\"");
+      std::string terminalName = std::string(vocabulary.getSymbolicName(token->getSymbol()->getType())) + ": " + terminalText;
 
       result += terminalCodeLoc + R"( [color="lightblue",label=")" + terminalName + "\"];\n";
       result += getSpaces() + nodeId + " -> " + terminalCodeLoc + "\n";

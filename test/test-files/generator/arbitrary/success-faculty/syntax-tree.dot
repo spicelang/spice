@@ -1,0 +1,571 @@
+digraph {
+ rankdir="TB";
+ label=".\test-files\generator\arbitrary\success-faculty\source.spice";
+ L1C0_entry [color="lightgreen",label="entry"];
+ L1C0_functionDef [color="lightgreen",label="functionDef"];
+ L1C0_entry -> L1C0_functionDef;
+ L1C0 [color="lightblue",label="F: f"];
+ L1C0_functionDef -> L1C0
+ L1C1 [color="lightblue",label="LESS: <"];
+ L1C0_functionDef -> L1C1
+ L1C2_dataType [color="lightgreen",label="dataType"];
+ L1C0_functionDef -> L1C2_dataType;
+ L1C2_baseDataType [color="lightgreen",label="baseDataType"];
+ L1C2_dataType -> L1C2_baseDataType;
+ L1C2 [color="lightblue",label="TYPE_INT: int"];
+ L1C2_baseDataType -> L1C2
+ L1C5 [color="lightblue",label="GREATER: >"];
+ L1C0_functionDef -> L1C5
+ L1C7 [color="lightblue",label="IDENTIFIER: faculty"];
+ L1C0_functionDef -> L1C7
+ L1C14 [color="lightblue",label="LPAREN: ("];
+ L1C0_functionDef -> L1C14
+ L1C15_argLstDef [color="lightgreen",label="argLstDef"];
+ L1C0_functionDef -> L1C15_argLstDef;
+ L1C15_declStmt [color="lightgreen",label="declStmt"];
+ L1C15_argLstDef -> L1C15_declStmt;
+ L1C15_dataType [color="lightgreen",label="dataType"];
+ L1C15_declStmt -> L1C15_dataType;
+ L1C15_baseDataType [color="lightgreen",label="baseDataType"];
+ L1C15_dataType -> L1C15_baseDataType;
+ L1C15 [color="lightblue",label="TYPE_INT: int"];
+ L1C15_baseDataType -> L1C15
+ L1C19 [color="lightblue",label="IDENTIFIER: input"];
+ L1C15_declStmt -> L1C19
+ L1C24 [color="lightblue",label="RPAREN: )"];
+ L1C0_functionDef -> L1C24
+ L1C26 [color="lightblue",label="LBRACE: {"];
+ L1C0_functionDef -> L1C26
+ L2C4_stmtLst [color="lightgreen",label="stmtLst"];
+ L1C0_functionDef -> L2C4_stmtLst;
+ L2C4_ifStmt [color="lightgreen",label="ifStmt"];
+ L2C4_stmtLst -> L2C4_ifStmt;
+ L2C4 [color="lightblue",label="IF: if"];
+ L2C4_ifStmt -> L2C4
+ L2C7_assignExpr [color="lightgreen",label="assignExpr"];
+ L2C4_ifStmt -> L2C7_assignExpr;
+ L2C7_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L2C7_assignExpr -> L2C7_ternaryExpr;
+ L2C7_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L2C7_ternaryExpr -> L2C7_logicalOrExpr;
+ L2C7_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L2C7_logicalOrExpr -> L2C7_logicalAndExpr;
+ L2C7_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L2C7_logicalAndExpr -> L2C7_bitwiseOrExpr;
+ L2C7_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L2C7_bitwiseOrExpr -> L2C7_bitwiseXorExpr;
+ L2C7_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L2C7_bitwiseXorExpr -> L2C7_bitwiseAndExpr;
+ L2C7_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L2C7_bitwiseAndExpr -> L2C7_equalityExpr;
+ L2C7_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L2C7_equalityExpr -> L2C7_relationalExpr;
+ L2C7_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L2C7_relationalExpr -> L2C7_shiftExpr;
+ L2C7_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L2C7_shiftExpr -> L2C7_additiveExpr;
+ L2C7_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L2C7_additiveExpr -> L2C7_multiplicativeExpr;
+ L2C7_castExpr [color="lightgreen",label="castExpr"];
+ L2C7_multiplicativeExpr -> L2C7_castExpr;
+ L2C7_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L2C7_castExpr -> L2C7_prefixUnaryExpr;
+ L2C7_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L2C7_prefixUnaryExpr -> L2C7_postfixUnaryExpr;
+ L2C7_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L2C7_postfixUnaryExpr -> L2C7_atomicExpr;
+ L2C7 [color="lightblue",label="IDENTIFIER: input"];
+ L2C7_atomicExpr -> L2C7
+ L2C13 [color="lightblue",label="LESS: <"];
+ L2C7_relationalExpr -> L2C13
+ L2C15_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L2C7_relationalExpr -> L2C15_shiftExpr;
+ L2C15_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L2C15_shiftExpr -> L2C15_additiveExpr;
+ L2C15_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L2C15_additiveExpr -> L2C15_multiplicativeExpr;
+ L2C15_castExpr [color="lightgreen",label="castExpr"];
+ L2C15_multiplicativeExpr -> L2C15_castExpr;
+ L2C15_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L2C15_castExpr -> L2C15_prefixUnaryExpr;
+ L2C15_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L2C15_prefixUnaryExpr -> L2C15_postfixUnaryExpr;
+ L2C15_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L2C15_postfixUnaryExpr -> L2C15_atomicExpr;
+ L2C15_value [color="lightgreen",label="value"];
+ L2C15_atomicExpr -> L2C15_value;
+ L2C15_primitiveValue [color="lightgreen",label="primitiveValue"];
+ L2C15_value -> L2C15_primitiveValue;
+ L2C15 [color="lightblue",label="INTEGER: 2"];
+ L2C15_primitiveValue -> L2C15
+ L2C17 [color="lightblue",label="LBRACE: {"];
+ L2C4_ifStmt -> L2C17
+ L3C8_stmtLst [color="lightgreen",label="stmtLst"];
+ L2C4_ifStmt -> L3C8_stmtLst;
+ L3C8_stmt [color="lightgreen",label="stmt"];
+ L3C8_stmtLst -> L3C8_stmt;
+ L3C8_returnStmt [color="lightgreen",label="returnStmt"];
+ L3C8_stmt -> L3C8_returnStmt;
+ L3C8 [color="lightblue",label="RETURN: return"];
+ L3C8_returnStmt -> L3C8
+ L3C15_assignExpr [color="lightgreen",label="assignExpr"];
+ L3C8_returnStmt -> L3C15_assignExpr;
+ L3C15_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L3C15_assignExpr -> L3C15_ternaryExpr;
+ L3C15_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L3C15_ternaryExpr -> L3C15_logicalOrExpr;
+ L3C15_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L3C15_logicalOrExpr -> L3C15_logicalAndExpr;
+ L3C15_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L3C15_logicalAndExpr -> L3C15_bitwiseOrExpr;
+ L3C15_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L3C15_bitwiseOrExpr -> L3C15_bitwiseXorExpr;
+ L3C15_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L3C15_bitwiseXorExpr -> L3C15_bitwiseAndExpr;
+ L3C15_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L3C15_bitwiseAndExpr -> L3C15_equalityExpr;
+ L3C15_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L3C15_equalityExpr -> L3C15_relationalExpr;
+ L3C15_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L3C15_relationalExpr -> L3C15_shiftExpr;
+ L3C15_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L3C15_shiftExpr -> L3C15_additiveExpr;
+ L3C15_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L3C15_additiveExpr -> L3C15_multiplicativeExpr;
+ L3C15_castExpr [color="lightgreen",label="castExpr"];
+ L3C15_multiplicativeExpr -> L3C15_castExpr;
+ L3C15_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L3C15_castExpr -> L3C15_prefixUnaryExpr;
+ L3C15_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L3C15_prefixUnaryExpr -> L3C15_postfixUnaryExpr;
+ L3C15_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L3C15_postfixUnaryExpr -> L3C15_atomicExpr;
+ L3C15_value [color="lightgreen",label="value"];
+ L3C15_atomicExpr -> L3C15_value;
+ L3C15_primitiveValue [color="lightgreen",label="primitiveValue"];
+ L3C15_value -> L3C15_primitiveValue;
+ L3C15 [color="lightblue",label="INTEGER: 1"];
+ L3C15_primitiveValue -> L3C15
+ L3C16 [color="lightblue",label="SEMICOLON: ;"];
+ L3C8_stmt -> L3C16
+ L4C4 [color="lightblue",label="RBRACE: }"];
+ L2C4_ifStmt -> L4C4
+ L5C4_stmt [color="lightgreen",label="stmt"];
+ L2C4_stmtLst -> L5C4_stmt;
+ L5C4_assignExpr [color="lightgreen",label="assignExpr"];
+ L5C4_stmt -> L5C4_assignExpr;
+ L5C4_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L5C4_assignExpr -> L5C4_prefixUnaryExpr;
+ L5C4_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L5C4_prefixUnaryExpr -> L5C4_postfixUnaryExpr;
+ L5C4_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L5C4_postfixUnaryExpr -> L5C4_atomicExpr;
+ L5C4 [color="lightblue",label="IDENTIFIER: result"];
+ L5C4_atomicExpr -> L5C4
+ L5C11_assignOp [color="lightgreen",label="assignOp"];
+ L5C4_assignExpr -> L5C11_assignOp;
+ L5C11 [color="lightblue",label="ASSIGN: ="];
+ L5C11_assignOp -> L5C11
+ L5C13_assignExpr [color="lightgreen",label="assignExpr"];
+ L5C4_assignExpr -> L5C13_assignExpr;
+ L5C13_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L5C13_assignExpr -> L5C13_ternaryExpr;
+ L5C13_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L5C13_ternaryExpr -> L5C13_logicalOrExpr;
+ L5C13_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L5C13_logicalOrExpr -> L5C13_logicalAndExpr;
+ L5C13_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L5C13_logicalAndExpr -> L5C13_bitwiseOrExpr;
+ L5C13_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L5C13_bitwiseOrExpr -> L5C13_bitwiseXorExpr;
+ L5C13_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L5C13_bitwiseXorExpr -> L5C13_bitwiseAndExpr;
+ L5C13_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L5C13_bitwiseAndExpr -> L5C13_equalityExpr;
+ L5C13_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L5C13_equalityExpr -> L5C13_relationalExpr;
+ L5C13_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L5C13_relationalExpr -> L5C13_shiftExpr;
+ L5C13_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L5C13_shiftExpr -> L5C13_additiveExpr;
+ L5C13_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L5C13_additiveExpr -> L5C13_multiplicativeExpr;
+ L5C13_castExpr [color="lightgreen",label="castExpr"];
+ L5C13_multiplicativeExpr -> L5C13_castExpr;
+ L5C13_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L5C13_castExpr -> L5C13_prefixUnaryExpr;
+ L5C13_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L5C13_prefixUnaryExpr -> L5C13_postfixUnaryExpr;
+ L5C13_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L5C13_postfixUnaryExpr -> L5C13_atomicExpr;
+ L5C13 [color="lightblue",label="IDENTIFIER: input"];
+ L5C13_atomicExpr -> L5C13
+ L5C19 [color="lightblue",label="MUL: *"];
+ L5C13_multiplicativeExpr -> L5C19
+ L5C21_castExpr [color="lightgreen",label="castExpr"];
+ L5C13_multiplicativeExpr -> L5C21_castExpr;
+ L5C21_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L5C21_castExpr -> L5C21_prefixUnaryExpr;
+ L5C21_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L5C21_prefixUnaryExpr -> L5C21_postfixUnaryExpr;
+ L5C21_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L5C21_postfixUnaryExpr -> L5C21_atomicExpr;
+ L5C21_value [color="lightgreen",label="value"];
+ L5C21_atomicExpr -> L5C21_value;
+ L5C21_functionCall [color="lightgreen",label="functionCall"];
+ L5C21_value -> L5C21_functionCall;
+ L5C21 [color="lightblue",label="IDENTIFIER: faculty"];
+ L5C21_functionCall -> L5C21
+ L5C28 [color="lightblue",label="LPAREN: ("];
+ L5C21_functionCall -> L5C28
+ L5C29_argLst [color="lightgreen",label="argLst"];
+ L5C21_functionCall -> L5C29_argLst;
+ L5C29_assignExpr [color="lightgreen",label="assignExpr"];
+ L5C29_argLst -> L5C29_assignExpr;
+ L5C29_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L5C29_assignExpr -> L5C29_ternaryExpr;
+ L5C29_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L5C29_ternaryExpr -> L5C29_logicalOrExpr;
+ L5C29_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L5C29_logicalOrExpr -> L5C29_logicalAndExpr;
+ L5C29_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L5C29_logicalAndExpr -> L5C29_bitwiseOrExpr;
+ L5C29_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L5C29_bitwiseOrExpr -> L5C29_bitwiseXorExpr;
+ L5C29_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L5C29_bitwiseXorExpr -> L5C29_bitwiseAndExpr;
+ L5C29_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L5C29_bitwiseAndExpr -> L5C29_equalityExpr;
+ L5C29_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L5C29_equalityExpr -> L5C29_relationalExpr;
+ L5C29_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L5C29_relationalExpr -> L5C29_shiftExpr;
+ L5C29_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L5C29_shiftExpr -> L5C29_additiveExpr;
+ L5C29_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L5C29_additiveExpr -> L5C29_multiplicativeExpr;
+ L5C29_castExpr [color="lightgreen",label="castExpr"];
+ L5C29_multiplicativeExpr -> L5C29_castExpr;
+ L5C29_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L5C29_castExpr -> L5C29_prefixUnaryExpr;
+ L5C29_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L5C29_prefixUnaryExpr -> L5C29_postfixUnaryExpr;
+ L5C29_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L5C29_postfixUnaryExpr -> L5C29_atomicExpr;
+ L5C29 [color="lightblue",label="IDENTIFIER: input"];
+ L5C29_atomicExpr -> L5C29
+ L5C35 [color="lightblue",label="MINUS: -"];
+ L5C29_additiveExpr -> L5C35
+ L5C37_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L5C29_additiveExpr -> L5C37_multiplicativeExpr;
+ L5C37_castExpr [color="lightgreen",label="castExpr"];
+ L5C37_multiplicativeExpr -> L5C37_castExpr;
+ L5C37_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L5C37_castExpr -> L5C37_prefixUnaryExpr;
+ L5C37_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L5C37_prefixUnaryExpr -> L5C37_postfixUnaryExpr;
+ L5C37_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L5C37_postfixUnaryExpr -> L5C37_atomicExpr;
+ L5C37_value [color="lightgreen",label="value"];
+ L5C37_atomicExpr -> L5C37_value;
+ L5C37_primitiveValue [color="lightgreen",label="primitiveValue"];
+ L5C37_value -> L5C37_primitiveValue;
+ L5C37 [color="lightblue",label="INTEGER: 1"];
+ L5C37_primitiveValue -> L5C37
+ L5C38 [color="lightblue",label="RPAREN: )"];
+ L5C21_functionCall -> L5C38
+ L5C39 [color="lightblue",label="SEMICOLON: ;"];
+ L5C4_stmt -> L5C39
+ L6C0 [color="lightblue",label="RBRACE: }"];
+ L1C0_functionDef -> L6C0
+ L8C0_mainFunctionDef [color="lightgreen",label="mainFunctionDef"];
+ L1C0_entry -> L8C0_mainFunctionDef;
+ L8C0 [color="lightblue",label="F: f"];
+ L8C0_mainFunctionDef -> L8C0
+ L8C1 [color="lightblue",label="LESS: <"];
+ L8C0_mainFunctionDef -> L8C1
+ L8C2 [color="lightblue",label="TYPE_INT: int"];
+ L8C0_mainFunctionDef -> L8C2
+ L8C5 [color="lightblue",label="GREATER: >"];
+ L8C0_mainFunctionDef -> L8C5
+ L8C7 [color="lightblue",label="MAIN: main"];
+ L8C0_mainFunctionDef -> L8C7
+ L8C11 [color="lightblue",label="LPAREN: ("];
+ L8C0_mainFunctionDef -> L8C11
+ L8C12 [color="lightblue",label="RPAREN: )"];
+ L8C0_mainFunctionDef -> L8C12
+ L8C14 [color="lightblue",label="LBRACE: {"];
+ L8C0_mainFunctionDef -> L8C14
+ L9C4_stmtLst [color="lightgreen",label="stmtLst"];
+ L8C0_mainFunctionDef -> L9C4_stmtLst;
+ L9C4_stmt [color="lightgreen",label="stmt"];
+ L9C4_stmtLst -> L9C4_stmt;
+ L9C4_declStmt [color="lightgreen",label="declStmt"];
+ L9C4_stmt -> L9C4_declStmt;
+ L9C4_dataType [color="lightgreen",label="dataType"];
+ L9C4_declStmt -> L9C4_dataType;
+ L9C4_baseDataType [color="lightgreen",label="baseDataType"];
+ L9C4_dataType -> L9C4_baseDataType;
+ L9C4 [color="lightblue",label="TYPE_DYN: dyn"];
+ L9C4_baseDataType -> L9C4
+ L9C8 [color="lightblue",label="IDENTIFIER: input"];
+ L9C4_declStmt -> L9C8
+ L9C14 [color="lightblue",label="ASSIGN: ="];
+ L9C4_declStmt -> L9C14
+ L9C16_assignExpr [color="lightgreen",label="assignExpr"];
+ L9C4_declStmt -> L9C16_assignExpr;
+ L9C16_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L9C16_assignExpr -> L9C16_ternaryExpr;
+ L9C16_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L9C16_ternaryExpr -> L9C16_logicalOrExpr;
+ L9C16_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L9C16_logicalOrExpr -> L9C16_logicalAndExpr;
+ L9C16_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L9C16_logicalAndExpr -> L9C16_bitwiseOrExpr;
+ L9C16_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L9C16_bitwiseOrExpr -> L9C16_bitwiseXorExpr;
+ L9C16_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L9C16_bitwiseXorExpr -> L9C16_bitwiseAndExpr;
+ L9C16_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L9C16_bitwiseAndExpr -> L9C16_equalityExpr;
+ L9C16_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L9C16_equalityExpr -> L9C16_relationalExpr;
+ L9C16_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L9C16_relationalExpr -> L9C16_shiftExpr;
+ L9C16_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L9C16_shiftExpr -> L9C16_additiveExpr;
+ L9C16_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L9C16_additiveExpr -> L9C16_multiplicativeExpr;
+ L9C16_castExpr [color="lightgreen",label="castExpr"];
+ L9C16_multiplicativeExpr -> L9C16_castExpr;
+ L9C16_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L9C16_castExpr -> L9C16_prefixUnaryExpr;
+ L9C16_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L9C16_prefixUnaryExpr -> L9C16_postfixUnaryExpr;
+ L9C16_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L9C16_postfixUnaryExpr -> L9C16_atomicExpr;
+ L9C16_value [color="lightgreen",label="value"];
+ L9C16_atomicExpr -> L9C16_value;
+ L9C16_primitiveValue [color="lightgreen",label="primitiveValue"];
+ L9C16_value -> L9C16_primitiveValue;
+ L9C16 [color="lightblue",label="INTEGER: 10"];
+ L9C16_primitiveValue -> L9C16
+ L9C18 [color="lightblue",label="SEMICOLON: ;"];
+ L9C4_stmt -> L9C18
+ L10C4_stmt [color="lightgreen",label="stmt"];
+ L9C4_stmtLst -> L10C4_stmt;
+ L10C4_declStmt [color="lightgreen",label="declStmt"];
+ L10C4_stmt -> L10C4_declStmt;
+ L10C4_dataType [color="lightgreen",label="dataType"];
+ L10C4_declStmt -> L10C4_dataType;
+ L10C4_baseDataType [color="lightgreen",label="baseDataType"];
+ L10C4_dataType -> L10C4_baseDataType;
+ L10C4 [color="lightblue",label="TYPE_INT: int"];
+ L10C4_baseDataType -> L10C4
+ L10C8 [color="lightblue",label="IDENTIFIER: faculty"];
+ L10C4_declStmt -> L10C8
+ L10C16 [color="lightblue",label="ASSIGN: ="];
+ L10C4_declStmt -> L10C16
+ L10C18_assignExpr [color="lightgreen",label="assignExpr"];
+ L10C4_declStmt -> L10C18_assignExpr;
+ L10C18_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L10C18_assignExpr -> L10C18_ternaryExpr;
+ L10C18_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L10C18_ternaryExpr -> L10C18_logicalOrExpr;
+ L10C18_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L10C18_logicalOrExpr -> L10C18_logicalAndExpr;
+ L10C18_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L10C18_logicalAndExpr -> L10C18_bitwiseOrExpr;
+ L10C18_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L10C18_bitwiseOrExpr -> L10C18_bitwiseXorExpr;
+ L10C18_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L10C18_bitwiseXorExpr -> L10C18_bitwiseAndExpr;
+ L10C18_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L10C18_bitwiseAndExpr -> L10C18_equalityExpr;
+ L10C18_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L10C18_equalityExpr -> L10C18_relationalExpr;
+ L10C18_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L10C18_relationalExpr -> L10C18_shiftExpr;
+ L10C18_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L10C18_shiftExpr -> L10C18_additiveExpr;
+ L10C18_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L10C18_additiveExpr -> L10C18_multiplicativeExpr;
+ L10C18_castExpr [color="lightgreen",label="castExpr"];
+ L10C18_multiplicativeExpr -> L10C18_castExpr;
+ L10C18_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L10C18_castExpr -> L10C18_prefixUnaryExpr;
+ L10C18_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L10C18_prefixUnaryExpr -> L10C18_postfixUnaryExpr;
+ L10C18_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L10C18_postfixUnaryExpr -> L10C18_atomicExpr;
+ L10C18_value [color="lightgreen",label="value"];
+ L10C18_atomicExpr -> L10C18_value;
+ L10C18_functionCall [color="lightgreen",label="functionCall"];
+ L10C18_value -> L10C18_functionCall;
+ L10C18 [color="lightblue",label="IDENTIFIER: faculty"];
+ L10C18_functionCall -> L10C18
+ L10C25 [color="lightblue",label="LPAREN: ("];
+ L10C18_functionCall -> L10C25
+ L10C26_argLst [color="lightgreen",label="argLst"];
+ L10C18_functionCall -> L10C26_argLst;
+ L10C26_assignExpr [color="lightgreen",label="assignExpr"];
+ L10C26_argLst -> L10C26_assignExpr;
+ L10C26_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L10C26_assignExpr -> L10C26_ternaryExpr;
+ L10C26_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L10C26_ternaryExpr -> L10C26_logicalOrExpr;
+ L10C26_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L10C26_logicalOrExpr -> L10C26_logicalAndExpr;
+ L10C26_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L10C26_logicalAndExpr -> L10C26_bitwiseOrExpr;
+ L10C26_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L10C26_bitwiseOrExpr -> L10C26_bitwiseXorExpr;
+ L10C26_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L10C26_bitwiseXorExpr -> L10C26_bitwiseAndExpr;
+ L10C26_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L10C26_bitwiseAndExpr -> L10C26_equalityExpr;
+ L10C26_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L10C26_equalityExpr -> L10C26_relationalExpr;
+ L10C26_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L10C26_relationalExpr -> L10C26_shiftExpr;
+ L10C26_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L10C26_shiftExpr -> L10C26_additiveExpr;
+ L10C26_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L10C26_additiveExpr -> L10C26_multiplicativeExpr;
+ L10C26_castExpr [color="lightgreen",label="castExpr"];
+ L10C26_multiplicativeExpr -> L10C26_castExpr;
+ L10C26_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L10C26_castExpr -> L10C26_prefixUnaryExpr;
+ L10C26_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L10C26_prefixUnaryExpr -> L10C26_postfixUnaryExpr;
+ L10C26_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L10C26_postfixUnaryExpr -> L10C26_atomicExpr;
+ L10C26 [color="lightblue",label="IDENTIFIER: input"];
+ L10C26_atomicExpr -> L10C26
+ L10C31 [color="lightblue",label="RPAREN: )"];
+ L10C18_functionCall -> L10C31
+ L10C32 [color="lightblue",label="SEMICOLON: ;"];
+ L10C4_stmt -> L10C32
+ L11C4_stmt [color="lightgreen",label="stmt"];
+ L9C4_stmtLst -> L11C4_stmt;
+ L11C4_assignExpr [color="lightgreen",label="assignExpr"];
+ L11C4_stmt -> L11C4_assignExpr;
+ L11C4_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L11C4_assignExpr -> L11C4_ternaryExpr;
+ L11C4_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L11C4_ternaryExpr -> L11C4_logicalOrExpr;
+ L11C4_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L11C4_logicalOrExpr -> L11C4_logicalAndExpr;
+ L11C4_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L11C4_logicalAndExpr -> L11C4_bitwiseOrExpr;
+ L11C4_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L11C4_bitwiseOrExpr -> L11C4_bitwiseXorExpr;
+ L11C4_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L11C4_bitwiseXorExpr -> L11C4_bitwiseAndExpr;
+ L11C4_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L11C4_bitwiseAndExpr -> L11C4_equalityExpr;
+ L11C4_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L11C4_equalityExpr -> L11C4_relationalExpr;
+ L11C4_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L11C4_relationalExpr -> L11C4_shiftExpr;
+ L11C4_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L11C4_shiftExpr -> L11C4_additiveExpr;
+ L11C4_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L11C4_additiveExpr -> L11C4_multiplicativeExpr;
+ L11C4_castExpr [color="lightgreen",label="castExpr"];
+ L11C4_multiplicativeExpr -> L11C4_castExpr;
+ L11C4_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L11C4_castExpr -> L11C4_prefixUnaryExpr;
+ L11C4_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L11C4_prefixUnaryExpr -> L11C4_postfixUnaryExpr;
+ L11C4_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L11C4_postfixUnaryExpr -> L11C4_atomicExpr;
+ L11C4_builtinCall [color="lightgreen",label="builtinCall"];
+ L11C4_atomicExpr -> L11C4_builtinCall;
+ L11C4_printfCall [color="lightgreen",label="printfCall"];
+ L11C4_builtinCall -> L11C4_printfCall;
+ L11C4 [color="lightblue",label="PRINTF: printf"];
+ L11C4_printfCall -> L11C4
+ L11C10 [color="lightblue",label="LPAREN: ("];
+ L11C4_printfCall -> L11C10
+ L11C11 [color="lightblue",label="STRING_LITERAL: \"Faculty of %d is: %d\""];
+ L11C4_printfCall -> L11C11
+ L11C33 [color="lightblue",label="COMMA: ,"];
+ L11C4_printfCall -> L11C33
+ L11C35_assignExpr [color="lightgreen",label="assignExpr"];
+ L11C4_printfCall -> L11C35_assignExpr;
+ L11C35_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L11C35_assignExpr -> L11C35_ternaryExpr;
+ L11C35_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L11C35_ternaryExpr -> L11C35_logicalOrExpr;
+ L11C35_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L11C35_logicalOrExpr -> L11C35_logicalAndExpr;
+ L11C35_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L11C35_logicalAndExpr -> L11C35_bitwiseOrExpr;
+ L11C35_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L11C35_bitwiseOrExpr -> L11C35_bitwiseXorExpr;
+ L11C35_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L11C35_bitwiseXorExpr -> L11C35_bitwiseAndExpr;
+ L11C35_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L11C35_bitwiseAndExpr -> L11C35_equalityExpr;
+ L11C35_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L11C35_equalityExpr -> L11C35_relationalExpr;
+ L11C35_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L11C35_relationalExpr -> L11C35_shiftExpr;
+ L11C35_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L11C35_shiftExpr -> L11C35_additiveExpr;
+ L11C35_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L11C35_additiveExpr -> L11C35_multiplicativeExpr;
+ L11C35_castExpr [color="lightgreen",label="castExpr"];
+ L11C35_multiplicativeExpr -> L11C35_castExpr;
+ L11C35_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L11C35_castExpr -> L11C35_prefixUnaryExpr;
+ L11C35_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L11C35_prefixUnaryExpr -> L11C35_postfixUnaryExpr;
+ L11C35_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L11C35_postfixUnaryExpr -> L11C35_atomicExpr;
+ L11C35 [color="lightblue",label="IDENTIFIER: input"];
+ L11C35_atomicExpr -> L11C35
+ L11C40 [color="lightblue",label="COMMA: ,"];
+ L11C4_printfCall -> L11C40
+ L11C42_assignExpr [color="lightgreen",label="assignExpr"];
+ L11C4_printfCall -> L11C42_assignExpr;
+ L11C42_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L11C42_assignExpr -> L11C42_ternaryExpr;
+ L11C42_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L11C42_ternaryExpr -> L11C42_logicalOrExpr;
+ L11C42_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L11C42_logicalOrExpr -> L11C42_logicalAndExpr;
+ L11C42_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L11C42_logicalAndExpr -> L11C42_bitwiseOrExpr;
+ L11C42_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L11C42_bitwiseOrExpr -> L11C42_bitwiseXorExpr;
+ L11C42_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L11C42_bitwiseXorExpr -> L11C42_bitwiseAndExpr;
+ L11C42_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L11C42_bitwiseAndExpr -> L11C42_equalityExpr;
+ L11C42_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L11C42_equalityExpr -> L11C42_relationalExpr;
+ L11C42_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L11C42_relationalExpr -> L11C42_shiftExpr;
+ L11C42_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L11C42_shiftExpr -> L11C42_additiveExpr;
+ L11C42_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L11C42_additiveExpr -> L11C42_multiplicativeExpr;
+ L11C42_castExpr [color="lightgreen",label="castExpr"];
+ L11C42_multiplicativeExpr -> L11C42_castExpr;
+ L11C42_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L11C42_castExpr -> L11C42_prefixUnaryExpr;
+ L11C42_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L11C42_prefixUnaryExpr -> L11C42_postfixUnaryExpr;
+ L11C42_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L11C42_postfixUnaryExpr -> L11C42_atomicExpr;
+ L11C42 [color="lightblue",label="IDENTIFIER: faculty"];
+ L11C42_atomicExpr -> L11C42
+ L11C49 [color="lightblue",label="RPAREN: )"];
+ L11C4_printfCall -> L11C49
+ L11C50 [color="lightblue",label="SEMICOLON: ;"];
+ L11C4_stmt -> L11C50
+ L12C0 [color="lightblue",label="RBRACE: }"];
+ L8C0_mainFunctionDef -> L12C0
+}
