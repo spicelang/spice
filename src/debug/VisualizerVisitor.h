@@ -97,5 +97,5 @@ private:
 
   // Private methods
   std::string buildRule(antlr4::ParserRuleContext *ctx);
-  [[nodiscard]] std::string getCurrentTabCount() const;
+  [[nodiscard]] std::string getSpaces() const;
 };

@@ -14,13 +14,14 @@ std::string VisualizerVisitor::buildRule(antlr4::ParserRuleContext *ctx) {
   std::string result = nodeId + R"( [color="lightgreen",label=")" + ruleName + "\"];\n";
 
   // Link parent node with the current one
+  std::string parentNodeIdBackup = parentNodeId;
   if (!parentNodeId.empty())
-    result += getCurrentTabCount() + parentNodeId + " -> " + nodeId + ";\n";
+    result += getSpaces() + parentNodeId + " -> " + nodeId + ";\n";
   parentNodeId = nodeId; // Set parentNodeId for children
 
   // Visit all the children
   for (auto &child : ctx->children) {
-    result += getCurrentTabCount();
+    result += getSpaces();
 
     auto token = dynamic_cast<antlr4::tree::TerminalNode *>(child);
     if (token) { // Terminal node
@@ -28,18 +29,21 @@ std::string VisualizerVisitor::buildRule(antlr4::ParserRuleContext *ctx) {
       std::string terminalName = std::string(vocabulary.getSymbolicName(token->getSymbol()->getType())) + ": " + token->getText();
 
       result += terminalCodeLoc + R"( [color="lightblue",label=")" + terminalName + "\"];\n";
-      result += getCurrentTabCount() + nodeId + " -> " + terminalCodeLoc + "\n";
+      result += getSpaces() + nodeId + " -> " + terminalCodeLoc + "\n";
     } else { // Non-terminal node
       result += std::any_cast<std::string>(visit(child));
     }
   }
 
+  // Restore parent node id
+  parentNodeId = parentNodeIdBackup;
+
   return result;
 }
 
-std::string VisualizerVisitor::getCurrentTabCount() const {
-  std::string tabs;
+std::string VisualizerVisitor::getSpaces() const {
+  std::string spaces;
   for (int i = 0; i < currentTabs; i++)
-    tabs += " ";
-  return tabs;
+    spaces += " ";
+  return spaces;
 }
