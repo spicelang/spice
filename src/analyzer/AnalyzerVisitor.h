@@ -43,9 +43,9 @@ const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yi
 class AnalyzerVisitor : public SpiceBaseVisitor {
 public:
   // Constructors
-  explicit AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                           ThreadFactory *threadFactory, SourceFile *sourceFile, CliOptions *options, bool requiresMainFct,
-                           bool stdFile);
+  explicit AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std::shared_ptr<llvm::IRBuilder<>> builder,
+                           const ThreadFactory &threadFactory, const SourceFile &sourceFile, CliOptions &options,
+                           bool requiresMainFct, bool stdFile);
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -107,7 +107,7 @@ private:
   std::shared_ptr<llvm::IRBuilder<>> builder;
   std::unique_ptr<OpRuleManager> opRuleManager;
   std::unique_ptr<ErrorFactory> err;
-  ThreadFactory *threadFactory;
+  const ThreadFactory &threadFactory;
   bool requiresMainFct = true;
   bool hasMainFunction = false;
   bool isStdFile = false;

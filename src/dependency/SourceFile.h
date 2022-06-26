@@ -27,6 +27,7 @@ struct SourceFileAntlrCtx {
 };
 
 struct CompilerOutput {
+  std::string astString;
   std::string symbolTableString;
   std::string irString;
   std::string irOptString;
@@ -35,16 +36,17 @@ struct CompilerOutput {
 class SourceFile {
 public:
   // Constructors
-  explicit SourceFile(CliOptions *options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
+  explicit SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
 
   // Public methods
-  void preAnalyze(CliOptions *options);
+  void preAnalyze(const CliOptions &options);
+  void visualizeAST(const CliOptions &options, std::string *output);
   void analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-               ThreadFactory *threadFactory);
+               const ThreadFactory &threadFactory);
   void reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                 ThreadFactory *threadFactory);
+                 ThreadFactory &threadFactory);
   void generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                ThreadFactory *threadFactory, LinkerInterface *linker);
+                ThreadFactory &threadFactory, LinkerInterface &linker);
   void addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name, const std::string &filePath,
                      bool stdFile);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
@@ -58,7 +60,7 @@ public:
   CompilerOutput compilerOutput;
   bool needsReAnalyze = false;
   SourceFile *parent;
-  CliOptions *options;
+  CliOptions &options;
   std::shared_ptr<SymbolTable> symbolTable;
   std::shared_ptr<AnalyzerVisitor> analyzer;
   std::shared_ptr<GeneratorVisitor> generator;

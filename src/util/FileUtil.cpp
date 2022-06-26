@@ -47,6 +47,19 @@ bool FileUtil::dirExists(const std::string &dirPath) {
 bool FileUtil::createDirs(const std::string &dirPath) { return std::filesystem::create_directories(dirPath); }
 
 /**
+ * Creates a file and writes fileContent to it.
+ *
+ * @param fileName File name
+ * @param fileContent String to write into the file
+ */
+void FileUtil::writeToFile(const std::string &fileName, const std::string &fileContent) {
+  std::ofstream file;
+  file.open(fileName);
+  file << fileContent;
+  file.close();
+}
+
+/**
  * Extracts the name of a file from its full path and returns it
  *
  * @param filePath Full path to the file (absolute or relative)
@@ -82,16 +95,17 @@ std::string FileUtil::exec(const std::string &cmd) {
 }
 
 /**
- * Retrieve the directory separator for the current os
+ * Checks if a certain command is available on the computer
  *
- * @return Directory separator
+ * @param cmd Command to search for
+ * @return Present or not
  */
-char FileUtil::getDirSeparator() {
-#ifdef _WIN32
-  return '\\';
-#else
-  return '/';
+bool FileUtil::isCommandAvailable(const std::string &cmd) {
+  std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
+#ifdef OS_WINDOWS
+  checkCmd = "where dot > nul 2>&1";
 #endif
+  return std::system(checkCmd.c_str());
 }
 
 /**

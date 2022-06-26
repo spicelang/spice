@@ -16,6 +16,7 @@
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
+#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
 #include "TestUtil.h"
@@ -34,7 +35,7 @@ std::vector<AnalyzerTestCase> detectAnalyzerTestCases(const std::string &suitePa
   testCases.reserve(subDirs.size());
   for (std::string &dirName : subDirs) {
     // Save test suite
-    testCases.push_back({dirName, suitePath + "/" + dirName});
+    testCases.push_back({dirName, suitePath + FileUtil::DIR_SEPARATOR + dirName});
   }
 
   return testCases;
@@ -46,14 +47,14 @@ std::vector<AnalyzerTestSuite> detectAnalyzerTestSuites(const std::string &testF
   std::vector<AnalyzerTestSuite> testSuites;
   testSuites.reserve(subDirs.size());
   for (std::string &dirName : subDirs)
-    testSuites.push_back(detectAnalyzerTestCases(testFilesPath + "/" + dirName));
+    testSuites.push_back(detectAnalyzerTestCases(testFilesPath + FileUtil::DIR_SEPARATOR + dirName));
 
   return testSuites;
 }
 
 void executeTest(const AnalyzerTestCase &testCase) {
   // Check if disabled
-  std::string disabledFile = testCase.testPath + "/disabled";
+  std::string disabledFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "disabled";
   if (FileUtil::fileExists(disabledFile))
     GTEST_SKIP();
 #ifdef SPICE_IS_GH_ACTIONS
@@ -63,7 +64,7 @@ void executeTest(const AnalyzerTestCase &testCase) {
 #endif
 
   // Read source file
-  std::string sourceFile = testCase.testPath + "/source.spice";
+  std::string sourceFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "source.spice";
   std::ifstream sourceStream;
   sourceStream.open(sourceFile);
   if (!sourceStream)
@@ -94,35 +95,44 @@ void executeTest(const AnalyzerTestCase &testCase) {
     ThreadFactory threadFactory = ThreadFactory();
 
     // Create instance of cli options
-    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, 0};
+    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, 0, true};
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
-    options = *cli.getOptions();
+    options = cli.getOptions();
 
     // Create main source file
-    SourceFile mainSourceFile = SourceFile(&options, nullptr, "root", sourceFile, false);
+    SourceFile mainSourceFile = SourceFile(options, nullptr, "root", sourceFile, false);
 
     // Execute pre-analyzer
-    mainSourceFile.preAnalyze(&options);
-
-    // Execute semantic analysis
-    mainSourceFile.analyze(context, builder, &threadFactory);
-    mainSourceFile.reAnalyze(context, builder, &threadFactory);
-
-    // Fail if an error was expected
-    if (FileUtil::fileExists(testCase.testPath + "/exception.out"))
-      FAIL() << "Expected error, but got no error";
+    mainSourceFile.preAnalyze(options);
 
     // Check if the AST matches the expected output
-    /*std::string astFileName = testCase.testPath + "/syntax-tree.ast";
-    if (fileExists(astFileName)) {
-        std::string expectedSymbolTable = getFileContent(astFileName);
-        EXPECT_EQ(expectedSymbolTable, tree->toStringTree(true));
-    }*/
+    std::string astFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "syntax-tree.dot";
+    if (FileUtil::fileExists(astFileName)) {
+      // Execute visualizer
+      mainSourceFile.visualizeAST(options, nullptr);
+
+      std::string actualAST = mainSourceFile.compilerOutput.astString;
+      if (TestUtil::isUpdateRefsEnabled()) {
+        // Update ref
+        TestUtil::setFileContent(astFileName, actualAST);
+      } else {
+        std::string expectedAST = TestUtil::getFileContent(astFileName);
+        EXPECT_EQ(expectedAST, mainSourceFile.compilerOutput.astString);
+      }
+    }
+
+    // Execute semantic analysis
+    mainSourceFile.analyze(context, builder, threadFactory);
+    mainSourceFile.reAnalyze(context, builder, threadFactory);
+
+    // Fail if an error was expected
+    if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + "exception.out"))
+      FAIL() << "Expected error, but got no error";
 
     // Check if the symbol table matches the expected output
-    std::string symbolTableFileName = testCase.testPath + "/symbol-table.json";
+    std::string symbolTableFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "symbol-table.json";
     if (FileUtil::fileExists(symbolTableFileName)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
@@ -136,31 +146,35 @@ void executeTest(const AnalyzerTestCase &testCase) {
     SUCCEED();
   } catch (LexerParserError &error) {
     // Check if the exception message matches the expected output
-    std::string exceptionFile = testCase.testPath + "/exception.out";
+    std::string errorWhat = error.what();
+    CommonUtil::replaceAll(errorWhat, "\\", "/");
+    std::string exceptionFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "exception.out";
     if (FileUtil::fileExists(exceptionFile)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(exceptionFile, error.what());
+        TestUtil::setFileContent(exceptionFile, errorWhat);
       } else {
         std::string expectedException = TestUtil::getFileContent(exceptionFile);
-        EXPECT_EQ(std::string(error.what()), expectedException);
+        EXPECT_EQ(std::string(errorWhat), expectedException);
       }
     } else {
-      FAIL() << "Expected no error, but got '" << error.what() << "'";
+      FAIL() << "Expected no error, but got '" << errorWhat << "'";
     }
   } catch (SemanticError &error) {
     // Check if the exception message matches the expected output
-    std::string exceptionFile = testCase.testPath + "/exception.out";
+    std::string errorWhat = error.what();
+    CommonUtil::replaceAll(errorWhat, "\\", "/");
+    std::string exceptionFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "exception.out";
     if (FileUtil::fileExists(exceptionFile)) {
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(exceptionFile, error.what());
+        TestUtil::setFileContent(exceptionFile, errorWhat);
       } else {
         std::string expectedException = TestUtil::getFileContent(exceptionFile);
-        EXPECT_EQ(std::string(error.what()), expectedException);
+        EXPECT_EQ(std::string(errorWhat), expectedException);
       }
     } else {
-      FAIL() << "Expected no error, but got '" << error.what() << "'";
+      FAIL() << "Expected no error, but got '" << errorWhat << "'";
     }
   }
 }
@@ -253,7 +267,9 @@ struct NameResolver {
 
 // Instantiations
 
-const std::vector<AnalyzerTestSuite> testSuites = detectAnalyzerTestSuites("./test-files/analyzer"); // NOLINT(cert-err58-cpp)
+const std::string dirSepString = std::string(1, FileUtil::DIR_SEPARATOR);                           // NOLINT(cert-err58-cpp)
+const std::string testRefsBasePath = "." + dirSepString + "test-files" + dirSepString + "analyzer"; // NOLINT(cert-err58-cpp)
+const std::vector<AnalyzerTestSuite> testSuites = detectAnalyzerTestSuites(testRefsBasePath);       // NOLINT(cert-err58-cpp)
 
 INSTANTIATE_TEST_SUITE_P(AnalyzerArbitraryTests, AnalyzerArbitraryTests, // NOLINT(cert-err58-cpp)
                          ::testing::ValuesIn(testSuites[0]), NameResolver());

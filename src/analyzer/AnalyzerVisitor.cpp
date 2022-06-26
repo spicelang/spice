@@ -11,26 +11,26 @@
 #include <util/CompilerWarning.h>
 #include <util/ScopeIdUtil.h>
 
-AnalyzerVisitor::AnalyzerVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
-                                 const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory *threadFactory,
-                                 SourceFile *sourceFile, CliOptions *options, bool requiresMainFct, bool isStdFile) {
-  this->context = context;
-  this->builder = builder;
-  this->threadFactory = threadFactory;
-  this->currentScope = this->rootScope = sourceFile->symbolTable.get();
-  this->requiresMainFct = requiresMainFct;
-  this->isStdFile = isStdFile;
+#include <utility>
+
+AnalyzerVisitor::AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std::shared_ptr<llvm::IRBuilder<>> builder,
+                                 const ThreadFactory &threadFactory, const SourceFile &sourceFile, CliOptions &options,
+                                 bool requiresMainFct, bool isStdFile)
+    : context(std::move(context)), builder(std::move(builder)), threadFactory(threadFactory), requiresMainFct(requiresMainFct),
+      isStdFile(isStdFile) {
+  // Retrieve symbol table
+  this->currentScope = this->rootScope = sourceFile.symbolTable.get();
 
   // Use default target triple if empty
-  if (options->targetTriple.empty()) {
+  if (options.targetTriple.empty()) {
     llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-    options->targetArch = targetTriple.getArchName();
-    options->targetVendor = targetTriple.getVendorName();
-    options->targetOs = targetTriple.getOSName();
+    options.targetArch = targetTriple.getArchName();
+    options.targetVendor = targetTriple.getVendorName();
+    options.targetOs = targetTriple.getOSName();
   }
 
   // Create error factory for this specific file
-  this->err = std::make_unique<ErrorFactory>(sourceFile->filePath);
+  this->err = std::make_unique<ErrorFactory>(sourceFile.filePath);
 
   // Create OpRuleManager
   opRuleManager = std::make_unique<OpRuleManager>(err.get(), allowUnsafeOperations);

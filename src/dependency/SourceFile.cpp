@@ -1,20 +1,19 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "SourceFile.h"
-#include "analyzer/PreAnalyzerVisitor.h"
+
+#include <analyzer/PreAnalyzerVisitor.h>
+#include <util/CommonUtil.h>
+#include <visualizer/VisualizerVisitor.h>
 
 #include <algorithm>
 #include <utility>
 
 #include <util/FileUtil.h>
 
-SourceFile::SourceFile(CliOptions *options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile) {
-  this->name = std::move(name);
-  this->filePath = filePath;
-  this->objectFilePath = options->outputDir + "/" + FileUtil::getFileName(filePath) + ".o";
-  this->stdFile = stdFile;
-  this->parent = parent;
-  this->options = options;
+SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
+    : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
+  this->objectFilePath = options.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
 
   // Read from file
   std::ifstream fileInputStream(filePath);
@@ -42,19 +41,63 @@ SourceFile::SourceFile(CliOptions *options, SourceFile *parent, std::string name
   symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
 }
 
-void SourceFile::preAnalyze(CliOptions *options) {
+void SourceFile::preAnalyze(const CliOptions &options) {
   // Pre-analyze this source file
-  PreAnalyzerVisitor preAnalyzer = PreAnalyzerVisitor(options, this);
+  PreAnalyzerVisitor preAnalyzer(options, *this);
   preAnalyzer.visit(antlrCtx.parser->entry());
   antlrCtx.parser->reset();
 
   // Analyze the imported source files
-  for (auto &[importName, sourceFile] : dependencies)
+  for (auto &[_, sourceFile] : dependencies)
     sourceFile.first->preAnalyze(options);
 }
 
+void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
+  // Only execute if enabled
+  if (!options.dumpAST && !options.testMode)
+    return;
+
+  std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
+  std::string replacedFilePath = filePath;
+  CommonUtil::replaceAll(replacedFilePath, "\\", "/");
+  dotCode += " label=\"" + replacedFilePath + "\";\n ";
+
+  // Visualize the imported source files
+  for (auto &[_, sourceFile] : dependencies)
+    sourceFile.first->visualizeAST(options, output);
+
+  // Generate dot code for this source file
+  VisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
+  dotCode += std::any_cast<std::string>(visualizerVisitor.visit(antlrCtx.parser->entry()));
+  antlrCtx.parser->reset();
+
+  dotCode += "}";
+
+  // If this is the root source file, output the serialized string and the SVG file
+  if (parent == nullptr) {
+    compilerOutput.astString = dotCode;
+
+    if (options.dumpAST) {
+      // Dump to console
+      std::cout << "\nSerialized AST:\n\n" << dotCode << "\n";
+
+      // Check if the dot command exists
+      if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
+        throw std::runtime_error(
+            "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable"); // GCOV_EXCL_STOP
+
+      // Generate SVG
+      std::cout << "\nGenerating SVG file ... ";
+      std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "ast";
+      FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
+      std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
+      std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n\n";
+    }
+  }
+}
+
 void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                         ThreadFactory *threadFactory) {
+                         const ThreadFactory &threadFactory) {
   // Analyze the imported source files
   for (auto &[importName, sourceFile] : dependencies) {
     // Analyze the imported source file
@@ -71,13 +114,13 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
   }
 
   // Analyze this source file
-  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, threadFactory, this, options, parent == nullptr, stdFile);
+  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, threadFactory, *this, options, parent == nullptr, stdFile);
   needsReAnalyze = any_cast<bool>(analyzer->visit(antlrCtx.parser->entry()));
   antlrCtx.parser->reset();
 }
 
 void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                           ThreadFactory *threadFactory) {
+                           ThreadFactory &threadFactory) {
   // Re-analyze the imported source files
   for (auto &[importName, sourceFile] : dependencies)
     sourceFile.first->reAnalyze(context, builder, threadFactory);
@@ -92,42 +135,43 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
 
   // Dump symbol table
-  if (options->dumpSymbolTables) { // GCOV_EXCL_START
+  if (options.dumpSymbolTables) { // GCOV_EXCL_START
     std::cout << "\nSymbol table of file " << filePath << ":\n\n";
     std::cout << compilerOutput.symbolTableString << "\n";
   } // GCOV_EXCL_STOP
 }
 
 void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                          ThreadFactory *threadFactory, LinkerInterface *linker) {
+                          ThreadFactory &threadFactory, LinkerInterface &linker) {
   // Generate the imported source files
-  for (auto &[importName, sourceFile] : dependencies)
+  for (auto &[_, sourceFile] : dependencies)
     sourceFile.first->generate(context, builder, threadFactory, linker);
 
   // Generate this source file
-  generator = std::make_shared<GeneratorVisitor>(context, builder, threadFactory, linker, options, this, objectFilePath);
+  generator = std::make_shared<GeneratorVisitor>(context, builder, threadFactory, linker, options, *this, objectFilePath);
   generator->visit(antlrCtx.parser->entry());
 
   // Save the JSON version in the compiler output
   compilerOutput.irString = generator->getIRString();
 
   // Dump unoptimized IR code
-  if (options->dumpIR) { // GCOV_EXCL_START
+  if (options.dumpIR) { // GCOV_EXCL_START
     std::cout << "\nUnoptimized IR code:\n";
     generator->dumpIR();
   } // GCOV_EXCL_STOP
 
   // Optimize IR code
-  if (options->optLevel >= 1 && options->optLevel <= 5) {
+  if (options.optLevel >= 1 && options.optLevel <= 5) {
     generator->optimize();
 
     // Save the JSON version in the compiler output
     compilerOutput.irOptString = generator->getIRString();
 
     // Dump optimized IR code
-    if (options->dumpIR) { // GCOV_EXCL_START
+    if (options.dumpIR) { // GCOV_EXCL_START
       std::cout << "\nOptimized IR code:\n";
       generator->dumpIR();
+      std::cout << "\n";
     } // GCOV_EXCL_STOP
   }
 
@@ -137,8 +181,7 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   antlrCtx.parser->reset();
 
   // Add object file to the linker interface
-  if (linker)
-    linker->addObjectFilePath(objectFilePath);
+  linker.addObjectFilePath(objectFilePath);
 }
 
 void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name,
