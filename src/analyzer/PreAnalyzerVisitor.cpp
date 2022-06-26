@@ -5,6 +5,7 @@
 #include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/AntlrThrowingErrorListener.h>
+#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
 PreAnalyzerVisitor::PreAnalyzerVisitor(const CliOptions &options, SourceFile &sourceFile)
@@ -71,6 +72,7 @@ std::any PreAnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx
                     "The source file '" + importIdentifier + ".spice' does not exist");
     }
   }
+  CommonUtil::replaceAll(importPath, "/", std::string(1, FileUtil::DIR_SEPARATOR));
 
   // Visit the imported file
   sourceFile.addDependency(&err, *ctx->STRING_LITERAL()->getSymbol(), importName, importPath, isImportStd);

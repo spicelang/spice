@@ -1156,6 +1156,7 @@ std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) 
   std::vector<llvm::Value *> printfArgs;
   std::string stringTemplate = ctx->STRING_LITERAL()->toString();
   stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\n"), "\n");
+  stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\a"), "\a");
   stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
   printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
   for (const auto &arg : ctx->assignExpr()) {

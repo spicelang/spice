@@ -223,18 +223,21 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
 
     if (!isGeneric) { // Only visit body for non-generic functions. Otherwise, bodies will be visited with the second analyzer run
       // Go down again in scope
-      currentScope = currentScope->getChild(substantiatedFunctions.front().getSignature());
-      assert(currentScope != nullptr);
+      for (auto &substantiatedFunction : substantiatedFunctions) {
+        // Go down again in scope
+        currentScope = currentScope->getChild(substantiatedFunction.getSignature());
+        assert(currentScope != nullptr);
 
-      // Visit statements in new scope
-      visit(ctx->stmtLst());
+        // Visit statement list in new scope
+        visit(ctx->stmtLst());
 
-      // Check if return variable is now initialized
-      if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
-        throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
+        // Check if return variable is now initialized
+        if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
+          throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
 
-      // Leave the function scope
-      currentScope = currentScope->getParent();
+        // Leave the function scope
+        currentScope = currentScope->getParent();
+      }
     }
 
     // Leave the struct scope
@@ -440,19 +443,21 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
     std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalArgs();
     currentScope->renameChildBlock(scopeId, substantiatedProcedures.front().getSignature());
-    for (int i = 0; i < substantiatedProcedures.size(); i++)
+    for (int i = 1; i < substantiatedProcedures.size(); i++)
       currentScope->copyChildBlock(substantiatedProcedures.front().getSignature(), substantiatedProcedures[i].getSignature());
 
     if (!isGeneric) { // Only visit body for non-generic procs. Otherwise, bodies will be visited with the second analyzer run
-      // Go down again in scope
-      currentScope = currentScope->getChild(substantiatedProcedures.front().getSignature());
-      assert(currentScope != nullptr);
+      for (auto &substantiatedProcedure : substantiatedProcedures) {
+        // Go down again in scope
+        currentScope = currentScope->getChild(substantiatedProcedure.getSignature());
+        assert(currentScope != nullptr);
 
-      // Visit statement list in new scope
-      visit(ctx->stmtLst());
+        // Visit statement list in new scope
+        visit(ctx->stmtLst());
 
-      // Leave the function scope
-      currentScope = currentScope->getParent();
+        // Leave the function scope
+        currentScope = currentScope->getParent();
+      }
     }
 
     // Leave the struct scope
