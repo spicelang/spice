@@ -2,13 +2,21 @@
 
 // GCOV_EXCL_START
 
+#ifdef __unix__
+#define OS_UNIX
+#elif defined(_WIN32) || defined(WIN32)
+#define OS_WINDOWS
+#endif
+
 #include "TestUtil.h"
 
-#include <cstring> // Required by builds on Linux
 #include <dirent.h>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#ifdef OS_UNIX
+#include <cstring> // Required by builds on Linux
+#endif
 
 /**
  * Get subdirectories of the given path
@@ -59,17 +67,6 @@ std::vector<std::string> TestUtil::getFileContentLinesVector(const std::string &
       lines.push_back(line);
   }
   return lines;
-}
-
-/**
- * Write a string to a certain file. The string will replace the original contents of the file
- *
- * @param filePath File path
- * @param content New contents as a string
- */
-void TestUtil::setFileContent(const std::string &filePath, const std::string &content) {
-  std::ofstream outputFileStream(filePath);
-  outputFileStream << content;
 }
 
 /**

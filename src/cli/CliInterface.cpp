@@ -1,8 +1,8 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "CliInterface.h"
-#include "util/CompilerWarning.h"
 
+#include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 
 #include <llvm/ADT/Triple.h>

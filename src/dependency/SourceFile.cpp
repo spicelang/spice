@@ -2,14 +2,19 @@
 
 #include "SourceFile.h"
 
-#include <analyzer/PreAnalyzerVisitor.h>
-#include <util/CommonUtil.h>
-#include <visualizer/VisualizerVisitor.h>
-
 #include <algorithm>
 #include <utility>
 
+#include <analyzer/AnalyzerVisitor.h>
+#include <analyzer/PreAnalyzerVisitor.h>
+#include <cli/CliInterface.h>
+#include <exception/AntlrThrowingErrorListener.h>
+#include <generator/GeneratorVisitor.h>
+#include <linker/LinkerInterface.h>
+#include <symbol/SymbolTable.h>
+#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
+#include <visualizer/VisualizerVisitor.h>
 
 SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
     : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
@@ -91,7 +96,7 @@ void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
       std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "ast";
       FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
       std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
-      std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n\n";
+      std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
     }
   }
 }

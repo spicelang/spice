@@ -2,11 +2,13 @@
 
 #include "LinkerInterface.h"
 
-#include <exception/LinkerError.h>
-#include <util/FileUtil.h>
-
 #include <iostream>
 #include <stdexcept>
+
+#include <cli/CliInterface.h>
+#include <exception/ErrorFactory.h>
+#include <util/FileUtil.h>
+#include <util/ThreadFactory.h>
 
 #ifdef __unix__
 #define OS_UNIX

@@ -5,9 +5,10 @@
 #include <string>
 #include <vector>
 
-#include <cli/CliInterface.h>
-#include <exception/ErrorFactory.h>
-#include <util/ThreadFactory.h>
+// Forward declarations
+struct CliOptions;
+class ErrorFactory;
+class ThreadFactory;
 
 class LinkerInterface {
 public:

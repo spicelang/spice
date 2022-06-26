@@ -6,7 +6,7 @@
 #include <tuple>
 #include <utility>
 
-#include <exception/SemanticError.h>
+#include <exception/ErrorFactory.h>
 
 /**
  * Retrieve the type chain of the symbol type

@@ -5,20 +5,12 @@
 #include <SpiceBaseVisitor.h>
 
 #include <analyzer/OpRuleManager.h>
-#include <cli/CliInterface.h>
-#include <exception/ErrorFactory.h>
-#include <linker/LinkerInterface.h>
 #include <symbol/ScopePath.h>
-#include <symbol/SymbolTable.h>
 #include <symbol/SymbolType.h>
-#include <util/ThreadFactory.h>
 
 #include <llvm/ADT/Triple.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/Host.h>
-
-// Forward declaration (circular import)
-class SourceFile;
 
 const std::string MAIN_FUNCTION_NAME = "main";
 const std::string RETURN_VARIABLE_NAME = "result";
@@ -29,6 +21,16 @@ const std::string DTOR_VARIABLE_NAME = "dtor";
 const std::string STRUCT_SCOPE_PREFIX = "struct:";
 const std::string UNUSED_VARIABLE_NAME = "_";
 const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync"};
+
+// Forward declarations
+class OpRuleManager;
+struct CliOptions;
+class ErrorFactory;
+class ThreadFactory;
+class LinkerInterface;
+class SymbolTable;
+class SymbolTableEntry;
+class SourceFile;
 
 /**
  * Visitor for analyzing a source file.

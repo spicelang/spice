@@ -6,7 +6,8 @@
 #include <tuple>
 #include <vector>
 
-#include <symbol/SymbolTable.h>
+// Forward declarations
+class SymbolTable;
 
 class ScopePath {
 public:

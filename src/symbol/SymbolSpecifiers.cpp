@@ -4,6 +4,8 @@
 
 #include <stdexcept>
 
+#include <symbol/SymbolType.h>
+
 SymbolSpecifiers::SymbolSpecifiers(const SymbolType &type) {
   switch (type.getSuperType()) {
   case TY_DOUBLE:

@@ -2,9 +2,9 @@
 
 #include "PreAnalyzerVisitor.h"
 
-#include <SpiceLexer.h>
+#include <cli/CliInterface.h>
+#include <dependency/SourceFile.h>
 #include <exception/AntlrThrowingErrorListener.h>
-
 #include <util/FileUtil.h>
 
 PreAnalyzerVisitor::PreAnalyzerVisitor(const CliOptions &options, SourceFile &sourceFile)

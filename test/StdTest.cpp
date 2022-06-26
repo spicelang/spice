@@ -12,16 +12,18 @@
 #include <SpiceParser.h>
 
 #include <analyzer/AnalyzerVisitor.h>
+#include <cli/CliInterface.h>
+#include <dependency/SourceFile.h>
 #include <exception/AntlrThrowingErrorListener.h>
+#include <exception/ErrorFactory.h>
 #include <exception/LexerParserError.h>
-#include <exception/SemanticError.h>
-#include <generator/GeneratorVisitor.h>
 #include <linker/LinkerInterface.h>
+#include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
+#include <util/ThreadFactory.h>
 
 #include "TestUtil.h"
-#include "dependency/SourceFile.h"
 
 const unsigned int IR_FILE_SKIP_LINES = 4;
 
@@ -126,7 +128,7 @@ void executeTest(const StdTestCase &testCase) {
       std::string actualAST = mainSourceFile.compilerOutput.astString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(astFileName, actualAST);
+        FileUtil::writeToFile(astFileName, actualAST);
       } else {
         std::string expectedAST = TestUtil::getFileContent(astFileName);
         EXPECT_EQ(expectedAST, mainSourceFile.compilerOutput.astString);
@@ -147,7 +149,7 @@ void executeTest(const StdTestCase &testCase) {
       std::string actualSymbolTable = mainSourceFile.symbolTable->toJSON().dump(2);
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(symbolTableFileName, actualSymbolTable);
+        FileUtil::writeToFile(symbolTableFileName, actualSymbolTable);
       } else {
         std::string expectedSymbolTable = TestUtil::getFileContent(symbolTableFileName);
         EXPECT_EQ(expectedSymbolTable, actualSymbolTable);
@@ -193,7 +195,7 @@ void executeTest(const StdTestCase &testCase) {
       std::string actualIR = mainSourceFile.compilerOutput.irString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(irCodeFileName, actualIR);
+        FileUtil::writeToFile(irCodeFileName, actualIR);
       } else {
         std::string expectedIR = TestUtil::getFileContent(irCodeFileName);
         // Cut of first n lines to have a target independent
@@ -210,7 +212,7 @@ void executeTest(const StdTestCase &testCase) {
       std::string actualOptimizedIR = mainSourceFile.compilerOutput.irOptString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(irCodeOptFileName, actualOptimizedIR);
+        FileUtil::writeToFile(irCodeOptFileName, actualOptimizedIR);
       } else {
         // Cut of first n lines to have a target independent
         for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
@@ -242,7 +244,7 @@ void executeTest(const StdTestCase &testCase) {
 
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        TestUtil::setFileContent(outputFileName, actualOutput);
+        FileUtil::writeToFile(outputFileName, actualOutput);
       } else {
         std::string expectedOutput = TestUtil::getFileContent(outputFileName);
 

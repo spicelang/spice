@@ -4,21 +4,25 @@
 
 #include <regex>
 
-#include <cli/CliInterface.h>
 #include <generator/OpRuleConversionsManager.h>
-#include <linker/LinkerInterface.h>
 #include <symbol/ScopePath.h>
-#include <symbol/SymbolTable.h>
-#include <util/ThreadFactory.h>
+#include <symbol/SymbolType.h>
 
 #include <SpiceBaseVisitor.h>
 
-#include <llvm/Passes/PassBuilder.h>
-#include <llvm/Support/Host.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/Target/TargetMachine.h>
 
-// Forward declaration (circular import)
+// Forward declarations
 class SourceFile;
+class ThreadFactory;
+class LinkerInterface;
+struct CliOptions;
+class LinkerInterface;
+class OpRuleConversionsManager;
+class SymbolTable;
+class SymbolTableEntry;
 
 /**
  * Visitor for generating a source file.

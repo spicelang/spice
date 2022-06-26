@@ -1,14 +1,16 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "symbol/SymbolTable.h"
-#include "GenericType.h"
-#include "util/CommonUtil.h"
-#include "util/FileUtil.h"
 
 #include <stdexcept>
 #include <utility>
 
 #include <analyzer/AnalyzerVisitor.h>
+#include <exception/ErrorFactory.h>
+#include <symbol/Function.h>
+#include <symbol/GenericType.h>
+#include <symbol/Struct.h>
+#include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 
 /**

@@ -2,7 +2,7 @@
 
 #include "SymbolTableEntry.h"
 
-#include <exception/SemanticError.h>
+#include <exception/ErrorFactory.h>
 
 /**
  * Retrieve the name of the current symbol

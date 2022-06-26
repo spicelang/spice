@@ -2,17 +2,17 @@
 
 #pragma once
 
+#include <utility>
+
+#include <exception/ErrorFactory.h>
+
+#include "../../lib/cli11/CLI11.hpp"
+
 #ifdef __unix__
 #define OS_UNIX
 #elif defined(_WIN32) || defined(WIN32)
 #define OS_WINDOWS
 #endif
-
-#include <exception/ErrorFactory.h>
-
-#include <utility>
-
-#include "../../lib/cli11/CLI11.hpp"
 
 /**
  * Representation of the various cli options

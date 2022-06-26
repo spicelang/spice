@@ -2,6 +2,8 @@
 
 #include "OpRuleManager.h"
 
+#include <exception/ErrorFactory.h>
+
 SymbolType OpRuleManager::getAssignResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs) {
   // Skip type compatibility check if the lhs is of type dyn
   if (lhs.is(TY_DYN))
