@@ -1,7 +1,8 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "ScopeIdUtil.h"
-#include "analyzer/AnalyzerVisitor.h"
+
+#include <analyzer/AnalyzerVisitor.h>
 
 /**
  * Get scope id for the MainFunctionDef AST node

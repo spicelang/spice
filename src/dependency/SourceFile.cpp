@@ -7,9 +7,11 @@
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
+#include <cli/CliInterface.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <generator/GeneratorVisitor.h>
 #include <linker/LinkerInterface.h>
+#include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 #include <visualizer/VisualizerVisitor.h>

@@ -5,9 +5,13 @@
 #include <stdexcept>
 
 #include <analyzer/AnalyzerVisitor.h>
+#include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/IRError.h>
 #include <exception/SemanticError.h>
+#include <symbol/Function.h>
+#include <symbol/Struct.h>
+#include <symbol/SymbolTable.h>
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
 #include <util/ThreadFactory.h>

@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "Token.h"
 #include <string>
+
+#include <Token.h>
 
 /**
  * Util for general simplification of tasks

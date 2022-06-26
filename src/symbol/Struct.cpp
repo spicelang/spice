@@ -1,9 +1,9 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "Struct.h"
-#include "util/CommonUtil.h"
 
 #include <symbol/SymbolTable.h>
+#include <util/CommonUtil.h>
 
 /**
  * Retrieve the name of the current struct

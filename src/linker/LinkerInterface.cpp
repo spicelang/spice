@@ -2,8 +2,10 @@
 
 #include "LinkerInterface.h"
 
-#include <exception/LinkerError.h>
+#include <cli/CliInterface.h>
+#include <exception/ErrorFactory.h>
 #include <util/FileUtil.h>
+#include <util/ThreadFactory.h>
 
 #include <iostream>
 #include <stdexcept>

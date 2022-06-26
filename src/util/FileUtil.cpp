@@ -3,6 +3,7 @@
 #include "FileUtil.h"
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <sys/stat.h>

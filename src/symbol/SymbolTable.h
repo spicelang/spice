@@ -7,14 +7,20 @@
 #include <string>
 #include <vector>
 
+#include <Token.h>
+
 #include <symbol/Capture.h>
-#include <symbol/Function.h>
-#include <symbol/Struct.h>
-#include <symbol/SymbolSpecifiers.h>
+#include <symbol/GenericType.h>
 #include <symbol/SymbolTableEntry.h>
-#include <symbol/SymbolType.h>
 
 #include "../../lib/json/json.hpp"
+
+// Forward declarations
+class Function;
+class Struct;
+class SymbolSpecifiers;
+class SymbolType;
+class ErrorFactory;
 
 enum ScopeType {
   SCOPE_GLOBAL,

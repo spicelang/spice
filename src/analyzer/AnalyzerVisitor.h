@@ -29,6 +29,7 @@ class ErrorFactory;
 class ThreadFactory;
 class LinkerInterface;
 class SymbolTable;
+class SymbolTableEntry;
 class SourceFile;
 
 /**

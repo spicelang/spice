@@ -4,10 +4,13 @@
 
 #include <utility>
 
+#include <Token.h>
+
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
 
-#include <exception/ErrorFactory.h>
+// Forward declarations
+class ErrorFactory;
 
 enum OpRuleType { P_TY_DOUBLE, P_TY_INT, P_TY_SHORT, P_TY_LONG, P_TY_BYTE_OR_CHAR, P_TY_STRING, P_TY_BOOL, P_TY_PTR };
 

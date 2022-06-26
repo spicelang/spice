@@ -2,16 +2,19 @@
 
 #include "AnalyzerVisitor.h"
 
+#include <utility>
+
 #include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/SemanticError.h>
+#include <symbol/Function.h>
 #include <symbol/GenericType.h>
+#include <symbol/Struct.h>
 #include <symbol/SymbolSpecifiers.h>
+#include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 #include <util/ScopeIdUtil.h>
-
-#include <utility>
 
 AnalyzerVisitor::AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std::shared_ptr<llvm::IRBuilder<>> builder,
                                  const ThreadFactory &threadFactory, const SourceFile &sourceFile, CliOptions &options,

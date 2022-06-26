@@ -2,12 +2,10 @@
 
 #pragma once
 
+#include <utility>
+
 #include <SpiceLexer.h>
 #include <SpiceVisitor.h>
-
-#include <cli/CliInterface.h>
-
-#include <utility>
 
 /**
  * Visitor for debug purposes (is only executed in the compiler debug mode)

@@ -5,9 +5,8 @@
 #include <string>
 #include <utility>
 
-#include "Token.h"
+#include <Token.h>
 
-#include <exception/ErrorFactory.h>
 #include <symbol/SymbolSpecifiers.h>
 #include <symbol/SymbolType.h>
 
@@ -15,8 +14,9 @@
 
 #include "../../lib/json/json.hpp"
 
-// Forward declaration of SymbolTable
+// Forward declarations
 class SymbolTable;
+class ErrorFactory;
 
 enum SymbolState { DECLARED, INITIALIZED };
 

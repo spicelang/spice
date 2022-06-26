@@ -6,12 +6,15 @@
 #include <utility>
 #include <vector>
 
-#include <symbol/Function.h>
+#include <Token.h>
+
 #include <symbol/GenericType.h>
 #include <symbol/SymbolSpecifiers.h>
 
 // Forward declaration
 class SymbolTable;
+class SymbolType;
+class Function;
 
 class Struct {
 public:

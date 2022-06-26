@@ -4,9 +4,12 @@
 
 #include <SpiceBaseVisitor.h>
 
-#include <cli/CliInterface.h>
-#include <dependency/SourceFile.h>
 #include <exception/ErrorFactory.h>
+
+// Forward declarations
+class CliOptions;
+class SourceFile;
+class ErrorFactory;
 
 /**
  * Visitor for pre-analyzing all source files in hierarchical order from bottom to top.

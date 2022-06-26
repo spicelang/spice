@@ -4,7 +4,7 @@
 
 #include <stdexcept>
 
-#include <exception/IRError.h>
+#include <exception/ErrorFactory.h>
 
 llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
   llvm::Type *lhsTy = lhs->getType();

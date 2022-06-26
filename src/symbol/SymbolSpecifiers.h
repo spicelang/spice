@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <symbol/SymbolType.h>
-
 #include "../../lib/json/json.hpp"
+
+// Forward declarations
+class SymbolType;
 
 // Bit indices from right to left
 const unsigned short BIT_INDEX_PUBLIC = 0;

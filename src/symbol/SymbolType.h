@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include "Token.h"
+#include <Token.h>
 
 #include <stack>
 #include <string>
 #include <vector>
 
-#include <exception/ErrorFactory.h>
+// Forward declarations
+class ErrorFactory;
 
 enum SymbolSuperType {
   TY_INVALID,
