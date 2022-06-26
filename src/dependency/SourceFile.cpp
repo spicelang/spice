@@ -83,7 +83,8 @@ void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
 
       // Check if the dot command exists
       if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
-        throw std::runtime_error("Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
+        throw std::runtime_error(
+            "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable"); // GCOV_EXCL_STOP
 
       // Generate SVG
       std::cout << "\nGenerating SVG file ... ";
