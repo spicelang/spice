@@ -1156,6 +1156,7 @@ std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) 
   std::vector<llvm::Value *> printfArgs;
   std::string stringTemplate = ctx->STRING_LITERAL()->toString();
   stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\n"), "\n");
+  stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\a"), "\a");
   stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
   printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
   for (const auto &arg : ctx->assignExpr()) {
@@ -1737,7 +1738,7 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
       } else if (token->BITWISE_NOT()) { // Consider ~ operator
         lhs = conversionsManager->getPrefixBitwiseNotInst(lhs);
       } else if (token->MUL()) { // Consider * operator
-        // De-reference
+        // Indirect pointer
         lhsPtr = lhs;
         lhs = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
       } else if (token->BITWISE_AND()) { // Consider & operator
@@ -1865,7 +1866,7 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
     if (entry->getType().isBaseType(TY_STRUCT)) { // If base type is a struct
       if (structAccessIndices.empty()) {          // No struct was seen before
         // Initialize GEP calculation
-        structAccessIndices.push_back(builder->getInt32(0)); // To de-reference pointer input of GEP
+        structAccessIndices.push_back(builder->getInt32(0)); // To indirect pointer input of GEP
         // Set the access type and address
         structAccessType = entry->getLLVMType();
         structAccessAddress = entry->getAddress();
@@ -1875,7 +1876,7 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
         structAccessIndices.push_back(builder->getInt32(fieldIndex));
         SymbolType tmpType = entry->getType();
         while (tmpType.isPointer()) {
-          // Execute GEP with the collected indices to de-reference the pointer
+          // Execute GEP with the collected indices to indirect the pointer
           structAccessAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
           // Load the value and store it as new address
           structAccessAddress = builder->CreateLoad(structAccessAddress->getType()->getPointerElementType(), structAccessAddress);

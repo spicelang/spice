@@ -235,8 +235,8 @@ void SymbolTable::renameChildBlock(const std::string &oldName, const std::string
  * @param newChildBlockName New block name
  */
 void SymbolTable::copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
+  assert(children.contains(originalChildBlockName));
   SymbolTable *originalChildBlock = children.at(originalChildBlockName);
-  assert(originalChildBlock != nullptr);
   // Copy child block
   auto newChildBlock = new SymbolTable(*originalChildBlock);
   // Save the new child block
