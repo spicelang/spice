@@ -277,14 +277,17 @@ void executeTest(const StdTestCase &testCase) {
 class StdDataTests : public ::testing::TestWithParam<StdTestCase> {};
 class StdIOTests : public ::testing::TestWithParam<StdTestCase> {};
 class StdOSTests : public ::testing::TestWithParam<StdTestCase> {};
+class StdTextTests : public ::testing::TestWithParam<StdTestCase> {};
 
 // Test macros
 
-TEST_P(StdDataTests, IOTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
+TEST_P(StdDataTests, DataTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 TEST_P(StdIOTests, IOTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 TEST_P(StdOSTests, OSTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
+
+TEST_P(StdTextTests, TextTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 // Name resolver
 
@@ -307,5 +310,8 @@ INSTANTIATE_TEST_SUITE_P(StdDataTests, StdDataTests, ::testing::ValuesIn(testSui
 INSTANTIATE_TEST_SUITE_P(StdIOTests, StdIOTests, ::testing::ValuesIn(testSuites[1]), NameResolver()); // NOLINT(cert-err58-cpp)
 
 INSTANTIATE_TEST_SUITE_P(StdOSTests, StdOSTests, ::testing::ValuesIn(testSuites[2]), NameResolver()); // NOLINT(cert-err58-cpp)
+
+INSTANTIATE_TEST_SUITE_P(StdTextTests, StdTextTests, ::testing::ValuesIn(testSuites[3]),
+                         NameResolver()); // NOLINT(cert-err58-cpp)
 
 // GCOV_EXCL_STOP
