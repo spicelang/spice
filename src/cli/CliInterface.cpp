@@ -173,6 +173,9 @@ void CliInterface::addBuildSubcommand() {
   subCmd->add_flag_callback(
       "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
 
+  // --debug-info
+  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
       ->check(CLI::ExistingFile)
