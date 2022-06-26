@@ -91,7 +91,7 @@ void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
       std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "ast";
       FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
       std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
-      std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n\n";
+      std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
     }
   }
 }

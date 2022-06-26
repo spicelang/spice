@@ -3,7 +3,6 @@
 #include "FileUtil.h"
 
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <memory>
 #include <sys/stat.h>
@@ -33,7 +32,7 @@ bool FileUtil::dirExists(const std::string &dirPath) {
   struct stat info {};
   if (stat(dirPath.c_str(), &info) != 0)
     return false;
-  else if (info.st_mode & S_IFDIR) // S_ISDIR() doesn't exist on my windows
+  else if (info.st_mode & S_IFDIR)
     return true;
   return false;
 }
@@ -103,7 +102,7 @@ std::string FileUtil::exec(const std::string &cmd) {
 bool FileUtil::isCommandAvailable(const std::string &cmd) {
   std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
 #ifdef OS_WINDOWS
-  checkCmd = "where dot > nul 2>&1";
+  checkCmd = "where " + cmd + " > nul 2>&1";
 #endif
   return std::system(checkCmd.c_str());
 }
