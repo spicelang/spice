@@ -41,7 +41,7 @@ f<int> main() {
 }
 ```
 
-The `ctor` method can also be called manually like calling [other methods](./methods.md).
+The `ctor` method can also be called manually like calling [other methods](./methods).
 
 ## Destructors
 *Feature to come ...*

@@ -7,20 +7,3 @@ f<int> main() {
     print.println("Finished testing all examples.");
     print.beep();
 }*/
-
-f<double> calledFunction(int mandatoryArg, dyn optionalArg = true) {
-    printf("Mandatory: %d\n", mandatoryArg);
-    printf("Optional: %d\n", optionalArg);
-    return 0.1;
-}
-
-f<double> calledFunction(string testString) {
-    printf("String: %s", testString);
-    return 0.3;
-}
-
-f<int> main() {
-    dyn res = calledFunction(1, false);
-    printf("Result: %f\n", res);
-    calledFunction("test");
-}
