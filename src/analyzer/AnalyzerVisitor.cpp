@@ -2,7 +2,7 @@
 
 #include "AnalyzerVisitor.h"
 
-#include <analyzer/OpRuleManager.h>
+#include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/SemanticError.h>
 #include <symbol/GenericType.h>

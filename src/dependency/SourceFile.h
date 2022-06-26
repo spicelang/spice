@@ -10,11 +10,17 @@
 #include <SpiceParser.h>
 #include <Token.h>
 
-#include <analyzer/AnalyzerVisitor.h>
-#include <exception/AntlrThrowingErrorListener.h>
-#include <exception/ErrorFactory.h>
-#include <generator/GeneratorVisitor.h>
-#include <symbol/SymbolTable.h>
+#include <llvm/IR/IRBuilder.h>
+
+// Forward declarations
+class AnalyzerVisitor;
+class GeneratorVisitor;
+class AntlrThrowingErrorListener;
+class SymbolTable;
+class ErrorFactory;
+class CliOptions;
+class LinkerInterface;
+class ThreadFactory;
 
 struct SourceFileAntlrCtx {
   // Create error handlers for lexer and parser

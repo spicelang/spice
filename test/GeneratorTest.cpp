@@ -20,6 +20,7 @@
 #include <linker/LinkerInterface.h>
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
+#include <util/ThreadFactory.h>
 
 #include "TestUtil.h"
 

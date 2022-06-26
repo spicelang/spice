@@ -2,14 +2,17 @@
 
 #include "SourceFile.h"
 
-#include <analyzer/PreAnalyzerVisitor.h>
-#include <util/CommonUtil.h>
-#include <visualizer/VisualizerVisitor.h>
-
 #include <algorithm>
 #include <utility>
 
+#include <analyzer/AnalyzerVisitor.h>
+#include <analyzer/PreAnalyzerVisitor.h>
+#include <exception/AntlrThrowingErrorListener.h>
+#include <generator/GeneratorVisitor.h>
+#include <linker/LinkerInterface.h>
+#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
+#include <visualizer/VisualizerVisitor.h>
 
 SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
     : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {

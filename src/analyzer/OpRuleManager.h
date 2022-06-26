@@ -6,7 +6,6 @@
 
 #include <Token.h>
 
-#include <exception/SemanticError.h>
 #include <symbol/SymbolType.h>
 
 // Types: double, int, short, long, byte, char, string, bool

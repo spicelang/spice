@@ -10,6 +10,7 @@
 #include <exception/SemanticError.h>
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
+#include <util/ThreadFactory.h>
 
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/IR/GlobalValue.h>
@@ -20,6 +21,7 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
+#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetOptions.h>
