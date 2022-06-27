@@ -1,7 +1,8 @@
-import "std/text/print" as print;
+type TestStruct struct {
+    unsigned int field1
+    long field2
+}
 
 f<int> main() {
-    print.println("Testing all examples ...");
-
-    print.println("Finished testing all examples.");
+    printf("Size: %d\n", sizeof(TestStruct{}));
 }

@@ -59,6 +59,10 @@ ArgList Function::getArgList() const { return argList; }
  * @return Mangled string
  */
 std::string Function::getMangledName() const {
+  // Return 'main' if name is 'main'
+  if (name == "main")
+    return name;
+
   // f, p, mf or mp depending on the function type
   std::string functionTyStr = "f";
   if (isProcedure()) {

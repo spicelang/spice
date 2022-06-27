@@ -712,8 +712,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   currentScope = currentScope->getParent();
 
   // Add the struct to the symbol table
-  std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
-  Struct s(structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, codeLoc);
+  Struct s(structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, *ctx->start);
   s.setSymbolTable(structScope);
   currentScope->insertStruct(s, err.get(), *ctx->start);
   currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);

@@ -190,8 +190,11 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   linker.addObjectFilePath(objectFilePath);
 
   // Print warning if verifier is disabled
-  if (parent == nullptr && options.disableVerifier)
+  if (parent == nullptr && options.disableVerifier) {
+    std::cout << "\n";
     CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.").print();
+    std::cout << "\n";
+  }
 }
 
 void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name,

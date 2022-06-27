@@ -1237,7 +1237,7 @@ std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) 
     llvm::Type *valueTy = value->getType();
 
     // Calculate size at compile-time
-    size = getSizeOfType(valueTy);
+    size = module->getDataLayout().getTypeSizeInBits(valueTy);
   } else { // Type
     auto llvmType = std::any_cast<llvm::Type *>(visit(ctx->dataType()));
     size = llvmType->getScalarSizeInBits();
@@ -2658,22 +2658,6 @@ bool GeneratorVisitor::compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs) {
   return true;
 }
 
-unsigned int GeneratorVisitor::getSizeOfType(llvm::Type *llvmType) {
-  if (llvmType->isArrayTy()) {
-    return llvmType->getArrayNumElements() * llvmType->getArrayElementType()->getScalarSizeInBits();
-  } else if (llvmType->isStructTy()) {
-    unsigned int size = 0;
-    for (int i = 0; i < llvmType->getNumContainedTypes(); ++i) {
-      llvm::Type *containedType = llvmType->getContainedType(i);
-      size += getSizeOfType(containedType);
-    }
-    return size;
-  } else if (llvmType->isPointerTy()) {
-    return module->getDataLayout().getPointerSizeInBits();
-  }
-  return llvmType->getScalarSizeInBits();
-}
-
 llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *srcValue, llvm::Type *dstType) {
   // Unpack the pointers until a pointer of another type is met
   unsigned int loadCounter = 0;
@@ -2723,19 +2707,36 @@ void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName) {
 }
 
 llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolType) const {
-  if (symbolType.isPointer()) {
+  if (symbolType.isPointer()) { // Pointer type
     llvm::DIType *pointeeTy = getDITypeForSymbolType(symbolType.getContainedTy());
     unsigned int pointerWidth = module->getDataLayout().getPointerSizeInBits();
     return diBuilder->createPointerType(pointeeTy, pointerWidth);
   }
 
-  if (symbolType.isArray()) {
+  if (symbolType.isArray()) { // Array type
+    llvm::DIType *itemTy = getDITypeForSymbolType(symbolType.getContainedTy());
+    size_t size = symbolType.getArraySize();
+    llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
+    return diBuilder->createArrayType(size, 0, itemTy, elements);
   }
 
-  if (symbolType.is(TY_STRUCT)) {
-  }
-
-  // Primitive type
+  // Primitive types
+  if (symbolType.is(TY_DOUBLE))
+    return debugInfo.doubleTy;
+  if (symbolType.is(TY_INT))
+    return symbolType.getSpecifiers().isSigned() ? debugInfo.intTy : debugInfo.uIntTy;
+  if (symbolType.is(TY_SHORT))
+    return symbolType.getSpecifiers().isSigned() ? debugInfo.shortTy : debugInfo.uShortTy;
+  if (symbolType.is(TY_LONG))
+    return symbolType.getSpecifiers().isSigned() ? debugInfo.longTy : debugInfo.uLongTy;
+  if (symbolType.is(TY_BYTE))
+    return symbolType.getSpecifiers().isSigned() ? debugInfo.byteTy : debugInfo.uByteTy;
+  if (symbolType.is(TY_CHAR))
+    return symbolType.getSpecifiers().isSigned() ? debugInfo.charTy : debugInfo.uCharTy;
+  if (symbolType.is(TY_STRING))
+    return debugInfo.stringTy;
+  if (symbolType.is(TY_BOOL))
+    return debugInfo.boolTy;
 
   return nullptr;
 }
@@ -2757,6 +2758,15 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
 
   // Add debug info to LLVM function
   llvmFunction->setSubprogram(subprogram);
+}
+
+llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  size_t lineNumber = spiceStruct->getDefinitionToken().getLine();
+  size_t sizeInBits = module->getDataLayout().getTypeSizeInBits(llvmStructTy);
+  llvm::DINode::DIFlags flags = spiceStruct->getSpecifiers().isPublic() ? llvm::DINode::FlagPublic : llvm::DINode::FlagPrivate;
+  llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
+  return diBuilder->createStructType(unit, spiceStruct->getName(), unit, lineNumber, sizeInBits, 0, flags, nullptr, elements);
 }
 
 llvm::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {

@@ -43,7 +43,7 @@ public:
   void setUsed();
   [[nodiscard]] bool isUsed() const;
   [[nodiscard]] const antlr4::Token &getDefinitionToken() const;
-  [[nodiscard]] const std::string &getDefinitionCodeLoc();
+  const std::string &getDefinitionCodeLoc();
 
 private:
   // Members

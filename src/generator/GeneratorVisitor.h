@@ -25,6 +25,7 @@ class OpRuleConversionsManager;
 class SymbolTable;
 class SymbolTableEntry;
 class Function;
+class Struct;
 
 /**
  * Visitor for generating a source file.
@@ -162,10 +163,10 @@ private:
   llvm::Constant *getDefaultValueForType(llvm::Type *type);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);
-  unsigned int getSizeOfType(llvm::Type *structType);
   llvm::Value *doImplicitCast(llvm::Value *lhs, llvm::Type *rhs);
   void initializeDIBuilder(const std::string &sourceFileName);
-  llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
+  [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) const;
+  [[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };
