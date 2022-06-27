@@ -135,11 +135,13 @@ std::string GeneratorVisitor::getIRString() {
 std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   std::any result = SpiceBaseVisitor::visitEntry(ctx);
 
-  // Verify module to detect IR code bugs
-  std::string output;
-  llvm::raw_string_ostream oss(output);
-  if (llvm::verifyModule(*module, &oss))
-    throw err->get(*ctx->start, INVALID_MODULE, oss.str());
+  // Verify module
+  if (!cliOptions.disableVerifier) {
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyModule(*module, &oss))
+      throw err->get(*ctx->start, INVALID_MODULE, oss.str());
+  }
 
   // Finalize debug info generation
   if (cliOptions.generateDebugInfo)
@@ -227,10 +229,12 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
     }
 
     // Verify function
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*fct, &oss))
-      throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+    if (!cliOptions.disableVerifier) {
+      std::string output;
+      llvm::raw_string_ostream oss(output);
+      if (llvm::verifyFunction(*fct, &oss))
+        throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+    }
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -366,10 +370,12 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
       }
 
       // Verify function
-      std::string output;
-      llvm::raw_string_ostream oss(output);
-      if (llvm::verifyFunction(*fct, &oss))
-        throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+      if (!cliOptions.disableVerifier) {
+        std::string output;
+        llvm::raw_string_ostream oss(output);
+        if (llvm::verifyFunction(*fct, &oss))
+          throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+      }
 
       // Change scope back
       currentScope = currentScope->getParent();
@@ -497,10 +503,12 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
       builder->CreateRetVoid();
 
       // Verify procedure
-      std::string output;
-      llvm::raw_string_ostream oss(output);
-      if (llvm::verifyFunction(*proc, &oss))
-        throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+      if (!cliOptions.disableVerifier) {
+        std::string output;
+        llvm::raw_string_ostream oss(output);
+        if (llvm::verifyFunction(*proc, &oss))
+          throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+      }
 
       // Change scope back
       currentScope = currentScope->getParent();

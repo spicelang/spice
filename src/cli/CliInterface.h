@@ -31,6 +31,7 @@ struct CliOptions {
   bool dumpSymbolTables = false;
   short optLevel = 2; // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
   bool generateDebugInfo = false;
+  bool disableVerifier = false;
   bool testMode = false;
 };
 

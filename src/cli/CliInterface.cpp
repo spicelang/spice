@@ -181,6 +181,8 @@ void CliInterface::addBuildSubcommand() {
 
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+  // --disable-verifier
+  subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
 
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
@@ -228,6 +230,8 @@ void CliInterface::addRunSubcommand() {
 
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+  // --disable-verifier
+  subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
 
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
