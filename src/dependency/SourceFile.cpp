@@ -13,6 +13,7 @@
 #include <linker/LinkerInterface.h>
 #include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
+#include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 #include <visualizer/VisualizerVisitor.h>
 
@@ -187,6 +188,10 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
 
   // Add object file to the linker interface
   linker.addObjectFilePath(objectFilePath);
+
+  // Print warning if verifier is disabled
+  if (parent == nullptr && options.disableVerifier)
+    CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.").print();
 }
 
 void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name,
