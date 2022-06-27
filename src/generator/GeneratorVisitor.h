@@ -47,6 +47,7 @@ public:
   void emit();
   void dumpIR();
   std::string getIRString();
+  void dumpAsm();
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
   std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
   std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;

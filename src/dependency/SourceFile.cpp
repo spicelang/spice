@@ -181,6 +181,12 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
     } // GCOV_EXCL_STOP
   }
 
+  // Dump assembly code
+  if (options.dumpAssembly) { // GCOV_EXCL_START
+    std::cout << "\nAssembly code:\n";
+    generator->dumpAsm();
+  } // GCOV_EXCL_STOP
+
   // Emit object file
   generator->emit();
 

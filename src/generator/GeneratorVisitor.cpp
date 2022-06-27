@@ -132,6 +132,16 @@ std::string GeneratorVisitor::getIRString() {
   return oss.str();
 }
 
+void GeneratorVisitor::dumpAsm() {
+  llvm::legacy::PassManager passManager;
+  if (targetMachine->addPassesToEmitFile(passManager, llvm::outs(), nullptr, llvm::CGFT_AssemblyFile))
+    throw err->get(WRONG_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
+
+  // Emit object file
+  passManager.run(*module);
+  llvm::outs().flush();
+}
+
 std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   std::any result = SpiceBaseVisitor::visitEntry(ctx);
 
@@ -2723,7 +2733,7 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
   // Primitive types
   if (symbolType.is(TY_DOUBLE))
     return debugInfo.doubleTy;
-  if (symbolType.is(TY_INT))
+  /*if (symbolType.is(TY_INT))
     return symbolType.getSpecifiers().isSigned() ? debugInfo.intTy : debugInfo.uIntTy;
   if (symbolType.is(TY_SHORT))
     return symbolType.getSpecifiers().isSigned() ? debugInfo.shortTy : debugInfo.uShortTy;
@@ -2732,7 +2742,7 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
   if (symbolType.is(TY_BYTE))
     return symbolType.getSpecifiers().isSigned() ? debugInfo.byteTy : debugInfo.uByteTy;
   if (symbolType.is(TY_CHAR))
-    return symbolType.getSpecifiers().isSigned() ? debugInfo.charTy : debugInfo.uCharTy;
+    return symbolType.getSpecifiers().isSigned() ? debugInfo.charTy : debugInfo.uCharTy;*/
   if (symbolType.is(TY_STRING))
     return debugInfo.stringTy;
   if (symbolType.is(TY_BOOL))

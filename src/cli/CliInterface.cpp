@@ -142,10 +142,12 @@ void CliInterface::addBuildSubcommand() {
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
   // --dump-ast
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
   // --dump-symtab
   subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-assembly
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
 
   // --target-triple
   subCmd->add_option<std::string>("--target,-t,--target-triple", cliOptions.targetTriple,
@@ -206,10 +208,12 @@ void CliInterface::addRunSubcommand() {
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
   // --dump-ast
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
   // --dump-symtab
   subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-assembly
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
 
   // --output
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
@@ -256,10 +260,12 @@ void CliInterface::addInstallSubcommand() {
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
   // --dump-ast
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
   // --dump-symtab
   subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-assembly
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
 
   // --output
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
