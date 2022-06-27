@@ -60,7 +60,7 @@ sizeof(12); // 32
 int[9] intArray = {};
 sizeof(intArray); // 9 * 32 = 288
 
-sizeof("Hello World!"); // 8 (Strings are Char pointers internally and the size of a char is 8)
+sizeof("Hello World!"); // 64 (Strings are Char pointers internally)
 ```
 
 ## The `len` builtin
