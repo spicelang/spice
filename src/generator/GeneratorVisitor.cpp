@@ -680,6 +680,8 @@ std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *c
 }
 
 std::any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Create threaded function
   std::string threadedFctName = "_thread" + std::to_string(threadFactory.getNextFunctionSuffix());
   llvm::Type *voidPtrTy = builder->getInt8PtrTy();
@@ -785,6 +787,8 @@ std::any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Change scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->getChild(scopeId);
@@ -801,6 +805,8 @@ std::any GeneratorVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContex
 }
 
 std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
+  emitSourceLocation(ctx);
+
   auto head = ctx->forHead();
 
   // Create blocks
@@ -865,6 +871,8 @@ std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
+  emitSourceLocation(ctx);
+
   auto head = ctx->foreachHead();
 
   // Create blocks
@@ -966,6 +974,8 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
 }
 
 std::any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
+  emitSourceLocation(ctx);
+
   llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
   // Create blocks
@@ -1011,6 +1021,8 @@ std::any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
+  emitSourceLocation(ctx);
+
   for (const auto &child : ctx->children) {
     if (!blockAlreadyTerminated)
       visit(child);
@@ -1023,6 +1035,8 @@ std::any GeneratorVisitor::visitTypeAlts(SpiceParser::TypeAltsContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Change scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->getChild(scopeId);
@@ -1068,6 +1082,8 @@ std::any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->ifStmt()) { // It is an else if branch
     visit(ctx->ifStmt());
   } else { // It is an else branch
@@ -1087,6 +1103,8 @@ std::any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Only generate assertions with -O0
   if (cliOptions.optLevel == 0) {
     // Visit the assignExpr
@@ -1124,6 +1142,8 @@ std::any GeneratorVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   currentVarName = lhsVarName = ctx->IDENTIFIER()->toString();
 
   // Get variable entry
@@ -1154,6 +1174,8 @@ std::any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
 
   // Check if a value is attached to the return statement
@@ -1184,6 +1206,8 @@ std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Get number, how many loops we want to break
   int breakCount = 1;
   if (ctx->INTEGER())
@@ -1199,6 +1223,8 @@ std::any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Get number, how many loops we want to continue
   int continueCount = 1;
   if (ctx->INTEGER())
@@ -1214,6 +1240,8 @@ std::any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *c
 }
 
 std::any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->printfCall())
     return visit(ctx->printfCall());
   if (ctx->sizeOfCall())
@@ -1373,6 +1401,8 @@ std::any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment or compound assignment
     lhsType = nullptr;   // Reset lhs type
@@ -1441,6 +1471,8 @@ std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->logicalOrExpr().size() > 1) {
     auto conditionPtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[0]));
     llvm::Value *condition = builder->CreateLoad(conditionPtr->getType()->getPointerElementType(), conditionPtr);
@@ -1485,6 +1517,8 @@ std::any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx
 }
 
 std::any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->logicalAndExpr().size() > 1) {
     // Prepare for short-circuiting
     std::pair<llvm::Value *, llvm::BasicBlock *> incomingBlocks[ctx->logicalAndExpr().size()];
@@ -1534,6 +1568,8 @@ std::any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext 
 }
 
 std::any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->bitwiseOrExpr().size() > 1) {
     // Prepare for short-circuiting
     std::pair<llvm::Value *, llvm::BasicBlock *> incomingBlocks[ctx->bitwiseOrExpr().size()];
@@ -1583,6 +1619,8 @@ std::any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContex
 }
 
 std::any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->bitwiseXorExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->bitwiseXorExpr()[0]));
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1599,6 +1637,8 @@ std::any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext 
 }
 
 std::any GeneratorVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->bitwiseAndExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->bitwiseAndExpr()[0]));
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1615,6 +1655,8 @@ std::any GeneratorVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContex
 }
 
 std::any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->equalityExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->equalityExpr()[0]));
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1631,6 +1673,8 @@ std::any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContex
 }
 
 std::any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->relationalExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->relationalExpr()[0]));
     auto rhsPtr = any_cast<llvm::Value *>(visit(ctx->relationalExpr()[1]));
@@ -1653,6 +1697,8 @@ std::any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *c
 }
 
 std::any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->shiftExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->shiftExpr()[0]));
     auto rhsPtr = any_cast<llvm::Value *>(visit(ctx->shiftExpr()[1]));
@@ -1685,6 +1731,8 @@ std::any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprContex
 }
 
 std::any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Check if there is a shift operation attached
   if (ctx->additiveExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->additiveExpr()[0]));
@@ -1708,6 +1756,8 @@ std::any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Check if at least one additive operator is applied
   if (ctx->multiplicativeExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->multiplicativeExpr()[0]));
@@ -1734,6 +1784,8 @@ std::any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *c
 }
 
 std::any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Check if at least one multiplicative operator is applied
   if (ctx->castExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->castExpr()[0]));
@@ -1762,6 +1814,8 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeEx
 }
 
 std::any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   auto value = visit(ctx->prefixUnaryExpr());
 
   if (ctx->LPAREN()) { // Cast operator is applied
@@ -1778,6 +1832,8 @@ std::any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   currentVarName = "";         // Reset the current variable name
   scopePrefix = "";            // Reset the scope prefix
   scopePath.clear();           // Clear the scope path
@@ -1845,6 +1901,8 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
 }
 
 std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->atomicExpr()));
 
   if (ctx->children.size() > 1) {
@@ -1922,6 +1980,8 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
 }
 
 std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->value())
     return visit(ctx->value());
   allArgsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
@@ -2016,6 +2076,8 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Primitive value
   if (ctx->primitiveValue()) {
     // Visit the primitive value
@@ -2426,6 +2488,8 @@ std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantia
 }
 
 std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
+  emitSourceLocation(ctx);
+
   currentSymbolType = any_cast<SymbolType>(visit(ctx->baseDataType()));
 
   size_t tokenCounter = 1;
@@ -2798,9 +2862,13 @@ llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmSt
 }
 
 void GeneratorVisitor::emitSourceLocation(antlr4::ParserRuleContext *ctx) {
+  if (!cliOptions.generateDebugInfo)
+    return;
   unsigned int lineNumber = ctx->start->getLine();
   unsigned int columnNumber = ctx->start->getCharPositionInLine();
-  llvm::DIScope *scope = debugInfo.lexicalBlocks.empty() ? debugInfo.compileUnit : debugInfo.lexicalBlocks.back();
+  if (debugInfo.lexicalBlocks.empty())
+    return;
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
   builder->SetCurrentDebugLocation(llvm::DILocation::get(scope->getContext(), lineNumber, columnNumber, scope));
 }
 

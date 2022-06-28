@@ -4,8 +4,8 @@ type TestStruct struct {
 }
 
 f<int> main() {
-    int[9] intArray = {};
-    printf("%d\n", sizeof(intArray));
+    int test = 12;
+    printf("%d\n", test);
 
     printf("%d\n", sizeof("Hello World!"));
 }
