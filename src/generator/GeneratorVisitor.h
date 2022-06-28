@@ -93,10 +93,10 @@ public:
   std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
   std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
   std::any visitValue(SpiceParser::ValueContext *ctx) override;
+  std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
   std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
   std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override;
   std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override;
-  std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;
@@ -138,6 +138,7 @@ private:
   struct DebugInfo {
     llvm::DIFile *diFile;
     llvm::DICompileUnit *compileUnit;
+    std::vector<llvm::DIScope *> lexicalBlocks;
     llvm::DIType *doubleTy;
     llvm::DIType *intTy;
     llvm::DIType *uIntTy;
@@ -167,7 +168,8 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *lhs, llvm::Type *rhs);
   void initializeDIBuilder(const std::string &sourceFileName);
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
-  void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) const;
+  void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
+  void emitSourceLocation(antlr4::ParserRuleContext *ctx);
   [[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

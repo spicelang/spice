@@ -145,6 +145,10 @@ void GeneratorVisitor::dumpAsm() {
 std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   std::any result = SpiceBaseVisitor::visitEntry(ctx);
 
+  // Finalize debug info generation
+  if (cliOptions.generateDebugInfo)
+    diBuilder->finalize();
+
   // Verify module
   if (!cliOptions.disableVerifier) {
     std::string output;
@@ -152,10 +156,6 @@ std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
     if (llvm::verifyModule(*module, &oss))
       throw err->get(*ctx->start, INVALID_MODULE, oss.str());
   }
-
-  // Finalize debug info generation
-  if (cliOptions.generateDebugInfo)
-    diBuilder->finalize();
 
   return result;
 }
@@ -176,6 +176,9 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
       for (const auto &arg : ctx->argLstDef()->declStmt()) {
         currentVarName = arg->IDENTIFIER()->toString();
         argNames.push_back(currentVarName);
+        SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
+        assert(argSymbol != nullptr);
+        currentVarSigned = argSymbol->getSpecifiers().isSigned();
         auto argType = any_cast<llvm::Type *>(visit(arg->dataType()));
         argTypes.push_back(argType);
       }
@@ -238,8 +241,12 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
       builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
     }
 
+    // Conclude debug information
+    if (cliOptions.generateDebugInfo)
+      debugInfo.lexicalBlocks.pop_back();
+
     // Verify function
-    if (!cliOptions.disableVerifier) {
+    if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
       std::string output;
       llvm::raw_string_ostream oss(output);
       if (llvm::verifyFunction(*fct, &oss))
@@ -308,6 +315,9 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
         for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
           currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
           argNames.push_back(currentVarName);
+          SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
+          assert(argSymbol != nullptr);
+          currentVarSigned = argSymbol->getSpecifiers().isSigned();
           argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex], currentScope));
         }
       }
@@ -379,8 +389,12 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
         builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
       }
 
+      // Conclude debug information
+      if (cliOptions.generateDebugInfo)
+        debugInfo.lexicalBlocks.pop_back();
+
       // Verify function
-      if (!cliOptions.disableVerifier) {
+      if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
         std::string output;
         llvm::raw_string_ostream oss(output);
         if (llvm::verifyFunction(*fct, &oss))
@@ -451,6 +465,9 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
         for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
           currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
           argNames.push_back(currentVarName);
+          SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
+          assert(argSymbol != nullptr);
+          currentVarSigned = argSymbol->getSpecifiers().isSigned();
           argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex], currentScope));
         }
       }
@@ -512,8 +529,12 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
       // Create return
       builder->CreateRetVoid();
 
+      // Conclude debug information
+      if (cliOptions.generateDebugInfo)
+        debugInfo.lexicalBlocks.pop_back();
+
       // Verify procedure
-      if (!cliOptions.disableVerifier) {
+      if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
         std::string output;
         llvm::raw_string_ostream oss(output);
         if (llvm::verifyFunction(*proc, &oss))
@@ -606,6 +627,7 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
         std::string fieldName = field->IDENTIFIER()->toString();
         SymbolTableEntry *fieldEntry = currentScope->lookup(fieldName);
         assert(fieldEntry && !fieldEntry->getType().is(TY_GENERIC));
+        currentVarSigned = fieldEntry->getSpecifiers().isSigned();
         fieldTypes.push_back(getTypeForSymbolType(fieldEntry->getType(), currentScope));
       }
 
@@ -1103,11 +1125,13 @@ std::any GeneratorVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) 
 
 std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   currentVarName = lhsVarName = ctx->IDENTIFIER()->toString();
-  llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
 
   // Get variable entry
   SymbolTableEntry *entry = currentScope->lookup(lhsVarName);
   assert(entry != nullptr);
+  currentVarSigned = entry->getSpecifiers().isSigned();
+
+  llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
   llvm::Value *memAddress = insertAlloca(varType, lhsVarName);
   entry->updateAddress(memAddress);
   entry->updateLLVMType(varType);
@@ -2036,6 +2060,82 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   return nullptr;
 }
 
+std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
+  // Value is a double constant
+  if (ctx->DOUBLE()) {
+    currentSymbolType = SymbolType(TY_DOUBLE);
+    double value = std::stod(ctx->DOUBLE()->toString());
+    if (constNegate)
+      value *= -1;
+    return static_cast<llvm::Constant *>(llvm::ConstantFP::get(*context, llvm::APFloat(value)));
+  }
+
+  // Value is an integer constant
+  if (ctx->INTEGER()) {
+    currentSymbolType = SymbolType(TY_INT);
+    int value = std::stoi(ctx->INTEGER()->toString());
+    if (constNegate)
+      value *= -1;
+    if (currentVarSigned)
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value));
+    return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value));
+  }
+
+  // Value is a short constant
+  if (ctx->SHORT()) {
+    currentSymbolType = SymbolType(TY_SHORT);
+    int value = std::stoi(ctx->SHORT()->toString());
+    if (constNegate)
+      value *= -1;
+    if (currentVarSigned)
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value));
+    return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value));
+  }
+
+  // Value is a long constant
+  if (ctx->LONG()) {
+    currentSymbolType = SymbolType(TY_LONG);
+    long long value = std::stoll(ctx->LONG()->toString());
+    if (constNegate)
+      value = -value;
+    if (currentVarSigned)
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value));
+    return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value));
+  }
+
+  // Value is a char constant
+  if (ctx->CHAR_LITERAL()) {
+    currentSymbolType = SymbolType(TY_CHAR);
+    char value = ctx->CHAR_LITERAL()->toString()[1];
+    if (currentVarSigned)
+      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value));
+    return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value));
+  }
+
+  // Value is a string constant
+  if (ctx->STRING_LITERAL()) {
+    currentSymbolType = SymbolType(TY_STRING);
+    std::string value = ctx->STRING_LITERAL()->toString();
+    value = std::regex_replace(value, std::regex("\\\\n"), "\n");
+    value = value.substr(1, value.size() - 2);
+    return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
+  }
+
+  // Value is a boolean constant with value false
+  if (ctx->FALSE()) {
+    currentSymbolType = SymbolType(TY_BOOL);
+    return static_cast<llvm::Constant *>(builder->getFalse());
+  }
+
+  // Value is a boolean constant with value true
+  if (ctx->TRUE()) {
+    currentSymbolType = SymbolType(TY_BOOL);
+    return static_cast<llvm::Constant *>(builder->getTrue());
+  }
+
+  throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through"); // GCOV_EXCL_LINE
+}
+
 std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
   // Get the access scope
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
@@ -2323,90 +2423,6 @@ std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantia
   }
 
   return structAddress;
-}
-
-std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
-  // Value is a double constant
-  if (ctx->DOUBLE()) {
-    currentSymbolType = SymbolType(TY_DOUBLE);
-    double value = std::stod(ctx->DOUBLE()->toString());
-    if (constNegate)
-      value *= -1;
-    return static_cast<llvm::Constant *>(llvm::ConstantFP::get(*context, llvm::APFloat(value)));
-  }
-
-  // Value is an integer constant
-  if (ctx->INTEGER()) {
-    currentSymbolType = SymbolType(TY_INT);
-    int value = std::stoi(ctx->INTEGER()->toString());
-    if (constNegate)
-      value *= -1;
-    if (currentVarSigned) {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value));
-    } else {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value));
-    }
-  }
-
-  // Value is a short constant
-  if (ctx->SHORT()) {
-    currentSymbolType = SymbolType(TY_SHORT);
-    int value = std::stoi(ctx->SHORT()->toString());
-    if (constNegate)
-      value *= -1;
-    if (currentVarSigned) {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value));
-    } else {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value));
-    }
-  }
-
-  // Value is a long constant
-  if (ctx->LONG()) {
-    currentSymbolType = SymbolType(TY_LONG);
-    long long value = std::stoll(ctx->LONG()->toString());
-    if (constNegate)
-      value = -value;
-    if (currentVarSigned) {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value));
-    } else {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value));
-    }
-  }
-
-  // Value is a char constant
-  if (ctx->CHAR_LITERAL()) {
-    currentSymbolType = SymbolType(TY_CHAR);
-    char value = ctx->CHAR_LITERAL()->toString()[1];
-    if (currentVarSigned) {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value));
-    } else {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value));
-    }
-  }
-
-  // Value is a string constant
-  if (ctx->STRING_LITERAL()) {
-    currentSymbolType = SymbolType(TY_STRING);
-    std::string value = ctx->STRING_LITERAL()->toString();
-    value = std::regex_replace(value, std::regex("\\\\n"), "\n");
-    value = value.substr(1, value.size() - 2);
-    return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
-  }
-
-  // Value is a boolean constant with value false
-  if (ctx->FALSE()) {
-    currentSymbolType = SymbolType(TY_BOOL);
-    return static_cast<llvm::Constant *>(builder->getFalse());
-  }
-
-  // Value is a boolean constant with value true
-  if (ctx->TRUE()) {
-    currentSymbolType = SymbolType(TY_BOOL);
-    return static_cast<llvm::Constant *>(builder->getTrue());
-  }
-
-  throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through"); // GCOV_EXCL_LINE
 }
 
 std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
@@ -2733,16 +2749,16 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
   // Primitive types
   if (symbolType.is(TY_DOUBLE))
     return debugInfo.doubleTy;
-  /*if (symbolType.is(TY_INT))
-    return symbolType.getSpecifiers().isSigned() ? debugInfo.intTy : debugInfo.uIntTy;
+  if (symbolType.is(TY_INT))
+    return currentVarSigned ? debugInfo.intTy : debugInfo.uIntTy;
   if (symbolType.is(TY_SHORT))
-    return symbolType.getSpecifiers().isSigned() ? debugInfo.shortTy : debugInfo.uShortTy;
+    return currentVarSigned ? debugInfo.shortTy : debugInfo.uShortTy;
   if (symbolType.is(TY_LONG))
-    return symbolType.getSpecifiers().isSigned() ? debugInfo.longTy : debugInfo.uLongTy;
+    return currentVarSigned ? debugInfo.longTy : debugInfo.uLongTy;
   if (symbolType.is(TY_BYTE))
-    return symbolType.getSpecifiers().isSigned() ? debugInfo.byteTy : debugInfo.uByteTy;
+    return currentVarSigned ? debugInfo.byteTy : debugInfo.uByteTy;
   if (symbolType.is(TY_CHAR))
-    return symbolType.getSpecifiers().isSigned() ? debugInfo.charTy : debugInfo.uCharTy;*/
+    return currentVarSigned ? debugInfo.charTy : debugInfo.uCharTy;
   if (symbolType.is(TY_STRING))
     return debugInfo.stringTy;
   if (symbolType.is(TY_BOOL))
@@ -2751,7 +2767,7 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
   return nullptr;
 }
 
-void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) const {
+void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
   size_t lineNumber = spiceFunc->getDefinitionToken().getLine();
 
@@ -2768,6 +2784,8 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
 
   // Add debug info to LLVM function
   llvmFunction->setSubprogram(subprogram);
+  // Add scope to lexicalBlocks
+  debugInfo.lexicalBlocks.push_back(subprogram);
 }
 
 llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
@@ -2777,6 +2795,13 @@ llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmSt
   llvm::DINode::DIFlags flags = spiceStruct->getSpecifiers().isPublic() ? llvm::DINode::FlagPublic : llvm::DINode::FlagPrivate;
   llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
   return diBuilder->createStructType(unit, spiceStruct->getName(), unit, lineNumber, sizeInBits, 0, flags, nullptr, elements);
+}
+
+void GeneratorVisitor::emitSourceLocation(antlr4::ParserRuleContext *ctx) {
+  unsigned int lineNumber = ctx->start->getLine();
+  unsigned int columnNumber = ctx->start->getCharPositionInLine();
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.empty() ? debugInfo.compileUnit : debugInfo.lexicalBlocks.back();
+  builder->SetCurrentDebugLocation(llvm::DILocation::get(scope->getContext(), lineNumber, columnNumber, scope));
 }
 
 llvm::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {

@@ -360,6 +360,7 @@ int CliInterface::parse(int argc, char **argv) {
  */
 void CliInterface::runBinary() const {
   // Print status message
+  std::cout << "\n";
   if (cliOptions.printDebugOutput)
     std::cout << "Running executable ...\n";
 

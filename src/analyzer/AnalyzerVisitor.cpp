@@ -691,8 +691,10 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
                          "Struct fields cannot have the const specifier attached");
         } else if (specifier->SIGNED()) {
           fieldTypeSpecifiers.setSigned(true);
+          fieldType.setSigned(true);
         } else if (specifier->UNSIGNED()) {
           fieldTypeSpecifiers.setSigned(false);
+          fieldType.setSigned(false);
         } else if (specifier->PUBLIC()) {
           fieldTypeSpecifiers.setPublic(true);
         } else {
@@ -1011,6 +1013,25 @@ std::any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
       throw err->get(*arg->start, INVALID_ARGUMENT_ORDER, "Mandatory arguments must go before any optional arguments");
     }
 
+    // Build symbol specifiers
+    auto symbolTypeSpecifiers = SymbolSpecifiers(argType);
+    if (arg->declSpecifiers()) {
+      for (const auto &specifier : arg->declSpecifiers()->declSpecifier()) {
+        if (specifier->CONST()) {
+          symbolTypeSpecifiers.setConst(true);
+        } else if (specifier->SIGNED()) {
+          symbolTypeSpecifiers.setSigned(true);
+          argType.setSigned(true);
+        } else if (specifier->UNSIGNED()) {
+          symbolTypeSpecifiers.setSigned(false);
+          argType.setSigned(false);
+        } else {
+          throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                         "Cannot use the " + specifier->getText() + " specifier on an argument declaration");
+        }
+      }
+    }
+
     namedArgList.emplace_back(argName, argType, metOptional);
   }
   return namedArgList;
@@ -1046,8 +1067,10 @@ std::any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
         symbolTypeSpecifiers.setConst(true);
       } else if (specifier->SIGNED()) {
         symbolTypeSpecifiers.setSigned(true);
+        symbolType.setSigned(true);
       } else if (specifier->UNSIGNED()) {
         symbolTypeSpecifiers.setSigned(false);
+        symbolType.setSigned(false);
       } else {
         throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
                        "Cannot use the " + specifier->getText() + " specifier on a local variable declaration");
@@ -1778,6 +1801,22 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   return nullptr;
 }
 
+std::any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
+  if (ctx->DOUBLE())
+    return SymbolType(TY_DOUBLE);
+  if (ctx->INTEGER())
+    return SymbolType(TY_INT);
+  if (ctx->SHORT())
+    return SymbolType(TY_SHORT);
+  if (ctx->LONG())
+    return SymbolType(TY_LONG);
+  if (ctx->CHAR_LITERAL())
+    return SymbolType(TY_CHAR);
+  if (ctx->STRING_LITERAL())
+    return SymbolType(TY_STRING);
+  return SymbolType(TY_BOOL);
+}
+
 std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
   // Get the access scope
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
@@ -2016,22 +2055,6 @@ std::any AnalyzerVisitor::visitStructInstantiation(SpiceParser::StructInstantiat
   }
 
   return structType;
-}
-
-std::any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
-  if (ctx->DOUBLE())
-    return SymbolType(TY_DOUBLE);
-  if (ctx->INTEGER())
-    return SymbolType(TY_INT);
-  if (ctx->SHORT())
-    return SymbolType(TY_SHORT);
-  if (ctx->LONG())
-    return SymbolType(TY_LONG);
-  if (ctx->CHAR_LITERAL())
-    return SymbolType(TY_CHAR);
-  if (ctx->STRING_LITERAL())
-    return SymbolType(TY_STRING);
-  return SymbolType(TY_BOOL);
 }
 
 std::any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
