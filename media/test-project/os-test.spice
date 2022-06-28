@@ -1,11 +1,3 @@
-type TestStruct struct {
-    unsigned int field1
-    long field2
-}
-
 f<int> main() {
-    int test = 12;
-    printf("%d\n", test);
-
-    printf("%d\n", sizeof("Hello World!"));
+    printf("Hello World!");
 }

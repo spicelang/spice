@@ -1155,6 +1155,18 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   llvm::Value *memAddress = insertAlloca(varType, lhsVarName);
   entry->updateAddress(memAddress);
   entry->updateLLVMType(varType);
+
+  // Generate debug info for local variable
+  if (cliOptions.generateDebugInfo) {
+    llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+    llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
+    unsigned int lineNumber = ctx->start->getLine();
+    llvm::DIType *diType = getDITypeForSymbolType(entry->getType());
+    llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, lineNumber, diType);
+    llvm::DIExpression *expr = diBuilder->createExpression();
+    diBuilder->insertDbgAddrIntrinsic(memAddress, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
+  }
+
   if (ctx->assignExpr()) {
     // Visit right side
     auto rhsPtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
@@ -2837,6 +2849,7 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
 
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
+  // ToDo: Here we do not know if return and arg types are signed or unsigned
   argTypes.push_back(getDITypeForSymbolType(spiceFunc->getReturnType())); // Add result type
   for (auto &argType : spiceFunc->getArgTypes())                          // Add arg types
     argTypes.push_back(getDITypeForSymbolType(argType));
