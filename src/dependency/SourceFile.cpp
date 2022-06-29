@@ -21,6 +21,10 @@ SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name
     : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
   this->objectFilePath = options.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
 
+  // Deduce fileName and fileDir
+  fileName = std::filesystem::path(filePath).filename().string();
+  fileDir = std::filesystem::path(filePath).parent_path().string();
+
   // Read from file
   std::ifstream fileInputStream(filePath);
   if (!fileInputStream)

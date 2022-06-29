@@ -166,9 +166,11 @@ private:
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);
   llvm::Value *doImplicitCast(llvm::Value *lhs, llvm::Type *rhs);
-  void initializeDIBuilder(const std::string &sourceFileName);
+  void initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir);
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
+  void generateDeclDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *address);
+  void generateAssignDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *value);
   void emitSourceLocation(antlr4::ParserRuleContext *ctx);
   [[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;

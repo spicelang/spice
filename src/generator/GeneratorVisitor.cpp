@@ -73,7 +73,7 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   // Initialize debug info generator
   if (cliOptions.generateDebugInfo) {
     module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
-    initializeDIBuilder(sourceFile.filePath);
+    initializeDIBuilder(sourceFile.fileName, sourceFile.fileDir);
   }
 }
 
@@ -1157,15 +1157,7 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   entry->updateLLVMType(varType);
 
   // Generate debug info for local variable
-  if (cliOptions.generateDebugInfo) {
-    llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-    llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
-    unsigned int lineNumber = ctx->start->getLine();
-    llvm::DIType *diType = getDITypeForSymbolType(entry->getType());
-    llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, lineNumber, diType);
-    llvm::DIExpression *expr = diBuilder->createExpression();
-    diBuilder->insertDbgAddrIntrinsic(memAddress, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
-  }
+  generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
 
   if (ctx->assignExpr()) {
     // Visit right side
@@ -1469,20 +1461,7 @@ std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) 
     }
 
     // Add debug info for value change
-    /*if (cliOptions.generateDebugInfo) {
-      // Get symbol table entry
-      SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
-      assert(variableEntry != nullptr);
-      // Build debug info
-      llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-      llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
-      unsigned int lineNumber = ctx->start->getLine();
-      llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
-      llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, lineNumber, diType);
-      llvm::DIExpression *expr = diBuilder->createExpression();
-      // Insert intrinsic call
-      diBuilder->insertDbgValueIntrinsic(rhs, varInfo, expr, builder->getCurrentDebugLocation(), builder->GetInsertBlock());
-    }*/
+    generateAssignDebugInfo(*ctx->start, lhsVarName, rhs);
 
     return lhsPtr;
   } else if (ctx->ternaryExpr()) {
@@ -1924,6 +1903,9 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
 
     // Store the value back again
     builder->CreateStore(lhs, lhsPtr, isVolatile);
+
+    // Create debug info for assignment
+    generateAssignDebugInfo(*ctx->start, currentVarName, lhs);
   }
 
   return lhsPtr;
@@ -2000,9 +1982,13 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
       tokenCounter++;
     }
 
-    // Store the value back again
-    if (lhs != nullptr)
+    if (lhs != nullptr) {
+      // Store the value back again
       builder->CreateStore(lhs, lhsPtr);
+
+      // Create debug info for assignment
+      generateAssignDebugInfo(*ctx->start, currentVarName, lhs);
+    }
   }
 
   return lhsPtr;
@@ -2803,11 +2789,11 @@ llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *srcValue, llvm::Type 
   return srcValue;
 }
 
-void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName) {
+void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir) {
   // Create DIBuilder
   diBuilder = std::make_unique<llvm::DIBuilder>(*module);
   // Create compilation unit
-  debugInfo.diFile = diBuilder->createFile(sourceFileName, ".");
+  debugInfo.diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
   debugInfo.compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, "Spice Compiler", false, "", 0);
   // Initialize primitive types
   debugInfo.doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
@@ -2888,6 +2874,35 @@ llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmSt
   llvm::DINode::DIFlags flags = spiceStruct->getSpecifiers().isPublic() ? llvm::DINode::FlagPublic : llvm::DINode::FlagPrivate;
   llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
   return diBuilder->createStructType(unit, spiceStruct->getName(), unit, lineNumber, sizeInBits, 0, flags, nullptr, elements);
+}
+
+void GeneratorVisitor::generateDeclDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *address) {
+  if (!cliOptions.generateDebugInfo)
+    return;
+  // Get symbol table entry
+  SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
+  assert(variableEntry != nullptr);
+  // Build debug info
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
+  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
+  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, token.getLine(), diType);
+  diBuilder->insertDbgAddrIntrinsic(address, varInfo, nullptr, builder->getCurrentDebugLocation(), allocaInsertBlock);
+}
+
+void GeneratorVisitor::generateAssignDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *value) {
+  if (!cliOptions.generateDebugInfo)
+    return;
+  // Get symbol table entry
+  SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
+  assert(variableEntry != nullptr);
+  // Build debug info
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
+  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
+  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, token.getLine(), diType);
+  // Insert intrinsic call
+  diBuilder->insertDbgValueIntrinsic(value, varInfo, nullptr, builder->getCurrentDebugLocation(), builder->GetInsertBlock());
 }
 
 void GeneratorVisitor::emitSourceLocation(antlr4::ParserRuleContext *ctx) {
