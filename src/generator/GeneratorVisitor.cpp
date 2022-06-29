@@ -1467,6 +1467,23 @@ std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) 
       }
       builder->CreateStore(rhs, lhsPtr, variableEntry->isVolatile());
     }
+
+    // Add debug info for value change
+    /*if (cliOptions.generateDebugInfo) {
+      // Get symbol table entry
+      SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
+      assert(variableEntry != nullptr);
+      // Build debug info
+      llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+      llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
+      unsigned int lineNumber = ctx->start->getLine();
+      llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
+      llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, lineNumber, diType);
+      llvm::DIExpression *expr = diBuilder->createExpression();
+      // Insert intrinsic call
+      diBuilder->insertDbgValueIntrinsic(rhs, varInfo, expr, builder->getCurrentDebugLocation(), builder->GetInsertBlock());
+    }*/
+
     return lhsPtr;
   } else if (ctx->ternaryExpr()) {
     std::any rhs = visit(ctx->ternaryExpr());
@@ -2826,15 +2843,15 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
   if (symbolType.is(TY_DOUBLE))
     return debugInfo.doubleTy;
   if (symbolType.is(TY_INT))
-    return currentVarSigned ? debugInfo.intTy : debugInfo.uIntTy;
+    return symbolType.isSigned() ? debugInfo.intTy : debugInfo.uIntTy;
   if (symbolType.is(TY_SHORT))
-    return currentVarSigned ? debugInfo.shortTy : debugInfo.uShortTy;
+    return symbolType.isSigned() ? debugInfo.shortTy : debugInfo.uShortTy;
   if (symbolType.is(TY_LONG))
-    return currentVarSigned ? debugInfo.longTy : debugInfo.uLongTy;
+    return symbolType.isSigned() ? debugInfo.longTy : debugInfo.uLongTy;
   if (symbolType.is(TY_BYTE))
-    return currentVarSigned ? debugInfo.byteTy : debugInfo.uByteTy;
+    return symbolType.isSigned() ? debugInfo.byteTy : debugInfo.uByteTy;
   if (symbolType.is(TY_CHAR))
-    return currentVarSigned ? debugInfo.charTy : debugInfo.uCharTy;
+    return symbolType.isSigned() ? debugInfo.charTy : debugInfo.uCharTy;
   if (symbolType.is(TY_STRING))
     return debugInfo.stringTy;
   if (symbolType.is(TY_BOOL))
@@ -2849,7 +2866,6 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
 
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
-  // ToDo: Here we do not know if return and arg types are signed or unsigned
   argTypes.push_back(getDITypeForSymbolType(spiceFunc->getReturnType())); // Add result type
   for (auto &argType : spiceFunc->getArgTypes())                          // Add arg types
     argTypes.push_back(getDITypeForSymbolType(argType));

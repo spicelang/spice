@@ -1,3 +1,5 @@
 f<int> main() {
-    printf("Hello World!");
+    int test = 12;
+    test = 13;
+    test++;
 }
