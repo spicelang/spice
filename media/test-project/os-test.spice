@@ -1,6 +1,5 @@
 f<int> main() {
     int test = 12;
-    test = 13;
     test++;
-    printf("%d", test);
+    printf("%d\n", test);
 }

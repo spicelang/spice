@@ -72,6 +72,7 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
 
   // Initialize debug info generator
   if (cliOptions.generateDebugInfo) {
+    module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
     module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
     initializeDIBuilder(sourceFile.fileName, sourceFile.fileDir);
   }
@@ -2859,7 +2860,7 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
 
   llvm::DISubprogram *subprogram =
       diBuilder->createFunction(unit, spiceFunc->getName(), spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
-                                llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+                                llvm::DINode::FlagZero, llvm::DISubprogram::SPFlagDefinition);
 
   // Add debug info to LLVM function
   llvmFunction->setSubprogram(subprogram);
@@ -2887,7 +2888,8 @@ void GeneratorVisitor::generateDeclDebugInfo(const antlr4::Token &token, const s
   llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
   llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
   llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, token.getLine(), diType);
-  diBuilder->insertDbgAddrIntrinsic(address, varInfo, nullptr, builder->getCurrentDebugLocation(), allocaInsertBlock);
+  llvm::DIExpression *expr = diBuilder->createExpression();
+  diBuilder->insertDbgAddrIntrinsic(address, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
 }
 
 void GeneratorVisitor::generateAssignDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *value) {
@@ -2901,8 +2903,9 @@ void GeneratorVisitor::generateAssignDebugInfo(const antlr4::Token &token, const
   llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
   llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
   llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, token.getLine(), diType);
+  llvm::DIExpression *expr = diBuilder->createExpression();
   // Insert intrinsic call
-  diBuilder->insertDbgValueIntrinsic(value, varInfo, nullptr, builder->getCurrentDebugLocation(), builder->GetInsertBlock());
+  diBuilder->insertDbgValueIntrinsic(value, varInfo, expr, builder->getCurrentDebugLocation(), builder->GetInsertBlock());
 }
 
 void GeneratorVisitor::emitSourceLocation(antlr4::ParserRuleContext *ctx) {
