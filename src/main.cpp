@@ -25,7 +25,6 @@ void compileProject(CliOptions &options) {
 
     // Prepare linker interface
     LinkerInterface linker = LinkerInterface(err, threadFactory, options);
-    linker.setOutputPath(options.outputPath);
 
     // Create source file instance for main source file
     SourceFile mainSourceFile = SourceFile(options, nullptr, "root", options.mainSourceFile, false);
