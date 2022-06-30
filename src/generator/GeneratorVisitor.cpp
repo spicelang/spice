@@ -1484,43 +1484,11 @@ std::any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx
 
   if (ctx->logicalOrExpr().size() > 1) {
     auto conditionPtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[0]));
+    auto trueValuePtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[1]));
+    auto falseValuePtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[2]));
+
     llvm::Value *condition = builder->CreateLoad(conditionPtr->getType()->getPointerElementType(), conditionPtr);
-    llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
-
-    // Create blocks
-    llvm::BasicBlock *bThen = llvm::BasicBlock::Create(*context, "tern.then");
-    llvm::BasicBlock *bElse = llvm::BasicBlock::Create(*context, "tern.else");
-    llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "tern.end");
-
-    // Conditional jump to respective block
-    createCondBr(condition, bThen, bElse);
-
-    // Fill then block
-    parentFct->getBasicBlockList().push_back(bThen);
-    moveInsertPointToBlock(bThen);
-    auto thenValuePtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[1]));
-    llvm::Value *thenValue = builder->CreateLoad(thenValuePtr->getType()->getPointerElementType(), thenValuePtr);
-    createBr(bEnd);
-
-    // Fill else block
-    parentFct->getBasicBlockList().push_back(bElse);
-    moveInsertPointToBlock(bElse);
-    auto elseValuePtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[2]));
-    llvm::Value *elseValue = builder->CreateLoad(elseValuePtr->getType()->getPointerElementType(), elseValuePtr);
-    createBr(bEnd);
-
-    // Fill end block
-    parentFct->getBasicBlockList().push_back(bEnd);
-    moveInsertPointToBlock(bEnd);
-
-    // Setup phi value
-    llvm::PHINode *phi = builder->CreatePHI(thenValue->getType(), 2, "phi");
-    phi->addIncoming(thenValue, bThen);
-    phi->addIncoming(elseValue, bElse);
-
-    llvm::Value *resultPtr = insertAlloca(phi->getType());
-    builder->CreateStore(phi, resultPtr);
-    return resultPtr;
+    return builder->CreateSelect(condition, trueValuePtr, falseValuePtr);
   }
   return visit(ctx->logicalOrExpr()[0]);
 }

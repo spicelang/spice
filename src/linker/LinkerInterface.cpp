@@ -65,3 +65,10 @@ void LinkerInterface::addObjectFilePath(const std::string &objectFilePath) { obj
  * @param linkerFlag Linker flag
  */
 void LinkerInterface::addLinkerFlag(const std::string &flag) { linkerFlags.push_back(flag); }
+
+/**
+ * Set executable output path
+ *
+ * @param outputPath Output path
+ */
+void LinkerInterface::setOutputPath(const std::string &outputPath) { this->outputPath = outputPath; }
