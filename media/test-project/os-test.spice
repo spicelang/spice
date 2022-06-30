@@ -1,9 +1,5 @@
-f<int> get() {
-    return 12;
-}
-
 f<int> main() {
-    bool condition = true;
-    dyn r = condition ? get(): 24;
-    printf("Result: %d", r);
+    int a = 1;
+    int b = ++2;
+    printf("Calculation result: %d", a + b);
 }

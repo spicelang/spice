@@ -25,19 +25,10 @@
 
 #include "TestUtil.h"
 
-const unsigned int IR_FILE_SKIP_LINES = 4;
-
-struct StdTestCase {
-  const std::string testName;
-  const std::string testPath;
-};
-
-typedef std::vector<StdTestCase> StdTestSuite;
-
-std::vector<StdTestCase> detectStdTestCases(const std::string &suitePath) {
+std::vector<TestCase> detectStdTestCases(const std::string &suitePath) {
   std::vector<std::string> subDirs = TestUtil::getSubdirs(suitePath);
 
-  std::vector<StdTestCase> testCases;
+  std::vector<TestCase> testCases;
   testCases.reserve(subDirs.size());
   for (std::string &dirName : subDirs) {
     // Save test suite
@@ -47,10 +38,12 @@ std::vector<StdTestCase> detectStdTestCases(const std::string &suitePath) {
   return testCases;
 }
 
-std::vector<StdTestSuite> detectStdTestSuites(const std::string &testFilesPath) {
+std::vector<TestSuite> detectStdTestSuites() {
+  std::string dirSepString(1, FileUtil::DIR_SEPARATOR);
+  std::string testFilesPath = "." + dirSepString + "test-files" + dirSepString + "std";
   std::vector<std::string> subDirs = TestUtil::getSubdirs(testFilesPath);
 
-  std::vector<StdTestSuite> testSuites;
+  std::vector<TestSuite> testSuites;
   testSuites.reserve(subDirs.size());
   for (std::string &dirName : subDirs)
     testSuites.push_back(detectStdTestCases(testFilesPath + FileUtil::DIR_SEPARATOR + dirName));
@@ -58,7 +51,7 @@ std::vector<StdTestSuite> detectStdTestSuites(const std::string &testFilesPath) 
   return testSuites;
 }
 
-void executeTest(const StdTestCase &testCase) {
+void executeStdTest(const TestCase &testCase) {
   // Check if disabled
   std::string disabledFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "disabled";
   if (FileUtil::fileExists(disabledFile))
@@ -273,24 +266,18 @@ void executeTest(const StdTestCase &testCase) {
 }
 
 // Test classes
-
-class StdDataTests : public ::testing::TestWithParam<StdTestCase> {};
-class StdIOTests : public ::testing::TestWithParam<StdTestCase> {};
-class StdOSTests : public ::testing::TestWithParam<StdTestCase> {};
-class StdTextTests : public ::testing::TestWithParam<StdTestCase> {};
+class StdDataTests : public ::testing::TestWithParam<TestCase> {};
+class StdIOTests : public ::testing::TestWithParam<TestCase> {};
+class StdOSTests : public ::testing::TestWithParam<TestCase> {};
+class StdTextTests : public ::testing::TestWithParam<TestCase> {};
 
 // Test macros
-
-TEST_P(StdDataTests, DataTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
-
-TEST_P(StdIOTests, IOTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
-
-TEST_P(StdOSTests, OSTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
-
-TEST_P(StdTextTests, TextTests) { executeTest(GetParam()); } // NOLINT(cert-err58-cpp)
+TEST_P(StdDataTests, DataTests) { executeStdTest(GetParam()); } // NOLINT(cert-err58-cpp)
+TEST_P(StdIOTests, IOTests) { executeStdTest(GetParam()); }     // NOLINT(cert-err58-cpp)
+TEST_P(StdOSTests, OSTests) { executeStdTest(GetParam()); }     // NOLINT(cert-err58-cpp)
+TEST_P(StdTextTests, TextTests) { executeStdTest(GetParam()); } // NOLINT(cert-err58-cpp)
 
 // Name resolver
-
 struct NameResolver {
   template <class StdTestCase> std::string operator()(const ::testing::TestParamInfo<StdTestCase> &info) const {
     auto testCase = static_cast<StdTestCase>(info.param);
@@ -299,19 +286,11 @@ struct NameResolver {
 };
 
 // Instantiations
+const std::vector<TestSuite> testSuites = detectStdTestSuites(); // NOLINT(cert-err58-cpp)
 
-const std::string dirSepString = std::string(1, FileUtil::DIR_SEPARATOR);                      // NOLINT(cert-err58-cpp)
-const std::string testRefsBasePath = "." + dirSepString + "test-files" + dirSepString + "std"; // NOLINT(cert-err58-cpp)
-const std::vector<StdTestSuite> testSuites = detectStdTestSuites(testRefsBasePath);            // NOLINT(cert-err58-cpp)
-
-INSTANTIATE_TEST_SUITE_P(StdDataTests, StdDataTests, ::testing::ValuesIn(testSuites[0]),
-                         NameResolver()); // NOLINT(cert-err58-cpp)
-
-INSTANTIATE_TEST_SUITE_P(StdIOTests, StdIOTests, ::testing::ValuesIn(testSuites[1]), NameResolver()); // NOLINT(cert-err58-cpp)
-
-INSTANTIATE_TEST_SUITE_P(StdOSTests, StdOSTests, ::testing::ValuesIn(testSuites[2]), NameResolver()); // NOLINT(cert-err58-cpp)
-
-INSTANTIATE_TEST_SUITE_P(StdTextTests, StdTextTests, ::testing::ValuesIn(testSuites[3]),
-                         NameResolver()); // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(, StdDataTests, ::testing::ValuesIn(testSuites[0]), NameResolver()); // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(, StdIOTests, ::testing::ValuesIn(testSuites[1]), NameResolver());   // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(, StdOSTests, ::testing::ValuesIn(testSuites[2]), NameResolver());   // NOLINT(cert-err58-cpp)
+INSTANTIATE_TEST_SUITE_P(, StdTextTests, ::testing::ValuesIn(testSuites[3]), NameResolver()); // NOLINT(cert-err58-cpp)
 
 // GCOV_EXCL_STOP
