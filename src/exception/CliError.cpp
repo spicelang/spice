@@ -32,6 +32,8 @@ std::string CliError::getMessagePrefix(CliErrorType type) {
     return "Invalid target triple";
   case SOURCE_FILE_MISSING:
     return "Source file missing";
+  case OPT_DEBUG_INFO_INCOMPATIBILITY:
+    return "Cannot emit debug info with optimization enabled";
   case COMING_SOON_CLI:
     return "Coming soon";
   }

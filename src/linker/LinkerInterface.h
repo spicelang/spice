@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 
+#include <cli/CliInterface.h>
+
 // Forward declarations
-struct CliOptions;
 class ErrorFactory;
 class ThreadFactory;
 
@@ -14,7 +15,7 @@ class LinkerInterface {
 public:
   // Constructors
   explicit LinkerInterface(const ErrorFactory &errorFactory, const ThreadFactory &threadFactory, CliOptions &cliOptions)
-      : err(errorFactory), threadFactory(threadFactory), cliOptions(cliOptions){};
+      : err(errorFactory), threadFactory(threadFactory), cliOptions(cliOptions), outputPath(cliOptions.outputPath){};
 
   // Public methods
   void link();

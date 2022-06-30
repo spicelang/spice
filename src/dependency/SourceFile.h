@@ -59,7 +59,9 @@ public:
 
   // Fields
   std::string name;
+  std::string fileName;
   std::string filePath;
+  std::string fileDir;
   std::string objectFilePath;
   bool stdFile;
   SourceFileAntlrCtx antlrCtx;

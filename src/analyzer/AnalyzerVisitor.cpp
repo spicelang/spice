@@ -211,8 +211,8 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     }
 
     // Insert function into the symbol table
-    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
-    Function spiceFunc = Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, codeLoc);
+    Function spiceFunc =
+        Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, *ctx->start);
     currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -435,9 +435,8 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     }
 
     // Insert function into the symbol table
-    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
     Function spiceProc =
-        Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, codeLoc);
+        Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, *ctx->start);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -546,7 +545,6 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     return nullptr;
 
   std::string functionName = ctx->IDENTIFIER()->toString();
-  std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
 
   ArgList argTypes;
   if (ctx->typeLstEllipsis()) {
@@ -568,7 +566,7 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
     // Insert function into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, codeLoc);
+    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, *ctx->start);
     currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
     // Add return symbol for function
@@ -578,7 +576,8 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   } else { // Procedure
     // Insert procedure into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
-    Function spiceProc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, codeLoc);
+    Function spiceProc =
+        Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, *ctx->start);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
 
     // Add empty scope for function body
@@ -692,8 +691,10 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
                          "Struct fields cannot have the const specifier attached");
         } else if (specifier->SIGNED()) {
           fieldTypeSpecifiers.setSigned(true);
+          fieldType.setSigned(true);
         } else if (specifier->UNSIGNED()) {
           fieldTypeSpecifiers.setSigned(false);
+          fieldType.setSigned(false);
         } else if (specifier->PUBLIC()) {
           fieldTypeSpecifiers.setPublic(true);
         } else {
@@ -713,8 +714,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   currentScope = currentScope->getParent();
 
   // Add the struct to the symbol table
-  std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
-  Struct s(structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, codeLoc);
+  Struct s(structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, *ctx->start);
   s.setSymbolTable(structScope);
   currentScope->insertStruct(s, err.get(), *ctx->start);
   currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
@@ -1013,6 +1013,25 @@ std::any AnalyzerVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) {
       throw err->get(*arg->start, INVALID_ARGUMENT_ORDER, "Mandatory arguments must go before any optional arguments");
     }
 
+    // Build symbol specifiers
+    auto symbolTypeSpecifiers = SymbolSpecifiers(argType);
+    if (arg->declSpecifiers()) {
+      for (const auto &specifier : arg->declSpecifiers()->declSpecifier()) {
+        if (specifier->CONST()) {
+          symbolTypeSpecifiers.setConst(true);
+        } else if (specifier->SIGNED()) {
+          symbolTypeSpecifiers.setSigned(true);
+          argType.setSigned(true);
+        } else if (specifier->UNSIGNED()) {
+          symbolTypeSpecifiers.setSigned(false);
+          argType.setSigned(false);
+        } else {
+          throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                         "Cannot use the " + specifier->getText() + " specifier on an argument declaration");
+        }
+      }
+    }
+
     namedArgList.emplace_back(argName, argType, metOptional);
   }
   return namedArgList;
@@ -1048,8 +1067,10 @@ std::any AnalyzerVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
         symbolTypeSpecifiers.setConst(true);
       } else if (specifier->SIGNED()) {
         symbolTypeSpecifiers.setSigned(true);
+        symbolType.setSigned(true);
       } else if (specifier->UNSIGNED()) {
         symbolTypeSpecifiers.setSigned(false);
+        symbolType.setSigned(false);
       } else {
         throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
                        "Cannot use the " + specifier->getText() + " specifier on a local variable declaration");
@@ -1780,6 +1801,22 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   return nullptr;
 }
 
+std::any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
+  if (ctx->DOUBLE())
+    return SymbolType(TY_DOUBLE);
+  if (ctx->INTEGER())
+    return SymbolType(TY_INT);
+  if (ctx->SHORT())
+    return SymbolType(TY_SHORT);
+  if (ctx->LONG())
+    return SymbolType(TY_LONG);
+  if (ctx->CHAR_LITERAL())
+    return SymbolType(TY_CHAR);
+  if (ctx->STRING_LITERAL())
+    return SymbolType(TY_STRING);
+  return SymbolType(TY_BOOL);
+}
+
 std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
   // Get the access scope
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
@@ -1858,14 +1895,13 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, origThisType, argTypes, err.get(), *token);
   if (!spiceFunc) {
     // Build dummy function to get a better error message
-    std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
 
     ArgList errArgTypes;
     for (auto &argType : argTypes)
       errArgTypes.emplace_back(argType, false);
 
-    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, codeLoc);
+    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, *ctx->start);
 
     throw err->get(*ctx->start, REFERENCED_UNDEFINED_FUNCTION,
                    "Function/Procedure '" + f.getSignature() + "' could not be found");
@@ -2019,22 +2055,6 @@ std::any AnalyzerVisitor::visitStructInstantiation(SpiceParser::StructInstantiat
   }
 
   return structType;
-}
-
-std::any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
-  if (ctx->DOUBLE())
-    return SymbolType(TY_DOUBLE);
-  if (ctx->INTEGER())
-    return SymbolType(TY_INT);
-  if (ctx->SHORT())
-    return SymbolType(TY_SHORT);
-  if (ctx->LONG())
-    return SymbolType(TY_LONG);
-  if (ctx->CHAR_LITERAL())
-    return SymbolType(TY_CHAR);
-  if (ctx->STRING_LITERAL())
-    return SymbolType(TY_STRING);
-  return SymbolType(TY_BOOL);
 }
 
 std::any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {

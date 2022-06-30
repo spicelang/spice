@@ -58,6 +58,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Negative value assigned to unsigned variable";
   case UNINSTALL_FAILED:
     return "Uninstall failed";
+  case VERIFIER_DISABLED:
+    return "Verifier disabled";
   }
   return "Unknown warning"; // GCOV_EXCL_LINE
 }

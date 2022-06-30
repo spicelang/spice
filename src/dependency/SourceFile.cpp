@@ -13,12 +13,17 @@
 #include <linker/LinkerInterface.h>
 #include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
+#include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 #include <visualizer/VisualizerVisitor.h>
 
 SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
     : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
   this->objectFilePath = options.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
+
+  // Deduce fileName and fileDir
+  fileName = std::filesystem::path(filePath).filename().string();
+  fileDir = std::filesystem::path(filePath).parent_path().string();
 
   // Read from file
   std::ifstream fileInputStream(filePath);
@@ -180,6 +185,12 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
     } // GCOV_EXCL_STOP
   }
 
+  // Dump assembly code
+  if (options.dumpAssembly) { // GCOV_EXCL_START
+    std::cout << "\nAssembly code:\n";
+    generator->dumpAsm();
+  } // GCOV_EXCL_STOP
+
   // Emit object file
   generator->emit();
 
@@ -187,6 +198,13 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
 
   // Add object file to the linker interface
   linker.addObjectFilePath(objectFilePath);
+
+  // Print warning if verifier is disabled
+  if (parent == nullptr && options.disableVerifier) {
+    std::cout << "\n";
+    CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.").print();
+    std::cout << "\n";
+  }
 }
 
 void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name,

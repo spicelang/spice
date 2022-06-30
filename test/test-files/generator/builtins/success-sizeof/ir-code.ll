@@ -142,7 +142,7 @@ entry:
   %77 = getelementptr inbounds %_s__Struct__int_bool_string, %_s__Struct__int_bool_string* %29, i32 0, i32 2
   store i8* %76, i8** %77, align 8
   %78 = load %_s__Struct__int_bool_string, %_s__Struct__int_bool_string* %29, align 8
-  store i32 97, i32* %33, align 4
+  store i32 128, i32* %33, align 4
   %79 = load i32, i32* %33, align 4
   %80 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([29 x i8], [29 x i8]* @11, i32 0, i32 0), i32 %79)
   %81 = load i32, i32* %result, align 4

@@ -89,6 +89,12 @@ void CliInterface::validate() const {
     throw ErrorFactory::get(INCOMPLETE_TARGET_TRIPLE,
                             "You need to provide all three of --target-arch, --target-vendor and --target-os");
   }
+
+  // Error out when opt level > 0 and debug info enabled
+  if (cliOptions.optLevel > 0 && cliOptions.generateDebugInfo)
+    throw ErrorFactory::get(
+        OPT_DEBUG_INFO_INCOMPATIBILITY,
+        "Optimization does not work reliably when emitting debug info. The cli argument -g only works in combination with -O0.");
 }
 
 /**
@@ -136,10 +142,12 @@ void CliInterface::addBuildSubcommand() {
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
   // --dump-ast
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
   // --dump-symtab
   subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-assembly
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
 
   // --target-triple
   subCmd->add_option<std::string>("--target,-t,--target-triple", cliOptions.targetTriple,
@@ -173,6 +181,11 @@ void CliInterface::addBuildSubcommand() {
   subCmd->add_flag_callback(
       "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
 
+  // --debug-info
+  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+  // --disable-verifier
+  subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
+
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
       ->check(CLI::ExistingFile)
@@ -195,10 +208,12 @@ void CliInterface::addRunSubcommand() {
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
   // --dump-ast
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
   // --dump-symtab
   subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-assembly
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
 
   // --output
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
@@ -216,6 +231,11 @@ void CliInterface::addRunSubcommand() {
       "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
   subCmd->add_flag_callback(
       "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
+
+  // --debug-info
+  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+  // --disable-verifier
+  subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
 
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
@@ -240,10 +260,12 @@ void CliInterface::addInstallSubcommand() {
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
   // --dump-ast
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
   // --dump-symtab
   subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-assembly
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
 
   // --output
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
@@ -338,6 +360,7 @@ int CliInterface::parse(int argc, char **argv) {
  */
 void CliInterface::runBinary() const {
   // Print status message
+  std::cout << "\n";
   if (cliOptions.printDebugOutput)
     std::cout << "Running executable ...\n";
 

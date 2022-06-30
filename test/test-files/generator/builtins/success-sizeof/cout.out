@@ -8,4 +8,4 @@ Size of string: 64
 Size of bool: 1
 Size of int[]: 224
 Size of int*: 64
-Size of struct instance: 97
+Size of struct instance: 128

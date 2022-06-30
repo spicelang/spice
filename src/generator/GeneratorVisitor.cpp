@@ -69,6 +69,13 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   targetMachine = target->createTargetMachine(cliOptions.targetTriple, "generic", "", opt, rm);
 
   module->setDataLayout(targetMachine->createDataLayout());
+
+  // Initialize debug info generator
+  if (cliOptions.generateDebugInfo) {
+    module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
+    module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
+    initializeDIBuilder(sourceFile.fileName, sourceFile.fileDir);
+  }
 }
 
 void GeneratorVisitor::optimize() {
@@ -126,14 +133,30 @@ std::string GeneratorVisitor::getIRString() {
   return oss.str();
 }
 
+void GeneratorVisitor::dumpAsm() {
+  llvm::legacy::PassManager passManager;
+  if (targetMachine->addPassesToEmitFile(passManager, llvm::outs(), nullptr, llvm::CGFT_AssemblyFile))
+    throw err->get(WRONG_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
+
+  // Emit object file
+  passManager.run(*module);
+  llvm::outs().flush();
+}
+
 std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   std::any result = SpiceBaseVisitor::visitEntry(ctx);
 
-  // Verify module to detect IR code bugs
-  std::string output;
-  llvm::raw_string_ostream oss(output);
-  if (llvm::verifyModule(*module, &oss))
-    throw err->get(*ctx->start, INVALID_MODULE, oss.str());
+  // Finalize debug info generation
+  if (cliOptions.generateDebugInfo)
+    diBuilder->finalize();
+
+  // Verify module
+  if (!cliOptions.disableVerifier) {
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyModule(*module, &oss))
+      throw err->get(*ctx->start, INVALID_MODULE, oss.str());
+  }
 
   return result;
 }
@@ -154,6 +177,9 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
       for (const auto &arg : ctx->argLstDef()->declStmt()) {
         currentVarName = arg->IDENTIFIER()->toString();
         argNames.push_back(currentVarName);
+        SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
+        assert(argSymbol != nullptr);
+        currentVarSigned = argSymbol->getSpecifiers().isSigned();
         auto argType = any_cast<llvm::Type *>(visit(arg->dataType()));
         argTypes.push_back(argType);
       }
@@ -163,10 +189,28 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
     llvm::Type *returnType = builder->getInt32Ty();
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
     llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module.get());
+
+    // Add debug info
+    if (cliOptions.generateDebugInfo) {
+      // Get arg types
+      std::vector<std::pair<SymbolType, bool>> argTypes;
+      for (auto &argName : argNames) {
+        SymbolTableEntry *argEntry = currentScope->lookup(argName);
+        assert(argEntry != nullptr);
+        argTypes.emplace_back(argEntry->getType(), true);
+      }
+      // Build spice function
+      SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+      Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argTypes, {}, *ctx->start);
+      // Add debug info
+      generateFunctionDebugInfo(fct, &spiceFunc);
+    }
+
+    // Create entry block
     llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
-    allocaInsertInst = nullptr;
     fct->getBasicBlockList().push_back(bEntry);
     moveInsertPointToBlock(bEntry);
+    allocaInsertInst = nullptr;
 
     // Store function arguments
     for (auto &arg : fct->args()) {
@@ -198,11 +242,17 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
       builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
     }
 
+    // Conclude debug information
+    if (cliOptions.generateDebugInfo)
+      debugInfo.lexicalBlocks.pop_back();
+
     // Verify function
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    if (llvm::verifyFunction(*fct, &oss))
-      throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+    if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
+      std::string output;
+      llvm::raw_string_ostream oss(output);
+      if (llvm::verifyFunction(*fct, &oss))
+        throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+    }
 
     // Change scope back
     currentScope = currentScope->getParent();
@@ -266,6 +316,9 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
         for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
           currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
           argNames.push_back(currentVarName);
+          SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
+          assert(argSymbol != nullptr);
+          currentVarSigned = argSymbol->getSpecifiers().isSigned();
           argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex], currentScope));
         }
       }
@@ -290,6 +343,10 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
       fct->setLinkage(linkage);
       if (explicitInlined)
         fct->addFnAttr(llvm::Attribute::AlwaysInline);
+
+      // Add debug info
+      if (cliOptions.generateDebugInfo)
+        generateFunctionDebugInfo(fct, &spiceFunc);
 
       // Create entry block
       llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
@@ -333,11 +390,17 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
         builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
       }
 
+      // Conclude debug information
+      if (cliOptions.generateDebugInfo)
+        debugInfo.lexicalBlocks.pop_back();
+
       // Verify function
-      std::string output;
-      llvm::raw_string_ostream oss(output);
-      if (llvm::verifyFunction(*fct, &oss))
-        throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+      if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
+        std::string output;
+        llvm::raw_string_ostream oss(output);
+        if (llvm::verifyFunction(*fct, &oss))
+          throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+      }
 
       // Change scope back
       currentScope = currentScope->getParent();
@@ -403,6 +466,9 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
         for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
           currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
           argNames.push_back(currentVarName);
+          SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
+          assert(argSymbol != nullptr);
+          currentVarSigned = argSymbol->getSpecifiers().isSigned();
           argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex], currentScope));
         }
       }
@@ -427,6 +493,10 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
       proc->setLinkage(linkage);
       if (explicitInlined)
         proc->addFnAttr(llvm::Attribute::AlwaysInline);
+
+      // Add debug info
+      if (cliOptions.generateDebugInfo)
+        generateFunctionDebugInfo(proc, &spiceProc);
 
       // Create entry block
       llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
@@ -460,11 +530,17 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
       // Create return
       builder->CreateRetVoid();
 
+      // Conclude debug information
+      if (cliOptions.generateDebugInfo)
+        debugInfo.lexicalBlocks.pop_back();
+
       // Verify procedure
-      std::string output;
-      llvm::raw_string_ostream oss(output);
-      if (llvm::verifyFunction(*proc, &oss))
-        throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+      if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
+        std::string output;
+        llvm::raw_string_ostream oss(output);
+        if (llvm::verifyFunction(*proc, &oss))
+          throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+      }
 
       // Change scope back
       currentScope = currentScope->getParent();
@@ -552,6 +628,7 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
         std::string fieldName = field->IDENTIFIER()->toString();
         SymbolTableEntry *fieldEntry = currentScope->lookup(fieldName);
         assert(fieldEntry && !fieldEntry->getType().is(TY_GENERIC));
+        currentVarSigned = fieldEntry->getSpecifiers().isSigned();
         fieldTypes.push_back(getTypeForSymbolType(fieldEntry->getType(), currentScope));
       }
 
@@ -604,6 +681,8 @@ std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *c
 }
 
 std::any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Create threaded function
   std::string threadedFctName = "_thread" + std::to_string(threadFactory.getNextFunctionSuffix());
   llvm::Type *voidPtrTy = builder->getInt8PtrTy();
@@ -709,6 +788,8 @@ std::any GeneratorVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Change scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->getChild(scopeId);
@@ -725,6 +806,8 @@ std::any GeneratorVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContex
 }
 
 std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
+  emitSourceLocation(ctx);
+
   auto head = ctx->forHead();
 
   // Create blocks
@@ -789,6 +872,8 @@ std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
+  emitSourceLocation(ctx);
+
   auto head = ctx->foreachHead();
 
   // Create blocks
@@ -890,6 +975,8 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
 }
 
 std::any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
+  emitSourceLocation(ctx);
+
   llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
   // Create blocks
@@ -935,6 +1022,8 @@ std::any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
+  emitSourceLocation(ctx);
+
   for (const auto &child : ctx->children) {
     if (!blockAlreadyTerminated)
       visit(child);
@@ -947,6 +1036,8 @@ std::any GeneratorVisitor::visitTypeAlts(SpiceParser::TypeAltsContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Change scope
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   currentScope = currentScope->getChild(scopeId);
@@ -992,6 +1083,8 @@ std::any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->ifStmt()) { // It is an else if branch
     visit(ctx->ifStmt());
   } else { // It is an else branch
@@ -1011,6 +1104,8 @@ std::any GeneratorVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Only generate assertions with -O0
   if (cliOptions.optLevel == 0) {
     // Visit the assignExpr
@@ -1048,15 +1143,23 @@ std::any GeneratorVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   currentVarName = lhsVarName = ctx->IDENTIFIER()->toString();
-  llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
 
   // Get variable entry
   SymbolTableEntry *entry = currentScope->lookup(lhsVarName);
   assert(entry != nullptr);
+  currentVarSigned = entry->getSpecifiers().isSigned();
+
+  llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
   llvm::Value *memAddress = insertAlloca(varType, lhsVarName);
   entry->updateAddress(memAddress);
   entry->updateLLVMType(varType);
+
+  // Generate debug info for local variable
+  generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
+
   if (ctx->assignExpr()) {
     // Visit right side
     auto rhsPtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
@@ -1076,6 +1179,8 @@ std::any GeneratorVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
 
   // Check if a value is attached to the return statement
@@ -1106,6 +1211,8 @@ std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Get number, how many loops we want to break
   int breakCount = 1;
   if (ctx->INTEGER())
@@ -1121,6 +1228,8 @@ std::any GeneratorVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Get number, how many loops we want to continue
   int continueCount = 1;
   if (ctx->INTEGER())
@@ -1136,6 +1245,8 @@ std::any GeneratorVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *c
 }
 
 std::any GeneratorVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->printfCall())
     return visit(ctx->printfCall());
   if (ctx->sizeOfCall())
@@ -1193,7 +1304,7 @@ std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) 
     llvm::Type *valueTy = value->getType();
 
     // Calculate size at compile-time
-    size = getSizeOfType(valueTy);
+    size = module->getDataLayout().getTypeSizeInBits(valueTy);
   } else { // Type
     auto llvmType = std::any_cast<llvm::Type *>(visit(ctx->dataType()));
     size = llvmType->getScalarSizeInBits();
@@ -1295,6 +1406,8 @@ std::any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment or compound assignment
     lhsType = nullptr;   // Reset lhs type
@@ -1347,6 +1460,10 @@ std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) 
       }
       builder->CreateStore(rhs, lhsPtr, variableEntry->isVolatile());
     }
+
+    // Add debug info for value change
+    generateAssignDebugInfo(*ctx->start, lhsVarName, rhs);
+
     return lhsPtr;
   } else if (ctx->ternaryExpr()) {
     std::any rhs = visit(ctx->ternaryExpr());
@@ -1363,50 +1480,22 @@ std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->logicalOrExpr().size() > 1) {
     auto conditionPtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[0]));
+    auto trueValuePtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[1]));
+    auto falseValuePtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[2]));
+
     llvm::Value *condition = builder->CreateLoad(conditionPtr->getType()->getPointerElementType(), conditionPtr);
-    llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
-
-    // Create blocks
-    llvm::BasicBlock *bThen = llvm::BasicBlock::Create(*context, "tern.then");
-    llvm::BasicBlock *bElse = llvm::BasicBlock::Create(*context, "tern.else");
-    llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "tern.end");
-
-    // Conditional jump to respective block
-    createCondBr(condition, bThen, bElse);
-
-    // Fill then block
-    parentFct->getBasicBlockList().push_back(bThen);
-    moveInsertPointToBlock(bThen);
-    auto thenValuePtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[1]));
-    llvm::Value *thenValue = builder->CreateLoad(thenValuePtr->getType()->getPointerElementType(), thenValuePtr);
-    createBr(bEnd);
-
-    // Fill else block
-    parentFct->getBasicBlockList().push_back(bElse);
-    moveInsertPointToBlock(bElse);
-    auto elseValuePtr = any_cast<llvm::Value *>(visit(ctx->logicalOrExpr()[2]));
-    llvm::Value *elseValue = builder->CreateLoad(elseValuePtr->getType()->getPointerElementType(), elseValuePtr);
-    createBr(bEnd);
-
-    // Fill end block
-    parentFct->getBasicBlockList().push_back(bEnd);
-    moveInsertPointToBlock(bEnd);
-
-    // Setup phi value
-    llvm::PHINode *phi = builder->CreatePHI(thenValue->getType(), 2, "phi");
-    phi->addIncoming(thenValue, bThen);
-    phi->addIncoming(elseValue, bElse);
-
-    llvm::Value *resultPtr = insertAlloca(phi->getType());
-    builder->CreateStore(phi, resultPtr);
-    return resultPtr;
+    return builder->CreateSelect(condition, trueValuePtr, falseValuePtr);
   }
   return visit(ctx->logicalOrExpr()[0]);
 }
 
 std::any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->logicalAndExpr().size() > 1) {
     // Prepare for short-circuiting
     std::pair<llvm::Value *, llvm::BasicBlock *> incomingBlocks[ctx->logicalAndExpr().size()];
@@ -1456,6 +1545,8 @@ std::any GeneratorVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext 
 }
 
 std::any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->bitwiseOrExpr().size() > 1) {
     // Prepare for short-circuiting
     std::pair<llvm::Value *, llvm::BasicBlock *> incomingBlocks[ctx->bitwiseOrExpr().size()];
@@ -1505,6 +1596,8 @@ std::any GeneratorVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContex
 }
 
 std::any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->bitwiseXorExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->bitwiseXorExpr()[0]));
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1521,6 +1614,8 @@ std::any GeneratorVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext 
 }
 
 std::any GeneratorVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->bitwiseAndExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->bitwiseAndExpr()[0]));
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1537,6 +1632,8 @@ std::any GeneratorVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContex
 }
 
 std::any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->equalityExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->equalityExpr()[0]));
     llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -1553,6 +1650,8 @@ std::any GeneratorVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContex
 }
 
 std::any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->relationalExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->relationalExpr()[0]));
     auto rhsPtr = any_cast<llvm::Value *>(visit(ctx->relationalExpr()[1]));
@@ -1575,6 +1674,8 @@ std::any GeneratorVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *c
 }
 
 std::any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->shiftExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->shiftExpr()[0]));
     auto rhsPtr = any_cast<llvm::Value *>(visit(ctx->shiftExpr()[1]));
@@ -1607,6 +1708,8 @@ std::any GeneratorVisitor::visitRelationalExpr(SpiceParser::RelationalExprContex
 }
 
 std::any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Check if there is a shift operation attached
   if (ctx->additiveExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->additiveExpr()[0]));
@@ -1630,6 +1733,8 @@ std::any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Check if at least one additive operator is applied
   if (ctx->multiplicativeExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->multiplicativeExpr()[0]));
@@ -1656,6 +1761,8 @@ std::any GeneratorVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *c
 }
 
 std::any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Check if at least one multiplicative operator is applied
   if (ctx->castExpr().size() > 1) {
     auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->castExpr()[0]));
@@ -1684,6 +1791,8 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeEx
 }
 
 std::any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   auto value = visit(ctx->prefixUnaryExpr());
 
   if (ctx->LPAREN()) { // Cast operator is applied
@@ -1700,6 +1809,8 @@ std::any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   currentVarName = "";         // Reset the current variable name
   scopePrefix = "";            // Reset the scope prefix
   scopePath.clear();           // Clear the scope path
@@ -1761,12 +1872,17 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
 
     // Store the value back again
     builder->CreateStore(lhs, lhsPtr, isVolatile);
+
+    // Create debug info for assignment
+    generateAssignDebugInfo(*ctx->start, currentVarName, lhs);
   }
 
   return lhsPtr;
 }
 
 std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   auto lhsPtr = any_cast<llvm::Value *>(visit(ctx->atomicExpr()));
 
   if (ctx->children.size() > 1) {
@@ -1835,15 +1951,21 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
       tokenCounter++;
     }
 
-    // Store the value back again
-    if (lhs != nullptr)
+    if (lhs != nullptr) {
+      // Store the value back again
       builder->CreateStore(lhs, lhsPtr);
+
+      // Create debug info for assignment
+      generateAssignDebugInfo(*ctx->start, currentVarName, lhs);
+    }
   }
 
   return lhsPtr;
 }
 
 std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
+  emitSourceLocation(ctx);
+
   if (ctx->value())
     return visit(ctx->value());
   allArgsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
@@ -1938,6 +2060,8 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
+  emitSourceLocation(ctx);
+
   // Primitive value
   if (ctx->primitiveValue()) {
     // Visit the primitive value
@@ -1980,6 +2104,82 @@ std::any GeneratorVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   }
 
   return nullptr;
+}
+
+std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
+  // Value is a double constant
+  if (ctx->DOUBLE()) {
+    currentSymbolType = SymbolType(TY_DOUBLE);
+    double value = std::stod(ctx->DOUBLE()->toString());
+    if (constNegate)
+      value = -value;
+    return static_cast<llvm::Constant *>(llvm::ConstantFP::get(*context, llvm::APFloat(value)));
+  }
+
+  // Value is an integer constant
+  if (ctx->INTEGER()) {
+    currentSymbolType = SymbolType(TY_INT);
+    int value = std::stoi(ctx->INTEGER()->toString());
+    if (constNegate)
+      value = -value;
+    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value)
+                                                : llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value);
+    return static_cast<llvm::Constant *>(constant);
+  }
+
+  // Value is a short constant
+  if (ctx->SHORT()) {
+    currentSymbolType = SymbolType(TY_SHORT);
+    int value = std::stoi(ctx->SHORT()->toString());
+    if (constNegate)
+      value = -value;
+    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value)
+                                                : llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value);
+    return static_cast<llvm::Constant *>(constant);
+  }
+
+  // Value is a long constant
+  if (ctx->LONG()) {
+    currentSymbolType = SymbolType(TY_LONG);
+    long long value = std::stoll(ctx->LONG()->toString());
+    if (constNegate)
+      value = -value;
+    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value)
+                                                : llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value);
+    return static_cast<llvm::Constant *>(constant);
+  }
+
+  // Value is a char constant
+  if (ctx->CHAR_LITERAL()) {
+    currentSymbolType = SymbolType(TY_CHAR);
+    char value = ctx->CHAR_LITERAL()->toString()[1];
+    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value)
+                                                : llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value);
+    return static_cast<llvm::Constant *>(constant);
+  }
+
+  // Value is a string constant
+  if (ctx->STRING_LITERAL()) {
+    currentSymbolType = SymbolType(TY_STRING);
+    std::string value = ctx->STRING_LITERAL()->toString();
+    value = std::regex_replace(value, std::regex("\\\\n"), "\n");
+    value = value.substr(1, value.size() - 2);
+    return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
+  }
+
+  // Value is a boolean constant with value false
+  if (ctx->FALSE()) {
+    currentSymbolType = SymbolType(TY_BOOL);
+    return static_cast<llvm::Constant *>(builder->getFalse());
+  }
+
+  // Value is a boolean constant with value true
+  if (ctx->TRUE()) {
+    currentSymbolType = SymbolType(TY_BOOL);
+    return static_cast<llvm::Constant *>(builder->getTrue());
+  }
+
+  throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through"); // GCOV_EXCL_LINE
 }
 
 std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
@@ -2271,91 +2471,9 @@ std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantia
   return structAddress;
 }
 
-std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
-  // Value is a double constant
-  if (ctx->DOUBLE()) {
-    currentSymbolType = SymbolType(TY_DOUBLE);
-    double value = std::stod(ctx->DOUBLE()->toString());
-    if (constNegate)
-      value *= -1;
-    return static_cast<llvm::Constant *>(llvm::ConstantFP::get(*context, llvm::APFloat(value)));
-  }
-
-  // Value is an integer constant
-  if (ctx->INTEGER()) {
-    currentSymbolType = SymbolType(TY_INT);
-    int value = std::stoi(ctx->INTEGER()->toString());
-    if (constNegate)
-      value *= -1;
-    if (currentVarSigned) {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value));
-    } else {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value));
-    }
-  }
-
-  // Value is a short constant
-  if (ctx->SHORT()) {
-    currentSymbolType = SymbolType(TY_SHORT);
-    int value = std::stoi(ctx->SHORT()->toString());
-    if (constNegate)
-      value *= -1;
-    if (currentVarSigned) {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value));
-    } else {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value));
-    }
-  }
-
-  // Value is a long constant
-  if (ctx->LONG()) {
-    currentSymbolType = SymbolType(TY_LONG);
-    long long value = std::stoll(ctx->LONG()->toString());
-    if (constNegate)
-      value = -value;
-    if (currentVarSigned) {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value));
-    } else {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value));
-    }
-  }
-
-  // Value is a char constant
-  if (ctx->CHAR_LITERAL()) {
-    currentSymbolType = SymbolType(TY_CHAR);
-    char value = ctx->CHAR_LITERAL()->toString()[1];
-    if (currentVarSigned) {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value));
-    } else {
-      return static_cast<llvm::Constant *>(llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value));
-    }
-  }
-
-  // Value is a string constant
-  if (ctx->STRING_LITERAL()) {
-    currentSymbolType = SymbolType(TY_STRING);
-    std::string value = ctx->STRING_LITERAL()->toString();
-    value = std::regex_replace(value, std::regex("\\\\n"), "\n");
-    value = value.substr(1, value.size() - 2);
-    return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
-  }
-
-  // Value is a boolean constant with value false
-  if (ctx->FALSE()) {
-    currentSymbolType = SymbolType(TY_BOOL);
-    return static_cast<llvm::Constant *>(builder->getFalse());
-  }
-
-  // Value is a boolean constant with value true
-  if (ctx->TRUE()) {
-    currentSymbolType = SymbolType(TY_BOOL);
-    return static_cast<llvm::Constant *>(builder->getTrue());
-  }
-
-  throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through"); // GCOV_EXCL_LINE
-}
-
 std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
+  emitSourceLocation(ctx);
+
   currentSymbolType = any_cast<SymbolType>(visit(ctx->baseDataType()));
 
   size_t tokenCounter = 1;
@@ -2614,22 +2732,6 @@ bool GeneratorVisitor::compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs) {
   return true;
 }
 
-unsigned int GeneratorVisitor::getSizeOfType(llvm::Type *llvmType) {
-  if (llvmType->isArrayTy()) {
-    return llvmType->getArrayNumElements() * llvmType->getArrayElementType()->getScalarSizeInBits();
-  } else if (llvmType->isStructTy()) {
-    unsigned int size = 0;
-    for (int i = 0; i < llvmType->getNumContainedTypes(); ++i) {
-      llvm::Type *containedType = llvmType->getContainedType(i);
-      size += getSizeOfType(containedType);
-    }
-    return size;
-  } else if (llvmType->isPointerTy()) {
-    return module->getDataLayout().getPointerSizeInBits();
-  }
-  return llvmType->getScalarSizeInBits();
-}
-
 llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *srcValue, llvm::Type *dstType) {
   // Unpack the pointers until a pointer of another type is met
   unsigned int loadCounter = 0;
@@ -2654,6 +2756,135 @@ llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *srcValue, llvm::Type 
     srcValue = newActualArg;
   }
   return srcValue;
+}
+
+void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir) {
+  // Create DIBuilder
+  diBuilder = std::make_unique<llvm::DIBuilder>(*module);
+  // Create compilation unit
+  debugInfo.diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
+  debugInfo.compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, "Spice Compiler", false, "", 0);
+  // Initialize primitive types
+  debugInfo.doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
+  debugInfo.intTy = diBuilder->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
+  debugInfo.uIntTy = diBuilder->createBasicType("unsigned int", 32, llvm::dwarf::DW_ATE_unsigned);
+  debugInfo.shortTy = diBuilder->createBasicType("short", 16, llvm::dwarf::DW_ATE_signed);
+  debugInfo.uShortTy = diBuilder->createBasicType("unsigned short", 16, llvm::dwarf::DW_ATE_unsigned);
+  debugInfo.longTy = diBuilder->createBasicType("long", 64, llvm::dwarf::DW_ATE_signed);
+  debugInfo.uLongTy = diBuilder->createBasicType("unsigned long", 64, llvm::dwarf::DW_ATE_unsigned);
+  debugInfo.byteTy = diBuilder->createBasicType("byte", 8, llvm::dwarf::DW_ATE_signed);
+  debugInfo.uByteTy = diBuilder->createBasicType("unsigned byte", 8, llvm::dwarf::DW_ATE_unsigned);
+  debugInfo.charTy = diBuilder->createBasicType("char", 8, llvm::dwarf::DW_ATE_signed_char);
+  debugInfo.uCharTy = diBuilder->createBasicType("unsigned char", 8, llvm::dwarf::DW_ATE_unsigned_char);
+  debugInfo.stringTy = diBuilder->createBasicType("string", 8, llvm::dwarf::DW_ATE_ASCII);
+  debugInfo.boolTy = diBuilder->createBasicType("bool", 1, llvm::dwarf::DW_ATE_boolean);
+}
+
+llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolType) const {
+  if (symbolType.isPointer()) { // Pointer type
+    llvm::DIType *pointeeTy = getDITypeForSymbolType(symbolType.getContainedTy());
+    unsigned int pointerWidth = module->getDataLayout().getPointerSizeInBits();
+    return diBuilder->createPointerType(pointeeTy, pointerWidth);
+  }
+
+  if (symbolType.isArray()) { // Array type
+    llvm::DIType *itemTy = getDITypeForSymbolType(symbolType.getContainedTy());
+    size_t size = symbolType.getArraySize();
+    llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
+    return diBuilder->createArrayType(size, 0, itemTy, elements);
+  }
+
+  // Primitive types
+  if (symbolType.is(TY_DOUBLE))
+    return debugInfo.doubleTy;
+  if (symbolType.is(TY_INT))
+    return symbolType.isSigned() ? debugInfo.intTy : debugInfo.uIntTy;
+  if (symbolType.is(TY_SHORT))
+    return symbolType.isSigned() ? debugInfo.shortTy : debugInfo.uShortTy;
+  if (symbolType.is(TY_LONG))
+    return symbolType.isSigned() ? debugInfo.longTy : debugInfo.uLongTy;
+  if (symbolType.is(TY_BYTE))
+    return symbolType.isSigned() ? debugInfo.byteTy : debugInfo.uByteTy;
+  if (symbolType.is(TY_CHAR))
+    return symbolType.isSigned() ? debugInfo.charTy : debugInfo.uCharTy;
+  if (symbolType.is(TY_STRING))
+    return debugInfo.stringTy;
+  if (symbolType.is(TY_BOOL))
+    return debugInfo.boolTy;
+
+  return nullptr;
+}
+
+void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  size_t lineNumber = spiceFunc->getDefinitionToken().getLine();
+
+  // Create function type
+  std::vector<llvm::Metadata *> argTypes;
+  argTypes.push_back(getDITypeForSymbolType(spiceFunc->getReturnType())); // Add result type
+  for (auto &argType : spiceFunc->getArgTypes())                          // Add arg types
+    argTypes.push_back(getDITypeForSymbolType(argType));
+  llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
+
+  llvm::DISubprogram *subprogram =
+      diBuilder->createFunction(unit, spiceFunc->getName(), spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
+                                llvm::DINode::FlagZero, llvm::DISubprogram::SPFlagDefinition);
+
+  // Add debug info to LLVM function
+  llvmFunction->setSubprogram(subprogram);
+  // Add scope to lexicalBlocks
+  debugInfo.lexicalBlocks.push_back(subprogram);
+}
+
+llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  size_t lineNumber = spiceStruct->getDefinitionToken().getLine();
+  size_t sizeInBits = module->getDataLayout().getTypeSizeInBits(llvmStructTy);
+  llvm::DINode::DIFlags flags = spiceStruct->getSpecifiers().isPublic() ? llvm::DINode::FlagPublic : llvm::DINode::FlagPrivate;
+  llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
+  return diBuilder->createStructType(unit, spiceStruct->getName(), unit, lineNumber, sizeInBits, 0, flags, nullptr, elements);
+}
+
+void GeneratorVisitor::generateDeclDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *address) {
+  if (!cliOptions.generateDebugInfo)
+    return;
+  // Get symbol table entry
+  SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
+  assert(variableEntry != nullptr);
+  // Build debug info
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
+  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
+  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, token.getLine(), diType);
+  llvm::DIExpression *expr = diBuilder->createExpression();
+  diBuilder->insertDbgAddrIntrinsic(address, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
+}
+
+void GeneratorVisitor::generateAssignDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *value) {
+  if (!cliOptions.generateDebugInfo)
+    return;
+  // Get symbol table entry
+  SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
+  assert(variableEntry != nullptr);
+  // Build debug info
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
+  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
+  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, token.getLine(), diType);
+  llvm::DIExpression *expr = diBuilder->createExpression();
+  // Insert intrinsic call
+  diBuilder->insertDbgValueIntrinsic(value, varInfo, expr, builder->getCurrentDebugLocation(), builder->GetInsertBlock());
+}
+
+void GeneratorVisitor::emitSourceLocation(antlr4::ParserRuleContext *ctx) {
+  if (!cliOptions.generateDebugInfo)
+    return;
+  unsigned int lineNumber = ctx->start->getLine();
+  unsigned int columnNumber = ctx->start->getCharPositionInLine();
+  if (debugInfo.lexicalBlocks.empty())
+    return;
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
+  builder->SetCurrentDebugLocation(llvm::DILocation::get(scope->getContext(), lineNumber, columnNumber, scope));
 }
 
 llvm::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {
