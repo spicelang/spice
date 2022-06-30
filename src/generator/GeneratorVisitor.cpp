@@ -2111,8 +2111,9 @@ std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContex
   if (ctx->DOUBLE()) {
     currentSymbolType = SymbolType(TY_DOUBLE);
     double value = std::stod(ctx->DOUBLE()->toString());
-    return currentConstValue = llvm::ConstantFP::get(*context, llvm::APFloat(constNegate ? -value : value));
-    ;
+    if (constNegate)
+      value = -value;
+    return static_cast<llvm::Constant *>(llvm::ConstantFP::get(*context, llvm::APFloat(value)));
   }
 
   // Value is an integer constant
@@ -2120,35 +2121,41 @@ std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContex
     currentSymbolType = SymbolType(TY_INT);
     int value = std::stoi(ctx->INTEGER()->toString());
     if (constNegate)
-      return currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), constNegate ? -value : value);
-    return currentConstValue = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), constNegate ? -value : value);
+      value = -value;
+    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value)
+                                                : llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value);
+    return static_cast<llvm::Constant *>(constant);
   }
 
   // Value is a short constant
   if (ctx->SHORT()) {
     currentSymbolType = SymbolType(TY_SHORT);
     int value = std::stoi(ctx->SHORT()->toString());
-    if (currentVarSigned)
-      return currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), constNegate ? -value : value);
-    return currentConstValue = llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), constNegate ? -value : value);
+    if (constNegate)
+      value = -value;
+    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value)
+                                                : llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value);
+    return static_cast<llvm::Constant *>(constant);
   }
 
   // Value is a long constant
   if (ctx->LONG()) {
     currentSymbolType = SymbolType(TY_LONG);
     long long value = std::stoll(ctx->LONG()->toString());
-    if (currentVarSigned)
-      return currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), constNegate ? -value : value);
-    return currentConstValue = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), constNegate ? -value : value);
+    if (constNegate)
+      value = -value;
+    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value)
+                                                : llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value);
+    return static_cast<llvm::Constant *>(constant);
   }
 
   // Value is a char constant
   if (ctx->CHAR_LITERAL()) {
     currentSymbolType = SymbolType(TY_CHAR);
     char value = ctx->CHAR_LITERAL()->toString()[1];
-    if (currentVarSigned)
-      return currentConstValue = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value);
-    return currentConstValue = llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value);
+    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value)
+                                                : llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value);
+    return static_cast<llvm::Constant *>(constant);
   }
 
   // Value is a string constant
@@ -2157,19 +2164,19 @@ std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContex
     std::string value = ctx->STRING_LITERAL()->toString();
     value = std::regex_replace(value, std::regex("\\\\n"), "\n");
     value = value.substr(1, value.size() - 2);
-    return currentConstValue = builder->CreateGlobalStringPtr(value, "", 0, module.get());
+    return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
   }
 
   // Value is a boolean constant with value false
   if (ctx->FALSE()) {
     currentSymbolType = SymbolType(TY_BOOL);
-    return currentConstValue = builder->getFalse();
+    return static_cast<llvm::Constant *>(builder->getFalse());
   }
 
   // Value is a boolean constant with value true
   if (ctx->TRUE()) {
     currentSymbolType = SymbolType(TY_BOOL);
-    return currentConstValue = builder->getTrue();
+    return static_cast<llvm::Constant *>(builder->getTrue());
   }
 
   throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through"); // GCOV_EXCL_LINE
