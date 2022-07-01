@@ -21,6 +21,20 @@ public type Vector<T> struct {
     unsigned int itemSize   // Size of a single item
 }
 
+public p Vector.ctor(unsigned int initAllocItems) {
+    this.ctor((long) initAllocItems);
+}
+
+public p Vector.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
+    // Allocate space for the initial number of elements
+    this.itemSize = sizeof(type T);
+    unsafe {
+        this.contents = (T*) malloc(this.itemSize * initAllocItems);
+    }
+    this.size = 0l;
+    this.capacity = initAllocItems;
+}
+
 public p Vector.ctor(unsigned int initAllocItems, T defaultValue) {
     this.ctor((long) initAllocItems, defaultValue);
 }
@@ -35,20 +49,6 @@ public p Vector.ctor(unsigned long initAllocItems, T defaultValue) {
         }
     }
     this.size = initAllocItems;
-}
-
-public p Vector.ctor(unsigned int initAllocItems) {
-    this.ctor((long) initAllocItems);
-}
-
-public p Vector.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
-    // Allocate space for the initial number of elements
-    this.itemSize = sizeof(type T);
-    unsafe {
-        this.contents = (T*) malloc(this.itemSize * initAllocItems);
-    }
-    this.size = 0l;
-    this.capacity = initAllocItems;
 }
 
 public p Vector.dtor() {
