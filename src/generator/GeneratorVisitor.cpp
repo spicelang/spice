@@ -1043,8 +1043,7 @@ std::any GeneratorVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   currentScope = currentScope->getChild(scopeId);
   assert(currentScope != nullptr);
 
-  auto condValuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
-  llvm::Value *condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
+  llvm::Value *condValue = resolveValue(ctx->assignExpr());
   llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
   // Create blocks
@@ -1271,7 +1270,7 @@ std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) 
   printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
   for (const auto &arg : ctx->assignExpr()) {
     // Visit argument
-    auto argValPtr = any_cast<llvm::Value *>(visit(arg));
+    auto argValPtr = resolveAddress(arg);
 
     llvm::Value *argVal;
     if (argValPtr->getType()->getPointerElementType()->isArrayTy()) { // Convert array type to pointer type
@@ -1298,8 +1297,7 @@ std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) 
   unsigned int size;
   if (ctx->assignExpr()) { // Assign expression
     // Visit the argument
-    auto valuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
-    llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    llvm::Value *value = resolveValue(ctx->assignExpr());
     llvm::Type *valueTy = value->getType();
 
     // Calculate size at compile-time
@@ -1843,6 +1841,8 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
 
     // Create debug info for assignment
     generateAssignDebugInfo(*ctx->start, currentVarName, lhs);
+
+    return lhsPtr;
   }
 
   return visit(ctx->postfixUnaryExpr());
@@ -1923,6 +1923,8 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
       // Create debug info for assignment
       generateAssignDebugInfo(*ctx->start, currentVarName, lhs);
     }
+
+    return lhsPtr;
   }
 
   return visit(ctx->atomicExpr());
@@ -2270,7 +2272,7 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
       // Get expected arg type
       llvm::Type *expectedArgType = fctType->getParamType(argIndex);
       // Get the actual arg value
-      auto actualArgPtr = any_cast<llvm::Value *>(visit(arg));
+      auto actualArgPtr = resolveAddress(arg);
       if (!compareLLVMTypes(actualArgPtr->getType()->getPointerElementType(), expectedArgType)) {
         argValues.push_back(doImplicitCast(actualArgPtr, expectedArgType));
       } else {
@@ -2309,7 +2311,7 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
     std::vector<llvm::Constant *> itemConstants;
     allArgsHardcoded = true;
     for (size_t i = 0; i < std::min(ctx->argLst()->assignExpr().size(), arraySize); i++) {
-      auto itemValuePtr = any_cast<llvm::Value *>(visit(ctx->argLst()->assignExpr()[i]));
+      auto itemValuePtr = resolveAddress(ctx->argLst()->assignExpr()[i]);
       itemValuePointers.push_back(itemValuePtr);
       itemConstants.push_back(currentConstValue);
     }
@@ -2425,8 +2427,7 @@ std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantia
       SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
       assert(fieldEntry);
       // Visit assignment
-      auto assignmentPtr = any_cast<llvm::Value *>(visit(ctx->argLst()->assignExpr()[i]));
-      llvm::Value *assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
+      llvm::Value *assignment = resolveValue(ctx->argLst()->assignExpr()[i]);
       // Get pointer to struct element
       llvm::Value *fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
       fieldEntry->updateAddress(fieldAddress);
@@ -2518,7 +2519,7 @@ llvm::Value *GeneratorVisitor::resolveValue(antlr4::tree::ParseTree *tree) {
   std::any valueAny = visit(tree);
   if (!valueAny.has_value() && currentConstValue) {
     llvm::Value *value = currentConstValue;
-    currentConstValue = nullptr;
+    // currentConstValue = nullptr;
     return value;
   }
   auto valueAddr = std::any_cast<llvm::Value *>(valueAny);
@@ -2530,7 +2531,7 @@ llvm::Value *GeneratorVisitor::resolveAddress(antlr4::tree::ParseTree *tree) {
   if (!valueAny.has_value() && currentConstValue) {
     llvm::Value *valueAddr = insertAlloca(currentConstValue->getType());
     builder->CreateStore(currentConstValue, valueAddr);
-    currentConstValue = nullptr;
+    // currentConstValue = nullptr;
     return valueAddr;
   }
   return std::any_cast<llvm::Value *>(valueAny);
