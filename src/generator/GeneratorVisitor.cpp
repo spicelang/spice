@@ -2547,6 +2547,27 @@ std::any GeneratorVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContex
   return SymbolType(genericType->getTypeChain());
 }
 
+llvm::Value *GeneratorVisitor::resolveValue(antlr4::tree::ParseTree *tree) {
+  auto valueAddr = std::any_cast<llvm::Value *>(visit(tree));
+  if (!valueAddr && currentConstValue)
+    return currentConstValue;
+  return builder->CreateLoad(valueAddr->getType()->getPointerElementType(), valueAddr);
+}
+
+llvm::Value *GeneratorVisitor::resolveAddress(antlr4::tree::ParseTree *tree) {
+  auto valueAddr = std::any_cast<llvm::Value *>(visit(tree));
+  if (!valueAddr && currentConstValue) {
+    valueAddr = insertAlloca(currentConstValue->getType());
+    builder->CreateStore(currentConstValue, valueAddr);
+  }
+  return valueAddr;
+}
+
+void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock *block) {
+  builder->SetInsertPoint(block);
+  blockAlreadyTerminated = false;
+}
+
 void GeneratorVisitor::createBr(llvm::BasicBlock *targetBlock) {
   if (blockAlreadyTerminated)
     return;
@@ -2559,11 +2580,6 @@ void GeneratorVisitor::createCondBr(llvm::Value *condition, llvm::BasicBlock *tr
     return;
   builder->CreateCondBr(condition, trueBlock, falseBlock);
   blockAlreadyTerminated = true;
-}
-
-void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock *block) {
-  builder->SetInsertPoint(block);
-  blockAlreadyTerminated = false;
 }
 
 llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::string &varName, llvm::Value *arraySize) {

@@ -155,6 +155,8 @@ private:
   } debugInfo;
 
   // Private methods
+  llvm::Value *resolveValue(antlr4::tree::ParseTree *tree);
+  llvm::Value *resolveAddress(antlr4::tree::ParseTree *tree);
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
