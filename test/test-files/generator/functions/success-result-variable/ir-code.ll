@@ -9,42 +9,30 @@ define internal i32 @_f__void__getAge() {
 entry:
   %result = alloca i32, align 4
   %i = alloca i1, align 1
-  %0 = alloca i1, align 1
-  %1 = alloca i32, align 4
-  %2 = alloca i1, align 1
-  %3 = alloca i32, align 4
-  %4 = alloca i32, align 4
-  store i1 true, i1* %0, align 1
-  %5 = load i1, i1* %0, align 1
-  br i1 %5, label %if.then, label %if.else
+  %0 = alloca i32, align 4
+  br i1 true, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
-  store i32 20, i32* %1, align 4
-  %6 = load i32, i32* %1, align 4
-  store i32 %6, i32* %result, align 4
-  %7 = load i32, i32* %result, align 4
-  ret i32 %7
+  store i32 20, i32* %result, align 4
+  %1 = load i32, i32* %result, align 4
+  ret i32 %1
 
 if.else:                                          ; preds = %entry
-  store i1 false, i1* %2, align 1
-  %8 = load i1, i1* %2, align 1
-  store i1 %8, i1* %i, align 1
-  %9 = load i1, i1* %i, align 1
-  br i1 %9, label %if.then1, label %if.end
+  store i1 false, i1* %i, align 1
+  %2 = load i1, i1* %i, align 1
+  br i1 %2, label %if.then1, label %if.end
 
 if.then1:                                         ; preds = %if.else
-  store i32 19, i32* %3, align 4
-  %10 = load i32, i32* %3, align 4
-  store i32 %10, i32* %result, align 4
+  store i32 19, i32* %result, align 4
   br label %if.end
 
 if.end:                                           ; preds = %if.then1, %if.else
   br label %if.end2
 
 if.end2:                                          ; preds = %if.end
-  store i32 15, i32* %4, align 4
-  %11 = load i32, i32* %4, align 4
-  ret i32 %11
+  store i32 15, i32* %0, align 4
+  %3 = load i32, i32* %0, align 4
+  ret i32 %3
 }
 
 define i32 @main() {

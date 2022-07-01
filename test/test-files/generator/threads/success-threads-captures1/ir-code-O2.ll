@@ -21,8 +21,8 @@ entry:
   br label %for
 
 for:                                              ; preds = %entry, %for
-  %storemerge6 = phi i32 [ 1, %entry ], [ %7, %for ]
-  %3 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i32 %storemerge6)
+  %storemerge2 = phi i32 [ 1, %entry ], [ %7, %for ]
+  %3 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i32 %storemerge2)
   store i32* %i, i32** %1, align 8
   %4 = alloca i8*, align 8
   %5 = call i32 @pthread_create(i8** nonnull %4, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %2)
@@ -34,7 +34,7 @@ for:                                              ; preds = %entry, %for
 
 for.end:                                          ; preds = %for
   %9 = call i32 @usleep(i32 1000000)
-  %puts5 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
+  %puts1 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
   ret i32 0
 }
 

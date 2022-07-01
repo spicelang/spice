@@ -17,28 +17,21 @@ entry:
   %1 = alloca {}, align 8
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
-  %4 = alloca i32, align 4
-  %5 = alloca i32, align 4
   store i32 0, i32* %result, align 4
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @0, i32 0, i32 0))
-  %7 = alloca i8*, align 8
-  %8 = bitcast {}* %0 to i8*
-  %9 = call i32 @pthread_create(i8** %7, i8* null, i8* (i8*)* @_thread0, i8* %8)
-  %10 = alloca i8*, align 8
-  %11 = bitcast {}* %1 to i8*
-  %12 = call i32 @pthread_create(i8** %10, i8* null, i8* (i8*)* @_thread1, i8* %11)
-  store i32 1000, i32* %2, align 4
-  %13 = load i32, i32* %2, align 4
-  store i32 1000, i32* %3, align 4
-  %14 = load i32, i32* %3, align 4
-  %15 = mul i32 %13, %14
-  store i32 %15, i32* %4, align 4
-  %16 = load i32, i32* %4, align 4
-  %17 = call i32 @usleep(i32 %16)
-  store i32 %17, i32* %5, align 4
-  %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
-  %19 = load i32, i32* %result, align 4
-  ret i32 %19
+  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @0, i32 0, i32 0))
+  %5 = alloca i8*, align 8
+  %6 = bitcast {}* %0 to i8*
+  %7 = call i32 @pthread_create(i8** %5, i8* null, i8* (i8*)* @_thread0, i8* %6)
+  %8 = alloca i8*, align 8
+  %9 = bitcast {}* %1 to i8*
+  %10 = call i32 @pthread_create(i8** %8, i8* null, i8* (i8*)* @_thread1, i8* %9)
+  store i32 1000000, i32* %2, align 4
+  %11 = load i32, i32* %2, align 4
+  %12 = call i32 @usleep(i32 %11)
+  store i32 %12, i32* %3, align 4
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
+  %14 = load i32, i32* %result, align 4
+  ret i32 %14
 }
 
 declare i32 @printf(i8*, ...)
@@ -48,18 +41,11 @@ entry:
   %1 = bitcast i8* %0 to {}*
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
-  %4 = alloca i32, align 4
-  %5 = alloca i32, align 4
-  store i32 500, i32* %2, align 4
-  %6 = load i32, i32* %2, align 4
-  store i32 1000, i32* %3, align 4
-  %7 = load i32, i32* %3, align 4
-  %8 = mul i32 %6, %7
-  store i32 %8, i32* %4, align 4
-  %9 = load i32, i32* %4, align 4
-  %10 = call i32 @usleep(i32 %9)
-  store i32 %10, i32* %5, align 4
-  %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @1, i32 0, i32 0))
+  store i32 500000, i32* %2, align 4
+  %4 = load i32, i32* %2, align 4
+  %5 = call i32 @usleep(i32 %4)
+  store i32 %5, i32* %3, align 4
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @1, i32 0, i32 0))
   ret i8* null
 }
 
@@ -70,17 +56,10 @@ entry:
   %1 = bitcast i8* %0 to {}*
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
-  %4 = alloca i32, align 4
-  %5 = alloca i32, align 4
-  store i32 200, i32* %2, align 4
-  %6 = load i32, i32* %2, align 4
-  store i32 1000, i32* %3, align 4
-  %7 = load i32, i32* %3, align 4
-  %8 = mul i32 %6, %7
-  store i32 %8, i32* %4, align 4
-  %9 = load i32, i32* %4, align 4
-  %10 = call i32 @usleep(i32 %9)
-  store i32 %10, i32* %5, align 4
-  %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @2, i32 0, i32 0))
+  store i32 200000, i32* %2, align 4
+  %4 = load i32, i32* %2, align 4
+  %5 = call i32 @usleep(i32 %4)
+  store i32 %5, i32* %3, align 4
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @2, i32 0, i32 0))
   ret i8* null
 }

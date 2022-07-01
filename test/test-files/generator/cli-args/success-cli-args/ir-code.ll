@@ -12,41 +12,32 @@ entry:
   %argc = alloca i32, align 4
   %argv = alloca i8**, align 8
   %result = alloca i32, align 4
-  %2 = alloca i32, align 4
-  %3 = alloca i32, align 4
-  %4 = alloca i1, align 1
-  %5 = alloca i32, align 4
+  %2 = alloca i1, align 1
   store i32 %0, i32* %argc, align 4
   store i8** %1, i8*** %argv, align 8
   store i32 0, i32* %result, align 4
-  %6 = load i32, i32* %argc, align 4
-  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %6)
-  %8 = load i8**, i8*** %argv, align 8
-  store i32 0, i32* %2, align 4
-  %9 = load i32, i32* %2, align 4
-  %10 = getelementptr inbounds i8*, i8** %8, i32 %9
-  %11 = load i8*, i8** %10, align 8
-  %12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @1, i32 0, i32 0), i8* %11)
-  store i32 1, i32* %3, align 4
-  %13 = load i32, i32* %argc, align 4
-  %14 = load i32, i32* %3, align 4
-  %15 = icmp sgt i32 %13, %14
-  store i1 %15, i1* %4, align 1
-  %16 = load i1, i1* %4, align 1
-  br i1 %16, label %if.then, label %if.end
+  %3 = load i32, i32* %argc, align 4
+  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %3)
+  %5 = load i8**, i8*** %argv, align 8
+  %6 = getelementptr inbounds i8*, i8** %5, i32 0
+  %7 = load i8*, i8** %6, align 8
+  %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @1, i32 0, i32 0), i8* %7)
+  %9 = load i32, i32* %argc, align 4
+  %10 = icmp sgt i32 %9, 1
+  store i1 %10, i1* %2, align 1
+  %11 = load i1, i1* %2, align 1
+  br i1 %11, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %17 = load i8**, i8*** %argv, align 8
-  store i32 1, i32* %5, align 4
-  %18 = load i32, i32* %5, align 4
-  %19 = getelementptr inbounds i8*, i8** %17, i32 %18
-  %20 = load i8*, i8** %19, align 8
-  %21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @2, i32 0, i32 0), i8* %20)
+  %12 = load i8**, i8*** %argv, align 8
+  %13 = getelementptr inbounds i8*, i8** %12, i32 1
+  %14 = load i8*, i8** %13, align 8
+  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @2, i32 0, i32 0), i8* %14)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %22 = load i32, i32* %result, align 4
-  ret i32 %22
+  %16 = load i32, i32* %result, align 4
+  ret i32 %16
 }
 
 declare i32 @printf(i8*, ...)

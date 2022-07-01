@@ -14,68 +14,52 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   %capturedVariable = alloca i32, align 4
-  %0 = alloca i32, align 4
   %i = alloca i32, align 4
-  %1 = alloca i32, align 4
+  %0 = alloca i1, align 1
+  %1 = alloca { i32*, i32* }, align 8
   %2 = alloca i32, align 4
-  %3 = alloca i1, align 1
-  %4 = alloca { i32*, i32* }, align 8
-  %5 = alloca i32, align 4
-  %6 = alloca i32, align 4
-  %7 = alloca i32, align 4
-  %8 = alloca i32, align 4
-  %9 = alloca i32, align 4
+  %3 = alloca i32, align 4
+  %4 = alloca i32, align 4
   store i32 0, i32* %result, align 4
-  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0))
-  store i32 0, i32* %0, align 4
-  %11 = load i32, i32* %0, align 4
-  store volatile i32 %11, i32* %capturedVariable, align 4
-  store i32 1, i32* %1, align 4
-  %12 = load i32, i32* %1, align 4
-  store i32 %12, i32* %i, align 4
+  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0))
+  store volatile i32 0, i32* %capturedVariable, align 4
+  store i32 1, i32* %i, align 4
   br label %for.cond
 
 for.cond:                                         ; preds = %for.post, %entry
-  store i32 8, i32* %2, align 4
-  %13 = load i32, i32* %i, align 4
-  %14 = load i32, i32* %2, align 4
-  %15 = icmp sle i32 %13, %14
-  store i1 %15, i1* %3, align 1
-  %16 = load i1, i1* %3, align 1
-  br i1 %16, label %for, label %for.end
+  %6 = load i32, i32* %i, align 4
+  %7 = icmp sle i32 %6, 8
+  store i1 %7, i1* %0, align 1
+  %8 = load i1, i1* %0, align 1
+  br i1 %8, label %for, label %for.end
 
 for:                                              ; preds = %for.cond
-  %17 = load i32, i32* %i, align 4
-  %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %17)
-  %19 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %4, i32 0, i32 0
-  store i32* %capturedVariable, i32** %19, align 8
-  %20 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %4, i32 0, i32 1
-  store i32* %i, i32** %20, align 8
-  %21 = alloca i8*, align 8
-  %22 = bitcast { i32*, i32* }* %4 to i8*
-  %23 = call i32 @pthread_create(i8** %21, i8* null, i8* (i8*)* @_thread0, i8* %22)
+  %9 = load i32, i32* %i, align 4
+  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %9)
+  %11 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %1, i32 0, i32 0
+  store i32* %capturedVariable, i32** %11, align 8
+  %12 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %1, i32 0, i32 1
+  store i32* %i, i32** %12, align 8
+  %13 = alloca i8*, align 8
+  %14 = bitcast { i32*, i32* }* %1 to i8*
+  %15 = call i32 @pthread_create(i8** %13, i8* null, i8* (i8*)* @_thread0, i8* %14)
   br label %for.post
 
 for.post:                                         ; preds = %for
-  %24 = load i32, i32* %i, align 4
-  %25 = add i32 %24, 1
-  store i32 %25, i32* %i, align 4
-  store i32 %24, i32* %5, align 4
+  %16 = load i32, i32* %i, align 4
+  %17 = add i32 %16, 1
+  store i32 %17, i32* %i, align 4
+  store i32 %16, i32* %2, align 4
   br label %for.cond
 
 for.end:                                          ; preds = %for.cond
-  store i32 1000, i32* %6, align 4
-  %26 = load i32, i32* %6, align 4
-  store i32 1000, i32* %7, align 4
-  %27 = load i32, i32* %7, align 4
-  %28 = mul i32 %26, %27
-  store i32 %28, i32* %8, align 4
-  %29 = load i32, i32* %8, align 4
-  %30 = call i32 @usleep(i32 %29)
-  store i32 %30, i32* %9, align 4
-  %31 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
-  %32 = load i32, i32* %result, align 4
-  ret i32 %32
+  store i32 1000000, i32* %3, align 4
+  %18 = load i32, i32* %3, align 4
+  %19 = call i32 @usleep(i32 %18)
+  store i32 %19, i32* %4, align 4
+  %20 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
+  %21 = load i32, i32* %result, align 4
+  ret i32 %21
 }
 
 declare i32 @printf(i8*, ...)
@@ -87,28 +71,19 @@ entry:
   %3 = load i32*, i32** %2, align 8
   %4 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %1, i32 0, i32 1
   %5 = load i32*, i32** %4, align 8
-  %6 = alloca i32, align 4
-  %7 = alloca i32, align 4
-  %8 = alloca i32, align 4
+  %6 = load i32, i32* %5, align 4
+  %7 = mul i32 100, %6
+  %8 = mul i32 %7, 1000
   %9 = alloca i32, align 4
   %10 = alloca i32, align 4
-  store i32 100, i32* %6, align 4
-  %11 = load i32, i32* %6, align 4
-  %12 = load i32, i32* %5, align 4
-  %13 = mul i32 %11, %12
-  store i32 1000, i32* %7, align 4
-  %14 = load i32, i32* %7, align 4
-  %15 = mul i32 %13, %14
-  store i32 %15, i32* %8, align 4
-  %16 = load i32, i32* %8, align 4
-  %17 = call i32 @usleep(i32 %16)
-  store i32 %17, i32* %9, align 4
-  store i32 2, i32* %10, align 4
-  %18 = load i32, i32* %10, align 4
-  %19 = load i32, i32* %3, align 4
-  %20 = mul i32 %19, %18
-  store volatile i32 %20, i32* %3, align 4
-  %21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @2, i32 0, i32 0))
+  store i32 %8, i32* %9, align 4
+  %11 = load i32, i32* %9, align 4
+  %12 = call i32 @usleep(i32 %11)
+  store i32 %12, i32* %10, align 4
+  %13 = load i32, i32* %3, align 4
+  %14 = mul i32 %13, 2
+  store volatile i32 %14, i32* %3, align 4
+  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @2, i32 0, i32 0))
   ret i8* null
 }
 
