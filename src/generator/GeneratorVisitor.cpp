@@ -834,8 +834,7 @@ std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   // Fill condition block
   parentFct->getBasicBlockList().push_back(bCond);
   moveInsertPointToBlock(bCond);
-  auto condValuePtr = any_cast<llvm::Value *>(visit(head->assignExpr()[0]));
-  llvm::Value *condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
+  llvm::Value *condValue = resolveValue(head->assignExpr()[0]);
   // Jump to loop body or to loop end
   createCondBr(condValue, bLoop, bEnd);
 
@@ -918,7 +917,7 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   llvm::Value *itemVariablePtr = itemVariableEntry->getAddress();
 
   // Do loop variable initialization
-  auto valuePtr = any_cast<llvm::Value *>(visit(ctx->foreachHead()->assignExpr()));
+  auto valuePtr = resolveAddress(ctx->foreachHead()->assignExpr());
   llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
   llvm::Value *maxIndex = builder->getInt32(value->getType()->getArrayNumElements() - 1);
   // Load the first item into item variable
@@ -997,8 +996,7 @@ std::any GeneratorVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   // Fill condition block
   parentFct->getBasicBlockList().push_back(bCond);
   moveInsertPointToBlock(bCond);
-  auto condValuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
-  llvm::Value *condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
+  llvm::Value *condValue = resolveValue(ctx->assignExpr());
   createCondBr(condValue, bLoop, bEnd);
 
   // Fill loop block
@@ -1108,8 +1106,7 @@ std::any GeneratorVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) 
   // Only generate assertions with -O0
   if (cliOptions.optLevel == 0) {
     // Visit the assignExpr
-    auto condValuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
-    llvm::Value *condValue = builder->CreateLoad(condValuePtr->getType()->getPointerElementType(), condValuePtr);
+    llvm::Value *condValue = resolveValue(ctx->assignExpr());
     llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
@@ -1317,8 +1314,7 @@ std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) 
 
 std::any GeneratorVisitor::visitLenCall(SpiceParser::LenCallContext *ctx) {
   // Visit the argument
-  auto valuePtr = any_cast<llvm::Value *>(visit(ctx->assignExpr()));
-  llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+  llvm::Value *value = resolveValue(ctx->assignExpr());
 
   // Get array size
   unsigned int size = value->getType()->getArrayNumElements();
@@ -1367,7 +1363,7 @@ std::any GeneratorVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
   unsigned int joinCount = 0;
   for (const auto &assignExpr : ctx->assignExpr()) {
     // Check if it is an id or an array of ids
-    auto threadIdPtr = any_cast<llvm::Value *>(visit(assignExpr));
+    auto threadIdPtr = resolveAddress(assignExpr);
     assert(threadIdPtr != nullptr && threadIdPtr->getType()->isPointerTy());
     llvm::Type *threadIdPtrTy = threadIdPtr->getType()->getPointerElementType();
     if (threadIdPtr->getType()->getPointerElementType()->isArrayTy()) { // Array of ids
@@ -2198,8 +2194,7 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
           SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
           assert(fieldEntry);
           // Visit assignment
-          auto assignmentPtr = any_cast<llvm::Value *>(visit(ctx->argLst()->assignExpr()[i]));
-          llvm::Value *assignment = builder->CreateLoad(assignmentPtr->getType()->getPointerElementType(), assignmentPtr);
+          llvm::Value *assignment = resolveValue(ctx->argLst()->assignExpr()[i]);
           // Get pointer to struct element
           llvm::Value *fieldAddress = builder->CreateStructGEP(structType, thisValuePtr, i);
           fieldEntry->updateAddress(fieldAddress);

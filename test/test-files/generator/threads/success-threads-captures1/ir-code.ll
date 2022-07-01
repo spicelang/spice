@@ -14,61 +14,48 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   %i = alloca i32, align 4
-  %0 = alloca i32, align 4
-  %1 = alloca i32, align 4
-  %2 = alloca i1, align 1
-  %3 = alloca { i32* }, align 8
+  %0 = alloca i1, align 1
+  %1 = alloca { i32* }, align 8
+  %2 = alloca i32, align 4
+  %3 = alloca i32, align 4
   %4 = alloca i32, align 4
-  %5 = alloca i32, align 4
-  %6 = alloca i32, align 4
-  %7 = alloca i32, align 4
-  %8 = alloca i32, align 4
   store i32 0, i32* %result, align 4
-  %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0))
-  store i32 1, i32* %0, align 4
-  %10 = load i32, i32* %0, align 4
-  store i32 %10, i32* %i, align 4
+  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0))
+  store i32 1, i32* %i, align 4
   br label %for.cond
 
 for.cond:                                         ; preds = %for.post, %entry
-  store i32 8, i32* %1, align 4
-  %11 = load i32, i32* %i, align 4
-  %12 = load i32, i32* %1, align 4
-  %13 = icmp sle i32 %11, %12
-  store i1 %13, i1* %2, align 1
-  %14 = load i1, i1* %2, align 1
-  br i1 %14, label %for, label %for.end
+  %6 = load i32, i32* %i, align 4
+  %7 = icmp sle i32 %6, 8
+  store i1 %7, i1* %0, align 1
+  %8 = load i1, i1* %0, align 1
+  br i1 %8, label %for, label %for.end
 
 for:                                              ; preds = %for.cond
-  %15 = load i32, i32* %i, align 4
-  %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %15)
-  %17 = getelementptr inbounds { i32* }, { i32* }* %3, i32 0, i32 0
-  store i32* %i, i32** %17, align 8
-  %18 = alloca i8*, align 8
-  %19 = bitcast { i32* }* %3 to i8*
-  %20 = call i32 @pthread_create(i8** %18, i8* null, i8* (i8*)* @_thread0, i8* %19)
+  %9 = load i32, i32* %i, align 4
+  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %9)
+  %11 = getelementptr inbounds { i32* }, { i32* }* %1, i32 0, i32 0
+  store i32* %i, i32** %11, align 8
+  %12 = alloca i8*, align 8
+  %13 = bitcast { i32* }* %1 to i8*
+  %14 = call i32 @pthread_create(i8** %12, i8* null, i8* (i8*)* @_thread0, i8* %13)
   br label %for.post
 
 for.post:                                         ; preds = %for
-  %21 = load i32, i32* %i, align 4
-  %22 = add i32 %21, 1
-  store i32 %22, i32* %i, align 4
-  store i32 %21, i32* %4, align 4
+  %15 = load i32, i32* %i, align 4
+  %16 = add i32 %15, 1
+  store i32 %16, i32* %i, align 4
+  store i32 %15, i32* %2, align 4
   br label %for.cond
 
 for.end:                                          ; preds = %for.cond
-  store i32 1000, i32* %5, align 4
-  %23 = load i32, i32* %5, align 4
-  store i32 1000, i32* %6, align 4
-  %24 = load i32, i32* %6, align 4
-  %25 = mul i32 %23, %24
-  store i32 %25, i32* %7, align 4
-  %26 = load i32, i32* %7, align 4
-  %27 = call i32 @usleep(i32 %26)
-  store i32 %27, i32* %8, align 4
-  %28 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
-  %29 = load i32, i32* %result, align 4
-  ret i32 %29
+  store i32 1000000, i32* %3, align 4
+  %17 = load i32, i32* %3, align 4
+  %18 = call i32 @usleep(i32 %17)
+  store i32 %18, i32* %4, align 4
+  %19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
+  %20 = load i32, i32* %result, align 4
+  ret i32 %20
 }
 
 declare i32 @printf(i8*, ...)
@@ -78,22 +65,16 @@ entry:
   %1 = bitcast i8* %0 to { i32* }*
   %2 = getelementptr inbounds { i32* }, { i32* }* %1, i32 0, i32 0
   %3 = load i32*, i32** %2, align 8
-  %4 = alloca i32, align 4
-  %5 = alloca i32, align 4
-  %6 = alloca i32, align 4
+  %4 = load i32, i32* %3, align 4
+  %5 = mul i32 100, %4
+  %6 = mul i32 %5, 1000
   %7 = alloca i32, align 4
-  store i32 100, i32* %4, align 4
-  %8 = load i32, i32* %4, align 4
-  %9 = load i32, i32* %3, align 4
-  %10 = mul i32 %8, %9
-  store i32 1000, i32* %5, align 4
-  %11 = load i32, i32* %5, align 4
-  %12 = mul i32 %10, %11
-  store i32 %12, i32* %6, align 4
-  %13 = load i32, i32* %6, align 4
-  %14 = call i32 @usleep(i32 %13)
-  store i32 %14, i32* %7, align 4
-  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @2, i32 0, i32 0))
+  %8 = alloca i32, align 4
+  store i32 %6, i32* %7, align 4
+  %9 = load i32, i32* %7, align 4
+  %10 = call i32 @usleep(i32 %9)
+  store i32 %10, i32* %8, align 4
+  %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @2, i32 0, i32 0))
   ret i8* null
 }
 

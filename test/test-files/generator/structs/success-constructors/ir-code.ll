@@ -11,21 +11,15 @@ target triple = "x86_64-w64-windows-gnu"
 define internal void @_mp__Vector__ctor(%_s__Vector__bool_string* %0) {
 entry:
   %this = alloca %_s__Vector__bool_string*, align 8
-  %1 = alloca i1, align 1
-  %2 = alloca i8*, align 8
   store %_s__Vector__bool_string* %0, %_s__Vector__bool_string** %this, align 8
-  store i1 false, i1* %1, align 1
-  %3 = load i1, i1* %1, align 1
+  %1 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
+  %2 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
+  %3 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %2, i32 0, i32 0
+  store i1 false, i1* %3, align 1
   %4 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
   %5 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
-  %6 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %5, i32 0, i32 0
-  store i1 %3, i1* %6, align 1
-  store i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0), i8** %2, align 8
-  %7 = load i8*, i8** %2, align 8
-  %8 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
-  %9 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
-  %10 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %9, i32 0, i32 1
-  store i8* %7, i8** %10, align 8
+  %6 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %5, i32 0, i32 1
+  store i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0), i8** %6, align 8
   ret void
 }
 

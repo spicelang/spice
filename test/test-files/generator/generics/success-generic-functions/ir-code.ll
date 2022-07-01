@@ -11,24 +11,21 @@ entry:
   %arg1 = alloca i32, align 4
   %arg2 = alloca double, align 8
   %arg3 = alloca i32, align 4
-  %2 = alloca i32, align 4
   %result = alloca double, align 8
-  %3 = alloca double, align 8
+  %2 = alloca double, align 8
   store i32 %0, i32* %arg1, align 4
   store double %1, double* %arg2, align 8
-  store i32 10, i32* %2, align 4
-  %4 = load i32, i32* %2, align 4
-  store i32 %4, i32* %arg3, align 4
-  %5 = load i32, i32* %arg1, align 4
-  %6 = load double, double* %arg2, align 8
-  %7 = sitofp i32 %5 to double
-  %8 = fadd double %7, %6
-  %9 = load i32, i32* %arg3, align 4
-  %10 = sitofp i32 %9 to double
-  %11 = fadd double %8, %10
-  store double %11, double* %3, align 8
-  %12 = load double, double* %3, align 8
-  ret double %12
+  store i32 10, i32* %arg3, align 4
+  %3 = load i32, i32* %arg1, align 4
+  %4 = load double, double* %arg2, align 8
+  %5 = sitofp i32 %3 to double
+  %6 = fadd double %5, %4
+  %7 = load i32, i32* %arg3, align 4
+  %8 = sitofp i32 %7 to double
+  %9 = fadd double %6, %8
+  store double %9, double* %2, align 8
+  %10 = load double, double* %2, align 8
+  ret double %10
 }
 
 define internal double @_f__void__genericFunction__long_double(i64 %0, double %1) {
@@ -36,24 +33,21 @@ entry:
   %arg1 = alloca i64, align 8
   %arg2 = alloca double, align 8
   %arg3 = alloca i32, align 4
-  %2 = alloca i32, align 4
   %result = alloca double, align 8
-  %3 = alloca double, align 8
+  %2 = alloca double, align 8
   store i64 %0, i64* %arg1, align 8
   store double %1, double* %arg2, align 8
-  store i32 10, i32* %2, align 4
-  %4 = load i32, i32* %2, align 4
-  store i32 %4, i32* %arg3, align 4
-  %5 = load i64, i64* %arg1, align 8
-  %6 = load double, double* %arg2, align 8
-  %7 = sitofp i64 %5 to double
-  %8 = fadd double %7, %6
-  %9 = load i32, i32* %arg3, align 4
-  %10 = sitofp i32 %9 to double
-  %11 = fadd double %8, %10
-  store double %11, double* %3, align 8
-  %12 = load double, double* %3, align 8
-  ret double %12
+  store i32 10, i32* %arg3, align 4
+  %3 = load i64, i64* %arg1, align 8
+  %4 = load double, double* %arg2, align 8
+  %5 = sitofp i64 %3 to double
+  %6 = fadd double %5, %4
+  %7 = load i32, i32* %arg3, align 4
+  %8 = sitofp i32 %7 to double
+  %9 = fadd double %6, %8
+  store double %9, double* %2, align 8
+  %10 = load double, double* %2, align 8
+  ret double %10
 }
 
 define i32 @main() {
