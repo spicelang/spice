@@ -2,7 +2,6 @@ import "std/data/vector" as vec;
 
 f<int> main() {
     vec.Vector<double> v1 = vec.Vector<double>(3);
-    v1.ctor();
     v1.pushBack(1.2);
     v1.pushBack(7.4964598);
     v1.pushBack(5.3);

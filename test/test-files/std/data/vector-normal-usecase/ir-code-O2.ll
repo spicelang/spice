@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() local_unnamed_addr {
 entry:
   %v1 = alloca %_s__double__Vector__doubleptr_long_long_int, align 8
-  call void @_mp__Vector_double__ctor(%_s__double__Vector__doubleptr_long_long_int* nonnull %v1)
+  call void @_mp__Vector_double__ctor__int(%_s__double__Vector__doubleptr_long_long_int* nonnull %v1, i32 3)
   call void @_mp__Vector_double__pushBack__double(%_s__double__Vector__doubleptr_long_long_int* nonnull %v1, double 1.200000e+00)
   call void @_mp__Vector_double__pushBack__double(%_s__double__Vector__doubleptr_long_long_int* nonnull %v1, double 0x401DFC5FF5331D64)
   call void @_mp__Vector_double__pushBack__double(%_s__double__Vector__doubleptr_long_long_int* nonnull %v1, double 5.300000e+00)
@@ -30,7 +30,7 @@ entry:
   ret i32 0
 }
 
-declare void @_mp__Vector_double__ctor(%_s__double__Vector__doubleptr_long_long_int*) local_unnamed_addr
+declare void @_mp__Vector_double__ctor__int(%_s__double__Vector__doubleptr_long_long_int*, i32) local_unnamed_addr
 
 declare void @_mp__Vector_double__pushBack__double(%_s__double__Vector__doubleptr_long_long_int*, double) local_unnamed_addr
 
