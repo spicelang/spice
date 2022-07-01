@@ -2175,33 +2175,12 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
       // Check if the struct is defined
       symbolEntry = accessScope->lookup(spiceStruct->getSignature());
       assert(symbolEntry != nullptr);
-      llvm::Type *structType = symbolEntry->getLLVMType();
 
       // Get address of variable in memory
       assert(!lhsVarName.empty());
       SymbolTableEntry *assignVarEntry = currentScope->lookup(lhsVarName);
       assert(assignVarEntry != nullptr);
       thisValuePtr = assignVarEntry->getAddress();
-
-      // Get struct table
-      SymbolTable *structTable = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + spiceStruct->getSignature());
-      assert(structTable != nullptr);
-
-      // Fill the struct with the stated values
-      if (ctx->argLst()) {
-        for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
-          // Set address to the struct instance field
-          SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
-          assert(fieldEntry);
-          // Visit assignment
-          llvm::Value *assignment = resolveValue(ctx->argLst()->assignExpr()[i]);
-          // Get pointer to struct element
-          llvm::Value *fieldAddress = builder->CreateStructGEP(structType, thisValuePtr, i);
-          fieldEntry->updateAddress(fieldAddress);
-          // Store value to address
-          builder->CreateStore(assignment, fieldAddress);
-        }
-      }
 
       constructorCall = true;
     } else {
@@ -2663,31 +2642,59 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType, Symbol
 llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type) {
   // Double
   if (OpRuleConversionsManager::isDouble(type))
-    return llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+    return currentConstValue = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
 
   // Int
   if (OpRuleConversionsManager::isInt(type))
-    return builder->getInt32(0);
+    return currentConstValue = builder->getInt32(0);
 
   // Short
   if (OpRuleConversionsManager::isShort(type))
-    return builder->getInt16(0);
+    return currentConstValue = builder->getInt16(0);
 
   // Long
   if (OpRuleConversionsManager::isLong(type))
-    return builder->getInt64(0);
+    return currentConstValue = builder->getInt64(0);
 
   // Byte or char
   if (OpRuleConversionsManager::isByteOrChar(type))
-    return builder->getInt8(0);
+    return currentConstValue = builder->getInt8(0);
 
   // String
   if (OpRuleConversionsManager::isString(type))
-    return builder->CreateGlobalStringPtr("", "", 0, module.get());
+    return currentConstValue = builder->CreateGlobalStringPtr("", "", 0, module.get());
 
   // Bool
   if (OpRuleConversionsManager::isBool(type))
-    return builder->getInt1(false);
+    return currentConstValue = builder->getFalse();
+
+  // Pointer
+  if (type->isPointerTy())
+    return currentConstValue = llvm::Constant::getNullValue(type);
+
+  // Array
+  if (type->isArrayTy()) {
+    size_t arraySize = type->getArrayNumElements();
+    llvm::Type *itemType = type->getArrayElementType();
+    llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
+    llvm::Constant *zeroItem = getDefaultValueForType(itemType);
+    std::vector<llvm::Constant *> itemConstants(arraySize, zeroItem);
+    return llvm::ConstantArray::get(arrayType, itemConstants);
+  }
+
+  // Struct
+  if (type->isStructTy()) {
+    size_t fieldNumber = type->getStructNumElements();
+    std::vector<llvm::Type *> fieldTypes(fieldNumber);
+    std::vector<llvm::Constant *> fieldConstants;
+    fieldConstants.reserve(fieldNumber);
+    for (int i = 0; i < fieldNumber; i++) {
+      fieldTypes[i] = type->getContainedType(i);
+      fieldConstants[i] = getDefaultValueForType(fieldTypes[i]);
+    }
+    llvm::StructType *structType = llvm::StructType::get(*context, fieldTypes);
+    return llvm::ConstantStruct::get(structType, fieldConstants);
+  }
 
   throw std::runtime_error("Internal compiler error: Cannot determine default value for type"); // GCOV_EXCL_LINE
 }

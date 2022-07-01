@@ -94,7 +94,7 @@ public:
 
   [[nodiscard]] bool isImported(const SymbolTable *askingScope) const;
 
-  [[nodiscard]] const ScopeType getScopeType() const;
+  [[nodiscard]] ScopeType getScopeType() const;
 
   void setCapturingRequired();
 

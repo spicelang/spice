@@ -1,5 +1,10 @@
+import "std/data/stack" as s;
+
 f<int> main() {
-    int a = 1;
-    int b = 2;
-    printf("Calculation result: %d", a + b);
+    dyn doubleVec = s.Stack<double>(3, 6.4);
+    printf("Test: %f\n", doubleVec.pop());
+    printf("Test: %f\n", doubleVec.pop());
+    printf("Test: %f\n", doubleVec.pop());
+    printf("Test: %f\n", doubleVec.pop());
+    doubleVec.dtor();
 }

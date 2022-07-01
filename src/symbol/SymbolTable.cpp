@@ -738,7 +738,7 @@ bool SymbolTable::isImported(const SymbolTable *askingScope) const {
  *
  * @return Scope type
  */
-const ScopeType SymbolTable::getScopeType() const { return scopeType; }
+ScopeType SymbolTable::getScopeType() const { return scopeType; }
 
 /**
  * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
