@@ -1,10 +1,44 @@
-import "std/data/vector" as v;
+type NestedStruct struct {
+    int field1
+    string field2
+}
+
+type TestStruct struct {
+    int* field1
+    NestedStruct* field2
+}
 
 f<int> main() {
-    dyn doubleVec = v.Vector<double>(3, 6.4);
-    printf("Test: %f\n", doubleVec.get(0));
-    printf("Test: %f\n", doubleVec.get(1));
-    printf("Test: %f\n", doubleVec.get(2));
-    printf("Test: %f\n", doubleVec.get(3));
-    doubleVec.dtor();
+    double doubleVar;
+    printf("Double value: %f\n", doubleVar);
+
+    int intVar;
+    printf("Int value: %d\n", intVar);
+
+    short shortVar;
+    printf("Short value: %d\n", shortVar);
+
+    long longVar;
+    printf("Long value: %d\n", longVar);
+
+    string stringVar;
+    printf("String value: %s\n", stringVar);
+
+    byte byteVar;
+    printf("Byte value: %d\n", byteVar);
+
+    char charVar;
+    printf("Char value: %c\n", charVar);
+
+    bool boolVar;
+    printf("Bool value: %d\n", boolVar);
+
+    int* intPtrVar;
+    printf("Int pointer value: %p\n", intPtrVar);
+
+    NestedStruct[4] structArrayVar;
+    printf("Struct array value: %s\n", structArrayVar[2].field2);
+
+    //TestStruct structVar;
+    //printf("Nested struct field value: %p\n", structVar.field2);
 }

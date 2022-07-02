@@ -1156,10 +1156,13 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   // Generate debug info for local variable
   generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
 
-  if (ctx->assignExpr()) {
+  if (ctx->assignExpr()) { // Declaration with assignment
     // Visit right side
     llvm::Value *rhs = resolveValue(ctx->assignExpr());
     builder->CreateStore(rhs, memAddress, entry->isVolatile());
+  } else { // Declaration with default value
+    llvm::Value *defaultValue = getDefaultValueForType(varType);
+    builder->CreateStore(defaultValue, memAddress, entry->isVolatile());
   }
 
   lhsType = nullptr; // Reset nullptr
@@ -2438,8 +2441,6 @@ std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
 
   // Come up with the LLVM type
   llvm::Type *type = getTypeForSymbolType(currentSymbolType, currentScope);
-  // Throw an error if something went wrong.
-  // This should technically never occur because of the semantic analysis
   if (!type)
     throw err->get(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, // GCOV_EXCL_LINE
                    "Internal compiler error: Dyn was other");                // GCOV_EXCL_LINE
@@ -2491,11 +2492,8 @@ std::any GeneratorVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContex
 
 llvm::Value *GeneratorVisitor::resolveValue(antlr4::tree::ParseTree *tree) {
   std::any valueAny = visit(tree);
-  if (!valueAny.has_value() && currentConstValue) {
-    llvm::Value *value = currentConstValue;
-    // currentConstValue = nullptr;
-    return value;
-  }
+  if (!valueAny.has_value() && currentConstValue)
+    return currentConstValue;
   auto valueAddr = std::any_cast<llvm::Value *>(valueAny);
   return builder->CreateLoad(valueAddr->getType()->getPointerElementType(), valueAddr);
 }
@@ -2505,7 +2503,6 @@ llvm::Value *GeneratorVisitor::resolveAddress(antlr4::tree::ParseTree *tree) {
   if (!valueAny.has_value() && currentConstValue) {
     llvm::Value *valueAddr = insertAlloca(currentConstValue->getType());
     builder->CreateStore(currentConstValue, valueAddr);
-    // currentConstValue = nullptr;
     return valueAddr;
   }
   return std::any_cast<llvm::Value *>(valueAny);
@@ -2685,14 +2682,16 @@ llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type) {
   // Struct
   if (type->isStructTy()) {
     size_t fieldNumber = type->getStructNumElements();
-    std::vector<llvm::Type *> fieldTypes(fieldNumber);
+    std::vector<llvm::Type *> fieldTypes;
     std::vector<llvm::Constant *> fieldConstants;
+    fieldTypes.reserve(fieldNumber);
     fieldConstants.reserve(fieldNumber);
     for (int i = 0; i < fieldNumber; i++) {
-      fieldTypes[i] = type->getContainedType(i);
-      fieldConstants[i] = getDefaultValueForType(fieldTypes[i]);
+      llvm::Type *fieldType = type->getContainedType(i);
+      fieldTypes.push_back(fieldType);
+      fieldConstants.push_back(getDefaultValueForType(fieldType));
     }
-    llvm::StructType *structType = llvm::StructType::get(*context, fieldTypes);
+    auto *structType = static_cast<llvm::StructType *>(type);
     return llvm::ConstantStruct::get(structType, fieldConstants);
   }
 
