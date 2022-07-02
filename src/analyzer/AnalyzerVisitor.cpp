@@ -41,7 +41,6 @@ AnalyzerVisitor::AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std
 
 std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   // --- Pre-traversing actions
-  needsReAnalyze = false;
 
   // --- Traverse AST
   visitChildren(ctx);
@@ -60,45 +59,50 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   if (requiresMainFct && !isStdFile)
     rootScope->printCompilerWarnings();
 
-  return secondRun = needsReAnalyze;
+  secondRun = true;
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
-  if (secondRun)
-    return nullptr;
-
   std::string mainSignature = MAIN_FUNCTION_NAME + "()";
 
-  // Check if the function is already defined
-  if (currentScope->lookup(mainSignature))
-    throw err->get(*ctx->start, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
+  if (!secondRun) { // First run
+    // Check if the function is already defined
+    if (currentScope->lookup(mainSignature))
+      throw err->get(*ctx->start, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
 
-  // Insert function name into the root symbol table
-  SymbolType symbolType = SymbolType(TY_FUNCTION);
-  currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start);
+    // Insert function name into the root symbol table
+    SymbolType symbolType = SymbolType(TY_FUNCTION);
+    currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start);
 
-  // Create the function scope
-  currentScope = currentScope->createChildBlock(mainSignature, SCOPE_FUNC_PROC_BODY);
+    // Create the function scope
+    currentScope = currentScope->createChildBlock(mainSignature, SCOPE_FUNC_PROC_BODY);
 
-  // Declare variable for the return value in the function scope
-  SymbolType returnType = SymbolType(TY_INT);
-  currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, *ctx->start);
-  currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
+    // Declare variable for the return value in the function scope
+    SymbolType returnType = SymbolType(TY_INT);
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, *ctx->start);
+    currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
 
-  // Visit arguments in new scope
-  if (ctx->argLstDef())
-    visit(ctx->argLstDef());
+    // Visit arguments in new scope
+    if (ctx->argLstDef())
+      visit(ctx->argLstDef());
 
-  // Visit statements in new scope
-  visit(ctx->stmtLst());
+    // Return to root scope
+    currentScope = currentScope->getParent();
 
-  // Return to root scope
-  currentScope = currentScope->getParent();
+    // Confirm main function
+    hasMainFunction = true;
+    currentScope->lookup(mainSignature)->setUsed();
+  } else { // Second run
+    // Do down into function scope
+    currentScope = currentScope->getChild(mainSignature);
 
-  // Confirm main function
-  hasMainFunction = true;
-  currentScope->lookup(mainSignature)->setUsed();
+    // Visit statements in new scope
+    visit(ctx->stmtLst());
 
+    // Return to root scope
+    currentScope = currentScope->getParent();
+  }
   return nullptr;
 }
 
@@ -151,8 +155,6 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
         templateTypes.push_back(*genericType);
       }
     }
-    if (isGeneric)
-      needsReAnalyze = true;
 
     // Visit arguments in new scope
     std::vector<std::string> argNames;
@@ -220,25 +222,6 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     currentScope->renameChildBlock(scopeId, substantiatedFunctions.front().getSignature());
     for (int i = 1; i < substantiatedFunctions.size(); i++)
       currentScope->copyChildBlock(substantiatedFunctions.front().getSignature(), substantiatedFunctions[i].getSignature());
-
-    if (!isGeneric) { // Only visit body for non-generic functions. Otherwise, bodies will be visited with the second analyzer run
-      // Go down again in scope
-      for (auto &substantiatedFunction : substantiatedFunctions) {
-        // Go down again in scope
-        currentScope = currentScope->getChild(substantiatedFunction.getSignature());
-        assert(currentScope != nullptr);
-
-        // Visit statement list in new scope
-        visit(ctx->stmtLst());
-
-        // Check if return variable is now initialized
-        if (currentScope->lookup(RETURN_VARIABLE_NAME)->getState() == DECLARED)
-          throw err->get(*ctx->start, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
-
-        // Leave the function scope
-        currentScope = currentScope->getParent();
-      }
-    }
 
     // Leave the struct scope
     if (isMethod)
@@ -384,8 +367,6 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
         templateTypes.push_back(*genericType);
       }
     }
-    if (isGeneric)
-      needsReAnalyze = true;
 
     // Visit arguments in new scope
     std::vector<std::string> argNames;
@@ -444,20 +425,6 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     currentScope->renameChildBlock(scopeId, substantiatedProcedures.front().getSignature());
     for (int i = 1; i < substantiatedProcedures.size(); i++)
       currentScope->copyChildBlock(substantiatedProcedures.front().getSignature(), substantiatedProcedures[i].getSignature());
-
-    if (!isGeneric) { // Only visit body for non-generic procs. Otherwise, bodies will be visited with the second analyzer run
-      for (auto &substantiatedProcedure : substantiatedProcedures) {
-        // Go down again in scope
-        currentScope = currentScope->getChild(substantiatedProcedure.getSignature());
-        assert(currentScope != nullptr);
-
-        // Visit statement list in new scope
-        visit(ctx->stmtLst());
-
-        // Leave the function scope
-        currentScope = currentScope->getParent();
-      }
-    }
 
     // Leave the struct scope
     if (isMethod)
@@ -638,7 +605,6 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   std::vector<GenericType> genericTemplateTypes;
   std::vector<SymbolType> templateTypes;
   if (ctx->typeLst()) {
-    needsReAnalyze = true;
     for (const auto &dataType : ctx->typeLst()->dataType()) {
       auto templateType = any_cast<SymbolType>(visit(dataType));
       if (!templateType.is(TY_GENERIC))

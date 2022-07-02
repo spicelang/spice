@@ -125,7 +125,7 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
 
   // Analyze this source file
   analyzer = std::make_shared<AnalyzerVisitor>(context, builder, threadFactory, *this, options, parent == nullptr, stdFile);
-  needsReAnalyze = any_cast<bool>(analyzer->visit(antlrCtx.parser->entry()));
+  analyzer->visit(antlrCtx.parser->entry());
   antlrCtx.parser->reset();
 }
 
@@ -136,10 +136,8 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
     sourceFile.first->reAnalyze(context, builder, threadFactory);
 
   // Re-Analyze this source file
-  if (needsReAnalyze) {
-    analyzer->visit(antlrCtx.parser->entry());
-    antlrCtx.parser->reset();
-  }
+  analyzer->visit(antlrCtx.parser->entry());
+  antlrCtx.parser->reset();
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);

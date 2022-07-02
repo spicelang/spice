@@ -1,46 +1,8 @@
-type NestedStruct struct {
-    int field1
-    string field2
-}
-
-type TestStruct struct {
-    int* field1
-    NestedStruct* field2
-}
-
 f<int> main() {
-    double doubleVar;
-    printf("Double value: %f\n", doubleVar);
+    int res = test();
+    printf("Result: %d", res);
+}
 
-    int intVar;
-    printf("Int value: %d\n", intVar);
-
-    short shortVar;
-    printf("Short value: %d\n", shortVar);
-
-    long longVar;
-    printf("Long value: %d\n", longVar);
-
-    string stringVar;
-    printf("String value: %s\n", stringVar);
-
-    byte byteVar;
-    printf("Byte value: %d\n", byteVar);
-
-    char charVar;
-    printf("Char value: %c\n", charVar);
-
-    bool boolVar;
-    printf("Bool value: %d\n", boolVar);
-
-    // Disabled because the output is different on GitHub actions
-    //int* intPtrVar;
-    //printf("Int pointer value: %p\n", intPtrVar);
-
-    NestedStruct[4] structArrayVar;
-    printf("Struct array value: %s\n", structArrayVar[2].field2);
-
-    // Disabled because the output is different on GitHub actions
-    //TestStruct structVar;
-    //printf("Nested struct field value: %p\n", structVar.field2);
+f<int> test() {
+    return 1;
 }

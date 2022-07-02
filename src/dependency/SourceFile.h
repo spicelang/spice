@@ -66,7 +66,6 @@ public:
   bool stdFile;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
-  bool needsReAnalyze = false;
   SourceFile *parent;
   CliOptions &options;
   std::shared_ptr<SymbolTable> symbolTable;

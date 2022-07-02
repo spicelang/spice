@@ -114,7 +114,6 @@ private:
   bool hasMainFunction = false;
   bool isStdFile = false;
   bool secondRun = false;
-  bool needsReAnalyze = false;
   SymbolTable *currentScope = nullptr;
   SymbolTable *rootScope = nullptr;
   ScopePath scopePath;
