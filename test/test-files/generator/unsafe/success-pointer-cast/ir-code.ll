@@ -20,6 +20,7 @@ entry:
   store i64* %l, i64** %0, align 8
   %3 = load i64*, i64** %0, align 8
   store i64* %3, i64** %lPtr, align 8
+  store i32* null, i32** %iPtr, align 8
   %4 = load i64*, i64** %lPtr, align 8
   %5 = bitcast i64* %4 to i32*
   store i32* %5, i32** %1, align 8

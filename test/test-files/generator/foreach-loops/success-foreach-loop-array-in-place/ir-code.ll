@@ -18,6 +18,7 @@ entry:
   %4 = alloca i32, align 4
   store i32 0, i32* %result, align 4
   store i32 0, i32* %idx, align 4
+  store i32 0, i32* %item, align 4
   store i32 1, i32* %0, align 4
   store i32 2, i32* %1, align 4
   store i32 3, i32* %2, align 4

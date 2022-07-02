@@ -10,6 +10,7 @@ entry:
   %result = alloca i32, align 4
   %i = alloca i1, align 1
   %0 = alloca i32, align 4
+  store i1 false, i1* %i, align 1
   br i1 true, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry

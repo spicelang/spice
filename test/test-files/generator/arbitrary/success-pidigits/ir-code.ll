@@ -57,11 +57,17 @@ entry:
   %30 = alloca i32, align 4
   store i32 0, i32* %result, align 4
   store i64 1, i64* %q, align 8
+  store i64 0, i64* %q_new, align 8
   store i64 0, i64* %r, align 8
+  store i64 0, i64* %r_new, align 8
   store i64 1, i64* %t, align 8
+  store i64 0, i64* %t_new, align 8
   store i64 1, i64* %k, align 8
+  store i64 0, i64* %k_new, align 8
   store i64 3, i64* %m, align 8
+  store i64 0, i64* %m_new, align 8
   store i64 3, i64* %x, align 8
+  store i64 0, i64* %x_new, align 8
   store i32 20, i32* %iterations, align 4
   store i32 0, i32* %printedDigits, align 4
   store i32 0, i32* %i, align 4

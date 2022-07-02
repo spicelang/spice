@@ -13,6 +13,7 @@ entry:
   %0 = alloca i32, align 4
   %1 = alloca i32, align 4
   store i32 0, i32* %result, align 4
+  store [2 x i32] zeroinitializer, [2 x i32]* %intArray, align 4
   store i32 1, i32* %0, align 4
   store i32 2, i32* %1, align 4
   %2 = load [2 x i32], [2 x i32]* @intArray, align 4
