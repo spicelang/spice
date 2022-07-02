@@ -33,12 +33,14 @@ f<int> main() {
     bool boolVar;
     printf("Bool value: %d\n", boolVar);
 
-    int* intPtrVar;
-    printf("Int pointer value: %p\n", intPtrVar);
+    // Disabled because the output is different on GitHub actions
+    //int* intPtrVar;
+    //printf("Int pointer value: %p\n", intPtrVar);
 
     NestedStruct[4] structArrayVar;
     printf("Struct array value: %s\n", structArrayVar[2].field2);
 
-    TestStruct structVar;
-    printf("Nested struct field value: %p\n", structVar.field2);
+    // Disabled because the output is different on GitHub actions
+    //TestStruct structVar;
+    //printf("Nested struct field value: %d\n", structVar.field2.field1);
 }
