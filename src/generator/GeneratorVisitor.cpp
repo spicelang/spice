@@ -894,10 +894,6 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
     SymbolTableEntry *indexVariableEntry = currentScope->lookup(indexVariableName);
     assert(indexVariableEntry != nullptr);
     indexVariablePtr = indexVariableEntry->getAddress();
-
-    // Initialize variable with 0
-    if (!head->declStmt().front()->assignExpr())
-      builder->CreateStore(builder->getInt32(0), indexVariablePtr);
   } else {
     std::string indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
     // Create local variable for
@@ -1161,7 +1157,7 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
     llvm::Value *rhs = resolveValue(ctx->assignExpr());
     builder->CreateStore(rhs, memAddress, entry->isVolatile());
   } else { // Declaration with default value
-    llvm::Value *defaultValue = getDefaultValueForType(varType);
+    llvm::Value *defaultValue = getDefaultValueForType(varType, entry->getType().getBaseType().getSubType());
     builder->CreateStore(defaultValue, memAddress, entry->isVolatile());
   }
 
@@ -2306,7 +2302,7 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
     if (!itemType->isStructTy() && allArgsHardcoded) { // All args hardcoded => array can be defined globally
       // Fill up the rest of the items
       if (itemConstants.size() < arraySize) {
-        llvm::Constant *constantValue = getDefaultValueForType(itemType);
+        llvm::Constant *constantValue = getDefaultValueForType(itemType, ""); // ToDo: Fill empty string
         for (size_t i = itemConstants.size(); i < arraySize; i++)
           itemConstants.push_back(constantValue);
       }
@@ -2636,7 +2632,7 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType, Symbol
   return llvmBaseType;
 }
 
-llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type) {
+llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type, const std::string &subTypeName) {
   // Double
   if (OpRuleConversionsManager::isDouble(type))
     return currentConstValue = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
@@ -2672,26 +2668,48 @@ llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type) {
   // Array
   if (type->isArrayTy()) {
     size_t arraySize = type->getArrayNumElements();
+
     llvm::Type *itemType = type->getArrayElementType();
     llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
-    llvm::Constant *zeroItem = getDefaultValueForType(itemType);
+    llvm::Constant *zeroItem = getDefaultValueForType(itemType, subTypeName);
     std::vector<llvm::Constant *> itemConstants(arraySize, zeroItem);
+
     return llvm::ConstantArray::get(arrayType, itemConstants);
   }
 
   // Struct
   if (type->isStructTy()) {
+    assert(!subTypeName.empty());
+    SymbolTable *childTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + subTypeName);
+    assert(childTable != nullptr);
+
     size_t fieldNumber = type->getStructNumElements();
+    auto structType = static_cast<llvm::StructType *>(type);
+
+    // Allocate space for the struct in memory
+    llvm::Value *structAddress = insertAlloca(structType);
+
     std::vector<llvm::Type *> fieldTypes;
     std::vector<llvm::Constant *> fieldConstants;
     fieldTypes.reserve(fieldNumber);
     fieldConstants.reserve(fieldNumber);
     for (int i = 0; i < fieldNumber; i++) {
+      SymbolTableEntry *fieldEntry = childTable->lookupByIndex(i);
+      assert(fieldEntry != nullptr);
       llvm::Type *fieldType = type->getContainedType(i);
+      fieldEntry->updateLLVMType(fieldType);
       fieldTypes.push_back(fieldType);
-      fieldConstants.push_back(getDefaultValueForType(fieldType));
+      llvm::Constant *defaultFieldValue = getDefaultValueForType(fieldType, fieldEntry->getType().getBaseType().getSubType());
+
+      // Get pointer to struct element
+      llvm::Value *fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
+      fieldEntry->updateAddress(fieldAddress);
+      // Store value to address
+      builder->CreateStore(defaultFieldValue, fieldAddress);
+
+      fieldConstants.push_back(defaultFieldValue);
     }
-    auto *structType = static_cast<llvm::StructType *>(type);
+
     return llvm::ConstantStruct::get(structType, fieldConstants);
   }
 
@@ -2781,8 +2799,8 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
   if (symbolType.isArray()) { // Array type
     llvm::DIType *itemTy = getDITypeForSymbolType(symbolType.getContainedTy());
     size_t size = symbolType.getArraySize();
-    llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
-    return diBuilder->createArrayType(size, 0, itemTy, elements);
+    llvm::DINodeArray subscripts = diBuilder->getOrCreateArray({});
+    return diBuilder->createArrayType(size, 0, itemTy, subscripts);
   }
 
   // Primitive types

@@ -1639,7 +1639,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
             "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.");
 
       // Get array item type
-      lhs = lhs.getContainedTy();
+      lhs = currentThisType = lhs.getContainedTy();
 
       currentVarName = arrayName;        // Restore array name
       scopePath = scopePathBackup;       // Restore scope path

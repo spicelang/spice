@@ -164,7 +164,7 @@ private:
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
   llvm::Type *getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope);
-  llvm::Constant *getDefaultValueForType(llvm::Type *type);
+  llvm::Constant *getDefaultValueForType(llvm::Type *type, const std::string &subTypeName);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);
   llvm::Value *doImplicitCast(llvm::Value *lhs, llvm::Type *rhs);

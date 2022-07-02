@@ -39,6 +39,6 @@ f<int> main() {
     NestedStruct[4] structArrayVar;
     printf("Struct array value: %s\n", structArrayVar[2].field2);
 
-    //TestStruct structVar;
-    //printf("Nested struct field value: %p\n", structVar.field2);
+    TestStruct structVar;
+    printf("Nested struct field value: %p\n", structVar.field2);
 }
