@@ -1639,7 +1639,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCon
             "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.");
 
       // Get array item type
-      lhs = lhs.getContainedTy();
+      lhs = currentThisType = lhs.getContainedTy();
 
       currentVarName = arrayName;        // Restore array name
       scopePath = scopePathBackup;       // Restore scope path
@@ -1798,7 +1798,7 @@ std::any AnalyzerVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     return nilType;
   }
 
-  return nullptr;
+  throw std::runtime_error("Value fall-through");
 }
 
 std::any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
@@ -1814,7 +1814,9 @@ std::any AnalyzerVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext
     return SymbolType(TY_CHAR);
   if (ctx->STRING_LITERAL())
     return SymbolType(TY_STRING);
-  return SymbolType(TY_BOOL);
+  if (ctx->TRUE() || ctx->FALSE())
+    return SymbolType(TY_BOOL);
+  throw std::runtime_error("Primitive value fall-through");
 }
 
 std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {

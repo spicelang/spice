@@ -30,6 +30,7 @@ entry:
   %7 = load [7 x i32], [7 x i32]* @intArray, align 4
   store [7 x i32] %7, [7 x i32]* %intArray, align 4
   store i32 0, i32* %idx, align 4
+  store i32 0, i32* %item, align 4
   %8 = load [7 x i32], [7 x i32]* %intArray, align 4
   %9 = load i32, i32* %idx, align 4
   %10 = getelementptr inbounds [7 x i32], [7 x i32]* %intArray, i32 0, i32 %9

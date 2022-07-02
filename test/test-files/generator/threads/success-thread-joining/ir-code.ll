@@ -3,10 +3,13 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-@0 = private unnamed_addr constant [19 x i8] c"Thread 1 finished\0A\00", align 1
-@1 = private unnamed_addr constant [19 x i8] c"Thread 2 finished\0A\00", align 1
-@2 = private unnamed_addr constant [19 x i8] c"Thread 3 finished\0A\00", align 1
-@3 = private unnamed_addr constant [18 x i8] c"Program finished\0A\00", align 1
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
+@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
+@2 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
+@3 = private unnamed_addr constant [19 x i8] c"Thread 1 finished\0A\00", align 1
+@4 = private unnamed_addr constant [19 x i8] c"Thread 2 finished\0A\00", align 1
+@5 = private unnamed_addr constant [19 x i8] c"Thread 3 finished\0A\00", align 1
+@6 = private unnamed_addr constant [18 x i8] c"Program finished\0A\00", align 1
 
 declare i32 @usleep(i32)
 
@@ -21,6 +24,9 @@ entry:
   %2 = alloca {}, align 8
   %3 = alloca i32, align 4
   store i32 0, i32* %result, align 4
+  store i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i8** %t1, align 8
+  store i8* getelementptr inbounds ([1 x i8], [1 x i8]* @1, i32 0, i32 0), i8** %t2, align 8
+  store i8* getelementptr inbounds ([1 x i8], [1 x i8]* @2, i32 0, i32 0), i8** %t3, align 8
   %4 = alloca i8*, align 8
   %5 = bitcast {}* %0 to i8*
   %6 = call i32 @pthread_create(i8** %4, i8* null, i8* (i8*)* @_thread0, i8* %5)
@@ -47,7 +53,7 @@ entry:
   %22 = load i8*, i8** %t3, align 8
   %23 = call i32 @pthread_join(i8* %22, i8** null)
   store i32 3, i32* %3, align 4
-  %24 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @3, i32 0, i32 0))
+  %24 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @6, i32 0, i32 0))
   %25 = load i32, i32* %result, align 4
   ret i32 %25
 }
@@ -61,7 +67,7 @@ entry:
   %4 = load i32, i32* %2, align 4
   %5 = call i32 @usleep(i32 %4)
   store i32 %5, i32* %3, align 4
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @0, i32 0, i32 0))
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @3, i32 0, i32 0))
   ret i8* null
 }
 
@@ -82,7 +88,7 @@ entry:
   %9 = call i32 @pthread_join(i8* %8, i8** null)
   %10 = alloca i32, align 4
   store i32 2, i32* %10, align 4
-  %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @1, i32 0, i32 0))
+  %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @4, i32 0, i32 0))
   ret i8* null
 }
 
@@ -97,6 +103,6 @@ entry:
   %4 = load i32, i32* %2, align 4
   %5 = call i32 @usleep(i32 %4)
   store i32 %5, i32* %3, align 4
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @2, i32 0, i32 0))
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @5, i32 0, i32 0))
   ret i8* null
 }

@@ -48,6 +48,7 @@ entry:
   %18 = load [5 x i16], [5 x i16]* %3, align 2
   store [5 x i16] %18, [5 x i16]* %shortArray, align 2
   store i32 0, i32* %idx, align 4
+  store i16 0, i16* %s, align 2
   %19 = load [5 x i16], [5 x i16]* %shortArray, align 2
   %20 = load i32, i32* %idx, align 4
   %21 = getelementptr inbounds [5 x i16], [5 x i16]* %shortArray, i32 0, i32 %20
@@ -71,6 +72,7 @@ foreach.loop:                                     ; preds = %foreach.inc4, %entr
 
 if.then:                                          ; preds = %foreach.loop
   store i32 0, i32* %idx1, align 4
+  store i64 0, i64* %l, align 8
   store i64 1, i64* %6, align 8
   store i64 2, i64* %7, align 8
   %32 = load [2 x i64], [2 x i64]* @l, align 8

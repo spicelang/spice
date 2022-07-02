@@ -894,10 +894,6 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
     SymbolTableEntry *indexVariableEntry = currentScope->lookup(indexVariableName);
     assert(indexVariableEntry != nullptr);
     indexVariablePtr = indexVariableEntry->getAddress();
-
-    // Initialize variable with 0
-    if (!head->declStmt().front()->assignExpr())
-      builder->CreateStore(builder->getInt32(0), indexVariablePtr);
   } else {
     std::string indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
     // Create local variable for
@@ -1156,10 +1152,13 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   // Generate debug info for local variable
   generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
 
-  if (ctx->assignExpr()) {
+  if (ctx->assignExpr()) { // Declaration with assignment
     // Visit right side
     llvm::Value *rhs = resolveValue(ctx->assignExpr());
     builder->CreateStore(rhs, memAddress, entry->isVolatile());
+  } else { // Declaration with default value
+    llvm::Value *defaultValue = getDefaultValueForType(varType, entry->getType().getBaseType().getSubType());
+    builder->CreateStore(defaultValue, memAddress, entry->isVolatile());
   }
 
   lhsType = nullptr; // Reset nullptr
@@ -2175,33 +2174,12 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
       // Check if the struct is defined
       symbolEntry = accessScope->lookup(spiceStruct->getSignature());
       assert(symbolEntry != nullptr);
-      llvm::Type *structType = symbolEntry->getLLVMType();
 
       // Get address of variable in memory
       assert(!lhsVarName.empty());
       SymbolTableEntry *assignVarEntry = currentScope->lookup(lhsVarName);
       assert(assignVarEntry != nullptr);
       thisValuePtr = assignVarEntry->getAddress();
-
-      // Get struct table
-      SymbolTable *structTable = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + spiceStruct->getSignature());
-      assert(structTable != nullptr);
-
-      // Fill the struct with the stated values
-      if (ctx->argLst()) {
-        for (unsigned int i = 0; i < ctx->argLst()->assignExpr().size(); i++) {
-          // Set address to the struct instance field
-          SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
-          assert(fieldEntry);
-          // Visit assignment
-          llvm::Value *assignment = resolveValue(ctx->argLst()->assignExpr()[i]);
-          // Get pointer to struct element
-          llvm::Value *fieldAddress = builder->CreateStructGEP(structType, thisValuePtr, i);
-          fieldEntry->updateAddress(fieldAddress);
-          // Store value to address
-          builder->CreateStore(assignment, fieldAddress);
-        }
-      }
 
       constructorCall = true;
     } else {
@@ -2324,7 +2302,7 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
     if (!itemType->isStructTy() && allArgsHardcoded) { // All args hardcoded => array can be defined globally
       // Fill up the rest of the items
       if (itemConstants.size() < arraySize) {
-        llvm::Constant *constantValue = getDefaultValueForType(itemType);
+        llvm::Constant *constantValue = getDefaultValueForType(itemType, ""); // ToDo: Fill empty string
         for (size_t i = itemConstants.size(); i < arraySize; i++)
           itemConstants.push_back(constantValue);
       }
@@ -2459,8 +2437,6 @@ std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
 
   // Come up with the LLVM type
   llvm::Type *type = getTypeForSymbolType(currentSymbolType, currentScope);
-  // Throw an error if something went wrong.
-  // This should technically never occur because of the semantic analysis
   if (!type)
     throw err->get(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, // GCOV_EXCL_LINE
                    "Internal compiler error: Dyn was other");                // GCOV_EXCL_LINE
@@ -2512,11 +2488,8 @@ std::any GeneratorVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContex
 
 llvm::Value *GeneratorVisitor::resolveValue(antlr4::tree::ParseTree *tree) {
   std::any valueAny = visit(tree);
-  if (!valueAny.has_value() && currentConstValue) {
-    llvm::Value *value = currentConstValue;
-    // currentConstValue = nullptr;
-    return value;
-  }
+  if (!valueAny.has_value() && currentConstValue)
+    return currentConstValue;
   auto valueAddr = std::any_cast<llvm::Value *>(valueAny);
   return builder->CreateLoad(valueAddr->getType()->getPointerElementType(), valueAddr);
 }
@@ -2526,7 +2499,6 @@ llvm::Value *GeneratorVisitor::resolveAddress(antlr4::tree::ParseTree *tree) {
   if (!valueAny.has_value() && currentConstValue) {
     llvm::Value *valueAddr = insertAlloca(currentConstValue->getType());
     builder->CreateStore(currentConstValue, valueAddr);
-    // currentConstValue = nullptr;
     return valueAddr;
   }
   return std::any_cast<llvm::Value *>(valueAny);
@@ -2660,34 +2632,86 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType, Symbol
   return llvmBaseType;
 }
 
-llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type) {
+llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type, const std::string &subTypeName) {
   // Double
   if (OpRuleConversionsManager::isDouble(type))
-    return llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+    return currentConstValue = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
 
   // Int
   if (OpRuleConversionsManager::isInt(type))
-    return builder->getInt32(0);
+    return currentConstValue = builder->getInt32(0);
 
   // Short
   if (OpRuleConversionsManager::isShort(type))
-    return builder->getInt16(0);
+    return currentConstValue = builder->getInt16(0);
 
   // Long
   if (OpRuleConversionsManager::isLong(type))
-    return builder->getInt64(0);
+    return currentConstValue = builder->getInt64(0);
 
   // Byte or char
   if (OpRuleConversionsManager::isByteOrChar(type))
-    return builder->getInt8(0);
+    return currentConstValue = builder->getInt8(0);
 
   // String
   if (OpRuleConversionsManager::isString(type))
-    return builder->CreateGlobalStringPtr("", "", 0, module.get());
+    return currentConstValue = builder->CreateGlobalStringPtr("", "", 0, module.get());
 
   // Bool
   if (OpRuleConversionsManager::isBool(type))
-    return builder->getInt1(false);
+    return currentConstValue = builder->getFalse();
+
+  // Pointer
+  if (type->isPointerTy())
+    return currentConstValue = llvm::Constant::getNullValue(type);
+
+  // Array
+  if (type->isArrayTy()) {
+    size_t arraySize = type->getArrayNumElements();
+
+    llvm::Type *itemType = type->getArrayElementType();
+    llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
+    llvm::Constant *zeroItem = getDefaultValueForType(itemType, subTypeName);
+    std::vector<llvm::Constant *> itemConstants(arraySize, zeroItem);
+
+    return llvm::ConstantArray::get(arrayType, itemConstants);
+  }
+
+  // Struct
+  if (type->isStructTy()) {
+    assert(!subTypeName.empty());
+    SymbolTable *childTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + subTypeName);
+    assert(childTable != nullptr);
+
+    size_t fieldNumber = type->getStructNumElements();
+    auto structType = static_cast<llvm::StructType *>(type);
+
+    // Allocate space for the struct in memory
+    llvm::Value *structAddress = insertAlloca(structType);
+
+    std::vector<llvm::Type *> fieldTypes;
+    std::vector<llvm::Constant *> fieldConstants;
+    fieldTypes.reserve(fieldNumber);
+    fieldConstants.reserve(fieldNumber);
+    for (int i = 0; i < fieldNumber; i++) {
+      SymbolTableEntry *fieldEntry = childTable->lookupByIndex(i);
+      assert(fieldEntry != nullptr);
+      llvm::Type *fieldType = type->getContainedType(i);
+      fieldEntry->updateLLVMType(fieldType);
+      fieldTypes.push_back(fieldType);
+      llvm::Constant *defaultFieldValue = getDefaultValueForType(fieldType, fieldEntry->getType().getBaseType().getSubType());
+
+      // Get pointer to struct element
+      llvm::Value *fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
+      fieldEntry->updateAddress(fieldAddress);
+      // Store value to address
+      builder->CreateStore(defaultFieldValue, fieldAddress);
+
+      fieldConstants.push_back(defaultFieldValue);
+    }
+
+    return llvm::ConstantStruct::get(structType, fieldConstants);
+  }
 
   throw std::runtime_error("Internal compiler error: Cannot determine default value for type"); // GCOV_EXCL_LINE
 }
@@ -2775,8 +2799,8 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
   if (symbolType.isArray()) { // Array type
     llvm::DIType *itemTy = getDITypeForSymbolType(symbolType.getContainedTy());
     size_t size = symbolType.getArraySize();
-    llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
-    return diBuilder->createArrayType(size, 0, itemTy, elements);
+    llvm::DINodeArray subscripts = diBuilder->getOrCreateArray({});
+    return diBuilder->createArrayType(size, 0, itemTy, subscripts);
   }
 
   // Primitive types
