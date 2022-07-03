@@ -153,6 +153,7 @@ private:
     llvm::DIType *stringTy;
     llvm::DIType *boolTy;
   } debugInfo;
+  bool secondRun = false;
 
   // Private methods
   llvm::Value *resolveValue(antlr4::tree::ParseTree *tree);

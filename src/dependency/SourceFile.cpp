@@ -137,16 +137,16 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
 void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                            ThreadFactory &threadFactory) {
   // Re-Analyze this source file
-  bool reAnalyzeRequired = false;
+  bool repetitionRequired;
   unsigned int analyzeCount = 0;
   do {
-    reAnalyzeRequired = any_cast<bool>(analyzer->visit(antlrCtx.parser->entry()));
+    repetitionRequired = any_cast<bool>(analyzer->visit(antlrCtx.parser->entry()));
     antlrCtx.parser->reset();
     analyzeCount++;
     if (analyzeCount >= 10)
       throw std::runtime_error("Internal compiler error: Number of analyzer runs for one source file exceeded. Please report "
                                "this as a bug on GitHub.");
-  } while (reAnalyzeRequired);
+  } while (repetitionRequired);
 
   // Re-analyze the imported source files
   for (auto &[importName, sourceFile] : dependencies)
@@ -170,7 +170,16 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
 
   // Generate this source file
   generator = std::make_shared<GeneratorVisitor>(context, builder, threadFactory, linker, options, *this, objectFilePath);
-  generator->visit(antlrCtx.parser->entry());
+  bool repetitionRequired;
+  unsigned int generateCount = 0;
+  do {
+    repetitionRequired = std::any_cast<bool>(generator->visit(antlrCtx.parser->entry()));
+    antlrCtx.parser->reset();
+    generateCount++;
+    if (generateCount >= 10)
+      throw std::runtime_error("Internal compiler error: Number of generator runs for one source file exceeded. Please report "
+                               "this as a bug on GitHub.");
+  } while (repetitionRequired);
 
   // Save the JSON version in the compiler output
   compilerOutput.irString = generator->getIRString();

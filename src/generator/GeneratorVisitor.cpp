@@ -144,7 +144,12 @@ void GeneratorVisitor::dumpAsm() {
 }
 
 std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
-  std::any result = SpiceBaseVisitor::visitEntry(ctx);
+  SpiceBaseVisitor::visitEntry(ctx);
+
+  if (!secondRun) {
+    secondRun = true;
+    return true;
+  }
 
   // Finalize debug info generation
   if (cliOptions.generateDebugInfo)
@@ -158,10 +163,13 @@ std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
       throw err->get(*ctx->start, INVALID_MODULE, oss.str());
   }
 
-  return result;
+  return false;
 }
 
 std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+  if (!secondRun)
+    return nullptr;
+
   if (requiresMainFct) { // Only create main function when it is required
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -263,6 +271,9 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
 }
 
 std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
+  if (!secondRun)
+    return nullptr;
+
   // Check if this is a global function or a method
   std::string functionName = ctx->IDENTIFIER().back()->toString();
   bool isMethod = ctx->IDENTIFIER().size() > 1;
@@ -417,6 +428,9 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
 }
 
 std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
+  if (!secondRun)
+    return nullptr;
+
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
   bool isMethod = ctx->IDENTIFIER().size() > 1;
 
@@ -557,6 +571,9 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
 }
 
 std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   // Get function name
   std::string functionName = ctx->IDENTIFIER()->toString();
   std::vector<SymbolType> symbolTypes;
@@ -603,6 +620,9 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   // Get struct name
   std::string structName = ctx->IDENTIFIER()->toString();
 
@@ -648,6 +668,9 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   std::string varName = currentVarName = ctx->IDENTIFIER()->toString();
 
   // Get symbol table entry and the symbol specifiers

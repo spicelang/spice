@@ -41,7 +41,7 @@ void compileProject(CliOptions &options) {
     // Re-analyze the project (resolve generic functions/procedures/structs, etc.)
     mainSourceFile.reAnalyze(context, builder, threadFactory);
 
-    // Generate the project (LLVM code gen, optimization, emitting object files, etc.)
+    // Generate the project (Coming up with the LLVM types of structs or other types in the root scope)
     mainSourceFile.generate(context, builder, threadFactory, linker);
 
     // Link the target executable (Link object files to executable)
