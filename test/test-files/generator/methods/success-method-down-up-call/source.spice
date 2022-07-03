@@ -1,5 +1,5 @@
 f<int> main() {
-    TestStruct<char> s = TestStruct{ 'a', 1 };
+    TestStruct<char> s = TestStruct<char>{ 'a', 1 };
     s.printTest();
 }
 
