@@ -127,7 +127,6 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     currentScope = currentScope->createChildBlock(scopeId, SCOPE_FUNC_PROC_BODY);
 
     // Get 'this' type
-    bool isGeneric = false;
     std::vector<GenericType> templateTypes;
     SymbolType thisType = SymbolType(TY_DYN);
     SymbolType thisTypePtr = thisType;
@@ -137,7 +136,6 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       thisType = structEntry->getType();
       thisTypePtr = thisType.toPointer(err.get(), *ctx->start);
       if (!thisType.getTemplateTypes().empty()) {
-        isGeneric = true;
         for (const auto &templateType : thisType.getTemplateTypes())
           templateTypes.emplace_back(templateType);
       }
@@ -145,7 +143,6 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
 
     // Get template types
     if (ctx->typeLst()) {
-      isGeneric = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
         auto templateType = any_cast<SymbolType>(visit(dataType));
         if (!templateType.is(TY_GENERIC))
@@ -339,7 +336,6 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     currentScope = currentScope->createChildBlock(scopeId, SCOPE_FUNC_PROC_BODY);
 
     // Get 'this' type
-    bool isGeneric = false;
     std::vector<GenericType> templateTypes;
     SymbolType thisType = SymbolType(TY_DYN);
     SymbolType thisTypePtr = thisType;
@@ -349,7 +345,6 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       thisType = structEntry->getType();
       thisTypePtr = thisType.toPointer(err.get(), *ctx->start);
       if (!thisType.getTemplateTypes().empty()) {
-        isGeneric = true;
         for (const auto &templateType : thisType.getTemplateTypes())
           templateTypes.emplace_back(templateType);
       }
@@ -357,7 +352,6 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
 
     // Get template types
     if (ctx->typeLst()) {
-      isGeneric = true;
       for (const auto &dataType : ctx->typeLst()->dataType()) {
         auto templateType = any_cast<SymbolType>(visit(dataType));
         if (!templateType.is(TY_GENERIC))
