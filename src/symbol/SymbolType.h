@@ -68,6 +68,8 @@ public:
   [[nodiscard]] SymbolType getBaseType() const;
   void setTemplateTypes(TemplateTypes templateTypes);
   [[nodiscard]] TemplateTypes getTemplateTypes() const;
+  void setSigned(bool isSigned);
+  [[nodiscard]] bool isSigned() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] unsigned int getArraySize() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
@@ -77,6 +79,7 @@ public:
 protected:
   // Members
   TypeChain typeChain;
+  bool isBaseTypeSigned = true;
 
   // Protected methods
   void setSubType(const std::string &newSubType);

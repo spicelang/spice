@@ -3,6 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
 @str = private unnamed_addr constant [17 x i8] c"Program finished\00", align 1
 @str.1 = private unnamed_addr constant [18 x i8] c"Thread 1 finished\00", align 1
 @str.2 = private unnamed_addr constant [18 x i8] c"Thread 2 finished\00", align 1
@@ -16,6 +17,7 @@ entry:
   %t1 = alloca i8*, align 8
   %t3 = alloca i8*, align 8
   %1 = alloca { i8**, i8** }, align 8
+  store i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i64 0, i64 0), i8** %t3, align 8
   %2 = alloca i8*, align 8
   %3 = bitcast {}* %0 to i8*
   %4 = call i32 @pthread_create(i8** nonnull %2, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %3)

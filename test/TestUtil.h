@@ -7,7 +7,15 @@
 #include <string>
 #include <vector>
 
+const unsigned int IR_FILE_SKIP_LINES = 4;
 extern bool updateRefs;
+
+struct TestCase {
+  const std::string testName;
+  const std::string testPath;
+};
+
+typedef std::vector<TestCase> TestSuite;
 
 class TestUtil {
 public:

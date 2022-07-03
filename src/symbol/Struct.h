@@ -20,9 +20,9 @@ class Struct {
 public:
   // Constructors
   explicit Struct(std::string name, SymbolSpecifiers specifiers, std::vector<SymbolType> fieldTypes,
-                  std::vector<GenericType> templateTypes, std::string definitionCodeLoc)
+                  std::vector<GenericType> templateTypes, const antlr4::Token &definitionToken)
       : name(std::move(name)), specifiers(specifiers), fieldTypes(std::move(fieldTypes)), templateTypes(std::move(templateTypes)),
-        definitionCodeLoc(std::move(definitionCodeLoc)) {}
+        definitionToken(definitionToken) {}
 
   // Public methods
   [[nodiscard]] std::string getName() const;
@@ -39,7 +39,8 @@ public:
   void setSymbolTable(SymbolTable *symbolTable);
   void setUsed();
   [[nodiscard]] bool isUsed() const;
-  [[nodiscard]] const std::string &getDefinitionCodeLoc() const;
+  [[nodiscard]] const antlr4::Token &getDefinitionToken() const;
+  const std::string &getDefinitionCodeLoc();
 
   // Public static methods
   static std::string getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes);
@@ -50,7 +51,8 @@ private:
   SymbolSpecifiers specifiers;
   std::vector<SymbolType> fieldTypes;
   std::vector<GenericType> templateTypes;
-  SymbolTable *symbolTable;
+  SymbolTable *symbolTable = nullptr;
+  const antlr4::Token &definitionToken;
   std::string definitionCodeLoc;
   bool used = false;
 };

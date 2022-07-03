@@ -1,0 +1,9 @@
+f<int> get() {
+    return 12;
+}
+
+f<int> main() {
+    bool condition = true;
+    dyn r = condition ? get(): 24;
+    printf("Result: %d", r);
+}

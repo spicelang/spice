@@ -4,6 +4,8 @@
 
 #include <utility>
 
+#include <util/CommonUtil.h>
+
 /**
  * Retrieve the name of the current function
  *
@@ -57,6 +59,10 @@ ArgList Function::getArgList() const { return argList; }
  * @return Mangled string
  */
 std::string Function::getMangledName() const {
+  // Return 'main' if name is 'main'
+  if (name == "main")
+    return name;
+
   // f, p, mf or mp depending on the function type
   std::string functionTyStr = "f";
   if (isProcedure()) {
@@ -194,13 +200,13 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
     if (argType.second) {         // Met optional argument
       if (!metFirstOptionalArg) { // Add substantiation without the optional argument
         definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                       definitionCodeLoc);
+                                       definitionToken);
         metFirstOptionalArg = true;
       }
       // Add substantiation with the optional argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
       definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                     definitionCodeLoc);
+                                     definitionToken);
     } else { // Met mandatory argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
     }
@@ -208,7 +214,7 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
 
   if (definiteFunctions.empty())
     definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                   definitionCodeLoc);
+                                   definitionToken);
 
   return definiteFunctions;
 }
@@ -223,7 +229,7 @@ Function Function::substantiateGenerics(const ArgList &concreteArgList, const Sy
   // Substantiate return type
   SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
 
-  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, definitionCodeLoc);
+  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, definitionToken);
 }
 
 /**
@@ -267,8 +273,19 @@ void Function::setUsed() { used = true; }
 bool Function::isUsed() const { return used; }
 
 /**
+ * Retrieve the definition token of this function
+ *
+ * @return Definition token
+ */
+const antlr4::Token &Function::getDefinitionToken() const { return definitionToken; }
+
+/**
  * Retrieve the definition code loc of this function
  *
  * @return Definition code location
  */
-const std::string &Function::getDefinitionCodeLoc() const { return definitionCodeLoc; }
+const std::string &Function::getDefinitionCodeLoc() {
+  if (definitionCodeLoc.empty())
+    definitionCodeLoc = CommonUtil::tokenToCodeLoc(definitionToken);
+  return definitionCodeLoc;
+}

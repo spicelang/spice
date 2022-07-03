@@ -31,49 +31,40 @@ entry:
   %result = alloca i32, align 4
   %mike = alloca %_s__Person__string_string_int, align 8
   %0 = alloca %_s__Person__string_string_int, align 8
-  %1 = alloca i8*, align 8
-  %2 = alloca i8*, align 8
-  %3 = alloca i32, align 4
-  %4 = alloca %_s__Person__string_string_int*, align 8
-  %5 = alloca i1, align 1
+  %1 = alloca %_s__Person__string_string_int*, align 8
+  %2 = alloca i1, align 1
   store i32 0, i32* %result, align 4
-  store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i32 0), i8** %1, align 8
-  %6 = load i8*, i8** %1, align 8
-  %7 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 0
-  store i8* %6, i8** %7, align 8
-  store i8* getelementptr inbounds ([7 x i8], [7 x i8]* @1, i32 0, i32 0), i8** %2, align 8
-  %8 = load i8*, i8** %2, align 8
-  %9 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 1
-  store i8* %8, i8** %9, align 8
-  store i32 32, i32* %3, align 4
-  %10 = load i32, i32* %3, align 4
-  %11 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 2
-  store i32 %10, i32* %11, align 4
-  %12 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %0, align 8
-  store %_s__Person__string_string_int %12, %_s__Person__string_string_int* %mike, align 8
-  %13 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, align 8
-  %14 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, i32 0, i32 1
-  %15 = load i8*, i8** %14, align 8
-  %16 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, align 8
-  %17 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, i32 0, i32 0
-  %18 = load i8*, i8** %17, align 8
-  %19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @2, i32 0, i32 0), i8* %15, i8* %18)
+  %3 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 0
+  store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i32 0), i8** %3, align 8
+  %4 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 1
+  store i8* getelementptr inbounds ([7 x i8], [7 x i8]* @1, i32 0, i32 0), i8** %4, align 8
+  %5 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 2
+  store i32 32, i32* %5, align 4
+  %6 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %0, align 8
+  store %_s__Person__string_string_int %6, %_s__Person__string_string_int* %mike, align 8
+  %7 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, align 8
+  %8 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, i32 0, i32 1
+  %9 = load i8*, i8** %8, align 8
+  %10 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, align 8
+  %11 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, i32 0, i32 0
+  %12 = load i8*, i8** %11, align 8
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @2, i32 0, i32 0), i8* %9, i8* %12)
+  %14 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, align 8
+  %15 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, i32 0, i32 2
+  %16 = load i32, i32* %15, align 4
+  %17 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @3, i32 0, i32 0), i32 %16)
+  %18 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, align 8
+  store %_s__Person__string_string_int* %mike, %_s__Person__string_string_int** %1, align 8
+  store %_s__Person__string_string_int* %mike, %_s__Person__string_string_int** %1, align 8
+  %19 = load %_s__Person__string_string_int*, %_s__Person__string_string_int** %1, align 8
+  call void @_p__void__birthday__Personptr(%_s__Person__string_string_int* %19)
+  store i1 true, i1* %2, align 1
   %20 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, align 8
   %21 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, i32 0, i32 2
   %22 = load i32, i32* %21, align 4
-  %23 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @3, i32 0, i32 0), i32 %22)
-  %24 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, align 8
-  store %_s__Person__string_string_int* %mike, %_s__Person__string_string_int** %4, align 8
-  store %_s__Person__string_string_int* %mike, %_s__Person__string_string_int** %4, align 8
-  %25 = load %_s__Person__string_string_int*, %_s__Person__string_string_int** %4, align 8
-  call void @_p__void__birthday__Personptr(%_s__Person__string_string_int* %25)
-  store i1 true, i1* %5, align 1
-  %26 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, align 8
-  %27 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %mike, i32 0, i32 2
-  %28 = load i32, i32* %27, align 4
-  %29 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @4, i32 0, i32 0), i32 %28)
-  %30 = load i32, i32* %result, align 4
-  ret i32 %30
+  %23 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @4, i32 0, i32 0), i32 %22)
+  %24 = load i32, i32* %result, align 4
+  ret i32 %24
 }
 
 declare i32 @printf(i8*, ...)

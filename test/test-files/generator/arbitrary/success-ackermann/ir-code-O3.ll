@@ -12,25 +12,25 @@ entry:
   br i1 %2, label %if.then, label %if.end
 
 if.then:                                          ; preds = %tailrecurse.backedge, %entry
-  %.tr23.lcssa = phi i32 [ %1, %entry ], [ %.tr23.be, %tailrecurse.backedge ]
-  %3 = add i32 %.tr23.lcssa, 1
+  %.tr17.lcssa = phi i32 [ %1, %entry ], [ %.tr17.be, %tailrecurse.backedge ]
+  %3 = add i32 %.tr17.lcssa, 1
   ret i32 %3
 
 if.end:                                           ; preds = %entry, %tailrecurse.backedge
-  %.tr2325 = phi i32 [ %.tr23.be, %tailrecurse.backedge ], [ %1, %entry ]
-  %.tr24 = phi i32 [ %.tr.be, %tailrecurse.backedge ], [ %0, %entry ]
-  %4 = icmp eq i32 %.tr2325, 0
+  %.tr1719 = phi i32 [ %.tr17.be, %tailrecurse.backedge ], [ %1, %entry ]
+  %.tr18 = phi i32 [ %.tr.be, %tailrecurse.backedge ], [ %0, %entry ]
+  %4 = icmp eq i32 %.tr1719, 0
   br i1 %4, label %tailrecurse.backedge, label %if.end2
 
 tailrecurse.backedge:                             ; preds = %if.end, %if.end2
-  %.tr23.be = phi i32 [ %7, %if.end2 ], [ 1, %if.end ]
-  %.tr.be = add i32 %.tr24, -1
+  %.tr17.be = phi i32 [ %7, %if.end2 ], [ 1, %if.end ]
+  %.tr.be = add i32 %.tr18, -1
   %5 = icmp eq i32 %.tr.be, 0
   br i1 %5, label %if.then, label %if.end
 
 if.end2:                                          ; preds = %if.end
-  %6 = add i32 %.tr2325, -1
-  %7 = tail call fastcc i32 @_f__void__ack__int_int(i32 %.tr24, i32 %6)
+  %6 = add i32 %.tr1719, -1
+  %7 = tail call fastcc i32 @_f__void__ack__int_int(i32 %.tr18, i32 %6)
   br label %tailrecurse.backedge
 }
 

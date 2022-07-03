@@ -20,7 +20,7 @@ entry:
   %4 = alloca i8*, align 8
   %5 = call i32 @pthread_create(i8** nonnull %4, i8* null, i8* (i8*)* nonnull @_thread1, i8* nonnull %2)
   %6 = call i32 @usleep(i32 1000000)
-  %puts3 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
+  %puts1 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
   ret i32 0
 }
 

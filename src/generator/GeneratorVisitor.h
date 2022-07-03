@@ -10,6 +10,7 @@
 
 #include <SpiceBaseVisitor.h>
 
+#include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/Target/TargetMachine.h>
@@ -23,6 +24,8 @@ class LinkerInterface;
 class OpRuleConversionsManager;
 class SymbolTable;
 class SymbolTableEntry;
+class Function;
+class Struct;
 
 /**
  * Visitor for generating a source file.
@@ -44,6 +47,7 @@ public:
   void emit();
   void dumpIR();
   std::string getIRString();
+  void dumpAsm();
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
   std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
   std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
@@ -89,10 +93,10 @@ public:
   std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
   std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
   std::any visitValue(SpiceParser::ValueContext *ctx) override;
+  std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
   std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
   std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override;
   std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override;
-  std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;
@@ -108,6 +112,7 @@ private:
   std::shared_ptr<llvm::LLVMContext> context;
   std::shared_ptr<llvm::IRBuilder<>> builder;
   std::unique_ptr<llvm::Module> module;
+  std::unique_ptr<llvm::DIBuilder> diBuilder;
   SymbolTable *currentScope;
   SymbolTable *rootScope;
   std::string scopePrefix;
@@ -130,8 +135,28 @@ private:
   llvm::Type *structAccessType = nullptr;
   llvm::Value *structAccessAddress = nullptr;
   std::vector<llvm::Value *> structAccessIndices;
+  struct DebugInfo {
+    llvm::DIFile *diFile;
+    llvm::DICompileUnit *compileUnit;
+    std::vector<llvm::DIScope *> lexicalBlocks;
+    llvm::DIType *doubleTy;
+    llvm::DIType *intTy;
+    llvm::DIType *uIntTy;
+    llvm::DIType *shortTy;
+    llvm::DIType *uShortTy;
+    llvm::DIType *longTy;
+    llvm::DIType *uLongTy;
+    llvm::DIType *byteTy;
+    llvm::DIType *uByteTy;
+    llvm::DIType *charTy;
+    llvm::DIType *uCharTy;
+    llvm::DIType *stringTy;
+    llvm::DIType *boolTy;
+  } debugInfo;
 
   // Private methods
+  llvm::Value *resolveValue(antlr4::tree::ParseTree *tree);
+  llvm::Value *resolveAddress(antlr4::tree::ParseTree *tree);
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
@@ -139,10 +164,16 @@ private:
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
   llvm::Type *getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope);
-  llvm::Constant *getDefaultValueForType(llvm::Type *type);
+  llvm::Constant *getDefaultValueForType(llvm::Type *type, const std::string &subTypeName);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);
-  unsigned int getSizeOfType(llvm::Type *structType);
   llvm::Value *doImplicitCast(llvm::Value *lhs, llvm::Type *rhs);
+  void initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir);
+  [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
+  void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
+  void generateDeclDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *address);
+  void generateAssignDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *value);
+  void emitSourceLocation(antlr4::ParserRuleContext *ctx);
+  [[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

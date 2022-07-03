@@ -8,7 +8,9 @@
 - [x] 3. Add tests for this feature
 - [x] 4. Implement Generics for structs
 - [x] 5. Add tests for this feature
-- [ ] 6. Add documentation for generics
+- [x] 6. Add documentation for generics
+- [ ] 7. Complex conditions
+- [ ] 8. Add tests for complex conditions
 
 ## Syntax
 
