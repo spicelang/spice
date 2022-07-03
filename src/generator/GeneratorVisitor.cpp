@@ -1299,7 +1299,7 @@ std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) 
     // Calculate size at compile-time
     size = module->getDataLayout().getTypeSizeInBits(valueTy);
   } else { // Type
-    auto llvmType = std::any_cast<llvm::Type *>(visit(ctx->dataType()));
+    auto llvmType = any_cast<llvm::Type *>(visit(ctx->dataType()));
     size = llvmType->getScalarSizeInBits();
   }
 
@@ -2490,7 +2490,7 @@ llvm::Value *GeneratorVisitor::resolveValue(antlr4::tree::ParseTree *tree) {
   std::any valueAny = visit(tree);
   if (!valueAny.has_value() && currentConstValue)
     return currentConstValue;
-  auto valueAddr = std::any_cast<llvm::Value *>(valueAny);
+  auto valueAddr = any_cast<llvm::Value *>(valueAny);
   return builder->CreateLoad(valueAddr->getType()->getPointerElementType(), valueAddr);
 }
 
@@ -2501,7 +2501,7 @@ llvm::Value *GeneratorVisitor::resolveAddress(antlr4::tree::ParseTree *tree) {
     builder->CreateStore(currentConstValue, valueAddr);
     return valueAddr;
   }
-  return std::any_cast<llvm::Value *>(valueAny);
+  return any_cast<llvm::Value *>(valueAny);
 }
 
 void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock *block) {
@@ -2827,7 +2827,7 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
 
 void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  size_t lineNumber = spiceFunc->getDefinitionToken().getLine();
+  size_t lineNumber = spiceFunc->getDeclToken().getLine();
 
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
@@ -2848,7 +2848,7 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
 
 llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  size_t lineNumber = spiceStruct->getDefinitionToken().getLine();
+  size_t lineNumber = spiceStruct->getDeclToken().getLine();
   size_t sizeInBits = module->getDataLayout().getTypeSizeInBits(llvmStructTy);
   llvm::DINode::DIFlags flags = spiceStruct->getSpecifiers().isPublic() ? llvm::DINode::FlagPublic : llvm::DINode::FlagPrivate;
   llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill

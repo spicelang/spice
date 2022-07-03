@@ -68,11 +68,11 @@ void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err
 }
 
 /**
- * Retrieve the token where the symbol was defined
+ * Retrieve the token where the symbol was declared
  *
- * @return Definition token
+ * @return Declaration token
  */
-const antlr4::Token &SymbolTableEntry::getDefinitionToken() const { return definitionToken; }
+const antlr4::Token &SymbolTableEntry::getDeclToken() const { return declToken; }
 
 /**
  * Retrieve the llvm type of the current symbol

@@ -59,14 +59,18 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   if (requiresMainFct && !isStdFile)
     rootScope->printCompilerWarnings();
 
-  secondRun = true;
-  return nullptr;
+  // Increment run number if the source file gets analyzed again
+  runNumber++;
+
+  bool reAnalyze = reAnalyzeRequired;
+  reAnalyzeRequired = false;
+  return reAnalyze;
 }
 
 std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
   std::string mainSignature = MAIN_FUNCTION_NAME + "()";
 
-  if (!secondRun) { // First run
+  if (runNumber == 1) { // First run
     // Check if the function is already defined
     if (currentScope->lookup(mainSignature))
       throw err->get(*ctx->start, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
@@ -93,7 +97,7 @@ std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefConte
     // Confirm main function
     hasMainFunction = true;
     currentScope->lookup(mainSignature)->setUsed();
-  } else { // Second run
+  } else if (runNumber == 2) { // Second run
     // Do down into function scope
     currentScope = currentScope->getChild(mainSignature);
 
@@ -121,7 +125,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
                      "Struct '" + structName + "' could not be found");
   }
 
-  if (!secondRun) { // First run
+  if (runNumber == 1) { // First run
     // Create a new scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
     currentScope = currentScope->createChildBlock(scopeId, SCOPE_FUNC_PROC_BODY);
@@ -210,8 +214,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     }
 
     // Insert function into the symbol table
-    Function spiceFunc =
-        Function(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, *ctx->start);
+    Function spiceFunc(functionName, functionSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, *ctx->start);
     currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -223,7 +226,7 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
     // Leave the struct scope
     if (isMethod)
       currentScope = currentScope->getParent();
-  } else { // Second run
+  } else { // Other runs
     // Change to the struct scope
     if (isMethod)
       currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
@@ -236,9 +239,12 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
       currentScope = currentScope->getParent();
 
     if (manifestations) {
-      for (const auto &[mangledName, spiceFunc] : *manifestations) {
+      for (auto &[mangledName, spiceFunc] : *manifestations) {
         // Check if the function is substantiated
         if (!spiceFunc.isFullySubstantiated())
+          continue;
+
+        if (spiceFunc.wasAlreadyAnalyzed())
           continue;
 
         // Change scope to the struct specialization
@@ -308,6 +314,8 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
         // Leave the struct scope
         if (isMethod)
           currentScope = currentScope->getParent();
+
+        spiceFunc.setAnalyzed();
       }
     }
   }
@@ -321,7 +329,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
   // Check if this is a global function or a method
   bool isMethod = ctx->IDENTIFIER().size() > 1;
 
-  if (!secondRun) { // First run
+  if (runNumber == 1) { // First run
     // Change to the struct scope
     if (isMethod) {
       std::string structName = ctx->IDENTIFIER().front()->toString();
@@ -410,8 +418,8 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     }
 
     // Insert function into the symbol table
-    Function spiceProc =
-        Function(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, *ctx->start);
+    Function spiceProc(procedureName, procedureSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes,
+                       *ctx->start);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -423,7 +431,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
     // Leave the struct scope
     if (isMethod)
       currentScope = currentScope->getParent();
-  } else { // Second run
+  } else { // Other runs
     // Enter the struct scope
     if (isMethod)
       currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
@@ -436,9 +444,12 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
       currentScope = currentScope->getParent();
 
     if (manifestations) {
-      for (const auto &[mangledName, spiceProc] : *manifestations) {
+      for (auto &[mangledName, spiceProc] : *manifestations) {
         // Check if the function is substantiated
         if (!spiceProc.isFullySubstantiated())
+          continue;
+
+        if (spiceProc.wasAlreadyAnalyzed())
           continue;
 
         // Change scope to the struct specialization
@@ -494,6 +505,8 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
         // Leave the struct scope
         if (isMethod)
           currentScope = currentScope->getParent();
+
+        spiceProc.setAnalyzed();
       }
     }
   }
@@ -502,7 +515,7 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
 }
 
 std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
-  if (secondRun)
+  if (runNumber > 1)
     return nullptr;
 
   std::string functionName = ctx->IDENTIFIER()->toString();
@@ -527,7 +540,7 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
     // Insert function into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc = Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, *ctx->start);
+    Function spiceFunc(functionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, *ctx->start);
     currentScope->insertFunction(spiceFunc, err.get(), *ctx->start);
 
     // Add return symbol for function
@@ -537,8 +550,7 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   } else { // Procedure
     // Insert procedure into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
-    Function spiceProc =
-        Function(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, *ctx->start);
+    Function spiceProc(functionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, *ctx->start);
     currentScope->insertFunction(spiceProc, err.get(), *ctx->start);
 
     // Add empty scope for function body
@@ -549,7 +561,7 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 }
 
 std::any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
-  if (secondRun)
+  if (runNumber > 1)
     return nullptr;
 
   // Check if type already exists in this scope
@@ -585,7 +597,7 @@ std::any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext
 }
 
 std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
-  if (secondRun)
+  if (runNumber > 1)
     return nullptr;
 
   // Get struct name
@@ -683,7 +695,7 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
 }
 
 std::any AnalyzerVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
-  if (secondRun)
+  if (runNumber > 1)
     return nullptr;
 
   std::string variableName = ctx->IDENTIFIER()->toString();
@@ -946,7 +958,7 @@ std::any AnalyzerVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
 }
 
 std::any AnalyzerVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
-  auto assertConditionType = std::any_cast<SymbolType>(visit(ctx->assignExpr()));
+  auto assertConditionType = any_cast<SymbolType>(visit(ctx->assignExpr()));
 
   // Check if assertStmt evaluates to bool
   if (!assertConditionType.is(TY_BOOL))
@@ -1879,6 +1891,11 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   if (accessScope->isImported(currentScope) && !functionEntry->getSpecifiers().isPublic())
     throw err->get(*token, INSUFFICIENT_VISIBILITY,
                    "Cannot access function/procedure '" + spiceFunc->getSignature() + "' due to its private visibility");
+
+  // Analyze the function if not done yet. This is only necessary if we call a function in the same source file, which was
+  // declared above.
+  if (!accessScope->isImported(currentScope) && spiceFunc->getDeclToken().getLine() < ctx->start->getLine())
+    reAnalyzeRequired = true;
 
   // Return struct type on constructor call
   if (constructorCall)

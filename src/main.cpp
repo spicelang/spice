@@ -30,10 +30,10 @@ void compileProject(CliOptions &options) {
     SourceFile mainSourceFile = SourceFile(options, nullptr, "root", options.mainSourceFile, false);
 
     // Pre-analyze the project (collect imports, etc.)
-    mainSourceFile.preAnalyze(options);
+    mainSourceFile.preAnalyze();
 
     // Visualize the project (only runs in debug mode)
-    mainSourceFile.visualizeAST(options, nullptr);
+    mainSourceFile.visualizeAST(nullptr);
 
     // Analyze the project (semantic analysis, build symbol table, type inference, type checking, etc.)
     mainSourceFile.analyze(context, builder, threadFactory);

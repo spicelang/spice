@@ -113,7 +113,8 @@ private:
   bool requiresMainFct = true;
   bool hasMainFunction = false;
   bool isStdFile = false;
-  bool secondRun = false;
+  unsigned int runNumber = 1;
+  bool reAnalyzeRequired = false;
   SymbolTable *currentScope = nullptr;
   SymbolTable *rootScope = nullptr;
   ScopePath scopePath;

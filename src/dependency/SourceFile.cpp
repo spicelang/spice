@@ -51,7 +51,12 @@ SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name
   symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
 }
 
-void SourceFile::preAnalyze(const CliOptions &options) {
+/**
+ * Runs the pre-analyzer on the source file. This visitor collects all imported source files on the fly and visits the afterwards
+ *
+ * @param options applied cli options
+ */
+void SourceFile::preAnalyze() {
   // Pre-analyze this source file
   PreAnalyzerVisitor preAnalyzer(options, *this);
   preAnalyzer.visit(antlrCtx.parser->entry());
@@ -59,10 +64,10 @@ void SourceFile::preAnalyze(const CliOptions &options) {
 
   // Analyze the imported source files
   for (auto &[_, sourceFile] : dependencies)
-    sourceFile.first->preAnalyze(options);
+    sourceFile.first->preAnalyze();
 }
 
-void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
+void SourceFile::visualizeAST(std::string *output) {
   // Only execute if enabled
   if (!options.dumpAST && !options.testMode)
     return;
@@ -74,11 +79,11 @@ void SourceFile::visualizeAST(const CliOptions &options, std::string *output) {
 
   // Visualize the imported source files
   for (auto &[_, sourceFile] : dependencies)
-    sourceFile.first->visualizeAST(options, output);
+    sourceFile.first->visualizeAST(output);
 
   // Generate dot code for this source file
   VisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
-  dotCode += std::any_cast<std::string>(visualizerVisitor.visit(antlrCtx.parser->entry()));
+  dotCode += any_cast<std::string>(visualizerVisitor.visit(antlrCtx.parser->entry()));
   antlrCtx.parser->reset();
 
   dotCode += "}";
@@ -131,13 +136,21 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
 
 void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                            ThreadFactory &threadFactory) {
+  // Re-Analyze this source file
+  bool reAnalyzeRequired = false;
+  unsigned int analyzeCount = 0;
+  do {
+    reAnalyzeRequired = any_cast<bool>(analyzer->visit(antlrCtx.parser->entry()));
+    antlrCtx.parser->reset();
+    analyzeCount++;
+    if (analyzeCount >= 10)
+      throw std::runtime_error("Internal compiler error: Number of analyzer runs for one source file exceeded. Please report "
+                               "this as a bug on GitHub.");
+  } while (reAnalyzeRequired);
+
   // Re-analyze the imported source files
   for (auto &[importName, sourceFile] : dependencies)
     sourceFile.first->reAnalyze(context, builder, threadFactory);
-
-  // Re-Analyze this source file
-  analyzer->visit(antlrCtx.parser->entry());
-  antlrCtx.parser->reset();
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);

@@ -27,8 +27,8 @@ class SymbolTableEntry {
 public:
   // Constructors
   SymbolTableEntry(std::string name, const SymbolType &type, SymbolTable *scope, SymbolSpecifiers specifiers, SymbolState state,
-                   const antlr4::Token &token, unsigned int orderIndex, const bool global)
-      : name(std::move(name)), type(type), scope(scope), specifiers(specifiers), state(state), definitionToken(token),
+                   const antlr4::Token &declToken, unsigned int orderIndex, const bool global)
+      : name(std::move(name)), type(type), scope(scope), specifiers(specifiers), state(state), declToken(declToken),
         orderIndex(orderIndex), global(global){};
 
   // Public methods
@@ -39,7 +39,7 @@ public:
   [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
   [[nodiscard]] SymbolState getState() const;
   void updateState(SymbolState newState, const ErrorFactory *errorFactory, const antlr4::Token &token);
-  [[nodiscard]] const antlr4::Token &getDefinitionToken() const;
+  [[nodiscard]] const antlr4::Token &getDeclToken() const;
   [[nodiscard]] llvm::Type *getLLVMType() const;
   void updateLLVMType(llvm::Type *newType);
   [[nodiscard]] virtual llvm::Value *getAddress() const;
@@ -62,7 +62,7 @@ private:
   SymbolSpecifiers specifiers;
   llvm::Type *llvmType = nullptr;
   SymbolState state;
-  const antlr4::Token &definitionToken;
+  const antlr4::Token &declToken;
   std::stack<llvm::Value *> memAddress;
   unsigned int orderIndex;
   const bool global;
