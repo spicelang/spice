@@ -6,26 +6,26 @@ type V3 dyn;
 /**
  * A triple in Spice is a commonly used data structure, which saves three values of arbitrary type together in a correlation
  */
-public type Tiple<V1, V2, V3> struct {
+public type Triple<V1, V2, V3> struct {
     V1 first
     V2 second
     V3 third
 }
 
-public p Pair.ctor(V1 first, V2 second, V3 third) {
+public p Triple.ctor(V1 first, V2 second, V3 third) {
     this.first = first;
     this.second = second;
     this.third = third;
 }
 
-public f<V1> Pair.getFirst() {
+public f<V1> Triple.getFirst() {
     return this.first;
 }
 
-public f<V2> Pair.getSecond() {
+public f<V2> Triple.getSecond() {
     return this.second;
 }
 
-public f<V3> Pair.getThird() {
+public f<V3> Triple.getThird() {
     return this.third;
 }
