@@ -2024,11 +2024,14 @@ std::any AnalyzerVisitor::visitStructInstantiation(SpiceParser::StructInstantiat
       // Get expected type
       SymbolTableEntry *expectedField = structTable->lookupByIndex(i);
       assert(expectedField != nullptr);
-      SymbolType expectedFieldType = expectedField->getType();
+      SymbolType expectedType = expectedField->getType();
+      // Replace expected type with the capture name
+      if (expectedType.is(TY_STRUCT))
+        expectedType = expectedType.replaceBaseSubType(accessScopePrefix + expectedType.getBaseType().getSubType());
       // Check if type matches declaration
-      if (actualType != expectedFieldType)
+      if (actualType != expectedType)
         throw err->get(*assignExpr->start, FIELD_TYPE_NOT_MATCHING,
-                       "Expected type " + expectedFieldType.getName(false) + " for the field '" + expectedField->getName() +
+                       "Expected type " + expectedType.getName(false) + " for the field '" + expectedField->getName() +
                            "', but got " + actualType.getName(false));
     }
   }
@@ -2170,14 +2173,14 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
       // Initialize nested struct
       initExtStruct(token, sourceScope, structScopePrefix, nestedStructName, entry.getType().getBaseType().getTemplateTypes());
       // Re-map type of field to the imported struct
-      SymbolType newNestedStructType = entry.getType();
-      newNestedStructType = newNestedStructType.replaceBaseSubType(structScopePrefix + nestedStructName);
-      entry.updateType(newNestedStructType, true);
+      // SymbolType newNestedStructType = entry.getType();
+      // newNestedStructType = newNestedStructType.replaceBaseSubType(structScopePrefix + nestedStructName);
+      // entry.updateType(newNestedStructType, true);
     }
   }
 
   // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
-  Capture newGlobalCapture = Capture(externalStructSymbol, newStructSignature, DECLARED);
+  Capture newGlobalCapture(externalStructSymbol, newStructSignature, DECLARED);
   rootScope->addCapture(newStructSignature, newGlobalCapture);
   externalStructSymbol->setUsed();
 

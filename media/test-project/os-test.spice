@@ -2,7 +2,7 @@ import "os-test2" as socket;
 
 f<int> main() {
     socket.Socket s = socket.openServerSocket(8080s);
-    //socket.NestedSocket n = s.nested;
-    //printf("Test string: %s", n.testString);
-    printf("Socket: %d", s.sock);
+    socket.NestedSocket n = s.nested;
+    printf("Test string: %s", n.testString);
+    //printf("Socket: %d", s.sock);
 }
