@@ -1,32 +1,8 @@
-/*import "os-test2" as socket;
+import "os-test2" as socket;
 
 f<int> main() {
     socket.Socket s = socket.openServerSocket(8080s);
     //socket.NestedSocket n = s.nested;
     //printf("Test string: %s", n.testString);
     printf("Socket: %d", s.sock);
-}*/
-
-f<int> main() {
-    TestStruct<char> s = TestStruct<char>{ 'a', 1 };
-    s.printTest();
-}
-
-type T string|char;
-
-type TestStruct<T> struct {
-    T base
-    int test
-}
-
-p TestStruct.printTest() {
-    printf("Test: %d\n", this.getTest());
-}
-
-f<int> TestStruct.getTest() {
-    if this.test == 1 {
-        this.test++;
-        this.printTest();
-    }
-    return this.test;
 }

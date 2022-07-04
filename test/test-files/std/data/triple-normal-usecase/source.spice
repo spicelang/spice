@@ -1,0 +1,8 @@
+import "std/data/triple" as triple;
+
+f<int> main() {
+    triple.Triple<string, int, bool> stringIntPair = triple.Triple<string, int, bool>("Test", 1234, true);
+    printf("First: %s\n", stringIntPair.getFirst());
+    printf("Second: %d\n", stringIntPair.getSecond());
+    printf("Third: %d\n", stringIntPair.getThird());
+}
