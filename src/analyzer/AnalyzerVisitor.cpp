@@ -1918,7 +1918,7 @@ std::any AnalyzerVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ct
   SymbolType returnType = spiceFunc->getReturnType();
 
   // If the return type is an external struct, initialize it
-  if (returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope))
+  if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope))
     return initExtStruct(*ctx->start, scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true),
                          returnType.getSubType(), thisType.getTemplateTypes());
 
