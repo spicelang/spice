@@ -1,0 +1,20 @@
+// Constants
+const unsigned long INITIAL_ALLOC_COUNT = 5l;
+const unsigned int RESIZE_FACTOR = 2;
+
+// Link external functions
+ext<byte*> malloc(long);
+ext<byte*> realloc(byte*, int);
+ext free(byte*);
+ext<byte*> memcpy(byte*, byte*, int);
+
+// Add generic type definitions
+type K dyn;
+type V dyn;
+
+/**
+ * A map in Spice is a commonly used data structure, which can be used to represent a list of key value pairs
+ */
+public type Map<K, V> struct {
+
+}

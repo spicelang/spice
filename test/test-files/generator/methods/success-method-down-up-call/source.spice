@@ -1,0 +1,23 @@
+f<int> main() {
+    TestStruct<char> s = TestStruct<char>{ 'a', 1 };
+    s.printTest();
+}
+
+type T string|char;
+
+type TestStruct<T> struct {
+    T base
+    int test
+}
+
+p TestStruct.printTest() {
+    printf("Test: %d\n", this.getTest());
+}
+
+f<int> TestStruct.getTest() {
+    if this.test == 1 {
+        this.test++;
+        this.printTest();
+    }
+    return this.test;
+}

@@ -1,8 +1,0 @@
-f<int> main() {
-    Test inst = Test { false };
-    printf("%u", inst.testField);
-}
-
-type Test struct {
-    bool testField
-}

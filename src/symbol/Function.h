@@ -16,9 +16,9 @@ public:
   // Constructors
   explicit Function(std::string name, SymbolSpecifiers specifiers, const SymbolType &thisType, const SymbolType &returnType,
                     std::vector<std::pair<SymbolType, bool>> argTypes, std::vector<GenericType> templateTypes,
-                    const antlr4::Token &definitionToken)
+                    const antlr4::Token &declToken)
       : name(std::move(name)), specifiers(specifiers), thisType(thisType), returnType(returnType), argList(std::move(argTypes)),
-        templateTypes(std::move(templateTypes)), definitionToken(definitionToken) {}
+        templateTypes(std::move(templateTypes)), declToken(declToken) {}
 
   // Public methods
   [[nodiscard]] std::string getName() const;
@@ -42,8 +42,10 @@ public:
   [[nodiscard]] bool isFullySubstantiated() const;
   void setUsed();
   [[nodiscard]] bool isUsed() const;
-  [[nodiscard]] const antlr4::Token &getDefinitionToken() const;
-  const std::string &getDefinitionCodeLoc();
+  void setAnalyzed();
+  [[nodiscard]] bool wasAlreadyAnalyzed() const;
+  [[nodiscard]] const antlr4::Token &getDeclToken() const;
+  const std::string &getDeclCodeLoc();
 
 private:
   // Members
@@ -53,7 +55,8 @@ private:
   SymbolType returnType = SymbolType(TY_DYN);
   std::vector<std::pair<SymbolType, bool>> argList;
   std::vector<GenericType> templateTypes;
-  const antlr4::Token &definitionToken;
-  std::string definitionCodeLoc;
+  const antlr4::Token &declToken;
+  std::string declCodeLoc;
   bool used = false;
+  bool alreadyAnalyzed = false;
 };

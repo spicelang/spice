@@ -144,7 +144,12 @@ void GeneratorVisitor::dumpAsm() {
 }
 
 std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
-  std::any result = SpiceBaseVisitor::visitEntry(ctx);
+  SpiceBaseVisitor::visitEntry(ctx);
+
+  if (!secondRun) {
+    secondRun = true;
+    return true;
+  }
 
   // Finalize debug info generation
   if (cliOptions.generateDebugInfo)
@@ -158,10 +163,13 @@ std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
       throw err->get(*ctx->start, INVALID_MODULE, oss.str());
   }
 
-  return result;
+  return false;
 }
 
 std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+  if (!secondRun)
+    return nullptr;
+
   if (requiresMainFct) { // Only create main function when it is required
     // Change scope
     std::string scopeId = ScopeIdUtil::getScopeId(ctx);
@@ -263,6 +271,9 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
 }
 
 std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
+  if (!secondRun)
+    return nullptr;
+
   // Check if this is a global function or a method
   std::string functionName = ctx->IDENTIFIER().back()->toString();
   bool isMethod = ctx->IDENTIFIER().size() > 1;
@@ -417,6 +428,9 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
 }
 
 std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
+  if (!secondRun)
+    return nullptr;
+
   std::string procedureName = ctx->IDENTIFIER().back()->toString();
   bool isMethod = ctx->IDENTIFIER().size() > 1;
 
@@ -557,6 +571,9 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
 }
 
 std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   // Get function name
   std::string functionName = ctx->IDENTIFIER()->toString();
   std::vector<SymbolType> symbolTypes;
@@ -603,6 +620,9 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   // Get struct name
   std::string structName = ctx->IDENTIFIER()->toString();
 
@@ -648,6 +668,9 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
 }
 
 std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
   std::string varName = currentVarName = ctx->IDENTIFIER()->toString();
 
   // Get symbol table entry and the symbol specifiers
@@ -1299,7 +1322,7 @@ std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) 
     // Calculate size at compile-time
     size = module->getDataLayout().getTypeSizeInBits(valueTy);
   } else { // Type
-    auto llvmType = std::any_cast<llvm::Type *>(visit(ctx->dataType()));
+    auto llvmType = any_cast<llvm::Type *>(visit(ctx->dataType()));
     size = llvmType->getScalarSizeInBits();
   }
 
@@ -1976,6 +1999,8 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
           // Unpack symbol type
           tmpType = tmpType.getContainedTy();
         }
+        // Execute GEP calculation
+        memAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
       }
     } else if (!structAccessIndices.empty()) { // A struct was met already, so this is a struct field
       unsigned int fieldIndex = entry->getOrderIndex();
@@ -2490,7 +2515,7 @@ llvm::Value *GeneratorVisitor::resolveValue(antlr4::tree::ParseTree *tree) {
   std::any valueAny = visit(tree);
   if (!valueAny.has_value() && currentConstValue)
     return currentConstValue;
-  auto valueAddr = std::any_cast<llvm::Value *>(valueAny);
+  auto valueAddr = any_cast<llvm::Value *>(valueAny);
   return builder->CreateLoad(valueAddr->getType()->getPointerElementType(), valueAddr);
 }
 
@@ -2501,7 +2526,7 @@ llvm::Value *GeneratorVisitor::resolveAddress(antlr4::tree::ParseTree *tree) {
     builder->CreateStore(currentConstValue, valueAddr);
     return valueAddr;
   }
-  return std::any_cast<llvm::Value *>(valueAny);
+  return any_cast<llvm::Value *>(valueAny);
 }
 
 void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock *block) {
@@ -2772,7 +2797,8 @@ void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName, co
   diBuilder = std::make_unique<llvm::DIBuilder>(*module);
   // Create compilation unit
   debugInfo.diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
-  debugInfo.compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, "Spice Compiler", false, "", 0);
+  debugInfo.compileUnit =
+      diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, "Spice Compiler", cliOptions.optLevel > 0, "", 0);
   // Initialize primitive types
   debugInfo.doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
   debugInfo.intTy = diBuilder->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
@@ -2826,7 +2852,7 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
 
 void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  size_t lineNumber = spiceFunc->getDefinitionToken().getLine();
+  size_t lineNumber = spiceFunc->getDeclToken().getLine();
 
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
@@ -2847,7 +2873,7 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
 
 llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  size_t lineNumber = spiceStruct->getDefinitionToken().getLine();
+  size_t lineNumber = spiceStruct->getDeclToken().getLine();
   size_t sizeInBits = module->getDataLayout().getTypeSizeInBits(llvmStructTy);
   llvm::DINode::DIFlags flags = spiceStruct->getSpecifiers().isPublic() ? llvm::DINode::FlagPublic : llvm::DINode::FlagPrivate;
   llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill

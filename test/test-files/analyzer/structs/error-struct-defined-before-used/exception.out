@@ -1,1 +1,0 @@
-Semantic error in ./test-files/analyzer/structs/error-struct-defined-before-used/source.spice at 2:5: Unknown datatype: Unknown symbol 'Test'

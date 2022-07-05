@@ -286,7 +286,7 @@ std::map<std::string, Capture> &SymbolTable::getCaptures() { return captures; }
  *
  * @param function Function object
  * @param err Error factory
- * @param token Function definition token
+ * @param token Function declaration token
  */
 void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, const antlr4::Token &token) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
@@ -313,7 +313,7 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
  * @param callThisType This type requirement
  * @param callArgTypes Argument types requirement
  * @param err Error Factory
- * @param token Definition token for the error message
+ * @param token Declaration token for the error message
  * @return Matched function or nullptr
  */
 Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::string &callFunctionName,
@@ -392,7 +392,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
       // Duplicate function
       Function newFunction = f.substantiateGenerics(argList, callThisType, concreteGenericTypes);
       if (!getChild(newFunction.getSignature())) { // Insert function
-        insertSubstantiatedFunction(newFunction, err, token, f.getDefinitionCodeLoc());
+        insertSubstantiatedFunction(newFunction, err, f.getDeclToken(), f.getDeclCodeLoc());
         copyChildBlock(f.getSignature(), newFunction.getSignature());
 
         // Insert symbols for generic type names with concrete types into the child block
@@ -495,7 +495,7 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
  *
  * @param s Struct object
  * @param err Error factory
- * @param token Struct definition token
+ * @param token Struct declaration token
  */
 void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
@@ -512,7 +512,7 @@ void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const antlr4:
  * @param structName Struct name
  * @param templateTypes Template type requirements
  * @param errorFactory Error factory
- * @param token Definition token for the error message
+ * @param token Declaration token for the error message
  * @return Matched struct or nullptr
  */
 Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &structName,
@@ -552,7 +552,7 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
         SymbolTable *structScope = getChild(STRUCT_SCOPE_PREFIX + structName);
         Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, structScope, token);
         if (!getChild(STRUCT_SCOPE_PREFIX + newStruct.getSignature())) { // Insert struct
-          insertSubstantiatedStruct(newStruct, err, token, s.getDefinitionCodeLoc());
+          insertSubstantiatedStruct(newStruct, err, s.getDeclToken(), s.getDeclCodeLoc());
           copyChildBlock(STRUCT_SCOPE_PREFIX + structName, STRUCT_SCOPE_PREFIX + newStruct.getSignature());
         }
 
@@ -683,18 +683,16 @@ void SymbolTable::printCompilerWarnings() {
   for (const auto &[key, entry] : symbols) {
     if (!entry.isUsed()) {
       if (entry.getType().is(TY_FUNCTION)) {
-        CompilerWarning(entry.getDefinitionToken(), UNUSED_FUNCTION, "The function '" + entry.getName() + "' is unused").print();
+        CompilerWarning(entry.getDeclToken(), UNUSED_FUNCTION, "The function '" + entry.getName() + "' is unused").print();
       } else if (entry.getType().is(TY_PROCEDURE)) {
-        CompilerWarning(entry.getDefinitionToken(), UNUSED_PROCEDURE, "The procedure '" + entry.getName() + "' is unused")
-            .print();
+        CompilerWarning(entry.getDeclToken(), UNUSED_PROCEDURE, "The procedure '" + entry.getName() + "' is unused").print();
       } else if (entry.getType().is(TY_STRUCT) || entry.getType().isPointerOf(TY_STRUCT)) {
-        CompilerWarning(entry.getDefinitionToken(), UNUSED_STRUCT, "The struct '" + entry.getName() + "' is unused").print();
+        CompilerWarning(entry.getDeclToken(), UNUSED_STRUCT, "The struct '" + entry.getName() + "' is unused").print();
       } else if (entry.getType().isOneOf({TY_IMPORT})) {
-        CompilerWarning(entry.getDefinitionToken(), UNUSED_IMPORT, "The import '" + entry.getName() + "' is unused").print();
+        CompilerWarning(entry.getDeclToken(), UNUSED_IMPORT, "The import '" + entry.getName() + "' is unused").print();
       } else {
         if (entry.getName() != UNUSED_VARIABLE_NAME && entry.getName() != FOREACH_DEFAULT_IDX_VARIABLE_NAME)
-          CompilerWarning(entry.getDefinitionToken(), UNUSED_VARIABLE, "The variable '" + entry.getName() + "' is unused")
-              .print();
+          CompilerWarning(entry.getDeclToken(), UNUSED_VARIABLE, "The variable '" + entry.getName() + "' is unused").print();
       }
     }
   }

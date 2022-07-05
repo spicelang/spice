@@ -1,0 +1,24 @@
+// Add generic type definitions
+type V1 dyn;
+type V2 dyn;
+
+/**
+ * A pair in Spice is a commonly used data structure, which saves two values of arbitrary type together in a correlation
+ */
+public type Pair<V1, V2> struct {
+    V1 first
+    V2 second
+}
+
+public p Pair.ctor(V1 first, V2 second) {
+    this.first = first;
+    this.second = second;
+}
+
+public f<V1> Pair.getFirst() {
+    return this.first;
+}
+
+public f<V2> Pair.getSecond() {
+    return this.second;
+}

@@ -13,6 +13,13 @@ void ScopePath::pushFragment(const std::string &fragmentName, SymbolTable *symbo
 }
 
 /**
+ * Checks if the scope path is empty
+ *
+ * @return Empty or not
+ */
+bool ScopePath::isEmpty() const { return fragments.empty(); }
+
+/**
  * Clear the scope path
  */
 void ScopePath::clear() { fragments.clear(); }
@@ -45,3 +52,10 @@ std::string ScopePath::getScopePrefix(bool includeLast) const {
     fqn += fragments[i].first + ".";
   return fqn;
 }
+
+/**
+ * Retrieve the name of the last scope
+ *
+ * @return Last scope name
+ */
+std::string ScopePath::getLastScopeName() const { return fragments.back().first; }

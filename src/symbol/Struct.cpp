@@ -122,7 +122,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
     }
   }
 
-  return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, definitionToken);
+  return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, declToken);
 }
 
 /**
@@ -164,21 +164,21 @@ void Struct::setUsed() { used = true; }
 bool Struct::isUsed() const { return used; }
 
 /**
- * Retrieve the definition token of this function
+ * Retrieve the declaration token of this function
  *
- * @return Definition token
+ * @return Declaration token
  */
-const antlr4::Token &Struct::getDefinitionToken() const { return definitionToken; }
+const antlr4::Token &Struct::getDeclToken() const { return declToken; }
 
 /**
  * Retrieve the definition code loc of this struct
  *
  * @return Definition code location
  */
-const std::string &Struct::getDefinitionCodeLoc() {
-  if (definitionCodeLoc.empty())
-    definitionCodeLoc = CommonUtil::tokenToCodeLoc(definitionToken);
-  return definitionCodeLoc;
+const std::string &Struct::getDeclCodeLoc() {
+  if (declCodeLoc.empty())
+    declCodeLoc = CommonUtil::tokenToCodeLoc(declToken);
+  return declCodeLoc;
 }
 
 /**

@@ -111,13 +111,13 @@ void executeGeneratorTest(const TestCase &testCase) {
     SourceFile mainSourceFile = SourceFile(options, nullptr, "root", sourceFile, false);
 
     // Execute pre-analyzer
-    mainSourceFile.preAnalyze(options);
+    mainSourceFile.preAnalyze();
 
     // Check if the AST matches the expected output
     std::string astFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "syntax-tree.dot";
     if (FileUtil::fileExists(astFileName)) {
       // Execute visualizer
-      mainSourceFile.visualizeAST(options, nullptr);
+      mainSourceFile.visualizeAST(nullptr);
 
       std::string actualAST = mainSourceFile.compilerOutput.astString;
       if (TestUtil::isUpdateRefsEnabled()) {

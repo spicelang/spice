@@ -1,0 +1,8 @@
+f<int> main() {
+    int res = test();
+    printf("Result: %d", res);
+}
+
+f<int> test() {
+    return 1;
+}
