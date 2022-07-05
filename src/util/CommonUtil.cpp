@@ -29,6 +29,16 @@ std::string CommonUtil::getLastFragment(const std::string &haystack, const std::
 }
 
 /**
+ * Get scope prefix from scope name
+ *
+ * @param haystack Scope name
+ * @return Scope prefix
+ */
+std::string CommonUtil::getPrefix(const std::string &haystack, const std::string &needle) {
+  return haystack.substr(0, haystack.find(needle) + needle.length());
+}
+
+/**
  * Generate a code loc string with for a token
  *
  * @param token Token

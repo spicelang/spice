@@ -1725,6 +1725,15 @@ std::any AnalyzerVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
           accessScope->getParent()->isImported(currentScope))
         throw err->get(*ctx->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
                        "Cannot access '" + structSignature + "' due to its private visibility");
+
+      // If the return type is an external struct, initialize it
+      if (!scopePath.isEmpty() && scopePath.getCurrentScope()->isImported(currentScope)) {
+        SymbolTableEntry *parentStruct = currentScope->lookup(scopePath.getLastScopeName());
+        assert(parentStruct != nullptr);
+        std::string scopePrefix = CommonUtil::getPrefix(parentStruct->getType().getSubType(), ".");
+        return initExtStruct(*ctx->start, accessScope, scopePrefix, entry->getType().getBaseType().getSubType(),
+                             currentThisType.getTemplateTypes());
+      }
     } else {
       // Check if we have seen a 'this.' prefix, because the generator needs that
       if (entry->getScope()->getScopeType() == SCOPE_STRUCT && currentThisType.is(TY_DYN))
@@ -2172,10 +2181,6 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
       std::string nestedStructName = entry.getType().getBaseType().getSubType();
       // Initialize nested struct
       initExtStruct(token, sourceScope, structScopePrefix, nestedStructName, entry.getType().getBaseType().getTemplateTypes());
-      // Re-map type of field to the imported struct
-      // SymbolType newNestedStructType = entry.getType();
-      // newNestedStructType = newNestedStructType.replaceBaseSubType(structScopePrefix + nestedStructName);
-      // entry.updateType(newNestedStructType, true);
     }
   }
 

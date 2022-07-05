@@ -1999,6 +1999,8 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
           // Unpack symbol type
           tmpType = tmpType.getContainedTy();
         }
+        // Execute GEP calculation
+        memAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
       }
     } else if (!structAccessIndices.empty()) { // A struct was met already, so this is a struct field
       unsigned int fieldIndex = entry->getOrderIndex();
