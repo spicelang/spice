@@ -6,18 +6,24 @@ type ShoppingItem struct {
 
 type ShoppingCart struct {
     string label
-    ShoppingItem[3] items
+    ShoppingItem* items
 }
 
 f<ShoppingCart> newShoppingCart() {
-    ShoppingItem[3] items;
-    items[0] = ShoppingItem { "Spaghetti", 100.0, "g" };
-    items[1] = ShoppingItem { "Rice", 125.5, "g" };
-    items[2] = ShoppingItem { "Doughnut", 6.0, "pcs" };
+    ShoppingItem* items;
+    unsafe {
+        printf("Test");
+        items[0] = ShoppingItem { "Spaghetti", 100.0, "g" };
+        printf("Test");
+        //items[1] = ShoppingItem { "Rice", 125.5, "g" };
+        //items[2] = ShoppingItem { "Doughnut", 6.0, "pcs" };
+    }
     return ShoppingCart { "Shopping Cart", items };
 }
 
 f<int> main() {
     ShoppingCart shoppingCart = newShoppingCart();
-    printf("Shopping cart item 1: %s\n", shoppingCart.items[1].name);
+    unsafe {
+        //printf("Shopping cart item 1: %s\n", shoppingCart.items[0].name);
+    }
 }

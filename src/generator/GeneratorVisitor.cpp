@@ -1901,9 +1901,9 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
           structAccessIndices.push_back(indexValue);
           lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, structAccessIndices);
         } else {
-          if (lhs == nullptr)
-            lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
           lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indexValue);
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+          structAccessIndices.clear();
         }
 
         scopePath = scopePathBackup; // Restore scope path
@@ -1987,7 +1987,7 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
         unsigned int fieldIndex = entry->getOrderIndex();
         structAccessIndices.push_back(builder->getInt32(fieldIndex));
         SymbolType tmpType = entry->getType();
-        while (tmpType.isPointer()) {
+        /*while (tmpType.isPointer()) {
           // Execute GEP with the collected indices to indirect the pointer
           structAccessAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
           // Load the value and store it as new address
@@ -2001,7 +2001,7 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
           structAccessIndices.push_back(builder->getInt32(0));
           // Unpack symbol type
           tmpType = tmpType.getContainedTy();
-        }
+        }*/
         // Execute GEP calculation
         memAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
       }
