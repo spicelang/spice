@@ -1,5 +1,3 @@
-// See Issue #82
-
 type ShoppingItem struct {
     string name
     double amount
@@ -19,19 +17,7 @@ f<ShoppingCart> newShoppingCart() {
     return ShoppingCart { "Shopping Cart", items };
 }
 
-f<ShoppingCart> anotherShoppingCart() {
-    ShoppingItem[3] items = {
-        ShoppingItem { "Spaghetti", 100.0, "g" },
-        ShoppingItem { "Rice", 125.5, "g" },
-        ShoppingItem { "Doughnut", 6.0, "pcs" }
-    };
-    return ShoppingCart { "Another Cart", items };
-}
-
 f<int> main() {
     ShoppingCart shoppingCart = newShoppingCart();
     printf("Shopping cart item 1: %s\n", shoppingCart.items[1].name);
-
-    shoppingCart = anotherShoppingCart();
-    printf("Another cart item 2 unit: %s\n", shoppingCart.items[2].unit);
 }

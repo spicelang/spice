@@ -1884,8 +1884,9 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
       if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
         tokenCounter++;                          // Consume LBRACKET
 
-        std::string arrayName = currentVarName; // Save array name
-        ScopePath scopePathBackup = scopePath;  // Save scope path
+        std::string arrayName = currentVarName;                                     // Save array name
+        ScopePath scopePathBackup = scopePath;                                      // Save scope path
+        std::vector<llvm::Value *> structAccessIndicesBackup = structAccessIndices; // Save struct access indices
         scopePrefix += "[idx]";
 
         // Get the index value
@@ -1893,18 +1894,20 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         llvm::Value *indexValue = resolveValue(assignExpr);
         tokenCounter++; // Consume assignExpr
 
+        structAccessIndices = structAccessIndicesBackup; // Restore access indices
+
         // Get array item
         if (lhsPtr->getType()->getPointerElementType()->isArrayTy()) {
-          llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
-          lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, indices);
+          structAccessIndices.push_back(indexValue);
+          lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, structAccessIndices);
         } else {
           if (lhs == nullptr)
             lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
           lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indexValue);
         }
 
-        currentVarName = arrayName;  // Restore current var name
         scopePath = scopePathBackup; // Restore scope path
+        currentVarName = arrayName;  // Restore current var name
 
         lhs = nullptr;                             // Set lhs to nullptr to prevent a store
       } else if (symbolType == SpiceParser::DOT) { // Consider member access
