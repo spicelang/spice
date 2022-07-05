@@ -57,26 +57,28 @@ entry:
   %19 = load %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance, align 8
   %20 = getelementptr inbounds %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance, i32 0, i32 2
   %21 = load %_s__Nested__string_boolptr*, %_s__Nested__string_boolptr** %20, align 8
-  %22 = load %_s__Nested__string_boolptr*, %_s__Nested__string_boolptr** %16, align 8
-  %23 = getelementptr inbounds %_s__Nested__string_boolptr, %_s__Nested__string_boolptr* %21, i32 0, i32 1
-  %24 = load i1*, i1** %23, align 8
-  %25 = load i1, i1* %24, align 1
-  store i1 %25, i1* %24, align 1
-  %26 = load i1, i1* %24, align 1
-  %27 = zext i1 %26 to i32
-  %28 = load %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance1, align 8
-  %29 = getelementptr inbounds %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance1, i32 0, i32 1
-  %30 = load double, double* %29, align 8
-  %31 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %27, double %30)
-  %32 = load %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance1, align 8
-  %33 = getelementptr inbounds %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance1, i32 0, i32 2
-  %34 = load %_s__Nested__string_boolptr*, %_s__Nested__string_boolptr** %33, align 8
-  %35 = load %_s__Nested__string_boolptr*, %_s__Nested__string_boolptr** %16, align 8
-  %36 = getelementptr inbounds %_s__Nested__string_boolptr, %_s__Nested__string_boolptr* %34, i32 0, i32 0
-  %37 = load i8*, i8** %36, align 8
-  %38 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @2, i32 0, i32 0), i8* %37)
-  %39 = load i32, i32* %result, align 4
-  ret i32 %39
+  %22 = getelementptr inbounds %_s__Nested__string_boolptr, %_s__Nested__string_boolptr* %21, i32 0
+  %23 = load %_s__Nested__string_boolptr, %_s__Nested__string_boolptr* %22, align 8
+  %24 = getelementptr inbounds %_s__Nested__string_boolptr, %_s__Nested__string_boolptr* %21, i32 0, i32 1
+  %25 = load i1*, i1** %24, align 8
+  %26 = load i1, i1* %25, align 1
+  store i1 %26, i1* %25, align 1
+  %27 = load i1, i1* %25, align 1
+  %28 = zext i1 %27 to i32
+  %29 = load %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance1, align 8
+  %30 = getelementptr inbounds %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance1, i32 0, i32 1
+  %31 = load double, double* %30, align 8
+  %32 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %28, double %31)
+  %33 = load %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance1, align 8
+  %34 = getelementptr inbounds %_s__TestStruct__intptr_double_Nestedptr, %_s__TestStruct__intptr_double_Nestedptr* %instance1, i32 0, i32 2
+  %35 = load %_s__Nested__string_boolptr*, %_s__Nested__string_boolptr** %34, align 8
+  %36 = getelementptr inbounds %_s__Nested__string_boolptr, %_s__Nested__string_boolptr* %35, i32 0
+  %37 = load %_s__Nested__string_boolptr, %_s__Nested__string_boolptr* %36, align 8
+  %38 = getelementptr inbounds %_s__Nested__string_boolptr, %_s__Nested__string_boolptr* %35, i32 0, i32 0
+  %39 = load i8*, i8** %38, align 8
+  %40 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @2, i32 0, i32 0), i8* %39)
+  %41 = load i32, i32* %result, align 4
+  ret i32 %41
 }
 
 declare i32 @printf(i8*, ...)
