@@ -1,3 +1,5 @@
+ext<byte*> malloc(long);
+
 type ShoppingItem struct {
     string name
     double amount
@@ -12,11 +14,10 @@ type ShoppingCart struct {
 f<ShoppingCart> newShoppingCart() {
     ShoppingItem* items;
     unsafe {
-        printf("Test");
+        items = (ShoppingItem*) malloc(sizeof(type ShoppingItem) * 3l);
         items[0] = ShoppingItem { "Spaghetti", 100.0, "g" };
-        printf("Test");
-        //items[1] = ShoppingItem { "Rice", 125.5, "g" };
-        //items[2] = ShoppingItem { "Doughnut", 6.0, "pcs" };
+        items[1] = ShoppingItem { "Rice", 125.5, "g" };
+        items[2] = ShoppingItem { "Doughnut", 6.0, "pcs" };
     }
     return ShoppingCart { "Shopping Cart", items };
 }
@@ -24,6 +25,6 @@ f<ShoppingCart> newShoppingCart() {
 f<int> main() {
     ShoppingCart shoppingCart = newShoppingCart();
     unsafe {
-        //printf("Shopping cart item 1: %s\n", shoppingCart.items[0].name);
+        printf("Shopping cart item 1: %s\n", shoppingCart.items[1].name);
     }
 }

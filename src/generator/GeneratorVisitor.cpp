@@ -1894,22 +1894,22 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         llvm::Value *indexValue = resolveValue(assignExpr);
         tokenCounter++; // Consume assignExpr
 
-        structAccessIndices = structAccessIndicesBackup; // Restore access indices
-
         // Get array item
         if (lhsPtr->getType()->getPointerElementType()->isArrayTy()) {
+          structAccessIndices = structAccessIndicesBackup; // Restore access indices
           structAccessIndices.push_back(indexValue);
           lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, structAccessIndices);
+          lhs = nullptr; // Set lhs to nullptr to prevent a store
         } else {
-          lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indexValue);
+          lhsPtr = structAccessAddress = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indexValue);
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+          structAccessType = structAccessAddress->getType()->getPointerElementType();
           structAccessIndices.clear();
+          structAccessIndices.push_back(builder->getInt32(0));
         }
 
-        scopePath = scopePathBackup; // Restore scope path
-        currentVarName = arrayName;  // Restore current var name
-
-        lhs = nullptr;                             // Set lhs to nullptr to prevent a store
+        scopePath = scopePathBackup;               // Restore scope path
+        currentVarName = arrayName;                // Restore current var name
       } else if (symbolType == SpiceParser::DOT) { // Consider member access
         tokenCounter++;                            // Consume dot
         scopePrefix += ".";
@@ -1987,21 +1987,6 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
         unsigned int fieldIndex = entry->getOrderIndex();
         structAccessIndices.push_back(builder->getInt32(fieldIndex));
         SymbolType tmpType = entry->getType();
-        /*while (tmpType.isPointer()) {
-          // Execute GEP with the collected indices to indirect the pointer
-          structAccessAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
-          // Load the value and store it as new address
-          structAccessAddress = builder->CreateLoad(structAccessAddress->getType()->getPointerElementType(), structAccessAddress);
-          // Set new struct access type
-          SymbolTableEntry *nestedStructEntry = accessScope->lookup(entry->getType().getBaseType().getSubType());
-          assert(nestedStructEntry != nullptr);
-          structAccessType = nestedStructEntry->getLLVMType();
-          // Reset index list
-          structAccessIndices.clear();
-          structAccessIndices.push_back(builder->getInt32(0));
-          // Unpack symbol type
-          tmpType = tmpType.getContainedTy();
-        }*/
         // Execute GEP calculation
         memAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
       }
@@ -2369,7 +2354,12 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
 
       // Fill up the rest of the values with default values
       for (; valueIndex < arraySize; valueIndex++) {
-        // ToDo: Fill up with default values
+        llvm::Value *itemDefaultValue = getDefaultValueForType(itemType, "");
+        // Calculate item address
+        llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
+        llvm::Value *itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
+        // Store value to item address
+        builder->CreateStore(itemDefaultValue, itemAddress);
       }
     }
     return arrayAddress;

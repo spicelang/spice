@@ -1,0 +1,7 @@
+type TestStruct struct {
+    int field
+}
+
+f<int> main() {
+    printf("Size: %d", sizeof(TestStruct));
+}
