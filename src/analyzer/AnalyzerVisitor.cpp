@@ -1230,9 +1230,7 @@ std::any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
     if (symbolType.isOneOf({TY_STRUCT, TY_GENERIC}))
       throw err->get(*ctx->assignExpr()->start, EXPECTED_VALUE, "This identifier does not correspond to a value");
   } else if (ctx->dataType()) { // Size of type
-    auto symbolType = any_cast<SymbolType>(visit(ctx->dataType()));
-    if (!symbolType.isOneOf({TY_STRUCT, TY_GENERIC}))
-      throw err->get(*ctx->assignExpr()->start, EXPECTED_TYPE, "This identifier does not correspond to a type");
+    any_cast<SymbolType>(visit(ctx->dataType()));
   }
   return SymbolType(TY_INT);
 }

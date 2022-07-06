@@ -1,20 +1,16 @@
-type Struct struct {
-    int fieldA
-    bool fieldB
-    string fieldC
-}
+import "std/data/queue" as que;
 
 f<int> main() {
-    printf("Size of double: %d\n", sizeof(-19.34989));
-    printf("Size of int: %d\n", sizeof(353));
-    printf("Size of short: %d\n", sizeof(35s));
-    printf("Size of long: %d\n", sizeof(9223372036854775807l));
-    printf("Size of byte: %d\n", sizeof((byte) 13));
-    printf("Size of char: %d\n", sizeof((char) 65));
-    printf("Size of string: %d\n", sizeof("Hello Spice!"));
-    printf("Size of bool: %d\n", sizeof(false));
-    printf("Size of int[]: %d\n", sizeof({ 1, 2, 3, 4, 5, 6, 7 }));
-    int intVariable = 123;
-    printf("Size of int*: %d\n", sizeof(&intVariable));
-    printf("Size of struct instance: %d\n", sizeof(type Struct));
+    dyn q1 = que.Queue<char>();
+    q1.push('H');
+    q1.push('e');
+    q1.push('l');
+    q1.push('l');
+    q1.push('o');
+    q1.push('!');
+    printf("Size: %d, Capacity: %d\n", q1.getSize(), q1.getCapacity());
+    while (!q1.isEmpty()) {
+        printf("%c", q1.pop());
+    }
+    q1.dtor();
 }
