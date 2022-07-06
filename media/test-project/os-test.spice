@@ -1,30 +1,20 @@
-ext<byte*> malloc(long);
-
-type ShoppingItem struct {
-    string name
-    double amount
-    string unit
-}
-
-type ShoppingCart struct {
-    string label
-    ShoppingItem* items
-}
-
-f<ShoppingCart> newShoppingCart() {
-    ShoppingItem* items;
-    unsafe {
-        items = (ShoppingItem*) malloc(sizeof(type ShoppingItem) * 3l);
-        items[0] = ShoppingItem { "Spaghetti", 100.0, "g" };
-        items[1] = ShoppingItem { "Rice", 125.5, "g" };
-        items[2] = ShoppingItem { "Doughnut", 6.0, "pcs" };
-    }
-    return ShoppingCart { "Shopping Cart", items };
+type Struct struct {
+    int fieldA
+    bool fieldB
+    string fieldC
 }
 
 f<int> main() {
-    ShoppingCart shoppingCart = newShoppingCart();
-    unsafe {
-        printf("Shopping cart item 1: %s\n", shoppingCart.items[1].name);
-    }
+    printf("Size of double: %d\n", sizeof(-19.34989));
+    printf("Size of int: %d\n", sizeof(353));
+    printf("Size of short: %d\n", sizeof(35s));
+    printf("Size of long: %d\n", sizeof(9223372036854775807l));
+    printf("Size of byte: %d\n", sizeof((byte) 13));
+    printf("Size of char: %d\n", sizeof((char) 65));
+    printf("Size of string: %d\n", sizeof("Hello Spice!"));
+    printf("Size of bool: %d\n", sizeof(false));
+    printf("Size of int[]: %d\n", sizeof({ 1, 2, 3, 4, 5, 6, 7 }));
+    int intVariable = 123;
+    printf("Size of int*: %d\n", sizeof(&intVariable));
+    printf("Size of struct instance: %d\n", sizeof(type Struct));
 }

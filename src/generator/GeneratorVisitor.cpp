@@ -1313,18 +1313,16 @@ std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) 
 }
 
 std::any GeneratorVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
-  unsigned int size;
+  llvm::Type *type;
   if (ctx->assignExpr()) { // Assign expression
     // Visit the argument
     llvm::Value *value = resolveValue(ctx->assignExpr());
-    llvm::Type *valueTy = value->getType();
-
-    // Calculate size at compile-time
-    size = module->getDataLayout().getTypeSizeInBits(valueTy);
+    type = value->getType();
   } else { // Type
-    auto llvmType = any_cast<llvm::Type *>(visit(ctx->dataType()));
-    size = llvmType->getScalarSizeInBits();
+    type = any_cast<llvm::Type *>(visit(ctx->dataType()));
   }
+  // Calculate size at compile-time
+  unsigned int size = module->getDataLayout().getTypeSizeInBits(type);
 
   // Save size
   llvm::Value *resultPtr = insertAlloca(builder->getInt32Ty());
@@ -1897,12 +1895,12 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         // Get array item
         if (lhsPtr->getType()->getPointerElementType()->isArrayTy()) {
           structAccessIndices = structAccessIndicesBackup; // Restore access indices
+          if (structAccessIndices.empty())
+            structAccessIndices.push_back(builder->getInt32(0));
           structAccessIndices.push_back(indexValue);
           lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, structAccessIndices);
-          lhs = nullptr; // Set lhs to nullptr to prevent a store
         } else {
           lhsPtr = structAccessAddress = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indexValue);
-          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
           structAccessType = structAccessAddress->getType()->getPointerElementType();
           structAccessIndices.clear();
           structAccessIndices.push_back(builder->getInt32(0));
@@ -1910,6 +1908,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
 
         scopePath = scopePathBackup;               // Restore scope path
         currentVarName = arrayName;                // Restore current var name
+        lhs = nullptr;                             // Set lhs to nullptr to prevent a store
       } else if (symbolType == SpiceParser::DOT) { // Consider member access
         tokenCounter++;                            // Consume dot
         scopePrefix += ".";
