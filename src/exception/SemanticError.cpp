@@ -118,6 +118,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Expected a generic type";
   case EXPECTED_VALUE:
     return "Expected value";
+  case EXPECTED_TYPE:
+    return "Expected type";
   case UNSAFE_OPERATION_IN_SAFE_CONTEXT:
     return "Unsafe operation in safe context";
   case ASSERTION_CONDITION_BOOL:

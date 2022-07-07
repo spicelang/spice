@@ -1227,7 +1227,7 @@ std::any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
 std::any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   if (ctx->assignExpr()) { // Size of value
     auto symbolType = any_cast<SymbolType>(visit(ctx->assignExpr()));
-    if (symbolType.isOneOf({TY_STRUCT, TY_GENERIC}))
+    if (symbolType.isOneOf({TY_GENERIC}))
       throw err->get(*ctx->assignExpr()->start, EXPECTED_VALUE, "This identifier does not correspond to a value");
   } else if (ctx->dataType()) { // Size of type
     any_cast<SymbolType>(visit(ctx->dataType()));
@@ -2119,10 +2119,13 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
       accessScopePrefix += structName + ".";
     SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
     if (!symbolEntry)
-      throw err->get(*ctx->IDENTIFIER()[0]->getSymbol(), UNKNOWN_DATATYPE, "Unknown symbol '" + structName + "'");
+      throw err->get(*ctx->start, UNKNOWN_DATATYPE, "Unknown symbol '" + structName + "'");
+    if (!symbolEntry->getType().isOneOf({TY_STRUCT, TY_IMPORT}))
+      throw err->get(*ctx->start, EXPECTED_TYPE, "Expected type, but got " + symbolEntry->getType().getName());
 
     std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
     accessScope = accessScope->lookupTable(tableName);
+    assert(accessScope != nullptr);
     if (accessScope->isImported(currentScope))
       structIsImported = true;
   }
