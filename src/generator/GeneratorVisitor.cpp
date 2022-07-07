@@ -1987,7 +1987,10 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
         structAccessIndices.push_back(builder->getInt32(fieldIndex));
         SymbolType tmpType = entry->getType();
         // Execute GEP calculation
-        memAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
+        memAddress = structAccessAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
+        structAccessType = structAccessAddress->getType()->getPointerElementType();
+        structAccessIndices.clear();
+        structAccessIndices.push_back(builder->getInt32(0));
       }
     } else if (!structAccessIndices.empty()) { // A struct was met already, so this is a struct field
       unsigned int fieldIndex = entry->getOrderIndex();
