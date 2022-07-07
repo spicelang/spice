@@ -39,7 +39,7 @@ entry:
   %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @1, i32 0, i32 0), i32 %3)
   store i16 0, i16* %shortVar, align 2
   %5 = load i16, i16* %shortVar, align 2
-  %6 = zext i16 %5 to i32
+  %6 = sext i16 %5 to i32
   %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @2, i32 0, i32 0), i32 %6)
   store i64 0, i64* %longVar, align 8
   %8 = load i64, i64* %longVar, align 8
@@ -49,11 +49,11 @@ entry:
   %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @5, i32 0, i32 0), i8* %10)
   store i8 0, i8* %byteVar, align 1
   %12 = load i8, i8* %byteVar, align 1
-  %13 = zext i8 %12 to i32
+  %13 = sext i8 %12 to i32
   %14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @6, i32 0, i32 0), i32 %13)
   store i8 0, i8* %charVar, align 1
   %15 = load i8, i8* %charVar, align 1
-  %16 = zext i8 %15 to i32
+  %16 = sext i8 %15 to i32
   %17 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @7, i32 0, i32 0), i32 %16)
   store i1 false, i1* %boolVar, align 1
   %18 = load i1, i1* %boolVar, align 1

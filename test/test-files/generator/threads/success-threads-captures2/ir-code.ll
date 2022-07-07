@@ -15,9 +15,9 @@ entry:
   %result = alloca i32, align 4
   %capturedVariable = alloca i32, align 4
   %i = alloca i32, align 4
-  %0 = alloca i1, align 1
-  %1 = alloca { i32*, i32* }, align 8
-  %2 = alloca i32, align 4
+  %0 = alloca { i32*, i32* }, align 8
+  %1 = alloca i32, align 4
+  %2 = alloca i1, align 1
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   store i32 0, i32* %result, align 4
@@ -26,31 +26,31 @@ entry:
   store i32 1, i32* %i, align 4
   br label %for.cond
 
-for.cond:                                         ; preds = %for.post, %entry
-  %6 = load i32, i32* %i, align 4
-  %7 = icmp sle i32 %6, 8
-  store i1 %7, i1* %0, align 1
-  %8 = load i1, i1* %0, align 1
-  br i1 %8, label %for, label %for.end
-
 for:                                              ; preds = %for.cond
-  %9 = load i32, i32* %i, align 4
-  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %9)
-  %11 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %1, i32 0, i32 0
-  store i32* %capturedVariable, i32** %11, align 8
-  %12 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %1, i32 0, i32 1
-  store i32* %i, i32** %12, align 8
-  %13 = alloca i8*, align 8
-  %14 = bitcast { i32*, i32* }* %1 to i8*
-  %15 = call i32 @pthread_create(i8** %13, i8* null, i8* (i8*)* @_thread0, i8* %14)
-  br label %for.post
+  %6 = load i32, i32* %i, align 4
+  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %6)
+  %8 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i32 0, i32 0
+  store i32* %capturedVariable, i32** %8, align 8
+  %9 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i32 0, i32 1
+  store i32* %i, i32** %9, align 8
+  %10 = alloca i8*, align 8
+  %11 = bitcast { i32*, i32* }* %0 to i8*
+  %12 = call i32 @pthread_create(i8** %10, i8* null, i8* (i8*)* @_thread0, i8* %11)
+  br label %for.inc
 
-for.post:                                         ; preds = %for
-  %16 = load i32, i32* %i, align 4
-  %17 = add i32 %16, 1
-  store i32 %17, i32* %i, align 4
-  store i32 %16, i32* %2, align 4
+for.inc:                                          ; preds = %for
+  %13 = load i32, i32* %i, align 4
+  %14 = add i32 %13, 1
+  store i32 %14, i32* %i, align 4
+  store i32 %13, i32* %1, align 4
   br label %for.cond
+
+for.cond:                                         ; preds = %for.inc, %entry
+  %15 = load i32, i32* %i, align 4
+  %16 = icmp sle i32 %15, 8
+  store i1 %16, i1* %2, align 1
+  %17 = load i1, i1* %2, align 1
+  br i1 %17, label %for, label %for.end
 
 for.end:                                          ; preds = %for.cond
   store i32 1000000, i32* %3, align 4

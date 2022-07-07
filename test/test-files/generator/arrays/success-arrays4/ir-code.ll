@@ -35,24 +35,27 @@ entry:
   store i8* %7, i8** %word, align 8
   br label %foreach.loop
 
-foreach.loop:                                     ; preds = %foreach.inc, %entry
+foreach.loop:                                     ; preds = %foreach.cond, %entry
   %8 = load i32, i32* %i, align 4
   %9 = load i8*, i8** %word, align 8
   %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @5, i32 0, i32 0), i32 %8, i8* %9)
-  %11 = load i32, i32* %i, align 4
-  %12 = icmp slt i32 %11, 4
-  br i1 %12, label %foreach.inc, label %foreach.end
+  br label %foreach.inc
 
 foreach.inc:                                      ; preds = %foreach.loop
   %idx = load i32, i32* %i, align 4
   %idx.inc = add i32 %idx, 1
   store i32 %idx.inc, i32* %i, align 4
-  %13 = getelementptr inbounds [5 x i8*], [5 x i8*]* %welcomeMessage, i32 0, i32 %idx.inc
-  %14 = load i8*, i8** %13, align 8
-  store i8* %14, i8** %word, align 8
-  br label %foreach.loop
+  %11 = getelementptr inbounds [5 x i8*], [5 x i8*]* %welcomeMessage, i32 0, i32 %idx.inc
+  %12 = load i8*, i8** %11, align 8
+  store i8* %12, i8** %word, align 8
+  br label %foreach.cond
 
-foreach.end:                                      ; preds = %foreach.loop
+foreach.cond:                                     ; preds = %foreach.inc
+  %13 = load i32, i32* %i, align 4
+  %14 = icmp ule i32 %13, 4
+  br i1 %14, label %foreach.loop, label %foreach.end
+
+foreach.end:                                      ; preds = %foreach.cond
   %15 = load i32, i32* %result, align 4
   ret i32 %15
 }

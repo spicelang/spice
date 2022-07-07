@@ -12,75 +12,75 @@ entry:
   %result = alloca i32, align 4
   %counter = alloca i32, align 4
   %0 = alloca i1, align 1
-  %1 = alloca i1, align 1
   %subCounter = alloca i32, align 4
+  %1 = alloca i1, align 1
   %2 = alloca i1, align 1
   %3 = alloca i1, align 1
   store i32 0, i32* %result, align 4
   store i32 0, i32* %counter, align 4
-  br label %for.cond
+  br label %for.cond5
 
-for.cond:                                         ; preds = %for.post5, %entry
+for:                                              ; preds = %for.cond5
   %4 = load i32, i32* %counter, align 4
-  %5 = icmp slt i32 %4, 10
-  store i1 %5, i1* %0, align 1
-  %6 = load i1, i1* %0, align 1
-  br i1 %6, label %for, label %for.end6
-
-for:                                              ; preds = %for.cond
-  %7 = load i32, i32* %counter, align 4
-  %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @0, i32 0, i32 0), i32 %7)
-  %9 = load i32, i32* %counter, align 4
-  %10 = icmp sge i32 %9, 5
-  store i1 %10, i1* %1, align 1
-  %11 = load i1, i1* %1, align 1
-  br i1 %11, label %if.then, label %if.end4
+  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @0, i32 0, i32 0), i32 %4)
+  %6 = load i32, i32* %counter, align 4
+  %7 = icmp sge i32 %6, 5
+  store i1 %7, i1* %0, align 1
+  %8 = load i1, i1* %0, align 1
+  br i1 %8, label %if.then, label %if.end3
 
 if.then:                                          ; preds = %for
   store i32 100, i32* %subCounter, align 4
-  br label %for.cond1
-
-for.cond1:                                        ; preds = %for.post, %if.then
-  %12 = load i32, i32* %subCounter, align 4
-  %13 = icmp sge i32 %12, 10
-  store i1 %13, i1* %2, align 1
-  %14 = load i1, i1* %2, align 1
-  br i1 %14, label %for2, label %for.end
-
-for2:                                             ; preds = %for.cond1
-  %15 = load i32, i32* %subCounter, align 4
-  %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @1, i32 0, i32 0), i32 %15)
-  %17 = load i32, i32* %subCounter, align 4
-  %18 = icmp eq i32 %17, 11
-  store i1 %18, i1* %3, align 1
-  %19 = load i1, i1* %3, align 1
-  br i1 %19, label %if.then3, label %if.end
-
-if.then3:                                         ; preds = %for2
-  br label %for.post5
-
-if.end:                                           ; preds = %for2
-  br label %for.post
-
-for.post:                                         ; preds = %if.end
-  %20 = load i32, i32* %subCounter, align 4
-  %21 = sub i32 %20, 1
-  store i32 %21, i32* %subCounter, align 4
-  br label %for.cond1
-
-for.end:                                          ; preds = %for.cond1
-  br label %if.end4
-
-if.end4:                                          ; preds = %for.end, %for
-  br label %for.post5
-
-for.post5:                                        ; preds = %if.end4, %if.then3
-  %22 = load i32, i32* %counter, align 4
-  %23 = add i32 %22, 2
-  store i32 %23, i32* %counter, align 4
   br label %for.cond
 
-for.end6:                                         ; preds = %for.cond
+for1:                                             ; preds = %for.cond
+  %9 = load i32, i32* %subCounter, align 4
+  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @1, i32 0, i32 0), i32 %9)
+  %11 = load i32, i32* %subCounter, align 4
+  %12 = icmp eq i32 %11, 11
+  store i1 %12, i1* %1, align 1
+  %13 = load i1, i1* %1, align 1
+  br i1 %13, label %if.then2, label %if.end
+
+if.then2:                                         ; preds = %for1
+  br label %for.inc4
+
+if.end:                                           ; preds = %for1
+  br label %for.inc
+
+for.inc:                                          ; preds = %if.end
+  %14 = load i32, i32* %subCounter, align 4
+  %15 = sub i32 %14, 1
+  store i32 %15, i32* %subCounter, align 4
+  br label %for.cond
+
+for.cond:                                         ; preds = %for.inc, %if.then
+  %16 = load i32, i32* %subCounter, align 4
+  %17 = icmp sge i32 %16, 10
+  store i1 %17, i1* %2, align 1
+  %18 = load i1, i1* %2, align 1
+  br i1 %18, label %for1, label %for.end
+
+for.end:                                          ; preds = %for.cond
+  br label %if.end3
+
+if.end3:                                          ; preds = %for.end, %for
+  br label %for.inc4
+
+for.inc4:                                         ; preds = %if.end3, %if.then2
+  %19 = load i32, i32* %counter, align 4
+  %20 = add i32 %19, 2
+  store i32 %20, i32* %counter, align 4
+  br label %for.cond5
+
+for.cond5:                                        ; preds = %for.inc4, %entry
+  %21 = load i32, i32* %counter, align 4
+  %22 = icmp slt i32 %21, 10
+  store i1 %22, i1* %3, align 1
+  %23 = load i1, i1* %3, align 1
+  br i1 %23, label %for, label %for.end6
+
+for.end6:                                         ; preds = %for.cond5
   %24 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @2, i32 0, i32 0))
   %25 = load i32, i32* %result, align 4
   ret i32 %25
