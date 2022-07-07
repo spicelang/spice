@@ -14,39 +14,39 @@ entry:
   %arrayLength = alloca i32, align 4
   %result = alloca i32, align 4
   %i = alloca i32, align 4
-  %2 = alloca i1, align 1
-  %3 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  %3 = alloca i1, align 1
   store i64* %0, i64** %numberArray, align 8
   store i32 %1, i32* %arrayLength, align 4
   store i32 0, i32* %result, align 4
   store i32 0, i32* %i, align 4
   br label %for.cond
 
-for.cond:                                         ; preds = %for.post, %entry
-  %4 = load i32, i32* %i, align 4
-  %5 = load i32, i32* %arrayLength, align 4
-  %6 = icmp slt i32 %4, %5
-  store i1 %6, i1* %2, align 1
-  %7 = load i1, i1* %2, align 1
-  br i1 %7, label %for, label %for.end
-
 for:                                              ; preds = %for.cond
-  %8 = load i64*, i64** %numberArray, align 8
-  %9 = load i32, i32* %i, align 4
-  %10 = getelementptr inbounds i64, i64* %8, i32 %9
-  %11 = load i64, i64* %10, align 8
-  %12 = load i32, i32* %result, align 4
-  %13 = trunc i64 %11 to i32
-  %14 = add i32 %12, %13
-  store i32 %14, i32* %result, align 4
-  br label %for.post
+  %4 = load i64*, i64** %numberArray, align 8
+  %5 = load i32, i32* %i, align 4
+  %6 = getelementptr inbounds i64, i64* %4, i32 %5
+  %7 = load i64, i64* %6, align 8
+  %8 = load i32, i32* %result, align 4
+  %9 = trunc i64 %7 to i32
+  %10 = add i32 %8, %9
+  store i32 %10, i32* %result, align 4
+  br label %for.inc
 
-for.post:                                         ; preds = %for
-  %15 = load i32, i32* %i, align 4
-  %16 = add i32 %15, 1
-  store i32 %16, i32* %i, align 4
-  store i32 %15, i32* %3, align 4
+for.inc:                                          ; preds = %for
+  %11 = load i32, i32* %i, align 4
+  %12 = add i32 %11, 1
+  store i32 %12, i32* %i, align 4
+  store i32 %11, i32* %2, align 4
   br label %for.cond
+
+for.cond:                                         ; preds = %for.inc, %entry
+  %13 = load i32, i32* %i, align 4
+  %14 = load i32, i32* %arrayLength, align 4
+  %15 = icmp slt i32 %13, %14
+  store i1 %15, i1* %3, align 1
+  %16 = load i1, i1* %3, align 1
+  br i1 %16, label %for, label %for.end
 
 for.end:                                          ; preds = %for.cond
   %17 = load i32, i32* %result, align 4
@@ -59,39 +59,39 @@ entry:
   %arrayLength = alloca i32, align 4
   %result = alloca i32, align 4
   %i = alloca i32, align 4
-  %2 = alloca i1, align 1
-  %3 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  %3 = alloca i1, align 1
   store i16* %0, i16** %numberArray, align 8
   store i32 %1, i32* %arrayLength, align 4
   store i32 0, i32* %result, align 4
   store i32 0, i32* %i, align 4
   br label %for.cond
 
-for.cond:                                         ; preds = %for.post, %entry
-  %4 = load i32, i32* %i, align 4
-  %5 = load i32, i32* %arrayLength, align 4
-  %6 = icmp slt i32 %4, %5
-  store i1 %6, i1* %2, align 1
-  %7 = load i1, i1* %2, align 1
-  br i1 %7, label %for, label %for.end
-
 for:                                              ; preds = %for.cond
-  %8 = load i16*, i16** %numberArray, align 8
-  %9 = load i32, i32* %i, align 4
-  %10 = getelementptr inbounds i16, i16* %8, i32 %9
-  %11 = load i16, i16* %10, align 2
-  %12 = load i32, i32* %result, align 4
-  %13 = sext i16 %11 to i32
-  %14 = add i32 %12, %13
-  store i32 %14, i32* %result, align 4
-  br label %for.post
+  %4 = load i16*, i16** %numberArray, align 8
+  %5 = load i32, i32* %i, align 4
+  %6 = getelementptr inbounds i16, i16* %4, i32 %5
+  %7 = load i16, i16* %6, align 2
+  %8 = load i32, i32* %result, align 4
+  %9 = sext i16 %7 to i32
+  %10 = add i32 %8, %9
+  store i32 %10, i32* %result, align 4
+  br label %for.inc
 
-for.post:                                         ; preds = %for
-  %15 = load i32, i32* %i, align 4
-  %16 = add i32 %15, 1
-  store i32 %16, i32* %i, align 4
-  store i32 %15, i32* %3, align 4
+for.inc:                                          ; preds = %for
+  %11 = load i32, i32* %i, align 4
+  %12 = add i32 %11, 1
+  store i32 %12, i32* %i, align 4
+  store i32 %11, i32* %2, align 4
   br label %for.cond
+
+for.cond:                                         ; preds = %for.inc, %entry
+  %13 = load i32, i32* %i, align 4
+  %14 = load i32, i32* %arrayLength, align 4
+  %15 = icmp slt i32 %13, %14
+  store i1 %15, i1* %3, align 1
+  %16 = load i1, i1* %3, align 1
+  br i1 %16, label %for, label %for.end
 
 for.end:                                          ; preds = %for.cond
   %17 = load i32, i32* %result, align 4
@@ -103,35 +103,35 @@ entry:
   %arrayLength = alloca i32, align 4
   %list = alloca [2 x i32], align 4
   %i = alloca i32, align 4
-  %2 = alloca i1, align 1
-  %3 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  %3 = alloca i1, align 1
   store i32 %0, i32* %arrayLength, align 4
   store [2 x i32] %1, [2 x i32]* %list, align 4
   store i32 0, i32* %i, align 4
   br label %for.cond
 
-for.cond:                                         ; preds = %for.post, %entry
-  %4 = load i32, i32* %i, align 4
-  %5 = load i32, i32* %arrayLength, align 4
-  %6 = icmp slt i32 %4, %5
-  store i1 %6, i1* %2, align 1
-  %7 = load i1, i1* %2, align 1
-  br i1 %7, label %for, label %for.end
-
 for:                                              ; preds = %for.cond
-  %8 = load [2 x i32], [2 x i32]* %list, align 4
-  %9 = load i32, i32* %i, align 4
-  %10 = getelementptr inbounds [2 x i32], [2 x i32]* %list, i32 0, i32 %9
-  %11 = load i32, i32* %10, align 4
-  %12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %11)
-  br label %for.post
+  %4 = load [2 x i32], [2 x i32]* %list, align 4
+  %5 = load i32, i32* %i, align 4
+  %6 = getelementptr inbounds [2 x i32], [2 x i32]* %list, i32 0, i32 %5
+  %7 = load i32, i32* %6, align 4
+  %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %7)
+  br label %for.inc
 
-for.post:                                         ; preds = %for
-  %13 = load i32, i32* %i, align 4
-  %14 = add i32 %13, 1
-  store i32 %14, i32* %i, align 4
-  store i32 %13, i32* %3, align 4
+for.inc:                                          ; preds = %for
+  %9 = load i32, i32* %i, align 4
+  %10 = add i32 %9, 1
+  store i32 %10, i32* %i, align 4
+  store i32 %9, i32* %2, align 4
   br label %for.cond
+
+for.cond:                                         ; preds = %for.inc, %entry
+  %11 = load i32, i32* %i, align 4
+  %12 = load i32, i32* %arrayLength, align 4
+  %13 = icmp slt i32 %11, %12
+  store i1 %13, i1* %3, align 1
+  %14 = load i1, i1* %3, align 1
+  br i1 %14, label %for, label %for.end
 
 for.end:                                          ; preds = %for.cond
   ret void

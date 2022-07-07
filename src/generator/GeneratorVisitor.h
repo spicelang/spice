@@ -128,7 +128,7 @@ private:
   bool constNegate = false;
   bool allArgsHardcoded = true;
   llvm::Constant *currentConstValue = nullptr;
-  bool currentVarSigned = false;
+  bool currentConstSigned = true;
   std::string currentVarName;
   std::string lhsVarName;
   llvm::Type *lhsType = nullptr;

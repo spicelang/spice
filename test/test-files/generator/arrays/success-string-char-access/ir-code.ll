@@ -18,7 +18,7 @@ entry:
   %2 = load i8, i8* %1, align 1
   store i8 %2, i8* %c1, align 1
   %3 = load i8, i8* %c1, align 1
-  %4 = zext i8 %3 to i32
+  %4 = sext i8 %3 to i32
   %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @1, i32 0, i32 0), i32 %4)
   %6 = load i32, i32* %result, align 4
   ret i32 %6

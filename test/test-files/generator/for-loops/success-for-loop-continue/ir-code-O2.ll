@@ -9,33 +9,33 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
-for2.preheader.3:
+for1.preheader.3:
   %0 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([13 x i8], [13 x i8]* @0, i64 0, i64 0), i32 0)
   %1 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([13 x i8], [13 x i8]* @0, i64 0, i64 0), i32 2)
   %2 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([13 x i8], [13 x i8]* @0, i64 0, i64 0), i32 4)
   %3 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([13 x i8], [13 x i8]* @0, i64 0, i64 0), i32 6)
-  br label %for2.3
+  br label %for1.3
 
-for2.3:                                           ; preds = %for2.3, %for2.preheader.3
-  %subCounter.016.3 = phi i32 [ %5, %for2.3 ], [ 100, %for2.preheader.3 ]
+for1.3:                                           ; preds = %for1.3, %for1.preheader.3
+  %subCounter.016.3 = phi i32 [ %5, %for1.3 ], [ 100, %for1.preheader.3 ]
   %4 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @1, i64 0, i64 0), i32 %subCounter.016.3)
+  %.not = icmp eq i32 %subCounter.016.3, 11
   %5 = add nsw i32 %subCounter.016.3, -1
-  %6 = icmp ugt i32 %subCounter.016.3, 11
-  br i1 %6, label %for2.3, label %for2.preheader.4
+  br i1 %.not, label %for1.preheader.4, label %for1.3
 
-for2.preheader.4:                                 ; preds = %for2.3
-  %7 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([13 x i8], [13 x i8]* @0, i64 0, i64 0), i32 8)
-  br label %for2.4
+for1.preheader.4:                                 ; preds = %for1.3
+  %6 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([13 x i8], [13 x i8]* @0, i64 0, i64 0), i32 8)
+  br label %for1.4
 
-for2.4:                                           ; preds = %for2.4, %for2.preheader.4
-  %subCounter.016.4 = phi i32 [ %9, %for2.4 ], [ 100, %for2.preheader.4 ]
-  %8 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @1, i64 0, i64 0), i32 %subCounter.016.4)
-  %9 = add nsw i32 %subCounter.016.4, -1
-  %10 = icmp ugt i32 %subCounter.016.4, 11
-  br i1 %10, label %for2.4, label %for.post5.4
+for1.4:                                           ; preds = %for1.4, %for1.preheader.4
+  %subCounter.016.4 = phi i32 [ %8, %for1.4 ], [ 100, %for1.preheader.4 ]
+  %7 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @1, i64 0, i64 0), i32 %subCounter.016.4)
+  %.not18 = icmp eq i32 %subCounter.016.4, 11
+  %8 = add nsw i32 %subCounter.016.4, -1
+  br i1 %.not18, label %for.inc4.4, label %for1.4
 
-for.post5.4:                                      ; preds = %for2.4
-  %11 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([5 x i8], [5 x i8]* @2, i64 0, i64 0))
+for.inc4.4:                                       ; preds = %for1.4
+  %9 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([5 x i8], [5 x i8]* @2, i64 0, i64 0))
   ret i32 0
 }
 

@@ -39,7 +39,7 @@ entry:
   %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @1, i32 0, i32 0), i32 %3)
   store i16 0, i16* %shortVar, align 2
   %5 = load i16, i16* %shortVar, align 2
-  %6 = zext i16 %5 to i32
+  %6 = sext i16 %5 to i32
   %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @2, i32 0, i32 0), i32 %6)
   store i64 0, i64* %longVar, align 8
   %8 = load i64, i64* %longVar, align 8
@@ -49,11 +49,11 @@ entry:
   %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([18 x i8], [18 x i8]* @5, i32 0, i32 0), i8* %10)
   store i8 0, i8* %byteVar, align 1
   %12 = load i8, i8* %byteVar, align 1
-  %13 = zext i8 %12 to i32
+  %13 = sext i8 %12 to i32
   %14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @6, i32 0, i32 0), i32 %13)
   store i8 0, i8* %charVar, align 1
   %15 = load i8, i8* %charVar, align 1
-  %16 = zext i8 %15 to i32
+  %16 = sext i8 %15 to i32
   %17 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @7, i32 0, i32 0), i32 %16)
   store i1 false, i1* %boolVar, align 1
   %18 = load i1, i1* %boolVar, align 1
@@ -66,10 +66,11 @@ entry:
   store [4 x %_s__NestedStruct__int_string] [%_s__NestedStruct__int_string { i32 0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @9, i32 0, i32 0) }, %_s__NestedStruct__int_string { i32 0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @9, i32 0, i32 0) }, %_s__NestedStruct__int_string { i32 0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @9, i32 0, i32 0) }, %_s__NestedStruct__int_string { i32 0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @9, i32 0, i32 0) }], [4 x %_s__NestedStruct__int_string]* %structArrayVar, align 8
   %23 = load [4 x %_s__NestedStruct__int_string], [4 x %_s__NestedStruct__int_string]* %structArrayVar, align 8
   %24 = getelementptr inbounds [4 x %_s__NestedStruct__int_string], [4 x %_s__NestedStruct__int_string]* %structArrayVar, i32 0, i32 2
-  %25 = load i8*, i8** %22, align 8
-  %26 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @10, i32 0, i32 0), i8* %25)
-  %27 = load i32, i32* %result, align 4
-  ret i32 %27
+  %25 = getelementptr inbounds [4 x %_s__NestedStruct__int_string], [4 x %_s__NestedStruct__int_string]* %structArrayVar, i32 0, i32 2, i32 1
+  %26 = load i8*, i8** %25, align 8
+  %27 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @10, i32 0, i32 0), i8* %26)
+  %28 = load i32, i32* %result, align 4
+  ret i32 %28
 }
 
 declare i32 @printf(i8*, ...)

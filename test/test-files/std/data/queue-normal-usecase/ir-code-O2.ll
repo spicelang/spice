@@ -25,7 +25,7 @@ entry:
 
 while:                                            ; preds = %entry, %while
   %4 = call i8 @_mf__Queue_char__pop(%_s__char__Queue__charptr_long_long_long_long_int* nonnull %q1)
-  %5 = zext i8 %4 to i32
+  %5 = sext i8 %4 to i32
   %putchar = call i32 @putchar(i32 %5)
   %6 = call i1 @_mf__Queue_char__isEmpty(%_s__char__Queue__charptr_long_long_long_long_int* nonnull %q1)
   br i1 %6, label %while.end, label %while

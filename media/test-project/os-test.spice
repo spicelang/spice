@@ -1,37 +1,46 @@
-// See Issue #82
-
-type ShoppingItem struct {
-    string name
-    double amount
-    string unit
+type NestedStruct struct {
+    int field1
+    string field2
 }
 
-type ShoppingCart struct {
-    string label
-    ShoppingItem[3] items
-}
-
-f<ShoppingCart> newShoppingCart() {
-    ShoppingItem[3] items;
-    items[0] = ShoppingItem { "Spaghetti", 100.0, "g" };
-    items[1] = ShoppingItem { "Rice", 125.5, "g" };
-    items[2] = ShoppingItem { "Doughnut", 6.0, "pcs" };
-    return ShoppingCart { "Shopping Cart", items };
-}
-
-f<ShoppingCart> anotherShoppingCart() {
-    ShoppingItem[3] items = {
-        ShoppingItem { "Spaghetti", 100.0, "g" },
-        ShoppingItem { "Rice", 125.5, "g" },
-        ShoppingItem { "Doughnut", 6.0, "pcs" }
-    };
-    return ShoppingCart { "Another Cart", items };
+type TestStruct struct {
+    int* field1
+    NestedStruct* field2
 }
 
 f<int> main() {
-    ShoppingCart shoppingCart = newShoppingCart();
-    printf("Shopping cart item 1: %s\n", shoppingCart.items[1].name);
+    double doubleVar;
+    printf("Double value: %f\n", doubleVar);
 
-    shoppingCart = anotherShoppingCart();
-    printf("Another cart item 2 unit: %s\n", shoppingCart.items[2].unit);
+    int intVar;
+    printf("Int value: %d\n", intVar);
+
+    short shortVar;
+    printf("Short value: %d\n", shortVar);
+
+    long longVar;
+    printf("Long value: %d\n", longVar);
+
+    string stringVar;
+    printf("String value: %s\n", stringVar);
+
+    byte byteVar;
+    printf("Byte value: %d\n", byteVar);
+
+    char charVar;
+    printf("Char value: %c\n", charVar);
+
+    bool boolVar;
+    printf("Bool value: %d\n", boolVar);
+
+    // Disabled because the output is different on GitHub actions
+    //int* intPtrVar;
+    //printf("Int pointer value: %p\n", intPtrVar);
+
+    NestedStruct[4] structArrayVar;
+    printf("Struct array value: %s\n", structArrayVar[2].field2);
+
+    // Disabled because the output is different on GitHub actions
+    //TestStruct structVar;
+    //printf("Nested struct field value: %d\n", structVar.field2.field1);
 }
