@@ -1226,9 +1226,7 @@ std::any AnalyzerVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
 
 std::any AnalyzerVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   if (ctx->assignExpr()) { // Size of value
-    auto symbolType = any_cast<SymbolType>(visit(ctx->assignExpr()));
-    if (symbolType.isOneOf({TY_GENERIC}))
-      throw err->get(*ctx->assignExpr()->start, EXPECTED_VALUE, "This identifier does not correspond to a value");
+    any_cast<SymbolType>(visit(ctx->assignExpr()));
   } else if (ctx->dataType()) { // Size of type
     any_cast<SymbolType>(visit(ctx->dataType()));
   }

@@ -187,7 +187,7 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
         argNames.push_back(currentVarName);
         SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
         assert(argSymbol != nullptr);
-        currentVarSigned = argSymbol->getSpecifiers().isSigned();
+        currentConstSigned = argSymbol->getSpecifiers().isSigned();
         auto argType = any_cast<llvm::Type *>(visit(arg->dataType()));
         argTypes.push_back(argType);
       }
@@ -329,7 +329,7 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
           argNames.push_back(currentVarName);
           SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
           assert(argSymbol != nullptr);
-          currentVarSigned = argSymbol->getSpecifiers().isSigned();
+          currentConstSigned = argSymbol->getSpecifiers().isSigned();
           argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex], currentScope));
         }
       }
@@ -482,7 +482,7 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
           argNames.push_back(currentVarName);
           SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
           assert(argSymbol != nullptr);
-          currentVarSigned = argSymbol->getSpecifiers().isSigned();
+          currentConstSigned = argSymbol->getSpecifiers().isSigned();
           argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex], currentScope));
         }
       }
@@ -648,7 +648,7 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
         std::string fieldName = field->IDENTIFIER()->toString();
         SymbolTableEntry *fieldEntry = currentScope->lookup(fieldName);
         assert(fieldEntry && !fieldEntry->getType().is(TY_GENERIC));
-        currentVarSigned = fieldEntry->getSpecifiers().isSigned();
+        currentConstSigned = fieldEntry->getSpecifiers().isSigned();
         fieldTypes.push_back(getTypeForSymbolType(fieldEntry->getType(), currentScope));
       }
 
@@ -681,7 +681,7 @@ std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *c
       specifiers.isPublic() ? llvm::GlobalValue::LinkageTypes::ExternalLinkage : llvm::GlobalValue::LinkageTypes::InternalLinkage;
 
   // Create correctly signed LLVM type from the data type
-  currentVarSigned = specifiers.isSigned();
+  currentConstSigned = specifiers.isSigned();
   auto varType = any_cast<llvm::Type *>(visit(ctx->dataType()));
   globalVarEntry->updateLLVMType(varType);
 
@@ -835,7 +835,7 @@ std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 
   // Create blocks
   llvm::BasicBlock *bCond = llvm::BasicBlock::Create(*context, "for.cond");
-  llvm::BasicBlock *bPost = llvm::BasicBlock::Create(*context, "for.post");
+  llvm::BasicBlock *bInc = llvm::BasicBlock::Create(*context, "for.inc");
   llvm::BasicBlock *bLoop = llvm::BasicBlock::Create(*context, "for");
   llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "for.end");
 
@@ -844,7 +844,7 @@ std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   currentScope = currentScope->getChild(scopeId);
   assert(currentScope != nullptr);
   breakBlocks.push(bEnd);
-  continueBlocks.push(bPost);
+  continueBlocks.push(bInc);
 
   // Execute pre-loop stmts
   visit(head->declStmt());
@@ -854,28 +854,28 @@ std::any GeneratorVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   // Get parent function
   llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
-  // Fill condition block
-  parentFct->getBasicBlockList().push_back(bCond);
-  moveInsertPointToBlock(bCond);
-  llvm::Value *condValue = resolveValue(head->assignExpr()[0]);
-  // Jump to loop body or to loop end
-  createCondBr(condValue, bLoop, bEnd);
-
   // Fill loop block
   parentFct->getBasicBlockList().push_back(bLoop);
   moveInsertPointToBlock(bLoop);
   // Generate IR for nested statements
   visit(ctx->stmtLst());
   // Jump into post block
-  createBr(bPost);
+  createBr(bInc);
 
-  // Fill loop post block
-  parentFct->getBasicBlockList().push_back(bPost);
-  moveInsertPointToBlock(bPost);
-  // Run post-loop actions
+  // Fill inc block
+  parentFct->getBasicBlockList().push_back(bInc);
+  moveInsertPointToBlock(bInc);
+  // Run inc actions
   visit(head->assignExpr()[1]);
   // Jump into condition block
   createBr(bCond);
+
+  // Fill condition block
+  parentFct->getBasicBlockList().push_back(bCond);
+  moveInsertPointToBlock(bCond);
+  llvm::Value *condValue = resolveValue(head->assignExpr()[0]);
+  // Jump to loop body or to loop end
+  createCondBr(condValue, bLoop, bEnd);
 
   // Fill loop end block
   parentFct->getBasicBlockList().push_back(bEnd);
@@ -899,8 +899,9 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   auto head = ctx->foreachHead();
 
   // Create blocks
-  llvm::BasicBlock *bLoop = llvm::BasicBlock::Create(*context, "foreach.loop");
+  llvm::BasicBlock *bCond = llvm::BasicBlock::Create(*context, "foreach.cond");
   llvm::BasicBlock *bInc = llvm::BasicBlock::Create(*context, "foreach.inc");
+  llvm::BasicBlock *bLoop = llvm::BasicBlock::Create(*context, "foreach.loop");
   llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "foreach.end");
 
   // Change scope
@@ -911,40 +912,40 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   continueBlocks.push(bInc);
 
   // Initialize loop variables
-  llvm::Value *indexVariablePtr;
+  llvm::Value *idxVarPtr;
   if (head->declStmt().size() >= 2) {
-    auto indexVariableName = any_cast<std::string>(visit(ctx->foreachHead()->declStmt().front()));
-    SymbolTableEntry *indexVariableEntry = currentScope->lookup(indexVariableName);
-    assert(indexVariableEntry != nullptr);
-    indexVariablePtr = indexVariableEntry->getAddress();
+    auto idxVarName = any_cast<std::string>(visit(ctx->foreachHead()->declStmt().front()));
+    SymbolTableEntry *idxVarEntry = currentScope->lookup(idxVarName);
+    assert(idxVarEntry != nullptr);
+    idxVarPtr = idxVarEntry->getAddress();
   } else {
     std::string indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
     // Create local variable for
     llvm::Type *indexVariableType = llvm::Type::getInt32Ty(*context);
-    indexVariablePtr = insertAlloca(indexVariableType, indexVariableName);
-    SymbolTableEntry *indexVariableEntry = currentScope->lookup(indexVariableName);
-    assert(indexVariableEntry != nullptr);
-    indexVariableEntry->updateAddress(indexVariablePtr);
-    indexVariableEntry->updateLLVMType(indexVariableType);
-    indexVariableEntry->setUsed();
+    idxVarPtr = insertAlloca(indexVariableType, indexVariableName);
+    SymbolTableEntry *idxVarEntry = currentScope->lookup(indexVariableName);
+    assert(idxVarEntry != nullptr);
+    idxVarEntry->updateAddress(idxVarPtr);
+    idxVarEntry->updateLLVMType(indexVariableType);
+    idxVarEntry->setUsed();
     // Initialize variable with 0
-    builder->CreateStore(builder->getInt32(0), indexVariablePtr);
+    builder->CreateStore(builder->getInt32(0), idxVarPtr);
   }
-  auto itemVariableName = any_cast<std::string>(visit(ctx->foreachHead()->declStmt().back()));
-  SymbolTableEntry *itemVariableEntry = currentScope->lookup(itemVariableName);
-  assert(itemVariableEntry != nullptr);
-  llvm::Value *itemVariablePtr = itemVariableEntry->getAddress();
+  auto itemVarName = any_cast<std::string>(visit(ctx->foreachHead()->declStmt().back()));
+  SymbolTableEntry *itemVarEntry = currentScope->lookup(itemVarName);
+  assert(itemVarEntry != nullptr);
+  llvm::Value *itemVarPtr = itemVarEntry->getAddress();
 
   // Do loop variable initialization
   auto valuePtr = resolveAddress(ctx->foreachHead()->assignExpr());
   llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
   llvm::Value *maxIndex = builder->getInt32(value->getType()->getArrayNumElements() - 1);
   // Load the first item into item variable
-  llvm::Value *index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
+  llvm::Value *index = builder->CreateLoad(idxVarPtr->getType()->getPointerElementType(), idxVarPtr);
   llvm::Value *indices[2] = {builder->getInt32(0), index};
   llvm::Value *itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, indices);
   llvm::Value *newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
-  builder->CreateStore(newItemValue, itemVariablePtr);
+  builder->CreateStore(newItemValue, itemVarPtr);
   createBr(bLoop);
 
   // Get parent function
@@ -955,26 +956,31 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   moveInsertPointToBlock(bLoop);
   // Generate IR for nested statements
   visit(ctx->stmtLst());
-  // Check if the index variable reached the size -2
-  if (!blockAlreadyTerminated) {
-    index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr);
-    llvm::Value *cond = builder->CreateICmpSLT(index, maxIndex);
-    createCondBr(cond, bInc, bEnd);
-  }
+  // Jump to condition check
+  if (!blockAlreadyTerminated)
+    builder->CreateBr(bInc);
 
   // Fill inc block
   parentFct->getBasicBlockList().push_back(bInc);
   moveInsertPointToBlock(bInc);
   // Increment index variable
-  index = builder->CreateLoad(indexVariablePtr->getType()->getPointerElementType(), indexVariablePtr, "idx");
+  index = builder->CreateLoad(idxVarPtr->getType()->getPointerElementType(), idxVarPtr, "idx");
   index = builder->CreateAdd(index, builder->getInt32(1), "idx.inc");
-  builder->CreateStore(index, indexVariablePtr);
+  builder->CreateStore(index, idxVarPtr);
   // Load new item into item variable
   indices[1] = index;
   itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, indices);
   newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
-  builder->CreateStore(newItemValue, itemVariablePtr);
-  createBr(bLoop);
+  builder->CreateStore(newItemValue, itemVarPtr);
+  createBr(bCond);
+
+  // Fill cond block
+  parentFct->getBasicBlockList().push_back(bCond);
+  moveInsertPointToBlock(bCond);
+  // Check condition
+  index = builder->CreateLoad(idxVarPtr->getType()->getPointerElementType(), idxVarPtr);
+  llvm::Value *cond = builder->CreateICmpULE(index, maxIndex);
+  createCondBr(cond, bLoop, bEnd);
 
   // Fill loop end block
   parentFct->getBasicBlockList().push_back(bEnd);
@@ -1165,7 +1171,7 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   // Get variable entry
   SymbolTableEntry *entry = currentScope->lookup(lhsVarName);
   assert(entry != nullptr);
-  currentVarSigned = entry->getSpecifiers().isSigned();
+  currentConstSigned = entry->getSpecifiers().isSigned();
 
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
   llvm::Value *memAddress = insertAlloca(varType, lhsVarName);
@@ -1304,8 +1310,10 @@ std::any GeneratorVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) 
       throw err->get(*arg->start, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
 
     // Cast all integer types to 32 bit
-    if (argVal->getType()->isIntegerTy(1) || argVal->getType()->isIntegerTy(8) || argVal->getType()->isIntegerTy(16))
-      argVal = builder->CreateZExtOrTrunc(argVal, llvm::Type::getInt32Ty(*context));
+    if (argVal->getType()->isIntegerTy(8) || argVal->getType()->isIntegerTy(16))
+      argVal = builder->CreateSExt(argVal, llvm::Type::getInt32Ty(*context));
+    if (argVal->getType()->isIntegerTy(1))
+      argVal = builder->CreateZExt(argVal, llvm::Type::getInt32Ty(*context));
 
     printfArgs.push_back(argVal);
   }
@@ -2101,8 +2109,9 @@ std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContex
     int value = std::stoi(ctx->INTEGER()->toString());
     if (constNegate)
       value = -value;
-    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*context), value)
-                                                : llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), value);
+    llvm::Type *intTy = builder->getInt32Ty();
+    llvm::Constant *constant =
+        currentConstSigned ? llvm::ConstantInt::getSigned(intTy, value) : llvm::ConstantInt::get(intTy, value);
     return static_cast<llvm::Constant *>(constant);
   }
 
@@ -2112,8 +2121,9 @@ std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContex
     int value = std::stoi(ctx->SHORT()->toString());
     if (constNegate)
       value = -value;
-    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*context), value)
-                                                : llvm::ConstantInt::get(llvm::Type::getInt16Ty(*context), value);
+    llvm::Type *shortTy = builder->getInt16Ty();
+    llvm::Constant *constant =
+        currentConstSigned ? llvm::ConstantInt::getSigned(shortTy, value) : llvm::ConstantInt::get(shortTy, value);
     return static_cast<llvm::Constant *>(constant);
   }
 
@@ -2123,8 +2133,9 @@ std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContex
     long long value = std::stoll(ctx->LONG()->toString());
     if (constNegate)
       value = -value;
-    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*context), value)
-                                                : llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), value);
+    llvm::Type *longTy = builder->getInt64Ty();
+    llvm::Constant *constant =
+        currentConstSigned ? llvm::ConstantInt::getSigned(longTy, value) : llvm::ConstantInt::get(longTy, value);
     return static_cast<llvm::Constant *>(constant);
   }
 
@@ -2132,8 +2143,9 @@ std::any GeneratorVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContex
   if (ctx->CHAR_LITERAL()) {
     currentSymbolType = SymbolType(TY_CHAR);
     char value = ctx->CHAR_LITERAL()->toString()[1];
-    llvm::Constant *constant = currentVarSigned ? llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*context), value)
-                                                : llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context), value);
+    llvm::Type *charTy = builder->getInt8Ty();
+    llvm::Constant *constant =
+        currentConstSigned ? llvm::ConstantInt::getSigned(charTy, value) : llvm::ConstantInt::get(charTy, value);
     return static_cast<llvm::Constant *>(constant);
   }
 

@@ -1255,12 +1255,10 @@ llvm::Value *OpRuleConversionsManager::getPrefixMinusInst(llvm::Value *lhs) {
   switch (lhsPTy) {
   case P_TY_DOUBLE:
     return builder->CreateFMul(lhs, llvm::ConstantFP::get(builder->getContext(), llvm::APFloat(double(-1))));
-  case P_TY_INT:
-    return builder->CreateMul(lhs, builder->getInt32(-1));
-  case P_TY_SHORT:
-    return builder->CreateMul(lhs, builder->getInt16(-1));
+  case P_TY_INT:   // fallthrough
+  case P_TY_SHORT: // fallthrough
   case P_TY_LONG:
-    return builder->CreateMul(lhs, builder->getInt64(-1));
+    return builder->CreateNeg(lhs);
   default:
     break;
   }
@@ -1293,6 +1291,8 @@ llvm::Value *OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value *lhs)
     return builder->CreateSub(lhs, builder->getInt16(1));
   case P_TY_LONG:
     return builder->CreateSub(lhs, builder->getInt64(1));
+  default:
+    break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }

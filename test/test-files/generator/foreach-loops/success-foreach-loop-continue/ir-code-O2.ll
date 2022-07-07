@@ -20,6 +20,8 @@ entry:
   store i16 -2, i16* %.fca.4.insert.fca.2.gep, align 2
   %.fca.4.insert.fca.3.gep = getelementptr inbounds [5 x i16], [5 x i16]* %shortArray, i64 0, i64 3
   store i16 -63, i16* %.fca.4.insert.fca.3.gep, align 2
+  %.fca.4.insert.fca.4.gep = getelementptr inbounds [5 x i16], [5 x i16]* %shortArray, i64 0, i64 4
+  store i16 0, i16* %.fca.4.insert.fca.4.gep, align 2
   br label %foreach.loop
 
 foreach.loop:                                     ; preds = %foreach.inc4, %entry

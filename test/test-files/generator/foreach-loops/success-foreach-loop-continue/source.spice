@@ -1,8 +1,6 @@
-// Attention: This test reveals a bug in the implementation of the short type. See the cout.out file for details
-
 f<int> main() {
     dyn s1 = 5s;
-    short[5] shortArray = { 1s, s1, 25s -27s, -63s };
+    short[5] shortArray = { 1s, s1, 25s, -27s, -63s };
     foreach short s : shortArray {
         printf("Short %d\n", s);
         if ((s & 1s) == 1) {

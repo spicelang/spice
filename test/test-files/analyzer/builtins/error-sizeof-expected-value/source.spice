@@ -1,7 +1,5 @@
-type TestStruct struct {
-    int field
-}
+type T dyn;
 
 f<int> main() {
-    printf("Size: %d", sizeof(TestStruct));
+    printf("Size: %d", sizeof(T));
 }
