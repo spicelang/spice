@@ -33,15 +33,15 @@ enum SymbolSuperType {
 
 class SymbolType {
   typedef std::vector<SymbolType> TemplateTypes;
-  typedef std::tuple<SymbolSuperType, std::string, TemplateTypes> TypeChainElement;
+  typedef std::tuple<SymbolSuperType, std::string, TemplateTypes, bool> TypeChainElement;
   typedef std::stack<TypeChainElement> TypeChain;
 
 public:
   // Constructors
-  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}}}) {}
-  explicit SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}}}) {}
+  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}, false}}) {}
+  explicit SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}, false}}) {}
   explicit SymbolType(SymbolSuperType superType, const std::string &subType, const std::vector<SymbolType> &templateTypes)
-      : typeChain({{superType, subType, templateTypes}}) {}
+      : typeChain({{superType, subType, templateTypes, false}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
   SymbolType() = default;
   virtual ~SymbolType() = default;
@@ -49,7 +49,7 @@ public:
   // Public methods
   [[nodiscard]] TypeChain getTypeChain() const;
   SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token) const;
-  SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size = 0) const;
+  SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size = 0, bool dynamicSize = false) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
@@ -72,6 +72,7 @@ public:
   [[nodiscard]] bool isSigned() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] unsigned int getArraySize() const;
+  [[nodiscard]] bool isArrayDynamicallySized() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);

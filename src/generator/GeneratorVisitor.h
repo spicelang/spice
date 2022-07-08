@@ -135,6 +135,7 @@ private:
   llvm::Type *structAccessType = nullptr;
   llvm::Value *structAccessAddress = nullptr;
   std::vector<llvm::Value *> structAccessIndices;
+  llvm::Value *dynamicArraySize = nullptr;
   struct DebugInfo {
     llvm::DIFile *diFile;
     llvm::DICompileUnit *compileUnit;
@@ -161,7 +162,7 @@ private:
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
-  llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "", llvm::Value *arraySize = nullptr);
+  llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
   llvm::Type *getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope);

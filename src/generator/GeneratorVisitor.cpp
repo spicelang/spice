@@ -1177,7 +1177,15 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   currentConstSigned = entry->getSpecifiers().isSigned();
 
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
-  llvm::Value *memAddress = insertAlloca(varType, lhsVarName);
+  llvm::Value *memAddress;
+  if (entry->getType().is(TY_ARRAY) && entry->getType().isArrayDynamicallySized()) {
+    assert(dynamicArraySize != nullptr);
+    memAddress = builder->CreateAlloca(varType, dynamicArraySize, lhsVarName); // Intentionally not via insertAlloca
+    varType = memAddress->getType()->getPointerElementType();
+    dynamicArraySize = nullptr;
+  } else {
+    memAddress = insertAlloca(varType, lhsVarName);
+  }
   entry->updateAddress(memAddress);
   entry->updateLLVMType(varType);
 
@@ -2467,12 +2475,16 @@ std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
     } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
       tokenCounter++;                                                    // Consume LBRACKET
       token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
-      unsigned int size = 0;                                       // Default to 0 when no size is attached
-      if (token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
+      int size = 0;                                                         // Default to 0 when no size is attached
+      if (token && token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
         size = std::stoi(token->toString());
+        currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, size);
         tokenCounter++; // Consume INTEGER
+      } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter])) {
+        auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(rule));
+        dynamicArraySize = builder->CreateLoad(sizeValuePtr->getType()->getPointerElementType(), sizeValuePtr);
+        tokenCounter++; // Consume assignExpr
       }
-      currentSymbolType = currentSymbolType.toArray(err.get(), *token->getSymbol(), size);
     }
     tokenCounter++;
   }
@@ -2480,8 +2492,7 @@ std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
   // Come up with the LLVM type
   llvm::Type *type = getTypeForSymbolType(currentSymbolType, currentScope);
   if (!type)
-    throw err->get(*ctx->baseDataType()->getStart(), UNEXPECTED_DYN_TYPE_IR, // GCOV_EXCL_LINE
-                   "Internal compiler error: Dyn was other");                // GCOV_EXCL_LINE
+    throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_IR, "Internal compiler error: Dyn was other"); // GCOV_EXCL_LINE
   return type;
 }
 
@@ -2565,9 +2576,9 @@ void GeneratorVisitor::createCondBr(llvm::Value *condition, llvm::BasicBlock *tr
   blockAlreadyTerminated = true;
 }
 
-llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::string &varName, llvm::Value *arraySize) {
+llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) {
-    llvm::AllocaInst *allocaInst = builder->CreateAlloca(llvmType, arraySize, varName);
+    llvm::AllocaInst *allocaInst = builder->CreateAlloca(llvmType, nullptr, varName);
     allocaInst->moveAfter(allocaInsertInst);
     allocaInsertInst = allocaInst;
   } else {
@@ -2575,7 +2586,7 @@ llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::str
     llvm::BasicBlock *currentBlock = builder->GetInsertBlock();
     builder->SetInsertPoint(allocaInsertBlock);
 
-    allocaInsertInst = builder->CreateAlloca(llvmType, arraySize, varName);
+    allocaInsertInst = builder->CreateAlloca(llvmType, nullptr, varName);
 
     // Restore old basic block
     builder->SetInsertPoint(currentBlock);

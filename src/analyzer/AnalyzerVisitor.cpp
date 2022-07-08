@@ -2059,17 +2059,23 @@ std::any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
       type = type.toPointer(err.get(), *ctx->start);
     } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
       tokenCounter++;                                                    // Consume LBRACKET
+      int size = 0;                                                      // Default to 0 when no size is attached
+      bool dynamicallySized = false;
       token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
-      unsigned int size = 0;                                       // Default to 0 when no size is attached
-      if (token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
-        int signedSize = std::stoi(token->toString());
+      if (token && token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
+        size = std::stoi(token->toString());
         // Check if size >1
-        if (signedSize <= 1)
+        if (size <= 1)
           throw err->get(*token->getSymbol(), ARRAY_SIZE_INVALID, "The size of an array must be > 1");
-        size = signedSize;
         tokenCounter++; // Consume INTEGER
+      } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter])) {
+        auto sizeType = std::any_cast<SymbolType>(visit(rule));
+        if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))
+          throw err->get(*token->getSymbol(), ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
+        dynamicallySized = true;
+        tokenCounter++; // Consume assignExpr
       }
-      type = type.toArray(err.get(), *ctx->start, size);
+      type = type.toArray(err.get(), *ctx->start, size, dynamicallySized);
     }
     tokenCounter++;
   }

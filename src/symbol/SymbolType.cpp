@@ -26,7 +26,7 @@ SymbolType SymbolType::toPointer(const ErrorFactory *err, const antlr4::Token &t
     throw err->get(token, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_PTR, "", {}});
+  newTypeChain.push({TY_PTR, "", {}, false});
   return SymbolType(newTypeChain);
 }
 
@@ -35,13 +35,13 @@ SymbolType SymbolType::toPointer(const ErrorFactory *err, const antlr4::Token &t
  *
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size) const {
+SymbolType SymbolType::toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size, bool dynamicSize) const {
   // Do not allow arrays of dyn
   if (std::get<0>(typeChain.top()) == TY_DYN)
     throw err->get(token, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_ARRAY, std::to_string(size), {}});
+  newTypeChain.push({TY_ARRAY, std::to_string(size), {}, dynamicSize});
   return SymbolType(newTypeChain);
 }
 
@@ -279,6 +279,9 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const {
 /**
  * Get the size of the current type
  *
+ * Special cases:
+ * - 0: Array size was not defined
+ *
  * @return Size
  */
 unsigned int SymbolType::getArraySize() const {
@@ -286,6 +289,18 @@ unsigned int SymbolType::getArraySize() const {
     throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
 
   return std::stoi(std::get<1>(typeChain.top()));
+}
+
+/**
+ * Check if the current array type is dynamically sized
+ *
+ * @return Dynamically sized or not
+ */
+bool SymbolType::isArrayDynamicallySized() const {
+  if (std::get<0>(typeChain.top()) != TY_ARRAY)                                                      // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: Cannot get dynamic sized of non-array type"); // GCOV_EXCL_LINE
+
+  return std::get<3>(typeChain.top());
 }
 
 /**
