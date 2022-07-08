@@ -1851,7 +1851,6 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
   currentVarName = "";           // Reset the current variable name
   scopePath.clear();             // Clear the scope path
   structAccessAddress = nullptr; // Clear struct access address
-  structAccessIndices.clear();   // Clear struct access indices
 
   if (!ctx->prefixUnaryOp().empty()) {
     // Load the value
@@ -1934,20 +1933,31 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
       if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
         tokenCounter++;                          // Consume LBRACKET
 
+        // Save variables to restore later
+        ScopePath scopePathBackup = scopePath;
+        llvm::Value *structAccessAddressBackup = structAccessAddress;
+
+        // Get the index value
+        auto assignExpr = dynamic_cast<SpiceParser::AssignExprContext *>(ctx->children[tokenCounter]);
+        llvm::Value *indexValue = resolveValue(assignExpr);
+        tokenCounter++; // Consume assignExpr
+
+        // Restore variables
+        scopePath = scopePathBackup;
+        structAccessAddress = structAccessAddressBackup;
+
+        // Calculate address of array item
+        assert(lhs->getType()->isArrayTy() || lhs->getType()->isPointerTy());
+        llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
+        lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, indices);
+
         lhs = nullptr;
       } else if (symbolType == SpiceParser::DOT) { // Consider member access
         tokenCounter++;                            // Consume dot
 
         // Auto de-reference pointer
-        while (lhsPtr->getType()->getPointerElementType()->isPointerTy()) {
-          lhsPtr = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
-          structAccessAddress = nullptr;
-          structAccessIndices.clear();
-          structAccessIndices.push_back(builder->getInt32(0));
-        }
-
-        // Set lhsPtr to structAccessAddress
-        structAccessAddress = lhsPtr->getType()->getPointerElementType()->isStructTy() ? lhsPtr : nullptr;
+        while (lhsPtr->getType()->getPointerElementType()->isPointerTy())
+          lhsPtr = structAccessAddress = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
 
         // Visit identifier after the dot
         auto postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(ctx->children[tokenCounter]);
@@ -2034,17 +2044,14 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
 
       if (structAccessAddress == nullptr) {
         // Initialize struct resolution
-        structAccessAddress = entry->getAddress();
-        structAccessIndices.clear();
-        structAccessIndices.push_back(builder->getInt32(0));
+        return structAccessAddress = entry->getAddress();
       } else {
         // Add field index to indices
         unsigned int fieldIndex = entry->getOrderIndex();
-        llvm::Value *index = builder->getInt32(fieldIndex);
-        structAccessIndices.push_back(index);
+        llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(fieldIndex)};
+        return structAccessAddress = builder->CreateInBoundsGEP(structAccessAddress->getType()->getPointerElementType(),
+                                                                structAccessAddress, indices);
       }
-
-      return structAccessAddress;
     }
 
     // Struct* or Struct** or ...
@@ -2056,23 +2063,29 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
       assert(structScope != nullptr);
       scopePath.pushFragment(identifier, structScope);
 
-      // Return the address and let the dot operator auto-dereference the pointers
-      return entry->getAddress();
+      if (structAccessAddress == nullptr) {
+        // Auto de-referencing is done by the dot operator
+        return structAccessAddress = entry->getAddress();
+      } else {
+        unsigned int fieldIndex = entry->getOrderIndex();
+        llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(fieldIndex)};
+        // Auto de-referencing is done by the dot operator
+        return structAccessAddress = builder->CreateInBoundsGEP(structAccessAddress->getType()->getPointerElementType(),
+                                                                structAccessAddress, indices);
+      }
     }
 
     // Other types
     if (accessScope->getScopeType() == SCOPE_STRUCT) { // Struct field
       // Retrieve field index
       unsigned int fieldIndex = entry->getOrderIndex();
-      llvm::Value *index = builder->getInt32(fieldIndex);
-      structAccessIndices.push_back(index);
+      llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(fieldIndex)};
 
-      // Retrieve field address via GEP instruction
+      // Calculate field address
       llvm::Value *fieldAddress =
-          builder->CreateGEP(structAccessAddress->getType()->getPointerElementType(), structAccessAddress, structAccessIndices);
+          builder->CreateInBoundsGEP(structAccessAddress->getType()->getPointerElementType(), structAccessAddress, indices);
 
       structAccessAddress = nullptr;
-      structAccessIndices.clear();
       return fieldAddress;
     }
 

@@ -132,7 +132,6 @@ private:
   std::string lhsVarName;
   llvm::Type *lhsType = nullptr;
   llvm::Value *structAccessAddress = nullptr;
-  std::vector<llvm::Value *> structAccessIndices;
   llvm::Value *dynamicArraySize = nullptr;
   llvm::Value *stackState = nullptr;
   struct DebugInfo {
