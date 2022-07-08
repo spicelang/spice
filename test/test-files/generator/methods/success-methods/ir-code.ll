@@ -16,7 +16,7 @@ entry:
   store %_s__Letter__string* %0, %_s__Letter__string** %this, align 8
   %1 = load %_s__Letter__string*, %_s__Letter__string** %this, align 8
   %2 = load %_s__Letter__string*, %_s__Letter__string** %this, align 8
-  %3 = getelementptr inbounds %_s__Letter__string, %_s__Letter__string* %2, i32 0, i32 0
+  %3 = getelementptr inbounds %_s__Letter__string, %_s__Letter__string* %1, i32 0, i32 0
   %4 = load i8*, i8** %3, align 8
   ret i8* %4
 }
@@ -30,7 +30,7 @@ entry:
   %2 = load i8*, i8** %text, align 8
   %3 = load %_s__Letter__string*, %_s__Letter__string** %this, align 8
   %4 = load %_s__Letter__string*, %_s__Letter__string** %this, align 8
-  %5 = getelementptr inbounds %_s__Letter__string, %_s__Letter__string* %4, i32 0, i32 0
+  %5 = getelementptr inbounds %_s__Letter__string, %_s__Letter__string* %3, i32 0, i32 0
   store i8* %2, i8** %5, align 8
   ret void
 }
