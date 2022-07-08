@@ -1848,10 +1848,10 @@ std::any GeneratorVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
 std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
   emitSourceLocation(ctx);
 
-  currentVarName = "";         // Reset the current variable name
-  scopePrefix = "";            // Reset the scope prefix
-  scopePath.clear();           // Clear the scope path
-  structAccessIndices.clear(); // Clear struct access indices
+  currentVarName = "";           // Reset the current variable name
+  scopePath.clear();             // Clear the scope path
+  structAccessAddress = nullptr; // Clear struct access address
+  structAccessIndices.clear();   // Clear struct access indices
 
   if (!ctx->prefixUnaryOp().empty()) {
     // Load the value
@@ -1924,9 +1924,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
   if (ctx->children.size() > 1) {
     // Load the value
     llvm::Value *lhsPtr = resolveAddress(ctx->atomicExpr());
-    llvm::Value *lhs = nullptr;
-    if (lhsPtr)
-      lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+    llvm::Value *lhs = lhsPtr != nullptr ? builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr) : nullptr;
 
     unsigned int tokenCounter = 1;
     while (tokenCounter < ctx->children.size()) {
@@ -1936,41 +1934,25 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
       if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
         tokenCounter++;                          // Consume LBRACKET
 
-        std::string arrayName = currentVarName;                                     // Save array name
-        ScopePath scopePathBackup = scopePath;                                      // Save scope path
-        std::vector<llvm::Value *> structAccessIndicesBackup = structAccessIndices; // Save struct access indices
-        scopePrefix += "[idx]";
+        lhs = nullptr;
+      } else if (symbolType == SpiceParser::DOT) { // Consider member access
+        tokenCounter++;                            // Consume dot
 
-        // Get the index value
-        auto assignExpr = dynamic_cast<SpiceParser::AssignExprContext *>(ctx->children[tokenCounter]);
-        llvm::Value *indexValue = resolveValue(assignExpr);
-        tokenCounter++; // Consume assignExpr
-
-        // Get array item
-        assert(structAccessAddress->getType()->getPointerElementType() == structAccessType);
-        if (lhsPtr->getType()->getPointerElementType()->isArrayTy()) {
-          structAccessIndices = structAccessIndicesBackup; // Restore access indices
-          if (structAccessIndices.empty())
-            structAccessIndices.push_back(builder->getInt32(0));
-          structAccessIndices.push_back(indexValue);
-          lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, structAccessIndices);
-        } else {
-          lhsPtr = structAccessAddress =
-              builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, indexValue);
-          structAccessType = structAccessAddress->getType()->getPointerElementType();
+        // Auto de-reference pointer
+        while (lhsPtr->getType()->getPointerElementType()->isPointerTy()) {
+          lhsPtr = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+          structAccessAddress = nullptr;
           structAccessIndices.clear();
           structAccessIndices.push_back(builder->getInt32(0));
         }
-        assert(structAccessAddress->getType()->getPointerElementType() == structAccessType);
 
-        scopePath = scopePathBackup;               // Restore scope path
-        currentVarName = arrayName;                // Restore current var name
-        lhs = nullptr;                             // Set lhs to nullptr to prevent a store
-      } else if (symbolType == SpiceParser::DOT) { // Consider member access
-        tokenCounter++;                            // Consume dot
-        scopePrefix += ".";
+        // Set lhsPtr to structAccessAddress
+        structAccessAddress = lhsPtr->getType()->getPointerElementType()->isStructTy() ? lhsPtr : nullptr;
+
+        // Visit identifier after the dot
         auto postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(ctx->children[tokenCounter]);
         lhsPtr = resolveAddress(postfixUnary);
+
         lhs = nullptr;
       } else if (symbolType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
         assert(lhs != nullptr);
@@ -2016,89 +1998,85 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
   allArgsHardcoded = false; // To prevent arrays from being defined globally when depending on other values (vars, calls, etc.)
 
   if (ctx->IDENTIFIER()) {
-    currentVarName = ctx->IDENTIFIER()->toString();
-    scopePrefix += currentVarName;
+    std::string identifier = ctx->IDENTIFIER()->toString();
 
-    // Load symbol table entry
-    SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
-    SymbolTableEntry *entry = accessScope->lookup(currentVarName);
+    // Retrieve access scope
+    SymbolTable *accessScope = scopePath.isEmpty() ? currentScope : scopePath.getCurrentScope();
+    bool importedScope = accessScope->isImported(currentScope);
 
-    if (!entry)
-      return static_cast<llvm::Value *>(nullptr);
+    // Get identifier entry
+    SymbolTableEntry *entry = accessScope->lookup(identifier);
+    assert(entry != nullptr);
 
-    // Check if this an external global var
-    if (accessScope->isImported(currentScope) && entry->isGlobal())
-      entry = initExtGlobal(currentVarName, scopePrefix);
+    // Global variables
+    if (entry->isGlobal()) {
+      // Initialize if it is an external global var
+      if (importedScope)
+        entry = initExtGlobal(currentVarName, scopePath.getScopePrefix(true));
+      return entry->getAddress();
+    }
 
-    llvm::Value *memAddress = entry->getAddress();
-    if (entry->getType().isBaseType(TY_STRUCT)) { // If base type is a struct
-      if (structAccessIndices.empty()) {          // No struct was seen before
-        // Set the access type and address
-        structAccessType = entry->getLLVMType();
+    // Import
+    if (entry->getType().is(TY_IMPORT)) {
+      SymbolTable *newScope = accessScope->lookupTable(identifier);
+      assert(newScope != nullptr);
+      scopePath.pushFragment(identifier, newScope);
+    }
+
+    // Struct without pointer
+    if (entry->getType().is(TY_STRUCT)) {
+      // Retrieve struct scope
+      SymbolType entryType = entry->getType();
+      std::string structSignature = Struct::getSignature(entryType.getSubType(), entryType.getTemplateTypes());
+      SymbolTable *structScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
+      assert(structScope != nullptr);
+      scopePath.pushFragment(identifier, structScope);
+
+      if (structAccessAddress == nullptr) {
+        // Initialize struct resolution
         structAccessAddress = entry->getAddress();
-        assert(structAccessAddress->getType()->getPointerElementType() == structAccessType);
-        // Auto-dereference
-        while (structAccessType->isPointerTy()) {
-          structAccessAddress = builder->CreateLoad(structAccessType, structAccessAddress);
-          structAccessType = structAccessType->getPointerElementType();
-        }
-        assert(structAccessAddress->getType()->getPointerElementType() == structAccessType);
-        // Initialize GEP calculation
-        structAccessIndices.push_back(builder->getInt32(0)); // To indirect pointer input of GEP
-      } else {                                               // This is a struct field in a struct
-        // Just add the index to the index list
-        unsigned int fieldIndex = entry->getOrderIndex();
-        structAccessIndices.push_back(builder->getInt32(fieldIndex));
-        SymbolType tmpType = entry->getType();
-        // Execute GEP calculation
-        memAddress = structAccessAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
-        structAccessType = structAccessAddress->getType()->getPointerElementType();
         structAccessIndices.clear();
         structAccessIndices.push_back(builder->getInt32(0));
+      } else {
+        // Add field index to indices
+        unsigned int fieldIndex = entry->getOrderIndex();
+        llvm::Value *index = builder->getInt32(fieldIndex);
+        structAccessIndices.push_back(index);
       }
-    } else if (!structAccessIndices.empty()) { // A struct was met already, so this is a struct field
+
+      return structAccessAddress;
+    }
+
+    // Struct* or Struct** or ...
+    if (entry->getType().isBaseType(TY_STRUCT)) {
+      // Retrieve struct scope
+      SymbolType entryBaseType = entry->getType().getBaseType();
+      std::string structSignature = Struct::getSignature(entryBaseType.getSubType(), entryBaseType.getTemplateTypes());
+      SymbolTable *structScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
+      assert(structScope != nullptr);
+      scopePath.pushFragment(identifier, structScope);
+
+      // Return the address and let the dot operator auto-dereference the pointers
+      return entry->getAddress();
+    }
+
+    // Other types
+    if (accessScope->getScopeType() == SCOPE_STRUCT) { // Struct field
+      // Retrieve field index
       unsigned int fieldIndex = entry->getOrderIndex();
-      // Push field index to index list
-      structAccessIndices.push_back(builder->getInt32(fieldIndex));
-      // Unpack address
-      while (structAccessType->isPointerTy()) {
-        structAccessAddress = builder->CreateLoad(structAccessType, structAccessAddress);
-        structAccessType = structAccessType->getPointerElementType();
-      }
-      // Execute GEP calculation
-      memAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, structAccessIndices);
-      // Clear index list
+      llvm::Value *index = builder->getInt32(fieldIndex);
+      structAccessIndices.push_back(index);
+
+      // Retrieve field address via GEP instruction
+      llvm::Value *fieldAddress =
+          builder->CreateGEP(structAccessAddress->getType()->getPointerElementType(), structAccessAddress, structAccessIndices);
+
+      structAccessAddress = nullptr;
       structAccessIndices.clear();
-    } else {
-      // For the case that in the current scope there is a variable with the same name, but it is initialized later, so the
-      // symbol above in the hierarchy is meant to be used.
-      while (entry && !memAddress && accessScope->getParent() && !entry->getType().is(TY_IMPORT)) {
-        accessScope = accessScope->getParent();
-        entry = accessScope->lookup(currentVarName);
-        if (!entry)
-          break;
-        memAddress = entry->getAddress();
-      }
-      assert(entry != nullptr);
+      return fieldAddress;
     }
 
-    // Retrieve scope for the new scope path fragment
-    if (entry->getType().is(TY_IMPORT)) { // Import
-      accessScope = accessScope->lookupTable(entry->getName());
-    } else if (entry->getType().isBaseType(TY_STRUCT)) { // Struct
-      std::string structSignature =
-          Struct::getSignature(entry->getType().getBaseType().getSubType(), entry->getType().getBaseType().getTemplateTypes());
-      accessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
-    }
-    assert(accessScope);
-
-    // Get dynamic array size
-    dynamicArraySize = entry->getType().isArray() ? entry->getType().getDynamicArraySize() : builder->getInt32(0);
-
-    // Otherwise, push the current scope to the scope path
-    scopePath.pushFragment(currentVarName, accessScope);
-
-    return memAddress;
+    return entry->getAddress();
   }
 
   if (ctx->builtinCall())

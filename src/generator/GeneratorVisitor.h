@@ -115,7 +115,6 @@ private:
   std::unique_ptr<llvm::DIBuilder> diBuilder;
   SymbolTable *currentScope;
   SymbolTable *rootScope;
-  std::string scopePrefix;
   SymbolType currentSymbolType;
   ScopePath scopePath;
   ThreadFactory &threadFactory;
@@ -132,7 +131,6 @@ private:
   std::string currentVarName;
   std::string lhsVarName;
   llvm::Type *lhsType = nullptr;
-  llvm::Type *structAccessType = nullptr;
   llvm::Value *structAccessAddress = nullptr;
   std::vector<llvm::Value *> structAccessIndices;
   llvm::Value *dynamicArraySize = nullptr;

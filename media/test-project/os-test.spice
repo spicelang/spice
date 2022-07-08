@@ -1,16 +1,15 @@
-import "std/data/queue" as que;
+type NestedStruct struct {
+    double* test
+}
+
+type TestStruct struct {
+    double f1
+    NestedStruct* f2
+}
 
 f<int> main() {
-    dyn q1 = que.Queue<char>();
-    q1.push('H');
-    q1.push('e');
-    q1.push('l');
-    q1.push('l');
-    q1.push('o');
-    q1.push('!');
-    printf("Size: %d, Capacity: %d\n", q1.getSize(), q1.getCapacity());
-    while (!q1.isEmpty()) {
-        printf("%c", q1.pop());
-    }
-    q1.dtor();
+    dyn test = 1.2;
+    dyn ns = NestedStruct{ &test };
+    dyn s = TestStruct{ 5.4, &ns };
+    printf("Double: %f\n", *s.f2.test);
 }
