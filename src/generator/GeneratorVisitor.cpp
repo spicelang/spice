@@ -241,11 +241,18 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
     returnSymbol->updateLLVMType(returnType);
     builder->CreateStore(builder->getInt32(0), returnSymbol->getAddress());
 
+    // Reset stack state
+    stackState = nullptr;
+
     // Generate IR for function body
     visit(ctx->stmtLst());
 
     // Generate return statement for result variable
     if (!blockAlreadyTerminated) {
+      // Restore stack if necessary
+      if (stackState != nullptr)
+        builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+      // Create return stmt
       llvm::Value *result = returnSymbol->getAddress();
       builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
     }
@@ -392,11 +399,18 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
       returnSymbol->updateAddress(returnMemAddress);
       returnSymbol->updateLLVMType(returnType);
 
+      // Reset stack state
+      stackState = nullptr;
+
       // Generate IR for function body
       visit(ctx->stmtLst());
 
       // Generate return statement for result variable
       if (!blockAlreadyTerminated) {
+        // Restore stack if necessary
+        if (stackState != nullptr)
+          builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+        // Create return stmt
         llvm::Value *result = returnSymbol->getAddress();
         builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
       }
@@ -538,11 +552,20 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
         }
       }
 
+      // Reset stack state
+      stackState = nullptr;
+
       // Generate IR for procedure body
       visit(ctx->stmtLst());
 
       // Create return
-      builder->CreateRetVoid();
+      if (!blockAlreadyTerminated) {
+        // Restore stack if necessary
+        if (stackState != nullptr)
+          builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+        // Create return stmt
+        builder->CreateRetVoid();
+      }
 
       // Conclude debug information
       if (cliOptions.generateDebugInfo)
@@ -1178,11 +1201,16 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
   llvm::Value *memAddress;
-  if (entry->getType().is(TY_ARRAY) && entry->getType().isArrayDynamicallySized()) {
-    assert(dynamicArraySize != nullptr);
+  if (entry->getType().is(TY_ARRAY) && dynamicArraySize != nullptr) {
+    entry->updateType(entry->getType().setDynamicArraySize(dynamicArraySize), true);
+    // Call llvm.stacksave intrinsic
+    llvm::Function *stackSaveFct = retrieveStackSaveFct();
+    stackState = builder->CreateCall(stackSaveFct);
+    // Allocate array
     memAddress = builder->CreateAlloca(varType, dynamicArraySize, lhsVarName); // Intentionally not via insertAlloca
     varType = memAddress->getType()->getPointerElementType();
     dynamicArraySize = nullptr;
+    lhsType = nullptr;
   } else {
     memAddress = insertAlloca(varType, lhsVarName);
   }
@@ -1355,12 +1383,18 @@ std::any GeneratorVisitor::visitLenCall(SpiceParser::LenCallContext *ctx) {
   // Visit the argument
   llvm::Value *value = resolveValue(ctx->assignExpr());
 
-  // Get array size
-  unsigned int size = value->getType()->getArrayNumElements();
+  llvm::Value *sizeValue;
+  if (value->getType()->isArrayTy()) {
+    // Get array size
+    sizeValue = builder->getInt32(value->getType()->getArrayNumElements());
+  } else {
+    // Get pointer size / dynamic array size
+    sizeValue = dynamicArraySize;
+  }
 
   // Store the result
   llvm::Value *resultPtr = insertAlloca(builder->getInt32Ty());
-  builder->CreateStore(builder->getInt32(size), resultPtr);
+  builder->CreateStore(sizeValue, resultPtr);
 
   // Return address to where the size is saved
   return resultPtr;
@@ -1919,7 +1953,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
           structAccessIndices.push_back(indexValue);
           lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, structAccessIndices);
         } else {
-          lhsPtr = structAccessAddress = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indexValue);
+          lhsPtr = structAccessAddress = builder->CreateInBoundsGEP(lhs->getType(), lhsPtr, indexValue);
           structAccessType = structAccessAddress->getType()->getPointerElementType();
           structAccessIndices.clear();
           structAccessIndices.push_back(builder->getInt32(0));
@@ -2053,6 +2087,9 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
       accessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
     }
     assert(accessScope);
+
+    // Get dynamic array size
+    dynamicArraySize = entry->getType().isArray() ? entry->getType().getDynamicArraySize() : builder->getInt32(0);
 
     // Otherwise, push the current scope to the scope path
     scopePath.pushFragment(currentVarName, accessScope);
@@ -2478,7 +2515,7 @@ std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
       int size = 0;                                                         // Default to 0 when no size is attached
       if (token && token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
         size = std::stoi(token->toString());
-        currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, size);
+        currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, size, nullptr);
         tokenCounter++; // Consume INTEGER
       } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter])) {
         auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(rule));
@@ -2614,6 +2651,28 @@ llvm::Function *GeneratorVisitor::retrieveExitFct() {
   llvm::FunctionType *exitFctTy = llvm::FunctionType::get(builder->getVoidTy(), builder->getInt32Ty(), false);
   module->getOrInsertFunction(exitFctName, exitFctTy);
   return module->getFunction(exitFctName);
+}
+
+llvm::Function *GeneratorVisitor::retrieveStackSaveFct() {
+  std::string stackSaveFctName = "llvm.stacksave";
+  llvm::Function *stackSaveFct = module->getFunction(stackSaveFctName);
+  if (stackSaveFct)
+    return stackSaveFct;
+  // Not found -> declare it for linkage
+  llvm::FunctionType *stackSaveFctTy = llvm::FunctionType::get(builder->getInt8PtrTy(), {}, false);
+  module->getOrInsertFunction(stackSaveFctName, stackSaveFctTy);
+  return module->getFunction(stackSaveFctName);
+}
+
+llvm::Function *GeneratorVisitor::retrieveStackRestoreFct() {
+  std::string stackRestoreFctName = "llvm.stackrestore";
+  llvm::Function *stackRestoreFct = module->getFunction(stackRestoreFctName);
+  if (stackRestoreFct)
+    return stackRestoreFct;
+  // Not found -> declare it for linkage
+  llvm::FunctionType *stackRestoreFctTy = llvm::FunctionType::get(builder->getVoidTy(), builder->getInt8PtrTy(), false);
+  module->getOrInsertFunction(stackRestoreFctName, stackRestoreFctTy);
+  return module->getFunction(stackRestoreFctName);
 }
 
 llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope) {

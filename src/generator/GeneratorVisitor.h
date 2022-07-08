@@ -136,6 +136,7 @@ private:
   llvm::Value *structAccessAddress = nullptr;
   std::vector<llvm::Value *> structAccessIndices;
   llvm::Value *dynamicArraySize = nullptr;
+  llvm::Value *stackState = nullptr;
   struct DebugInfo {
     llvm::DIFile *diFile;
     llvm::DICompileUnit *compileUnit;
@@ -165,6 +166,8 @@ private:
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
+  llvm::Function *retrieveStackSaveFct();
+  llvm::Function *retrieveStackRestoreFct();
   llvm::Type *getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope);
   llvm::Constant *getDefaultValueForType(llvm::Type *type, const std::string &subTypeName);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);

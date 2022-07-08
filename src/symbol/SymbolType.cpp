@@ -26,7 +26,7 @@ SymbolType SymbolType::toPointer(const ErrorFactory *err, const antlr4::Token &t
     throw err->get(token, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_PTR, "", {}, false});
+  newTypeChain.push({TY_PTR, "", {}, nullptr});
   return SymbolType(newTypeChain);
 }
 
@@ -35,7 +35,7 @@ SymbolType SymbolType::toPointer(const ErrorFactory *err, const antlr4::Token &t
  *
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size, bool dynamicSize) const {
+SymbolType SymbolType::toArray(const ErrorFactory *err, const antlr4::Token &token, int size, llvm::Value *dynamicSize) const {
   // Do not allow arrays of dyn
   if (std::get<0>(typeChain.top()) == TY_DYN)
     throw err->get(token, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
@@ -284,7 +284,7 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const {
  *
  * @return Size
  */
-unsigned int SymbolType::getArraySize() const {
+int SymbolType::getArraySize() const {
   if (std::get<0>(typeChain.top()) != TY_ARRAY)                                             // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
 
@@ -292,11 +292,23 @@ unsigned int SymbolType::getArraySize() const {
 }
 
 /**
- * Check if the current array type is dynamically sized
- *
- * @return Dynamically sized or not
+ * Set the dynamic array size of the current type
  */
-bool SymbolType::isArrayDynamicallySized() const {
+SymbolType SymbolType::setDynamicArraySize(llvm::Value *dynamicArraySize) const {
+  if (std::get<0>(typeChain.top()) != TY_ARRAY)                                             // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
+
+  TypeChain newTypeChain = typeChain;
+  std::get<3>(newTypeChain.top()) = dynamicArraySize;
+  return SymbolType(newTypeChain);
+}
+
+/**
+ * Retrieve the dynamic array size of the current type
+ *
+ * @return Dynamic array size
+ */
+llvm::Value *SymbolType::getDynamicArraySize() const {
   if (std::get<0>(typeChain.top()) != TY_ARRAY)                                                      // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get dynamic sized of non-array type"); // GCOV_EXCL_LINE
 
