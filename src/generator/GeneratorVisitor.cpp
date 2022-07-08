@@ -1487,6 +1487,7 @@ std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) 
 
     // Take a look at the operator
     if (ctx->assignOp()->ASSIGN()) { // Simple assign
+      assert(rhs->getType() == lhsPtr->getType()->getPointerElementType());
       builder->CreateStore(rhs, lhsPtr);
     } else { // Compound assign
       // Get symbol table entry
@@ -1946,6 +1947,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         tokenCounter++; // Consume assignExpr
 
         // Get array item
+        assert(structAccessAddress->getType()->getPointerElementType() == structAccessType);
         if (lhsPtr->getType()->getPointerElementType()->isArrayTy()) {
           structAccessIndices = structAccessIndicesBackup; // Restore access indices
           if (structAccessIndices.empty())
@@ -1953,11 +1955,13 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
           structAccessIndices.push_back(indexValue);
           lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, structAccessIndices);
         } else {
-          lhsPtr = structAccessAddress = builder->CreateInBoundsGEP(lhs->getType(), lhsPtr, indexValue);
+          lhsPtr = structAccessAddress =
+              builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, indexValue);
           structAccessType = structAccessAddress->getType()->getPointerElementType();
           structAccessIndices.clear();
           structAccessIndices.push_back(builder->getInt32(0));
         }
+        assert(structAccessAddress->getType()->getPointerElementType() == structAccessType);
 
         scopePath = scopePathBackup;               // Restore scope path
         currentVarName = arrayName;                // Restore current var name

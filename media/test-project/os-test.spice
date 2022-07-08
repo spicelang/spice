@@ -1,9 +1,16 @@
+import "std/data/queue" as que;
+
 f<int> main() {
-    int arraySize = 4;
-    int[arraySize] intArray;
-    intArray[0] = 10;
-    intArray[1] = 12;
-    intArray[2] = 7;
-    printf("Test: %d\n", intArray[0]);
-    printf("Size: %d\n", len(intArray));
+    dyn q1 = que.Queue<char>();
+    q1.push('H');
+    q1.push('e');
+    q1.push('l');
+    q1.push('l');
+    q1.push('o');
+    q1.push('!');
+    printf("Size: %d, Capacity: %d\n", q1.getSize(), q1.getCapacity());
+    while (!q1.isEmpty()) {
+        printf("%c", q1.pop());
+    }
+    q1.dtor();
 }
