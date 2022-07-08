@@ -642,6 +642,12 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
       currentScope = currentScope->getChild(STRUCT_SCOPE_PREFIX + spiceStruct.getSignature());
       assert(currentScope);
 
+      // Create global struct
+      llvm::StructType *structType = llvm::StructType::create(*context, mangledName);
+      SymbolTableEntry *structSymbol = currentScope->lookup(spiceStruct.getSignature());
+      assert(structSymbol);
+      structSymbol->updateLLVMType(structType);
+
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
       for (const auto &field : ctx->field()) {
@@ -652,15 +658,12 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
         fieldTypes.push_back(getTypeForSymbolType(fieldEntry->getType(), currentScope));
       }
 
+      // Set field types to struct type
+      structType->setBody(fieldTypes);
+
       // Return to old scope
       currentScope = currentScope->getParent();
       assert(currentScope);
-
-      // Create global struct
-      llvm::StructType *structType = llvm::StructType::create(*context, fieldTypes, mangledName);
-      SymbolTableEntry *structSymbol = currentScope->lookup(spiceStruct.getSignature());
-      assert(structSymbol);
-      structSymbol->updateLLVMType(structType);
     }
   }
 
@@ -1984,12 +1987,19 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
     llvm::Value *memAddress = entry->getAddress();
     if (entry->getType().isBaseType(TY_STRUCT)) { // If base type is a struct
       if (structAccessIndices.empty()) {          // No struct was seen before
-        // Initialize GEP calculation
-        structAccessIndices.push_back(builder->getInt32(0)); // To indirect pointer input of GEP
         // Set the access type and address
         structAccessType = entry->getLLVMType();
         structAccessAddress = entry->getAddress();
-      } else { // This is a struct field in a struct
+        assert(structAccessAddress->getType()->getPointerElementType() == structAccessType);
+        // Auto-dereference
+        while (structAccessType->isPointerTy()) {
+          structAccessAddress = builder->CreateLoad(structAccessType, structAccessAddress);
+          structAccessType = structAccessType->getPointerElementType();
+        }
+        assert(structAccessAddress->getType()->getPointerElementType() == structAccessType);
+        // Initialize GEP calculation
+        structAccessIndices.push_back(builder->getInt32(0)); // To indirect pointer input of GEP
+      } else {                                               // This is a struct field in a struct
         // Just add the index to the index list
         unsigned int fieldIndex = entry->getOrderIndex();
         structAccessIndices.push_back(builder->getInt32(fieldIndex));

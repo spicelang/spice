@@ -18,7 +18,7 @@ entry:
   store %_s__Person__string_string_int* %0, %_s__Person__string_string_int** %person, align 8
   %2 = load %_s__Person__string_string_int*, %_s__Person__string_string_int** %person, align 8
   %3 = load %_s__Person__string_string_int*, %_s__Person__string_string_int** %person, align 8
-  %4 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %3, i32 0, i32 2
+  %4 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %2, i32 0, i32 2
   %5 = load i32, i32* %4, align 4
   %6 = add i32 %5, 1
   store i32 %6, i32* %4, align 4

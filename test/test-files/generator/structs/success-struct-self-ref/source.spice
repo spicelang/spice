@@ -1,0 +1,25 @@
+type TreeNode struct {
+    TreeNode* parent
+    int value
+}
+
+/*
+  0
+ / \
+1   2
+   /
+  3
+*/
+f<int> main() {
+    dyn rootNode = TreeNode { nil<TreeNode*>, 0 };
+    dyn childNode1 = TreeNode { &rootNode, 1 };
+    dyn childNode2 = TreeNode { &rootNode, 2 };
+    dyn childNode21 = TreeNode { &childNode2, 3 };
+
+    // Find root node
+    TreeNode* curNode = &childNode21;
+    while curNode.parent != nil<TreeNode*> {
+        curNode = curNode.parent;
+    }
+    printf("Root node number: %d", curNode.value);
+}

@@ -14,11 +14,11 @@ entry:
   store %_s__Vector__bool_string* %0, %_s__Vector__bool_string** %this, align 8
   %1 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
   %2 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
-  %3 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %2, i32 0, i32 0
+  %3 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %1, i32 0, i32 0
   store i1 false, i1* %3, align 1
   %4 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
   %5 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
-  %6 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %5, i32 0, i32 1
+  %6 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %4, i32 0, i32 1
   store i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0), i8** %6, align 8
   ret void
 }

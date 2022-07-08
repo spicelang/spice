@@ -636,7 +636,10 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
     }
   }
 
-  // Visit field list in a new scope
+  // Add the struct to the symbol table
+  currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
+
+  // Create scope for struct
   std::string scopeId = ScopeIdUtil::getScopeId(ctx);
   SymbolTable *structScope = currentScope = currentScope->createChildBlock(scopeId, SCOPE_STRUCT);
 
@@ -685,11 +688,10 @@ std::any AnalyzerVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   // Return to the old scope
   currentScope = currentScope->getParent();
 
-  // Add the struct to the symbol table
+  // Add struct
   Struct s(structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, *ctx->start);
-  s.setSymbolTable(structScope);
   currentScope->insertStruct(s, err.get(), *ctx->start);
-  currentScope->insert(structName, symbolType, structSymbolSpecifiers, DECLARED, *ctx->start);
+  s.setSymbolTable(structScope);
 
   return nullptr;
 }
@@ -2136,9 +2138,9 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   }
 
   // Set the struct instance to used
-  Struct *externalSpiceStruct = accessScope->matchStruct(nullptr, structName, concreteTemplateTypes, err.get(), *ctx->start);
-  assert(externalSpiceStruct != nullptr);
-  externalSpiceStruct->setUsed();
+  Struct *spiceStruct = accessScope->matchStruct(nullptr, structName, concreteTemplateTypes, err.get(), *ctx->start);
+  if (spiceStruct)
+    spiceStruct->setUsed();
 
   if (structIsImported) // Imported struct
     return initExtStruct(*ctx->start, accessScope, accessScopePrefix, structName, concreteTemplateTypes);

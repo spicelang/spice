@@ -51,7 +51,7 @@ entry:
   store %_s__char__TestStruct__char_int* %0, %_s__char__TestStruct__char_int** %this, align 8
   %4 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
   %5 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
-  %6 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %5, i32 0, i32 1
+  %6 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %4, i32 0, i32 1
   %7 = load i32, i32* %6, align 4
   %8 = icmp eq i32 %7, 1
   store i1 %8, i1* %1, align 1
@@ -61,7 +61,7 @@ entry:
 if.then:                                          ; preds = %entry
   %10 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
   %11 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
-  %12 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %11, i32 0, i32 1
+  %12 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %10, i32 0, i32 1
   %13 = load i32, i32* %12, align 4
   %14 = add i32 %13, 1
   store i32 %14, i32* %12, align 4
@@ -74,7 +74,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %if.then, %entry
   %16 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
   %17 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
-  %18 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %17, i32 0, i32 1
+  %18 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %16, i32 0, i32 1
   %19 = load i32, i32* %18, align 4
   ret i32 %19
 }
