@@ -1,15 +1,11 @@
-type NestedStruct struct {
-    double* test
-}
-
-type TestStruct struct {
-    double f1
-    NestedStruct*[3] f2
-}
+import "std/io/dir" as dir;
 
 f<int> main() {
-    dyn test = 1.24;
-    dyn ns = NestedStruct{ &test };
-    dyn s = TestStruct{ 5.4, {&ns, &ns, &ns} };
-    printf("Double: %f\n", *s.f2[1].test);
+    printf("Existing before create: %d\n", dir.dirExists("./test"));
+    dyn mkReturnCode = dir.mkDir("./test", dir.MODE_ALL_RWX);
+    printf("mkDir return code: %d\n", mkReturnCode);
+    printf("Existing after create: %d\n", dir.dirExists("./test"));
+    dyn rmReturnCode = dir.rmDir("./test");
+    printf("rmDir return code: %d\n", rmReturnCode);
+    printf("Existing after delete: %d\n", dir.dirExists("./test"));
 }

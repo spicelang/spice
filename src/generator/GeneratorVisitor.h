@@ -134,6 +134,7 @@ private:
   llvm::Value *structAccessAddress = nullptr;
   llvm::Value *dynamicArraySize = nullptr;
   llvm::Value *stackState = nullptr;
+  bool secondRun = false;
   struct DebugInfo {
     llvm::DIFile *diFile;
     llvm::DICompileUnit *compileUnit;
@@ -152,11 +153,10 @@ private:
     llvm::DIType *stringTy;
     llvm::DIType *boolTy;
   } debugInfo;
-  bool secondRun = false;
 
   // Private methods
   llvm::Value *resolveValue(antlr4::tree::ParseTree *tree);
-  llvm::Value *resolveAddress(antlr4::tree::ParseTree *tree);
+  llvm::Value *resolveAddress(antlr4::tree::ParseTree *tree, bool storeVolatile = false);
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
