@@ -22,6 +22,7 @@ entry:
   %7 = alloca i32, align 4
   %8 = alloca i32, align 4
   %9 = alloca i32, align 4
+  %intArray1 = alloca [10 x i32], align 4
   store i32 0, i32* %result, align 4
   store i32 1, i32* %0, align 4
   store i32 2, i32* %1, align 4
@@ -33,22 +34,21 @@ entry:
   store i32 128, i32* %7, align 4
   store i32 256, i32* %8, align 4
   store i32 512, i32* %9, align 4
-  %10 = load [10 x i32], [10 x i32]* @intArray, align 4
-  store [10 x i32] %10, [10 x i32]* %intArray, align 4
-  %11 = load [10 x i32], [10 x i32]* %intArray, align 4
-  %12 = getelementptr inbounds [10 x i32], [10 x i32]* %intArray, i32 0, i32 3
-  %13 = load i32, i32* %12, align 4
-  %14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @0, i32 0, i32 0), i32 %13)
-  %15 = load [10 x i32], [10 x i32]* %intArray, align 4
-  %16 = getelementptr inbounds [10 x i32], [10 x i32]* %intArray, i32 0, i32 7
-  %17 = load i32, i32* %16, align 4
-  %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @1, i32 0, i32 0), i32 %17)
-  %19 = load [10 x i32], [10 x i32]* %intArray, align 4
-  %20 = getelementptr inbounds [10 x i32], [10 x i32]* %intArray, i32 0, i32 9
-  %21 = load i32, i32* %20, align 4
-  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @2, i32 0, i32 0), i32 %21)
-  %23 = load i32, i32* %result, align 4
-  ret i32 %23
+  store [10 x i32] [i32 1, i32 2, i32 4, i32 8, i32 16, i32 32, i32 64, i32 128, i32 256, i32 512], [10 x i32]* %intArray1, align 4
+  %10 = load [10 x i32], [10 x i32]* %intArray1, align 4
+  %11 = getelementptr inbounds [10 x i32], [10 x i32]* %intArray1, i32 0, i32 3
+  %12 = load i32, i32* %11, align 4
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @0, i32 0, i32 0), i32 %12)
+  %14 = load [10 x i32], [10 x i32]* %intArray1, align 4
+  %15 = getelementptr inbounds [10 x i32], [10 x i32]* %intArray1, i32 0, i32 7
+  %16 = load i32, i32* %15, align 4
+  %17 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @1, i32 0, i32 0), i32 %16)
+  %18 = load [10 x i32], [10 x i32]* %intArray1, align 4
+  %19 = getelementptr inbounds [10 x i32], [10 x i32]* %intArray1, i32 0, i32 9
+  %20 = load i32, i32* %19, align 4
+  %21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @2, i32 0, i32 0), i32 %20)
+  %22 = load i32, i32* %result, align 4
+  ret i32 %22
 }
 
 declare i32 @printf(i8*, ...)

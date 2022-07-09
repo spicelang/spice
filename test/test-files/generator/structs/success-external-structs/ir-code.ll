@@ -16,12 +16,10 @@ entry:
   store i32 11, i32* %2, align 4
   %3 = getelementptr inbounds %_s__Vec__int_bool, %_s__Vec__int_bool* %0, i32 0, i32 1
   store i1 false, i1* %3, align 1
-  %4 = load %_s__Vec__int_bool, %_s__Vec__int_bool* %0, align 4
-  store %_s__Vec__int_bool %4, %_s__Vec__int_bool* %v, align 4
-  call void @_mp__Vec__print(%_s__Vec__int_bool* %v)
+  call void @_mp__Vec__print(%_s__Vec__int_bool* %0)
   store i1 true, i1* %1, align 1
-  %5 = load i32, i32* %result, align 4
-  ret i32 %5
+  %4 = load i32, i32* %result, align 4
+  ret i32 %4
 }
 
 declare void @_mp__Vec__print(%_s__Vec__int_bool*)

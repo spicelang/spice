@@ -12,28 +12,28 @@ declare i32 @usleep(i32) local_unnamed_addr
 
 define i32 @main() local_unnamed_addr {
 entry:
-  %i = alloca i32, align 4
-  %0 = alloca { i32* }, align 8
+  %0 = alloca i32, align 4
+  %1 = alloca { i32* }, align 8
   %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([21 x i8], [21 x i8]* @str, i64 0, i64 0))
-  store i32 1, i32* %i, align 4
-  %1 = getelementptr inbounds { i32* }, { i32* }* %0, i64 0, i32 0
-  %2 = bitcast { i32* }* %0 to i8*
+  store i32 1, i32* %0, align 4
+  %2 = getelementptr inbounds { i32* }, { i32* }* %1, i64 0, i32 0
+  %3 = bitcast { i32* }* %1 to i8*
   br label %for
 
 for:                                              ; preds = %entry, %for
-  %storemerge2 = phi i32 [ 1, %entry ], [ %7, %for ]
-  %3 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i32 %storemerge2)
-  store i32* %i, i32** %1, align 8
-  %4 = alloca i8*, align 8
-  %5 = call i32 @pthread_create(i8** nonnull %4, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %2)
-  %6 = load i32, i32* %i, align 4
-  %7 = add i32 %6, 1
-  store i32 %7, i32* %i, align 4
-  %8 = icmp slt i32 %7, 9
-  br i1 %8, label %for, label %for.end
+  %storemerge2 = phi i32 [ 1, %entry ], [ %8, %for ]
+  %4 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i32 %storemerge2)
+  store i32* %0, i32** %2, align 8
+  %5 = alloca i8*, align 8
+  %6 = call i32 @pthread_create(i8** nonnull %5, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %3)
+  %7 = load i32, i32* %0, align 4
+  %8 = add i32 %7, 1
+  store i32 %8, i32* %0, align 4
+  %9 = icmp slt i32 %8, 9
+  br i1 %9, label %for, label %for.end
 
 for.end:                                          ; preds = %for
-  %9 = call i32 @usleep(i32 1000000)
+  %10 = call i32 @usleep(i32 1000000)
   %puts1 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
   ret i32 0
 }

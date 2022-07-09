@@ -1,9 +1,7 @@
+int CONST1 = 123;
+int CONST2 = 1234;
+
 f<int> main() {
-    int variable = 12;
-    if (true) {
-        variable++;
-        int variable = 14;
-        printf("Inner variable: %d\n", variable);
-    }
-    printf("Outer variable: %d", variable);
+    printf("1. Constant: %d\n", CONST1);
+    printf("2. Constant: %d\n", CONST2);
 }

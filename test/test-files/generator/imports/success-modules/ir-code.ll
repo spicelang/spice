@@ -14,11 +14,9 @@ entry:
   %1 = call i32 @_f__void__forwardToOtherModule()
   store i32 %1, i32* %0, align 4
   %2 = load i32, i32* %0, align 4
-  store i32 %2, i32* %integer, align 4
-  %3 = load i32, i32* %integer, align 4
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i32 0, i32 0), i32 %3)
-  %5 = load i32, i32* %result, align 4
-  ret i32 %5
+  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i32 0, i32 0), i32 %2)
+  %4 = load i32, i32* %result, align 4
+  ret i32 %4
 }
 
 declare i32 @_f__void__forwardToOtherModule()

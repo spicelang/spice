@@ -15,20 +15,18 @@ entry:
   store i32 0, i32* %result, align 4
   store i1 true, i1* %0, align 1
   %2 = load i1, i1* %0, align 1
-  store i1 %2, i1* %condition, align 1
-  %3 = load i1, i1* %condition, align 1
-  br i1 %3, label %if.then, label %if.end
+  br i1 %2, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0))
+  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0))
   store i32 0, i32* %1, align 4
-  %5 = load i32, i32* %1, align 4
-  ret i32 %5
+  %4 = load i32, i32* %1, align 4
+  ret i32 %4
 
 if.end:                                           ; preds = %entry
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @1, i32 0, i32 0))
-  %7 = load i32, i32* %result, align 4
-  ret i32 %7
+  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @1, i32 0, i32 0))
+  %6 = load i32, i32* %result, align 4
+  ret i32 %6
 }
 
 declare i32 @printf(i8*, ...)

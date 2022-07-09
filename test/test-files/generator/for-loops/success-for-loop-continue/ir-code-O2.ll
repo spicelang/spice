@@ -17,10 +17,10 @@ for1.preheader.3:
   br label %for1.3
 
 for1.3:                                           ; preds = %for1.3, %for1.preheader.3
-  %subCounter.016.3 = phi i32 [ %5, %for1.3 ], [ 100, %for1.preheader.3 ]
-  %4 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @1, i64 0, i64 0), i32 %subCounter.016.3)
-  %.not = icmp eq i32 %subCounter.016.3, 11
-  %5 = add nsw i32 %subCounter.016.3, -1
+  %.01718.3 = phi i32 [ %5, %for1.3 ], [ 100, %for1.preheader.3 ]
+  %4 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @1, i64 0, i64 0), i32 %.01718.3)
+  %.not = icmp eq i32 %.01718.3, 11
+  %5 = add nsw i32 %.01718.3, -1
   br i1 %.not, label %for1.preheader.4, label %for1.3
 
 for1.preheader.4:                                 ; preds = %for1.3
@@ -28,11 +28,11 @@ for1.preheader.4:                                 ; preds = %for1.3
   br label %for1.4
 
 for1.4:                                           ; preds = %for1.4, %for1.preheader.4
-  %subCounter.016.4 = phi i32 [ %8, %for1.4 ], [ 100, %for1.preheader.4 ]
-  %7 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @1, i64 0, i64 0), i32 %subCounter.016.4)
-  %.not18 = icmp eq i32 %subCounter.016.4, 11
-  %8 = add nsw i32 %subCounter.016.4, -1
-  br i1 %.not18, label %for.inc4.4, label %for1.4
+  %.01718.4 = phi i32 [ %8, %for1.4 ], [ 100, %for1.preheader.4 ]
+  %7 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @1, i64 0, i64 0), i32 %.01718.4)
+  %.not20 = icmp eq i32 %.01718.4, 11
+  %8 = add nsw i32 %.01718.4, -1
+  br i1 %.not20, label %for.inc4.4, label %for1.4
 
 for.inc4.4:                                       ; preds = %for1.4
   %9 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([5 x i8], [5 x i8]* @2, i64 0, i64 0))

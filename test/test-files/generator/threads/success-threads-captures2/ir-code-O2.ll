@@ -12,32 +12,32 @@ declare i32 @usleep(i32) local_unnamed_addr
 
 define i32 @main() local_unnamed_addr {
 entry:
-  %capturedVariable = alloca i32, align 4
-  %i = alloca i32, align 4
-  %0 = alloca { i32*, i32* }, align 8
+  %0 = alloca i32, align 4
+  %1 = alloca i32, align 4
+  %2 = alloca { i32*, i32* }, align 8
   %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([21 x i8], [21 x i8]* @str, i64 0, i64 0))
-  store volatile i32 0, i32* %capturedVariable, align 4
-  store i32 1, i32* %i, align 4
-  %1 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i64 0, i32 0
-  %2 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i64 0, i32 1
-  %3 = bitcast { i32*, i32* }* %0 to i8*
+  store i32 0, i32* %0, align 4
+  store i32 1, i32* %1, align 4
+  %3 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %2, i64 0, i32 0
+  %4 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %2, i64 0, i32 1
+  %5 = bitcast { i32*, i32* }* %2 to i8*
   br label %for
 
 for:                                              ; preds = %entry, %for
-  %storemerge2 = phi i32 [ 1, %entry ], [ %8, %for ]
-  %4 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i32 %storemerge2)
-  store i32* %capturedVariable, i32** %1, align 8
-  store i32* %i, i32** %2, align 8
-  %5 = alloca i8*, align 8
-  %6 = call i32 @pthread_create(i8** nonnull %5, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %3)
-  %7 = load i32, i32* %i, align 4
-  %8 = add i32 %7, 1
-  store i32 %8, i32* %i, align 4
-  %9 = icmp slt i32 %8, 9
-  br i1 %9, label %for, label %for.end
+  %storemerge2 = phi i32 [ 1, %entry ], [ %10, %for ]
+  %6 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i32 %storemerge2)
+  store i32* %0, i32** %3, align 8
+  store i32* %1, i32** %4, align 8
+  %7 = alloca i8*, align 8
+  %8 = call i32 @pthread_create(i8** nonnull %7, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %5)
+  %9 = load i32, i32* %1, align 4
+  %10 = add i32 %9, 1
+  store i32 %10, i32* %1, align 4
+  %11 = icmp slt i32 %10, 9
+  br i1 %11, label %for, label %for.end
 
 for.end:                                          ; preds = %for
-  %10 = call i32 @usleep(i32 1000000)
+  %12 = call i32 @usleep(i32 1000000)
   %puts1 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
   ret i32 0
 }

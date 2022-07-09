@@ -1223,7 +1223,9 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 
   if (ctx->assignExpr()) { // Declaration with assignment
     // Visit right side
-    entry->updateAddress(resolveAddress(ctx->assignExpr()));
+    llvm::Value *rhsAddress = resolveAddress(ctx->assignExpr());
+    assert(rhsAddress->getType()->getPointerElementType() == varType);
+    entry->updateAddress(rhsAddress);
   } else { // Declaration with default value
     llvm::Value *defaultValue = getDefaultValueForType(varType, entry->getType().getBaseType().getSubType());
     builder->CreateStore(defaultValue, memAddress, entry->isVolatile());
@@ -1908,6 +1910,8 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
         // Create a reference
         lhs = lhsPtr;
         lhsPtr = insertAlloca(lhs->getType());
+        builder->CreateStore(lhs, lhsPtr);
+        storeValue = false;
       } else if (token->LOGICAL_AND()) { // Consider doubled & operator
         // First reference
         lhs = lhsPtr;
@@ -1916,11 +1920,13 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
         // Second reference
         lhs = lhsPtr;
         lhsPtr = insertAlloca(lhs->getType());
+        builder->CreateStore(lhs, lhsPtr);
+        storeValue = false;
       }
       tokenCounter++;
     }
 
-    if (lhs != nullptr) {
+    if (storeValue) {
       // Store the value back again
       builder->CreateStore(lhs, lhsPtr, isVolatile);
       // Create debug info for assignment
@@ -2441,7 +2447,9 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
           suffixNumber++;
         } while (module->getNamedGlobal(globalVarName) != nullptr);
       }
-      arrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
+      llvm::Value *globalArrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
+      arrayAddress = insertAlloca(arrayType, globalVarName);
+      builder->CreateStore(constArray, arrayAddress);
       // Set some attributes to it
       llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
       global->setConstant(true);
@@ -2552,15 +2560,16 @@ std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
     } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
       tokenCounter++;                                                    // Consume LBRACKET
       token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
-      int size = 0;                                                         // Default to 0 when no size is attached
       if (token && token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
-        size = std::stoi(token->toString());
+        int size = std::stoi(token->toString());
         currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, size, nullptr);
         tokenCounter++; // Consume INTEGER
       } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter])) {
         auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(rule));
         dynamicArraySize = builder->CreateLoad(sizeValuePtr->getType()->getPointerElementType(), sizeValuePtr);
         tokenCounter++; // Consume assignExpr
+      } else {
+        currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, /* array size */ 0, nullptr);
       }
     }
     tokenCounter++;

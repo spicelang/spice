@@ -17,9 +17,11 @@ entry:
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
   %6 = alloca i32, align 4
+  %intArray1 = alloca [7 x i32], align 4
   %idx = alloca i32, align 4
-  %item = alloca i32, align 4
   %7 = alloca i32, align 4
+  %item = alloca i32, align 4
+  %8 = alloca i32, align 4
   store i32 0, i32* %result, align 4
   store i32 1, i32* %0, align 4
   store i32 5, i32* %1, align 4
@@ -28,38 +30,37 @@ entry:
   store i32 12, i32* %4, align 4
   store i32 12345, i32* %5, align 4
   store i32 9, i32* %6, align 4
-  %8 = load [7 x i32], [7 x i32]* @intArray, align 4
-  store [7 x i32] %8, [7 x i32]* %intArray, align 4
-  store i32 2, i32* %idx, align 4
+  store [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9], [7 x i32]* %intArray1, align 4
+  store i32 2, i32* %7, align 4
   store i32 0, i32* %item, align 4
-  %9 = load [7 x i32], [7 x i32]* %intArray, align 4
-  %10 = load i32, i32* %idx, align 4
-  %11 = getelementptr inbounds [7 x i32], [7 x i32]* %intArray, i32 0, i32 %10
+  %9 = load [7 x i32], [7 x i32]* %intArray1, align 4
+  %10 = load i32, i32* %7, align 4
+  %11 = getelementptr inbounds [7 x i32], [7 x i32]* %intArray1, i32 0, i32 %10
   %12 = load i32, i32* %11, align 4
   store i32 %12, i32* %item, align 4
   br label %foreach.loop
 
 foreach.loop:                                     ; preds = %foreach.cond, %entry
-  %13 = load i32, i32* %idx, align 4
+  %13 = load i32, i32* %7, align 4
   %14 = load i32, i32* %item, align 4
   %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @0, i32 0, i32 0), i32 %13, i32 %14)
-  %16 = load i32, i32* %idx, align 4
+  %16 = load i32, i32* %7, align 4
   %17 = add i32 %16, 1
-  store i32 %17, i32* %idx, align 4
-  store i32 %16, i32* %7, align 4
+  store i32 %17, i32* %7, align 4
+  store i32 %16, i32* %8, align 4
   br label %foreach.inc
 
 foreach.inc:                                      ; preds = %foreach.loop
-  %idx1 = load i32, i32* %idx, align 4
-  %idx.inc = add i32 %idx1, 1
-  store i32 %idx.inc, i32* %idx, align 4
-  %18 = getelementptr inbounds [7 x i32], [7 x i32]* %intArray, i32 0, i32 %idx.inc
+  %idx2 = load i32, i32* %7, align 4
+  %idx.inc = add i32 %idx2, 1
+  store i32 %idx.inc, i32* %7, align 4
+  %18 = getelementptr inbounds [7 x i32], [7 x i32]* %intArray1, i32 0, i32 %idx.inc
   %19 = load i32, i32* %18, align 4
   store i32 %19, i32* %item, align 4
   br label %foreach.cond
 
 foreach.cond:                                     ; preds = %foreach.inc
-  %20 = load i32, i32* %idx, align 4
+  %20 = load i32, i32* %7, align 4
   %21 = icmp ule i32 %20, 6
   br i1 %21, label %foreach.loop, label %foreach.end
 

@@ -14,11 +14,11 @@ entry:
   store %_s__Vector__bool_string* %0, %_s__Vector__bool_string** %this, align 8
   %1 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
   %2 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
-  %3 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %1, i32 0, i32 0
+  %3 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %2, i32 0, i32 0
   store i1 false, i1* %3, align 1
   %4 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
   %5 = load %_s__Vector__bool_string*, %_s__Vector__bool_string** %this, align 8
-  %6 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %4, i32 0, i32 1
+  %6 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %5, i32 0, i32 1
   store i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0), i8** %6, align 8
   ret void
 }
@@ -30,17 +30,15 @@ entry:
   store i32 0, i32* %result, align 4
   call void @_mp__Vector__ctor(%_s__Vector__bool_string* %vec)
   %0 = load %_s__Vector__bool_string, %_s__Vector__bool_string* %vec, align 8
-  store %_s__Vector__bool_string %0, %_s__Vector__bool_string* %vec, align 8
-  %1 = load %_s__Vector__bool_string, %_s__Vector__bool_string* %vec, align 8
-  %2 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %vec, i32 0, i32 0
-  %3 = load i1, i1* %2, align 1
-  %4 = zext i1 %3 to i32
-  %5 = load %_s__Vector__bool_string, %_s__Vector__bool_string* %vec, align 8
-  %6 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %vec, i32 0, i32 1
-  %7 = load i8*, i8** %6, align 8
-  %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @1, i32 0, i32 0), i32 %4, i8* %7)
-  %9 = load i32, i32* %result, align 4
-  ret i32 %9
+  %1 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %vec, i32 0, i32 0
+  %2 = load i1, i1* %1, align 1
+  %3 = zext i1 %2 to i32
+  %4 = load %_s__Vector__bool_string, %_s__Vector__bool_string* %vec, align 8
+  %5 = getelementptr inbounds %_s__Vector__bool_string, %_s__Vector__bool_string* %vec, i32 0, i32 1
+  %6 = load i8*, i8** %5, align 8
+  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @1, i32 0, i32 0), i32 %3, i8* %6)
+  %8 = load i32, i32* %result, align 4
+  ret i32 %8
 }
 
 declare i32 @printf(i8*, ...)

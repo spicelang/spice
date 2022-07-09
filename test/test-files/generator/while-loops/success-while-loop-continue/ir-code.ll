@@ -9,60 +9,62 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   %loopCounterOuter = alloca double, align 8
-  %0 = alloca i1, align 1
+  %0 = alloca double, align 8
   %1 = alloca i1, align 1
-  %loopCounterInner = alloca i16, align 2
   %2 = alloca i1, align 1
+  %loopCounterInner = alloca i16, align 2
   %3 = alloca i16, align 2
   %4 = alloca i1, align 1
+  %5 = alloca i16, align 2
+  %6 = alloca i1, align 1
   store i32 0, i32* %result, align 4
-  store double 0.000000e+00, double* %loopCounterOuter, align 8
+  store double 0.000000e+00, double* %0, align 8
   br label %while.cond
 
 while.cond:                                       ; preds = %if.end4, %if.then3, %entry
-  %5 = load double, double* %loopCounterOuter, align 8
-  %6 = fcmp olt double %5, 1.000000e+01
-  store i1 %6, i1* %0, align 1
-  %7 = load i1, i1* %0, align 1
-  br i1 %7, label %while, label %while.end5
+  %7 = load double, double* %0, align 8
+  %8 = fcmp olt double %7, 1.000000e+01
+  store i1 %8, i1* %1, align 1
+  %9 = load i1, i1* %1, align 1
+  br i1 %9, label %while, label %while.end5
 
 while:                                            ; preds = %while.cond
-  %8 = load double, double* %loopCounterOuter, align 8
-  %9 = fadd double %8, 1.500000e-01
-  store double %9, double* %loopCounterOuter, align 8
-  %10 = load double, double* %loopCounterOuter, align 8
-  %11 = fcmp olt double %10, 4.000000e+00
-  store i1 %11, i1* %1, align 1
-  %12 = load i1, i1* %1, align 1
-  br i1 %12, label %if.then, label %if.end4
+  %10 = load double, double* %0, align 8
+  %11 = fadd double %10, 1.500000e-01
+  store double %11, double* %0, align 8
+  %12 = load double, double* %0, align 8
+  %13 = fcmp olt double %12, 4.000000e+00
+  store i1 %13, i1* %2, align 1
+  %14 = load i1, i1* %2, align 1
+  br i1 %14, label %if.then, label %if.end4
 
 if.then:                                          ; preds = %while
-  store i16 10, i16* %loopCounterInner, align 2
+  store i16 10, i16* %3, align 2
   br label %while.cond1
 
 while.cond1:                                      ; preds = %if.end, %if.then
-  %13 = load i16, i16* %loopCounterInner, align 2
-  %14 = sext i16 %13 to i32
-  %15 = icmp sgt i32 %14, 0
-  store i1 %15, i1* %2, align 1
-  %16 = load i1, i1* %2, align 1
-  br i1 %16, label %while2, label %while.end
+  %15 = load i16, i16* %3, align 2
+  %16 = sext i16 %15 to i32
+  %17 = icmp sgt i32 %16, 0
+  store i1 %17, i1* %4, align 1
+  %18 = load i1, i1* %4, align 1
+  br i1 %18, label %while2, label %while.end
 
 while2:                                           ; preds = %while.cond1
-  %17 = load double, double* %loopCounterOuter, align 8
-  %18 = load i16, i16* %loopCounterInner, align 2
-  %19 = sext i16 %18 to i32
-  %20 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0), double %17, i32 %19)
-  %21 = load i16, i16* %loopCounterInner, align 2
-  %22 = sub i16 %21, 1
-  store i16 %22, i16* %loopCounterInner, align 2
-  store i16 %21, i16* %3, align 2
-  %23 = load i16, i16* %loopCounterInner, align 2
-  %24 = sext i16 %23 to i32
-  %25 = icmp eq i32 %24, 5
-  store i1 %25, i1* %4, align 1
-  %26 = load i1, i1* %4, align 1
-  br i1 %26, label %if.then3, label %if.end
+  %19 = load double, double* %0, align 8
+  %20 = load i16, i16* %3, align 2
+  %21 = sext i16 %20 to i32
+  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0), double %19, i32 %21)
+  %23 = load i16, i16* %3, align 2
+  %24 = sub i16 %23, 1
+  store i16 %24, i16* %3, align 2
+  store i16 %23, i16* %5, align 2
+  %25 = load i16, i16* %3, align 2
+  %26 = sext i16 %25 to i32
+  %27 = icmp eq i32 %26, 5
+  store i1 %27, i1* %6, align 1
+  %28 = load i1, i1* %6, align 1
+  br i1 %28, label %if.then3, label %if.end
 
 if.then3:                                         ; preds = %while2
   br label %while.cond
@@ -77,8 +79,8 @@ if.end4:                                          ; preds = %while.end, %while
   br label %while.cond
 
 while.end5:                                       ; preds = %while.cond
-  %27 = load i32, i32* %result, align 4
-  ret i32 %27
+  %29 = load i32, i32* %result, align 4
+  ret i32 %29
 }
 
 declare i32 @printf(i8*, ...)

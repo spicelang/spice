@@ -12,15 +12,16 @@ entry:
   %arg1 = alloca double, align 8
   %arg2 = alloca i1, align 1
   %arg3 = alloca double, align 8
+  %3 = alloca double, align 8
   %result = alloca i8*, align 8
-  %3 = alloca i8*, align 8
+  %4 = alloca i8*, align 8
   store i32 %0, i32* %arg0, align 4
   store double %1, double* %arg1, align 8
   store i1 %2, i1* %arg2, align 1
-  store double 1.340000e+00, double* %arg3, align 8
-  store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i32 0), i8** %3, align 8
-  %4 = load i8*, i8** %3, align 8
-  ret i8* %4
+  store double 1.340000e+00, double* %3, align 8
+  store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i32 0), i8** %4, align 8
+  %5 = load i8*, i8** %4, align 8
+  ret i8* %5
 }
 
 define i32 @main() {

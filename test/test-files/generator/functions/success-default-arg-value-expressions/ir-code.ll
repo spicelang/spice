@@ -26,9 +26,7 @@ entry:
   %4 = fadd double %3, 1.200000e+00
   store double %4, double* %1, align 8
   %5 = load double, double* %1, align 8
-  store double %5, double* %arg, align 8
-  %6 = load double, double* %arg, align 8
-  ret double %6
+  ret double %5
 }
 
 define i32 @main() {

@@ -47,17 +47,16 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   %input = alloca i32, align 4
-  %faculty = alloca i32, align 4
   %0 = alloca i32, align 4
+  %faculty = alloca i32, align 4
+  %1 = alloca i32, align 4
   store i32 0, i32* %result, align 4
-  store i32 10, i32* %input, align 4
-  %1 = load i32, i32* %input, align 4
-  %2 = call i32 @_f__void__faculty__int(i32 %1)
-  store i32 %2, i32* %0, align 4
-  %3 = load i32, i32* %0, align 4
-  store i32 %3, i32* %faculty, align 4
-  %4 = load i32, i32* %input, align 4
-  %5 = load i32, i32* %faculty, align 4
+  store i32 10, i32* %0, align 4
+  %2 = load i32, i32* %0, align 4
+  %3 = call i32 @_f__void__faculty__int(i32 %2)
+  store i32 %3, i32* %1, align 4
+  %4 = load i32, i32* %0, align 4
+  %5 = load i32, i32* %1, align 4
   %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @0, i32 0, i32 0), i32 %4, i32 %5)
   %7 = load i32, i32* %result, align 4
   ret i32 %7
