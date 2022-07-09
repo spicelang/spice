@@ -12,6 +12,7 @@
 #include <symbol/Function.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolTable.h>
+#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 #include <util/ScopeIdUtil.h>
 #include <util/ThreadFactory.h>
@@ -1854,7 +1855,7 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
   if (!ctx->prefixUnaryOp().empty()) {
     // Load the value
     llvm::Value *lhsPtr = resolveAddress(ctx->postfixUnaryExpr());
-    llvm::Value *lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+    llvm::Value *lhs = nullptr;
 
     bool isVolatile = false;
     bool storeValue = true;
@@ -1865,8 +1866,13 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
 
       // Insert conversion instructions depending on the used operator
       if (token->MINUS()) { // Consider - operator
+        if (!lhs)
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixMinusInst(lhs);
+        lhsPtr = insertAlloca(lhs->getType());
       } else if (token->PLUS_PLUS()) { // Consider ++ operator
+        if (!lhs)
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixPlusPlusInst(lhs);
 
         // Store the new value volatile
@@ -1874,6 +1880,8 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
         if (!isVolatile && lhsVarEntry && lhsVarEntry->isVolatile())
           isVolatile = true;
       } else if (token->MINUS_MINUS()) { // Consider -- operator
+        if (!lhs)
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixMinusMinusInst(lhs);
 
         // Store the new value volatile
@@ -1881,10 +1889,18 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
         if (!isVolatile && lhsVarEntry && lhsVarEntry->isVolatile())
           isVolatile = true;
       } else if (token->NOT()) { // Consider ! operator
+        if (!lhs)
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixNotInst(lhs);
+        lhsPtr = insertAlloca(lhs->getType());
       } else if (token->BITWISE_NOT()) { // Consider ~ operator
+        if (!lhs)
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixBitwiseNotInst(lhs);
+        lhsPtr = insertAlloca(lhs->getType());
       } else if (token->MUL()) { // Consider * operator
+        if (!lhs)
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         // Indirect pointer
         lhsPtr = lhs;
         lhs = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
@@ -1892,8 +1908,6 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
         // Create a reference
         lhs = lhsPtr;
         lhsPtr = insertAlloca(lhs->getType());
-        builder->CreateStore(lhs, lhsPtr);
-        storeValue = false;
       } else if (token->LOGICAL_AND()) { // Consider doubled & operator
         // First reference
         lhs = lhsPtr;
@@ -1902,13 +1916,11 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
         // Second reference
         lhs = lhsPtr;
         lhsPtr = insertAlloca(lhs->getType());
-        builder->CreateStore(lhs, lhsPtr);
-        storeValue = false;
       }
       tokenCounter++;
     }
 
-    if (storeValue) {
+    if (lhs != nullptr) {
       // Store the value back again
       builder->CreateStore(lhs, lhsPtr, isVolatile);
       // Create debug info for assignment
@@ -1937,9 +1949,14 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
 
       if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
         tokenCounter++;                          // Consume LBRACKET
+
+        if (!lhs)
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+
         assert(lhs->getType()->isArrayTy() || lhs->getType()->isPointerTy());
 
         // Save variables to restore later
+        std::string currentVarNameBackup = currentVarName;
         ScopePath scopePathBackup = scopePath;
         llvm::Value *structAccessAddressBackup = structAccessAddress;
 
@@ -1949,6 +1966,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         tokenCounter++; // Consume assignExpr
 
         // Restore variables
+        currentVarName = currentVarNameBackup;
         scopePath = scopePathBackup;
         structAccessAddress = structAccessAddressBackup;
 
@@ -1975,6 +1993,8 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
 
         lhs = nullptr;
       } else if (symbolType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+        if (!lhs)
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         // Get the lhs variable entry
         SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         // Save the new value to the old pointer
@@ -1983,6 +2003,8 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
         // Allocate new space and continue working with the new memory slot
         lhsPtr = insertAlloca(lhs->getType());
       } else if (symbolType == SpiceParser::MINUS_MINUS) { // Consider -- operator
+        if (!lhs)
+          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         // Get the lhs variable entry
         SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         // Save the new value to the old pointer
@@ -2098,7 +2120,22 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
       return fieldAddress;
     }
 
-    return entry->getAddress();
+    // If the address is known, return it
+    if (entry->getAddress())
+      return entry->getAddress();
+
+    // For the case that in the current scope there is a variable with the same name, but it is initialized later, so the
+    // symbol above in the hierarchy is meant to be used.
+    while (entry && !entry->getAddress() && accessScope->getParent() && !entry->getType().is(TY_IMPORT)) {
+      accessScope = accessScope->getParent();
+      entry = accessScope->lookup(currentVarName);
+      assert(entry != nullptr);
+      if (entry->getAddress())
+        return entry->getAddress();
+    }
+
+    throw std::runtime_error("Internal compiler error: Could not find variable with address at: " +
+                             CommonUtil::tokenToCodeLoc(*ctx->start));
   }
 
   if (ctx->builtinCall())
