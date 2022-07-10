@@ -34,8 +34,18 @@ enum SymbolSuperType {
 };
 
 class SymbolType {
-  typedef std::vector<SymbolType> TemplateTypes;
-  typedef std::tuple<SymbolSuperType, std::string, TemplateTypes, llvm::Value *> TypeChainElement;
+private:
+  struct TypeChainElement {
+    SymbolSuperType superType;
+    std::string subType;
+    std::vector<SymbolType> templateTypes;
+    llvm::Value *dynamicArraySize;
+
+    friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
+      return lhs.superType == rhs.superType && lhs.subType == rhs.subType && lhs.templateTypes == rhs.templateTypes &&
+             lhs.dynamicArraySize == rhs.dynamicArraySize;
+    }
+  };
   typedef std::stack<TypeChainElement> TypeChain;
 
 public:
@@ -68,8 +78,8 @@ public:
   [[nodiscard]] SymbolSuperType getSuperType() const;
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;
-  void setTemplateTypes(TemplateTypes templateTypes);
-  [[nodiscard]] TemplateTypes getTemplateTypes() const;
+  void setTemplateTypes(std::vector<SymbolType> templateTypes);
+  [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
   void setSigned(bool isSigned);
   [[nodiscard]] bool isSigned() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
