@@ -61,10 +61,6 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   if (requiresMainFct && !isStdFile && !reAnalyze)
     rootScope->printCompilerWarnings();
 
-  // Set all variables to declared
-  if (requiresMainFct && !reAnalyze)
-    rootScope->setVariablesToDeclared(err.get(), *ctx->start);
-
   // Increment run number if the source file gets analyzed again
   runNumber++;
 

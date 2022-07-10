@@ -1213,7 +1213,7 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
     // Generate debug info for local variable
     generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
   } else { // Declaration with default value
-    if (entry->getType().getDynamicArraySize() != nullptr) {
+    if (entry->getType().is(TY_PTR) && entry->getType().getDynamicArraySize() != nullptr) {
       llvm::Type *itemType = getTypeForSymbolType(entry->getType().getContainedTy(), nullptr);
       dynamicArraySize = entry->getType().getDynamicArraySize();
       llvm::Value *arrayValue = allocateDynamicallySizedArray(itemType);
@@ -1233,7 +1233,6 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 
   // Update address in symbol table
   entry->updateAddress(memAddress);
-  entry->updateState(INITIALIZED, err.get(), *ctx->IDENTIFIER()->getSymbol());
 
   lhsType = nullptr; // Reset nullptr
 
@@ -2136,16 +2135,20 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
 
     // For the case that in the current scope there is a variable with the same name, but it is initialized later, so the
     // symbol above in the hierarchy is meant to be used.
-    while (entry && entry->getState() == DECLARED && accessScope->getParent()) {
+    SymbolTableEntry *entryAbove = entry;
+    while (entryAbove && entryAbove->getAddress() == nullptr && accessScope->getParent()) {
       accessScope = accessScope->getParent();
-      entry = accessScope->lookup(currentVarName);
-      assert(entry != nullptr);
-      if (entry->getAddress())
-        return entry->getAddress();
+      entryAbove = accessScope->lookup(currentVarName);
+      assert(entryAbove != nullptr);
+      if (entryAbove->getAddress())
+        return entryAbove->getAddress();
     }
 
-    throw std::runtime_error("Internal compiler error: Could not find variable with address at: " +
-                             CommonUtil::tokenToCodeLoc(*ctx->start));
+    // If no variable was found, that has a valid address => allocate space for the original entry
+    llvm::Type *llvmType = getTypeForSymbolType(entry->getType(), currentScope);
+    llvm::Value *memAddress = insertAlloca(llvmType, lhsVarName);
+    entry->updateAddress(memAddress);
+    return memAddress;
   }
 
   if (ctx->builtinCall())
@@ -2422,7 +2425,9 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
   if (dynamicallySized)
     arrayEntry->updateType(arrayEntry->getType().setDynamicArraySize(dynamicArraySize), true);
 
+  std::vector<llvm::Value *> itemPointers;
   std::vector<llvm::Constant *> itemConstants;
+  itemPointers.reserve(arraySize);
   itemConstants.reserve(arraySize);
 
   if (ctx->argLst()) { // The array is initialized with values
@@ -2430,8 +2435,8 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
     allArgsHardcoded = true;
     for (size_t i = 0; i < std::min(ctx->argLst()->assignExpr().size(), arraySize); i++) {
       currentConstValue = nullptr;
-      resolveAddress(ctx->argLst()->assignExpr()[i]);
-      assert(currentConstValue != nullptr);
+      llvm::Value *itemPointer = resolveAddress(ctx->argLst()->assignExpr()[i]);
+      itemPointers.push_back(itemPointer);
       itemConstants.push_back(currentConstValue);
     }
   }
@@ -2439,10 +2444,12 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
   llvm::Type *itemType = nullptr;
   if (arrayType) {                // Check if array type matches the item type
     if (arrayType->isArrayTy()) { // Array
-      assert(itemConstants.empty() || arrayType->getArrayElementType() == itemConstants.front()->getType());
+      assert(itemConstants.empty() || !itemConstants.front() ||
+             arrayType->getArrayElementType() == itemConstants.front()->getType());
       itemType = arrayType->getArrayElementType();
     } else { // Pointer
-      assert(itemConstants.empty() || arrayType->getPointerElementType() == itemConstants.front()->getType());
+      assert(itemConstants.empty() || !itemConstants.front() ||
+             arrayType->getPointerElementType() == itemConstants.front()->getType());
       itemType = arrayType->getPointerElementType();
     }
   } else { // Infer type of array from the item type
@@ -2486,7 +2493,14 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
       }
 
       // Store item value to item address
-      llvm::Value *itemValue = valueIndex < ctx->argLst()->assignExpr().size() ? itemConstants[valueIndex] : itemDefaultValue;
+      llvm::Value *itemValue = itemDefaultValue;
+      if (ctx->argLst() && valueIndex < ctx->argLst()->assignExpr().size()) {
+        if (itemConstants[valueIndex] == nullptr) {
+          itemValue = builder->CreateLoad(itemPointers[valueIndex]->getType()->getPointerElementType(), itemPointers[valueIndex]);
+        } else {
+          itemValue = itemConstants[valueIndex];
+        }
+      }
       builder->CreateStore(itemValue, itemAddress);
     }
 

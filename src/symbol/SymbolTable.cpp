@@ -640,18 +640,6 @@ void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, 
 }
 
 /**
- * Set all variables in this and all child scopes to declared.
- * This is done after analyzing the whole project.
- */
-void SymbolTable::setVariablesToDeclared(const ErrorFactory *err, const antlr4::Token &token) {
-  for (auto &childScope : children)
-    childScope.second->setVariablesToDeclared(err, token);
-
-  for (auto &symbol : symbols)
-    symbol.second.updateState(DECLARED, err, token, true);
-}
-
-/**
  * Purge all non-substantiated manifestations of functions and structs
  */
 void SymbolTable::purgeSubstantiationRemnants() {
