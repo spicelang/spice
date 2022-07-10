@@ -51,18 +51,23 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   // if (requiresMainFct && secondRun)
   //  rootScope->purgeSubstantiationRemnants();
 
+  bool reAnalyze = reAnalyzeRequired;
+
   // Check if the visitor got a main function
   if (requiresMainFct && !hasMainFunction)
     throw err->get(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
 
   // Print compiler warnings once the whole ast is present, but not for std files
-  if (requiresMainFct && !isStdFile)
+  if (requiresMainFct && !isStdFile && !reAnalyze)
     rootScope->printCompilerWarnings();
+
+  // Set all variables to declared
+  if (requiresMainFct && !reAnalyze)
+    rootScope->setVariablesToDeclared(err.get(), *ctx->start);
 
   // Increment run number if the source file gets analyzed again
   runNumber++;
 
-  bool reAnalyze = reAnalyzeRequired;
   reAnalyzeRequired = false;
   return reAnalyze;
 }
@@ -845,6 +850,10 @@ std::any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx)
   if (!arrayType.isArray() && !arrayType.is(TY_STRING))
     throw err->get(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
                    "Can only apply foreach loop on an array type. You provided " + arrayType.getName(false));
+
+  if (arrayType.getArraySize() <= 0)
+    throw err->get(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
+                   "Can only apply foreach loop on an array type of which the size is unknown at compile time");
 
   // Check index assignment or declaration
   SymbolType indexType;

@@ -87,6 +87,7 @@ public:
   Struct *getStructAccessPointer(const antlr4::Token &token);
   void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const antlr4::Token &token, const std::string &codeLoc);
 
+  void setVariablesToDeclared(const ErrorFactory *err, const antlr4::Token &token);
   void purgeSubstantiationRemnants();
 
   void printCompilerWarnings();

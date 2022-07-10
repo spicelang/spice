@@ -161,6 +161,8 @@ private:
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
+  llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
+  llvm::Value *createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants);
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
   llvm::Function *retrieveStackSaveFct();

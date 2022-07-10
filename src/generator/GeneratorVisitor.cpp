@@ -1200,36 +1200,31 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   assert(entry != nullptr);
   currentConstSigned = entry->getSpecifiers().isSigned();
 
+  // Get data type
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
-  llvm::Value *memAddress;
-  if (entry->getType().is(TY_ARRAY) && dynamicArraySize != nullptr) {
-    entry->updateType(entry->getType().setDynamicArraySize(dynamicArraySize), true);
-    // Call llvm.stacksave intrinsic
-    llvm::Function *stackSaveFct = retrieveStackSaveFct();
-    stackState = builder->CreateCall(stackSaveFct);
-    // Allocate array
-    memAddress = builder->CreateAlloca(varType, dynamicArraySize, lhsVarName); // Intentionally not via insertAlloca
-    varType = memAddress->getType()->getPointerElementType();
-    dynamicArraySize = nullptr;
-    lhsType = nullptr;
-  } else {
-    memAddress = insertAlloca(varType, lhsVarName);
-  }
-  entry->updateAddress(memAddress);
   entry->updateLLVMType(varType);
 
-  // Generate debug info for local variable
-  generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
-
+  llvm::Value *memAddress = nullptr;
   if (ctx->assignExpr()) { // Declaration with assignment
-    // Visit right side
-    llvm::Value *rhsAddress = resolveAddress(ctx->assignExpr());
-    assert(rhsAddress->getType()->getPointerElementType() == varType);
-    entry->updateAddress(rhsAddress);
+    memAddress = resolveAddress(ctx->assignExpr());
+    assert(memAddress->getType()->getPointerElementType() == varType);
+
+    // Generate debug info for local variable
+    generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
   } else { // Declaration with default value
     llvm::Value *defaultValue = getDefaultValueForType(varType, entry->getType().getBaseType().getSubType());
+    llvm::Value *memAddress = insertAlloca(varType, lhsVarName);
+
+    // Generate debug info for local variable
+    generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
+
+    // Save default value to address
     builder->CreateStore(defaultValue, memAddress, entry->isVolatile());
   }
+
+  // Update address in symbol table
+  entry->updateAddress(memAddress);
+  entry->updateState(INITIALIZED, err.get(), *ctx->IDENTIFIER()->getSymbol());
 
   lhsType = nullptr; // Reset nullptr
 
@@ -2132,7 +2127,7 @@ std::any GeneratorVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) 
 
     // For the case that in the current scope there is a variable with the same name, but it is initialized later, so the
     // symbol above in the hierarchy is meant to be used.
-    while (entry && !entry->getAddress() && accessScope->getParent() && !entry->getType().is(TY_IMPORT)) {
+    while (entry && entry->getState() == DECLARED && accessScope->getParent()) {
       accessScope = accessScope->getParent();
       entry = accessScope->lookup(currentVarName);
       assert(entry != nullptr);
@@ -2404,88 +2399,91 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
   // Get data type
   size_t actualItemCount = ctx->argLst() ? ctx->argLst()->assignExpr().size() : 0;
   size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
-  auto arrayType = static_cast<llvm::ArrayType *>(lhsType);
+  auto arrayType = lhsType;
 
-  // Fill items with the stated values
-  if (ctx->argLst()) {
+  SymbolTableEntry *arrayEntry = currentScope->lookupStrict(lhsVarName);
+  bool dynamicallySized = arrayEntry && arrayEntry->getType().is(TY_ARRAY) && dynamicArraySize != nullptr;
+
+  // Save the dynamic size when it is a dynamically sized array
+  if (dynamicallySized)
+    arrayEntry->updateType(arrayEntry->getType().setDynamicArraySize(dynamicArraySize), true);
+
+  std::vector<llvm::Constant *> itemConstants;
+  itemConstants.reserve(arraySize);
+
+  if (ctx->argLst()) { // The array is initialized with values
     // Visit all args to check if they are hardcoded or not
-    std::vector<llvm::Value *> itemValuePointers;
-    std::vector<llvm::Constant *> itemConstants;
     allArgsHardcoded = true;
     for (size_t i = 0; i < std::min(ctx->argLst()->assignExpr().size(), arraySize); i++) {
-      auto itemValuePtr = resolveAddress(ctx->argLst()->assignExpr()[i]);
-      itemValuePointers.push_back(itemValuePtr);
+      currentConstValue = nullptr;
+      resolveAddress(ctx->argLst()->assignExpr()[i]);
+      assert(currentConstValue != nullptr);
       itemConstants.push_back(currentConstValue);
     }
+  }
 
-    llvm::Type *itemType;
-    if (arrayType == nullptr) {
-      itemType = itemValuePointers[0]->getType()->getPointerElementType();
-      arrayType = llvm::ArrayType::get(itemType, arraySize);
-    } else {
+  llvm::Type *itemType = nullptr;
+  if (arrayType) {                // Check if array type matches the item type
+    if (arrayType->isArrayTy()) { // Array
+      assert(itemConstants.empty() || arrayType->getArrayElementType() == itemConstants.front()->getType());
       itemType = arrayType->getArrayElementType();
+    } else { // Pointer
+      assert(itemConstants.empty() || arrayType->getPointerElementType() == itemConstants.front()->getType());
+      itemType = arrayType->getPointerElementType();
+    }
+  } else { // Infer type of array from the item type
+    assert(!itemConstants.empty());
+    itemType = itemConstants.front()->getType();
+    arrayType = llvm::ArrayType::get(itemType, arraySize);
+  }
+
+  // Decide if the array can be defined globally
+  if (allArgsHardcoded && !dynamicallySized && !itemType->isStructTy()) { // Global array is possible
+    // Fill up the rest of the items with default values
+    if (itemConstants.size() < arraySize) {
+      llvm::Constant *constantValue = getDefaultValueForType(itemType, ""); // ToDo: Fill empty string
+      for (size_t i = itemConstants.size(); i < arraySize; i++)
+        itemConstants.push_back(constantValue);
     }
 
-    // Decide if the array can be defined globally
-    llvm::Value *arrayAddress;
-    if (!itemType->isStructTy() && allArgsHardcoded) { // All args hardcoded => array can be defined globally
-      // Fill up the rest of the items
-      if (itemConstants.size() < arraySize) {
-        llvm::Constant *constantValue = getDefaultValueForType(itemType, ""); // ToDo: Fill empty string
-        for (size_t i = itemConstants.size(); i < arraySize; i++)
-          itemConstants.push_back(constantValue);
-      }
-
-      // Create hardcoded array
-      llvm::Constant *constArray = llvm::ConstantArray::get(arrayType, itemConstants);
-      // Create global variable
-      std::string globalVarName = lhsVarName;
-      if (globalVarName.empty()) { // Get unused anonymous global var name
-        unsigned int suffixNumber = 0;
-        do {
-          globalVarName = "anonymous." + std::to_string(suffixNumber);
-          suffixNumber++;
-        } while (module->getNamedGlobal(globalVarName) != nullptr);
-      }
-      llvm::Value *globalArrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
-      arrayAddress = insertAlloca(arrayType, globalVarName);
-      builder->CreateStore(constArray, arrayAddress);
-      // Set some attributes to it
-      llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
-      global->setConstant(true);
-      global->setInitializer(constArray);
-    } else { // Some args are not hardcoded => fallback to individual indexing
-      // Allocate array
+    // Create global array from constant values
+    assert(arrayType != nullptr);
+    return createGlobalArray(arrayType, itemConstants);
+  } else { // Global array is not possible => fallback to individual indexing
+    // Allocate array
+    llvm::Value *arrayAddress = nullptr;
+    if (dynamicallySized) {
+      arrayAddress = allocateDynamicallySizedArray(itemType);
+      arrayType = arrayAddress->getType()->getPointerElementType();
+    } else {
       arrayAddress = insertAlloca(arrayType, currentVarName);
+    }
 
-      // Insert all given values
-      size_t valueIndex = 0;
-      for (; valueIndex < std::min(ctx->argLst()->assignExpr().size(), arraySize); valueIndex++) {
-        llvm::Value *itemValuePtr = itemValuePointers[valueIndex];
-        llvm::Value *itemValue = builder->CreateLoad(itemValuePtr->getType()->getPointerElementType(), itemValuePtr);
-        // Calculate item address
+    // Insert all given values
+    llvm::Value *itemDefaultValue = getDefaultValueForType(itemType, "");
+    for (size_t valueIndex = 0; valueIndex < arraySize; valueIndex++) {
+      // Calculate item address
+      llvm::Value *itemAddress = nullptr;
+      if (arrayType->isArrayTy()) {
         llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
-        llvm::Value *itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
-        // Store value to item address
-        builder->CreateStore(itemValue, itemAddress);
+        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
+      } else {
+        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, builder->getInt32(valueIndex));
       }
 
-      // Fill up the rest of the values with default values
-      for (; valueIndex < arraySize; valueIndex++) {
-        llvm::Value *itemDefaultValue = getDefaultValueForType(itemType, "");
-        // Calculate item address
-        llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
-        llvm::Value *itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
-        // Store value to item address
-        builder->CreateStore(itemDefaultValue, itemAddress);
-      }
+      // Store item value to item address
+      llvm::Value *itemValue = valueIndex < ctx->argLst()->assignExpr().size() ? itemConstants[valueIndex] : itemDefaultValue;
+      builder->CreateStore(itemValue, itemAddress);
+    }
+
+    // Save value to address
+    if (dynamicallySized) {
+      llvm::Value *newArrayAddress = insertAlloca(arrayAddress->getType(), lhsVarName);
+      builder->CreateStore(arrayAddress, newArrayAddress);
+      return newArrayAddress;
     }
     return arrayAddress;
   }
-
-  // Empty array: '{}'
-  assert(arrayType != nullptr);
-  return insertAlloca(arrayType, lhsVarName);
 }
 
 std::any GeneratorVisitor::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
@@ -2567,6 +2565,7 @@ std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
       } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter])) {
         auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(rule));
         dynamicArraySize = builder->CreateLoad(sizeValuePtr->getType()->getPointerElementType(), sizeValuePtr);
+        currentSymbolType = currentSymbolType.toPointer(err.get(), *ctx->start);
         tokenCounter++; // Consume assignExpr
       } else {
         currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, /* array size */ 0, nullptr);
@@ -2678,6 +2677,40 @@ llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::str
     builder->SetInsertPoint(currentBlock);
   }
   return static_cast<llvm::Value *>(allocaInsertInst);
+}
+
+llvm::Value *GeneratorVisitor::allocateDynamicallySizedArray(llvm::Type *itemType) {
+  // Call llvm.stacksave intrinsic
+  llvm::Function *stackSaveFct = retrieveStackSaveFct();
+  stackState = builder->CreateCall(stackSaveFct);
+  // Allocate array
+  llvm::Value *memAddress = builder->CreateAlloca(itemType, dynamicArraySize); // Intentionally not via insertAlloca
+  dynamicArraySize = nullptr;
+  return memAddress;
+}
+
+llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants) {
+  // Create hardcoded array
+  auto type = static_cast<llvm::ArrayType *>(arrayType);
+  llvm::Constant *constArray = llvm::ConstantArray::get(type, itemConstants);
+  // Find an unused global name
+  std::string globalVarName = lhsVarName;
+  if (globalVarName.empty()) {
+    unsigned int suffixNumber = 0;
+    do {
+      globalVarName = "anonymous." + std::to_string(suffixNumber);
+      suffixNumber++;
+    } while (module->getNamedGlobal(globalVarName) != nullptr);
+  }
+  // Create global variable
+  llvm::Value *globalArrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
+  llvm::Value *arrayAddress = insertAlloca(arrayType, globalVarName);
+  builder->CreateStore(constArray, arrayAddress);
+  // Set some attributes to it
+  llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
+  global->setConstant(true);
+  global->setInitializer(constArray);
+  return arrayAddress;
 }
 
 llvm::Function *GeneratorVisitor::retrievePrintfFct() {

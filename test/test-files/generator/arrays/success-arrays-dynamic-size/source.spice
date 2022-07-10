@@ -1,0 +1,7 @@
+f<int> main() {
+    short arraySize = 6s;
+    int[arraySize] array = {1, 2, 3};
+    foreach dyn item : array {
+        printf("Item: %d\n", item);
+    }
+}
