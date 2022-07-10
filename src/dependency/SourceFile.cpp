@@ -188,6 +188,7 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   if (options.dumpIR) { // GCOV_EXCL_START
     std::cout << "\nUnoptimized IR code:\n";
     generator->dumpIR();
+    std::cout << "\n";
   } // GCOV_EXCL_STOP
 
   // Optimize IR code

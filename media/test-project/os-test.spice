@@ -1,11 +1,7 @@
+import "std/data/pair" as pair;
+
 f<int> main() {
-    short arraySize = 6s;
-    int[arraySize] array;
-    array[2] = 11;
-    printf("Item: %d\n", array[0]);
-    printf("Item: %d\n", array[1]);
-    printf("Item: %d\n", array[2]);
-    printf("Item: %d\n", array[3]);
-    printf("Item: %d\n", array[4]);
-    printf("Item: %d\n", array[5]);
+    pair.Pair<string, int> stringIntPair = pair.Pair<string, int>("Test", 1234);
+    printf("First: %s\n", stringIntPair.getFirst());
+    printf("Second: %d\n", stringIntPair.getSecond());
 }

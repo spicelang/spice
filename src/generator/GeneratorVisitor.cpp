@@ -2312,7 +2312,12 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
       assert(!lhsVarName.empty());
       SymbolTableEntry *assignVarEntry = currentScope->lookup(lhsVarName);
       assert(assignVarEntry != nullptr);
-      thisValuePtr = assignVarEntry->getAddress();
+      if (assignVarEntry->getAddress() != nullptr) {
+        thisValuePtr = assignVarEntry->getAddress();
+      } else {
+        llvm::Type *llvmType = getTypeForSymbolType(assignVarEntry->getType(), currentScope);
+        thisValuePtr = insertAlloca(llvmType, lhsVarName);
+      }
 
       constructorCall = true;
     } else {
@@ -2644,7 +2649,7 @@ llvm::Value *GeneratorVisitor::resolveValue(antlr4::tree::ParseTree *tree) {
 llvm::Value *GeneratorVisitor::resolveAddress(antlr4::tree::ParseTree *tree, bool storeVolatile) {
   std::any valueAny = visit(tree);
   if (!valueAny.has_value() && currentConstValue) {
-    llvm::Value *valueAddr = insertAlloca(currentConstValue->getType());
+    llvm::Value *valueAddr = insertAlloca(currentConstValue->getType(), lhsVarName);
     builder->CreateStore(currentConstValue, valueAddr, storeVolatile);
     return valueAddr;
   }
