@@ -1203,6 +1203,7 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   // Get data type
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
   entry->updateLLVMType(varType);
+  entry->updateType(currentSymbolType, true);
 
   llvm::Value *memAddress = nullptr;
   if (ctx->assignExpr()) { // Declaration with assignment
@@ -1212,14 +1213,22 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
     // Generate debug info for local variable
     generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
   } else { // Declaration with default value
-    llvm::Value *defaultValue = getDefaultValueForType(varType, entry->getType().getBaseType().getSubType());
-    llvm::Value *memAddress = insertAlloca(varType, lhsVarName);
+    if (entry->getType().getDynamicArraySize() != nullptr) {
+      llvm::Type *itemType = getTypeForSymbolType(entry->getType().getContainedTy(), nullptr);
+      dynamicArraySize = entry->getType().getDynamicArraySize();
+      llvm::Value *arrayValue = allocateDynamicallySizedArray(itemType);
+      memAddress = insertAlloca(arrayValue->getType(), lhsVarName);
+      builder->CreateStore(arrayValue, memAddress, entry->isVolatile());
+    } else {
+      llvm::Value *defaultValue = getDefaultValueForType(varType, entry->getType().getBaseType().getSubType());
+      memAddress = insertAlloca(varType, lhsVarName);
 
-    // Generate debug info for local variable
-    generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
+      // Generate debug info for local variable
+      generateDeclDebugInfo(*ctx->start, lhsVarName, memAddress);
 
-    // Save default value to address
-    builder->CreateStore(defaultValue, memAddress, entry->isVolatile());
+      // Save default value to address
+      builder->CreateStore(defaultValue, memAddress, entry->isVolatile());
+    }
   }
 
   // Update address in symbol table
@@ -2560,15 +2569,15 @@ std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
       token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
       if (token && token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
         int size = std::stoi(token->toString());
-        currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, size, nullptr);
+        currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, size);
         tokenCounter++; // Consume INTEGER
       } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter])) {
         auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(rule));
         dynamicArraySize = builder->CreateLoad(sizeValuePtr->getType()->getPointerElementType(), sizeValuePtr);
-        currentSymbolType = currentSymbolType.toPointer(err.get(), *ctx->start);
+        currentSymbolType = currentSymbolType.toPointer(err.get(), *ctx->start, dynamicArraySize);
         tokenCounter++; // Consume assignExpr
       } else {
-        currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, /* array size */ 0, nullptr);
+        currentSymbolType = currentSymbolType.toArray(err.get(), *ctx->start, /* array size */ 0);
       }
     }
     tokenCounter++;

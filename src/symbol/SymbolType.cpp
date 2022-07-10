@@ -20,13 +20,13 @@ SymbolType::TypeChain SymbolType::getTypeChain() const { return typeChain; }
  *
  * @return Pointer type of the current type
  */
-SymbolType SymbolType::toPointer(const ErrorFactory *err, const antlr4::Token &token) const {
+SymbolType SymbolType::toPointer(const ErrorFactory *err, const antlr4::Token &token, llvm::Value *dynamicSize) const {
   // Do not allow pointers of dyn
   if (std::get<0>(typeChain.top()) == TY_DYN)
     throw err->get(token, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_PTR, "", {}, nullptr});
+  newTypeChain.push({TY_PTR, "", {}, dynamicSize});
   return SymbolType(newTypeChain);
 }
 
@@ -35,13 +35,13 @@ SymbolType SymbolType::toPointer(const ErrorFactory *err, const antlr4::Token &t
  *
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const ErrorFactory *err, const antlr4::Token &token, int size, llvm::Value *dynamicSize) const {
+SymbolType SymbolType::toArray(const ErrorFactory *err, const antlr4::Token &token, int size) const {
   // Do not allow arrays of dyn
   if (std::get<0>(typeChain.top()) == TY_DYN)
     throw err->get(token, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_ARRAY, std::to_string(size), {}, dynamicSize});
+  newTypeChain.push({TY_ARRAY, std::to_string(size), {}, nullptr});
   return SymbolType(newTypeChain);
 }
 
@@ -309,7 +309,7 @@ SymbolType SymbolType::setDynamicArraySize(llvm::Value *dynamicArraySize) const 
  * @return Dynamic array size
  */
 llvm::Value *SymbolType::getDynamicArraySize() const {
-  if (std::get<0>(typeChain.top()) != TY_ARRAY)                                                      // GCOV_EXCL_LINE
+  if (std::get<0>(typeChain.top()) != TY_PTR)                                                        // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get dynamic sized of non-array type"); // GCOV_EXCL_LINE
 
   return std::get<3>(typeChain.top());
