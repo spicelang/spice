@@ -29,7 +29,6 @@ entry:
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
-  %mike = alloca %_s__Person__string_string_int, align 8
   %0 = alloca %_s__Person__string_string_int, align 8
   %1 = alloca %_s__Person__string_string_int*, align 8
   %2 = alloca i1, align 1

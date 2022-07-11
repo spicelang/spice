@@ -15,49 +15,42 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   %welcomeMessage = alloca [5 x i8*], align 8
-  %0 = alloca i8*, align 8
-  %1 = alloca i8*, align 8
-  %2 = alloca i8*, align 8
-  %welcomeMessage1 = alloca [5 x i8*], align 8
   %i = alloca i32, align 4
   %word = alloca i8*, align 8
   store i32 0, i32* %result, align 4
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8** %0, align 8
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8** %1, align 8
-  store i8* getelementptr inbounds ([13 x i8], [13 x i8]* @2, i32 0, i32 0), i8** %2, align 8
-  store [5 x i8*] [i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8* getelementptr inbounds ([13 x i8], [13 x i8]* @2, i32 0, i32 0), i8* getelementptr inbounds ([1 x i8], [1 x i8]* @3, i32 0, i32 0), i8* getelementptr inbounds ([1 x i8], [1 x i8]* @3, i32 0, i32 0)], [5 x i8*]* %welcomeMessage1, align 8
+  store [5 x i8*] [i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8* getelementptr inbounds ([13 x i8], [13 x i8]* @2, i32 0, i32 0), i8* getelementptr inbounds ([1 x i8], [1 x i8]* @3, i32 0, i32 0), i8* getelementptr inbounds ([1 x i8], [1 x i8]* @3, i32 0, i32 0)], [5 x i8*]* %welcomeMessage, align 8
   store i32 0, i32* %i, align 4
   store i8* getelementptr inbounds ([1 x i8], [1 x i8]* @4, i32 0, i32 0), i8** %word, align 8
-  %3 = load [5 x i8*], [5 x i8*]* %welcomeMessage1, align 8
-  %4 = load i32, i32* %i, align 4
-  %5 = getelementptr inbounds [5 x i8*], [5 x i8*]* %welcomeMessage1, i32 0, i32 %4
-  %6 = load i8*, i8** %5, align 8
-  store i8* %6, i8** %word, align 8
+  %0 = load [5 x i8*], [5 x i8*]* %welcomeMessage, align 8
+  %1 = load i32, i32* %i, align 4
+  %2 = getelementptr inbounds [5 x i8*], [5 x i8*]* %welcomeMessage, i32 0, i32 %1
+  %3 = load i8*, i8** %2, align 8
+  store i8* %3, i8** %word, align 8
   br label %foreach.loop
 
 foreach.loop:                                     ; preds = %foreach.cond, %entry
-  %7 = load i32, i32* %i, align 4
-  %8 = load i8*, i8** %word, align 8
-  %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @5, i32 0, i32 0), i32 %7, i8* %8)
+  %4 = load i32, i32* %i, align 4
+  %5 = load i8*, i8** %word, align 8
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @5, i32 0, i32 0), i32 %4, i8* %5)
   br label %foreach.inc
 
 foreach.inc:                                      ; preds = %foreach.loop
   %idx = load i32, i32* %i, align 4
   %idx.inc = add i32 %idx, 1
   store i32 %idx.inc, i32* %i, align 4
-  %10 = getelementptr inbounds [5 x i8*], [5 x i8*]* %welcomeMessage1, i32 0, i32 %idx.inc
-  %11 = load i8*, i8** %10, align 8
-  store i8* %11, i8** %word, align 8
+  %7 = getelementptr inbounds [5 x i8*], [5 x i8*]* %welcomeMessage, i32 0, i32 %idx.inc
+  %8 = load i8*, i8** %7, align 8
+  store i8* %8, i8** %word, align 8
   br label %foreach.cond
 
 foreach.cond:                                     ; preds = %foreach.inc
-  %12 = load i32, i32* %i, align 4
-  %13 = icmp ule i32 %12, 4
-  br i1 %13, label %foreach.loop, label %foreach.end
+  %9 = load i32, i32* %i, align 4
+  %10 = icmp ule i32 %9, 4
+  br i1 %10, label %foreach.loop, label %foreach.end
 
 foreach.end:                                      ; preds = %foreach.cond
-  %14 = load i32, i32* %result, align 4
-  ret i32 %14
+  %11 = load i32, i32* %result, align 4
+  ret i32 %11
 }
 
 declare i32 @printf(i8*, ...)

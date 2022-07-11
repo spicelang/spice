@@ -13,8 +13,6 @@ target triple = "x86_64-w64-windows-gnu"
 define internal void @_p__void__testProc__intarrayptrptrptr(i32**** %0) {
 entry:
   %nums = alloca i32****, align 8
-  %nums1 = alloca i32**, align 8
-  %nums2 = alloca i32*, align 8
   store i32**** %0, i32***** %nums, align 8
   %1 = load i32****, i32***** %nums, align 8
   %2 = load i32***, i32**** %1, align 8
@@ -51,40 +49,31 @@ define i32 @main() {
 entry:
   %result = alloca i32, align 4
   %intArray = alloca [4 x i32], align 4
-  %0 = alloca i32, align 4
-  %1 = alloca i32, align 4
-  %2 = alloca i32, align 4
-  %3 = alloca i32, align 4
-  %intArray1 = alloca [4 x i32], align 4
-  %4 = alloca [4 x i32]*, align 8
-  %5 = alloca [4 x i32]**, align 8
-  %6 = alloca [4 x i32]***, align 8
-  %7 = alloca i32*, align 8
-  %8 = alloca i32**, align 8
-  %9 = alloca i32***, align 8
-  %10 = alloca i1, align 1
+  %0 = alloca [4 x i32]*, align 8
+  %1 = alloca [4 x i32]**, align 8
+  %2 = alloca [4 x i32]***, align 8
+  %3 = alloca i32*, align 8
+  %4 = alloca i32**, align 8
+  %5 = alloca i32***, align 8
+  %6 = alloca i1, align 1
   store i32 0, i32* %result, align 4
-  store i32 1, i32* %0, align 4
-  store i32 2, i32* %1, align 4
-  store i32 3, i32* %2, align 4
-  store i32 4, i32* %3, align 4
-  store [4 x i32] [i32 1, i32 2, i32 3, i32 4], [4 x i32]* %intArray1, align 4
-  %11 = load [4 x i32], [4 x i32]* %intArray1, align 4
-  %12 = getelementptr inbounds [4 x i32], [4 x i32]* %intArray1, i32 0, i32 1
-  %13 = load i32, i32* %12, align 4
-  %14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @4, i32 0, i32 0), i32 %13)
-  store [4 x i32]* %intArray1, [4 x i32]** %4, align 8
-  store [4 x i32]** %4, [4 x i32]*** %5, align 8
-  store [4 x i32]*** %5, [4 x i32]**** %6, align 8
-  %15 = load [4 x i32]***, [4 x i32]**** %6, align 8
-  %16 = load [4 x i32]**, [4 x i32]*** %15, align 8
-  %17 = load [4 x i32]*, [4 x i32]** %16, align 8
-  %18 = getelementptr inbounds [4 x i32], [4 x i32]* %17, i32 0, i32 0
-  store i32* %18, i32** %7, align 8
-  store i32** %7, i32*** %8, align 8
-  store i32*** %8, i32**** %9, align 8
-  call void @_p__void__testProc__intarrayptrptrptr(i32**** %9)
-  store i1 true, i1* %10, align 1
-  %19 = load i32, i32* %result, align 4
-  ret i32 %19
+  store [4 x i32] [i32 1, i32 2, i32 3, i32 4], [4 x i32]* %intArray, align 4
+  %7 = load [4 x i32], [4 x i32]* %intArray, align 4
+  %8 = getelementptr inbounds [4 x i32], [4 x i32]* %intArray, i32 0, i32 1
+  %9 = load i32, i32* %8, align 4
+  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @4, i32 0, i32 0), i32 %9)
+  store [4 x i32]* %intArray, [4 x i32]** %0, align 8
+  store [4 x i32]** %0, [4 x i32]*** %1, align 8
+  store [4 x i32]*** %1, [4 x i32]**** %2, align 8
+  %11 = load [4 x i32]***, [4 x i32]**** %2, align 8
+  %12 = load [4 x i32]**, [4 x i32]*** %11, align 8
+  %13 = load [4 x i32]*, [4 x i32]** %12, align 8
+  %14 = getelementptr inbounds [4 x i32], [4 x i32]* %13, i32 0, i32 0
+  store i32* %14, i32** %3, align 8
+  store i32** %3, i32*** %4, align 8
+  store i32*** %4, i32**** %5, align 8
+  call void @_p__void__testProc__intarrayptrptrptr(i32**** %5)
+  store i1 true, i1* %6, align 1
+  %15 = load i32, i32* %result, align 4
+  ret i32 %15
 }

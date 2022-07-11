@@ -28,8 +28,8 @@ entry:
   %byteVar = alloca i8, align 1
   %charVar = alloca i8, align 1
   %boolVar = alloca i1, align 1
-  %structArrayVar = alloca [4 x %_s__NestedStruct__int_string], align 8
   %0 = alloca %_s__NestedStruct__int_string, align 8
+  %structArrayVar = alloca [4 x %_s__NestedStruct__int_string], align 8
   store i32 0, i32* %result, align 4
   store double 0.000000e+00, double* %doubleVar, align 8
   %1 = load double, double* %doubleVar, align 8

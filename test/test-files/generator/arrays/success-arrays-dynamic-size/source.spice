@@ -1,7 +1,30 @@
 f<int> main() {
-    short arraySize = 6s;
-    int[arraySize] array = {1, 2, 3};
-    foreach dyn item : array {
+    printf("Array1:\n");
+    short arraySize1 = 6s;
+    int[arraySize1] array1 = {1, 2, 3};
+    foreach dyn item : array1 {
+        printf("Item: %d\n", item);
+    }
+
+    printf("Array2:\n");
+    long arraySize2 = 12l;
+    string[arraySize2] array2;
+    foreach dyn item : array2 {
+        printf("Item: %d\n", item);
+    }
+
+    printf("Array3:\n");
+    int arraySize3 = 3l;
+    int[arraySize3] array3 = {1, arraySize3, arraySize3};
+    foreach dyn item : array3 {
+        printf("Item: %d\n", item);
+    }
+
+    printf("Array4:\n");
+    int arraySize4 = 3l;
+    int[arraySize4] array4;
+    array4 = {1, arraySize4, arraySize4};
+    foreach dyn item : array4 {
         printf("Item: %d\n", item);
     }
 }

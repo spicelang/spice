@@ -8,7 +8,6 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
-  %res = alloca i32, align 4
   %0 = alloca i32, align 4
   store i32 0, i32* %result, align 4
   %1 = call i32 @_f__void__test()
@@ -22,10 +21,10 @@ entry:
 define internal i32 @_f__void__test() {
 entry:
   %result = alloca i32, align 4
-  %0 = alloca i32, align 4
-  store i32 1, i32* %0, align 4
-  %1 = load i32, i32* %0, align 4
-  ret i32 %1
+  %res = alloca i32, align 4
+  store i32 1, i32* %res, align 4
+  %0 = load i32, i32* %res, align 4
+  ret i32 %0
 }
 
 declare i32 @printf(i8*, ...)

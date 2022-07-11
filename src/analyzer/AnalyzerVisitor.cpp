@@ -847,9 +847,9 @@ std::any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx)
     throw err->get(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
                    "Can only apply foreach loop on an array type. You provided " + arrayType.getName(false));
 
-  if (arrayType.getArraySize() <= 0)
+  if (arrayType.getArraySize() == 0)
     throw err->get(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
-                   "Can only apply foreach loop on an array type of which the size is unknown at compile time");
+                   "Can only apply foreach loop on an array type of which the size is known at compile time");
 
   // Check index assignment or declaration
   SymbolType indexType;

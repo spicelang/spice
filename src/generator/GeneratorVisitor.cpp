@@ -938,6 +938,12 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   breakBlocks.push(bEnd);
   continueBlocks.push(bInc);
 
+  // Get array variable entry
+  visit(ctx->foreachHead()->assignExpr());
+  SymbolTableEntry *arrayVarEntry = currentScope->lookup(lhsVarName);
+  assert(arrayVarEntry != nullptr);
+  bool dynamicallySized = arrayVarEntry->getType().is(TY_PTR) && arrayVarEntry->getType().getDynamicArraySize() != nullptr;
+
   // Initialize loop variables
   llvm::Value *idxVarPtr;
   if (head->declStmt().size() >= 2) {
@@ -964,13 +970,26 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   llvm::Value *itemVarPtr = itemVarEntry->getAddress();
 
   // Do loop variable initialization
-  auto valuePtr = resolveAddress(ctx->foreachHead()->assignExpr());
-  llvm::Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
-  llvm::Value *maxIndex = builder->getInt32(value->getType()->getArrayNumElements() - 1);
+  llvm::Value *arrayValuePtr = resolveAddress(ctx->foreachHead()->assignExpr());
+  llvm::Value *arrayValue = builder->CreateLoad(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr);
+  llvm::Value *arraySizeValue = dynamicallySized ? arrayVarEntry->getType().getDynamicArraySize()
+                                                 : builder->getInt32(arrayValue->getType()->getArrayNumElements());
+
+  // Cast to i32 type if necessary
+  if (arraySizeValue->getType()->getIntegerBitWidth() != 32)
+    arraySizeValue = builder->CreateSExtOrTrunc(arraySizeValue, builder->getInt32Ty());
+
   // Load the first item into item variable
   llvm::Value *index = builder->CreateLoad(idxVarPtr->getType()->getPointerElementType(), idxVarPtr);
+
+  llvm::Value *itemPtr;
   llvm::Value *indices[2] = {builder->getInt32(0), index};
-  llvm::Value *itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, indices);
+  if (dynamicallySized) {
+    arrayValuePtr = builder->CreateLoad(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr);
+    itemPtr = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr, index);
+  } else {
+    itemPtr = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr, indices);
+  }
   llvm::Value *newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
   builder->CreateStore(newItemValue, itemVarPtr);
   createBr(bLoop);
@@ -995,8 +1014,11 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   index = builder->CreateAdd(index, builder->getInt32(1), "idx.inc");
   builder->CreateStore(index, idxVarPtr);
   // Load new item into item variable
-  indices[1] = index;
-  itemPtr = builder->CreateInBoundsGEP(valuePtr->getType()->getPointerElementType(), valuePtr, indices);
+  if (dynamicallySized) {
+    itemPtr = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr, index);
+  } else {
+    itemPtr = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr, indices);
+  }
   newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
   builder->CreateStore(newItemValue, itemVarPtr);
   createBr(bCond);
@@ -1006,7 +1028,7 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   moveInsertPointToBlock(bCond);
   // Check condition
   index = builder->CreateLoad(idxVarPtr->getType()->getPointerElementType(), idxVarPtr);
-  llvm::Value *cond = builder->CreateICmpULE(index, maxIndex);
+  llvm::Value *cond = builder->CreateICmpULT(index, arraySizeValue);
   createCondBr(cond, bLoop, bEnd);
 
   // Fill loop end block
@@ -2419,15 +2441,15 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
   auto arrayType = lhsType;
 
   SymbolTableEntry *arrayEntry = currentScope->lookupStrict(lhsVarName);
-  bool dynamicallySized = arrayEntry && arrayEntry->getType().is(TY_ARRAY) && dynamicArraySize != nullptr;
+  bool dynamicallySized = arrayEntry && arrayEntry->getType().is(TY_PTR) && dynamicArraySize != nullptr;
 
   // Save the dynamic size when it is a dynamically sized array
   if (dynamicallySized)
     arrayEntry->updateType(arrayEntry->getType().setDynamicArraySize(dynamicArraySize), true);
 
-  std::vector<llvm::Value *> itemPointers;
+  std::vector<llvm::Value *> itemValues;
   std::vector<llvm::Constant *> itemConstants;
-  itemPointers.reserve(arraySize);
+  itemValues.reserve(arraySize);
   itemConstants.reserve(arraySize);
 
   if (ctx->argLst()) { // The array is initialized with values
@@ -2435,8 +2457,8 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
     allArgsHardcoded = true;
     for (size_t i = 0; i < std::min(ctx->argLst()->assignExpr().size(), arraySize); i++) {
       currentConstValue = nullptr;
-      llvm::Value *itemPointer = resolveAddress(ctx->argLst()->assignExpr()[i]);
-      itemPointers.push_back(itemPointer);
+      llvm::Value *itemValue = resolveValue(ctx->argLst()->assignExpr()[i]);
+      itemValues.push_back(itemValue);
       itemConstants.push_back(currentConstValue);
     }
   }
@@ -2493,14 +2515,8 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
       }
 
       // Store item value to item address
-      llvm::Value *itemValue = itemDefaultValue;
-      if (ctx->argLst() && valueIndex < ctx->argLst()->assignExpr().size()) {
-        if (itemConstants[valueIndex] == nullptr) {
-          itemValue = builder->CreateLoad(itemPointers[valueIndex]->getType()->getPointerElementType(), itemPointers[valueIndex]);
-        } else {
-          itemValue = itemConstants[valueIndex];
-        }
-      }
+      llvm::Value *itemValue =
+          ctx->argLst() && valueIndex < ctx->argLst()->assignExpr().size() ? itemValues[valueIndex] : itemDefaultValue;
       builder->CreateStore(itemValue, itemAddress);
     }
 
@@ -2721,6 +2737,7 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const st
   // Create hardcoded array
   auto type = static_cast<llvm::ArrayType *>(arrayType);
   llvm::Constant *constArray = llvm::ConstantArray::get(type, itemConstants);
+
   // Find an unused global name
   std::string globalVarName = lhsVarName;
   if (globalVarName.empty()) {
@@ -2730,10 +2747,10 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const st
       suffixNumber++;
     } while (module->getNamedGlobal(globalVarName) != nullptr);
   }
+
   // Create global variable
-  llvm::Value *globalArrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
-  llvm::Value *arrayAddress = insertAlloca(arrayType, globalVarName);
-  builder->CreateStore(constArray, arrayAddress);
+  llvm::Value *arrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
+
   // Set some attributes to it
   llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
   global->setConstant(true);

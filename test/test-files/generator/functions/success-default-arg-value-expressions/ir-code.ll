@@ -16,16 +16,15 @@ entry:
 
 define internal double @_f__void__test() {
 entry:
-  %arg = alloca double, align 8
-  %0 = alloca double, align 8
+  %0 = call double @_f__void__getArg()
   %1 = alloca double, align 8
+  %2 = alloca double, align 8
   %result = alloca double, align 8
-  %2 = call double @_f__void__getArg()
-  store double %2, double* %0, align 8
-  %3 = load double, double* %0, align 8
+  store double %0, double* %1, align 8
+  %3 = load double, double* %1, align 8
   %4 = fadd double %3, 1.200000e+00
-  store double %4, double* %1, align 8
-  %5 = load double, double* %1, align 8
+  store double %4, double* %2, align 8
+  %5 = load double, double* %2, align 8
   ret double %5
 }
 

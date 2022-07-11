@@ -295,7 +295,7 @@ int SymbolType::getArraySize() const {
  * Set the dynamic array size of the current type
  */
 SymbolType SymbolType::setDynamicArraySize(llvm::Value *dynamicArraySize) const {
-  if (typeChain.top().superType != TY_ARRAY)                                                // GCOV_EXCL_LINE
+  if (typeChain.top().superType != TY_PTR)                                                  // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
 
   TypeChain newTypeChain = typeChain;

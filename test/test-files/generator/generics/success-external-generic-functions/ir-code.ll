@@ -14,27 +14,23 @@ entry:
   %1 = alloca i1, align 1
   %2 = alloca i32, align 4
   %3 = alloca i1, align 1
-  %4 = alloca i8*, align 8
-  %5 = alloca i8*, align 8
   %anonymous.0 = alloca [2 x i8*], align 8
-  %6 = alloca i1, align 1
+  %4 = alloca i1, align 1
   store i32 0, i32* %result, align 4
   store double 1.123000e+00, double* %0, align 8
-  %7 = load double, double* %0, align 8
-  call void @_p__void__printFormat__double(double %7)
+  %5 = load double, double* %0, align 8
+  call void @_p__void__printFormat__double(double %5)
   store i1 true, i1* %1, align 1
   store i32 543, i32* %2, align 4
-  %8 = load i32, i32* %2, align 4
-  call void @_p__void__printFormat__int(i32 %8)
+  %6 = load i32, i32* %2, align 4
+  call void @_p__void__printFormat__int(i32 %6)
   store i1 true, i1* %3, align 1
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8** %4, align 8
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8** %5, align 8
   store [2 x i8*] [i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0)], [2 x i8*]* %anonymous.0, align 8
-  %9 = load [2 x i8*], [2 x i8*]* %anonymous.0, align 8
-  call void @_p__void__printFormat__stringarray([2 x i8*] %9)
-  store i1 true, i1* %6, align 1
-  %10 = load i32, i32* %result, align 4
-  ret i32 %10
+  %7 = load [2 x i8*], [2 x i8*]* %anonymous.0, align 8
+  call void @_p__void__printFormat__stringarray([2 x i8*] %7)
+  store i1 true, i1* %4, align 1
+  %8 = load i32, i32* %result, align 4
+  ret i32 %8
 }
 
 declare void @_p__void__printFormat__double(double)

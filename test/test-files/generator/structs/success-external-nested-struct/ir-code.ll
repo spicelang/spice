@@ -12,27 +12,25 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
-  %s = alloca %_s__Socket__int_short_NestedSocket, align 8
-  %0 = alloca i16, align 2
-  %1 = alloca %_s__Socket__int_short_NestedSocket, align 8
-  %n = alloca %_s__NestedSocket__string_long, align 8
+  %s = alloca i16, align 2
+  %0 = alloca %_s__Socket__int_short_NestedSocket, align 8
   store i32 0, i32* %result, align 4
-  store i16 8080, i16* %0, align 2
-  %2 = load i16, i16* %0, align 2
-  %3 = call %_s__Socket__int_short_NestedSocket @_f__void__openServerSocket__short(i16 %2)
-  store %_s__Socket__int_short_NestedSocket %3, %_s__Socket__int_short_NestedSocket* %1, align 8
-  %4 = load %_s__Socket__int_short_NestedSocket, %_s__Socket__int_short_NestedSocket* %1, align 8
-  %5 = getelementptr inbounds %_s__Socket__int_short_NestedSocket, %_s__Socket__int_short_NestedSocket* %1, i32 0, i32 2
-  %6 = load %_s__NestedSocket__string_long, %_s__NestedSocket__string_long* %5, align 8
-  %7 = getelementptr inbounds %_s__NestedSocket__string_long, %_s__NestedSocket__string_long* %5, i32 0, i32 0
-  %8 = load i8*, i8** %7, align 8
-  %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @0, i32 0, i32 0), i8* %8)
-  %10 = load %_s__Socket__int_short_NestedSocket, %_s__Socket__int_short_NestedSocket* %1, align 8
-  %11 = getelementptr inbounds %_s__Socket__int_short_NestedSocket, %_s__Socket__int_short_NestedSocket* %1, i32 0, i32 0
-  %12 = load i32, i32* %11, align 4
-  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @1, i32 0, i32 0), i32 %12)
-  %14 = load i32, i32* %result, align 4
-  ret i32 %14
+  store i16 8080, i16* %s, align 2
+  %1 = load i16, i16* %s, align 2
+  %2 = call %_s__Socket__int_short_NestedSocket @_f__void__openServerSocket__short(i16 %1)
+  store %_s__Socket__int_short_NestedSocket %2, %_s__Socket__int_short_NestedSocket* %0, align 8
+  %3 = load %_s__Socket__int_short_NestedSocket, %_s__Socket__int_short_NestedSocket* %0, align 8
+  %4 = getelementptr inbounds %_s__Socket__int_short_NestedSocket, %_s__Socket__int_short_NestedSocket* %0, i32 0, i32 2
+  %5 = load %_s__NestedSocket__string_long, %_s__NestedSocket__string_long* %4, align 8
+  %6 = getelementptr inbounds %_s__NestedSocket__string_long, %_s__NestedSocket__string_long* %4, i32 0, i32 0
+  %7 = load i8*, i8** %6, align 8
+  %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @0, i32 0, i32 0), i8* %7)
+  %9 = load %_s__Socket__int_short_NestedSocket, %_s__Socket__int_short_NestedSocket* %0, align 8
+  %10 = getelementptr inbounds %_s__Socket__int_short_NestedSocket, %_s__Socket__int_short_NestedSocket* %0, i32 0, i32 0
+  %11 = load i32, i32* %10, align 4
+  %12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @1, i32 0, i32 0), i32 %11)
+  %13 = load i32, i32* %result, align 4
+  ret i32 %13
 }
 
 declare %_s__Socket__int_short_NestedSocket @_f__void__openServerSocket__short(i16)

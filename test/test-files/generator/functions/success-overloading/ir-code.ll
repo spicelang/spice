@@ -21,7 +21,6 @@ declare i32 @printf(i8*, ...)
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
-  %res = alloca i32, align 4
   %0 = alloca i32, align 4
   store i32 0, i32* %result, align 4
   %1 = call i32 @_f__void__testFunc()

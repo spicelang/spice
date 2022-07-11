@@ -8,7 +8,6 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
-  %v = alloca %_s__Vec__int_bool, align 8
   %0 = alloca %_s__Vec__int_bool, align 8
   %1 = alloca i1, align 1
   store i32 0, i32* %result, align 4
