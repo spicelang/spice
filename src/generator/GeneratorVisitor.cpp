@@ -250,6 +250,19 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
 
     // Generate return statement for result variable
     if (!blockAlreadyTerminated) {
+      std::vector<SymbolTableEntry *> varsToFree = currentScope->getVariablesThatCanBeFreed();
+      if (!varsToFree.empty()) {
+        // Generate cleanup block
+        llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
+        fct->getBasicBlockList().push_back(bCleanup);
+        builder->CreateBr(bCleanup);
+
+        // Generate cleanup instructions (e.g. dtor calls)
+        moveInsertPointToBlock(bCleanup);
+        for (SymbolTableEntry *varEntry : varsToFree)
+          insertDestructorCall(varEntry);
+      }
+
       // Restore stack if necessary
       if (stackState != nullptr)
         builder->CreateCall(retrieveStackRestoreFct(), {stackState});
@@ -408,6 +421,19 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
 
       // Generate return statement for result variable
       if (!blockAlreadyTerminated) {
+        std::vector<SymbolTableEntry *> varsToFree = currentScope->getVariablesThatCanBeFreed();
+        if (!varsToFree.empty()) {
+          // Generate cleanup block
+          llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
+          fct->getBasicBlockList().push_back(bCleanup);
+          builder->CreateBr(bCleanup);
+
+          // Generate cleanup instructions (e.g. dtor calls)
+          moveInsertPointToBlock(bCleanup);
+          for (SymbolTableEntry *varEntry : varsToFree)
+            insertDestructorCall(varEntry);
+        }
+
         // Restore stack if necessary
         if (stackState != nullptr)
           builder->CreateCall(retrieveStackRestoreFct(), {stackState});
@@ -561,6 +587,19 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
 
       // Create return
       if (!blockAlreadyTerminated) {
+        std::vector<SymbolTableEntry *> varsToFree = currentScope->getVariablesThatCanBeFreed();
+        if (!varsToFree.empty()) {
+          // Generate cleanup block
+          llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
+          proc->getBasicBlockList().push_back(bCleanup);
+          builder->CreateBr(bCleanup);
+
+          // Generate cleanup instructions (e.g. dtor calls)
+          moveInsertPointToBlock(bCleanup);
+          for (SymbolTableEntry *varEntry : varsToFree)
+            insertDestructorCall(varEntry);
+        }
+
         // Restore stack if necessary
         if (stackState != nullptr)
           builder->CreateCall(retrieveStackRestoreFct(), {stackState});
@@ -1283,6 +1322,20 @@ std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) 
     returnValuePtr = resolveAddress(ctx->assignExpr());
   } else if (returnVarEntry != nullptr) { // Function. Procedures do not have a return variable
     returnValuePtr = returnVarEntry->getAddress();
+  }
+
+  std::vector<SymbolTableEntry *> varsToFree = currentScope->getVariablesThatCanBeFreed();
+  if (!varsToFree.empty()) {
+    // Generate cleanup block
+    llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
+    llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
+    parentFct->getBasicBlockList().push_back(bCleanup);
+    builder->CreateBr(bCleanup);
+
+    // Generate cleanup instructions (e.g. dtor calls)
+    moveInsertPointToBlock(bCleanup);
+    for (SymbolTableEntry *varEntry : varsToFree)
+      insertDestructorCall(varEntry);
   }
 
   // Set block to terminated
@@ -2757,6 +2810,8 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const st
   global->setInitializer(constArray);
   return arrayAddress;
 }
+
+void GeneratorVisitor::insertDestructorCall(SymbolTableEntry *varEntry) {}
 
 llvm::Function *GeneratorVisitor::retrievePrintfFct() {
   std::string printfFctName = "printf";

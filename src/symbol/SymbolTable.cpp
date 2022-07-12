@@ -268,6 +268,17 @@ SymbolTable *SymbolTable::getChild(const std::string &scopeId) {
 }
 
 /**
+ * Retrieve all variables that can be freed, because the ref count went down to 0.
+ *
+ * @return
+ */
+std::vector<SymbolTableEntry *> SymbolTable::getVariablesThatCanBeFreed() const {
+  std::vector<SymbolTableEntry *> varsToFree;
+
+  return varsToFree;
+}
+
+/**
  * Returns all symbols of this particular sub-table
  *
  * @return Map of names and the corresponding symbol table entries

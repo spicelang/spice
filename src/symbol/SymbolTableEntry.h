@@ -62,6 +62,7 @@ private:
   SymbolSpecifiers specifiers;
   llvm::Type *llvmType = nullptr;
   SymbolState state;
+  size_t referenceCount = 0;
   const antlr4::Token &declToken;
   std::stack<llvm::Value *> memAddress;
   unsigned int orderIndex;
