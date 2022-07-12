@@ -22,7 +22,7 @@ entry:
   %4 = alloca i32, align 4
   store i32 0, i32* %result, align 4
   %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0))
-  store volatile i32 0, i32* %capturedVariable, align 4
+  store i32 0, i32* %capturedVariable, align 4
   store i32 1, i32* %i, align 4
   br label %for.cond
 

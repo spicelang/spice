@@ -10,7 +10,6 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
-  %s = alloca %_s__char__TestStruct__char_int, align 8
   %0 = alloca %_s__char__TestStruct__char_int, align 8
   %1 = alloca i1, align 1
   store i32 0, i32* %result, align 4
@@ -18,12 +17,10 @@ entry:
   store i8 97, i8* %2, align 1
   %3 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %0, i32 0, i32 1
   store i32 1, i32* %3, align 4
-  %4 = load %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %0, align 4
-  store %_s__char__TestStruct__char_int %4, %_s__char__TestStruct__char_int* %s, align 4
-  call void @_mp__TestStruct_char__printTest(%_s__char__TestStruct__char_int* %s)
+  call void @_mp__TestStruct_char__printTest(%_s__char__TestStruct__char_int* %0)
   store i1 true, i1* %1, align 1
-  %5 = load i32, i32* %result, align 4
-  ret i32 %5
+  %4 = load i32, i32* %result, align 4
+  ret i32 %4
 }
 
 define internal void @_mp__TestStruct_char__printTest(%_s__char__TestStruct__char_int* %0) {
@@ -51,7 +48,7 @@ entry:
   store %_s__char__TestStruct__char_int* %0, %_s__char__TestStruct__char_int** %this, align 8
   %4 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
   %5 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
-  %6 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %4, i32 0, i32 1
+  %6 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %5, i32 0, i32 1
   %7 = load i32, i32* %6, align 4
   %8 = icmp eq i32 %7, 1
   store i1 %8, i1* %1, align 1
@@ -61,7 +58,7 @@ entry:
 if.then:                                          ; preds = %entry
   %10 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
   %11 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
-  %12 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %10, i32 0, i32 1
+  %12 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %11, i32 0, i32 1
   %13 = load i32, i32* %12, align 4
   %14 = add i32 %13, 1
   store i32 %14, i32* %12, align 4
@@ -74,7 +71,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %if.then, %entry
   %16 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
   %17 = load %_s__char__TestStruct__char_int*, %_s__char__TestStruct__char_int** %this, align 8
-  %18 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %16, i32 0, i32 1
+  %18 = getelementptr inbounds %_s__char__TestStruct__char_int, %_s__char__TestStruct__char_int* %17, i32 0, i32 1
   %19 = load i32, i32* %18, align 4
   ret i32 %19
 }

@@ -57,9 +57,9 @@ SymbolState SymbolTableEntry::getState() const { return state; }
  * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
  * @param newState New state of the current symbol
  */
-void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const antlr4::Token &token) {
+void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const antlr4::Token &token, bool force) {
   // Check if this is a constant variable and is already initialized
-  if (state == INITIALIZED && specifiers.isConst())
+  if (state == INITIALIZED && specifiers.isConst() && !force)
     throw err->get(token, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
   // Check if the type is known at time of initialization
   if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                  // GCOV_EXCL_LINE

@@ -72,7 +72,7 @@ functionCall: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst
 arrayInitialization: LBRACE argLst? RBRACE;
 structInstantiation: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 
-dataType: baseDataType (MUL | LBRACKET INTEGER? RBRACKET)*;
+dataType: baseDataType (MUL | LBRACKET (INTEGER | assignExpr)? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType;
 customDataType: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)?;
 

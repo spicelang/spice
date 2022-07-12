@@ -16,7 +16,7 @@ entry:
   %i = alloca i32, align 4
   %0 = alloca { i32*, i32* }, align 8
   %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([21 x i8], [21 x i8]* @str, i64 0, i64 0))
-  store volatile i32 0, i32* %capturedVariable, align 4
+  store i32 0, i32* %capturedVariable, align 4
   store i32 1, i32* %i, align 4
   %1 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i64 0, i32 0
   %2 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i64 0, i32 1

@@ -51,18 +51,19 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   // if (requiresMainFct && secondRun)
   //  rootScope->purgeSubstantiationRemnants();
 
+  bool reAnalyze = reAnalyzeRequired;
+
   // Check if the visitor got a main function
   if (requiresMainFct && !hasMainFunction)
     throw err->get(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
 
   // Print compiler warnings once the whole ast is present, but not for std files
-  if (requiresMainFct && !isStdFile)
+  if (requiresMainFct && !isStdFile && !reAnalyze)
     rootScope->printCompilerWarnings();
 
   // Increment run number if the source file gets analyzed again
   runNumber++;
 
-  bool reAnalyze = reAnalyzeRequired;
   reAnalyzeRequired = false;
   return reAnalyze;
 }
@@ -845,6 +846,10 @@ std::any AnalyzerVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx)
   if (!arrayType.isArray() && !arrayType.is(TY_STRING))
     throw err->get(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
                    "Can only apply foreach loop on an array type. You provided " + arrayType.getName(false));
+
+  if (arrayType.getArraySize() == 0)
+    throw err->get(*head->declStmt().back()->start, OPERATOR_WRONG_DATA_TYPE,
+                   "Can only apply foreach loop on an array type of which the size is known at compile time");
 
   // Check index assignment or declaration
   SymbolType indexType;
@@ -2059,15 +2064,20 @@ std::any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
       type = type.toPointer(err.get(), *ctx->start);
     } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
       tokenCounter++;                                                    // Consume LBRACKET
+      int size = 0;                                                      // Default to 0 when no size is attached
       token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
-      unsigned int size = 0;                                       // Default to 0 when no size is attached
-      if (token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
-        int signedSize = std::stoi(token->toString());
+      if (token && token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
+        size = std::stoi(token->toString());
         // Check if size >1
-        if (signedSize <= 1)
+        if (size <= 1)
           throw err->get(*token->getSymbol(), ARRAY_SIZE_INVALID, "The size of an array must be > 1");
-        size = signedSize;
         tokenCounter++; // Consume INTEGER
+      } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter])) {
+        auto sizeType = std::any_cast<SymbolType>(visit(rule));
+        if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))
+          throw err->get(*token->getSymbol(), ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
+        size = -1;      // Set size to -1 to signalize that the array is dynamically sized
+        tokenCounter++; // Consume assignExpr
       }
       type = type.toArray(err.get(), *ctx->start, size);
     }

@@ -13,22 +13,22 @@ target triple = "x86_64-w64-windows-gnu"
 
 define i32 @main() local_unnamed_addr {
 entry:
-  %s1 = alloca %_s__int__Stack__intptr_long_long_int, align 8
-  call void @_mp__Stack_int__ctor(%_s__int__Stack__intptr_long_long_int* nonnull %s1)
-  call void @_mp__Stack_int__push__int(%_s__int__Stack__intptr_long_long_int* nonnull %s1, i32 123)
-  call void @_mp__Stack_int__push__int(%_s__int__Stack__intptr_long_long_int* nonnull %s1, i32 456)
-  call void @_mp__Stack_int__push__int(%_s__int__Stack__intptr_long_long_int* nonnull %s1, i32 789)
-  %0 = call i64 @_mf__Stack_int__getSize(%_s__int__Stack__intptr_long_long_int* nonnull %s1)
-  %1 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([16 x i8], [16 x i8]* @0, i64 0, i64 0), i64 %0)
-  %2 = call i64 @_mf__Stack_int__getCapacity(%_s__int__Stack__intptr_long_long_int* nonnull %s1)
-  %3 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @1, i64 0, i64 0), i64 %2)
-  %4 = call i32 @_mf__Stack_int__pop(%_s__int__Stack__intptr_long_long_int* nonnull %s1)
-  %5 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @2, i64 0, i64 0), i32 %4)
-  %6 = call i32 @_mf__Stack_int__pop(%_s__int__Stack__intptr_long_long_int* nonnull %s1)
-  %7 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @3, i64 0, i64 0), i32 %6)
-  %8 = call i32 @_mf__Stack_int__pop(%_s__int__Stack__intptr_long_long_int* nonnull %s1)
-  %9 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @4, i64 0, i64 0), i32 %8)
-  call void @_mp__Stack_int__dtor(%_s__int__Stack__intptr_long_long_int* nonnull %s1)
+  %0 = alloca %_s__int__Stack__intptr_long_long_int, align 8
+  call void @_mp__Stack_int__ctor(%_s__int__Stack__intptr_long_long_int* nonnull %0)
+  call void @_mp__Stack_int__push__int(%_s__int__Stack__intptr_long_long_int* nonnull %0, i32 123)
+  call void @_mp__Stack_int__push__int(%_s__int__Stack__intptr_long_long_int* nonnull %0, i32 456)
+  call void @_mp__Stack_int__push__int(%_s__int__Stack__intptr_long_long_int* nonnull %0, i32 789)
+  %1 = call i64 @_mf__Stack_int__getSize(%_s__int__Stack__intptr_long_long_int* nonnull %0)
+  %2 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([16 x i8], [16 x i8]* @0, i64 0, i64 0), i64 %1)
+  %3 = call i64 @_mf__Stack_int__getCapacity(%_s__int__Stack__intptr_long_long_int* nonnull %0)
+  %4 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @1, i64 0, i64 0), i64 %3)
+  %5 = call i32 @_mf__Stack_int__pop(%_s__int__Stack__intptr_long_long_int* nonnull %0)
+  %6 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @2, i64 0, i64 0), i32 %5)
+  %7 = call i32 @_mf__Stack_int__pop(%_s__int__Stack__intptr_long_long_int* nonnull %0)
+  %8 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @3, i64 0, i64 0), i32 %7)
+  %9 = call i32 @_mf__Stack_int__pop(%_s__int__Stack__intptr_long_long_int* nonnull %0)
+  %10 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @4, i64 0, i64 0), i32 %9)
+  call void @_mp__Stack_int__dtor(%_s__int__Stack__intptr_long_long_int* nonnull %0)
   ret i32 0
 }
 

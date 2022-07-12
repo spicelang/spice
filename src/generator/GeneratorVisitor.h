@@ -115,7 +115,6 @@ private:
   std::unique_ptr<llvm::DIBuilder> diBuilder;
   SymbolTable *currentScope;
   SymbolTable *rootScope;
-  std::string scopePrefix;
   SymbolType currentSymbolType;
   ScopePath scopePath;
   ThreadFactory &threadFactory;
@@ -132,9 +131,10 @@ private:
   std::string currentVarName;
   std::string lhsVarName;
   llvm::Type *lhsType = nullptr;
-  llvm::Type *structAccessType = nullptr;
   llvm::Value *structAccessAddress = nullptr;
-  std::vector<llvm::Value *> structAccessIndices;
+  llvm::Value *dynamicArraySize = nullptr;
+  llvm::Value *stackState = nullptr;
+  bool secondRun = false;
   struct DebugInfo {
     llvm::DIFile *diFile;
     llvm::DICompileUnit *compileUnit;
@@ -153,17 +153,20 @@ private:
     llvm::DIType *stringTy;
     llvm::DIType *boolTy;
   } debugInfo;
-  bool secondRun = false;
 
   // Private methods
   llvm::Value *resolveValue(antlr4::tree::ParseTree *tree);
-  llvm::Value *resolveAddress(antlr4::tree::ParseTree *tree);
+  llvm::Value *resolveAddress(antlr4::tree::ParseTree *tree, bool storeVolatile = false);
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
-  llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "", llvm::Value *arraySize = nullptr);
+  llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
+  llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
+  llvm::Value *createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants);
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
+  llvm::Function *retrieveStackSaveFct();
+  llvm::Function *retrieveStackRestoreFct();
   llvm::Type *getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope);
   llvm::Constant *getDefaultValueForType(llvm::Type *type, const std::string &subTypeName);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);

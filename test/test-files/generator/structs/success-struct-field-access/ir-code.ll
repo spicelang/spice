@@ -12,7 +12,6 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
-  %john = alloca %_s__Person__string_string_int, align 8
   %0 = alloca %_s__Person__string_string_int, align 8
   store i32 0, i32* %result, align 4
   %1 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 0
@@ -22,16 +21,14 @@ entry:
   %3 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 2
   store i32 46, i32* %3, align 4
   %4 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %0, align 8
-  store %_s__Person__string_string_int %4, %_s__Person__string_string_int* %john, align 8
-  %5 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %john, align 8
-  %6 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %john, i32 0, i32 2
-  store i32 47, i32* %6, align 4
-  %7 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %john, align 8
-  %8 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %john, i32 0, i32 2
-  %9 = load i32, i32* %8, align 4
-  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @2, i32 0, i32 0), i32 %9)
-  %11 = load i32, i32* %result, align 4
-  ret i32 %11
+  %5 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 2
+  store i32 47, i32* %5, align 4
+  %6 = load %_s__Person__string_string_int, %_s__Person__string_string_int* %0, align 8
+  %7 = getelementptr inbounds %_s__Person__string_string_int, %_s__Person__string_string_int* %0, i32 0, i32 2
+  %8 = load i32, i32* %7, align 4
+  %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @2, i32 0, i32 0), i32 %8)
+  %10 = load i32, i32* %result, align 4
+  ret i32 %10
 }
 
 declare i32 @printf(i8*, ...)

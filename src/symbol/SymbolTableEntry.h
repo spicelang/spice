@@ -38,7 +38,7 @@ public:
   [[nodiscard]] const SymbolTable *getScope() const;
   [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
   [[nodiscard]] SymbolState getState() const;
-  void updateState(SymbolState newState, const ErrorFactory *errorFactory, const antlr4::Token &token);
+  void updateState(SymbolState newState, const ErrorFactory *errorFactory, const antlr4::Token &token, bool force = false);
   [[nodiscard]] const antlr4::Token &getDeclToken() const;
   [[nodiscard]] llvm::Type *getLLVMType() const;
   void updateLLVMType(llvm::Type *newType);

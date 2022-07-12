@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include <llvm/IR/Value.h>
+
 // Forward declarations
 class ErrorFactory;
 
@@ -32,24 +34,34 @@ enum SymbolSuperType {
 };
 
 class SymbolType {
-  typedef std::vector<SymbolType> TemplateTypes;
-  typedef std::tuple<SymbolSuperType, std::string, TemplateTypes> TypeChainElement;
+private:
+  struct TypeChainElement {
+    SymbolSuperType superType;
+    std::string subType;
+    std::vector<SymbolType> templateTypes;
+    llvm::Value *dynamicArraySize;
+
+    friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
+      return lhs.superType == rhs.superType && lhs.subType == rhs.subType && lhs.templateTypes == rhs.templateTypes &&
+             lhs.dynamicArraySize == rhs.dynamicArraySize;
+    }
+  };
   typedef std::stack<TypeChainElement> TypeChain;
 
 public:
   // Constructors
-  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}}}) {}
-  explicit SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}}}) {}
+  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}, nullptr}}) {}
+  explicit SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}, nullptr}}) {}
   explicit SymbolType(SymbolSuperType superType, const std::string &subType, const std::vector<SymbolType> &templateTypes)
-      : typeChain({{superType, subType, templateTypes}}) {}
+      : typeChain({{superType, subType, templateTypes, nullptr}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
   SymbolType() = default;
   virtual ~SymbolType() = default;
 
   // Public methods
   [[nodiscard]] TypeChain getTypeChain() const;
-  SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token) const;
-  SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, unsigned int size = 0) const;
+  SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token, llvm::Value *dynamicSize = nullptr) const;
+  SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, int size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
@@ -66,12 +78,14 @@ public:
   [[nodiscard]] SymbolSuperType getSuperType() const;
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;
-  void setTemplateTypes(TemplateTypes templateTypes);
-  [[nodiscard]] TemplateTypes getTemplateTypes() const;
+  void setTemplateTypes(std::vector<SymbolType> templateTypes);
+  [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
   void setSigned(bool isSigned);
   [[nodiscard]] bool isSigned() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
-  [[nodiscard]] unsigned int getArraySize() const;
+  [[nodiscard]] int getArraySize() const;
+  [[nodiscard]] SymbolType setDynamicArraySize(llvm::Value *dynamicArraySize) const;
+  [[nodiscard]] llvm::Value *getDynamicArraySize() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
