@@ -111,9 +111,7 @@ bool SymbolType::isPointer() const { return getSuperType() == TY_PTR; }
  * @return Pointer or not
  */
 bool SymbolType::isPointerOf(SymbolSuperType elementSuperType) const {
-  if (isPointer())
-    return getContainedTy().is(elementSuperType);
-  return false;
+  return isPointer() && getContainedTy().is(elementSuperType);
 }
 
 /**
@@ -129,11 +127,7 @@ bool SymbolType::isArray() const { return getSuperType() == TY_ARRAY; }
  * @param elementSuperType Super type to check for
  * @return Array of super type or not
  */
-bool SymbolType::isArrayOf(SymbolSuperType elementSuperType) const {
-  if (isArray())
-    return getContainedTy().is(elementSuperType);
-  return false;
-}
+bool SymbolType::isArrayOf(SymbolSuperType elementSuperType) const { return isArray() && getContainedTy().is(elementSuperType); }
 
 /**
  * Check if the current type is an array of the given type. Array size is ignored.
@@ -141,11 +135,7 @@ bool SymbolType::isArrayOf(SymbolSuperType elementSuperType) const {
  * @param otherSymbolType Symbol type
  * @return Array of contained symbol type or not
  */
-bool SymbolType::isArrayOf(const SymbolType &otherSymbolType) const {
-  if (isArray())
-    return getContainedTy() == otherSymbolType;
-  return false;
-}
+bool SymbolType::isArrayOf(const SymbolType &otherSymbolType) const { return isArray() && getContainedTy() == otherSymbolType; }
 
 /**
  * Check if the current type is of a certain super type
