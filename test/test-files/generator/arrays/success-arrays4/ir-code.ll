@@ -45,7 +45,7 @@ foreach.inc:                                      ; preds = %foreach.loop
 
 foreach.cond:                                     ; preds = %foreach.inc
   %9 = load i32, i32* %i, align 4
-  %10 = icmp ule i32 %9, 4
+  %10 = icmp ult i32 %9, 5
   br i1 %10, label %foreach.loop, label %foreach.end
 
 foreach.end:                                      ; preds = %foreach.cond

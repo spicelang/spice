@@ -941,8 +941,8 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   // Get array variable entry
   visit(ctx->foreachHead()->assignExpr());
   SymbolTableEntry *arrayVarEntry = currentScope->lookup(lhsVarName);
-  assert(arrayVarEntry != nullptr);
-  bool dynamicallySized = arrayVarEntry->getType().is(TY_PTR) && arrayVarEntry->getType().getDynamicArraySize() != nullptr;
+  bool dynamicallySized =
+      arrayVarEntry && arrayVarEntry->getType().is(TY_PTR) && arrayVarEntry->getType().getDynamicArraySize() != nullptr;
 
   // Initialize loop variables
   llvm::Value *idxVarPtr;
@@ -1014,6 +1014,7 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
   index = builder->CreateAdd(index, builder->getInt32(1), "idx.inc");
   builder->CreateStore(index, idxVarPtr);
   // Load new item into item variable
+  indices[1] = index;
   if (dynamicallySized) {
     itemPtr = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr, index);
   } else {
@@ -2441,11 +2442,8 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
   auto arrayType = lhsType;
 
   SymbolTableEntry *arrayEntry = currentScope->lookupStrict(lhsVarName);
-  bool dynamicallySized = arrayEntry && arrayEntry->getType().is(TY_PTR) && dynamicArraySize != nullptr;
-
-  // Save the dynamic size when it is a dynamically sized array
-  if (dynamicallySized)
-    arrayEntry->updateType(arrayEntry->getType().setDynamicArraySize(dynamicArraySize), true);
+  bool dynamicallySized =
+      arrayEntry && arrayEntry->getType().is(TY_PTR) && arrayEntry->getType().getDynamicArraySize() != nullptr;
 
   std::vector<llvm::Value *> itemValues;
   std::vector<llvm::Constant *> itemConstants;
@@ -2749,7 +2747,9 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const st
   }
 
   // Create global variable
-  llvm::Value *arrayAddress = module->getOrInsertGlobal(globalVarName, arrayType);
+  module->getOrInsertGlobal(globalVarName, arrayType);
+  llvm::Value *arrayAddress = insertAlloca(arrayType, lhsVarName);
+  builder->CreateStore(constArray, arrayAddress);
 
   // Set some attributes to it
   llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
