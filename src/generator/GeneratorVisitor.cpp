@@ -1324,6 +1324,7 @@ std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) 
     returnValuePtr = returnVarEntry->getAddress();
   }
 
+  // Insert destructor calls to variables, going out of scope
   std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
   if (!varsToDestruct.empty()) {
     // Generate cleanup block
@@ -2812,16 +2813,8 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const st
 }
 
 void GeneratorVisitor::insertDestructorCall(const antlr4::Token &token, SymbolTableEntry *varEntry) {
-  assert(varEntry != nullptr && varEntry->getType().is(TY_STRUCT));
-
-  // Create Spice function for destructor
-  SymbolTableEntry *structEntry = currentScope->lookup(varEntry->getType().getName());
-  SymbolTable *accessScope = structEntry->getScope();
-  assert(accessScope != nullptr);
-  accessScope = accessScope->getChild(STRUCT_SCOPE_PREFIX + structEntry->getName());
-  assert(accessScope != nullptr);
-  SymbolType thisType = varEntry->getType();
-  Function *spiceDtor = accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, err.get(), token);
+  Function *spiceDtor = currentScope->getFunctionAccessPointer(token);
+  assert(spiceDtor != nullptr);
 
   // Cancel if no destructor was found
   if (spiceDtor == nullptr)
