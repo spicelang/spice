@@ -12,5 +12,4 @@ f<int> main() {
     printf("Vector size: %d\n", v1.getSize());
     printf("Vector capacity: %d\n", v1.getCapacity());
     printf("Vector item 5: %f\n", v1.get(5));
-    v1.dtor();
 }

@@ -478,7 +478,7 @@ void SymbolTable::insertFunctionAccessPointer(const antlr4::Token &token, Functi
 Function *SymbolTable::getFunctionAccessPointer(const antlr4::Token &token) {
   std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
   if (!functionAccessPointers.contains(codeLoc))
-    throw std::runtime_error("Internal compiler error: Could not get function access pointer");
+    return nullptr;
   return functionAccessPointers.at(codeLoc);
 }
 
