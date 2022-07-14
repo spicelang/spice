@@ -250,8 +250,8 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
 
     // Generate return statement for result variable
     if (!blockAlreadyTerminated) {
-      std::vector<SymbolTableEntry *> varsToFree = currentScope->getVariablesThatCanBeFreed();
-      if (!varsToFree.empty()) {
+      std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+      if (!varsToDestruct.empty()) {
         // Generate cleanup block
         llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
         fct->getBasicBlockList().push_back(bCleanup);
@@ -259,8 +259,8 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
 
         // Generate cleanup instructions (e.g. dtor calls)
         moveInsertPointToBlock(bCleanup);
-        for (SymbolTableEntry *varEntry : varsToFree)
-          insertDestructorCall(varEntry);
+        for (SymbolTableEntry *varEntry : varsToDestruct)
+          insertDestructorCall(*ctx->start, varEntry);
       }
 
       // Restore stack if necessary
@@ -421,8 +421,8 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
 
       // Generate return statement for result variable
       if (!blockAlreadyTerminated) {
-        std::vector<SymbolTableEntry *> varsToFree = currentScope->getVariablesThatCanBeFreed();
-        if (!varsToFree.empty()) {
+        std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+        if (!varsToDestruct.empty()) {
           // Generate cleanup block
           llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
           fct->getBasicBlockList().push_back(bCleanup);
@@ -430,8 +430,8 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
 
           // Generate cleanup instructions (e.g. dtor calls)
           moveInsertPointToBlock(bCleanup);
-          for (SymbolTableEntry *varEntry : varsToFree)
-            insertDestructorCall(varEntry);
+          for (SymbolTableEntry *varEntry : varsToDestruct)
+            insertDestructorCall(*ctx->start, varEntry);
         }
 
         // Restore stack if necessary
@@ -587,8 +587,8 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
 
       // Create return
       if (!blockAlreadyTerminated) {
-        std::vector<SymbolTableEntry *> varsToFree = currentScope->getVariablesThatCanBeFreed();
-        if (!varsToFree.empty()) {
+        std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+        if (!varsToDestruct.empty()) {
           // Generate cleanup block
           llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
           proc->getBasicBlockList().push_back(bCleanup);
@@ -596,8 +596,8 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
 
           // Generate cleanup instructions (e.g. dtor calls)
           moveInsertPointToBlock(bCleanup);
-          for (SymbolTableEntry *varEntry : varsToFree)
-            insertDestructorCall(varEntry);
+          for (SymbolTableEntry *varEntry : varsToDestruct)
+            insertDestructorCall(*ctx->start, varEntry);
         }
 
         // Restore stack if necessary
@@ -1324,8 +1324,8 @@ std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) 
     returnValuePtr = returnVarEntry->getAddress();
   }
 
-  std::vector<SymbolTableEntry *> varsToFree = currentScope->getVariablesThatCanBeFreed();
-  if (!varsToFree.empty()) {
+  std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+  if (!varsToDestruct.empty()) {
     // Generate cleanup block
     llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
     llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
@@ -1334,8 +1334,8 @@ std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) 
 
     // Generate cleanup instructions (e.g. dtor calls)
     moveInsertPointToBlock(bCleanup);
-    for (SymbolTableEntry *varEntry : varsToFree)
-      insertDestructorCall(varEntry);
+    for (SymbolTableEntry *varEntry : varsToDestruct)
+      insertDestructorCall(*ctx->start, varEntry);
   }
 
   // Set block to terminated
@@ -2811,7 +2811,52 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const st
   return arrayAddress;
 }
 
-void GeneratorVisitor::insertDestructorCall(SymbolTableEntry *varEntry) {}
+void GeneratorVisitor::insertDestructorCall(const antlr4::Token &token, SymbolTableEntry *varEntry) {
+  assert(varEntry != nullptr && varEntry->getType().is(TY_STRUCT));
+
+  // Create Spice function for destructor
+  SymbolTableEntry *structEntry = currentScope->lookup(varEntry->getType().getName());
+  SymbolTable *accessScope = structEntry->getScope();
+  assert(accessScope != nullptr);
+  accessScope = accessScope->getChild(STRUCT_SCOPE_PREFIX + structEntry->getName());
+  assert(accessScope != nullptr);
+  SymbolType thisType = varEntry->getType();
+  Function *spiceDtor = accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, err.get(), token);
+
+  // Cancel if no destructor was found
+  if (spiceDtor == nullptr)
+    return;
+
+  // Get this value pointer
+  llvm::Value *thisValuePtr = varEntry->getAddress();
+
+  // Check if function exists in the current module
+  bool functionFound = false;
+  std::string fctIdentifier = spiceDtor->getMangledName();
+  for (const auto &function : module->getFunctionList()) { // Search for function definition
+    if (function.getName() == fctIdentifier) {
+      functionFound = true;
+      break;
+    } else if (function.getName() == spiceDtor->getName()) {
+      functionFound = true;
+      fctIdentifier = spiceDtor->getName();
+      break;
+    }
+  }
+
+  if (!functionFound) { // Not found => Declare function, which will be linked in
+    llvm::FunctionType *fctType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), thisValuePtr->getType(), false);
+    module->getOrInsertFunction(fctIdentifier, fctType);
+  }
+
+  // Get the declared function and its type
+  llvm::Function *fct = module->getFunction(fctIdentifier);
+  assert(fct != nullptr);
+  llvm::FunctionType *fctType = fct->getFunctionType();
+
+  // Create the function call
+  builder->CreateCall(fct, thisValuePtr);
+}
 
 llvm::Function *GeneratorVisitor::retrievePrintfFct() {
   std::string printfFctName = "printf";

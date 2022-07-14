@@ -3,5 +3,4 @@ import "std/data/vector" as v;
 f<int> main() {
     dyn vec = v.Vector<int>();
     vec.pushBack(12);
-
 }

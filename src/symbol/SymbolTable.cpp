@@ -270,12 +270,21 @@ SymbolTable *SymbolTable::getChild(const std::string &scopeId) {
 /**
  * Retrieve all variables that can be freed, because the ref count went down to 0.
  *
- * @return
+ * @return Variables that can be de-allocated
  */
-std::vector<SymbolTableEntry *> SymbolTable::getVariablesThatCanBeFreed() const {
-  std::vector<SymbolTableEntry *> varsToFree;
+std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForStructs) {
+  assert(parent != nullptr); // Should not be called in root scope
 
-  return varsToFree;
+  // Collect all variables
+  std::vector<SymbolTableEntry *> varsGoingOutOfScope;
+  varsGoingOutOfScope.reserve(symbols.size());
+  for (auto [name, entry] : symbols) {
+    if (name == THIS_VARIABLE_NAME)
+      continue;
+    if (!filterForStructs || entry.getType().is(TY_STRUCT))
+      varsGoingOutOfScope.push_back(&symbols.at(name));
+  }
+  return varsGoingOutOfScope;
 }
 
 /**

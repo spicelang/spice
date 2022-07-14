@@ -35,7 +35,7 @@ public:
   [[nodiscard]] std::string getName() const;
   [[nodiscard]] const SymbolType &getType() const;
   void updateType(const SymbolType &newType, bool force);
-  [[nodiscard]] const SymbolTable *getScope() const;
+  [[nodiscard]] SymbolTable *getScope() const;
   [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
   [[nodiscard]] SymbolState getState() const;
   void updateState(SymbolState newState, const ErrorFactory *errorFactory, const antlr4::Token &token, bool force = false);
@@ -50,6 +50,8 @@ public:
   [[nodiscard]] bool isGlobal() const;
   [[nodiscard]] bool isVolatile() const;
   void setVolatile(bool volatility = true);
+  //[[nodiscard]] size_t getRefCount() const;
+  // void increaseRefCount();
   [[nodiscard]] bool isUsed() const;
   void setUsed();
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
@@ -58,11 +60,11 @@ private:
   // Members
   const std::string name;
   SymbolType type;
-  const SymbolTable *scope;
+  SymbolTable *scope;
   SymbolSpecifiers specifiers;
   llvm::Type *llvmType = nullptr;
   SymbolState state;
-  size_t referenceCount = 0;
+  // size_t refCount = 0;
   const antlr4::Token &declToken;
   std::stack<llvm::Value *> memAddress;
   unsigned int orderIndex;
