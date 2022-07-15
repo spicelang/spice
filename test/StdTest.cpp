@@ -30,10 +30,8 @@ std::vector<TestCase> detectStdTestCases(const std::string &suitePath) {
 
   std::vector<TestCase> testCases;
   testCases.reserve(subDirs.size());
-  for (std::string &dirName : subDirs) {
-    // Save test suite
+  for (std::string &dirName : subDirs)
     testCases.push_back({dirName, suitePath + FileUtil::DIR_SEPARATOR + dirName});
-  }
 
   return testCases;
 }
