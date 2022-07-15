@@ -1,7 +1,8 @@
-import "std/data/vector" as v;
+import "std/data/vector" as vec;
+import "std/data/pair" as pair;
 
 f<int> main() {
-    dyn vec = v.Vector<int>();
-    vec.pushBack(12);
-    return 0;
+    vec.Vector<pair.Pair<int, string>> pairVector = vec.Vector<pair.Pair<int, string>>();
+    pairVector.pushBack(pair.Pair<int, string>(0, "Hello"));
+    pairVector.pushBack(pair.Pair<int, string>(1, "World"));
 }

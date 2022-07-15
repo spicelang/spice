@@ -21,16 +21,16 @@ entry:
   %1 = call i64 @_mf__Queue_char__getCapacity(%_s__char__Queue__charptr_long_long_long_long_int* nonnull %q1)
   %2 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i64 %0, i64 %1)
   %3 = call i1 @_mf__Queue_char__isEmpty(%_s__char__Queue__charptr_long_long_long_long_int* nonnull %q1)
-  br i1 %3, label %while.end, label %while
+  br i1 %3, label %cleanup, label %while
 
 while:                                            ; preds = %entry, %while
   %4 = call i8 @_mf__Queue_char__pop(%_s__char__Queue__charptr_long_long_long_long_int* nonnull %q1)
   %5 = sext i8 %4 to i32
   %putchar = call i32 @putchar(i32 %5)
   %6 = call i1 @_mf__Queue_char__isEmpty(%_s__char__Queue__charptr_long_long_long_long_int* nonnull %q1)
-  br i1 %6, label %while.end, label %while
+  br i1 %6, label %cleanup, label %while
 
-while.end:                                        ; preds = %while, %entry
+cleanup:                                          ; preds = %while, %entry
   call void @_mp__Queue_char__dtor(%_s__char__Queue__charptr_long_long_long_long_int* nonnull %q1)
   ret i32 0
 }

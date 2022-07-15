@@ -252,17 +252,24 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
     if (!blockAlreadyTerminated) {
       std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
       if (!varsToDestruct.empty()) {
+        llvm::BasicBlock *predecessor = builder->GetInsertBlock();
         // Generate cleanup block
         llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
-        builder->CreateBr(bCleanup);
         moveInsertPointToBlock(bCleanup);
 
         // Generate cleanup instructions (e.g. dtor calls)
         bool destructorCalled = false;
         for (SymbolTableEntry *varEntry : varsToDestruct)
-          destructorCalled = destructorCalled || insertDestructorCall(*ctx->start, varEntry);
-        if (destructorCalled)
+          destructorCalled |= insertDestructorCall(*ctx->start, varEntry);
+
+        if (destructorCalled) {
           fct->getBasicBlockList().push_back(bCleanup);
+          moveInsertPointToBlock(predecessor);
+          builder->CreateBr(bCleanup);
+          moveInsertPointToBlock(bCleanup);
+        } else {
+          moveInsertPointToBlock(predecessor);
+        }
       }
 
       // Restore stack if necessary
@@ -426,17 +433,24 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
       if (!blockAlreadyTerminated) {
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
         if (!varsToDestruct.empty()) {
+          llvm::BasicBlock *predecessor = builder->GetInsertBlock();
           // Generate cleanup block
           llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
-          builder->CreateBr(bCleanup);
           moveInsertPointToBlock(bCleanup);
 
           // Generate cleanup instructions (e.g. dtor calls)
           bool destructorCalled = false;
           for (SymbolTableEntry *varEntry : varsToDestruct)
-            destructorCalled = destructorCalled || insertDestructorCall(*ctx->start, varEntry);
-          if (destructorCalled)
+            destructorCalled |= insertDestructorCall(*ctx->start, varEntry);
+
+          if (destructorCalled) {
             fct->getBasicBlockList().push_back(bCleanup);
+            moveInsertPointToBlock(predecessor);
+            builder->CreateBr(bCleanup);
+            moveInsertPointToBlock(bCleanup);
+          } else {
+            moveInsertPointToBlock(predecessor);
+          }
         }
 
         // Restore stack if necessary
@@ -594,17 +608,24 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
       if (!blockAlreadyTerminated) {
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
         if (!varsToDestruct.empty()) {
+          llvm::BasicBlock *predecessor = builder->GetInsertBlock();
           // Generate cleanup block
           llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
-          builder->CreateBr(bCleanup);
           moveInsertPointToBlock(bCleanup);
 
           // Generate cleanup instructions (e.g. dtor calls)
           bool destructorCalled = false;
           for (SymbolTableEntry *varEntry : varsToDestruct)
-            destructorCalled = destructorCalled || insertDestructorCall(*ctx->start, varEntry);
-          if (destructorCalled)
+            destructorCalled |= insertDestructorCall(*ctx->start, varEntry);
+
+          if (destructorCalled) {
             proc->getBasicBlockList().push_back(bCleanup);
+            moveInsertPointToBlock(predecessor);
+            builder->CreateBr(bCleanup);
+            moveInsertPointToBlock(bCleanup);
+          } else {
+            moveInsertPointToBlock(predecessor);
+          }
         }
 
         // Restore stack if necessary
@@ -1334,18 +1355,24 @@ std::any GeneratorVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) 
   // Insert destructor calls to variables, going out of scope
   std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
   if (!varsToDestruct.empty()) {
-    llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
+    llvm::BasicBlock *predecessor = builder->GetInsertBlock();
     // Generate cleanup block
     llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
-    builder->CreateBr(bCleanup);
     moveInsertPointToBlock(bCleanup);
 
     // Generate cleanup instructions (e.g. dtor calls)
     bool destructorCalled = false;
     for (SymbolTableEntry *varEntry : varsToDestruct)
-      destructorCalled = destructorCalled || insertDestructorCall(*ctx->start, varEntry);
-    if (destructorCalled)
-      parentFct->getBasicBlockList().push_back(bCleanup);
+      destructorCalled |= insertDestructorCall(*ctx->start, varEntry);
+
+    if (destructorCalled) {
+      predecessor->getParent()->getBasicBlockList().push_back(bCleanup);
+      moveInsertPointToBlock(predecessor);
+      builder->CreateBr(bCleanup);
+      moveInsertPointToBlock(bCleanup);
+    } else {
+      moveInsertPointToBlock(predecessor);
+    }
   }
 
   // Set block to terminated

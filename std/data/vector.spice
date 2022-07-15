@@ -52,7 +52,6 @@ public p Vector.ctor(unsigned long initAllocItems, T defaultValue) {
 }
 
 public p Vector.dtor() {
-    printf("Dtor called!");
     // Free all the memory
     unsafe {
         free((byte*) this.contents);
