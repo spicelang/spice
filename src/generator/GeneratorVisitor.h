@@ -163,6 +163,7 @@ private:
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
   llvm::Value *createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants);
+  bool insertDestructorCall(const antlr4::Token &token, SymbolTableEntry *varEntry);
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
   llvm::Function *retrieveStackSaveFct();

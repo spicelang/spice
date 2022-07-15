@@ -5,5 +5,4 @@ f<int> main() {
     vec.Vector<pair.Pair<int, string>> pairVector = vec.Vector<pair.Pair<int, string>>();
     pairVector.pushBack(pair.Pair<int, string>(0, "Hello"));
     pairVector.pushBack(pair.Pair<int, string>(1, "World"));
-    pairVector.dtor();
 }

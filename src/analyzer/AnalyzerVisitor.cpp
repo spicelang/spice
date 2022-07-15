@@ -105,6 +105,11 @@ std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefConte
     // Visit statements in new scope
     visit(ctx->stmtLst());
 
+    // Call destructors for variables, that are going out of scope
+    std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+    for (SymbolTableEntry *varEntry : varsToDestruct)
+      insertDestructorCall(*ctx->start, varEntry);
+
     // Return to root scope
     currentScope = currentScope->getParent();
   }
@@ -297,6 +302,11 @@ std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx)
 
         // Visit statements in new scope
         visit(ctx->stmtLst());
+
+        // Call destructors for variables, that are going out of scope
+        std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+        for (SymbolTableEntry *varEntry : varsToDestruct)
+          insertDestructorCall(*ctx->start, varEntry);
 
         // Reset generic types
         for (const auto &arg : args) {
@@ -492,6 +502,11 @@ std::any AnalyzerVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ct
 
         // Visit statements in new scope
         visit(ctx->stmtLst());
+
+        // Call destructors for variables, that are going out of scope
+        std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+        for (SymbolTableEntry *varEntry : varsToDestruct)
+          insertDestructorCall(*ctx->start, varEntry);
 
         // Reset generic types
         for (const auto &arg : args) {
@@ -1070,6 +1085,7 @@ std::any AnalyzerVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
 
 std::any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   SymbolTableEntry *returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
+  SymbolType returnType;
   if (returnVariable) { // Return variable => function
     expectedType = returnVariable->getType();
 
@@ -1100,13 +1116,21 @@ std::any AnalyzerVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
                      "Return without value, but result variable is not initialized yet");
     returnVariable->setUsed();
 
-    return returnVariable->getType();
+    returnType = returnVariable->getType();
+  } else {
+    // No return variable => procedure
+    if (ctx->assignExpr())
+      throw err->get(*ctx->assignExpr()->start, RETURN_WITH_VALUE_IN_PROCEDURE,
+                     "Return statements in procedures may not have a value attached");
+    returnType = SymbolType(TY_DYN);
   }
-  // No return variable => procedure
-  if (ctx->assignExpr())
-    throw err->get(*ctx->assignExpr()->start, RETURN_WITH_VALUE_IN_PROCEDURE,
-                   "Return statements in procedures may not have a value attached");
-  return SymbolType(TY_DYN);
+
+  // Call destructors for variables, that are going out of scope
+  std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+  for (SymbolTableEntry *varEntry : varsToDestruct)
+    insertDestructorCall(*ctx->start, varEntry);
+
+  return returnType;
 }
 
 std::any AnalyzerVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
@@ -2162,6 +2186,19 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   structSymbol->setUsed();
 
   return SymbolType(TY_STRUCT, structName, concreteTemplateTypes);
+}
+
+void AnalyzerVisitor::insertDestructorCall(const antlr4::Token &token, SymbolTableEntry *varEntry) {
+  assert(varEntry != nullptr && varEntry->getType().is(TY_STRUCT));
+
+  // Create Spice function for destructor
+  SymbolTableEntry *structEntry = currentScope->lookup(varEntry->getType().getName());
+  SymbolTable *accessScope = structEntry->getScope();
+  assert(accessScope != nullptr);
+  accessScope = accessScope->getChild(STRUCT_SCOPE_PREFIX + structEntry->getName());
+  assert(accessScope != nullptr);
+  SymbolType thisType = varEntry->getType();
+  accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, err.get(), token);
 }
 
 SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTable *sourceScope,

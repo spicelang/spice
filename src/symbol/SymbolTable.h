@@ -67,6 +67,8 @@ public:
   [[nodiscard]] SymbolTable *getParent() const;
   SymbolTable *getChild(const std::string &tableName);
 
+  std::vector<SymbolTableEntry *> getVarsGoingOutOfScope(bool filterForStructs = false);
+
   std::map<std::string, SymbolTableEntry> &getSymbols();
   std::map<std::string, Capture> &getCaptures();
 

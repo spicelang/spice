@@ -34,7 +34,7 @@ void SymbolTableEntry::updateType(const SymbolType &newType, bool force) {
  *
  * @return Parent symbol table
  */
-const SymbolTable *SymbolTableEntry::getScope() const { return scope; }
+SymbolTable *SymbolTableEntry::getScope() const { return scope; }
 
 /**
  * Retrieve the symbol specifiers of the current symbol
@@ -145,6 +145,18 @@ bool SymbolTableEntry::isVolatile() const { return volatility; }
  * @param volatility Volatile or not
  */
 void SymbolTableEntry::setVolatile(bool vol) { volatility = vol; }
+
+/**
+ * Retrieve number of references to the symbol
+ *
+ * @return Ref count
+ */
+// size_t SymbolTableEntry::getRefCount() const { return refCount; }
+
+/**
+ * Increase the number of references to the symbol
+ */
+// void SymbolTableEntry::increaseRefCount() { refCount++; }
 
 /**
  * Returns if the symbol is used somewhere

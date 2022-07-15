@@ -268,6 +268,26 @@ SymbolTable *SymbolTable::getChild(const std::string &scopeId) {
 }
 
 /**
+ * Retrieve all variables that can be freed, because the ref count went down to 0.
+ *
+ * @return Variables that can be de-allocated
+ */
+std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForStructs) {
+  assert(parent != nullptr); // Should not be called in root scope
+
+  // Collect all variables
+  std::vector<SymbolTableEntry *> varsGoingOutOfScope;
+  varsGoingOutOfScope.reserve(symbols.size());
+  for (auto [name, entry] : symbols) {
+    if (name == THIS_VARIABLE_NAME)
+      continue;
+    if (!filterForStructs || entry.getType().is(TY_STRUCT))
+      varsGoingOutOfScope.push_back(&symbols.at(name));
+  }
+  return varsGoingOutOfScope;
+}
+
+/**
  * Returns all symbols of this particular sub-table
  *
  * @return Map of names and the corresponding symbol table entries
@@ -458,7 +478,7 @@ void SymbolTable::insertFunctionAccessPointer(const antlr4::Token &token, Functi
 Function *SymbolTable::getFunctionAccessPointer(const antlr4::Token &token) {
   std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
   if (!functionAccessPointers.contains(codeLoc))
-    throw std::runtime_error("Internal compiler error: Could not get function access pointer");
+    return nullptr;
   return functionAccessPointers.at(codeLoc);
 }
 
