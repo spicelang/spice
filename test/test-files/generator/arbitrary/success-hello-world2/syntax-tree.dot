@@ -274,8 +274,10 @@ digraph {
  L6C29_value -> L6C29_primitiveValue;
  L6C29 [color="lightblue",label="LONG: 8245928625469605920l"];
  L6C29_primitiveValue -> L6C29
- L6C50 [color="lightblue",label="SHR: >>"];
+ L6C50 [color="lightblue",label="GREATER: >"];
  L6C29_shiftExpr -> L6C50
+ L6C51 [color="lightblue",label="GREATER: >"];
+ L6C29_shiftExpr -> L6C51
  L6C53_additiveExpr [color="lightgreen",label="additiveExpr"];
  L6C29_shiftExpr -> L6C53_additiveExpr;
  L6C53_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
@@ -440,8 +442,10 @@ digraph {
  L6C69_primitiveValue -> L6C69
  L6C71 [color="lightblue",label="RPAREN: )"];
  L6C54_atomicExpr -> L6C71
- L6C73 [color="lightblue",label="SHL: <<"];
+ L6C73 [color="lightblue",label="LESS: <"];
  L6C54_shiftExpr -> L6C73
+ L6C74 [color="lightblue",label="LESS: <"];
+ L6C54_shiftExpr -> L6C74
  L6C76_additiveExpr [color="lightgreen",label="additiveExpr"];
  L6C54_shiftExpr -> L6C76_additiveExpr;
  L6C76_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];

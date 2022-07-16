@@ -1880,9 +1880,9 @@ std::any GeneratorVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
     llvm::Value *rhs = resolveValue(ctx->additiveExpr()[1]);
 
     llvm::Value *result;
-    if (ctx->SHL()) { // Shift expr is: additiveExpr SHL additiveExpr
+    if (!ctx->LESS().empty()) { // Shift expr is: additiveExpr SHL additiveExpr
       result = conversionsManager->getShiftLeftInst(lhs, rhs);
-    } else if (ctx->SHR()) { // Shift expr is: additiveExpr SHR additiveExpr
+    } else if (!ctx->GREATER().empty()) { // Shift expr is: additiveExpr SHR additiveExpr
       result = conversionsManager->getShiftRightInst(lhs, rhs);
     } else {
       throw std::runtime_error("Shift expr fall-through");

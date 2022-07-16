@@ -1488,9 +1488,9 @@ std::any AnalyzerVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
     auto lhsTy = any_cast<SymbolType>(visit(ctx->additiveExpr()[0]));
     auto rhsTy = any_cast<SymbolType>(visit(ctx->additiveExpr()[1]));
 
-    if (ctx->SHL()) // Operator was shl
+    if (!ctx->LESS().empty()) // Operator was shl
       return opRuleManager->getShiftLeftResultType(*ctx->start, lhsTy, rhsTy);
-    else if (ctx->SHR()) // Operator was shr
+    else if (!ctx->GREATER().empty()) // Operator was shr
       return opRuleManager->getShiftRightResultType(*ctx->start, lhsTy, rhsTy);
   }
   return visit(ctx->additiveExpr()[0]);
