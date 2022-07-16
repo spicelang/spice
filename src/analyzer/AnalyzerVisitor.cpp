@@ -1601,6 +1601,9 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprConte
       lhs = opRuleManager->getPrefixMulResultType(*ctx->postfixUnaryExpr()->start, lhs);
     } else if (token->BITWISE_AND()) { // Consider & operator
       lhs = opRuleManager->getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
+    } else if (token->LOGICAL_AND()) { // Consider doubled & operator
+      lhs = opRuleManager->getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
+      lhs = opRuleManager->getPrefixBitwiseAndResultType(*ctx->postfixUnaryExpr()->start, lhs);
     }
     tokenCounter++;
   }

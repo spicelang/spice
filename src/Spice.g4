@@ -51,7 +51,7 @@ joinCall: JOIN LPAREN assignExpr (COMMA assignExpr)* RPAREN;
 assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr | threadDef;
 ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr COLON logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
-logicalAndExpr: bitwiseOrExpr (BITWISE_AND BITWISE_AND bitwiseOrExpr)*;
+logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
 bitwiseOrExpr: bitwiseXorExpr (BITWISE_OR bitwiseXorExpr)*;
 bitwiseXorExpr: bitwiseAndExpr (BITWISE_XOR bitwiseAndExpr)*;
 bitwiseAndExpr: equalityExpr (BITWISE_AND equalityExpr)*;
@@ -78,7 +78,7 @@ customDataType: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)?;
 
 // Shorthands
 assignOp: ASSIGN | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | REM_EQUAL | SHL_EQUAL | SHR_EQUAL | AND_EQUAL | OR_EQUAL | XOR_EQUAL;
-prefixUnaryOp: MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND;
+prefixUnaryOp: MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND | LOGICAL_AND; // Here, '&&' means the same as two times '&'
 
 // Keyword tokens
 TYPE_DOUBLE: 'double';
@@ -133,6 +133,7 @@ RPAREN: ')';
 LBRACKET: '[';
 RBRACKET: ']';
 LOGICAL_OR: '||';
+LOGICAL_AND: '&&';
 BITWISE_OR: '|';
 BITWISE_XOR: '^';
 BITWISE_AND: '&';

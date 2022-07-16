@@ -2028,6 +2028,16 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCont
         lhsPtr = insertAlloca(lhs->getType());
         builder->CreateStore(lhs, lhsPtr);
         storeValue = false;
+      } else if (token->LOGICAL_AND()) { // Consider doubled & operator
+        // First reference
+        lhs = lhsPtr;
+        lhsPtr = insertAlloca(lhs->getType());
+        builder->CreateStore(lhs, lhsPtr);
+        // Second reference
+        lhs = lhsPtr;
+        lhsPtr = insertAlloca(lhs->getType());
+        builder->CreateStore(lhs, lhsPtr);
+        storeValue = false;
       }
       tokenCounter++;
     }
