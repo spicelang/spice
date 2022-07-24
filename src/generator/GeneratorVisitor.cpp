@@ -1007,7 +1007,7 @@ std::any GeneratorVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx
 
   // Get array variable entry
   visit(ctx->foreachHead()->assignExpr());
-  SymbolTableEntry *arrayVarEntry = currentScope->lookup(lhsVarName);
+  SymbolTableEntry *arrayVarEntry = currentScope->lookup(currentVarName);
   bool dynamicallySized =
       arrayVarEntry && arrayVarEntry->getType().is(TY_PTR) && arrayVarEntry->getType().getDynamicArraySize() != nullptr;
 
@@ -1165,8 +1165,10 @@ std::any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   emitSourceLocation(ctx);
 
   for (const auto &child : ctx->children) {
-    if (!blockAlreadyTerminated)
+    if (!blockAlreadyTerminated) {
       visit(child);
+      lhsVarName = currentVarName = "";
+    }
   }
   return nullptr;
 }
@@ -1283,6 +1285,7 @@ std::any GeneratorVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) 
 std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   emitSourceLocation(ctx);
 
+  // Get var name
   currentVarName = lhsVarName = ctx->IDENTIFIER()->toString();
 
   // Get variable entry
@@ -1294,6 +1297,9 @@ std::any GeneratorVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(ctx->dataType()));
   entry->updateLLVMType(varType);
   entry->updateType(currentSymbolType, true);
+
+  // Restore var name
+  currentVarName = lhsVarName = ctx->IDENTIFIER()->toString();
 
   llvm::Value *memAddress = nullptr;
   if (ctx->assignExpr()) { // Declaration with assignment
@@ -1595,6 +1601,10 @@ std::any GeneratorVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) 
   // Check if there is an assign operator applied
   if (ctx->assignOp()) { // This is an assignment or compound assignment
     lhsType = nullptr;   // Reset lhs type
+
+    // Retrieve the lhs variable name
+    if (ctx->prefixUnaryExpr()->postfixUnaryExpr()->atomicExpr()->IDENTIFIER())
+      lhsVarName = ctx->prefixUnaryExpr()->postfixUnaryExpr()->atomicExpr()->IDENTIFIER()->toString();
 
     // Get value of right side
     llvm::Value *rhs = resolveValue(ctx->assignExpr());
@@ -2531,9 +2541,12 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
   size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
   auto arrayType = lhsType;
 
-  SymbolTableEntry *arrayEntry = currentScope->lookupStrict(lhsVarName);
-  bool dynamicallySized =
-      arrayEntry && arrayEntry->getType().is(TY_PTR) && arrayEntry->getType().getDynamicArraySize() != nullptr;
+  bool dynamicallySized = false;
+  if (!lhsVarName.empty()) {
+    SymbolTableEntry *arrayEntry = currentScope->lookupStrict(lhsVarName);
+    assert(arrayEntry != nullptr);
+    dynamicallySized = arrayEntry->getType().is(TY_PTR) && arrayEntry->getType().getDynamicArraySize() != nullptr;
+  }
 
   std::vector<llvm::Value *> itemValues;
   std::vector<llvm::Constant *> itemConstants;
@@ -2552,7 +2565,8 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
   }
 
   llvm::Type *itemType = nullptr;
-  if (arrayType) {                // Check if array type matches the item type
+  if (arrayType) {
+    // Check if array type matches the item type
     if (arrayType->isArrayTy()) { // Array
       assert(itemConstants.empty() || !itemConstants.front() ||
              arrayType->getArrayElementType() == itemConstants.front()->getType());
@@ -2562,7 +2576,8 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
              arrayType->getPointerElementType() == itemConstants.front()->getType());
       itemType = arrayType->getPointerElementType();
     }
-  } else { // Infer type of array from the item type
+  } else {
+    // Infer type of array from the item type
     assert(!itemConstants.empty());
     itemType = itemConstants.front()->getType();
     arrayType = llvm::ArrayType::get(itemType, arraySize);
@@ -2587,7 +2602,7 @@ std::any GeneratorVisitor::visitArrayInitialization(SpiceParser::ArrayInitializa
       arrayAddress = allocateDynamicallySizedArray(itemType);
       arrayType = arrayAddress->getType()->getPointerElementType();
     } else {
-      arrayAddress = insertAlloca(arrayType, currentVarName);
+      arrayAddress = insertAlloca(arrayType, lhsVarName);
     }
 
     // Insert all given values

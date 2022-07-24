@@ -71,6 +71,8 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) {
  * @return Desired symbol / nullptr if the symbol was not found
  */
 SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
+  if (name.empty())
+    return nullptr;
   // Check if a symbol with this name exists in this scope
   if (symbols.contains(name))
     return &symbols.at(name);
