@@ -21,10 +21,10 @@ entry:
 define internal i32 @_f__void__test() {
 entry:
   %result = alloca i32, align 4
-  %res = alloca i32, align 4
-  store i32 1, i32* %res, align 4
-  %0 = load i32, i32* %res, align 4
-  ret i32 %0
+  %0 = alloca i32, align 4
+  store i32 1, i32* %0, align 4
+  %1 = load i32, i32* %0, align 4
+  ret i32 %1
 }
 
 declare i32 @printf(i8*, ...)

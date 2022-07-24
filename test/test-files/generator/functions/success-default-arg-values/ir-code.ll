@@ -26,23 +26,23 @@ entry:
 define i32 @main() {
 entry:
   %result = alloca i32, align 4
-  %arg3 = alloca i32, align 4
-  %arg31 = alloca double, align 8
-  %arg32 = alloca i1, align 1
-  %0 = alloca i8*, align 8
+  %0 = alloca i32, align 4
+  %1 = alloca double, align 8
+  %2 = alloca i1, align 1
+  %3 = alloca i8*, align 8
   store i32 0, i32* %result, align 4
-  store i32 1, i32* %arg3, align 4
-  %1 = load i32, i32* %arg3, align 4
-  store double 3.400000e+00, double* %arg31, align 8
-  %2 = load double, double* %arg31, align 8
-  store i1 true, i1* %arg32, align 1
-  %3 = load i1, i1* %arg32, align 1
-  %4 = call i8* @_f__void__getTestString__int_double_bool(i32 %1, double %2, i1 %3)
-  store i8* %4, i8** %0, align 8
-  %5 = load i8*, i8** %0, align 8
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @1, i32 0, i32 0), i8* %5)
-  %7 = load i32, i32* %result, align 4
-  ret i32 %7
+  store i32 1, i32* %0, align 4
+  %4 = load i32, i32* %0, align 4
+  store double 3.400000e+00, double* %1, align 8
+  %5 = load double, double* %1, align 8
+  store i1 true, i1* %2, align 1
+  %6 = load i1, i1* %2, align 1
+  %7 = call i8* @_f__void__getTestString__int_double_bool(i32 %4, double %5, i1 %6)
+  store i8* %7, i8** %3, align 8
+  %8 = load i8*, i8** %3, align 8
+  %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @1, i32 0, i32 0), i8* %8)
+  %10 = load i32, i32* %result, align 4
+  ret i32 %10
 }
 
 declare i32 @printf(i8*, ...)
