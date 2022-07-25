@@ -7,19 +7,14 @@
 class AstVisitor : public AbstractAstVisitor {
 public:
   // Visitor methods
-  virtual std::any visitEntry(const EntryNode *ctx) const;
-  virtual std::any visitMainFctDef(const MainFctDefNode *ctx) const;
-  virtual std::any visitFctDef(const FctDefNode *ctx) const;
-  virtual std::any visitProcDef(const ProcDefNode *ctx) const;
-  virtual std::any visitStructDef(const StructDefNode *ctx) const;
-  virtual std::any visitGenericTypeDef(const GenericTypeDefNode *ctx) const;
-  virtual std::any visitGlobalVarDef(const GlobalVarDefNode *ctx) const;
-  virtual std::any visitImportStmt(const ImportStmtNode *ctx) const;
-  virtual std::any visitExtDecl(const ExtDeclNode *ctx) const;
+  virtual std::any visitEntry(const EntryNode *ctx) override;
+  virtual std::any visitMainFctDef(const MainFctDefNode *ctx) override;
+  virtual std::any visitFctDef(const FctDefNode *ctx) override;
+  virtual std::any visitProcDef(const ProcDefNode *ctx) override;
+  virtual std::any visitStructDef(const StructDefNode *ctx) override;
+  virtual std::any visitGenericTypeDef(const GenericTypeDefNode *ctx) override;
+  virtual std::any visitGlobalVarDef(const GlobalVarDefNode *ctx) override;
+  virtual std::any visitImportStmt(const ImportStmtNode *ctx) override;
+  virtual std::any visitExtDecl(const ExtDeclNode *ctx) override;
 
-  // Public methods
-  virtual std::any visitChildren(const AstNode *ctx) const;
-
-private:
-  // Members
 };

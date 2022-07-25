@@ -38,6 +38,7 @@ set(SOURCES
         symbol/ScopePath.h
         symbol/SymbolSpecifiers.cpp
         symbol/SymbolSpecifiers.h
+        ast/AbstractAstVisitor.cpp
         ast/AbstractAstVisitor.h
         ast/AstVisitor.cpp
         ast/AstVisitor.h
@@ -60,6 +61,8 @@ set(SOURCES
         exception/AntlrThrowingErrorListener.h
         visualizer/CSTVisualizerVisitor.cpp
         visualizer/CSTVisualizerVisitor.h
+        visualizer/ASTVisualizerVisitor.cpp
+        visualizer/ASTVisualizerVisitor.h
         util/CommonUtil.cpp
         util/CommonUtil.h
         util/ScopeIdUtil.cpp

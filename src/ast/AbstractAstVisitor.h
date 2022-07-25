@@ -18,17 +18,20 @@ class ExtDeclNode;
 
 class AbstractAstVisitor {
 public:
+  // General visitor method
+  virtual std::any visit(AstNode *ctx);
+
   // Visitor methods
-  virtual std::any visitEntry(const EntryNode *ctx) const = 0;
-  virtual std::any visitMainFctDef(const MainFctDefNode *ctx) const = 0;
-  virtual std::any visitFctDef(const FctDefNode *ctx) const = 0;
-  virtual std::any visitProcDef(const ProcDefNode *ctx) const = 0;
-  virtual std::any visitStructDef(const StructDefNode *ctx) const = 0;
-  virtual std::any visitGenericTypeDef(const GenericTypeDefNode *ctx) const = 0;
-  virtual std::any visitGlobalVarDef(const GlobalVarDefNode *ctx) const = 0;
-  virtual std::any visitImportStmt(const ImportStmtNode *ctx) const = 0;
-  virtual std::any visitExtDecl(const ExtDeclNode *ctx) const = 0;
+  virtual std::any visitEntry(const EntryNode *ctx) = 0;
+  virtual std::any visitMainFctDef(const MainFctDefNode *ctx) = 0;
+  virtual std::any visitFctDef(const FctDefNode *ctx) = 0;
+  virtual std::any visitProcDef(const ProcDefNode *ctx) = 0;
+  virtual std::any visitStructDef(const StructDefNode *ctx) = 0;
+  virtual std::any visitGenericTypeDef(const GenericTypeDefNode *ctx) = 0;
+  virtual std::any visitGlobalVarDef(const GlobalVarDefNode *ctx) = 0;
+  virtual std::any visitImportStmt(const ImportStmtNode *ctx) = 0;
+  virtual std::any visitExtDecl(const ExtDeclNode *ctx) = 0;
 
   // Public methods
-  virtual std::any visitChildren(const AstNode *ctx) const = 0;
+  virtual std::any visitChildren(const AstNode *ctx) const;
 };

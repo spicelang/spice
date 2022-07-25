@@ -8,42 +8,42 @@ std::any AstBuilderVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = static_cast<EntryNode *>(currentNode);
 
   // Main function definitions
-  for (auto &child : ctx->mainFunctionDef()) {
+  for (auto child : ctx->mainFunctionDef()) {
     visit(child);
     entryNode->createChild<MainFctDefNode>(CodeLoc(child->start));
   }
   // Function definitions
-  for (auto &child : ctx->functionDef()) {
+  for (auto child : ctx->functionDef()) {
     visit(child);
     entryNode->createChild<FctDefNode>(CodeLoc(child->start));
   }
   // Procedure definitions
-  for (auto &child : ctx->procedureDef()) {
+  for (auto child : ctx->procedureDef()) {
     visit(child);
     entryNode->createChild<ProcDefNode>(CodeLoc(child->start));
   }
   // Struct definitions
-  for (auto &child : ctx->structDef()) {
+  for (auto child : ctx->structDef()) {
     visit(child);
     entryNode->createChild<StructDefNode>(CodeLoc(child->start));
   }
   // Generic type definitions
-  for (auto &child : ctx->genericTypeDef()) {
+  for (auto child : ctx->genericTypeDef()) {
     visit(child);
     entryNode->createChild<GenericTypeDefNode>(CodeLoc(child->start));
   }
   // Global var definition
-  for (auto &child : ctx->globalVarDef()) {
+  for (auto child : ctx->globalVarDef()) {
     visit(child);
     entryNode->createChild<GlobalVarDefNode>(CodeLoc(child->start));
   }
   // Import statements
-  for (auto &child : ctx->importStmt()) {
+  for (auto child : ctx->importStmt()) {
     visit(child);
     entryNode->createChild<ImportStmtNode>(CodeLoc(child->start));
   }
   // External declarations
-  for (auto &child : ctx->extDecl()) {
+  for (auto child : ctx->extDecl()) {
     visit(child);
     entryNode->createChild<ExtDeclNode>(CodeLoc(child->start));
   }

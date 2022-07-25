@@ -11,7 +11,7 @@
  * Visitor for debug purposes (is only executed in the compiler debug mode)
  *
  * Jobs:
- * - Visualize AST
+ * - Visualize CST
  */
 class CSTVisualizerVisitor : public SpiceVisitor {
 public:
@@ -19,7 +19,7 @@ public:
   explicit CSTVisualizerVisitor(const std::shared_ptr<SpiceLexer> &lexer, const std::shared_ptr<SpiceParser> &parser)
       : vocabulary(lexer->getVocabulary()), ruleNames(parser->getRuleNames()){};
 
-  // Public methods
+  // Visitor methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override { return buildRule(ctx); };
   std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override { return buildRule(ctx); };
   std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override { return buildRule(ctx); };

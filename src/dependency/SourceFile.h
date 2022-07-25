@@ -21,7 +21,7 @@ class ErrorFactory;
 struct CliOptions;
 class LinkerInterface;
 class ThreadFactory;
-class AstNode;
+class EntryNode;
 
 struct SourceFileAntlrCtx {
   // Create error handlers for lexer and parser
@@ -49,7 +49,8 @@ public:
   // Public methods
   void preAnalyze();
   void visualizeCST(std::string *output);
-  void buildAST(AstNode *rootNode);
+  void buildAST();
+  void visualizeAST(std::string *output);
   void analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                const ThreadFactory &threadFactory);
   void reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
@@ -71,6 +72,7 @@ public:
   CompilerOutput compilerOutput;
   SourceFile *parent;
   CliOptions &options;
+  std::shared_ptr<EntryNode> ast;
   std::shared_ptr<SymbolTable> symbolTable;
   std::shared_ptr<AnalyzerVisitor> analyzer;
   std::shared_ptr<GeneratorVisitor> generator;

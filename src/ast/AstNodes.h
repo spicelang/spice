@@ -14,7 +14,7 @@
 class AstNode {
 public:
   // Constructors
-  explicit AstNode(CodeLoc codeLoc) : codeLoc(codeLoc) {}
+  explicit AstNode(AstNode *parent, const CodeLoc &codeLoc) : parent(parent), codeLoc(codeLoc) {}
 
   // Destructors
   virtual ~AstNode() {
@@ -23,12 +23,12 @@ public:
   }
 
   // Virtual methods
-  virtual std::any accept(const AstVisitor *visitor) const = 0;
+  virtual std::any accept(AbstractAstVisitor *visitor) const = 0;
 
   // Public methods
   template <typename T> T *createChild(const CodeLoc &codeLoc) {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
-    T *node = new T(codeLoc);
+    T *node = new T(this, codeLoc);
     children.push_back(node);
     return node;
   }
@@ -51,6 +51,7 @@ public:
   }
 
   // Public members
+  AstNode *parent;
   std::vector<AstNode *> children;
   const CodeLoc codeLoc;
 };
@@ -60,10 +61,10 @@ public:
 class EntryNode : public AstNode {
 public:
   // Constructors
-  explicit EntryNode(CodeLoc codeLoc) : AstNode(codeLoc) {}
+  using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(const AstVisitor *visitor) const override { return visitor->visitEntry(this); }
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitEntry(this); }
 
   // Public get methods
   std::vector<MainFctDefNode *> mainFctDefNode() const { return getChildren<MainFctDefNode>(); }
@@ -81,10 +82,10 @@ public:
 class MainFctDefNode : public AstNode {
 public:
   // Constructors
-  explicit MainFctDefNode(CodeLoc codeLoc) : AstNode(codeLoc) {}
+  using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(const AstVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
 
 private:
   // Members
@@ -96,10 +97,10 @@ private:
 class FctDefNode : public AstNode {
 public:
   // Constructors
-  explicit FctDefNode(CodeLoc codeLoc) : AstNode(codeLoc) {}
+  using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(const AstVisitor *visitor) const override { return visitor->visitFctDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitFctDef(this); }
 
 private:
   // Members
@@ -112,10 +113,10 @@ private:
 class ProcDefNode : public AstNode {
 public:
   // Constructors
-  explicit ProcDefNode(CodeLoc codeLoc) : AstNode(codeLoc) {}
+  using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(const AstVisitor *visitor) const override { return visitor->visitProcDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitProcDef(this); }
 
 private:
   // Members
@@ -128,10 +129,10 @@ private:
 class StructDefNode : public AstNode {
 public:
   // Constructors
-  explicit StructDefNode(CodeLoc codeLoc) : AstNode(codeLoc) {}
+  using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(const AstVisitor *visitor) const override { return visitor->visitStructDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStructDef(this); }
 
 private:
   // Members
@@ -144,10 +145,10 @@ private:
 class GenericTypeDefNode : public AstNode {
 public:
   // Constructors
-  explicit GenericTypeDefNode(CodeLoc codeLoc) : AstNode(codeLoc) {}
+  using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(const AstVisitor *visitor) const override { return visitor->visitGenericTypeDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitGenericTypeDef(this); }
 
 private:
   // Members
@@ -159,10 +160,10 @@ private:
 class GlobalVarDefNode : public AstNode {
 public:
   // Constructors
-  explicit GlobalVarDefNode(CodeLoc codeLoc) : AstNode(codeLoc) {}
+  using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(const AstVisitor *visitor) const override { return visitor->visitGlobalVarDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitGlobalVarDef(this); }
 
 private:
   // Members
@@ -174,10 +175,10 @@ private:
 class ImportStmtNode : public AstNode {
 public:
   // Constructors
-  explicit ImportStmtNode(CodeLoc codeLoc) : AstNode(codeLoc) {}
+  using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(const AstVisitor *visitor) const override { return visitor->visitImportStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitImportStmt(this); }
 
 private:
   // Members
@@ -189,10 +190,10 @@ private:
 class ExtDeclNode : public AstNode {
 public:
   // Constructors
-  explicit ExtDeclNode(CodeLoc codeLoc) : AstNode(codeLoc) {}
+  using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(const AstVisitor *visitor) const override { return visitor->visitExtDecl(this); }
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitExtDecl(this); }
 
 private:
   // Members

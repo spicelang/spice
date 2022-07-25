@@ -16,6 +16,7 @@
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
+#include <visualizer/ASTVisualizerVisitor.h>
 #include <visualizer/CSTVisualizerVisitor.h>
 
 SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
@@ -42,11 +43,14 @@ SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name
   antlrCtx.lexer->addErrorListener(antlrCtx.lexerErrorHandler.get());
   antlrCtx.tokenStream = std::make_shared<antlr4::CommonTokenStream>(antlrCtx.lexer.get());
 
-  // Parse input to AST
+  // Parse input
   antlrCtx.parser = std::make_shared<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
   antlrCtx.parser->removeErrorListeners();
   antlrCtx.parser->addErrorListener(antlrCtx.parserErrorHandler.get());
   antlrCtx.parser->removeParseListeners();
+
+  // Create AST
+  ast = std::make_shared<EntryNode>(nullptr, CodeLoc(filePath, 1, 1));
 
   // Create symbol table
   symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
@@ -68,23 +72,9 @@ void SourceFile::preAnalyze() {
     sourceFile.first->preAnalyze();
 }
 
-void SourceFile::buildAST(AstNode *rootNode) {
-  if (!rootNode)
-    rootNode = new EntryNode(CodeLoc(antlrCtx.parser->entry()->start));
-
-  // Transform the imported source files
-  for (auto &[_, sourceFile] : dependencies)
-    sourceFile.first->buildAST(rootNode);
-
-  // Transform this source file
-  AstBuilderVisitor astBuilder(rootNode);
-  astBuilder.visit(antlrCtx.parser->entry());
-  antlrCtx.parser->reset();
-}
-
 void SourceFile::visualizeCST(std::string *output) {
   // Only execute if enabled
-  if (!options.dumpAST && !options.testMode)
+  if (!options.dumpCST && !options.testMode)
     return;
 
   std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
@@ -100,6 +90,60 @@ void SourceFile::visualizeCST(std::string *output) {
   CSTVisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
   dotCode += any_cast<std::string>(visualizerVisitor.visit(antlrCtx.parser->entry()));
   antlrCtx.parser->reset();
+
+  dotCode += "}";
+
+  // If this is the root source file, output the serialized string and the SVG file
+  if (parent == nullptr) {
+    compilerOutput.cstString = dotCode;
+
+    if (options.dumpCST) {
+      // Dump to console
+      std::cout << "\nSerialized CST:\n\n" << dotCode << "\n";
+
+      // Check if the dot command exists
+      if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
+        throw std::runtime_error(
+            "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable"); // GCOV_EXCL_STOP
+
+      // Generate SVG
+      std::cout << "\nGenerating SVG file ... ";
+      std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "cst";
+      FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
+      std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
+      std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
+    }
+  }
+}
+
+void SourceFile::buildAST() {
+  // Transform the imported source files
+  for (auto &[_, sourceFile] : dependencies)
+    sourceFile.first->buildAST();
+
+  // Transform this source file
+  AstBuilderVisitor astBuilder(ast.get());
+  astBuilder.visit(antlrCtx.parser->entry());
+  antlrCtx.parser->reset();
+}
+
+void SourceFile::visualizeAST(std::string *output) {
+  // Only execute if enabled
+  if (!options.dumpAST && !options.testMode)
+    return;
+
+  std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
+  std::string replacedFilePath = filePath;
+  CommonUtil::replaceAll(replacedFilePath, "\\", "/");
+  dotCode += " label=\"" + replacedFilePath + "\";\n ";
+
+  // Visualize the imported source files
+  for (auto &[_, sourceFile] : dependencies)
+    sourceFile.first->visualizeAST(output);
+
+  // Generate dot code for this source file
+  ASTVisualizerVisitor visualizerVisitor(ast.get());
+  dotCode += any_cast<std::string>(visualizerVisitor.visit(ast.get()));
 
   dotCode += "}";
 

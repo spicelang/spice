@@ -128,7 +128,23 @@ void executeGeneratorTest(const TestCase &testCase) {
     }
 
     // Execute AST builder
-    mainSourceFile.buildAST(nullptr);
+    mainSourceFile.buildAST();
+
+    // Check if the AST matches the expected output
+    std::string astFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "syntax-tree.dot";
+    if (FileUtil::fileExists(astFileName)) {
+      // Execute visualizer
+      mainSourceFile.visualizeAST(nullptr);
+
+      std::string actualAST = mainSourceFile.compilerOutput.astString;
+      if (TestUtil::isUpdateRefsEnabled()) {
+        // Update ref
+        FileUtil::writeToFile(astFileName, actualAST);
+      } else {
+        std::string expectedAST = TestUtil::getFileContent(astFileName);
+        EXPECT_EQ(expectedAST, mainSourceFile.compilerOutput.astString);
+      }
+    }
 
     // Execute semantic analysis
     mainSourceFile.analyze(context, builder, threadFactory);
