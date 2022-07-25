@@ -36,6 +36,8 @@ set(SOURCES
         symbol/ScopePath.h
         symbol/SymbolSpecifiers.cpp
         symbol/SymbolSpecifiers.h
+        ast/AstNode.cpp
+        ast/AstNode.h
         dependency/SourceFile.cpp
         dependency/SourceFile.h
         exception/ErrorFactory.cpp
@@ -52,8 +54,8 @@ set(SOURCES
         exception/LexerParserError.h
         exception/AntlrThrowingErrorListener.cpp
         exception/AntlrThrowingErrorListener.h
-        visualizer/VisualizerVisitor.cpp
-        visualizer/VisualizerVisitor.h
+        visualizer/CSTVisualizerVisitor.cpp
+        visualizer/CSTVisualizerVisitor.h
         util/CommonUtil.cpp
         util/CommonUtil.h
         util/ScopeIdUtil.cpp

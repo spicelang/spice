@@ -13,10 +13,10 @@
  * Jobs:
  * - Visualize AST
  */
-class VisualizerVisitor : public SpiceVisitor {
+class CSTVisualizerVisitor : public SpiceVisitor {
 public:
   // Constructors
-  explicit VisualizerVisitor(const std::shared_ptr<SpiceLexer> &lexer, const std::shared_ptr<SpiceParser> &parser)
+  explicit CSTVisualizerVisitor(const std::shared_ptr<SpiceLexer> &lexer, const std::shared_ptr<SpiceParser> &parser)
       : vocabulary(lexer->getVocabulary()), ruleNames(parser->getRuleNames()){};
 
   // Public methods

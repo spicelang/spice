@@ -15,7 +15,7 @@
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
-#include <visualizer/VisualizerVisitor.h>
+#include <visualizer/CSTVisualizerVisitor.h>
 
 SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
     : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
@@ -82,7 +82,7 @@ void SourceFile::visualizeAST(std::string *output) {
     sourceFile.first->visualizeAST(output);
 
   // Generate dot code for this source file
-  VisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
+  CSTVisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
   dotCode += any_cast<std::string>(visualizerVisitor.visit(antlrCtx.parser->entry()));
   antlrCtx.parser->reset();
 
