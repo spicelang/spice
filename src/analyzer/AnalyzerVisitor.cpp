@@ -2229,9 +2229,10 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   // Initialize potential structs for field types
   for (auto &[_, entry] : externalStructTable->getSymbols()) {
     if (entry.getType().isBaseType(TY_STRUCT)) {
-      std::string nestedStructName = entry.getType().getBaseType().getSubType();
+      std::string nestedStructName = CommonUtil::getLastFragment(entry.getType().getBaseType().getSubType(), ".");
+      std::string nestedStructPrefix = CommonUtil::getPrefix(entry.getType().getBaseType().getSubType(), ".");
       // Initialize nested struct
-      initExtStruct(token, sourceScope, structScopePrefix, nestedStructName, entry.getType().getBaseType().getTemplateTypes());
+      initExtStruct(token, sourceScope, nestedStructPrefix, nestedStructName, entry.getType().getBaseType().getTemplateTypes());
     }
   }
 

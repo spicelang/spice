@@ -148,7 +148,7 @@ entry:
   %numberList2 = alloca [4 x i64], align 8
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
-  %result2 = alloca [2 x i32], align 4
+  %resultList = alloca [2 x i32], align 4
   %4 = alloca i32, align 4
   %5 = alloca i1, align 1
   store i32 0, i32* %result, align 4
@@ -168,14 +168,14 @@ entry:
   store i32 %13, i32* %3, align 4
   %14 = load i32, i32* %1, align 4
   %15 = load i32, i32* %3, align 4
-  %16 = getelementptr inbounds [2 x i32], [2 x i32]* %result2, i32 0, i32 0
+  %16 = getelementptr inbounds [2 x i32], [2 x i32]* %resultList, i32 0, i32 0
   store i32 %14, i32* %16, align 4
-  %17 = getelementptr inbounds [2 x i32], [2 x i32]* %result2, i32 0, i32 1
+  %17 = getelementptr inbounds [2 x i32], [2 x i32]* %resultList, i32 0, i32 1
   store i32 %15, i32* %17, align 4
-  %18 = load [2 x i32], [2 x i32]* %result2, align 4
+  %18 = load [2 x i32], [2 x i32]* %resultList, align 4
   store i32 2, i32* %4, align 4
   %19 = load i32, i32* %4, align 4
-  %20 = load [2 x i32], [2 x i32]* %result2, align 4
+  %20 = load [2 x i32], [2 x i32]* %resultList, align 4
   call void @_p__void__printData__int_intarray(i32 %19, [2 x i32] %20)
   store i1 true, i1* %5, align 1
   %21 = load i32, i32* %1, align 4

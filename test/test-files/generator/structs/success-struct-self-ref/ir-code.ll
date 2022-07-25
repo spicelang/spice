@@ -19,64 +19,64 @@ entry:
   %5 = alloca %_s__TreeNode__TreeNodeptr_int, align 8
   %6 = alloca %_s__TreeNode__TreeNodeptr_int*, align 8
   %7 = alloca %_s__TreeNode__TreeNodeptr_int*, align 8
-  %curNode = alloca %_s__TreeNode__TreeNodeptr_int*, align 8
-  %8 = alloca i1, align 1
+  %8 = alloca %_s__TreeNode__TreeNodeptr_int*, align 8
+  %9 = alloca i1, align 1
   store i32 0, i32* %result, align 4
   store %_s__TreeNode__TreeNodeptr_int* null, %_s__TreeNode__TreeNodeptr_int** %rootNode, align 8
-  %9 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %rootNode, align 8
-  %10 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %0, i32 0, i32 0
-  store %_s__TreeNode__TreeNodeptr_int* %9, %_s__TreeNode__TreeNodeptr_int** %10, align 8
-  %11 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %0, i32 0, i32 1
-  store i32 0, i32* %11, align 4
+  %10 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %rootNode, align 8
+  %11 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %0, i32 0, i32 0
+  store %_s__TreeNode__TreeNodeptr_int* %10, %_s__TreeNode__TreeNodeptr_int** %11, align 8
+  %12 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %0, i32 0, i32 1
+  store i32 0, i32* %12, align 4
   store %_s__TreeNode__TreeNodeptr_int* %0, %_s__TreeNode__TreeNodeptr_int** %2, align 8
-  %12 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %2, align 8
-  %13 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %1, i32 0, i32 0
-  store %_s__TreeNode__TreeNodeptr_int* %12, %_s__TreeNode__TreeNodeptr_int** %13, align 8
-  %14 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %1, i32 0, i32 1
-  store i32 1, i32* %14, align 4
+  %13 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %2, align 8
+  %14 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %1, i32 0, i32 0
+  store %_s__TreeNode__TreeNodeptr_int* %13, %_s__TreeNode__TreeNodeptr_int** %14, align 8
+  %15 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %1, i32 0, i32 1
+  store i32 1, i32* %15, align 4
   store %_s__TreeNode__TreeNodeptr_int* %0, %_s__TreeNode__TreeNodeptr_int** %4, align 8
-  %15 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %4, align 8
-  %16 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %3, i32 0, i32 0
-  store %_s__TreeNode__TreeNodeptr_int* %15, %_s__TreeNode__TreeNodeptr_int** %16, align 8
-  %17 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %3, i32 0, i32 1
-  store i32 2, i32* %17, align 4
+  %16 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %4, align 8
+  %17 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %3, i32 0, i32 0
+  store %_s__TreeNode__TreeNodeptr_int* %16, %_s__TreeNode__TreeNodeptr_int** %17, align 8
+  %18 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %3, i32 0, i32 1
+  store i32 2, i32* %18, align 4
   store %_s__TreeNode__TreeNodeptr_int* %3, %_s__TreeNode__TreeNodeptr_int** %6, align 8
-  %18 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %6, align 8
-  %19 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %5, i32 0, i32 0
-  store %_s__TreeNode__TreeNodeptr_int* %18, %_s__TreeNode__TreeNodeptr_int** %19, align 8
-  %20 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %5, i32 0, i32 1
-  store i32 3, i32* %20, align 4
+  %19 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %6, align 8
+  %20 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %5, i32 0, i32 0
+  store %_s__TreeNode__TreeNodeptr_int* %19, %_s__TreeNode__TreeNodeptr_int** %20, align 8
+  %21 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %5, i32 0, i32 1
+  store i32 3, i32* %21, align 4
   store %_s__TreeNode__TreeNodeptr_int* %5, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   br label %while.cond
 
 while.cond:                                       ; preds = %while, %entry
-  %21 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   %22 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
-  %23 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %22, i32 0, i32 0
-  %24 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %23, align 8
-  store %_s__TreeNode__TreeNodeptr_int* null, %_s__TreeNode__TreeNodeptr_int** %curNode, align 8
-  %25 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %curNode, align 8
-  %26 = icmp ne %_s__TreeNode__TreeNodeptr_int* %24, %25
-  store i1 %26, i1* %8, align 1
-  %27 = load i1, i1* %8, align 1
-  br i1 %27, label %while, label %while.end
+  %23 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
+  %24 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %23, i32 0, i32 0
+  %25 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %24, align 8
+  store %_s__TreeNode__TreeNodeptr_int* null, %_s__TreeNode__TreeNodeptr_int** %8, align 8
+  %26 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %8, align 8
+  %27 = icmp ne %_s__TreeNode__TreeNodeptr_int* %25, %26
+  store i1 %27, i1* %9, align 1
+  %28 = load i1, i1* %9, align 1
+  br i1 %28, label %while, label %while.end
 
 while:                                            ; preds = %while.cond
-  %28 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   %29 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
-  %30 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %29, i32 0, i32 0
-  %31 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %30, align 8
-  store %_s__TreeNode__TreeNodeptr_int* %31, %_s__TreeNode__TreeNodeptr_int** %7, align 8
+  %30 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
+  %31 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %30, i32 0, i32 0
+  %32 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %31, align 8
+  store %_s__TreeNode__TreeNodeptr_int* %32, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   br label %while.cond
 
 while.end:                                        ; preds = %while.cond
-  %32 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   %33 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
-  %34 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %33, i32 0, i32 1
-  %35 = load i32, i32* %34, align 4
-  %36 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @0, i32 0, i32 0), i32 %35)
-  %37 = load i32, i32* %result, align 4
-  ret i32 %37
+  %34 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
+  %35 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %34, i32 0, i32 1
+  %36 = load i32, i32* %35, align 4
+  %37 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @0, i32 0, i32 0), i32 %36)
+  %38 = load i32, i32* %result, align 4
+  ret i32 %38
 }
 
 declare i32 @printf(i8*, ...)

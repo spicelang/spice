@@ -9,19 +9,19 @@ define internal i32 @_f__void__getAge() {
 entry:
   %result = alloca i32, align 4
   %i = alloca i1, align 1
-  %result3 = alloca i32, align 4
+  %0 = alloca i32, align 4
   store i1 false, i1* %i, align 1
   br i1 true, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
   store i32 20, i32* %result, align 4
-  %0 = load i32, i32* %result, align 4
-  ret i32 %0
+  %1 = load i32, i32* %result, align 4
+  ret i32 %1
 
 if.else:                                          ; preds = %entry
   store i1 false, i1* %i, align 1
-  %1 = load i1, i1* %i, align 1
-  br i1 %1, label %if.then1, label %if.end
+  %2 = load i1, i1* %i, align 1
+  br i1 %2, label %if.then1, label %if.end
 
 if.then1:                                         ; preds = %if.else
   store i32 19, i32* %result, align 4
@@ -31,9 +31,9 @@ if.end:                                           ; preds = %if.then1, %if.else
   br label %if.end2
 
 if.end2:                                          ; preds = %if.end
-  store i32 15, i32* %result3, align 4
-  %2 = load i32, i32* %result3, align 4
-  ret i32 %2
+  store i32 15, i32* %0, align 4
+  %3 = load i32, i32* %0, align 4
+  ret i32 %3
 }
 
 define i32 @main() {

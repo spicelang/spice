@@ -1,8 +1,20 @@
-import "std/data/vector" as vec;
+/*import "std/data/vector" as vec;
 import "std/data/pair" as pair;
 
 f<int> main() {
     vec.Vector<pair.Pair<int, string>> pairVector = vec.Vector<pair.Pair<int, string>>();
     pairVector.pushBack(pair.Pair<int, string>(0, "Hello"));
     pairVector.pushBack(pair.Pair<int, string>(1, "World"));
+
+    pair.Pair<int, string> p1 = pairVector.get(1);
+    printf("Hello %s!", p1.getSecond());
+}*/
+
+import "os-test2" as socket;
+
+f<int> main() {
+    socket.Socket s = socket.openServerSocket(8080s);
+    socket.NestedSocket n = s.nested;
+    printf("Test string: %s\n", n.testString);
+    printf("Socket: %d\n", s.sock);
 }
