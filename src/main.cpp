@@ -33,7 +33,10 @@ void compileProject(CliOptions &options) {
     mainSourceFile.preAnalyze();
 
     // Visualize the project (only runs in debug mode)
-    mainSourceFile.visualizeAST(nullptr);
+    mainSourceFile.visualizeCST(nullptr);
+
+    // Transform CST to an AST
+    mainSourceFile.buildAST(nullptr);
 
     // Analyze the project (semantic analysis, build symbol table, type inference, type checking, etc.)
     mainSourceFile.analyze(context, builder, threadFactory);

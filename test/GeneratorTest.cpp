@@ -111,21 +111,24 @@ void executeGeneratorTest(const TestCase &testCase) {
     // Execute pre-analyzer
     mainSourceFile.preAnalyze();
 
-    // Check if the AST matches the expected output
-    std::string astFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "syntax-tree.dot";
-    if (FileUtil::fileExists(astFileName)) {
+    // Check if the CST matches the expected output
+    std::string cstFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "parse-tree.dot";
+    if (FileUtil::fileExists(cstFileName)) {
       // Execute visualizer
-      mainSourceFile.visualizeAST(nullptr);
+      mainSourceFile.visualizeCST(nullptr);
 
-      std::string actualAST = mainSourceFile.compilerOutput.astString;
+      std::string actualCST = mainSourceFile.compilerOutput.cstString;
       if (TestUtil::isUpdateRefsEnabled()) {
         // Update ref
-        FileUtil::writeToFile(astFileName, actualAST);
+        FileUtil::writeToFile(cstFileName, actualCST);
       } else {
-        std::string expectedAST = TestUtil::getFileContent(astFileName);
-        EXPECT_EQ(expectedAST, mainSourceFile.compilerOutput.astString);
+        std::string expectedCST = TestUtil::getFileContent(cstFileName);
+        EXPECT_EQ(expectedCST, mainSourceFile.compilerOutput.cstString);
       }
     }
+
+    // Execute AST builder
+    mainSourceFile.buildAST(nullptr);
 
     // Execute semantic analysis
     mainSourceFile.analyze(context, builder, threadFactory);

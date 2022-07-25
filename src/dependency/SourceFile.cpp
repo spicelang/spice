@@ -2,11 +2,12 @@
 
 #include "SourceFile.h"
 
-#include <algorithm>
 #include <utility>
 
+#include <parser/AstBuilderVisitor.h>
 #include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
+#include <ast/AstNodes.h>
 #include <cli/CliInterface.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <generator/GeneratorVisitor.h>
@@ -67,7 +68,21 @@ void SourceFile::preAnalyze() {
     sourceFile.first->preAnalyze();
 }
 
-void SourceFile::visualizeAST(std::string *output) {
+void SourceFile::buildAST(AstNode *rootNode) {
+  if (!rootNode)
+    rootNode = new EntryNode(CodeLoc(antlrCtx.parser->entry()->start));
+
+  // Transform the imported source files
+  for (auto &[_, sourceFile] : dependencies)
+    sourceFile.first->buildAST(rootNode);
+
+  // Transform this source file
+  AstBuilderVisitor astBuilder(rootNode);
+  astBuilder.visit(antlrCtx.parser->entry());
+  antlrCtx.parser->reset();
+}
+
+void SourceFile::visualizeCST(std::string *output) {
   // Only execute if enabled
   if (!options.dumpAST && !options.testMode)
     return;
@@ -79,7 +94,7 @@ void SourceFile::visualizeAST(std::string *output) {
 
   // Visualize the imported source files
   for (auto &[_, sourceFile] : dependencies)
-    sourceFile.first->visualizeAST(output);
+    sourceFile.first->visualizeCST(output);
 
   // Generate dot code for this source file
   CSTVisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);

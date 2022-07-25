@@ -6,6 +6,8 @@ set(SOURCES
         main.cpp
         cli/CliInterface.cpp
         cli/CliInterface.h
+        parser/AstBuilderVisitor.cpp
+        parser/AstBuilderVisitor.h
         analyzer/PreAnalyzerVisitor.cpp
         analyzer/PreAnalyzerVisitor.h
         analyzer/AnalyzerVisitor.cpp
@@ -36,8 +38,10 @@ set(SOURCES
         symbol/ScopePath.h
         symbol/SymbolSpecifiers.cpp
         symbol/SymbolSpecifiers.h
-        ast/AstNode.cpp
-        ast/AstNode.h
+        ast/AbstractAstVisitor.h
+        ast/AstVisitor.cpp
+        ast/AstVisitor.h
+        ast/AstNodes.h
         dependency/SourceFile.cpp
         dependency/SourceFile.h
         exception/ErrorFactory.cpp
@@ -64,6 +68,8 @@ set(SOURCES
         util/ThreadFactory.h
         util/FileUtil.cpp
         util/FileUtil.h
+        util/CodeLoc.cpp
+        util/CodeLoc.h
         util/CompilerWarning.cpp
         util/CompilerWarning.h)
 
