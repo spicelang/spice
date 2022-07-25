@@ -2435,14 +2435,18 @@ std::any GeneratorVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *c
       assert(symbolEntry != nullptr);
 
       // Get address of variable in memory
-      assert(!lhsVarName.empty());
-      SymbolTableEntry *assignVarEntry = currentScope->lookup(lhsVarName);
-      assert(assignVarEntry != nullptr);
-      if (assignVarEntry->getAddress() != nullptr) {
-        thisValuePtr = assignVarEntry->getAddress();
+      if (lhsVarName.empty()) {
+        llvm::Type *thisType = getTypeForSymbolType(spiceFunc->getThisType(), accessScope);
+        thisValuePtr = insertAlloca(thisType);
       } else {
-        llvm::Type *llvmType = getTypeForSymbolType(assignVarEntry->getType(), currentScope);
-        thisValuePtr = insertAlloca(llvmType, lhsVarName);
+        SymbolTableEntry *assignVarEntry = currentScope->lookup(lhsVarName);
+        assert(assignVarEntry != nullptr);
+        if (assignVarEntry->getAddress() != nullptr) {
+          thisValuePtr = assignVarEntry->getAddress();
+        } else {
+          llvm::Type *llvmType = getTypeForSymbolType(assignVarEntry->getType(), currentScope);
+          thisValuePtr = insertAlloca(llvmType, lhsVarName);
+        }
       }
 
       constructorCall = true;
