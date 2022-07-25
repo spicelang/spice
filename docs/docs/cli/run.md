@@ -22,6 +22,7 @@ You can apply following options to the `run` command:
 | Option       | Long                 | Description                                                                                 |
 |--------------|----------------------|---------------------------------------------------------------------------------------------|
 | `-d`         | `--debug-output`     | Print compiler output for debugging.                                                        |
+| `-cst`       | `--dump-cst`         | Dump CST as serialized string and SVG image                                                 |
 | `-ast`       | `--dump-ast`         | Dump AST as serialized string and SVG image                                                 |
 | `-symtab`    | `--dump-symtab`      | Dump serialized symbol tables                                                               |
 | `-ir`        | `--dump-ir`          | Dump LLVM-IR                                                                                |
