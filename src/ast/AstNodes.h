@@ -32,19 +32,24 @@ public:
     children.push_back(node);
     return node;
   }
-  template <typename T> T *getChild() const {
+
+  template <typename T> T *getChild(size_t i = 0) const {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
+    size_t j = 0;
     for (auto &child : children) {
-      if (auto *typedChild = dynamic_cast<T*>(child); typedChild != nullptr)
-        return typedChild;
+      if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr) {
+        if (j++ == i)
+          return typedChild;
+      }
     }
     return nullptr;
   }
+
   template <typename T> std::vector<T *> getChildren() const {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
     std::vector<T *> nodes;
     for (auto &child : children) {
-      if (auto *typedChild = dynamic_cast<T*>(child); typedChild != nullptr)
+      if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr)
         nodes.push_back(typedChild);
     }
     return nodes;
@@ -87,8 +92,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
 
-private:
-  // Members
+  // Public members
   Function *spiceFunc = nullptr;
 };
 
@@ -102,8 +106,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitFctDef(this); }
 
-private:
-  // Members
+  // Public members
   std::string functionName;
   Function *spiceFunc = nullptr;
 };
@@ -118,8 +121,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitProcDef(this); }
 
-private:
-  // Members
+  // Public members
   std::string procedureName;
   Function *spiceProc = nullptr;
 };
@@ -134,8 +136,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStructDef(this); }
 
-private:
-  // Members
+  // Public members
   std::string structName;
   Struct *spiceProc = nullptr;
 };
@@ -150,8 +151,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitGenericTypeDef(this); }
 
-private:
-  // Members
+  // Public members
   std::string typeName;
 };
 
@@ -165,8 +165,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitGlobalVarDef(this); }
 
-private:
-  // Members
+  // Public members
   std::string varName;
 };
 
@@ -180,8 +179,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitExtDecl(this); }
 
-private:
-  // Members
+  // Public members
   std::string extFunctionName;
 };
 
@@ -216,6 +214,11 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitForLoop(this); }
+
+  // Public get methods
+  DeclStmtNode *initDecl() const { return getChild<DeclStmtNode>(); }
+  AssignExprNode *condAssign() const { return getChild<AssignExprNode>(0); }
+  AssignExprNode *incAssign() const { return getChild<AssignExprNode>(1); }
 };
 
 // ======================================================== ForeachLoopNode ======================================================
@@ -227,6 +230,14 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitForeachLoop(this); }
+
+  // Public get methods
+  DeclStmtNode *idxVarDecl() const {
+    std::vector<DeclStmtNode *> declStmtNodes = getChildren<DeclStmtNode>();
+    return declStmtNodes.size() == 2 ? declStmtNodes.front() : nullptr;
+  }
+  DeclStmtNode *varDecl() const { return getChildren<DeclStmtNode>().back(); }
+  AssignExprNode *arrayAssign() const { return getChild<AssignExprNode>(); }
 };
 
 // ========================================================= WhileLoopNode =======================================================
@@ -249,6 +260,17 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitIfStmt(this); }
+};
+
+// ========================================================= ElseStmtNode ========================================================
+
+class ElseStmtNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitElseStmt(this); }
 };
 
 // ======================================================== AssertStmtNode =======================================================
@@ -371,8 +393,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitImportStmt(this); }
 
-private:
-  // Members
+  // Public members
   std::string importName;
 };
 
@@ -397,8 +418,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBreakStmt(this); }
 
-private:
-  // Members
+  // Public members
   int breakTimes;
 };
 
@@ -412,8 +432,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitContinueStmt(this); }
 
-private:
-  // Members
+  // Public members
   int continueTimes;
 };
 
@@ -427,8 +446,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPrintfCall(this); }
 
-private:
-  // Members
+  // Public members
   std::string templatedString;
 };
 
@@ -684,8 +702,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitFunctionCall(this); }
 
-private:
-  // Members
+  // Public members
   Function *functionAccessPtr;
 };
 
@@ -710,8 +727,7 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStructInstantiation(this); }
 
-private:
-  // Members
+  // Public members
   Struct *structAccessPtr;
 };
 

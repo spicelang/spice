@@ -20,6 +20,7 @@ class ForLoopNode;
 class ForeachLoopNode;
 class WhileLoopNode;
 class IfStmtNode;
+class ElseStmtNode;
 class AssertStmtNode;
 class StmtLstNode;
 class TypeLstNode;
@@ -84,6 +85,7 @@ public:
   virtual std::any visitForeachLoop(const ForeachLoopNode *ctx) = 0;
   virtual std::any visitWhileLoop(const WhileLoopNode *ctx) = 0;
   virtual std::any visitIfStmt(const IfStmtNode *ctx) = 0;
+  virtual std::any visitElseStmt(const ElseStmtNode *ctx) = 0;
   virtual std::any visitAssertStmt(const AssertStmtNode *ctx) = 0;
   virtual std::any visitStmtLst(const StmtLstNode *ctx) = 0;
   virtual std::any visitTypeLst(const TypeLstNode *ctx) = 0;

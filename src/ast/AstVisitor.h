@@ -21,6 +21,7 @@ public:
   virtual std::any visitForeachLoop(const ForeachLoopNode *ctx) override;
   virtual std::any visitWhileLoop(const WhileLoopNode *ctx) override;
   virtual std::any visitIfStmt(const IfStmtNode *ctx) override;
+  virtual std::any visitElseStmt(const ElseStmtNode *ctx) override;
   virtual std::any visitAssertStmt(const AssertStmtNode *ctx) override;
   virtual std::any visitStmtLst(const StmtLstNode *ctx) override;
   virtual std::any visitTypeLst(const TypeLstNode *ctx) override;

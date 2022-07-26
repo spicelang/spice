@@ -32,6 +32,8 @@ std::any AstVisitor::visitWhileLoop(const WhileLoopNode *ctx) { return visitChil
 
 std::any AstVisitor::visitIfStmt(const IfStmtNode *ctx) { return visitChildren(ctx); }
 
+std::any AstVisitor::visitElseStmt(const ElseStmtNode *ctx) { return visitChildren(ctx); }
+
 std::any AstVisitor::visitAssertStmt(const AssertStmtNode *ctx) { return visitChildren(ctx); }
 
 std::any AstVisitor::visitStmtLst(const StmtLstNode *ctx) { return visitChildren(ctx); }

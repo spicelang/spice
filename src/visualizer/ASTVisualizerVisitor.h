@@ -34,6 +34,7 @@ public:
   std::any visitForeachLoop(const ForeachLoopNode *ctx) override { return buildNode(ctx); }
   std::any visitWhileLoop(const WhileLoopNode *ctx) override { return buildNode(ctx); }
   std::any visitIfStmt(const IfStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitElseStmt(const ElseStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitAssertStmt(const AssertStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitStmtLst(const StmtLstNode *ctx) override { return buildNode(ctx); }
   std::any visitTypeLst(const TypeLstNode *ctx) override { return buildNode(ctx); }
@@ -124,11 +125,115 @@ private:
       return "FctDef";
     if (std::is_same<ProcDefNode, T>())
       return "ProcDef";
+    if (std::is_same<StructDefNode, T>())
+      return "StructDef";
+    if (std::is_same<GenericTypeDefNode, T>())
+      return "GenericTypeDef";
+    if (std::is_same<GlobalVarDefNode, T>())
+      return "GlobalVarDef";
+    if (std::is_same<ExtDeclNode, T>())
+      return "ExtDecl";
     if (std::is_same<ThreadDefNode, T>())
       return "ThreadDef";
     if (std::is_same<UnsafeBlockDefNode, T>())
       return "UnsafeBlockDef";
-    return "Unknown";
+    if (std::is_same<ForLoopNode, T>())
+      return "ForLoop";
+    if (std::is_same<ForeachLoopNode, T>())
+      return "ForeachLoop";
+    if (std::is_same<WhileLoopNode, T>())
+      return "WhileLoop";
+    if (std::is_same<IfStmtNode, T>())
+      return "IfStmt";
+    if (std::is_same<ElseStmtNode, T>())
+      return "ElseStmt";
+    if (std::is_same<AssertStmtNode, T>())
+      return "AssertStmt";
+    if (std::is_same<StmtLstNode, T>())
+      return "StmtLst";
+    if (std::is_same<TypeLstNode, T>())
+      return "TypeLst";
+    if (std::is_same<TypeAltsLstNode, T>())
+      return "TypeAltsLst";
+    if (std::is_same<ArgLstDefNode, T>())
+      return "ArgLstDef";
+    if (std::is_same<ArgLstNode, T>())
+      return "ArgLst";
+    if (std::is_same<FieldNode, T>())
+      return "Field";
+    if (std::is_same<StmtNode, T>())
+      return "Stmt";
+    if (std::is_same<DeclStmtNode, T>())
+      return "DeclStmt";
+    if (std::is_same<DeclSpecifiersNode, T>())
+      return "DeclSpecifiers";
+    if (std::is_same<ImportStmtNode, T>())
+      return "ImportStmt";
+    if (std::is_same<ReturnStmtNode, T>())
+      return "ReturnStmt";
+    if (std::is_same<BreakStmtNode, T>())
+      return "BreakStmt";
+    if (std::is_same<ContinueStmtNode, T>())
+      return "ContinueStmt";
+    if (std::is_same<PrintfCallNode, T>())
+      return "PrintfCall";
+    if (std::is_same<SizeofCallNode, T>())
+      return "SizeofCall";
+    if (std::is_same<LenCallNode, T>())
+      return "LenCall";
+    if (std::is_same<TidCallNode, T>())
+      return "TidCall";
+    if (std::is_same<JoinCallNode, T>())
+      return "JoinCall";
+    if (std::is_same<AssignExprNode, T>())
+      return "AssignExpr";
+    if (std::is_same<TernaryExprNode, T>())
+      return "TernaryExpr";
+    if (std::is_same<LogicalOrExprNode, T>())
+      return "LogicalOrExpr";
+    if (std::is_same<LogicalAndExprNode, T>())
+      return "LogicalAndExpr";
+    if (std::is_same<BitwiseOrExprNode, T>())
+      return "BitwiseOrExpr";
+    if (std::is_same<BitwiseXorExprNode, T>())
+      return "BitwiseXorExpr";
+    if (std::is_same<BitwiseAndExprNode, T>())
+      return "BitwiseAndExpr";
+    if (std::is_same<EqualityExprNode, T>())
+      return "EqualityExpr";
+    if (std::is_same<RelationalExprNode, T>())
+      return "RelationalExpr";
+    if (std::is_same<ShiftExprNode, T>())
+      return "ShiftExpr";
+    if (std::is_same<AdditiveExprNode, T>())
+      return "AdditiveExpr";
+    if (std::is_same<MultiplicativeExprNode, T>())
+      return "MultiplicativeExpr";
+    if (std::is_same<CastExprNode, T>())
+      return "CastExpr";
+    if (std::is_same<PrefixUnaryExprNode, T>())
+      return "PrefixUnaryExpr";
+    if (std::is_same<PostfixUnaryExprNode, T>())
+      return "PostfixUnaryExpr";
+    if (std::is_same<AtomicExprNode, T>())
+      return "AtomicExpr";
+    if (std::is_same<ValueNode, T>())
+      return "Value";
+    if (std::is_same<PrimitiveValueNode, T>())
+      return "PrimitiveValue";
+    if (std::is_same<FunctionCallNode, T>())
+      return "FunctionCall";
+    if (std::is_same<ArrayInitializationNode, T>())
+      return "ArrayInitialization";
+    if (std::is_same<StructInstantiationNode, T>())
+      return "StructInstantiation";
+    if (std::is_same<DataTypeNode, T>())
+      return "DataType";
+    if (std::is_same<BaseDataTypeNode, T>())
+      return "BaseDataType";
+    if (std::is_same<CustomDataTypeNode, T>())
+      return "CustomDataType";
+    throw std::runtime_error("Unknown node name");
   }
 
   [[nodiscard]] std::string getSpaces() const;
