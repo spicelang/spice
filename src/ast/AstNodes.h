@@ -617,6 +617,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitEqualityExpr(this); }
+
+  // Public members
+  EqualityOp op;
 };
 
 // ==================================================== RelationalExprNode =======================================================
@@ -636,6 +639,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitRelationalExpr(this); }
+
+  // Public members
+  RelationalOp op;
 };
 
 // ====================================================== ShiftExprNode ==========================================================
@@ -653,6 +659,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitShiftExpr(this); }
+
+  // Public members
+  ShiftOp op;
 };
 
 // ==================================================== AdditiveExprNode =========================================================
@@ -670,6 +679,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAdditiveExpr(this); }
+
+  // Public members
+  std::queue<AdditiveOp> opQueue;
 };
 
 // ================================================== MultiplicativeExprNode =====================================================
@@ -688,6 +700,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitMultiplicativeExpr(this); }
+
+  // Public members
+  std::queue<MultiplicativeOp> opQueue;
 };
 
 // ======================================================= CastExprNode ==========================================================
@@ -699,6 +714,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitCastExpr(this); }
+
+  // Public members
+  bool isCasted = false;
 };
 
 // ==================================================== PrefixUnaryExprNode ======================================================
@@ -730,11 +748,22 @@ public:
 
 class PostfixUnaryExprNode : public AstNode {
 public:
+  // Enums
+  enum PostfixUnaryOp {
+    OP_SUBSCRIPT,
+    OP_MEMBER_ACCESS,
+    OP_PLUS_PLUS,
+    OP_MINUS_MINUS
+  };
+
   // Constructors
   using AstNode::AstNode;
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPostfixUnaryExpr(this); }
+
+  // Public members
+  std::queue<PostfixUnaryOp> opQueue;
 };
 
 // ====================================================== AtomicExprNode =========================================================
@@ -746,6 +775,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAtomicExpr(this); }
+
+  // Public members
+  std::string identifier;
 };
 
 // ======================================================== ValueNode ============================================================
@@ -763,11 +795,35 @@ public:
 
 class PrimitiveValueNode : public AstNode {
 public:
+  // Enum
+  enum PrimitiveValueType {
+    TY_DOUBLE,
+    TY_INT,
+    TY_SHORT,
+    TY_LONG,
+    TY_BYTE,
+    TY_CHAR,
+    TY_STRING,
+    TY_BOOL
+  };
+
   // Constructors
   using AstNode::AstNode;
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPrimitiveValue(this); }
+
+  // Public members
+  PrimitiveValueType type;
+  struct {
+    double_t doubleValue;
+    int32_t intValue;
+    int16_t shortValue;
+    int64_t longValue;
+    int8_t charValue;
+    std::string stringValue;
+    bool boolValue;
+  } data;
 };
 
 // ==================================================== FunctionCallNode =========================================================
@@ -781,6 +837,8 @@ public:
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitFunctionCall(this); }
 
   // Public members
+  std::string fqFunctionName;
+  std::vector<std::string> functionNameFragments;
   Function *functionAccessPtr;
 };
 
@@ -806,6 +864,8 @@ public:
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStructInstantiation(this); }
 
   // Public members
+  std::string fqStructName;
+  std::vector<std::string> structNameFragments;
   Struct *structAccessPtr;
 };
 
@@ -813,22 +873,55 @@ public:
 
 class DataTypeNode : public AstNode {
 public:
+  // Enums
+  enum TypeModifierType {
+    TY_POINTER,
+    TY_ARRAY
+  };
+
+  // Structs
+  struct TypeModifier {
+    TypeModifierType modifierType;
+    bool isSizeHardcoded;
+    int hardcodedSize;
+  };
+
   // Constructors
   using AstNode::AstNode;
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitDataType(this); }
+
+  // Public members
+  std::queue<TypeModifier> tmQueue;
 };
 
 // ==================================================== BaseDataTypeNode =========================================================
 
 class BaseDataTypeNode : public AstNode {
 public:
+  // Enums
+  enum Type {
+    TY_DOUBLE,
+    TY_INT,
+    TY_SHORT,
+    TY_LONG,
+    TY_BYTE,
+    TY_CHAR,
+    TY_STRING,
+    TY_BOOL,
+    TY_DYN,
+    TY_CUSTOM
+  };
+
   // Constructors
   using AstNode::AstNode;
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBaseDataType(this); }
+
+  // Public members
+  Type type;
 };
 
 // ==================================================== CustomDataTypeNode =======================================================
@@ -840,4 +933,8 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitCustomDataType(this); }
+
+  // Public members
+  std::string fqTypeName;
+  std::vector<std::string> typeNameFragments;
 };
