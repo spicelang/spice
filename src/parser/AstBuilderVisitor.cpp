@@ -6,51 +6,38 @@
 
 std::any AstBuilderVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = static_cast<EntryNode *>(currentNode);
+  for (auto subTree : ctx->children) {
+    // Create child for the current node
+    if (auto rule = dynamic_cast<SpiceParser::MainFunctionDefContext *>(subTree); rule != nullptr) // MainFctDef
+      entryNode->createChild<MainFctDefNode>(CodeLoc(rule->start));
+    else if (auto rule = dynamic_cast<SpiceParser::FunctionDefContext *>(subTree); rule != nullptr) // FctDef
+      entryNode->createChild<FctDefNode>(CodeLoc(rule->start));
+    else if (auto rule = dynamic_cast<SpiceParser::ProcedureDefContext *>(subTree); rule != nullptr) // ProcDef
+      entryNode->createChild<ProcDefNode>(CodeLoc(rule->start));
+    else if (auto rule = dynamic_cast<SpiceParser::StructDefContext *>(subTree); rule != nullptr) // StructDef
+      entryNode->createChild<StructDefNode>(CodeLoc(rule->start));
+    else if (auto rule = dynamic_cast<SpiceParser::GenericTypeDefContext *>(subTree); rule != nullptr) // GenericTypeDef
+      entryNode->createChild<GenericTypeDefNode>(CodeLoc(rule->start));
+    else if (auto rule = dynamic_cast<SpiceParser::GlobalVarDefContext *>(subTree); rule != nullptr) // GlobalVarDef
+      entryNode->createChild<GlobalVarDefNode>(CodeLoc(rule->start));
+    else if (auto rule = dynamic_cast<SpiceParser::ImportStmtContext *>(subTree); rule != nullptr) // ImportStmt
+      entryNode->createChild<ImportStmtNode>(CodeLoc(rule->start));
+    else if (auto rule = dynamic_cast<SpiceParser::ExtDeclContext *>(subTree); rule != nullptr) // ExtDecl
+      entryNode->createChild<ExtDeclNode>(CodeLoc(rule->start));
+    // Visit child
 
-  // Main function definitions
-  for (auto child : ctx->mainFunctionDef()) {
-    visit(child);
-    entryNode->createChild<MainFctDefNode>(CodeLoc(child->start));
-  }
-  // Function definitions
-  for (auto child : ctx->functionDef()) {
-    visit(child);
-    entryNode->createChild<FctDefNode>(CodeLoc(child->start));
-  }
-  // Procedure definitions
-  for (auto child : ctx->procedureDef()) {
-    visit(child);
-    entryNode->createChild<ProcDefNode>(CodeLoc(child->start));
-  }
-  // Struct definitions
-  for (auto child : ctx->structDef()) {
-    visit(child);
-    entryNode->createChild<StructDefNode>(CodeLoc(child->start));
-  }
-  // Generic type definitions
-  for (auto child : ctx->genericTypeDef()) {
-    visit(child);
-    entryNode->createChild<GenericTypeDefNode>(CodeLoc(child->start));
-  }
-  // Global var definition
-  for (auto child : ctx->globalVarDef()) {
-    visit(child);
-    entryNode->createChild<GlobalVarDefNode>(CodeLoc(child->start));
-  }
-  // Import statements
-  for (auto child : ctx->importStmt()) {
-    visit(child);
-    entryNode->createChild<ImportStmtNode>(CodeLoc(child->start));
-  }
-  // External declarations
-  for (auto child : ctx->extDecl()) {
-    visit(child);
-    entryNode->createChild<ExtDeclNode>(CodeLoc(child->start));
   }
   return nullptr;
 }
 
-std::any AstBuilderVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) { return nullptr; }
+std::any AstBuilderVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+  auto mainFctDefNode = static_cast<MainFctDefNode *>(currentNode);
+  for (auto subTree : ctx->children) {
+    /*if (auto rule = dynamic_cast<SpiceParser::DeclSpecifiersContext *>(subTree); rule != nullptr) // MainFctDef
+      mainFctDefNode->createChild<DeclSpecifiersNode>(CodeLoc(rule->start));*/
+  }
+  return nullptr;
+}
 
 std::any AstBuilderVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) { return nullptr; }
 
@@ -84,19 +71,24 @@ std::any AstBuilderVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) { r
 
 std::any AstBuilderVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) { return nullptr; }
 
-std::any AstBuilderVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) { return nullptr; }
-
-std::any AstBuilderVisitor::visitField(SpiceParser::FieldContext *ctx) { return nullptr; }
+std::any AstBuilderVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
+  auto stmtLstNode = static_cast<StmtLstNode *>(currentNode);
+  for (auto subTree : ctx->children) {
+    if (auto rule = dynamic_cast<SpiceParser::StmtContext *>(subTree); rule != nullptr) // Stmt
+      stmtLstNode->createChild<StmtNode>(CodeLoc(rule->start));
+  }
+  return nullptr;
+}
 
 std::any AstBuilderVisitor::visitTypeLst(SpiceParser::TypeLstContext *ctx) { return nullptr; }
 
-std::any AstBuilderVisitor::visitTypeLstEllipsis(SpiceParser::TypeLstEllipsisContext *ctx) { return nullptr; }
-
-std::any AstBuilderVisitor::visitTypeAlts(SpiceParser::TypeAltsContext *ctx) { return nullptr; }
+std::any AstBuilderVisitor::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) { return nullptr; }
 
 std::any AstBuilderVisitor::visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) { return nullptr; }
 
 std::any AstBuilderVisitor::visitArgLst(SpiceParser::ArgLstContext *ctx) { return nullptr; }
+
+std::any AstBuilderVisitor::visitField(SpiceParser::FieldContext *ctx) { return nullptr; }
 
 std::any AstBuilderVisitor::visitStmt(SpiceParser::StmtContext *ctx) { return nullptr; }
 

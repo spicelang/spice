@@ -27,8 +27,25 @@ public:
   std::any visitStructDef(const StructDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGenericTypeDef(const GenericTypeDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGlobalVarDef(const GlobalVarDefNode *ctx) override { return buildNode(ctx); }
-  std::any visitImportStmt(const ImportStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitExtDecl(const ExtDeclNode *ctx) override { return buildNode(ctx); }
+  std::any visitThreadDef(const ThreadDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitUnsafeBlockDef(const UnsafeBlockDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitForLoop(const ForLoopNode *ctx) override { return buildNode(ctx); }
+  std::any visitForeachLoop(const ForeachLoopNode *ctx) override { return buildNode(ctx); }
+  std::any visitWhileLoop(const WhileLoopNode *ctx) override { return buildNode(ctx); }
+  std::any visitIfStmt(const IfStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitAssertStmt(const AssertStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitStmtLst(const StmtLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitTypeLst(const TypeLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitTypeAltsLst(const TypeAltsLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitArgLstDef(const ArgLstDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitArgLst(const ArgLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitField(const FieldNode *ctx) override { return buildNode(ctx); }
+  std::any visitStmt(const StmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitDeclStmt(const DeclStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitDeclSpecifiers(const DeclSpecifiersNode *ctx) override { return buildNode(ctx); }
+
+  std::any visitImportStmt(const ImportStmtNode *ctx) override { return buildNode(ctx); }
 
 private:
   // Members
@@ -38,10 +55,11 @@ private:
   std::string parentNodeId;
 
   // Private methods
-  template <typename T> std::string buildNode(const T *ctx) {
+  template <typename T>
+  std::string buildNode(const T *ctx) {
     // Prepare strings
     std::string codeLoc = ctx->codeLoc.toString();
-    std::string nodeName = getNodeName(*ctx);
+    std::string nodeName = getNodeName(ctx);
     std::string nodeId = codeLoc + "_" + nodeName;
 
     // Build result
@@ -65,7 +83,8 @@ private:
     return result;
   }
 
-  template <typename T> std::string getNodeName(const T) const {
+  template <typename T>
+  std::string getNodeName(const T*) const {
     if (std::is_same<EntryNode, T>())
       return "Entry";
     if (std::is_same<MainFctDefNode, T>())
@@ -74,6 +93,10 @@ private:
       return "FctDef";
     if (std::is_same<ProcDefNode, T>())
       return "ProcDef";
+    if (std::is_same<ThreadDefNode, T>())
+      return "ThreadDef";
+    if (std::is_same<UnsafeBlockDefNode, T>())
+      return "UnsafeBlockDef";
     return "Unknown";
   }
 

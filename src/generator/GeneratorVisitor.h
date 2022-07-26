@@ -61,7 +61,7 @@ public:
   std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override;
   std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
-  std::any visitTypeAlts(SpiceParser::TypeAltsContext *ctx) override;
+  std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override;
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;

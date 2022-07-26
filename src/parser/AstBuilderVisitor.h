@@ -32,12 +32,11 @@ public:
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
-  std::any visitField(SpiceParser::FieldContext *ctx) override;
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override;
-  std::any visitTypeLstEllipsis(SpiceParser::TypeLstEllipsisContext *ctx) override;
-  std::any visitTypeAlts(SpiceParser::TypeAltsContext *ctx) override;
+  std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override;
   std::any visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) override;
   std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override;
+  std::any visitField(SpiceParser::FieldContext *ctx) override;
   std::any visitStmt(SpiceParser::StmtContext *ctx) override;
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
   std::any visitDeclSpecifiers(SpiceParser::DeclSpecifiersContext *ctx) override;

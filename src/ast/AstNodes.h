@@ -170,21 +170,6 @@ private:
   std::string varName;
 };
 
-// ======================================================== ImportStmtNode =======================================================
-
-class ImportStmtNode : public AstNode {
-public:
-  // Constructors
-  using AstNode::AstNode;
-
-  // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitImportStmt(this); }
-
-private:
-  // Members
-  std::string identifier;
-};
-
 // ========================================================== ExtDeclNode ========================================================
 
 class ExtDeclNode : public AstNode {
@@ -198,4 +183,198 @@ public:
 private:
   // Members
   std::string extFunctionName;
+};
+
+// ========================================================= ThreadDefNode =======================================================
+
+class ThreadDefNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitThreadDef(this); }
+};
+
+// ====================================================== UnsafeBlockDefNode =====================================================
+
+class UnsafeBlockDefNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitUnsafeBlockDef(this); }
+};
+
+// ========================================================== ForLoopNode ========================================================
+
+class ForLoopNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitForLoop(this); }
+};
+
+// ======================================================== ForeachLoopNode ======================================================
+
+class ForeachLoopNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitForeachLoop(this); }
+};
+
+// ========================================================= WhileLoopNode =======================================================
+
+class WhileLoopNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitWhileLoop(this); }
+};
+
+// ========================================================== IfStmtNode =========================================================
+
+class IfStmtNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitIfStmt(this); }
+};
+
+// ======================================================== AssertStmtNode =======================================================
+
+class AssertStmtNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAssertStmt(this); }
+};
+
+// ========================================================= StmtLstNode =========================================================
+
+class StmtLstNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStmtLst(this); }
+};
+
+// ========================================================= TypeLstNode =========================================================
+
+class TypeLstNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitTypeLst(this); }
+};
+
+// ======================================================= TypeAltsLstNode =======================================================
+
+class TypeAltsLstNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitTypeAltsLst(this); }
+};
+
+// ======================================================== ArgLstDefNode ========================================================
+
+class ArgLstDefNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitArgLstDef(this); }
+};
+
+// ========================================================== ArgLstNode =========================================================
+
+class ArgLstNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitArgLst(this); }
+};
+
+// ========================================================== FieldNode ==========================================================
+
+class FieldNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitField(this); }
+};
+
+// =========================================================== StmtNode ==========================================================
+
+class StmtNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStmt(this); }
+};
+
+// ========================================================= DeclStmtNode ========================================================
+
+class DeclStmtNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitDeclStmt(this); }
+};
+
+// ====================================================== DeclSpecifiersNode =====================================================
+
+class DeclSpecifiersNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitDeclSpecifiers(this); }
+};
+
+
+
+
+// ======================================================== ImportStmtNode =======================================================
+
+class ImportStmtNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitImportStmt(this); }
+
+private:
+  // Members
+  std::string identifier;
 };

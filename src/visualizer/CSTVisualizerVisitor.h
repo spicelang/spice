@@ -41,8 +41,7 @@ public:
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override { return buildRule(ctx); };
   std::any visitField(SpiceParser::FieldContext *ctx) override { return buildRule(ctx); };
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override { return buildRule(ctx); };
-  std::any visitTypeLstEllipsis(SpiceParser::TypeLstEllipsisContext *ctx) override { return buildRule(ctx); };
-  std::any visitTypeAlts(SpiceParser::TypeAltsContext *ctx) override { return buildRule(ctx); };
+  std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override { return buildRule(ctx); };
   std::any visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) override { return buildRule(ctx); };
   std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override { return buildRule(ctx); };
   std::any visitStmt(SpiceParser::StmtContext *ctx) override { return buildRule(ctx); };

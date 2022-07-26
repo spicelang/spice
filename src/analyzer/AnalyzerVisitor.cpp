@@ -537,9 +537,9 @@ std::any AnalyzerVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::string functionName = ctx->IDENTIFIER()->toString();
 
   ArgList argTypes;
-  if (ctx->typeLstEllipsis()) {
+  if (ctx->typeLst()) {
     // Check if an argument is dyn
-    for (const auto &arg : ctx->typeLstEllipsis()->typeLst()->dataType()) {
+    for (const auto &arg : ctx->typeLst()->dataType()) {
       auto argType = any_cast<SymbolType>(visit(arg));
       if (argType.is(TY_DYN))
         throw err->get(*arg->start, UNEXPECTED_DYN_TYPE_SA, "Dyn data type is not allowed as arg type for external functions");
@@ -587,7 +587,7 @@ std::any AnalyzerVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefContext
 
   // Get type conditions
   std::vector<SymbolType> typeConditions;
-  for (const auto &typeAlt : ctx->typeAlts()->dataType()) {
+  for (const auto &typeAlt : ctx->typeAltsLst()->dataType()) {
     auto typeCondition = any_cast<SymbolType>(visit(typeAlt));
     typeConditions.push_back(typeCondition);
   }

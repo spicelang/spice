@@ -10,11 +10,14 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-import "os-test2" as socket;
+f<string> func() {
+    return "Test";
+}
 
 f<int> main() {
-    socket.Socket s = socket.openServerSocket(8080s);
-    socket.NestedSocket n = s.nested;
-    printf("Test string: %s\n", n.testString);
-    printf("Socket: %d\n", s.sock);
+    string res = func();
+    if false {
+        printf("1: %s", res);
+    }
+    printf("2: %s", res);
 }
