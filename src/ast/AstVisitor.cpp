@@ -85,3 +85,35 @@ std::any AstVisitor::visitBitwiseXorExpr(const BitwiseXorExprNode *ctx) { return
 std::any AstVisitor::visitBitwiseAndExpr(const BitwiseAndExprNode *ctx) { return visitChildren(ctx); }
 
 std::any AstVisitor::visitEqualityExpr(const EqualityExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitRelationalExpr(const RelationalExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitShiftExpr(const ShiftExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitAdditiveExpr(const AdditiveExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitMultiplicativeExpr(const MultiplicativeExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitCastExpr(const CastExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitPrefixUnaryExpr(const PrefixUnaryExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitPostfixUnaryExpr(const PostfixUnaryExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitAtomicExpr(const AtomicExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitValue(const ValueNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitPrimitiveValue(const PrimitiveValueNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitFunctionCall(const FunctionCallNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitArrayInitialization(const ArrayInitializationNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitStructInstantiation(const StructInstantiationNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitDataType(const DataTypeNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitBaseDataType(const BaseDataTypeNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitCustomDataType(const CustomDataTypeNode *ctx) { return visitChildren(ctx); }

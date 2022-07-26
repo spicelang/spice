@@ -563,3 +563,187 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitEqualityExpr(this); }
 };
+
+// ==================================================== RelationalExprNode =======================================================
+
+class RelationalExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitRelationalExpr(this); }
+};
+
+// ====================================================== ShiftExprNode ==========================================================
+
+class ShiftExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitShiftExpr(this); }
+};
+
+// ==================================================== AdditiveExprNode =========================================================
+
+class AdditiveExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAdditiveExpr(this); }
+};
+
+// ================================================== MultiplicativeExprNode =====================================================
+
+class MultiplicativeExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitMultiplicativeExpr(this); }
+};
+
+// ======================================================= CastExprNode ==========================================================
+
+class CastExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitCastExpr(this); }
+};
+
+// ==================================================== PrefixUnaryExprNode ======================================================
+
+class PrefixUnaryExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPrefixUnaryExpr(this); }
+};
+
+// =================================================== PostfixUnaryExprNode ======================================================
+
+class PostfixUnaryExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPostfixUnaryExpr(this); }
+};
+
+// ====================================================== AtomicExprNode =========================================================
+
+class AtomicExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAtomicExpr(this); }
+};
+
+// ======================================================== ValueNode ============================================================
+
+class ValueNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitValue(this); }
+};
+
+// =================================================== PrimitiveValueNode ========================================================
+
+class PrimitiveValueNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPrimitiveValue(this); }
+};
+
+// ==================================================== FunctionCallNode =========================================================
+
+class FunctionCallNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitFunctionCall(this); }
+
+private:
+  // Members
+  Function *functionAccessPtr;
+};
+
+// ================================================= ArrayInitializationNode =====================================================
+
+class ArrayInitializationNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitArrayInitialization(this); }
+};
+
+// ================================================= StructInstantiationNode =====================================================
+
+class StructInstantiationNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStructInstantiation(this); }
+
+private:
+  // Members
+  Struct *structAccessPtr;
+};
+
+// ======================================================= DataTypeNode ==========================================================
+
+class DataTypeNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitDataType(this); }
+};
+
+// ==================================================== BaseDataTypeNode =========================================================
+
+class BaseDataTypeNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBaseDataType(this); }
+};
+
+// ==================================================== CustomDataTypeNode =======================================================
+
+class CustomDataTypeNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitCustomDataType(this); }
+};

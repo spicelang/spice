@@ -61,6 +61,22 @@ public:
   std::any visitBitwiseXorExpr(const BitwiseXorExprNode *ctx) override { return buildNode(ctx); }
   std::any visitBitwiseAndExpr(const BitwiseAndExprNode *ctx) override { return buildNode(ctx); }
   std::any visitEqualityExpr(const EqualityExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitRelationalExpr(const RelationalExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitShiftExpr(const ShiftExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitAdditiveExpr(const AdditiveExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitMultiplicativeExpr(const MultiplicativeExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitCastExpr(const CastExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitPrefixUnaryExpr(const PrefixUnaryExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitPostfixUnaryExpr(const PostfixUnaryExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitAtomicExpr(const AtomicExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitValue(const ValueNode *ctx) override { return buildNode(ctx); }
+  std::any visitPrimitiveValue(const PrimitiveValueNode *ctx) override { return buildNode(ctx); }
+  std::any visitFunctionCall(const FunctionCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitArrayInitialization(const ArrayInitializationNode *ctx) override { return buildNode(ctx); }
+  std::any visitStructInstantiation(const StructInstantiationNode *ctx) override { return buildNode(ctx); }
+  std::any visitDataType(const DataTypeNode *ctx) override { return buildNode(ctx); }
+  std::any visitBaseDataType(const BaseDataTypeNode *ctx) override { return buildNode(ctx); }
+  std::any visitCustomDataType(const CustomDataTypeNode *ctx) override { return buildNode(ctx); }
 
 private:
   // Members

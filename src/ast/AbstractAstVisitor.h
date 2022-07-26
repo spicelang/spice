@@ -47,6 +47,22 @@ class BitwiseOrExprNode;
 class BitwiseXorExprNode;
 class BitwiseAndExprNode;
 class EqualityExprNode;
+class RelationalExprNode;
+class ShiftExprNode;
+class AdditiveExprNode;
+class MultiplicativeExprNode;
+class CastExprNode;
+class PrefixUnaryExprNode;
+class PostfixUnaryExprNode;
+class AtomicExprNode;
+class ValueNode;
+class PrimitiveValueNode;
+class FunctionCallNode;
+class ArrayInitializationNode;
+class StructInstantiationNode;
+class DataTypeNode;
+class BaseDataTypeNode;
+class CustomDataTypeNode;
 
 class AbstractAstVisitor {
 public:
@@ -95,6 +111,22 @@ public:
   virtual std::any visitBitwiseXorExpr(const BitwiseXorExprNode *ctx) = 0;
   virtual std::any visitBitwiseAndExpr(const BitwiseAndExprNode *ctx) = 0;
   virtual std::any visitEqualityExpr(const EqualityExprNode *ctx) = 0;
+  virtual std::any visitRelationalExpr(const RelationalExprNode *ctx) = 0;
+  virtual std::any visitShiftExpr(const ShiftExprNode *ctx) = 0;
+  virtual std::any visitAdditiveExpr(const AdditiveExprNode *ctx) = 0;
+  virtual std::any visitMultiplicativeExpr(const MultiplicativeExprNode *ctx) = 0;
+  virtual std::any visitCastExpr(const CastExprNode *ctx) = 0;
+  virtual std::any visitPrefixUnaryExpr(const PrefixUnaryExprNode *ctx) = 0;
+  virtual std::any visitPostfixUnaryExpr(const PostfixUnaryExprNode *ctx) = 0;
+  virtual std::any visitAtomicExpr(const AtomicExprNode *ctx) = 0;
+  virtual std::any visitValue(const ValueNode *ctx) = 0;
+  virtual std::any visitPrimitiveValue(const PrimitiveValueNode *ctx) = 0;
+  virtual std::any visitFunctionCall(const FunctionCallNode *ctx) = 0;
+  virtual std::any visitArrayInitialization(const ArrayInitializationNode *ctx) = 0;
+  virtual std::any visitStructInstantiation(const StructInstantiationNode *ctx) = 0;
+  virtual std::any visitDataType(const DataTypeNode *ctx) = 0;
+  virtual std::any visitBaseDataType(const BaseDataTypeNode *ctx) = 0;
+  virtual std::any visitCustomDataType(const CustomDataTypeNode *ctx) = 0;
 
   // Public methods
   virtual std::any visitChildren(const AstNode *ctx) const;

@@ -48,5 +48,21 @@ public:
   virtual std::any visitBitwiseXorExpr(const BitwiseXorExprNode *ctx) override;
   virtual std::any visitBitwiseAndExpr(const BitwiseAndExprNode *ctx) override;
   virtual std::any visitEqualityExpr(const EqualityExprNode *ctx) override;
+  virtual std::any visitRelationalExpr(const RelationalExprNode *ctx) override;
+  virtual std::any visitShiftExpr(const ShiftExprNode *ctx) override;
+  virtual std::any visitAdditiveExpr(const AdditiveExprNode *ctx) override;
+  virtual std::any visitMultiplicativeExpr(const MultiplicativeExprNode *ctx) override;
+  virtual std::any visitCastExpr(const CastExprNode *ctx) override;
+  virtual std::any visitPrefixUnaryExpr(const PrefixUnaryExprNode *ctx) override;
+  virtual std::any visitPostfixUnaryExpr(const PostfixUnaryExprNode *ctx) override;
+  virtual std::any visitAtomicExpr(const AtomicExprNode *ctx) override;
+  virtual std::any visitValue(const ValueNode *ctx) override;
+  virtual std::any visitPrimitiveValue(const PrimitiveValueNode *ctx) override;
+  virtual std::any visitFunctionCall(const FunctionCallNode *ctx) override;
+  virtual std::any visitArrayInitialization(const ArrayInitializationNode *ctx) override;
+  virtual std::any visitStructInstantiation(const StructInstantiationNode *ctx) override;
+  virtual std::any visitDataType(const DataTypeNode *ctx) override;
+  virtual std::any visitBaseDataType(const BaseDataTypeNode *ctx) override;
+  virtual std::any visitCustomDataType(const CustomDataTypeNode *ctx) override;
 
 };
