@@ -44,8 +44,23 @@ public:
   std::any visitStmt(const StmtNode *ctx) override { return buildNode(ctx); }
   std::any visitDeclStmt(const DeclStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitDeclSpecifiers(const DeclSpecifiersNode *ctx) override { return buildNode(ctx); }
-
   std::any visitImportStmt(const ImportStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitReturnStmt(const ReturnStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitBreakStmt(const BreakStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitContinueStmt(const ContinueStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitPrintfCall(const PrintfCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitSizeofCall(const SizeofCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitLenCall(const LenCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitTidCall(const TidCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitJoinCall(const JoinCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitAssignExpr(const AssignExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitTernaryExpr(const TernaryExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitLogicalOrExpr(const LogicalOrExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitLogicalAndExpr(const LogicalAndExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitBitwiseOrExpr(const BitwiseOrExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitBitwiseXorExpr(const BitwiseXorExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitBitwiseAndExpr(const BitwiseAndExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitEqualityExpr(const EqualityExprNode *ctx) override { return buildNode(ctx); }
 
 private:
   // Members

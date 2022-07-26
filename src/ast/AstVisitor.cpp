@@ -52,6 +52,36 @@ std::any AstVisitor::visitDeclStmt(const DeclStmtNode *ctx) { return visitChildr
 
 std::any AstVisitor::visitDeclSpecifiers(const DeclSpecifiersNode *ctx) { return visitChildren(ctx); }
 
-
-
 std::any AstVisitor::visitImportStmt(const ImportStmtNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitReturnStmt(const ReturnStmtNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitBreakStmt(const BreakStmtNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitContinueStmt(const ContinueStmtNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitPrintfCall(const PrintfCallNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitSizeofCall(const SizeofCallNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitLenCall(const LenCallNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitTidCall(const TidCallNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitJoinCall(const JoinCallNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitAssignExpr(const AssignExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitTernaryExpr(const TernaryExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitLogicalOrExpr(const LogicalOrExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitLogicalAndExpr(const LogicalAndExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitBitwiseOrExpr(const BitwiseOrExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitBitwiseXorExpr(const BitwiseXorExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitBitwiseAndExpr(const BitwiseAndExprNode *ctx) { return visitChildren(ctx); }
+
+std::any AstVisitor::visitEqualityExpr(const EqualityExprNode *ctx) { return visitChildren(ctx); }

@@ -361,9 +361,6 @@ public:
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitDeclSpecifiers(this); }
 };
 
-
-
-
 // ======================================================== ImportStmtNode =======================================================
 
 class ImportStmtNode : public AstNode {
@@ -376,5 +373,193 @@ public:
 
 private:
   // Members
-  std::string identifier;
+  std::string importName;
+};
+
+// ======================================================== ReturnStmtNode =======================================================
+
+class ReturnStmtNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitReturnStmt(this); }
+};
+
+// ======================================================== BreakStmtNode ========================================================
+
+class BreakStmtNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBreakStmt(this); }
+
+private:
+  // Members
+  int breakTimes;
+};
+
+// ======================================================= ContinueStmtNode ======================================================
+
+class ContinueStmtNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitContinueStmt(this); }
+
+private:
+  // Members
+  int continueTimes;
+};
+
+// ======================================================== PrintfCallNode =======================================================
+
+class PrintfCallNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPrintfCall(this); }
+
+private:
+  // Members
+  std::string templatedString;
+};
+
+// ======================================================== SizeofCallNode =======================================================
+
+class SizeofCallNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitSizeofCall(this); }
+};
+
+// ========================================================= LenCallNode =========================================================
+
+class LenCallNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitLenCall(this); }
+};
+
+// ========================================================= TidCallNode =========================================================
+
+class TidCallNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitTidCall(this); }
+};
+
+// ======================================================== JoinCallNode =========================================================
+
+class JoinCallNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitJoinCall(this); }
+};
+
+// ======================================================= AssignExprNode ========================================================
+
+class AssignExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAssignExpr(this); }
+};
+
+// ======================================================= TernaryExprNode =======================================================
+
+class TernaryExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitTernaryExpr(this); }
+};
+
+// ===================================================== LogicalOrExprNode =======================================================
+
+class LogicalOrExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitLogicalOrExpr(this); }
+};
+
+// ===================================================== LogicalAndExprNode ======================================================
+
+class LogicalAndExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitLogicalAndExpr(this); }
+};
+
+// ===================================================== BitwiseOrExprNode =======================================================
+
+class BitwiseOrExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBitwiseOrExpr(this); }
+};
+
+// ==================================================== BitwiseXorExprNode =======================================================
+
+class BitwiseXorExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBitwiseXorExpr(this); }
+};
+
+// ==================================================== BitwiseAndExprNode =======================================================
+
+class BitwiseAndExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBitwiseAndExpr(this); }
+};
+
+// ===================================================== EqualityExprNode ========================================================
+
+class EqualityExprNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitEqualityExpr(this); }
 };

@@ -31,6 +31,22 @@ public:
   virtual std::any visitStmt(const StmtNode *ctx) override;
   virtual std::any visitDeclStmt(const DeclStmtNode *ctx) override;
   virtual std::any visitDeclSpecifiers(const DeclSpecifiersNode *ctx) override;
-
   virtual std::any visitImportStmt(const ImportStmtNode *ctx) override;
+  virtual std::any visitReturnStmt(const ReturnStmtNode *ctx) override;
+  virtual std::any visitBreakStmt(const BreakStmtNode *ctx) override;
+  virtual std::any visitContinueStmt(const ContinueStmtNode *ctx) override;
+  virtual std::any visitPrintfCall(const PrintfCallNode *ctx) override;
+  virtual std::any visitSizeofCall(const SizeofCallNode *ctx) override;
+  virtual std::any visitLenCall(const LenCallNode *ctx) override;
+  virtual std::any visitTidCall(const TidCallNode *ctx) override;
+  virtual std::any visitJoinCall(const JoinCallNode *ctx) override;
+  virtual std::any visitAssignExpr(const AssignExprNode *ctx) override;
+  virtual std::any visitTernaryExpr(const TernaryExprNode *ctx) override;
+  virtual std::any visitLogicalOrExpr(const LogicalOrExprNode *ctx) override;
+  virtual std::any visitLogicalAndExpr(const LogicalAndExprNode *ctx) override;
+  virtual std::any visitBitwiseOrExpr(const BitwiseOrExprNode *ctx) override;
+  virtual std::any visitBitwiseXorExpr(const BitwiseXorExprNode *ctx) override;
+  virtual std::any visitBitwiseAndExpr(const BitwiseAndExprNode *ctx) override;
+  virtual std::any visitEqualityExpr(const EqualityExprNode *ctx) override;
+
 };
