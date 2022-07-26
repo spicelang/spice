@@ -1136,7 +1136,7 @@ std::any AstBuilderVisitor::visitValue(SpiceParser::ValueContext *ctx) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::PrimitiveValueContext *>(subTree); rule != nullptr) // PrimitiveValue
       currentNode = valueNode->createChild<PrimitiveValueNode>(CodeLoc(rule->start));
-    else if (rule = dynamic_cast<SpiceParser::FunctionDefContext *>(subTree); rule != nullptr) // FunctionCall
+    else if (rule = dynamic_cast<SpiceParser::FunctionCallContext *>(subTree); rule != nullptr) // FunctionCall
       currentNode = valueNode->createChild<FunctionCallNode>(CodeLoc(rule->start));
     else if (rule = dynamic_cast<SpiceParser::ArrayInitializationContext *>(subTree); rule != nullptr) // ArrayInitialization
       currentNode = valueNode->createChild<ArrayInitializationNode>(CodeLoc(rule->start));
@@ -1173,7 +1173,7 @@ std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueConte
       primitiveValueNode->data.charValue = ctx->CHAR_LITERAL()->toString()[1];
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t->getSymbol()->getType() == SpiceParser::STRING_LITERAL) {
-      std::string strValue = ctx->CHAR_LITERAL()->toString();
+      std::string strValue = ctx->STRING_LITERAL()->toString();
       primitiveValueNode->data.stringValue = strValue.substr(1, strValue.size() - 2);
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TRUE) {
       primitiveValueNode->data.boolValue = true;
