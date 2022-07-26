@@ -61,7 +61,7 @@ SymbolSpecifiers::SymbolSpecifiers(const SymbolType &type) {
 }
 
 /**
- * Set the const flag
+ * Set or clear the const flag
  *
  * @param value True or false
  */
@@ -80,7 +80,7 @@ void SymbolSpecifiers::setConst(bool value) {
 bool SymbolSpecifiers::isConst() const { return getBit(BIT_INDEX_CONST); }
 
 /**
- * Set the signed flag
+ * Set or clear the signed flag
  *
  * @param value True or false
  */
@@ -99,7 +99,26 @@ void SymbolSpecifiers::setSigned(bool value) {
 bool SymbolSpecifiers::isSigned() const { return getBit(BIT_INDEX_SIGNED); }
 
 /**
- * Set the public flag
+ * Set or clear the inline flag
+ *
+ * @param value True or false
+ */
+void SymbolSpecifiers::setInline(bool value) {
+  if (value)
+    setBit(BIT_INDEX_INLINE);
+  else
+    clearBit(BIT_INDEX_INLINE);
+}
+
+/**
+ * Check if the inline flag is set
+ *
+ * @return True or false
+ */
+bool SymbolSpecifiers::isInline() const { return getBit(BIT_INDEX_INLINE); }
+
+/**
+ * Set or clear the public flag
  *
  * @param value True or false
  */
@@ -118,7 +137,7 @@ void SymbolSpecifiers::setPublic(bool value) {
 bool SymbolSpecifiers::isPublic() const { return getBit(BIT_INDEX_PUBLIC); }
 
 /**
- * Set bit in specifier value
+ * Set or clear bit in specifier value
  *
  * @param index Index of the bit to set
  */

@@ -2074,7 +2074,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
     while (tokenCounter < ctx->children.size()) {
       auto token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
       assert(token != nullptr);
-      unsigned long long symbolType = token->getSymbol()->getType();
+      size_t symbolType = token->getSymbol()->getType();
 
       if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
         tokenCounter++;                          // Consume LBRACKET

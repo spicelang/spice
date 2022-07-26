@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vector>
+#include <queue>
 
 #include <ast/AstVisitor.h>
 #include <symbol/Function.h>
@@ -167,6 +168,7 @@ public:
 
   // Public members
   std::string varName;
+  bool negative;
 };
 
 // ========================================================== ExtDeclNode ========================================================
@@ -381,6 +383,13 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitDeclSpecifiers(this); }
+
+  // Public members
+  bool hasConstKeyword = false;
+  bool hasSignedKeyword = false;
+  bool hasUnsignedKeyword = false;
+  bool hasInlineKeyword = false;
+  bool hasPublicKeyword = false;
 };
 
 // ======================================================== ImportStmtNode =======================================================
@@ -394,6 +403,7 @@ public:
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitImportStmt(this); }
 
   // Public members
+  std::string importPath;
   std::string importName;
 };
 
@@ -459,6 +469,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitSizeofCall(this); }
+
+  // Public members
+  bool isType = false;
 };
 
 // ========================================================= LenCallNode =========================================================
@@ -498,11 +511,29 @@ public:
 
 class AssignExprNode : public AstNode {
 public:
+  // Enums
+  enum AssignOp {
+    OP_ASSIGN,
+    OP_PLUS_EQUAL,
+    OP_MINUS_EQUAL,
+    OP_MUL_EQUAL,
+    OP_DIV_EQUAL,
+    OP_REM_EQUAL,
+    OP_SHL_EQUAL,
+    OP_SHR_EQUAL,
+    OP_AND_EQUAL,
+    OP_OR_EQUAL,
+    OP_XOR_EQUAL
+  };
+
   // Constructors
   using AstNode::AstNode;
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAssignExpr(this); }
+
+  // Public members
+  AssignOp op;
 };
 
 // ======================================================= TernaryExprNode =======================================================
@@ -575,6 +606,12 @@ public:
 
 class EqualityExprNode : public AstNode {
 public:
+  // Enums
+  enum EqualityOp {
+    OP_EQUAL,
+    OP_NOT_EQUAL
+  };
+
   // Constructors
   using AstNode::AstNode;
 
@@ -586,6 +623,14 @@ public:
 
 class RelationalExprNode : public AstNode {
 public:
+  // Enums
+  enum RelationalOp {
+    OP_LESS,
+    OP_GREATER,
+    OP_LESS_EQUAL,
+    OP_GREATER_EQUAL
+  };
+
   // Constructors
   using AstNode::AstNode;
 
@@ -597,6 +642,12 @@ public:
 
 class ShiftExprNode : public AstNode {
 public:
+  // Enums
+  enum ShiftOp {
+    OP_SHIFT_LEFT,
+    OP_SHIFT_RIGHT,
+  };
+
   // Constructors
   using AstNode::AstNode;
 
@@ -608,6 +659,12 @@ public:
 
 class AdditiveExprNode : public AstNode {
 public:
+  // Enums
+  enum AdditiveOp {
+    OP_PLUS,
+    OP_MINUS,
+  };
+
   // Constructors
   using AstNode::AstNode;
 
@@ -619,6 +676,13 @@ public:
 
 class MultiplicativeExprNode : public AstNode {
 public:
+  // Enums
+  enum MultiplicativeOp {
+    OP_MUL,
+    OP_DIV,
+    OP_REM,
+  };
+
   // Constructors
   using AstNode::AstNode;
 
@@ -641,11 +705,25 @@ public:
 
 class PrefixUnaryExprNode : public AstNode {
 public:
+  // Enums
+  enum PrefixUnaryOp {
+    OP_MINUS,
+    OP_PLUS_PLUS,
+    OP_MINUS_MINUS,
+    OP_NOT,
+    OP_BITWISE_NOT,
+    OP_INDIRECTION,
+    OP_ADDRESS_OF,
+  };
+
   // Constructors
   using AstNode::AstNode;
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPrefixUnaryExpr(this); }
+
+  // Public members
+  std::queue<PrefixUnaryOp> opQueue;
 };
 
 // =================================================== PostfixUnaryExprNode ======================================================
