@@ -26,6 +26,7 @@ struct CliOptions {
   std::string outputDir;  // Where the object files go. Should always be a temp directory
   std::string outputPath; // Where the output binary goes.
   bool printDebugOutput = false;
+  bool dumpCST = false;
   bool dumpAST = false;
   bool dumpIR = false;
   bool dumpAssembly = false;

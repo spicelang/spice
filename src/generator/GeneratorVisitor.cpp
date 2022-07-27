@@ -689,8 +689,8 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   // Get LLVM arg types
   std::vector<llvm::Type *> argTypes;
-  if (ctx->typeLstEllipsis()) {
-    for (const auto &arg : ctx->typeLstEllipsis()->typeLst()->dataType()) {
+  if (ctx->typeLst()) {
+    for (const auto &arg : ctx->typeLst()->dataType()) {
       auto argType = any_cast<llvm::Type *>(visit(arg));
       argTypes.push_back(argType);
     }
@@ -698,11 +698,8 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   std::vector<SymbolType> argSymbolTypes = spiceFunc.getArgTypes();
   symbolTypes.insert(std::end(symbolTypes), std::begin(argSymbolTypes), std::end(argSymbolTypes));
 
-  // Get vararg
-  bool isVararg = ctx->typeLstEllipsis() && ctx->typeLstEllipsis()->ELLIPSIS();
-
   // Declare function
-  llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, isVararg);
+  llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, ctx->ELLIPSIS());
   module->getOrInsertFunction(functionName, functionType);
   if (ctx->DLL())
     module->getFunction(functionName)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
@@ -1173,7 +1170,7 @@ std::any GeneratorVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   return nullptr;
 }
 
-std::any GeneratorVisitor::visitTypeAlts(SpiceParser::TypeAltsContext *ctx) {
+std::any GeneratorVisitor::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
   return nullptr; // Noop
 }
 
@@ -2077,7 +2074,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprCo
     while (tokenCounter < ctx->children.size()) {
       auto token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
       assert(token != nullptr);
-      unsigned long long symbolType = token->getSymbol()->getType();
+      size_t symbolType = token->getSymbol()->getType();
 
       if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
         tokenCounter++;                          // Consume LBRACKET

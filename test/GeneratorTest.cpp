@@ -96,7 +96,7 @@ void executeGeneratorTest(const TestCase &testCase) {
     ThreadFactory threadFactory = ThreadFactory();
 
     // Create instance of cli options
-    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, false, 0, false, false, true};
+    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, false, false, 0, false, false, true};
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
@@ -110,6 +110,25 @@ void executeGeneratorTest(const TestCase &testCase) {
 
     // Execute pre-analyzer
     mainSourceFile.preAnalyze();
+
+    // Check if the CST matches the expected output
+    std::string cstFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "parse-tree.dot";
+    if (FileUtil::fileExists(cstFileName)) {
+      // Execute visualizer
+      mainSourceFile.visualizeCST(nullptr);
+
+      std::string actualCST = mainSourceFile.compilerOutput.cstString;
+      if (TestUtil::isUpdateRefsEnabled()) {
+        // Update ref
+        FileUtil::writeToFile(cstFileName, actualCST);
+      } else {
+        std::string expectedCST = TestUtil::getFileContent(cstFileName);
+        EXPECT_EQ(expectedCST, mainSourceFile.compilerOutput.cstString);
+      }
+    }
+
+    // Execute AST builder
+    mainSourceFile.buildAST();
 
     // Check if the AST matches the expected output
     std::string astFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "syntax-tree.dot";

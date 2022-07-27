@@ -7,10 +7,10 @@ entry: (mainFunctionDef | functionDef | procedureDef | structDef | genericTypeDe
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLstEllipsis? RPAREN DLL? SEMICOLON;
-genericTypeDef: declSpecifiers? TYPE IDENTIFIER typeAlts SEMICOLON;
 structDef: declSpecifiers? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT LBRACE field* RBRACE;
+genericTypeDef: declSpecifiers? TYPE IDENTIFIER typeAltsLst SEMICOLON;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
+extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 threadDef: THREAD LBRACE stmtLst RBRACE;
 unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;
 forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
@@ -24,12 +24,11 @@ assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Statements, declarations, definitions and lists
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef)*;
-field: declSpecifiers? dataType IDENTIFIER;
 typeLst: dataType (COMMA dataType)*;
-typeLstEllipsis: typeLst ELLIPSIS?;
-typeAlts: dataType (BITWISE_OR dataType)*;
+typeAltsLst: dataType (BITWISE_OR dataType)*;
 argLstDef: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
+field: declSpecifiers? dataType IDENTIFIER;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: declSpecifiers? dataType IDENTIFIER (ASSIGN assignExpr)?;
 declSpecifiers: declSpecifier+;

@@ -1,10 +1,10 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include "VisualizerVisitor.h"
+#include "CSTVisualizerVisitor.h"
 
 #include <util/CommonUtil.h>
 
-std::string VisualizerVisitor::buildRule(antlr4::ParserRuleContext *ctx) {
+std::string CSTVisualizerVisitor::buildRule(antlr4::ParserRuleContext *ctx) {
   // Prepare strings
   std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
   std::string ruleName = ruleNames[ctx->getRuleIndex()];
@@ -44,7 +44,7 @@ std::string VisualizerVisitor::buildRule(antlr4::ParserRuleContext *ctx) {
   return result;
 }
 
-std::string VisualizerVisitor::getSpaces() const {
+std::string CSTVisualizerVisitor::getSpaces() const {
   std::string spaces;
   for (int i = 0; i < currentTabs; i++)
     spaces += " ";
