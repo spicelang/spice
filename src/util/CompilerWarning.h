@@ -4,7 +4,8 @@
 
 #include <string>
 
-#include <Token.h>
+// Forward declaration
+struct CodeLoc;
 
 enum CompilerWarningType {
   UNUSED_FUNCTION,
@@ -25,7 +26,7 @@ enum CompilerWarningType {
 class CompilerWarning {
 public:
   // Constructors
-  explicit CompilerWarning(const antlr4::Token &token, CompilerWarningType type, const std::string &message);
+  explicit CompilerWarning(const CodeLoc &codeLoc, CompilerWarningType type, const std::string &message);
   explicit CompilerWarning(CompilerWarningType type, const std::string &message);
 
   void print() const;

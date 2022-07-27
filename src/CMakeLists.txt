@@ -65,8 +65,6 @@ set(SOURCES
         visualizer/ASTVisualizerVisitor.h
         util/CommonUtil.cpp
         util/CommonUtil.h
-        util/ScopeIdUtil.cpp
-        util/ScopeIdUtil.h
         util/ThreadFactory.cpp
         util/ThreadFactory.h
         util/FileUtil.cpp

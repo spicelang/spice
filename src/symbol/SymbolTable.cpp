@@ -314,17 +314,17 @@ std::map<std::string, Capture> &SymbolTable::getCaptures() { return captures; }
 void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, const CodeLoc &codeLoc) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
   std::string codeLocStr = codeLoc.toString();
-  functions.insert({accessId, std::make_shared<std::map<std::string, Function>>()});
+  functions.insert({codeLocStr, std::make_shared<std::map<std::string, Function>>()});
 
   // Check if function is already substantiated
   if (function.hasSubstantiatedArgs()) {
-    insertSubstantiatedFunction(function, err, token, codeLocStr);
+    insertSubstantiatedFunction(function, err, codeLoc);
     return;
   }
 
   // Substantiate the function and insert the substantiated instances
   for (const auto &fct : function.substantiateOptionalArgs())
-    insertSubstantiatedFunction(fct, err, token, codeLocStr);
+    insertSubstantiatedFunction(fct, err, codeLoc);
 }
 
 /**
@@ -346,7 +346,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
 
   // Loop through functions and add any matches to the matches vector
   auto oldFunctionsList = functions;
-  for (const auto &[codeLoc, manifestations] : oldFunctionsList) {
+  for (const auto &[defCodeLocStr, manifestations] : oldFunctionsList) {
     auto oldManifestations = *manifestations;
     for (auto &[mangledName, f] : oldManifestations) {
       // Check name requirement
@@ -431,8 +431,8 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
         }
       }
 
-      assert(functions.contains(codeLoc) && functions.at(codeLoc)->contains(newFunction.getMangledName()));
-      matches.push_back(&functions.at(codeLoc)->at(newFunction.getMangledName()));
+      assert(functions.contains(defCodeLocStr) && functions.at(defCodeLocStr)->contains(newFunction.getMangledName()));
+      matches.push_back(&functions.at(defCodeLocStr)->at(newFunction.getMangledName()));
       break;
     }
   }
@@ -443,7 +443,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
   // Throw error if more than one function matches the criteria
   if (matches.size() > 1)
     throw err->get(
-        token, FUNCTION_AMBIGUITY,
+        codeLoc, FUNCTION_AMBIGUITY,
         "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
@@ -456,33 +456,37 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
 /**
  * Retrieve the manifestations of the function, defined at defToken
  *
+ * @param defCodeLoc Definition code location
+ *
  * @return Function manifestations
  */
-std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const antlr4::Token &defToken) const {
-  std::string accessId = CommonUtil::tokenToCodeLoc(defToken);
-  return functions.contains(accessId) ? functions.at(accessId).get() : nullptr;
+std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const CodeLoc &defCodeLoc) const {
+  std::string codeLocStr = defCodeLoc.toString();
+  return functions.contains(codeLocStr) ? functions.at(codeLocStr).get() : nullptr;
 }
 
 /**
  * Add function access pointer to the current scope
  *
- * @param token Call token
+ * @param codeLoc Call code location
  * @param spiceFunc Function
  */
-void SymbolTable::insertFunctionAccessPointer(const antlr4::Token &token, Function *spiceFunc) {
-  functionAccessPointers.insert({CommonUtil::tokenToCodeLoc(token), spiceFunc});
+void SymbolTable::insertFunctionAccessPointer(const CodeLoc &codeLoc, Function *spiceFunc) {
+  functionAccessPointers.insert({codeLoc.toString(), spiceFunc});
 }
 
 /**
  * Get the function access pointer by code location
  *
+ * @param codeLoc Code location
+ *
  * @return Function pointer for the function access
  */
-Function *SymbolTable::getFunctionAccessPointer(const antlr4::Token &token) {
-  std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
-  if (!functionAccessPointers.contains(codeLoc))
+Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc) {
+  std::string codeLocStr = codeLoc.toString();
+  if (!functionAccessPointers.contains(codeLocStr))
     return nullptr;
-  return functionAccessPointers.at(codeLoc);
+  return functionAccessPointers.at(codeLocStr);
 }
 
 /**
@@ -491,7 +495,6 @@ Function *SymbolTable::getFunctionAccessPointer(const antlr4::Token &token) {
  *
  * @param function Substantiated function
  * @param err Error factory
- * @param token Token, where the function is declared
  * @param codeLoc Code location
  */
 void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const CodeLoc &codeLoc) {
@@ -517,13 +520,13 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
  *
  * @param s Struct object
  * @param err Error factory
- * @param token Struct declaration token
+ * @param codeLoc Struct declaration code loccation
  */
 void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const CodeLoc &codeLoc) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  std::string codeLoc = CommonUtil::tokenToCodeLoc(token);
-  structs.insert({codeLoc, std::make_shared<std::map<std::string, Struct>>()});
-  insertSubstantiatedStruct(s, err, token, codeLoc);
+  std::string codeLocStr = codeLoc.toString();
+  structs.insert({codeLocStr, std::make_shared<std::map<std::string, Struct>>()});
+  insertSubstantiatedStruct(s, err, codeLoc);
 }
 
 /**
@@ -534,7 +537,7 @@ void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const CodeLoc
  * @param structName Struct name
  * @param templateTypes Template type requirements
  * @param errorFactory Error factory
- * @param token Declaration token for the error message
+ * @param codeLoc Declaration code location for the error message
  * @return Matched struct or nullptr
  */
 Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &structName,
@@ -543,7 +546,7 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
 
   // Loop through structs and add any matches to the matches vector
   auto oldStructList = structs;
-  for (const auto &[codeLoc, manifestations] : oldStructList) {
+  for (const auto &[defCodeLocStr, manifestations] : oldStructList) {
     auto oldManifestations = *manifestations;
     for (auto &[mangledName, s] : oldManifestations) {
       // Check name requirement
@@ -554,7 +557,7 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
       std::vector<GenericType> curTemplateTypes = s.getTemplateTypes();
       if (curTemplateTypes.empty()) {
         // It's a match!
-        matches.push_back(&structs.at(codeLoc)->at(s.getMangledName()));
+        matches.push_back(&structs.at(defCodeLocStr)->at(s.getMangledName()));
       } else {
         if (curTemplateTypes.size() != templateTypes.size())
           continue;
@@ -574,12 +577,12 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
         SymbolTable *structScope = getChild(STRUCT_SCOPE_PREFIX + structName);
         Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, structScope);
         if (!getChild(STRUCT_SCOPE_PREFIX + newStruct.getSignature())) { // Insert struct
-          insertSubstantiatedStruct(newStruct, err, s.getDeclToken(), s.getDeclCodeLoc());
+          insertSubstantiatedStruct(newStruct, err, s.getDeclCodeLoc());
           copyChildBlock(STRUCT_SCOPE_PREFIX + structName, STRUCT_SCOPE_PREFIX + newStruct.getSignature());
         }
 
-        assert(structs.contains(codeLoc) && structs.at(codeLoc)->contains(newStruct.getMangledName()));
-        matches.push_back(&structs.at(codeLoc)->at(newStruct.getMangledName()));
+        assert(structs.contains(defCodeLocStr) && structs.at(defCodeLocStr)->contains(newStruct.getMangledName()));
+        matches.push_back(&structs.at(defCodeLocStr)->at(newStruct.getMangledName()));
         break;
       }
     }
@@ -704,16 +707,16 @@ void SymbolTable::printCompilerWarnings() {
   for (const auto &[key, entry] : symbols) {
     if (!entry.isUsed()) {
       if (entry.getType().is(TY_FUNCTION)) {
-        CompilerWarning(entry.getDeclToken(), UNUSED_FUNCTION, "The function '" + entry.getName() + "' is unused").print();
+        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_FUNCTION, "The function '" + entry.getName() + "' is unused").print();
       } else if (entry.getType().is(TY_PROCEDURE)) {
-        CompilerWarning(entry.getDeclToken(), UNUSED_PROCEDURE, "The procedure '" + entry.getName() + "' is unused").print();
+        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.getName() + "' is unused").print();
       } else if (entry.getType().is(TY_STRUCT) || entry.getType().isPointerOf(TY_STRUCT)) {
-        CompilerWarning(entry.getDeclToken(), UNUSED_STRUCT, "The struct '" + entry.getName() + "' is unused").print();
+        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.getName() + "' is unused").print();
       } else if (entry.getType().isOneOf({TY_IMPORT})) {
-        CompilerWarning(entry.getDeclToken(), UNUSED_IMPORT, "The import '" + entry.getName() + "' is unused").print();
+        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.getName() + "' is unused").print();
       } else {
         if (entry.getName() != UNUSED_VARIABLE_NAME && entry.getName() != FOREACH_DEFAULT_IDX_VARIABLE_NAME)
-          CompilerWarning(entry.getDeclToken(), UNUSED_VARIABLE, "The variable '" + entry.getName() + "' is unused").print();
+          CompilerWarning(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.getName() + "' is unused").print();
       }
     }
   }

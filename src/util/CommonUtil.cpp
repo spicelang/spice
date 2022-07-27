@@ -37,13 +37,3 @@ std::string CommonUtil::getLastFragment(const std::string &haystack, const std::
 std::string CommonUtil::getPrefix(const std::string &haystack, const std::string &needle) {
   return haystack.substr(0, haystack.find(needle) + needle.length());
 }
-
-/**
- * Generate a code loc string with for a token
- *
- * @param token Token
- * @return Code loc string
- */
-std::string CommonUtil::tokenToCodeLoc(const antlr4::Token &token) {
-  return "L" + std::to_string(token.getLine()) + "C" + std::to_string(token.getCharPositionInLine());
-}
