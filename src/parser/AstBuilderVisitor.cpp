@@ -1276,11 +1276,11 @@ std::any AstBuilderVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
       subTree = ctx->children[i];
       bool isHardcoded = true;
       int hardCodedSize = 0;
-      if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INTEGER) {
-        hardCodedSize = std::stoi(t->getSymbol()->getText());
-      } else if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
+      if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
         isHardcoded = false;
         currentNode = dataTypeNode->createChild<AssignExprNode>(CodeLoc(rule->start));
+      } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INTEGER) {
+        hardCodedSize = std::stoi(t->getSymbol()->getText());
       }
       i += 2; // Consume INTEGER and RBRACKET
       dataTypeNode->tmQueue.push({DataTypeNode::TY_ARRAY, isHardcoded, hardCodedSize});
