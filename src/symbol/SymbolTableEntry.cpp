@@ -2,6 +2,8 @@
 
 #include "SymbolTableEntry.h"
 
+#include <util/CodeLoc.h>
+
 #include <exception/ErrorFactory.h>
 
 /**
@@ -56,11 +58,14 @@ SymbolState SymbolTableEntry::getState() const { return state; }
  * @throws SemanticError When trying to re-assign a constant variable
  * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
  * @param newState New state of the current symbol
+ * @param err Error factory
+ * @param codeLoc Code location where the update takes place
+ * @param force Force update. This can only be used compiler-internal
  */
-void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const antlr4::Token &token, bool force) {
+void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const CodeLoc &codeLoc, bool force) {
   // Check if this is a constant variable and is already initialized
   if (state == INITIALIZED && specifiers.isConst() && !force)
-    throw err->get(token, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
+    throw err->get(codeLoc, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
   // Check if the type is known at time of initialization
   if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                  // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
@@ -68,11 +73,11 @@ void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err
 }
 
 /**
- * Retrieve the token where the symbol was declared
+ * Retrieve the code location where the symbol was declared
  *
- * @return Declaration token
+ * @return Declaration code location
  */
-const antlr4::Token &SymbolTableEntry::getDeclToken() const { return declToken; }
+const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declCodeLoc; }
 
 /**
  * Retrieve the llvm type of the current symbol

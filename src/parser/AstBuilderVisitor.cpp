@@ -60,9 +60,11 @@ std::any AstBuilderVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ct
   auto fctDefNode = static_cast<FctDefNode *>(currentNode);
 
   // Extract function name
-  fctDefNode->functionName = ctx->IDENTIFIER().front()->getText();
-  for (int i = 1; i < ctx->IDENTIFIER().size(); i++)
-    fctDefNode->functionName += "." + ctx->IDENTIFIER()[i]->getText();
+  fctDefNode->functionName = fctDefNode->fqFunctionName = ctx->IDENTIFIER().front()->getText();
+  for (int i = 1; i < ctx->IDENTIFIER().size(); i++) {
+    fctDefNode->fqFunctionName += "." + ctx->IDENTIFIER()[i]->getText();
+    fctDefNode->isMethod = true;
+  }
 
   for (auto subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
@@ -91,9 +93,11 @@ std::any AstBuilderVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *
   auto procDefNode = static_cast<ProcDefNode *>(currentNode);
 
   // Extract procedure name
-  procDefNode->procedureName = ctx->IDENTIFIER().front()->getText();
-  for (int i = 1; i < ctx->IDENTIFIER().size(); i++)
-    procDefNode->procedureName += "." + ctx->IDENTIFIER()[i]->getText();
+  procDefNode->procedureName = procDefNode->fqProcedureName = ctx->IDENTIFIER().front()->getText();
+  for (int i = 1; i < ctx->IDENTIFIER().size(); i++) {
+    procDefNode->fqProcedureName += "." + ctx->IDENTIFIER()[i]->getText();
+    procDefNode->isMethod = true;
+  }
 
   for (auto subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
@@ -1281,6 +1285,7 @@ std::any AstBuilderVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
       int hardCodedSize = 0;
       if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
         isHardcoded = false;
+        hardCodedSize = -1;
         currentNode = dataTypeNode->createChild<AssignExprNode>(CodeLoc(rule->start));
       } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INTEGER) {
         hardCodedSize = std::stoi(t->getSymbol()->getText());

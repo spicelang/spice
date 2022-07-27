@@ -282,19 +282,8 @@ void Function::setAnalyzed() { alreadyAnalyzed = true; }
 bool Function::wasAlreadyAnalyzed() const { return alreadyAnalyzed; }
 
 /**
- * Retrieve the declaration token of this function
- *
- * @return Declaration token
- */
-const antlr4::Token &Function::getDeclToken() const { return declToken; }
-
-/**
  * Retrieve the declaration code location of this function
  *
- * @return Declaration code loc
+ * @return Declaration code location
  */
-const std::string &Function::getDeclCodeLoc() {
-  if (declCodeLoc.empty())
-    declCodeLoc = CommonUtil::tokenToCodeLoc(declToken);
-  return declCodeLoc;
-}
+const CodeLoc &Function::getDeclCodeLoc() const { return declCodeLoc; }

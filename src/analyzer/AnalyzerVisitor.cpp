@@ -116,8 +116,8 @@ std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
   return nullptr;
 }
 
-std::any AnalyzerVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
-  std::string functionName = ctx->IDENTIFIER().back()->toString();
+std::any AnalyzerVisitor::visitFctDef(FctDefNode *ctx) {
+  std::string functionName = ctx->functionName;
 
   // Check if this is a global function or a method
   bool isMethod = false;
@@ -1979,9 +1979,9 @@ std::any AnalyzerVisitor::visitArrayInitialization(SpiceParser::ArrayInitializat
   // Check if actual item type is known now
   if (actualItemType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
     if (expectedType.is(TY_DYN))
-      throw err->get(*ctx->start, UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
+      throw err->get(ctx->codeLoc, UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
     if (expectedType.is(TY_DYN))
-      throw err->get(*ctx->start, ARRAY_ITEM_TYPE_NOT_MATCHING, "Cannot assign an array to a primitive data type");
+      throw err->get(ctx->codeLoc, ARRAY_ITEM_TYPE_NOT_MATCHING, "Cannot assign an array to a primitive data type");
     actualItemType = expectedType.getContainedTy();
   }
 
@@ -2052,7 +2052,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(SpiceParser::StructInstantiat
   std::vector<SymbolType> fieldTypes;
   if (ctx->argLst()) { // Check if any fields are passed. Empty braces are also allowed
     if (spiceStruct->getFieldTypes().size() != ctx->argLst()->assignExpr().size())
-      throw err->get(*ctx->argLst()->start, NUMBER_OF_FIELDS_NOT_MATCHING,
+      throw err->get(codeLoc, NUMBER_OF_FIELDS_NOT_MATCHING,
                      "You've passed too less/many field values. Pass either none or all of them");
 
     // Check if the field types are matching
@@ -2078,14 +2078,34 @@ std::any AnalyzerVisitor::visitStructInstantiation(SpiceParser::StructInstantiat
   return structType;
 }
 
-std::any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
+std::any AnalyzerVisitor::visitDataType(DataTypeNode *ctx) {
   auto type = any_cast<SymbolType>(visit(ctx->baseDataType()));
 
-  unsigned int tokenCounter = 1;
+  size_t assignExprCounter = 0;
+  std::vector<AssignExprNode *> arraySizeExpr = ctx->arraySizeExpr();
+  while (ctx->tmQueue.empty()) {
+    DataTypeNode::TypeModifier typeModifier = ctx->tmQueue.front();
+    if (typeModifier.modifierType == DataTypeNode::TY_POINTER) { // Pointer
+      type = type.toPointer(err.get(), ctx->codeLoc);
+    } else { // Array
+      if (typeModifier.isSizeHardcoded) {
+        if (typeModifier.hardcodedSize <= 1)
+          throw err->get(ctx->codeLoc, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
+      } else {
+        auto sizeType = std::any_cast<SymbolType>(visit(arraySizeExpr[assignExprCounter++]));
+        if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))
+          throw err->get(ctx->codeLoc, ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
+      }
+      type = type.toArray(err.get(), ctx->codeLoc, typeModifier.hardcodedSize);
+    }
+    ctx->tmQueue.pop();
+  }
+
+  /*unsigned int tokenCounter = 1;
   while (tokenCounter < ctx->children.size()) {
     auto token = dynamic_cast<antlr4::tree::TerminalNode *>(ctx->children[tokenCounter]);
     if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
-      type = type.toPointer(err.get(), *ctx->start);
+      type = type.toPointer(err.get(), ctx->codeLoc);
     } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
       tokenCounter++;                                                    // Consume LBRACKET
       int size = 0;                                                      // Default to 0 when no size is attached
@@ -2094,19 +2114,19 @@ std::any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
         size = std::stoi(token->toString());
         // Check if size >1
         if (size <= 1)
-          throw err->get(*token->getSymbol(), ARRAY_SIZE_INVALID, "The size of an array must be > 1");
+          throw err->get(ctx->codeLoc, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
         tokenCounter++; // Consume INTEGER
       } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(ctx->children[tokenCounter])) {
         auto sizeType = std::any_cast<SymbolType>(visit(rule));
         if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))
-          throw err->get(*token->getSymbol(), ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
+          throw err->get(ctx->codeLoc, ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
         size = -1;      // Set size to -1 to signalize that the array is dynamically sized
         tokenCounter++; // Consume assignExpr
       }
-      type = type.toArray(err.get(), *ctx->start, size);
+      type = type.toArray(err.get(), ctx->codeLoc, size);
     }
     tokenCounter++;
-  }
+  }*/
 
   return type;
 }
@@ -2244,7 +2264,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const CodeLoc &codeLoc, SymbolTable *s
   externalStructSymbol->setUsed();
 
   // Set the struct instance to used
-  Struct *externalSpiceStruct = sourceScope->matchStruct(nullptr, structName, templateTypes, err.get(), token);
+  Struct *externalSpiceStruct = sourceScope->matchStruct(nullptr, structName, templateTypes, err.get(), codeLoc);
   assert(externalSpiceStruct);
   externalSpiceStruct->setUsed();
 

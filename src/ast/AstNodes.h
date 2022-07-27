@@ -114,6 +114,8 @@ public:
 
   // Public members
   std::string functionName;
+  std::string fqFunctionName;
+  bool isMethod = false;
   Function *spiceFunc = nullptr;
 };
 
@@ -129,6 +131,8 @@ public:
 
   // Public members
   std::string procedureName;
+  std::string fqProcedureName;
+  bool isMethod = false;
   Function *spiceProc = nullptr;
 };
 
@@ -908,6 +912,10 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitDataType(this); }
+
+  // Public get methods
+  BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
+  std::vector<AssignExprNode *> arraySizeExpr() const { return getChildren<AssignExprNode>(); }
 
   // Public members
   std::queue<TypeModifier> tmQueue;
