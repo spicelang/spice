@@ -2,17 +2,17 @@
 
 #include "SemanticError.h"
 
+#include <util/CodeLoc.h>
+
 /**
  * Constructor: Used in case that the exact code position where the error occurred is known
  *
- * @param token Syntax token, where the error occurred
+ * @param codeLoc Code location where the error occurred
  * @param type Type of the error
  * @param message Error message suffix
  */
-SemanticError::SemanticError(const std::string &fileName, const antlr4::Token &token, const SemanticErrorType &type,
-                             const std::string &message) {
-  auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
-  errorMessage = "Semantic error in " + fileName + " at " + codeLoc + ": " + getMessagePrefix(type) + ": " + message;
+SemanticError::SemanticError(const CodeLoc &codeLoc, const SemanticErrorType &type, const std::string &message) {
+  errorMessage = "Semantic error in " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

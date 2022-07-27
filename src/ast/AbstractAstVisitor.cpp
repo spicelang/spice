@@ -8,9 +8,9 @@ std::any AbstractAstVisitor::visit(AstNode *ctx) {
   return ctx->accept(this);
 }
 
-std::any AbstractAstVisitor::visitChildren(const AstNode *ctx) const {
+std::any AbstractAstVisitor::visitChildren(AstNode *ctx) {
   std::any result = std::any();
   for (const auto child : ctx->children)
-    result = child->accept(const_cast<AbstractAstVisitor *>(this));
+    result = child->accept(this);
   return result;
 }

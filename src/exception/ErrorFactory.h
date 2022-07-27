@@ -10,22 +10,17 @@
 #include <exception/LinkerError.h>
 #include <exception/SemanticError.h>
 
-#include "Token.h"
+// Forward declarations
+struct CodeLoc;
 
 class ErrorFactory {
 public:
   // Constructors
   ErrorFactory() = default;
-  explicit ErrorFactory(std::string fileName) : fileName(std::move(fileName)){};
 
   // Public methods
-  [[nodiscard]] SemanticError get(const antlr4::Token &token, SemanticErrorType type, const std::string &message) const;
-  [[nodiscard]] IRError get(const antlr4::Token &token, IRErrorType type, const std::string &message) const;
-  [[nodiscard]] IRError get(IRErrorType type, const std::string &message) const;
+  [[nodiscard]] SemanticError get(const CodeLoc &codeLoc, SemanticErrorType type, const std::string &message) const;
+  [[nodiscard]] IRError get(const CodeLoc &codeLoc, IRErrorType type, const std::string &message) const;
   [[nodiscard]] static CliError get(CliErrorType type, const std::string &message);
   [[nodiscard]] static LinkerError get(LinkerErrorType type, const std::string &message);
-
-private:
-  // Members
-  std::string fileName;
 };

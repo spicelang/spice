@@ -33,17 +33,17 @@ AnalyzerVisitor::AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std
   }
 
   // Create error factory for this specific file
-  this->err = std::make_unique<ErrorFactory>(sourceFile.filePath);
+  this->err = std::make_unique<ErrorFactory>();
 
   // Create OpRuleManager
   opRuleManager = std::make_unique<OpRuleManager>(err.get(), allowUnsafeOperations);
 }
 
-std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
+std::any AnalyzerVisitor::visitEntry(EntryNode *ctx) {
   // --- Pre-traversing actions
 
   // --- Traverse AST
-  visitChildren(ctx);
+  AstVisitor::visitChildren(ctx);
 
   // --- Post traversing actions
   // Remove non-substantiated functions and structs
@@ -55,7 +55,7 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
 
   // Check if the visitor got a main function
   if (requiresMainFct && !hasMainFunction)
-    throw err->get(*ctx->start, MISSING_MAIN_FUNCTION, "No main function found");
+    throw err->get(ctx->codeLoc, MISSING_MAIN_FUNCTION, "No main function found");
 
   // Print compiler warnings once the whole ast is present, but not for std files
   if (requiresMainFct && !isStdFile && !reAnalyze)
@@ -68,29 +68,29 @@ std::any AnalyzerVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   return reAnalyze;
 }
 
-std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
   std::string mainSignature = MAIN_FUNCTION_NAME + "()";
 
   if (runNumber == 1) { // First run
     // Check if the function is already defined
     if (currentScope->lookup(mainSignature))
-      throw err->get(*ctx->start, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
+      throw err->get(node->codeLoc, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
 
     // Insert function name into the root symbol table
     SymbolType symbolType = SymbolType(TY_FUNCTION);
-    currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *ctx->start);
+    currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, *node->start);
 
     // Create the function scope
     currentScope = currentScope->createChildBlock(mainSignature, SCOPE_FUNC_PROC_BODY);
 
     // Declare variable for the return value in the function scope
     SymbolType returnType = SymbolType(TY_INT);
-    currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, *ctx->start);
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, *node->start);
     currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
 
     // Visit arguments in new scope
-    if (ctx->argLstDef())
-      visit(ctx->argLstDef());
+    if (node->hasArgs)
+      visit(node->argLstDef());
 
     // Return to root scope
     currentScope = currentScope->getParent();
@@ -103,12 +103,12 @@ std::any AnalyzerVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefConte
     currentScope = currentScope->getChild(mainSignature);
 
     // Visit statements in new scope
-    visit(ctx->stmtLst());
+    visit(node->stmtLst());
 
     // Call destructors for variables, that are going out of scope
     std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
     for (SymbolTableEntry *varEntry : varsToDestruct)
-      insertDestructorCall(*ctx->start, varEntry);
+      insertDestructorCall(node->codeLoc, varEntry);
 
     // Return to root scope
     currentScope = currentScope->getParent();
@@ -2111,33 +2111,36 @@ std::any AnalyzerVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
   return type;
 }
 
-std::any AnalyzerVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
-  if (ctx->TYPE_DOUBLE())
+std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *ctx) {
+  switch (ctx->type) {
+  case BaseDataTypeNode::TY_DOUBLE:
     return SymbolType(TY_DOUBLE);
-  if (ctx->TYPE_INT())
+  case BaseDataTypeNode::TY_INT:
     return SymbolType(TY_INT);
-  if (ctx->TYPE_SHORT())
+  case BaseDataTypeNode::TY_SHORT:
     return SymbolType(TY_SHORT);
-  if (ctx->TYPE_LONG())
+  case BaseDataTypeNode::TY_LONG:
     return SymbolType(TY_LONG);
-  if (ctx->TYPE_BYTE())
+  case BaseDataTypeNode::TY_BYTE:
     return SymbolType(TY_BYTE);
-  if (ctx->TYPE_CHAR())
+  case BaseDataTypeNode::TY_CHAR:
     return SymbolType(TY_CHAR);
-  if (ctx->TYPE_STRING())
+  case BaseDataTypeNode::TY_STRING:
     return SymbolType(TY_STRING);
-  if (ctx->TYPE_BOOL())
+  case BaseDataTypeNode::TY_BOOL:
     return SymbolType(TY_BOOL);
-  if (ctx->customDataType()) // Struct or generic type
+  case BaseDataTypeNode::TY_CUSTOM:
     return visit(ctx->customDataType());
-  return SymbolType(TY_DYN);
+  default:
+    return SymbolType(TY_DYN);
+  }
 }
 
-std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
+std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *ctx) {
   // Check if it is a generic type
-  std::string firstFragment = ctx->IDENTIFIER()[0]->toString();
+  std::string firstFragment = ctx->typeNameFragments.front();
   SymbolTableEntry *entry = currentScope->lookup(firstFragment);
-  if (ctx->IDENTIFIER().size() == 1 && !entry && currentScope->lookupGenericType(firstFragment))
+  if (ctx->typeNameFragments.size() == 1 && !entry && currentScope->lookupGenericType(firstFragment))
     return *static_cast<SymbolType *>(currentScope->lookupGenericType(firstFragment));
 
   // It is a struct type -> get the access scope
@@ -2147,15 +2150,15 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
   std::string accessScopePrefix;
   std::string structName;
   bool structIsImported = false;
-  for (unsigned int i = 0; i < ctx->IDENTIFIER().size(); i++) {
-    structName = ctx->IDENTIFIER()[i]->toString();
-    if (i < ctx->IDENTIFIER().size() - 1)
+  for (unsigned int i = 0; i < ctx->typeNameFragments.size(); i++) {
+    structName = ctx->typeNameFragments[i];
+    if (i < ctx->typeNameFragments.size() - 1)
       accessScopePrefix += structName + ".";
     SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
     if (!symbolEntry)
-      throw err->get(*ctx->start, UNKNOWN_DATATYPE, "Unknown symbol '" + structName + "'");
+      throw err->get(ctx->codeLoc, UNKNOWN_DATATYPE, "Unknown symbol '" + structName + "'");
     if (!symbolEntry->getType().isOneOf({TY_STRUCT, TY_IMPORT}))
-      throw err->get(*ctx->start, EXPECTED_TYPE, "Expected type, but got " + symbolEntry->getType().getName());
+      throw err->get(ctx->codeLoc, EXPECTED_TYPE, "Expected type, but got " + symbolEntry->getType().getName());
 
     std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
     accessScope = accessScope->lookupTable(tableName);
@@ -2166,8 +2169,8 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
 
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
-  if (ctx->typeLst()) {
-    for (const auto &dataType : ctx->typeLst()->dataType())
+  if (ctx->templateTypeLst()) {
+    for (const auto &dataType : ctx->templateTypeLst()->dataTypes())
       concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
   }
 
@@ -2177,18 +2180,18 @@ std::any AnalyzerVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext
     spiceStruct->setUsed();
 
   if (structIsImported) // Imported struct
-    return initExtStruct(*ctx->start, accessScope, accessScopePrefix, structName, concreteTemplateTypes);
+    return initExtStruct(ctx->codeLoc, accessScope, accessScopePrefix, structName, concreteTemplateTypes);
 
   // Check if struct was declared
   SymbolTableEntry *structSymbol = accessScope->lookup(structName);
   if (!structSymbol)
-    throw err->get(*ctx->start, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+    throw err->get(ctx->codeLoc, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
   structSymbol->setUsed();
 
   return SymbolType(TY_STRUCT, structName, concreteTemplateTypes);
 }
 
-void AnalyzerVisitor::insertDestructorCall(const antlr4::Token &token, SymbolTableEntry *varEntry) {
+void AnalyzerVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
   assert(varEntry != nullptr && varEntry->getType().is(TY_STRUCT));
 
   // Create Spice function for destructor
@@ -2198,12 +2201,11 @@ void AnalyzerVisitor::insertDestructorCall(const antlr4::Token &token, SymbolTab
   accessScope = accessScope->getChild(STRUCT_SCOPE_PREFIX + structEntry->getName());
   assert(accessScope != nullptr);
   SymbolType thisType = varEntry->getType();
-  accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, err.get(), token);
+  accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, err.get(), codeLoc);
 }
 
-SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTable *sourceScope,
-                                          const std::string &structScopePrefix, const std::string &structName,
-                                          const std::vector<SymbolType> &templateTypes) {
+SymbolType AnalyzerVisitor::initExtStruct(const CodeLoc &codeLoc, SymbolTable *sourceScope, const std::string &structScopePrefix,
+                                          const std::string &structName, const std::vector<SymbolType> &templateTypes) {
   // Get external struct name
   std::string newStructName = structScopePrefix + structName;
 
@@ -2221,7 +2223,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   std::string structSignature = Struct::getSignature(structName, templateTypes);
   SymbolTableEntry *externalStructSymbol = sourceScope->lookup(structSignature);
   if (!externalStructSymbol)
-    throw err->get(token, REFERENCED_UNDEFINED_STRUCT, "Could not find struct '" + newStructName + "'");
+    throw err->get(codeLoc, REFERENCED_UNDEFINED_STRUCT, "Could not find struct '" + newStructName + "'");
 
   // Get the associated symbolTable of the external struct symbol
   SymbolTable *externalStructTable = sourceScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
@@ -2232,7 +2234,7 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
       std::string nestedStructName = CommonUtil::getLastFragment(entry.getType().getBaseType().getSubType(), ".");
       std::string nestedStructPrefix = CommonUtil::getPrefix(entry.getType().getBaseType().getSubType(), ".");
       // Initialize nested struct
-      initExtStruct(token, sourceScope, nestedStructPrefix, nestedStructName, entry.getType().getBaseType().getTemplateTypes());
+      initExtStruct(codeLoc, sourceScope, nestedStructPrefix, nestedStructName, entry.getType().getBaseType().getTemplateTypes());
     }
   }
 
@@ -2253,8 +2255,8 @@ SymbolType AnalyzerVisitor::initExtStruct(const antlr4::Token &token, SymbolTabl
   return newStructTy;
 }
 
-SymbolType AnalyzerVisitor::initExtGlobal(const antlr4::Token &token, SymbolTable *sourceScope,
-                                          const std::string &globalScopePrefix, const std::string &globalName) {
+SymbolType AnalyzerVisitor::initExtGlobal(const CodeLoc &codeLoc, SymbolTable *sourceScope, const std::string &globalScopePrefix,
+                                          const std::string &globalName) {
   // Get external global var name
   std::string newGlobalName = globalScopePrefix + globalName;
 
@@ -2266,7 +2268,7 @@ SymbolType AnalyzerVisitor::initExtGlobal(const antlr4::Token &token, SymbolTabl
   // Check if external global var is declared
   SymbolTableEntry *externalGlobalSymbol = sourceScope->lookup(globalName);
   if (!externalGlobalSymbol)
-    throw err->get(token, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + newGlobalName + "'");
+    throw err->get(codeLoc, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + newGlobalName + "'");
 
   // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
   Capture newGlobalCapture = Capture(externalGlobalSymbol, newGlobalName, DECLARED);

@@ -340,7 +340,7 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, co
  */
 Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::string &callFunctionName,
                                      const SymbolType &callThisType, const std::vector<SymbolType> &callArgTypes,
-                                     ErrorFactory *err, const antlr4::Token &token) {
+                                     ErrorFactory *err, const CodeLoc &codeLoc) {
   std::vector<Function *> matches;
 
   // Loop through functions and add any matches to the matches vector

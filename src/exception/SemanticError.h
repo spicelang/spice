@@ -7,6 +7,9 @@
 
 #include <Token.h>
 
+// Forward declarations
+struct CodeLoc;
+
 enum SemanticErrorType {
   REFERENCED_UNDEFINED_FUNCTION,
   REFERENCED_UNDEFINED_VARIABLE,
@@ -65,8 +68,7 @@ enum SemanticErrorType {
 class SemanticError : public std::exception {
 public:
   // Constructors
-  explicit SemanticError(const std::string &fileName, const antlr4::Token &token, const SemanticErrorType &type,
-                         const std::string &message);
+  explicit SemanticError(const CodeLoc &codeLoc, const SemanticErrorType &type, const std::string &message);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

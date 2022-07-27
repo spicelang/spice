@@ -40,9 +40,10 @@ std::any AstBuilderVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCon
   auto mainFctDefNode = static_cast<MainFctDefNode *>(currentNode);
   for (auto subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::ArgLstDefContext *>(subTree); rule != nullptr) // ArgLstDef
+    if (rule = dynamic_cast<SpiceParser::ArgLstDefContext *>(subTree); rule != nullptr) { // ArgLstDef
       currentNode = mainFctDefNode->createChild<ArgLstDefNode>(CodeLoc(rule->start));
-    else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
+      mainFctDefNode->hasArgs = true;
+    } else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
       currentNode = mainFctDefNode->createChild<StmtLstNode>(CodeLoc(rule->start));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -446,9 +447,10 @@ std::any AstBuilderVisitor::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
 
   for (auto subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
       currentNode = typeLstNode->createChild<DataTypeNode>(CodeLoc(rule->start));
-    else
+      typeLstNode->numberOfTypes++;
+    } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
     if (currentNode != typeLstNode) {
@@ -464,9 +466,10 @@ std::any AstBuilderVisitor::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ct
 
   for (auto subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
       currentNode = typeAltsLstNode->createChild<DataTypeNode>(CodeLoc(rule->start));
-    else
+      typeAltsLstNode->numberOfAlts++;
+    } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
     if (currentNode != typeAltsLstNode) {

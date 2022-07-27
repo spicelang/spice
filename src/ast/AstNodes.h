@@ -24,7 +24,7 @@ public:
   }
 
   // Virtual methods
-  virtual std::any accept(AbstractAstVisitor *visitor) const = 0;
+  virtual std::any accept(AbstractAstVisitor *visitor) = 0;
 
   // Public methods
   template <typename T> T *createChild(const CodeLoc &codeLoc) {
@@ -70,7 +70,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitEntry(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitEntry(this); }
 
   // Public get methods
   std::vector<MainFctDefNode *> mainFctDefNode() const { return getChildren<MainFctDefNode>(); }
@@ -91,10 +91,15 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitMainFctDef(this); }
+
+  // Public get methods
+  ArgLstDefNode *argLstDef() const { return getChild<ArgLstDefNode>(); }
+  StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
 
   // Public members
   Function *spiceFunc = nullptr;
+  bool hasArgs = false;
 };
 
 // ========================================================== FctDefNode =========================================================
@@ -105,7 +110,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitFctDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitFctDef(this); }
 
   // Public members
   std::string functionName;
@@ -120,7 +125,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitProcDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitProcDef(this); }
 
   // Public members
   std::string procedureName;
@@ -135,7 +140,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStructDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitStructDef(this); }
 
   // Public members
   std::string structName;
@@ -150,7 +155,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitGenericTypeDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitGenericTypeDef(this); }
 
   // Public members
   std::string typeName;
@@ -164,7 +169,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitGlobalVarDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitGlobalVarDef(this); }
 
   // Public members
   std::string varName;
@@ -179,7 +184,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitExtDecl(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitExtDecl(this); }
 
   // Public members
   std::string extFunctionName;
@@ -193,7 +198,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitThreadDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitThreadDef(this); }
 };
 
 // ====================================================== UnsafeBlockDefNode =====================================================
@@ -204,7 +209,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitUnsafeBlockDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitUnsafeBlockDef(this); }
 };
 
 // ========================================================== ForLoopNode ========================================================
@@ -215,7 +220,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitForLoop(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitForLoop(this); }
 
   // Public get methods
   DeclStmtNode *initDecl() const { return getChild<DeclStmtNode>(); }
@@ -231,7 +236,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitForeachLoop(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitForeachLoop(this); }
 
   // Public get methods
   DeclStmtNode *idxVarDecl() const {
@@ -250,7 +255,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitWhileLoop(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitWhileLoop(this); }
 };
 
 // ========================================================== IfStmtNode =========================================================
@@ -261,7 +266,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitIfStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitIfStmt(this); }
 };
 
 // ========================================================= ElseStmtNode ========================================================
@@ -272,7 +277,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitElseStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitElseStmt(this); }
 };
 
 // ======================================================== AssertStmtNode =======================================================
@@ -283,7 +288,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAssertStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitAssertStmt(this); }
 };
 
 // ========================================================= StmtLstNode =========================================================
@@ -294,7 +299,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStmtLst(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitStmtLst(this); }
 };
 
 // ========================================================= TypeLstNode =========================================================
@@ -305,7 +310,13 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitTypeLst(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitTypeLst(this); }
+
+  // Public get methods
+  std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
+
+  // Public members
+  size_t numberOfTypes = 0;
 };
 
 // ======================================================= TypeAltsLstNode =======================================================
@@ -316,7 +327,13 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitTypeAltsLst(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitTypeAltsLst(this); }
+
+  // Public get methods
+  std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
+
+  // Public members
+  size_t numberOfAlts = 0;
 };
 
 // ======================================================== ArgLstDefNode ========================================================
@@ -327,7 +344,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitArgLstDef(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitArgLstDef(this); }
 };
 
 // ========================================================== ArgLstNode =========================================================
@@ -338,7 +355,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitArgLst(this); }
+  std::any accept(AbstractAstVisitor *visitor)  override { return visitor->visitArgLst(this); }
 };
 
 // ========================================================== FieldNode ==========================================================
@@ -349,7 +366,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitField(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitField(this); }
 };
 
 // =========================================================== StmtNode ==========================================================
@@ -360,7 +377,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitStmt(this); }
 };
 
 // ========================================================= DeclStmtNode ========================================================
@@ -371,7 +388,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitDeclStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitDeclStmt(this); }
 };
 
 // ====================================================== DeclSpecifiersNode =====================================================
@@ -382,7 +399,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitDeclSpecifiers(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitDeclSpecifiers(this); }
 
   // Public members
   bool hasConstKeyword = false;
@@ -400,7 +417,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitImportStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitImportStmt(this); }
 
   // Public members
   std::string importPath;
@@ -415,7 +432,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitReturnStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitReturnStmt(this); }
 };
 
 // ======================================================== BreakStmtNode ========================================================
@@ -426,7 +443,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBreakStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBreakStmt(this); }
 
   // Public members
   int breakTimes;
@@ -440,7 +457,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitContinueStmt(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitContinueStmt(this); }
 
   // Public members
   int continueTimes;
@@ -454,7 +471,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPrintfCall(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitPrintfCall(this); }
 
   // Public members
   std::string templatedString;
@@ -468,7 +485,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitSizeofCall(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitSizeofCall(this); }
 
   // Public members
   bool isType = false;
@@ -482,7 +499,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitLenCall(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitLenCall(this); }
 };
 
 // ========================================================= TidCallNode =========================================================
@@ -493,7 +510,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitTidCall(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitTidCall(this); }
 };
 
 // ======================================================== JoinCallNode =========================================================
@@ -504,7 +521,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitJoinCall(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitJoinCall(this); }
 };
 
 // ======================================================= AssignExprNode ========================================================
@@ -530,7 +547,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAssignExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitAssignExpr(this); }
 
   // Public members
   AssignOp op;
@@ -544,7 +561,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitTernaryExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitTernaryExpr(this); }
 };
 
 // ===================================================== LogicalOrExprNode =======================================================
@@ -555,7 +572,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitLogicalOrExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitLogicalOrExpr(this); }
 };
 
 // ===================================================== LogicalAndExprNode ======================================================
@@ -566,7 +583,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitLogicalAndExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitLogicalAndExpr(this); }
 };
 
 // ===================================================== BitwiseOrExprNode =======================================================
@@ -577,7 +594,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBitwiseOrExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBitwiseOrExpr(this); }
 };
 
 // ==================================================== BitwiseXorExprNode =======================================================
@@ -588,7 +605,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBitwiseXorExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBitwiseXorExpr(this); }
 };
 
 // ==================================================== BitwiseAndExprNode =======================================================
@@ -599,7 +616,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBitwiseAndExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBitwiseAndExpr(this); }
 };
 
 // ===================================================== EqualityExprNode ========================================================
@@ -616,7 +633,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitEqualityExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitEqualityExpr(this); }
 
   // Public members
   EqualityOp op;
@@ -638,7 +655,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitRelationalExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitRelationalExpr(this); }
 
   // Public members
   RelationalOp op;
@@ -658,7 +675,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitShiftExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitShiftExpr(this); }
 
   // Public members
   ShiftOp op;
@@ -678,7 +695,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAdditiveExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitAdditiveExpr(this); }
 
   // Public members
   std::queue<AdditiveOp> opQueue;
@@ -699,7 +716,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitMultiplicativeExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitMultiplicativeExpr(this); }
 
   // Public members
   std::queue<MultiplicativeOp> opQueue;
@@ -713,7 +730,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitCastExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitCastExpr(this); }
 
   // Public members
   bool isCasted = false;
@@ -738,7 +755,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPrefixUnaryExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitPrefixUnaryExpr(this); }
 
   // Public members
   std::queue<PrefixUnaryOp> opQueue;
@@ -760,7 +777,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPostfixUnaryExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitPostfixUnaryExpr(this); }
 
   // Public members
   std::queue<PostfixUnaryOp> opQueue;
@@ -774,7 +791,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitAtomicExpr(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitAtomicExpr(this); }
 
   // Public members
   std::string identifier;
@@ -788,7 +805,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitValue(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitValue(this); }
 };
 
 // =================================================== PrimitiveValueNode ========================================================
@@ -811,7 +828,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitPrimitiveValue(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitPrimitiveValue(this); }
 
   // Public members
   PrimitiveValueType type;
@@ -834,7 +851,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitFunctionCall(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitFunctionCall(this); }
 
   // Public members
   std::string fqFunctionName;
@@ -850,7 +867,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitArrayInitialization(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitArrayInitialization(this); }
 };
 
 // ================================================= StructInstantiationNode =====================================================
@@ -861,7 +878,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitStructInstantiation(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitStructInstantiation(this); }
 
   // Public members
   std::string fqStructName;
@@ -890,7 +907,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitDataType(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitDataType(this); }
 
   // Public members
   std::queue<TypeModifier> tmQueue;
@@ -918,7 +935,10 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitBaseDataType(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBaseDataType(this); }
+
+  // Public get methods
+  CustomDataTypeNode *customDataType() const { return getChild<CustomDataTypeNode>(); }
 
   // Public members
   Type type;
@@ -932,7 +952,10 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor) const override { return visitor->visitCustomDataType(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitCustomDataType(this); }
+
+  // Public get methods
+  TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Public members
   std::string fqTypeName;
