@@ -10,14 +10,36 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-f<string> func() {
-    return "Test";
-}
-
 f<int> main() {
-    string res = func();
-    if false {
-        printf("1: %s", res);
+    printf("Array1:\n");
+    short arraySize1 = 4s;
+    int[arraySize1] array1 = {1, 2, 3};
+    array1[3] = 0;
+    foreach dyn item : array1 {
+        printf("Item: %d\n", item);
     }
-    printf("2: %s", res);
+
+    printf("Array2:\n");
+    long arraySize2 = 2l;
+    string[arraySize2] array2;
+    array2[0] = "Hello";
+    array2[1] = "world";
+    foreach dyn item : array2 {
+        printf("Item: %s\n", item);
+    }
+
+    printf("Array3:\n");
+    int arraySize3 = 3;
+    int[arraySize3] array3 = {1, arraySize3, arraySize3};
+    foreach dyn item : array3 {
+        printf("Item: %d\n", item);
+    }
+
+    printf("Array4:\n");
+    int arraySize4 = 3;
+    int[arraySize4] array4;
+    array4 = {1, arraySize4, arraySize4};
+    foreach dyn item : array4 {
+        printf("Item: %d\n", item);
+    }
 }

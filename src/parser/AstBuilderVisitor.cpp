@@ -359,7 +359,7 @@ std::any AstBuilderVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
       currentNode = ifStmtNode->createChild<AssignExprNode>(CodeLoc(rule->start));
     else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
       currentNode = ifStmtNode->createChild<StmtLstNode>(CodeLoc(rule->start));
-    else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // ElseStmt
+    else if (rule = dynamic_cast<SpiceParser::ElseStmtContext *>(subTree); rule != nullptr) // ElseStmt
       currentNode = ifStmtNode->createChild<ElseStmtNode>(CodeLoc(rule->start));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1273,14 +1273,13 @@ std::any AstBuilderVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
       dataTypeNode->tmQueue.push({DataTypeNode::TY_POINTER, false, 0});
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::LBRACKET) {
       i++; // Consume LBRACKET
+      subTree = ctx->children[i];
       bool isHardcoded = true;
       int hardCodedSize = 0;
       if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INTEGER) {
-        hardCodedSize = std::stoi(t->getSymbol()->toString());
-      } else {
+        hardCodedSize = std::stoi(t->getSymbol()->getText());
+      } else if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
         isHardcoded = false;
-        rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree);
-        assert(rule != nullptr);
         currentNode = dataTypeNode->createChild<AssignExprNode>(CodeLoc(rule->start));
       }
       i += 2; // Consume INTEGER and RBRACKET
