@@ -71,7 +71,7 @@ public:
   std::map<std::string, SymbolTableEntry> &getSymbols();
   std::map<std::string, Capture> &getCaptures();
 
-  void insertFunction(const Function &function, ErrorFactory *err, const CodeLoc &codeLoc);
+  void insertFunction(const Function &function, ErrorFactory *err);
   Function *matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,
                           const std::vector<SymbolType> &callArgTypes, ErrorFactory *errorFactory, const CodeLoc &codeLoc);
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc) const;
@@ -79,7 +79,7 @@ public:
   Function *getFunctionAccessPointer(const CodeLoc &codeLoc);
   void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const CodeLoc &codeLoc);
 
-  void insertStruct(const Struct &s, ErrorFactory *err, const CodeLoc &codeLoc);
+  void insertStruct(const Struct &s, ErrorFactory *err);
   Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
                       ErrorFactory *errorFactory, const CodeLoc &codeLoc);
   [[nodiscard]] std::map<std::string, Struct> *getStructManifestations(const CodeLoc &defCodeLoc) const;

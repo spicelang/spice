@@ -39,7 +39,7 @@ public:
   std::any visitStmtLst(const StmtLstNode *ctx) override { return buildNode(ctx); }
   std::any visitTypeLst(const TypeLstNode *ctx) override { return buildNode(ctx); }
   std::any visitTypeAltsLst(const TypeAltsLstNode *ctx) override { return buildNode(ctx); }
-  std::any visitArgLstDef(const ArgLstDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitArgLstDef(const ParamLstNode *ctx) override { return buildNode(ctx); }
   std::any visitArgLst(const ArgLstNode *ctx) override { return buildNode(ctx); }
   std::any visitField(const FieldNode *ctx) override { return buildNode(ctx); }
   std::any visitStmt(const StmtNode *ctx) override { return buildNode(ctx); }
@@ -87,8 +87,7 @@ private:
   std::string parentNodeId;
 
   // Private methods
-  template <typename T>
-  std::string buildNode(const T *ctx) {
+  template <typename T> std::string buildNode(const T *ctx) {
     // Prepare strings
     std::string codeLoc = ctx->codeLoc.toString();
     std::string nodeName = getNodeName(ctx);
@@ -115,8 +114,7 @@ private:
     return result;
   }
 
-  template <typename T>
-  std::string getNodeName(const T*) const {
+  template <typename T> std::string getNodeName(const T *) const {
     if (std::is_same<EntryNode, T>())
       return "Entry";
     if (std::is_same<MainFctDefNode, T>())
@@ -155,7 +153,7 @@ private:
       return "TypeLst";
     if (std::is_same<TypeAltsLstNode, T>())
       return "TypeAltsLst";
-    if (std::is_same<ArgLstDefNode, T>())
+    if (std::is_same<ParamLstNode, T>())
       return "ArgLstDef";
     if (std::is_same<ArgLstNode, T>())
       return "ArgLst";

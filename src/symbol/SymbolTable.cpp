@@ -309,9 +309,10 @@ std::map<std::string, Capture> &SymbolTable::getCaptures() { return captures; }
  *
  * @param function Function object
  * @param err Error factory
- * @param codeLoc Function declaration code location
  */
-void SymbolTable::insertFunction(const Function &function, ErrorFactory *err, const CodeLoc &codeLoc) {
+void SymbolTable::insertFunction(const Function &function, ErrorFactory *err) {
+  const CodeLoc &codeLoc = function.getDeclCodeLoc();
+
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
   std::string codeLocStr = codeLoc.toString();
   functions.insert({codeLocStr, std::make_shared<std::map<std::string, Function>>()});
@@ -520,10 +521,10 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
  *
  * @param s Struct object
  * @param err Error factory
- * @param codeLoc Struct declaration code loccation
  */
-void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err, const CodeLoc &codeLoc) {
+void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
+  const CodeLoc &codeLoc = s.getDeclCodeLoc();
   std::string codeLocStr = codeLoc.toString();
   structs.insert({codeLocStr, std::make_shared<std::map<std::string, Struct>>()});
   insertSubstantiatedStruct(s, err, codeLoc);

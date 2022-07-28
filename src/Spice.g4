@@ -4,9 +4,9 @@ grammar Spice;
 
 // Control structures
 entry: (mainFunctionDef | functionDef | procedureDef | structDef | genericTypeDef | globalVarDef | importStmt | extDecl)*;
-mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
+mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 structDef: declSpecifiers? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT LBRACE field* RBRACE;
 genericTypeDef: declSpecifiers? TYPE IDENTIFIER typeAltsLst SEMICOLON;
 globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
@@ -26,7 +26,7 @@ assertStmt: ASSERT assignExpr SEMICOLON;
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef)*;
 typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
-argLstDef: declStmt (COMMA declStmt)*;
+paramLst: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
 field: declSpecifiers? dataType IDENTIFIER;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;

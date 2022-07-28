@@ -30,6 +30,7 @@ class IRError : public std::exception {
 public:
   // Constructors
   explicit IRError(const CodeLoc &codeLoc, const IRErrorType &errorType, const std::string &messageSuffix);
+  explicit IRError(const IRErrorType &errorType, const std::string &messageSuffix);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

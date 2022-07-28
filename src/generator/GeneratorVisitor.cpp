@@ -14,7 +14,6 @@
 #include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
-#include <util/ScopeIdUtil.h>
 #include <util/ThreadFactory.h>
 
 #include <llvm/Analysis/AliasAnalysis.h>
@@ -43,7 +42,7 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   this->currentScope = this->rootScope = sourceFile.symbolTable.get();
 
   // Create error factory for this specific file
-  this->err = std::make_unique<ErrorFactory>(sourceFile.filePath);
+  this->err = std::make_unique<ErrorFactory>();
 
   // Create LLVM base components
   module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile.filePath), *context);
@@ -144,7 +143,7 @@ void GeneratorVisitor::dumpAsm() {
   llvm::outs().flush();
 }
 
-std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
+std::any GeneratorVisitor::visitEntry(EntryNode *node) {
   SpiceBaseVisitor::visitEntry(ctx);
 
   if (!secondRun) {
@@ -161,7 +160,7 @@ std::any GeneratorVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
     std::string output;
     llvm::raw_string_ostream oss(output);
     if (llvm::verifyModule(*module, &oss))
-      throw err->get(*ctx->start, INVALID_MODULE, oss.str());
+      throw err->get(node->codeLoc, INVALID_MODULE, oss.str());
   }
 
   return false;
@@ -661,52 +660,6 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
   return nullptr;
 }
 
-std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
-  if (secondRun)
-    return nullptr;
-
-  // Get function name
-  std::string functionName = ctx->IDENTIFIER()->toString();
-  std::vector<SymbolType> symbolTypes;
-
-  // Pop function declaration pointer from the stack
-  std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
-  assert(!manifestations->empty());
-  Function spiceFunc = manifestations->begin()->second;
-
-  // Get LLVM return type
-  llvm::Type *returnType;
-  if (ctx->dataType()) {
-    returnType = any_cast<llvm::Type *>(visit(ctx->dataType()));
-    SymbolTable *functionTable = currentScope->getChild(spiceFunc.getSignature());
-    assert(functionTable != nullptr);
-    SymbolTableEntry *returnEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
-    assert(returnEntry != nullptr);
-    symbolTypes.push_back(returnEntry->getType());
-  } else {
-    returnType = llvm::Type::getVoidTy(*context);
-  }
-
-  // Get LLVM arg types
-  std::vector<llvm::Type *> argTypes;
-  if (ctx->typeLst()) {
-    for (const auto &arg : ctx->typeLst()->dataType()) {
-      auto argType = any_cast<llvm::Type *>(visit(arg));
-      argTypes.push_back(argType);
-    }
-  }
-  std::vector<SymbolType> argSymbolTypes = spiceFunc.getArgTypes();
-  symbolTypes.insert(std::end(symbolTypes), std::begin(argSymbolTypes), std::end(argSymbolTypes));
-
-  // Declare function
-  llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, ctx->ELLIPSIS());
-  module->getOrInsertFunction(functionName, functionType);
-  if (ctx->DLL())
-    module->getFunction(functionName)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-
-  return nullptr;
-}
-
 std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   if (secondRun)
     return nullptr;
@@ -790,6 +743,52 @@ std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *c
     global->setInitializer(currentConstValue);
     constNegate = false;
   }
+
+  return nullptr;
+}
+
+std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
+  if (secondRun)
+    return nullptr;
+
+  // Get function name
+  std::string functionName = ctx->IDENTIFIER()->toString();
+  std::vector<SymbolType> symbolTypes;
+
+  // Pop function declaration pointer from the stack
+  std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+  assert(!manifestations->empty());
+  Function spiceFunc = manifestations->begin()->second;
+
+  // Get LLVM return type
+  llvm::Type *returnType;
+  if (ctx->dataType()) {
+    returnType = any_cast<llvm::Type *>(visit(ctx->dataType()));
+    SymbolTable *functionTable = currentScope->getChild(spiceFunc.getSignature());
+    assert(functionTable != nullptr);
+    SymbolTableEntry *returnEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
+    assert(returnEntry != nullptr);
+    symbolTypes.push_back(returnEntry->getType());
+  } else {
+    returnType = llvm::Type::getVoidTy(*context);
+  }
+
+  // Get LLVM arg types
+  std::vector<llvm::Type *> argTypes;
+  if (ctx->typeLst()) {
+    for (const auto &arg : ctx->typeLst()->dataType()) {
+      auto argType = any_cast<llvm::Type *>(visit(arg));
+      argTypes.push_back(argType);
+    }
+  }
+  std::vector<SymbolType> argSymbolTypes = spiceFunc.getArgTypes();
+  symbolTypes.insert(std::end(symbolTypes), std::begin(argSymbolTypes), std::end(argSymbolTypes));
+
+  // Declare function
+  llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, ctx->ELLIPSIS());
+  module->getOrInsertFunction(functionName, functionType);
+  if (ctx->DLL())
+    module->getFunction(functionName)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
 
   return nullptr;
 }

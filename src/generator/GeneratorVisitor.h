@@ -52,9 +52,9 @@ public:
   std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
   std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
   std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
-  std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
+  std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
   std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
   std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override;
   std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override;

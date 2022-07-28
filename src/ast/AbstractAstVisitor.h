@@ -25,7 +25,7 @@ class AssertStmtNode;
 class StmtLstNode;
 class TypeLstNode;
 class TypeAltsLstNode;
-class ArgLstDefNode;
+class ParamLstNode;
 class ArgLstNode;
 class FieldNode;
 class StmtNode;
@@ -90,7 +90,7 @@ public:
   virtual std::any visitStmtLst(StmtLstNode *ctx) = 0;
   virtual std::any visitTypeLst(TypeLstNode *ctx) = 0;
   virtual std::any visitTypeAltsLst(TypeAltsLstNode *ctx) = 0;
-  virtual std::any visitArgLstDef(ArgLstDefNode *ctx) = 0;
+  virtual std::any visitArgLstDef(ParamLstNode *ctx) = 0;
   virtual std::any visitArgLst(ArgLstNode *ctx) = 0;
   virtual std::any visitField(FieldNode *ctx) = 0;
   virtual std::any visitStmt(StmtNode *ctx) = 0;

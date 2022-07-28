@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vector>
 #include <queue>
+#include <utility>
+#include <vector>
 
 #include <ast/AstVisitor.h>
 #include <symbol/Function.h>
@@ -15,7 +16,7 @@
 class AstNode {
 public:
   // Constructors
-  explicit AstNode(AstNode *parent, const CodeLoc &codeLoc) : parent(parent), codeLoc(codeLoc) {}
+  explicit AstNode(AstNode *parent, CodeLoc codeLoc) : parent(parent), codeLoc(std::move(codeLoc)) {}
 
   // Destructors
   virtual ~AstNode() {
@@ -73,14 +74,14 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitEntry(this); }
 
   // Public get methods
-  std::vector<MainFctDefNode *> mainFctDefNode() const { return getChildren<MainFctDefNode>(); }
-  std::vector<FctDefNode *> fctDefNode() const { return getChildren<FctDefNode>(); }
-  std::vector<ProcDefNode *> procDefNode() const { return getChildren<ProcDefNode>(); }
-  std::vector<StructDefNode *> structDefNode() const { return getChildren<StructDefNode>(); }
-  std::vector<GenericTypeDefNode *> genericTypeDefNode() const { return getChildren<GenericTypeDefNode>(); }
-  std::vector<GlobalVarDefNode *> globalVarDefNode() const { return getChildren<GlobalVarDefNode>(); }
-  std::vector<ImportStmtNode *> importStmtNode() const { return getChildren<ImportStmtNode>(); }
-  std::vector<ExtDeclNode *> extDeclNode() const { return getChildren<ExtDeclNode>(); }
+  [[nodiscard]] std::vector<MainFctDefNode *> mainFctDefNode() const { return getChildren<MainFctDefNode>(); }
+  [[nodiscard]] std::vector<FctDefNode *> fctDefNode() const { return getChildren<FctDefNode>(); }
+  [[nodiscard]] std::vector<ProcDefNode *> procDefNode() const { return getChildren<ProcDefNode>(); }
+  [[nodiscard]] std::vector<StructDefNode *> structDefNode() const { return getChildren<StructDefNode>(); }
+  [[nodiscard]] std::vector<GenericTypeDefNode *> genericTypeDefNode() const { return getChildren<GenericTypeDefNode>(); }
+  [[nodiscard]] std::vector<GlobalVarDefNode *> globalVarDefNode() const { return getChildren<GlobalVarDefNode>(); }
+  [[nodiscard]] std::vector<ImportStmtNode *> importStmtNode() const { return getChildren<ImportStmtNode>(); }
+  [[nodiscard]] std::vector<ExtDeclNode *> extDeclNode() const { return getChildren<ExtDeclNode>(); }
 };
 
 // ======================================================== MainFctDefNode =======================================================
@@ -94,11 +95,11 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitMainFctDef(this); }
 
   // Public get methods
-  ArgLstDefNode *argLstDef() const { return getChild<ArgLstDefNode>(); }
-  StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+  [[nodiscard]] ParamLstNode *argLstDef() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
 
   // Public members
-  Function *spiceFunc = nullptr;
+  SymbolTable *fctScope = nullptr;
   bool hasArgs = false;
 };
 
@@ -112,10 +113,25 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitFctDef(this); }
 
+  // Public get methods
+  [[nodiscard]] DeclSpecifiersNode *declSpecifiers() const { return getChild<DeclSpecifiersNode>(); }
+  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] ParamLstNode *argLstDef() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
+
   // Public members
   std::string functionName;
+  std::string structName;
   std::string fqFunctionName;
+  std::vector<std::string> functionNameFragments;
   bool isMethod = false;
+  bool isGeneric = false;
+  bool hasParams = false;
+  SymbolTable *fctScope = nullptr;
   Function *spiceFunc = nullptr;
 };
 
@@ -129,10 +145,24 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitProcDef(this); }
 
+  // Public get methods
+  [[nodiscard]] DeclSpecifiersNode *declSpecifiers() const { return getChild<DeclSpecifiersNode>(); }
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] ParamLstNode *argLstDef() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
+
   // Public members
   std::string procedureName;
+  std::string structName;
   std::string fqProcedureName;
+  std::vector<std::string> procedureNameFragments;
   bool isMethod = false;
+  bool isGeneric = false;
+  bool hasParams = false;
+  SymbolTable *procScope = nullptr;
   Function *spiceProc = nullptr;
 };
 
@@ -144,10 +174,19 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
+  [[nodiscard]] DeclSpecifiersNode *declSpecifiers() const { return getChild<DeclSpecifiersNode>(); }
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitStructDef(this); }
+  [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
+
+  // Public get methods
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "struct:" + codeLoc.toString(); }
 
   // Public members
   std::string structName;
+  bool isGeneric = false;
   Struct *spiceProc = nullptr;
 };
 
@@ -190,8 +229,13 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitExtDecl(this); }
 
+  // Public get methods
+  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] TypeLstNode *argTypeLst() const { return getChild<TypeLstNode>(); }
+
   // Public members
   std::string extFunctionName;
+  bool hasArgs = false;
 };
 
 // ========================================================= ThreadDefNode =======================================================
@@ -227,9 +271,9 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitForLoop(this); }
 
   // Public get methods
-  DeclStmtNode *initDecl() const { return getChild<DeclStmtNode>(); }
-  AssignExprNode *condAssign() const { return getChild<AssignExprNode>(0); }
-  AssignExprNode *incAssign() const { return getChild<AssignExprNode>(1); }
+  [[nodiscard]] DeclStmtNode *initDecl() const { return getChild<DeclStmtNode>(); }
+  [[nodiscard]] AssignExprNode *condAssign() const { return getChild<AssignExprNode>(0); }
+  [[nodiscard]] AssignExprNode *incAssign() const { return getChild<AssignExprNode>(1); }
 };
 
 // ======================================================== ForeachLoopNode ======================================================
@@ -243,12 +287,12 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitForeachLoop(this); }
 
   // Public get methods
-  DeclStmtNode *idxVarDecl() const {
+  [[nodiscard]] DeclStmtNode *idxVarDecl() const {
     std::vector<DeclStmtNode *> declStmtNodes = getChildren<DeclStmtNode>();
     return declStmtNodes.size() == 2 ? declStmtNodes.front() : nullptr;
   }
-  DeclStmtNode *varDecl() const { return getChildren<DeclStmtNode>().back(); }
-  AssignExprNode *arrayAssign() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] DeclStmtNode *varDecl() const { return getChildren<DeclStmtNode>().back(); }
+  [[nodiscard]] AssignExprNode *arrayAssign() const { return getChild<AssignExprNode>(); }
 };
 
 // ========================================================= WhileLoopNode =======================================================
@@ -317,7 +361,7 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitTypeLst(this); }
 
   // Public get methods
-  std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
+  [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
 
   // Public members
   size_t numberOfTypes = 0;
@@ -334,21 +378,24 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitTypeAltsLst(this); }
 
   // Public get methods
-  std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
+  [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
 
   // Public members
   size_t numberOfAlts = 0;
 };
 
-// ======================================================== ArgLstDefNode ========================================================
+// ======================================================== ParamLstNode =========================================================
 
-class ArgLstDefNode : public AstNode {
+class ParamLstNode : public AstNode {
 public:
   // Constructors
   using AstNode::AstNode;
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitArgLstDef(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<DeclStmtNode *> declStmts() const { return getChildren<DeclStmtNode>(); }
 };
 
 // ========================================================== ArgLstNode =========================================================
@@ -359,7 +406,7 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  std::any accept(AbstractAstVisitor *visitor)  override { return visitor->visitArgLst(this); }
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitArgLst(this); }
 };
 
 // ========================================================== FieldNode ==========================================================
@@ -371,6 +418,13 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitField(this); }
+
+  // Public get methods
+  [[nodiscard]] DeclSpecifiersNode *declSpecifiers() const { return getChild<DeclSpecifiersNode>(); }
+  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+
+  // Public members
+  std::string name;
 };
 
 // =========================================================== StmtNode ==========================================================
@@ -393,6 +447,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitDeclStmt(this); }
+
+  // Public members
+  std::string varName;
 };
 
 // ====================================================== DeclSpecifiersNode =====================================================
@@ -628,10 +685,7 @@ public:
 class EqualityExprNode : public AstNode {
 public:
   // Enums
-  enum EqualityOp {
-    OP_EQUAL,
-    OP_NOT_EQUAL
-  };
+  enum EqualityOp { OP_EQUAL, OP_NOT_EQUAL };
 
   // Constructors
   using AstNode::AstNode;
@@ -648,12 +702,7 @@ public:
 class RelationalExprNode : public AstNode {
 public:
   // Enums
-  enum RelationalOp {
-    OP_LESS,
-    OP_GREATER,
-    OP_LESS_EQUAL,
-    OP_GREATER_EQUAL
-  };
+  enum RelationalOp { OP_LESS, OP_GREATER, OP_LESS_EQUAL, OP_GREATER_EQUAL };
 
   // Constructors
   using AstNode::AstNode;
@@ -770,12 +819,7 @@ public:
 class PostfixUnaryExprNode : public AstNode {
 public:
   // Enums
-  enum PostfixUnaryOp {
-    OP_SUBSCRIPT,
-    OP_MEMBER_ACCESS,
-    OP_PLUS_PLUS,
-    OP_MINUS_MINUS
-  };
+  enum PostfixUnaryOp { OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS };
 
   // Constructors
   using AstNode::AstNode;
@@ -817,16 +861,7 @@ public:
 class PrimitiveValueNode : public AstNode {
 public:
   // Enum
-  enum PrimitiveValueType {
-    TY_DOUBLE,
-    TY_INT,
-    TY_SHORT,
-    TY_LONG,
-    TY_BYTE,
-    TY_CHAR,
-    TY_STRING,
-    TY_BOOL
-  };
+  enum PrimitiveValueType { TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL };
 
   // Constructors
   using AstNode::AstNode;
@@ -895,10 +930,7 @@ public:
 class DataTypeNode : public AstNode {
 public:
   // Enums
-  enum TypeModifierType {
-    TY_POINTER,
-    TY_ARRAY
-  };
+  enum TypeModifierType { TY_POINTER, TY_ARRAY };
 
   // Structs
   struct TypeModifier {
@@ -914,8 +946,8 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitDataType(this); }
 
   // Public get methods
-  BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
-  std::vector<AssignExprNode *> arraySizeExpr() const { return getChildren<AssignExprNode>(); }
+  [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
+  [[nodiscard]] std::vector<AssignExprNode *> arraySizeExpr() const { return getChildren<AssignExprNode>(); }
 
   // Public members
   std::queue<TypeModifier> tmQueue;
@@ -926,18 +958,7 @@ public:
 class BaseDataTypeNode : public AstNode {
 public:
   // Enums
-  enum Type {
-    TY_DOUBLE,
-    TY_INT,
-    TY_SHORT,
-    TY_LONG,
-    TY_BYTE,
-    TY_CHAR,
-    TY_STRING,
-    TY_BOOL,
-    TY_DYN,
-    TY_CUSTOM
-  };
+  enum Type { TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL, TY_DYN, TY_CUSTOM };
 
   // Constructors
   using AstNode::AstNode;
@@ -946,7 +967,7 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBaseDataType(this); }
 
   // Public get methods
-  CustomDataTypeNode *customDataType() const { return getChild<CustomDataTypeNode>(); }
+  [[nodiscard]] CustomDataTypeNode *customDataType() const { return getChild<CustomDataTypeNode>(); }
 
   // Public members
   Type type;
@@ -963,7 +984,7 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitCustomDataType(this); }
 
   // Public get methods
-  TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Public members
   std::string fqTypeName;

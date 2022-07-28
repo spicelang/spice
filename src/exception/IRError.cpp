@@ -16,6 +16,16 @@ IRError::IRError(const CodeLoc &codeLoc, const IRErrorType &type, const std::str
 }
 
 /**
+ * Constructor: Used in case that the exact code position where the error occurred is unknown
+ *
+ * @param type Type of the error
+ * @param message Error message suffix
+ */
+IRError::IRError(const IRErrorType &type, const std::string &message) {
+  errorMessage = "Internal compiler: " + getMessagePrefix(type) + ": " + message;
+}
+
+/**
  * Get the message for this particular error instance
  *
  * @return Error message in form of a char array

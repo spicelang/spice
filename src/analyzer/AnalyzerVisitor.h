@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <ast/AstVisitor.h>
 #include <ast/AstNodes.h>
+#include <ast/AstVisitor.h>
 
 #include <analyzer/OpRuleManager.h>
 #include <symbol/ScopePath.h>
@@ -53,12 +53,12 @@ public:
   // Public methods
   std::any visitEntry(EntryNode *ctx) override;
   std::any visitMainFctDef(MainFctDefNode *node) override;
-  std::any visitFctDef(FctDefNode *ctx) override;
+  std::any visitFctDef(FctDefNode *node) override;
   std::any visitProcDef(ProcDefNode *ctx) override;
-  std::any visitExtDecl(ExtDeclNode *ctx) override;
-  std::any visitGenericTypeDef(GenericTypeDefNode *ctx) override;
-  std::any visitStructDef(StructDefNode *ctx) override;
+  std::any visitStructDef(StructDefNode *node) override;
+  std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
   std::any visitGlobalVarDef(GlobalVarDefNode *ctx) override;
+  std::any visitExtDecl(ExtDeclNode *node) override;
   std::any visitThreadDef(ThreadDefNode *ctx) override;
   std::any visitUnsafeBlockDef(UnsafeBlockDefNode *ctx) override;
   std::any visitForLoop(ForLoopNode *ctx) override;
@@ -67,7 +67,7 @@ public:
   std::any visitIfStmt(IfStmtNode *ctx) override;
   std::any visitElseStmt(ElseStmtNode *ctx) override;
   std::any visitAssertStmt(AssertStmtNode *ctx) override;
-  std::any visitArgLstDef(ArgLstDefNode *ctx) override;
+  std::any visitArgLstDef(ParamLstNode *ctx) override;
   std::any visitDeclStmt(DeclStmtNode *ctx) override;
   std::any visitImportStmt(ImportStmtNode *ctx) override;
   std::any visitReturnStmt(ReturnStmtNode *ctx) override;

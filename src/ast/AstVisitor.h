@@ -26,7 +26,7 @@ public:
   virtual std::any visitStmtLst(StmtLstNode *ctx) override;
   virtual std::any visitTypeLst(TypeLstNode *ctx) override;
   virtual std::any visitTypeAltsLst(TypeAltsLstNode *ctx) override;
-  virtual std::any visitArgLstDef(ArgLstDefNode *ctx) override;
+  virtual std::any visitArgLstDef(ParamLstNode *ctx) override;
   virtual std::any visitArgLst(ArgLstNode *ctx) override;
   virtual std::any visitField(FieldNode *ctx) override;
   virtual std::any visitStmt(StmtNode *ctx) override;

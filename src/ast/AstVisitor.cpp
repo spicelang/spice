@@ -42,7 +42,7 @@ std::any AstVisitor::visitTypeLst(TypeLstNode *ctx) { return visitChildren(ctx);
 
 std::any AstVisitor::visitTypeAltsLst(TypeAltsLstNode *ctx) { return visitChildren(ctx); }
 
-std::any AstVisitor::visitArgLstDef(ArgLstDefNode *ctx) { return visitChildren(ctx); }
+std::any AstVisitor::visitArgLstDef(ParamLstNode *ctx) { return visitChildren(ctx); }
 
 std::any AstVisitor::visitArgLst(ArgLstNode *ctx) { return visitChildren(ctx); }
 
