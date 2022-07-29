@@ -3,7 +3,6 @@
 #include "ASTVisualizerVisitor.h"
 
 #include <util/CommonUtil.h>
-#include <ast/AstNodes.h>
 
 std::string ASTVisualizerVisitor::getSpaces() const {
   std::string spaces;

@@ -2723,37 +2723,37 @@ std::any GeneratorVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
   return type;
 }
 
-std::any GeneratorVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
-  if (ctx->TYPE_DOUBLE())
+std::any GeneratorVisitor::visitBaseDataType(BaseDataTypeNode *node) {
+  if (node->TYPE_DOUBLE())
     return SymbolType(TY_DOUBLE);
-  if (ctx->TYPE_INT())
+  if (node->TYPE_INT())
     return SymbolType(TY_INT);
-  if (ctx->TYPE_SHORT())
+  if (node->TYPE_SHORT())
     return SymbolType(TY_SHORT);
-  if (ctx->TYPE_LONG())
+  if (node->TYPE_LONG())
     return SymbolType(TY_LONG);
-  if (ctx->TYPE_BYTE())
+  if (node->TYPE_BYTE())
     return SymbolType(TY_BYTE);
-  if (ctx->TYPE_CHAR())
+  if (node->TYPE_CHAR())
     return SymbolType(TY_CHAR);
-  if (ctx->TYPE_STRING())
+  if (node->TYPE_STRING())
     return SymbolType(TY_STRING);
-  if (ctx->TYPE_BOOL())
+  if (node->TYPE_BOOL())
     return SymbolType(TY_BOOL);
-  if (ctx->TYPE_DYN()) { // Data type is type inferred
+  if (node->TYPE_DYN()) { // Data type is type inferred
     assert(!currentVarName.empty());
     SymbolTableEntry *symbolTableEntry = currentScope->lookup(currentVarName);
     assert(symbolTableEntry != nullptr);
     return symbolTableEntry->getType();
   }
-  if (ctx->customDataType()) // Struct type or generic type
-    return visit(ctx->customDataType());
+  if (node->customDataType()) // Struct type or generic type
+    return visit(node->customDataType());
   throw std::runtime_error("Internal compiler error: Base datatype generator fall-through");
 }
 
-std::any GeneratorVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
+std::any GeneratorVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   // Get type name in format: a.b.c<d>
-  std::string typeName = ctx->getText();
+  std::string typeName = node->getText();
 
   // Search in symbol for a struct
   SymbolTableEntry *typeEntry = currentScope->lookup(typeName);
@@ -2766,16 +2766,16 @@ std::any GeneratorVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContex
   return SymbolType(genericType->getTypeChain());
 }
 
-llvm::Value *GeneratorVisitor::resolveValue(antlr4::tree::ParseTree *tree) {
-  std::any valueAny = visit(tree);
+llvm::Value *GeneratorVisitor::resolveValue(AstNode *node) {
+  std::any valueAny = visit(node);
   if (!valueAny.has_value() && currentConstValue)
     return currentConstValue;
   auto valueAddr = any_cast<llvm::Value *>(valueAny);
   return builder->CreateLoad(valueAddr->getType()->getPointerElementType(), valueAddr);
 }
 
-llvm::Value *GeneratorVisitor::resolveAddress(antlr4::tree::ParseTree *tree, bool storeVolatile) {
-  std::any valueAny = visit(tree);
+llvm::Value *GeneratorVisitor::resolveAddress(AstNode *node, bool storeVolatile) {
+  std::any valueAny = visit(node);
   if (!valueAny.has_value() && currentConstValue) {
     llvm::Value *valueAddr = insertAlloca(currentConstValue->getType(), lhsVarName);
     builder->CreateStore(currentConstValue, valueAddr, storeVolatile);
@@ -2858,8 +2858,8 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const st
   return arrayAddress;
 }
 
-bool GeneratorVisitor::insertDestructorCall(const antlr4::Token &token, SymbolTableEntry *varEntry) {
-  Function *spiceDtor = currentScope->getFunctionAccessPointer(token);
+bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
+  Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc);
 
   // Cancel if no destructor was found
   if (spiceDtor == nullptr)
@@ -3205,7 +3205,7 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
 
 void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  size_t lineNumber = spiceFunc->getDeclToken().getLine();
+  size_t lineNumber = spiceFunc->getDeclCodeLoc().line;
 
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
@@ -3226,7 +3226,7 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
 
 llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  size_t lineNumber = spiceStruct->getDeclToken().getLine();
+  size_t lineNumber = spiceStruct->getDeclCodeLoc().line;
   size_t sizeInBits = module->getDataLayout().getTypeSizeInBits(llvmStructTy);
   llvm::DINode::DIFlags flags = spiceStruct->getSpecifiers().isPublic() ? llvm::DINode::FlagPublic : llvm::DINode::FlagPrivate;
   llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill

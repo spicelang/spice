@@ -121,7 +121,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
     }
   }
 
-  return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, declToken);
+  return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, declCodeLoc);
 }
 
 /**

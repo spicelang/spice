@@ -22,6 +22,7 @@ struct CliOptions;
 class LinkerInterface;
 class ThreadFactory;
 class EntryNode;
+struct CodeLoc;
 
 struct SourceFileAntlrCtx {
   // Create error handlers for lexer and parser
@@ -57,7 +58,7 @@ public:
                  ThreadFactory &threadFactory);
   void generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                 ThreadFactory &threadFactory, LinkerInterface &linker);
-  void addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name, const std::string &filePath,
+  void addDependency(const ErrorFactory *err, const CodeLoc &codeLoc, const std::string &name, const std::string &filePath,
                      bool stdFile);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
 
@@ -76,5 +77,5 @@ public:
   std::shared_ptr<SymbolTable> symbolTable;
   std::shared_ptr<AnalyzerVisitor> analyzer;
   std::shared_ptr<GeneratorVisitor> generator;
-  std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const antlr4::Token &>> dependencies;
+  std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const CodeLoc &>> dependencies;
 };

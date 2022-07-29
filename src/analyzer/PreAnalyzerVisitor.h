@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <SpiceBaseVisitor.h>
+#include <ast/AstVisitor.h>
 
 #include <exception/ErrorFactory.h>
 
@@ -17,17 +17,17 @@ class ErrorFactory;
  * Jobs:
  * - Collect imports
  */
-class PreAnalyzerVisitor : public SpiceBaseVisitor {
+class PreAnalyzerVisitor : public AstVisitor {
 public:
   // Constructors
-  explicit PreAnalyzerVisitor(const CliOptions &options, SourceFile &sourceFile);
+  explicit PreAnalyzerVisitor(const CliOptions &options, SourceFile &sourceFile) : cliOptions(options), sourceFile(sourceFile) {}
 
   // Public methods
-  std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
+  std::any visitImportStmt(ImportStmtNode *node) override;
 
 private:
   // Members
   const CliOptions &cliOptions;
-  ErrorFactory err;
+  ErrorFactory err = ErrorFactory();
   SourceFile &sourceFile;
 };

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <queue>
+#include <stack>
 #include <utility>
 #include <vector>
 
@@ -466,6 +467,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitArgLst(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<AssignExprNode *> args() const { return getChildren<AssignExprNode>(); }
 };
 
 // ========================================================== FieldNode ==========================================================
@@ -955,7 +959,7 @@ public:
   [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
 
   // Public members
-  std::queue<PrefixUnaryOp> opQueue;
+  std::stack<PrefixUnaryOp> opStack;
 };
 
 // =================================================== PostfixUnaryExprNode ======================================================
@@ -973,6 +977,8 @@ public:
 
   // Public get methods
   [[nodiscard]] AtomicExprNode *atomicExpr() const { return getChild<AtomicExprNode>(); }
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
 
   // Public members
   std::queue<PostfixUnaryOp> opQueue;
@@ -1058,9 +1064,15 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitFunctionCall(this); }
 
+  // Public get methods
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] ArgLstNode *argLst() const { return getChild<ArgLstNode>(); }
+
   // Public members
   std::string fqFunctionName;
   std::vector<std::string> functionNameFragments;
+  bool isGeneric = false;
+  bool hasArgs = false;
   Function *functionAccessPtr;
 };
 
@@ -1073,6 +1085,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitArrayInitialization(this); }
+
+  // Public get methods
+  [[nodiscard]] ArgLstNode *itemLst() const { return getChild<ArgLstNode>(); }
 };
 
 // ================================================= StructInstantiationNode =====================================================
@@ -1084,6 +1099,10 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitStructInstantiation(this); }
+
+  // Public get methods
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] ArgLstNode *fieldLst() const { return getChild<ArgLstNode>(); }
 
   // Public members
   std::string fqStructName;

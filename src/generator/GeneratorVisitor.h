@@ -94,12 +94,12 @@ public:
   std::any visitAtomicExpr(AtomicExprNode *ctx) override;
   std::any visitValue(ValueNode *ctx) override;
   std::any visitPrimitiveValue(PrimitiveValueNode *ctx) override;
-  std::any visitFunctionCall(FunctionCallNode*ctx) override;
+  std::any visitFunctionCall(FunctionCallNode *ctx) override;
   std::any visitArrayInitialization(ArrayInitializationNode *ctx) override;
   std::any visitStructInstantiation(StructInstantiationNode *ctx) override;
   std::any visitDataType(DataTypeNode *ctx) override;
-  std::any visitBaseDataType(BaseDataTypeNode *ctx) override;
-  std::any visitCustomDataType(CustomDataTypeNode *ctx) override;
+  std::any visitBaseDataType(BaseDataTypeNode *node) override;
+  std::any visitCustomDataType(CustomDataTypeNode *node) override;
 
 private:
   // Members
@@ -155,15 +155,15 @@ private:
   } debugInfo;
 
   // Private methods
-  llvm::Value *resolveValue(antlr4::tree::ParseTree *tree);
-  llvm::Value *resolveAddress(antlr4::tree::ParseTree *tree, bool storeVolatile = false);
+  llvm::Value *resolveValue(AstNode *node);
+  llvm::Value *resolveAddress(AstNode *node, bool storeVolatile = false);
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
   llvm::Value *createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants);
-  bool insertDestructorCall(const antlr4::Token &token, SymbolTableEntry *varEntry);
+  bool insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
   llvm::Function *retrieveStackSaveFct();

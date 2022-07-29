@@ -4,7 +4,6 @@
 
 #include <utility>
 
-#include <parser/AstBuilderVisitor.h>
 #include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
 #include <ast/AstNodes.h>
@@ -12,7 +11,9 @@
 #include <exception/AntlrThrowingErrorListener.h>
 #include <generator/GeneratorVisitor.h>
 #include <linker/LinkerInterface.h>
+#include <parser/AstBuilderVisitor.h>
 #include <symbol/SymbolTable.h>
+#include <util/CodeLoc.h>
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
@@ -64,7 +65,7 @@ SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name
 void SourceFile::preAnalyze() {
   // Pre-analyze this source file
   PreAnalyzerVisitor preAnalyzer(options, *this);
-  preAnalyzer.visit(antlrCtx.parser->entry());
+  preAnalyzer.visit(ast.get());
   antlrCtx.parser->reset();
 
   // Analyze the imported source files
@@ -189,7 +190,7 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
 
   // Analyze this source file
   analyzer = std::make_shared<AnalyzerVisitor>(context, builder, threadFactory, *this, options, parent == nullptr, stdFile);
-  analyzer->visit(antlrCtx.parser->entry());
+  analyzer->visit(ast.get());
   antlrCtx.parser->reset();
 }
 
@@ -199,7 +200,7 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
   bool repetitionRequired;
   unsigned int analyzeCount = 0;
   do {
-    repetitionRequired = any_cast<bool>(analyzer->visit(antlrCtx.parser->entry()));
+    repetitionRequired = any_cast<bool>(analyzer->visit(ast.get()));
     antlrCtx.parser->reset();
     analyzeCount++;
     if (analyzeCount >= 10)
@@ -232,7 +233,7 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   bool repetitionRequired;
   unsigned int generateCount = 0;
   do {
-    repetitionRequired = std::any_cast<bool>(generator->visit(antlrCtx.parser->entry()));
+    repetitionRequired = std::any_cast<bool>(generator->visit(ast.get()));
     antlrCtx.parser->reset();
     generateCount++;
     if (generateCount >= 10)
@@ -287,14 +288,14 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   }
 }
 
-void SourceFile::addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name,
+void SourceFile::addDependency(const ErrorFactory *err, const CodeLoc &codeLoc, const std::string &name,
                                const std::string &filePath, bool stdFile) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(filePath))
-    throw err->get(token, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
+    throw err->get(codeLoc, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
-  dependencies.insert({name, {std::make_shared<SourceFile>(options, this, name, filePath, stdFile), token}});
+  dependencies.insert({name, {std::make_shared<SourceFile>(options, this, name, filePath, stdFile), codeLoc}});
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {

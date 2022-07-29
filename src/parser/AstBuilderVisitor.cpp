@@ -1218,26 +1218,29 @@ std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueConte
 }
 
 std::any AstBuilderVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
-  auto functionCallNode = static_cast<FunctionCallNode *>(currentNode);
+  auto fctCallNode = static_cast<FunctionCallNode *>(currentNode);
 
   for (auto subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) // TypeLst
-      currentNode = functionCallNode->createChild<TypeLstNode>(CodeLoc(rule->start));
-    else if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) // ArgLst
-      currentNode = functionCallNode->createChild<ArgLstNode>(CodeLoc(rule->start));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+    if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
+      currentNode = fctCallNode->createChild<TypeLstNode>(CodeLoc(rule->start));
+      fctCallNode->isGeneric = true;
+    } else if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) { // ArgLst
+      currentNode = fctCallNode->createChild<ArgLstNode>(CodeLoc(rule->start));
+      fctCallNode->hasArgs = true;
+    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+               t->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       std::string fragment = t->toString();
-      functionCallNode->functionNameFragments.push_back(fragment);
-      if (!functionCallNode->fqFunctionName.empty())
-        functionCallNode->fqFunctionName += ".";
-      functionCallNode->fqFunctionName += fragment;
+      fctCallNode->functionNameFragments.push_back(fragment);
+      if (!fctCallNode->fqFunctionName.empty())
+        fctCallNode->fqFunctionName += ".";
+      fctCallNode->fqFunctionName += fragment;
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
-    if (currentNode != functionCallNode) {
+    if (currentNode != fctCallNode) {
       visit(rule);
-      currentNode = functionCallNode;
+      currentNode = fctCallNode;
     }
   }
   return nullptr;
@@ -1422,22 +1425,22 @@ std::any AstBuilderVisitor::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext
 
   // Extract assign operator
   if (ctx->MINUS())
-    prefixUnaryExprNode->opQueue.push(PrefixUnaryExprNode::OP_MINUS);
+    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_MINUS);
   else if (ctx->PLUS_PLUS())
-    prefixUnaryExprNode->opQueue.push(PrefixUnaryExprNode::OP_PLUS_PLUS);
+    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_PLUS_PLUS);
   else if (ctx->MINUS_MINUS())
-    prefixUnaryExprNode->opQueue.push(PrefixUnaryExprNode::OP_MINUS_MINUS);
+    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_MINUS_MINUS);
   else if (ctx->NOT())
-    prefixUnaryExprNode->opQueue.push(PrefixUnaryExprNode::OP_NOT);
+    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_NOT);
   else if (ctx->BITWISE_NOT())
-    prefixUnaryExprNode->opQueue.push(PrefixUnaryExprNode::OP_BITWISE_NOT);
+    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_BITWISE_NOT);
   else if (ctx->MUL())
-    prefixUnaryExprNode->opQueue.push(PrefixUnaryExprNode::OP_INDIRECTION);
+    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_INDIRECTION);
   else if (ctx->BITWISE_AND())
-    prefixUnaryExprNode->opQueue.push(PrefixUnaryExprNode::OP_ADDRESS_OF);
+    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_ADDRESS_OF);
   else if (ctx->LOGICAL_AND()) {
-    prefixUnaryExprNode->opQueue.push(PrefixUnaryExprNode::OP_ADDRESS_OF);
-    prefixUnaryExprNode->opQueue.push(PrefixUnaryExprNode::OP_ADDRESS_OF);
+    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_ADDRESS_OF);
+    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_ADDRESS_OF);
   } else
     assert(false);
 

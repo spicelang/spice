@@ -11,6 +11,7 @@
 
 // Forward declarations
 class ErrorFactory;
+struct CodeLoc;
 
 enum OpRuleType { P_TY_DOUBLE, P_TY_INT, P_TY_SHORT, P_TY_LONG, P_TY_BYTE_OR_CHAR, P_TY_STRING, P_TY_BOOL, P_TY_PTR };
 
@@ -22,7 +23,7 @@ public:
       : err(errorFactory), builder(std::move(builder)) {}
 
   // Public methods
-  llvm::Value *getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token);
+  llvm::Value *getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc);
   llvm::Value *getMinusEqualInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getMulEqualInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getDivEqualInst(llvm::Value *lhs, llvm::Value *rhs);
@@ -35,17 +36,17 @@ public:
   llvm::Value *getBitwiseAndInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getBitwiseOrInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getBitwiseXorInst(llvm::Value *lhs, llvm::Value *rhs);
-  llvm::Value *getEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token);
-  llvm::Value *getNotEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token);
+  llvm::Value *getEqualInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc);
+  llvm::Value *getNotEqualInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc);
   llvm::Value *getLessInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getGreaterInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getLessEqualInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getGreaterEqualInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getShiftLeftInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getShiftRightInst(llvm::Value *lhs, llvm::Value *rhs);
-  llvm::Value *getPlusInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token);
+  llvm::Value *getPlusInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc);
   llvm::Value *getMinusInst(llvm::Value *lhs, llvm::Value *rhs);
-  llvm::Value *getMulInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token);
+  llvm::Value *getMulInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc);
   llvm::Value *getDivInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getRemInst(llvm::Value *lhs, llvm::Value *rhs);
   llvm::Value *getPrefixMinusInst(llvm::Value *lhs);
