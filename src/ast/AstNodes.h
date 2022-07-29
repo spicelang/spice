@@ -214,6 +214,10 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitGlobalVarDef(this); }
 
+  // Public get methods
+  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] ValueNode *value() const { return getChild<ValueNode>(); }
+
   // Public members
   std::string varName;
   bool negative;
@@ -247,6 +251,12 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitThreadDef(this); }
+
+  // Public get methods
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "thread:" + codeLoc.toString(); }
 };
 
 // ====================================================== UnsafeBlockDefNode =====================================================
@@ -258,6 +268,12 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitUnsafeBlockDef(this); }
+
+  // Public get methods
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "unsafe:" + codeLoc.toString(); }
 };
 
 // ========================================================== ForLoopNode ========================================================
@@ -274,6 +290,10 @@ public:
   [[nodiscard]] DeclStmtNode *initDecl() const { return getChild<DeclStmtNode>(); }
   [[nodiscard]] AssignExprNode *condAssign() const { return getChild<AssignExprNode>(0); }
   [[nodiscard]] AssignExprNode *incAssign() const { return getChild<AssignExprNode>(1); }
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
 };
 
 // ======================================================== ForeachLoopNode ======================================================
@@ -291,8 +311,12 @@ public:
     std::vector<DeclStmtNode *> declStmtNodes = getChildren<DeclStmtNode>();
     return declStmtNodes.size() == 2 ? declStmtNodes.front() : nullptr;
   }
-  [[nodiscard]] DeclStmtNode *varDecl() const { return getChildren<DeclStmtNode>().back(); }
+  [[nodiscard]] DeclStmtNode *itemDecl() const { return getChildren<DeclStmtNode>().back(); }
   [[nodiscard]] AssignExprNode *arrayAssign() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "foreach:" + codeLoc.toString(); }
 };
 
 // ========================================================= WhileLoopNode =======================================================
@@ -304,6 +328,13 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitWhileLoop(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *condition() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "while:" + codeLoc.toString(); }
 };
 
 // ========================================================== IfStmtNode =========================================================
@@ -315,6 +346,14 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitIfStmt(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *condition() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+  [[nodiscard]] ElseStmtNode *elseStmt() const { return getChild<ElseStmtNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
 };
 
 // ========================================================= ElseStmtNode ========================================================
@@ -326,6 +365,16 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitElseStmt(this); }
+
+  // Public get methods
+  [[nodiscard]] IfStmtNode *ifStmt() const { return getChild<IfStmtNode>(); }
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
+
+  // Public members
+  bool isElseIf = false;
 };
 
 // ======================================================== AssertStmtNode =======================================================
@@ -337,6 +386,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitAssertStmt(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 };
 
 // ========================================================= StmtLstNode =========================================================
@@ -395,7 +447,7 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitArgLstDef(this); }
 
   // Public get methods
-  [[nodiscard]] std::vector<DeclStmtNode *> declStmts() const { return getChildren<DeclStmtNode>(); }
+  [[nodiscard]] std::vector<DeclStmtNode *> params() const { return getChildren<DeclStmtNode>(); }
 };
 
 // ========================================================== ArgLstNode =========================================================
@@ -450,6 +502,7 @@ public:
 
   // Public members
   std::string varName;
+  bool hasAssignment = false;
 };
 
 // ====================================================== DeclSpecifiersNode =====================================================
@@ -494,6 +547,12 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitReturnStmt(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+
+  // Public members
+  bool hasReturnValue = false;
 };
 
 // ======================================================== BreakStmtNode ========================================================
@@ -507,7 +566,7 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBreakStmt(this); }
 
   // Public members
-  int breakTimes;
+  int breakTimes = 1;
 };
 
 // ======================================================= ContinueStmtNode ======================================================
@@ -521,7 +580,7 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitContinueStmt(this); }
 
   // Public members
-  int continueTimes;
+  int continueTimes = 1;
 };
 
 // ======================================================== PrintfCallNode =======================================================
@@ -533,6 +592,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitPrintfCall(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<AssignExprNode *> assignExpr() const { return getChildren<AssignExprNode>(); }
 
   // Public members
   std::string templatedString;
@@ -548,6 +610,10 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitSizeofCall(this); }
 
+  // Public get methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+
   // Public members
   bool isType = false;
 };
@@ -561,6 +627,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitLenCall(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 };
 
 // ========================================================= TidCallNode =========================================================
@@ -583,6 +652,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitJoinCall(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<AssignExprNode *> assignExpressions() const { return getChildren<AssignExprNode>(); }
 };
 
 // ======================================================= AssignExprNode ========================================================
@@ -610,8 +682,15 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitAssignExpr(this); }
 
+  // Public get methods
+  [[nodiscard]] AssignExprNode *rhs() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] PrefixUnaryExprNode *lhs() const { return getChild<PrefixUnaryExprNode>(); }
+  [[nodiscard]] TernaryExprNode *ternaryExpr() const { return getChild<TernaryExprNode>(); }
+  [[nodiscard]] ThreadDefNode *threadDef() const { return getChild<ThreadDefNode>(); }
+
   // Public members
   AssignOp op;
+  bool hasOperator = false;
 };
 
 // ======================================================= TernaryExprNode =======================================================
@@ -623,6 +702,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitTernaryExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<LogicalOrExprNode *> operands() const { return getChildren<LogicalOrExprNode>(); }
 };
 
 // ===================================================== LogicalOrExprNode =======================================================
@@ -634,6 +716,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitLogicalOrExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<LogicalAndExprNode *> operands() const { return getChildren<LogicalAndExprNode>(); }
 };
 
 // ===================================================== LogicalAndExprNode ======================================================
@@ -645,6 +730,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitLogicalAndExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<BitwiseOrExprNode *> operands() const { return getChildren<BitwiseOrExprNode>(); }
 };
 
 // ===================================================== BitwiseOrExprNode =======================================================
@@ -656,6 +744,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBitwiseOrExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<BitwiseXorExprNode *> operands() const { return getChildren<BitwiseXorExprNode>(); }
 };
 
 // ==================================================== BitwiseXorExprNode =======================================================
@@ -667,6 +758,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBitwiseXorExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<BitwiseAndExprNode *> operands() const { return getChildren<BitwiseAndExprNode>(); }
 };
 
 // ==================================================== BitwiseAndExprNode =======================================================
@@ -678,6 +772,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitBitwiseAndExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<EqualityExprNode *> operands() const { return getChildren<EqualityExprNode>(); }
 };
 
 // ===================================================== EqualityExprNode ========================================================
@@ -692,6 +789,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitEqualityExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<RelationalExprNode *> operands() const { return getChildren<RelationalExprNode>(); }
 
   // Public members
   EqualityOp op;
@@ -709,6 +809,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitRelationalExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<ShiftExprNode *> operands() const { return getChildren<ShiftExprNode>(); }
 
   // Public members
   RelationalOp op;
@@ -730,6 +833,9 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitShiftExpr(this); }
 
+  // Public get methods
+  [[nodiscard]] std::vector<AdditiveExprNode *> operands() const { return getChildren<AdditiveExprNode>(); }
+
   // Public members
   ShiftOp op;
 };
@@ -749,6 +855,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitAdditiveExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<MultiplicativeExprNode *> operands() const { return getChildren<MultiplicativeExprNode>(); }
 
   // Public members
   std::queue<AdditiveOp> opQueue;
@@ -771,6 +880,9 @@ public:
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitMultiplicativeExpr(this); }
 
+  // Public get methods
+  [[nodiscard]] std::vector<CastExprNode *> operands() const { return getChildren<CastExprNode>(); }
+
   // Public members
   std::queue<MultiplicativeOp> opQueue;
 };
@@ -784,6 +896,10 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitCastExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] PrefixUnaryExprNode *prefixUnaryExpr() const { return getChild<PrefixUnaryExprNode>(); }
 
   // Public members
   bool isCasted = false;
