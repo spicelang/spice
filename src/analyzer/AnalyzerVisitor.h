@@ -51,10 +51,10 @@ public:
                            bool requiresMainFct, bool stdFile);
 
   // Public methods
-  std::any visitEntry(EntryNode *ctx) override;
+  std::any visitEntry(EntryNode *node) override;
   std::any visitMainFctDef(MainFctDefNode *node) override;
   std::any visitFctDef(FctDefNode *node) override;
-  std::any visitProcDef(ProcDefNode *ctx) override;
+  std::any visitProcDef(ProcDefNode *node) override;
   std::any visitStructDef(StructDefNode *node) override;
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
@@ -67,41 +67,41 @@ public:
   std::any visitIfStmt(IfStmtNode *node) override;
   std::any visitElseStmt(ElseStmtNode *node) override;
   std::any visitAssertStmt(AssertStmtNode *node) override;
-  std::any visitParamLst(ParamLstNode *ctx) override;
+  std::any visitParamLst(ParamLstNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
-  std::any visitImportStmt(ImportStmtNode *ctx) override;
+  std::any visitImportStmt(ImportStmtNode *node) override;
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;
   std::any visitPrintfCall(PrintfCallNode *node) override;
-  std::any visitSizeofCall(SizeofCallNode *ctx) override;
+  std::any visitSizeofCall(SizeofCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;
-  std::any visitTidCall(TidCallNode *ctx) override;
+  std::any visitTidCall(TidCallNode *node) override;
   std::any visitJoinCall(JoinCallNode *node) override;
   std::any visitAssignExpr(AssignExprNode *node) override;
   std::any visitTernaryExpr(TernaryExprNode *node) override;
   std::any visitLogicalOrExpr(LogicalOrExprNode *node) override;
-  std::any visitLogicalAndExpr(LogicalAndExprNode *ctx) override;
-  std::any visitBitwiseOrExpr(BitwiseOrExprNode *ctx) override;
-  std::any visitBitwiseXorExpr(BitwiseXorExprNode *ctx) override;
-  std::any visitBitwiseAndExpr(BitwiseAndExprNode *ctx) override;
+  std::any visitLogicalAndExpr(LogicalAndExprNode *node) override;
+  std::any visitBitwiseOrExpr(BitwiseOrExprNode *node) override;
+  std::any visitBitwiseXorExpr(BitwiseXorExprNode *node) override;
+  std::any visitBitwiseAndExpr(BitwiseAndExprNode *node) override;
   std::any visitEqualityExpr(EqualityExprNode *node) override;
-  std::any visitRelationalExpr(RelationalExprNode *ctx) override;
-  std::any visitShiftExpr(ShiftExprNode *ctx) override;
-  std::any visitAdditiveExpr(AdditiveExprNode *ctx) override;
-  std::any visitMultiplicativeExpr(MultiplicativeExprNode *ctx) override;
+  std::any visitRelationalExpr(RelationalExprNode *node) override;
+  std::any visitShiftExpr(ShiftExprNode *node) override;
+  std::any visitAdditiveExpr(AdditiveExprNode *node) override;
+  std::any visitMultiplicativeExpr(MultiplicativeExprNode *node) override;
   std::any visitCastExpr(CastExprNode *node) override;
-  std::any visitPrefixUnaryExpr(PrefixUnaryExprNode *ctx) override;
-  std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *ctx) override;
-  std::any visitAtomicExpr(AtomicExprNode *ctx) override;
-  std::any visitValue(ValueNode *ctx) override;
-  std::any visitPrimitiveValue(PrimitiveValueNode *ctx) override;
-  std::any visitFunctionCall(FunctionCallNode *ctx) override;
-  std::any visitArrayInitialization(ArrayInitializationNode *ctx) override;
-  std::any visitStructInstantiation(StructInstantiationNode *ctx) override;
+  std::any visitPrefixUnaryExpr(PrefixUnaryExprNode *node) override;
+  std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *node) override;
+  std::any visitAtomicExpr(AtomicExprNode *node) override;
+  std::any visitValue(ValueNode *node) override;
+  std::any visitPrimitiveValue(PrimitiveValueNode *node) override;
+  std::any visitFunctionCall(FunctionCallNode *node) override;
+  std::any visitArrayInitialization(ArrayInitializationNode *node) override;
+  std::any visitStructInstantiation(StructInstantiationNode *node) override;
   std::any visitDataType(DataTypeNode *node) override;
-  std::any visitBaseDataType(BaseDataTypeNode *ctx) override;
-  std::any visitCustomDataType(CustomDataTypeNode *ctx) override;
+  std::any visitBaseDataType(BaseDataTypeNode *node) override;
+  std::any visitCustomDataType(CustomDataTypeNode *node) override;
 
 private:
   // Members

@@ -38,11 +38,11 @@ AnalyzerVisitor::AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std
   opRuleManager = std::make_unique<OpRuleManager>(err.get(), allowUnsafeOperations);
 }
 
-std::any AnalyzerVisitor::visitEntry(EntryNode *ctx) {
+std::any AnalyzerVisitor::visitEntry(EntryNode *node) {
   // --- Pre-traversing actions
 
   // --- Traverse AST
-  AstVisitor::visitChildren(ctx);
+  AstVisitor::visitChildren(node);
 
   // --- Post traversing actions
   // Remove non-substantiated functions and structs
@@ -54,7 +54,7 @@ std::any AnalyzerVisitor::visitEntry(EntryNode *ctx) {
 
   // Check if the visitor got a main function
   if (requiresMainFct && !hasMainFunction)
-    throw err->get(ctx->codeLoc, MISSING_MAIN_FUNCTION, "No main function found");
+    throw err->get(node->codeLoc, MISSING_MAIN_FUNCTION, "No main function found");
 
   // Print compiler warnings once the whole ast is present, but not for std files
   if (requiresMainFct && !isStdFile && !reAnalyze)
@@ -89,7 +89,7 @@ std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
 
     // Visit arguments in new scope
     if (node->hasArgs)
-      visit(node->argLstDef());
+      visit(node->paramLst());
 
     // Return to root scope
     currentScope = currentScope->getParent();
@@ -157,7 +157,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     std::vector<std::string> argNames;
     ArgList argTypes;
     if (node->hasParams) {
-      auto namedArgList = any_cast<NamedArgList>(visit(node->argLstDef()));
+      auto namedArgList = any_cast<NamedArgList>(visit(node->paramLst()));
       for (const auto &namedArg : namedArgList) {
         std::string argName = std::get<0>(namedArg);
         SymbolType argType = std::get<1>(namedArg);
@@ -166,7 +166,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         // Check if the type is present in the template for generic types
         if (argType.is(TY_GENERIC)) {
           if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == argType; }))
-            throw err->get(node->argLstDef()->codeLoc, GENERIC_TYPE_NOT_IN_TEMPLATE,
+            throw err->get(node->paramLst()->codeLoc, GENERIC_TYPE_NOT_IN_TEMPLATE,
                            "Generic arg type not included in function template");
         }
 
@@ -270,7 +270,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         // Get argument types
         std::vector<std::pair<std::string, SymbolType>> args;
         if (node->hasParams) {
-          for (const auto paramDecl : node->argLstDef()->declStmts()) {
+          for (const auto paramDecl : node->paramLst()->declStmts()) {
             SymbolTableEntry *argEntry = currentScope->lookup(paramDecl->varName);
             assert(argEntry);
             args.emplace_back(paramDecl->varName, argEntry->getType());
@@ -358,7 +358,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     std::vector<std::string> argNames;
     ArgList argTypes;
     if (node->hasParams) {
-      auto namedArgList = any_cast<NamedArgList>(visit(node->argLstDef()));
+      auto namedArgList = any_cast<NamedArgList>(visit(node->paramLst()));
       for (const auto &namedArg : namedArgList) {
         std::string argName = std::get<0>(namedArg);
         SymbolType argType = std::get<1>(namedArg);
@@ -367,7 +367,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         // Check if the type is present in the template for generic types
         if (argType.is(TY_GENERIC)) {
           if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == argType; }))
-            throw err->get(node->argLstDef()->codeLoc, GENERIC_TYPE_NOT_IN_TEMPLATE,
+            throw err->get(node->paramLst()->codeLoc, GENERIC_TYPE_NOT_IN_TEMPLATE,
                            "Generic arg type not included in procedure template");
         }
 
@@ -452,8 +452,8 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
 
         // Get parameter types
         std::vector<std::pair<std::string, SymbolType>> params;
-        if (node->argLstDef()) {
-          for (const auto paramDecl : node->argLstDef()->declStmts()) {
+        if (node->paramLst()) {
+          for (const auto paramDecl : node->paramLst()->declStmts()) {
             SymbolTableEntry *paramEntry = currentScope->lookup(paramDecl->varName);
             assert(paramEntry);
             params.emplace_back(paramDecl->varName, paramEntry->getType());
@@ -1935,7 +1935,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
   Struct *spiceStruct = accessScope->matchStruct(currentScope, structName, concreteTemplateTypes, err.get(), node->codeLoc);
   if (!spiceStruct) {
     std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
-    throw err->get(*node->codeLoc, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
+    throw err->get(node->codeLoc, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
   }
   spiceStruct->setUsed();
 
@@ -2043,8 +2043,8 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
   return type;
 }
 
-std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *ctx) {
-  switch (ctx->type) {
+std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {
+  switch (node->type) {
   case BaseDataTypeNode::TY_DOUBLE:
     return SymbolType(TY_DOUBLE);
   case BaseDataTypeNode::TY_INT:
@@ -2062,17 +2062,17 @@ std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *ctx) {
   case BaseDataTypeNode::TY_BOOL:
     return SymbolType(TY_BOOL);
   case BaseDataTypeNode::TY_CUSTOM:
-    return visit(ctx->customDataType());
+    return visit(node->customDataType());
   default:
     return SymbolType(TY_DYN);
   }
 }
 
-std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *ctx) {
+std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   // Check if it is a generic type
-  std::string firstFragment = ctx->typeNameFragments.front();
+  std::string firstFragment = node->typeNameFragments.front();
   SymbolTableEntry *entry = currentScope->lookup(firstFragment);
-  if (ctx->typeNameFragments.size() == 1 && !entry && currentScope->lookupGenericType(firstFragment))
+  if (node->typeNameFragments.size() == 1 && !entry && currentScope->lookupGenericType(firstFragment))
     return *static_cast<SymbolType *>(currentScope->lookupGenericType(firstFragment));
 
   // It is a struct type -> get the access scope
@@ -2082,15 +2082,15 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *ctx) {
   std::string accessScopePrefix;
   std::string structName;
   bool structIsImported = false;
-  for (unsigned int i = 0; i < ctx->typeNameFragments.size(); i++) {
-    structName = ctx->typeNameFragments[i];
-    if (i < ctx->typeNameFragments.size() - 1)
+  for (unsigned int i = 0; i < node->typeNameFragments.size(); i++) {
+    structName = node->typeNameFragments[i];
+    if (i < node->typeNameFragments.size() - 1)
       accessScopePrefix += structName + ".";
     SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
     if (!symbolEntry)
-      throw err->get(ctx->codeLoc, UNKNOWN_DATATYPE, "Unknown symbol '" + structName + "'");
+      throw err->get(node->codeLoc, UNKNOWN_DATATYPE, "Unknown symbol '" + structName + "'");
     if (!symbolEntry->getType().isOneOf({TY_STRUCT, TY_IMPORT}))
-      throw err->get(ctx->codeLoc, EXPECTED_TYPE, "Expected type, but got " + symbolEntry->getType().getName());
+      throw err->get(node->codeLoc, EXPECTED_TYPE, "Expected type, but got " + symbolEntry->getType().getName());
 
     std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
     accessScope = accessScope->lookupTable(tableName);
@@ -2101,23 +2101,23 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *ctx) {
 
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
-  if (ctx->templateTypeLst()) {
-    for (const auto &dataType : ctx->templateTypeLst()->dataTypes())
+  if (node->templateTypeLst()) {
+    for (const auto &dataType : node->templateTypeLst()->dataTypes())
       concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
   }
 
   // Set the struct instance to used
-  Struct *spiceStruct = accessScope->matchStruct(nullptr, structName, concreteTemplateTypes, err.get(), *ctx->start);
+  Struct *spiceStruct = accessScope->matchStruct(nullptr, structName, concreteTemplateTypes, err.get(), *node->start);
   if (spiceStruct)
     spiceStruct->setUsed();
 
   if (structIsImported) // Imported struct
-    return initExtStruct(ctx->codeLoc, accessScope, accessScopePrefix, structName, concreteTemplateTypes);
+    return initExtStruct(node->codeLoc, accessScope, accessScopePrefix, structName, concreteTemplateTypes);
 
   // Check if struct was declared
   SymbolTableEntry *structSymbol = accessScope->lookup(structName);
   if (!structSymbol)
-    throw err->get(ctx->codeLoc, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+    throw err->get(node->codeLoc, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
   structSymbol->setUsed();
 
   return SymbolType(TY_STRUCT, structName, concreteTemplateTypes);

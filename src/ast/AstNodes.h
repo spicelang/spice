@@ -95,7 +95,7 @@ public:
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitMainFctDef(this); }
 
   // Public get methods
-  [[nodiscard]] ParamLstNode *argLstDef() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
   [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
 
   // Public members
@@ -117,7 +117,7 @@ public:
   [[nodiscard]] DeclSpecifiersNode *declSpecifiers() const { return getChild<DeclSpecifiersNode>(); }
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-  [[nodiscard]] ParamLstNode *argLstDef() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
   [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
 
   // Other methods
@@ -148,7 +148,7 @@ public:
   // Public get methods
   [[nodiscard]] DeclSpecifiersNode *declSpecifiers() const { return getChild<DeclSpecifiersNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-  [[nodiscard]] ParamLstNode *argLstDef() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
   [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
 
   // Other methods
@@ -240,6 +240,8 @@ public:
   // Public members
   std::string extFunctionName;
   bool hasArgs = false;
+  bool isVarArg = false;
+  bool isDll = false;
 };
 
 // ========================================================= ThreadDefNode =======================================================

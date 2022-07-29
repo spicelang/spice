@@ -144,7 +144,7 @@ void GeneratorVisitor::dumpAsm() {
 }
 
 std::any GeneratorVisitor::visitEntry(EntryNode *node) {
-  SpiceBaseVisitor::visitEntry(ctx);
+  AstVisitor::visitEntry(node);
 
   if (!secondRun) {
     secondRun = true;
@@ -166,29 +166,28 @@ std::any GeneratorVisitor::visitEntry(EntryNode *node) {
   return false;
 }
 
-std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
   if (!secondRun)
     return nullptr;
 
   if (requiresMainFct) { // Only create main function when it is required
-    // Change scope
-    std::string scopeId = ScopeIdUtil::getScopeId(ctx);
-    currentScope = currentScope->getChild(scopeId);
+    // Change scope to function scope
+    currentScope = node->fctScope;
     assert(currentScope != nullptr);
 
     // Visit arguments
     std::vector<std::string> argNames;
     std::vector<llvm::Type *> argTypes;
-    if (ctx->argLstDef()) {
-      argNames.reserve(ctx->argLstDef()->declStmt().size());
-      argTypes.reserve(ctx->argLstDef()->declStmt().size());
-      for (const auto &arg : ctx->argLstDef()->declStmt()) {
-        currentVarName = arg->IDENTIFIER()->toString();
+    if (node->paramLst()) {
+      argNames.reserve(node->paramLst()->params().size());
+      argTypes.reserve(node->paramLst()->params().size());
+      for (const auto &param : node->paramLst()->params()) {
+        currentVarName = param->varName;
         argNames.push_back(currentVarName);
         SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
         assert(argSymbol != nullptr);
         currentConstSigned = argSymbol->getSpecifiers().isSigned();
-        auto argType = any_cast<llvm::Type *>(visit(arg->dataType()));
+        auto argType = any_cast<llvm::Type *>(visit(param->dataType()));
         argTypes.push_back(argType);
       }
     }
@@ -209,7 +208,7 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
       }
       // Build spice function
       SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-      Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argTypes, {}, *ctx->start);
+      Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argTypes, {}, node->codeLoc);
       // Add debug info
       generateFunctionDebugInfo(fct, &spiceFunc);
     }
@@ -245,7 +244,7 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
     stackState = nullptr;
 
     // Generate IR for function body
-    visit(ctx->stmtLst());
+    visit(node->stmtLst());
 
     // Generate return statement for result variable
     if (!blockAlreadyTerminated) {
@@ -259,7 +258,7 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
         // Generate cleanup instructions (e.g. dtor calls)
         bool destructorCalled = false;
         for (SymbolTableEntry *varEntry : varsToDestruct)
-          destructorCalled |= insertDestructorCall(*ctx->start, varEntry);
+          destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
 
         if (destructorCalled) {
           fct->getBasicBlockList().push_back(bCleanup);
@@ -289,7 +288,7 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
       std::string output;
       llvm::raw_string_ostream oss(output);
       if (llvm::verifyFunction(*fct, &oss))
-        throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+        throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
     }
 
     // Change scope back
@@ -300,22 +299,22 @@ std::any GeneratorVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefCont
   return nullptr;
 }
 
-std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
+std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
   if (!secondRun)
     return nullptr;
 
   // Check if this is a global function or a method
-  std::string functionName = ctx->IDENTIFIER().back()->toString();
-  bool isMethod = ctx->IDENTIFIER().size() > 1;
+  std::string functionName = node->IDENTIFIER().back()->toString();
+  bool isMethod = node->IDENTIFIER().size() > 1;
 
   // Change to the (potentially generic) struct scope
   SymbolTable *accessScope = currentScope;
   if (isMethod)
-    accessScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
+    accessScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + node->IDENTIFIER().front()->toString());
   assert(accessScope != nullptr);
 
   // Get all substantiated function which result from this function declaration
-  std::map<std::string, Function> *manifestations = accessScope->getFunctionManifestations(*ctx->start);
+  std::map<std::string, Function> *manifestations = accessScope->getFunctionManifestations(node->codeLoc);
 
   if (manifestations) {
     for (const auto &[mangledName, spiceFunc] : *manifestations) {
@@ -352,10 +351,10 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
 
       // Arguments
       unsigned int currentArgIndex = 0;
-      if (ctx->argLstDef()) {
+      if (node->hasParams) {
         std::vector<SymbolType> argSymbolTypes = spiceFunc.getArgTypes();
         for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
-          currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
+          currentVarName = node->paramLst()->params()[currentArgIndex]->varName;
           argNames.push_back(currentVarName);
           SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
           assert(argSymbol != nullptr);
@@ -367,8 +366,8 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
       // Check if function is public and/or explicit inlined
       llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
       bool explicitInlined = false;
-      if (ctx->declSpecifiers()) {
-        for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+      if (node->declSpecifiers()) {
+        for (const auto &specifier : node->declSpecifiers()->declSpecifier()) {
           if (specifier->INLINE()) {
             explicitInlined = true;
           } else if (specifier->PUBLIC()) {
@@ -409,10 +408,9 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
       }
 
       // Store the default values for optional function args
-      if (ctx->argLstDef()) {
-        for (; currentArgIndex < ctx->argLstDef()->declStmt().size(); currentArgIndex++) {
-          visit(ctx->argLstDef()->declStmt()[currentArgIndex]);
-        }
+      if (node->paramLst()) {
+        for (; currentArgIndex < node->paramLst()->params().size(); currentArgIndex++)
+          visit(node->paramLst()->params()[currentArgIndex]);
       }
 
       // Declare result variable
@@ -426,7 +424,7 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
       stackState = nullptr;
 
       // Generate IR for function body
-      visit(ctx->stmtLst());
+      visit(node->stmtLst());
 
       // Generate return statement for result variable
       if (!blockAlreadyTerminated) {
@@ -440,7 +438,7 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
           // Generate cleanup instructions (e.g. dtor calls)
           bool destructorCalled = false;
           for (SymbolTableEntry *varEntry : varsToDestruct)
-            destructorCalled |= insertDestructorCall(*ctx->start, varEntry);
+            destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
 
           if (destructorCalled) {
             fct->getBasicBlockList().push_back(bCleanup);
@@ -469,7 +467,7 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
         std::string output;
         llvm::raw_string_ostream oss(output);
         if (llvm::verifyFunction(*fct, &oss))
-          throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+          throw err->get(node->codeLoc INVALID_FUNCTION, oss.str());
       }
 
       // Change scope back
@@ -486,21 +484,21 @@ std::any GeneratorVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ctx
   return nullptr;
 }
 
-std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
+std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
   if (!secondRun)
     return nullptr;
 
-  std::string procedureName = ctx->IDENTIFIER().back()->toString();
-  bool isMethod = ctx->IDENTIFIER().size() > 1;
+  std::string procedureName = node->IDENTIFIER().back()->toString();
+  bool isMethod = node->IDENTIFIER().size() > 1;
 
   // Change to the (potentially generic) struct scope
   SymbolTable *accessScope = currentScope;
   if (isMethod)
-    accessScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + ctx->IDENTIFIER().front()->toString());
+    accessScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + node->IDENTIFIER().front()->toString());
   assert(accessScope != nullptr);
 
   // Get all substantiated function which result from this function declaration
-  std::map<std::string, Function> *manifestations = accessScope->getFunctionManifestations(*ctx->start);
+  std::map<std::string, Function> *manifestations = accessScope->getFunctionManifestations(node->codeLoc);
 
   if (manifestations) {
     for (const auto &[mangledName, spiceProc] : *manifestations) {
@@ -534,10 +532,10 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
 
       // Arguments
       unsigned int currentArgIndex = 0;
-      if (ctx->argLstDef()) {
+      if (node->paramLst()) {
         std::vector<SymbolType> argSymbolTypes = spiceProc.getArgTypes();
         for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
-          currentVarName = ctx->argLstDef()->declStmt()[currentArgIndex]->IDENTIFIER()->toString();
+          currentVarName = node->paramLst()->params()[currentArgIndex]->varName;
           argNames.push_back(currentVarName);
           SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
           assert(argSymbol != nullptr);
@@ -549,8 +547,8 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
       // Check if function is public and/or explicit inlined
       llvm::GlobalValue::LinkageTypes linkage = llvm::Function::InternalLinkage;
       bool explicitInlined = false;
-      if (ctx->declSpecifiers()) {
-        for (const auto &specifier : ctx->declSpecifiers()->declSpecifier()) {
+      if (node->declSpecifiers()) {
+        for (const auto &specifier : node->declSpecifiers()->declSpecifier()) {
           if (specifier->INLINE()) {
             explicitInlined = true;
           } else if (specifier->PUBLIC()) {
@@ -591,17 +589,16 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
       }
 
       // Store the default values for optional procedure args
-      if (ctx->argLstDef()) {
-        for (; currentArgIndex < ctx->argLstDef()->declStmt().size(); currentArgIndex++) {
-          visit(ctx->argLstDef()->declStmt()[currentArgIndex]);
-        }
+      if (node->paramLst()) {
+        for (; currentArgIndex < node->paramLst()->params().size(); currentArgIndex++)
+          visit(node->paramLst()->params()[currentArgIndex]);
       }
 
       // Reset stack state
       stackState = nullptr;
 
       // Generate IR for procedure body
-      visit(ctx->stmtLst());
+      visit(node->stmtLst());
 
       // Create return
       if (!blockAlreadyTerminated) {
@@ -615,7 +612,7 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
           // Generate cleanup instructions (e.g. dtor calls)
           bool destructorCalled = false;
           for (SymbolTableEntry *varEntry : varsToDestruct)
-            destructorCalled |= insertDestructorCall(*ctx->start, varEntry);
+            destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
 
           if (destructorCalled) {
             proc->getBasicBlockList().push_back(bCleanup);
@@ -643,7 +640,7 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
         std::string output;
         llvm::raw_string_ostream oss(output);
         if (llvm::verifyFunction(*proc, &oss))
-          throw err->get(*ctx->start, INVALID_FUNCTION, oss.str());
+          throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
       }
 
       // Change scope back
@@ -660,15 +657,15 @@ std::any GeneratorVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *c
   return nullptr;
 }
 
-std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
+std::any GeneratorVisitor::visitStructDef(StructDefNode *node) {
   if (secondRun)
     return nullptr;
 
   // Get struct name
-  std::string structName = ctx->IDENTIFIER()->toString();
+  std::string structName = node->IDENTIFIER()->toString();
 
   // Get all substantiated function which result from this function declaration
-  std::map<std::string, Struct> *manifestations = currentScope->getStructManifestations(*ctx->start);
+  std::map<std::string, Struct> *manifestations = currentScope->getStructManifestations(node->codeLoc);
   if (manifestations) {
     for (const auto &[mangledName, spiceStruct] : *manifestations) {
       // Check if the struct is substantiated
@@ -691,9 +688,8 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
 
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
-      for (const auto &field : ctx->field()) {
-        std::string fieldName = field->IDENTIFIER()->toString();
-        SymbolTableEntry *fieldEntry = currentScope->lookup(fieldName);
+      for (const auto &field : node->field()) {
+        SymbolTableEntry *fieldEntry = currentScope->lookup(field->name);
         assert(fieldEntry && !fieldEntry->getType().is(TY_GENERIC));
         currentConstSigned = fieldEntry->getSpecifiers().isSigned();
         fieldTypes.push_back(getTypeForSymbolType(fieldEntry->getType(), currentScope));
@@ -711,14 +707,14 @@ std::any GeneratorVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   return nullptr;
 }
 
-std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
+std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (secondRun)
     return nullptr;
 
-  std::string varName = currentVarName = ctx->IDENTIFIER()->toString();
+  currentVarName = node->varName;
 
   // Get symbol table entry and the symbol specifiers
-  SymbolTableEntry *globalVarEntry = currentScope->lookup(varName);
+  SymbolTableEntry *globalVarEntry = currentScope->lookup(node->varName);
   assert(globalVarEntry != nullptr);
   SymbolSpecifiers specifiers = globalVarEntry->getSpecifiers();
   llvm::GlobalValue::LinkageTypes linkage =
@@ -726,20 +722,20 @@ std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *c
 
   // Create correctly signed LLVM type from the data type
   currentConstSigned = specifiers.isSigned();
-  auto varType = any_cast<llvm::Type *>(visit(ctx->dataType()));
+  auto varType = any_cast<llvm::Type *>(visit(node->dataType()));
   globalVarEntry->updateLLVMType(varType);
 
   // Create global variable
-  llvm::Value *memAddress = module->getOrInsertGlobal(varName, varType);
+  llvm::Value *memAddress = module->getOrInsertGlobal(node->varName, varType);
   globalVarEntry->updateAddress(memAddress);
   // Set some attributes to it
-  llvm::GlobalVariable *global = module->getNamedGlobal(varName);
+  llvm::GlobalVariable *global = module->getNamedGlobal(node->varName);
   global->setLinkage(linkage);
   global->setConstant(specifiers.isConst());
 
-  if (ctx->value()) { // Variable is initialized here
-    visit(ctx->value());
-    constNegate = ctx->MINUS();
+  if (node->value()) { // Variable is initialized here
+    visit(node->value());
+    constNegate = node->negative;
     global->setInitializer(currentConstValue);
     constNegate = false;
   }
@@ -747,23 +743,22 @@ std::any GeneratorVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *c
   return nullptr;
 }
 
-std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
+std::any GeneratorVisitor::visitExtDecl(ExtDeclNode *node) {
   if (secondRun)
     return nullptr;
 
   // Get function name
-  std::string functionName = ctx->IDENTIFIER()->toString();
   std::vector<SymbolType> symbolTypes;
 
   // Pop function declaration pointer from the stack
-  std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(*ctx->start);
+  std::map<std::string, Function> *manifestations = currentScope->getFunctionManifestations(node->codeLoc);
   assert(!manifestations->empty());
   Function spiceFunc = manifestations->begin()->second;
 
   // Get LLVM return type
   llvm::Type *returnType;
-  if (ctx->dataType()) {
-    returnType = any_cast<llvm::Type *>(visit(ctx->dataType()));
+  if (node->returnType()) {
+    returnType = any_cast<llvm::Type *>(visit(node->returnType()));
     SymbolTable *functionTable = currentScope->getChild(spiceFunc.getSignature());
     assert(functionTable != nullptr);
     SymbolTableEntry *returnEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
@@ -775,8 +770,8 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   // Get LLVM arg types
   std::vector<llvm::Type *> argTypes;
-  if (ctx->typeLst()) {
-    for (const auto &arg : ctx->typeLst()->dataType()) {
+  if (node->argTypeLst()) {
+    for (const auto &arg : node->argTypeLst()->dataType()) {
       auto argType = any_cast<llvm::Type *>(visit(arg));
       argTypes.push_back(argType);
     }
@@ -785,9 +780,9 @@ std::any GeneratorVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   symbolTypes.insert(std::end(symbolTypes), std::begin(argSymbolTypes), std::end(argSymbolTypes));
 
   // Declare function
-  llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, ctx->ELLIPSIS());
+  llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, node->ELLIPSIS());
   module->getOrInsertFunction(functionName, functionType);
-  if (ctx->DLL())
+  if (node->DLL())
     module->getFunction(functionName)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
 
   return nullptr;
