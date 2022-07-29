@@ -157,7 +157,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     std::vector<std::string> argNames;
     ArgList argTypes;
     if (node->hasParams) {
-      auto namedArgList = any_cast<NamedArgList>(visit(node->paramLst()));
+      auto namedArgList = any_cast<NamedParamList>(visit(node->paramLst()));
       for (const auto &namedArg : namedArgList) {
         std::string argName = std::get<0>(namedArg);
         SymbolType argType = std::get<1>(namedArg);
@@ -196,13 +196,15 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
 
     // Build function specifiers
     auto fctSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    if (DeclSpecifiersNode *specifiers = node->declSpecifiers(); specifiers) {
-      if (specifiers->hasPublicKeyword)
-        fctSymbolSpecifiers.setPublic(true);
-      if (specifiers->hasInlineKeyword)
-        fctSymbolSpecifiers.setPublic(false);
-      if (specifiers->hasConstKeyword || specifiers->hasSignedKeyword || specifiers->hasUnsignedKeyword)
-        throw err->get(specifiers->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+    if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+      for (const auto &specifier : specifierLst->specifiers()) {
+        if (specifier->type == SpecifierNode::TY_INLINE)
+          fctSymbolSpecifiers.setInline(true);
+        else if (specifier->type == SpecifierNode::TY_PUBLIC)
+          fctSymbolSpecifiers.setPublic(true);
+        else
+          throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+      }
     }
 
     // Insert function into the symbol table
@@ -270,7 +272,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         // Get argument types
         std::vector<std::pair<std::string, SymbolType>> args;
         if (node->hasParams) {
-          for (const auto paramDecl : node->paramLst()->declStmts()) {
+          for (const auto paramDecl : node->paramLst()->params()) {
             SymbolTableEntry *argEntry = currentScope->lookup(paramDecl->varName);
             assert(argEntry);
             args.emplace_back(paramDecl->varName, argEntry->getType());
@@ -358,7 +360,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     std::vector<std::string> argNames;
     ArgList argTypes;
     if (node->hasParams) {
-      auto namedArgList = any_cast<NamedArgList>(visit(node->paramLst()));
+      auto namedArgList = any_cast<NamedParamList>(visit(node->paramLst()));
       for (const auto &namedArg : namedArgList) {
         std::string argName = std::get<0>(namedArg);
         SymbolType argType = std::get<1>(namedArg);
@@ -388,13 +390,15 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
 
     // Build procedure specifiers
     auto procSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    if (DeclSpecifiersNode *specifiers = node->declSpecifiers(); specifiers) {
-      if (specifiers->hasPublicKeyword)
-        procSymbolSpecifiers.setPublic(true);
-      if (specifiers->hasInlineKeyword)
-        procSymbolSpecifiers.setPublic(false);
-      if (specifiers->hasConstKeyword || specifiers->hasSignedKeyword || specifiers->hasUnsignedKeyword)
-        throw err->get(specifiers->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
+    if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+      for (const auto &specifier : specifierLst->specifiers()) {
+        if (specifier->type == SpecifierNode::TY_INLINE)
+          procSymbolSpecifiers.setInline(true);
+        else if (specifier->type == SpecifierNode::TY_PUBLIC)
+          procSymbolSpecifiers.setPublic(true);
+        else
+          throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+      }
     }
 
     // Insert function into the symbol table
@@ -453,7 +457,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         // Get parameter types
         std::vector<std::pair<std::string, SymbolType>> params;
         if (node->paramLst()) {
-          for (const auto paramDecl : node->paramLst()->declStmts()) {
+          for (const auto paramDecl : node->paramLst()->params()) {
             SymbolTableEntry *paramEntry = currentScope->lookup(paramDecl->varName);
             assert(paramEntry);
             params.emplace_back(paramDecl->varName, paramEntry->getType());
@@ -523,12 +527,13 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
   // Build struct specifiers
   SymbolType symbolType = SymbolType(TY_STRUCT, node->structName, templateTypes);
   auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
-  if (DeclSpecifiersNode *specifiers = node->declSpecifiers(); specifiers) {
-    if (specifiers->hasPublicKeyword)
-      structSymbolSpecifiers.setPublic(true);
-    if (specifiers->hasPublicKeyword || specifiers->hasConstKeyword || specifiers->hasSignedKeyword ||
-        specifiers->hasUnsignedKeyword)
-      throw err->get(specifiers->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const auto &specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        structSymbolSpecifiers.setPublic(true);
+      else
+        throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+    }
   }
 
   // Add the struct to the symbol table
@@ -550,18 +555,20 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
     }
 
     auto fieldSymbolSpecifiers = SymbolSpecifiers(symbolType);
-    if (DeclSpecifiersNode *specifiers = field->declSpecifiers(); specifiers) {
-      if (specifiers->hasConstKeyword)
-        throw err->get(specifiers->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                       "Struct fields cannot have the const specifier attached");
-      if (specifiers->hasPublicKeyword)
-        fieldSymbolSpecifiers.setPublic(true);
-      if (specifiers->hasSignedKeyword)
-        fieldSymbolSpecifiers.setSigned(true);
-      if (specifiers->hasUnsignedKeyword)
-        fieldSymbolSpecifiers.setSigned(false);
-      if (specifiers->hasInlineKeyword)
-        throw err->get(specifiers->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+    if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+      for (const auto &specifier : specifierLst->specifiers()) {
+        if (specifier->type == SpecifierNode::TY_CONST)
+          throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                         "Struct fields cannot have the const specifier attached");
+        else if (specifier->type == SpecifierNode::TY_SIGNED)
+          fieldSymbolSpecifiers.setSigned(true);
+        else if (specifier->type == SpecifierNode::TY_UNSIGNED)
+          fieldSymbolSpecifiers.setSigned(false);
+        else if (specifier->type == SpecifierNode::TY_PUBLIC)
+          fieldSymbolSpecifiers.setPublic(true);
+        else
+          throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+      }
     }
 
     // Add the field to the symbol table
@@ -591,7 +598,7 @@ std::any AnalyzerVisitor::visitGenericTypeDef(GenericTypeDefNode *node) {
 
   // Get type conditions
   std::vector<SymbolType> typeConditions;
-  for (const auto &typeAlt : node->typeAltsLst()->dataType()) {
+  for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
     auto typeCondition = any_cast<SymbolType>(visit(typeAlt));
     typeConditions.push_back(typeCondition);
   }
@@ -599,14 +606,12 @@ std::any AnalyzerVisitor::visitGenericTypeDef(GenericTypeDefNode *node) {
   // Build symbol specifiers
   GenericType genericType = GenericType(node->typeName, typeConditions);
   auto structSymbolSpecifiers = SymbolSpecifiers(genericType);
-  if (node->declSpecifiers()) {
-    for (const auto &specifier : node->declSpecifiers()->declSpecifier()) {
-      if (specifier->PUBLIC()) {
+  if (node->specifierLst()) {
+    for (const auto &specifier : node->specifierLst()->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
         structSymbolSpecifiers.setPublic(true);
-      } else {
-        throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                       "Cannot use the " + specifier->getText() + " specifier on a struct definition");
-      }
+      else
+        throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a struct definition");
     }
   }
 
@@ -658,13 +663,13 @@ std::any AnalyzerVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
 
   // Create symbol specifiers
   auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
-  if (node->declSpecifiers()) {
-    for (const auto &specifier : node->declSpecifiers()->declSpecifier()) {
-      if (specifier->CONST()) {
+  if (node->specifierLst()) {
+    for (const auto &specifier : node->specifierLst()->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_CONST) {
         symbolTypeSpecifiers.setConst(true);
-      } else if (specifier->SIGNED()) {
+      } else if (specifier->type == SpecifierNode::TY_SIGNED) {
         symbolTypeSpecifiers.setSigned(true);
-      } else if (specifier->UNSIGNED()) {
+      } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
         symbolTypeSpecifiers.setSigned(false);
 
         // Check if there is a negative value attached. If yes, print a compiler warning
@@ -672,17 +677,17 @@ std::any AnalyzerVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
           CompilerWarning(node->codeLoc, NEGATIVE_VALUE_TO_UNSIGNED_VAR,
                           "Please mind that assigning a negative value to an unsigned variable causes a wrap-around")
               .print();
-      } else if (specifier->PUBLIC()) {
+      } else if (specifier->type == SpecifierNode::TY_PUBLIC) {
         symbolTypeSpecifiers.setPublic(true);
       } else {
-        throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                       "Cannot use the " + specifier->getText() + " specifier on a global variable definition");
+        throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                       "Cannot use this specifier on a global variable definition");
       }
     }
   }
 
   // Insert into symbol table
-  currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, state, *node->start);
+  currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, state, node->codeLoc);
 
   return nullptr;
 }
@@ -807,27 +812,27 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
 
   // Check index assignment or declaration
   SymbolType indexType;
-  if (head->declStmt().size() >= 2) {
-    indexType = any_cast<SymbolType>(visit(head->declStmt().front()));
+  if (node->idxVarDecl()) {
+    indexType = any_cast<SymbolType>(visit(node->idxVarDecl()));
 
     // Set declared variable to initialized, because we increment it internally in the loop
-    if (!head->declStmt().front()->assignExpr()) {
-      std::string varName = head->declStmt().front()->IDENTIFIER()->toString();
+    if (!node->idxVarDecl()->assignExpr()) {
+      std::string varName = node->idxVarDecl()->varName;
       SymbolTableEntry *entry = currentScope->lookup(varName);
       assert(entry != nullptr);
-      entry->updateState(INITIALIZED, err.get(), *head->declStmt().front()->IDENTIFIER()->getSymbol());
+      entry->updateState(INITIALIZED, err.get(), node->idxVarDecl()->codeLoc);
     }
 
     // Check if index type is int
     if (!indexType.is(TY_INT))
-      throw err->get(*head->declStmt().front()->start, ARRAY_INDEX_NO_INTEGER,
+      throw err->get(node->idxVarDecl()->codeLoc, ARRAY_INDEX_NO_INTEGER,
                      "Index in foreach loop must be of type int. You provided " + indexType.getName(false));
   } else {
     // Declare the variable with the default index variable name
     SymbolType symbolType = SymbolType(TY_INT);
     auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
     symbolTypeSpecifiers.setConst(true);
-    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, symbolType, symbolTypeSpecifiers, INITIALIZED, *node->start);
+    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, symbolType, symbolTypeSpecifiers, INITIALIZED, node->codeLoc);
   }
 
   // Check type of the item
@@ -925,44 +930,25 @@ std::any AnalyzerVisitor::visitAssertStmt(AssertStmtNode *node) {
 }
 
 std::any AnalyzerVisitor::visitParamLst(ParamLstNode *node) {
-  NamedArgList namedArgList;
+  NamedParamList namedParamList;
   bool metOptional = false;
   for (const auto &param : node->params()) {
-    auto argType = any_cast<SymbolType>(visit(param));
+    auto paramType = any_cast<SymbolType>(visit(param));
 
     // Check if the type could be inferred. Dyn without a default value is forbidden
-    if (argType.is(TY_DYN))
-      throw err->get(node->codeLoc, FCT_ARG_IS_TYPE_DYN, "Type of argument '" + param->varName + "' is invalid");
+    if (paramType.is(TY_DYN))
+      throw err->get(node->codeLoc, FCT_PARAM_IS_TYPE_DYN, "Type of parameter '" + param->varName + "' is invalid");
 
-    // Ensure that no optional argument comes after a mandatory argument
+    // Ensure that no optional param comes after a mandatory param
     if (param->hasAssignment) {
       metOptional = true;
     } else if (metOptional) {
-      throw err->get(param->codeLoc, INVALID_ARGUMENT_ORDER, "Mandatory arguments must go before any optional arguments");
+      throw err->get(param->codeLoc, INVALID_PARAM_ORDER, "Mandatory parameters must go before any optional parameters");
     }
 
-    // Build symbol specifiers
-    auto symbolTypeSpecifiers = SymbolSpecifiers(argType);
-    if (param->declSpecifiers()) {
-      for (const auto &specifier : param->declSpecifiers()->declSpecifier()) {
-        if (specifier->CONST()) {
-          symbolTypeSpecifiers.setConst(true);
-        } else if (specifier->SIGNED()) {
-          symbolTypeSpecifiers.setSigned(true);
-          argType.setSigned(true);
-        } else if (specifier->UNSIGNED()) {
-          symbolTypeSpecifiers.setSigned(false);
-          argType.setSigned(false);
-        } else {
-          throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                         "Cannot use the " + specifier->getText() + " specifier on an argument declaration");
-        }
-      }
-    }
-
-    namedArgList.emplace_back(param->varName, argType, metOptional);
+    namedParamList.emplace_back(param->varName, paramType, metOptional);
   }
-  return namedArgList;
+  return namedParamList;
 }
 
 std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
@@ -988,19 +974,19 @@ std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
 
   // Build symbol specifiers
   auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
-  if (node->declSpecifiers()) {
-    for (const auto &specifier : node->declSpecifiers()->declSpecifier()) {
-      if (specifier->CONST()) {
+  if (node->specifierLst()) {
+    for (const auto &specifier : node->specifierLst()->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_CONST) {
         symbolTypeSpecifiers.setConst(true);
-      } else if (specifier->SIGNED()) {
+      } else if (specifier->type == SpecifierNode::TY_SIGNED) {
         symbolTypeSpecifiers.setSigned(true);
         symbolType.setSigned(true);
-      } else if (specifier->UNSIGNED()) {
+      } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
         symbolTypeSpecifiers.setSigned(false);
         symbolType.setSigned(false);
       } else {
-        throw err->get(*specifier->start, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                       "Cannot use the " + specifier->getText() + " specifier on a local variable declaration");
+        throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                       "Cannot use this specifier on a local variable declaration");
       }
     }
   }
@@ -1034,7 +1020,7 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
       } else {
         // Check if return type matches with function definition
         if (returnType != returnVariable->getType())
-          throw err->get(*node->assignExpr()->codeLoc, OPERATOR_WRONG_DATA_TYPE,
+          throw err->get(node->assignExpr()->codeLoc, OPERATOR_WRONG_DATA_TYPE,
                          "Passed wrong data type to return statement. Expected " + returnVariable->getType().getName(false) +
                              " but got " + returnType.getName(false));
       }
@@ -1482,40 +1468,40 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   while (tokenCounter < node->children.size() - 1) {
     auto token = dynamic_cast<SpiceParser::PrefixUnaryOpContext *>(node->children[tokenCounter]);
     if (token->MINUS()) { // Consider - operator
-      lhs = opRuleManager->getPrefixMinusResultType(*node->postfixUnaryExpr()->start, lhs);
+      lhs = opRuleManager->getPrefixMinusResultType(node->postfixUnaryExpr()->codeLoc, lhs);
     } else if (token->PLUS_PLUS()) { // Consider ++ operator
-      lhs = opRuleManager->getPrefixPlusPlusResultType(*node->postfixUnaryExpr()->start, lhs);
+      lhs = opRuleManager->getPrefixPlusPlusResultType(node->postfixUnaryExpr()->codeLoc, lhs);
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err.get(), *token->start);
+        currentEntry->updateState(INITIALIZED, err.get(), token->codeLoc);
 
       // In case the lhs is captured, notify the capture about the write access
       Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
       if (lhsCapture)
         lhsCapture->setCaptureMode(READ_WRITE);
     } else if (token->MINUS_MINUS()) { // Consider -- operator
-      lhs = opRuleManager->getPrefixMinusMinusResultType(*node->postfixUnaryExpr()->start, lhs);
+      lhs = opRuleManager->getPrefixMinusMinusResultType(node->postfixUnaryExpr()->codeLoc, lhs);
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err.get(), *token->start);
+        currentEntry->updateState(INITIALIZED, err.get(), token->codeLoc);
 
       // In case the lhs is captured, notify the capture about the write access
       Capture *lhsCapture = currentScope->lookupCapture(currentVarName);
       if (lhsCapture)
         lhsCapture->setCaptureMode(READ_WRITE);
     } else if (token->NOT()) { // Consider ! operator
-      lhs = opRuleManager->getPrefixNotResultType(*node->postfixUnaryExpr()->start, lhs);
+      lhs = opRuleManager->getPrefixNotResultType(node->postfixUnaryExpr()->codeLoc, lhs);
     } else if (token->BITWISE_NOT()) { // Consider ~ operator
-      lhs = opRuleManager->getPrefixBitwiseNotResultType(*node->postfixUnaryExpr()->start, lhs);
+      lhs = opRuleManager->getPrefixBitwiseNotResultType(node->postfixUnaryExpr()->codeLoc, lhs);
     } else if (token->MUL()) { // Consider * operator
-      lhs = opRuleManager->getPrefixMulResultType(*node->postfixUnaryExpr()->start, lhs);
+      lhs = opRuleManager->getPrefixMulResultType(node->postfixUnaryExpr()->codeLoc, lhs);
     } else if (token->BITWISE_AND()) { // Consider & operator
-      lhs = opRuleManager->getPrefixBitwiseAndResultType(*node->postfixUnaryExpr()->start, lhs);
+      lhs = opRuleManager->getPrefixBitwiseAndResultType(node->postfixUnaryExpr()->codeLoc, lhs);
     } else if (token->LOGICAL_AND()) { // Consider doubled & operator
-      lhs = opRuleManager->getPrefixBitwiseAndResultType(*node->postfixUnaryExpr()->start, lhs);
-      lhs = opRuleManager->getPrefixBitwiseAndResultType(*node->postfixUnaryExpr()->start, lhs);
+      lhs = opRuleManager->getPrefixBitwiseAndResultType(node->postfixUnaryExpr()->codeLoc, lhs);
+      lhs = opRuleManager->getPrefixBitwiseAndResultType(node->postfixUnaryExpr()->codeLoc, lhs);
     }
     tokenCounter++;
   }
@@ -1612,8 +1598,8 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
   if (node->value())
     return visit(node->value());
 
-  if (node->IDENTIFIER()) {
-    currentVarName = node->IDENTIFIER()->toString();
+  if (!node->identifier.empty()) {
+    currentVarName = node->identifier;
 
     // Check if this is a reserved keyword
     if (std::find(RESERVED_KEYWORDS.begin(), RESERVED_KEYWORDS.end(), currentVarName) != RESERVED_KEYWORDS.end())
@@ -1636,12 +1622,12 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
     if (accessScope->isImported(currentScope)) {
       // Check if the entry is public if it is imported
       if (!entry->getSpecifiers().isPublic())
-        throw err->get(*node->IDENTIFIER()->getSymbol(), INSUFFICIENT_VISIBILITY,
+        throw err->get(node->codeLoc, INSUFFICIENT_VISIBILITY,
                        "Cannot access '" + currentVarName + "' due to its private visibility");
 
       // Check if the entry is an external global variable and needs to be imported
       if (entry->isGlobal() && !entry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT}))
-        initExtGlobal(*node->IDENTIFIER()->getSymbol(), accessScope, scopePath.getScopePrefix(true), entry->getName());
+        initExtGlobal(accessScope, scopePath.getScopePrefix(true), entry->getName(), node->codeLoc);
     }
 
     // Set symbol to used
@@ -1690,8 +1676,20 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
     return entry->getType();
   }
 
-  if (node->builtinCall())
-    return visit(node->builtinCall());
+  if (node->printfCall())
+    return visit(node->printfCall());
+
+  if (node->sizeofCall())
+    return visit(node->sizeofCall());
+
+  if (node->lenCall())
+    return visit(node->lenCall());
+
+  if (node->tidCall())
+    return visit(node->tidCall());
+
+  if (node->joinCall())
+    return visit(node->joinCall());
 
   return visit(node->assignExpr());
 }
@@ -1714,10 +1712,10 @@ std::any AnalyzerVisitor::visitValue(ValueNode *node) {
     return visit(node->structInstantiation());
 
   // Typed nil
-  if (node->NIL()) {
-    auto nilType = any_cast<SymbolType>(visit(node->dataType()));
+  if (node->isNil) {
+    auto nilType = any_cast<SymbolType>(visit(node->nilType()));
     if (nilType.is(TY_DYN))
-      throw err->get(*node->dataType()->start, UNEXPECTED_DYN_TYPE_SA, "Nil must have an explicit type");
+      throw err->get(*node->nilType()->codeLoc, UNEXPECTED_DYN_TYPE_SA, "Nil must have an explicit type");
     return nilType;
   }
 
@@ -1725,20 +1723,24 @@ std::any AnalyzerVisitor::visitValue(ValueNode *node) {
 }
 
 std::any AnalyzerVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
-  if (node->DOUBLE())
+  switch (node->type) {
+  case PrimitiveValueNode::TY_DOUBLE:
     return SymbolType(TY_DOUBLE);
-  if (node->INTEGER())
+  case PrimitiveValueNode::TY_INT:
     return SymbolType(TY_INT);
-  if (node->SHORT())
+  case PrimitiveValueNode::TY_SHORT:
     return SymbolType(TY_SHORT);
-  if (node->LONG())
+  case PrimitiveValueNode::TY_LONG:
     return SymbolType(TY_LONG);
-  if (node->CHAR_LITERAL())
+  case PrimitiveValueNode::TY_BYTE:
+    return SymbolType(TY_BYTE);
+  case PrimitiveValueNode::TY_CHAR:
     return SymbolType(TY_CHAR);
-  if (node->STRING_LITERAL())
+  case PrimitiveValueNode::TY_STRING:
     return SymbolType(TY_STRING);
-  if (node->TRUE() || node->FALSE())
+  case PrimitiveValueNode::TY_BOOL:
     return SymbolType(TY_BOOL);
+  }
   throw std::runtime_error("Primitive value fall-through");
 }
 
@@ -1768,7 +1770,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       std::string structSignature = Struct::getSignature(identifier, concreteTemplateTypes);
 
       // Get the struct instance
-      Struct *spiceStruct = accessScope->matchStruct(currentScope, identifier, concreteTemplateTypes, err.get(), *node->start);
+      Struct *spiceStruct = accessScope->matchStruct(currentScope, identifier, concreteTemplateTypes, err.get(), node->codeLoc);
       if (!spiceStruct)
         throw err->get(node->codeLoc, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
       spiceStruct->setUsed();
@@ -1817,7 +1819,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   // Get the function/procedure instance
   antlr4::Token *token = node->IDENTIFIER().back()->getSymbol();
   SymbolType origThisType = thisType.replaceBaseSubType(CommonUtil::getLastFragment(thisType.getBaseType().getSubType(), "."));
-  Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, origThisType, argTypes, err.get(), *token);
+  Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, origThisType, argTypes, err.get(), );
   if (!spiceFunc) {
     // Build dummy function to get a better error message
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
@@ -1826,7 +1828,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     for (auto &argType : argTypes)
       errArgTypes.emplace_back(argType, false);
 
-    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, *node->start);
+    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, node->codeLoc);
 
     throw err->get(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION,
                    "Function/Procedure '" + f.getSignature() + "' could not be found");
@@ -1845,7 +1847,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // Analyze the function if not done yet. This is only necessary if we call a function in the same source file, which was
   // declared above.
-  if (!accessScope->isImported(currentScope) && spiceFunc->getDeclToken().getLine() < node->start->getLine())
+  if (!accessScope->isImported(currentScope) && spiceFunc->getDeclCodeLoc().line < node->codeLoc.line)
     reAnalyzeRequired = true;
 
   // Return struct type on constructor call
@@ -1861,8 +1863,8 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // If the return type is an external struct, initialize it
   if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope))
-    return initExtStruct(node->codeLoc, scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true),
-                         returnType.getSubType(), thisType.getTemplateTypes());
+    return initExtStruct(scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true), returnType.getSubType(),
+                         thisType.getTemplateTypes(), node->codeLoc);
 
   return returnType;
 }
@@ -2107,12 +2109,12 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   }
 
   // Set the struct instance to used
-  Struct *spiceStruct = accessScope->matchStruct(nullptr, structName, concreteTemplateTypes, err.get(), *node->start);
+  Struct *spiceStruct = accessScope->matchStruct(nullptr, structName, concreteTemplateTypes, err.get(), node->codeLoc);
   if (spiceStruct)
     spiceStruct->setUsed();
 
   if (structIsImported) // Imported struct
-    return initExtStruct(node->codeLoc, accessScope, accessScopePrefix, structName, concreteTemplateTypes);
+    return initExtStruct(accessScope, accessScopePrefix, structName, concreteTemplateTypes, node->codeLoc);
 
   // Check if struct was declared
   SymbolTableEntry *structSymbol = accessScope->lookup(structName);
@@ -2136,8 +2138,9 @@ void AnalyzerVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEn
   accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, err.get(), codeLoc);
 }
 
-SymbolType AnalyzerVisitor::initExtStruct(const CodeLoc &codeLoc, SymbolTable *sourceScope, const std::string &structScopePrefix,
-                                          const std::string &structName, const std::vector<SymbolType> &templateTypes) {
+SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix,
+                                          const std::string &structName, const std::vector<SymbolType> &templateTypes,
+                                          const CodeLoc &codeLoc) {
   // Get external struct name
   std::string newStructName = structScopePrefix + structName;
 
@@ -2187,8 +2190,8 @@ SymbolType AnalyzerVisitor::initExtStruct(const CodeLoc &codeLoc, SymbolTable *s
   return newStructTy;
 }
 
-SymbolType AnalyzerVisitor::initExtGlobal(const CodeLoc &codeLoc, SymbolTable *sourceScope, const std::string &globalScopePrefix,
-                                          const std::string &globalName) {
+SymbolType AnalyzerVisitor::initExtGlobal(SymbolTable *sourceScope, const std::string &globalScopePrefix,
+                                          const std::string &globalName, const CodeLoc &codeLoc) {
   // Get external global var name
   std::string newGlobalName = globalScopePrefix + globalName;
 

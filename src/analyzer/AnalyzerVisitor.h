@@ -127,8 +127,8 @@ private:
 
   // Private methods
   void insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
-  SymbolType initExtStruct(const CodeLoc &codeLoc, SymbolTable *sourceScope, const std::string &structScopePrefix,
-                           const std::string &structName, const std::vector<SymbolType> &templateTypes);
-  SymbolType initExtGlobal(const CodeLoc &codeLoc, SymbolTable *sourceScope, const std::string &globalScopePrefix,
-                           const std::string &globalName);
+  SymbolType initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix, const std::string &structName,
+                           const std::vector<SymbolType> &templateTypes, const CodeLoc &codeLoc);
+  SymbolType initExtGlobal(SymbolTable *sourceScope, const std::string &globalScopePrefix, const std::string &globalName,
+                           const CodeLoc &codeLoc);
 };

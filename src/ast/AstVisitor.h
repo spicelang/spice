@@ -31,7 +31,8 @@ public:
   virtual std::any visitField(FieldNode *ctx) override;
   virtual std::any visitStmt(StmtNode *ctx) override;
   virtual std::any visitDeclStmt(DeclStmtNode *ctx) override;
-  virtual std::any visitDeclSpecifiers(DeclSpecifiersNode *ctx) override;
+  virtual std::any visitSpecifierLst(SpecifierLstNode *ctx) override;
+  virtual std::any visitSpecifier(SpecifierNode *ctx) override;
   virtual std::any visitImportStmt(ImportStmtNode *ctx) override;
   virtual std::any visitReturnStmt(ReturnStmtNode *ctx) override;
   virtual std::any visitBreakStmt(BreakStmtNode *ctx) override;

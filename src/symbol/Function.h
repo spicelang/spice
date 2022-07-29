@@ -12,7 +12,7 @@
 struct CodeLoc;
 
 typedef std::vector<std::pair<SymbolType, bool>> ArgList;
-typedef std::vector<std::tuple<std::string, SymbolType, bool>> NamedArgList;
+typedef std::vector<std::tuple<std::string, SymbolType, bool>> NamedParamList;
 
 class Function {
 public:

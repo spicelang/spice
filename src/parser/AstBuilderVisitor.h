@@ -10,7 +10,7 @@ class AstNode;
 class AstBuilderVisitor : public SpiceVisitor {
 public:
   // Constructors
-  AstBuilderVisitor(AstNode *rootNode) : currentNode(rootNode) {}
+  explicit AstBuilderVisitor(AstNode *rootNode) : currentNode(rootNode) {}
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -39,8 +39,8 @@ public:
   std::any visitField(SpiceParser::FieldContext *ctx) override;
   std::any visitStmt(SpiceParser::StmtContext *ctx) override;
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
-  std::any visitDeclSpecifiers(SpiceParser::DeclSpecifiersContext *ctx) override;
-  std::any visitDeclSpecifier(SpiceParser::DeclSpecifierContext *ctx) override;
+  std::any visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) override;
+  std::any visitSpecifier(SpiceParser::SpecifierContext *ctx) override;
   std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;

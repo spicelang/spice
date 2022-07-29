@@ -54,7 +54,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Global of invalid type";
   case FUNCTION_WITHOUT_RETURN_STMT:
     return "Missing return statement";
-  case INVALID_ARGUMENT_ORDER:
+  case INVALID_PARAM_ORDER:
     return "Invalid argument order";
   case OPERATOR_WRONG_DATA_TYPE:
     return "Wrong data type for operator";
@@ -66,7 +66,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Condition must be bool";
   case MISSING_MAIN_FUNCTION:
     return "Spice programs must contain a main function";
-  case FCT_ARG_IS_TYPE_DYN:
+  case FCT_PARAM_IS_TYPE_DYN:
     return "Parameter type dyn not valid in function/procedure definition without default value";
   case INVALID_BREAK_NUMBER:
     return "Invalid number of break calls";
