@@ -26,12 +26,12 @@ digraph {
  L4C4_stmtLst -> L4C4_stmt;
  L4C4_declStmt [color="lightgreen",label="declStmt"];
  L4C4_stmt -> L4C4_declStmt;
- L4C4_declSpecifiers [color="lightgreen",label="declSpecifiers"];
- L4C4_declStmt -> L4C4_declSpecifiers;
- L4C4_declSpecifier [color="lightgreen",label="declSpecifier"];
- L4C4_declSpecifiers -> L4C4_declSpecifier;
+ L4C4_specifierLst [color="lightgreen",label="specifierLst"];
+ L4C4_declStmt -> L4C4_specifierLst;
+ L4C4_specifier [color="lightgreen",label="specifier"];
+ L4C4_specifierLst -> L4C4_specifier;
  L4C4 [color="lightblue",label="UNSIGNED: unsigned"];
- L4C4_declSpecifier -> L4C4
+ L4C4_specifier -> L4C4
  L4C13_dataType [color="lightgreen",label="dataType"];
  L4C4_declStmt -> L4C13_dataType;
  L4C13_baseDataType [color="lightgreen",label="baseDataType"];

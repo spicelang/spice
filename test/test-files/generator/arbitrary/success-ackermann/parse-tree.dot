@@ -20,10 +20,10 @@ digraph {
  L1C0_functionDef -> L1C7
  L1C10 [color="lightblue",label="LPAREN: ("];
  L1C0_functionDef -> L1C10
- L1C11_argLstDef [color="lightgreen",label="argLstDef"];
- L1C0_functionDef -> L1C11_argLstDef;
+ L1C11_paramLst [color="lightgreen",label="paramLst"];
+ L1C0_functionDef -> L1C11_paramLst;
  L1C11_declStmt [color="lightgreen",label="declStmt"];
- L1C11_argLstDef -> L1C11_declStmt;
+ L1C11_paramLst -> L1C11_declStmt;
  L1C11_dataType [color="lightgreen",label="dataType"];
  L1C11_declStmt -> L1C11_dataType;
  L1C11_baseDataType [color="lightgreen",label="baseDataType"];
@@ -33,9 +33,9 @@ digraph {
  L1C15 [color="lightblue",label="IDENTIFIER: m"];
  L1C11_declStmt -> L1C15
  L1C16 [color="lightblue",label="COMMA: ,"];
- L1C11_argLstDef -> L1C16
+ L1C11_paramLst -> L1C16
  L1C18_declStmt [color="lightgreen",label="declStmt"];
- L1C11_argLstDef -> L1C18_declStmt;
+ L1C11_paramLst -> L1C18_declStmt;
  L1C18_dataType [color="lightgreen",label="dataType"];
  L1C18_declStmt -> L1C18_dataType;
  L1C18_baseDataType [color="lightgreen",label="baseDataType"];

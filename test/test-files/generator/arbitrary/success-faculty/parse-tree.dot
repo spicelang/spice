@@ -20,10 +20,10 @@ digraph {
  L1C0_functionDef -> L1C7
  L1C14 [color="lightblue",label="LPAREN: ("];
  L1C0_functionDef -> L1C14
- L1C15_argLstDef [color="lightgreen",label="argLstDef"];
- L1C0_functionDef -> L1C15_argLstDef;
+ L1C15_paramLst [color="lightgreen",label="paramLst"];
+ L1C0_functionDef -> L1C15_paramLst;
  L1C15_declStmt [color="lightgreen",label="declStmt"];
- L1C15_argLstDef -> L1C15_declStmt;
+ L1C15_paramLst -> L1C15_declStmt;
  L1C15_dataType [color="lightgreen",label="dataType"];
  L1C15_declStmt -> L1C15_dataType;
  L1C15_baseDataType [color="lightgreen",label="baseDataType"];

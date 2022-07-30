@@ -1264,7 +1264,7 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   currentConstSigned = entry->getSpecifiers().isSigned();
 
   // Get data type
-  llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(node->dataType()));
+  llvm::Type *varType = lhsType = getTypeForSymbolType(entry->getType(), currentScope);
   entry->updateLLVMType(varType);
   entry->updateType(currentSymbolType, true);
 

@@ -40,4 +40,6 @@ digraph {
  L2C5_PrefixUnaryExpr -> L2C5_PostfixUnaryExpr;
  L2C5_AtomicExpr [color="lightgreen",label="AtomicExpr"];
  L2C5_PostfixUnaryExpr -> L2C5_AtomicExpr;
+ L2C5_PrintfCall [color="lightgreen",label="PrintfCall"];
+ L2C5_AtomicExpr -> L2C5_PrintfCall;
 }
