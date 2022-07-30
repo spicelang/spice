@@ -84,4 +84,7 @@ private:
   // Members
   AstNode *currentNode;
   std::string fileName;
+
+  // Private methods
+  void replaceEscapeChars(std::string &string) const;
 };

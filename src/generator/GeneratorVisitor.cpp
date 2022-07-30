@@ -1395,8 +1395,7 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
   llvm::Function *printfFct = retrievePrintfFct();
 
   std::vector<llvm::Value *> printfArgs;
-  std::string stringTemplate = node->templatedString;
-  printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
+  printfArgs.push_back(builder->CreateGlobalStringPtr(node->templatedString));
   for (const auto &arg : node->assignExpr()) {
     // Visit argument
     auto argValPtr = resolveAddress(arg);
@@ -1968,18 +1967,18 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
     bool isVolatile = false;
     bool storeValue = true;
-    unsigned int tokenCounter = 0;
-    while (tokenCounter < node->children.size() - 1) {
-      auto token = dynamic_cast<SpiceParser::PrefixUnaryOpContext *>(node->children[tokenCounter]);
-      storeValue = true;
 
-      // Insert conversion instructions depending on the used operator
-      if (token->MINUS()) { // Consider - operator
+    std::stack<PrefixUnaryExprNode::PrefixUnaryOp> opStack = node->opStack;
+    while (!opStack.empty()) {
+      switch (opStack.top()) {
+      case PrefixUnaryExprNode::OP_MINUS: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixMinusInst(lhs);
         lhsPtr = insertAlloca(lhs->getType());
-      } else if (token->PLUS_PLUS()) { // Consider ++ operator
+        break;
+      }
+      case PrefixUnaryExprNode::OP_PLUS_PLUS: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixPlusPlusInst(lhs);
@@ -1988,7 +1987,9 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
         SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         if (!isVolatile && lhsVarEntry && lhsVarEntry->isVolatile())
           isVolatile = true;
-      } else if (token->MINUS_MINUS()) { // Consider -- operator
+        break;
+      }
+      case PrefixUnaryExprNode::OP_MINUS_MINUS: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixMinusMinusInst(lhs);
@@ -1997,40 +1998,43 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
         SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         if (!isVolatile && lhsVarEntry && lhsVarEntry->isVolatile())
           isVolatile = true;
-      } else if (token->NOT()) { // Consider ! operator
+        break;
+      }
+      case PrefixUnaryExprNode::OP_NOT: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixNotInst(lhs);
         lhsPtr = insertAlloca(lhs->getType());
-      } else if (token->BITWISE_NOT()) { // Consider ~ operator
+        break;
+      }
+      case PrefixUnaryExprNode::OP_BITWISE_NOT: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         lhs = conversionsManager->getPrefixBitwiseNotInst(lhs);
         lhsPtr = insertAlloca(lhs->getType());
-      } else if (token->MUL()) { // Consider * operator
+        break;
+      }
+      case PrefixUnaryExprNode::OP_INDIRECTION: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         // Indirect pointer
         lhsPtr = lhs;
         lhs = builder->CreateLoad(lhs->getType()->getPointerElementType(), lhs);
-      } else if (token->BITWISE_AND()) { // Consider & operator
+        break;
+      }
+      case PrefixUnaryExprNode::OP_ADDRESS_OF: {
         // Create a reference
         lhs = lhsPtr;
         lhsPtr = insertAlloca(lhs->getType());
         builder->CreateStore(lhs, lhsPtr);
         storeValue = false;
-      } else if (token->LOGICAL_AND()) { // Consider doubled & operator
-        // First reference
-        lhs = lhsPtr;
-        lhsPtr = insertAlloca(lhs->getType());
-        builder->CreateStore(lhs, lhsPtr);
-        // Second reference
-        lhs = lhsPtr;
-        lhsPtr = insertAlloca(lhs->getType());
-        builder->CreateStore(lhs, lhsPtr);
-        storeValue = false;
+        break;
       }
-      tokenCounter++;
+      default:
+        throw std::runtime_error("PrefixUnary fall-through");
+      }
+
+      opStack.pop();
     }
 
     if (storeValue) {

@@ -5,6 +5,7 @@
 #include <regex>
 
 #include <ast/AstNodes.h>
+#include <util/CommonUtil.h>
 
 std::any AstBuilderVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = dynamic_cast<EntryNode *>(currentNode);
@@ -730,7 +731,9 @@ std::any AstBuilderVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx)
 
   // Extract templated string
   std::string templatedString = ctx->STRING_LITERAL()->getText();
-  printfCallNode->templatedString = templatedString.substr(1, templatedString.size() - 2);
+  templatedString = templatedString.substr(1, templatedString.size() - 2);
+  replaceEscapeChars(templatedString);
+  printfCallNode->templatedString = templatedString;
 
   for (auto subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
@@ -757,7 +760,7 @@ std::any AstBuilderVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx)
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = sizeofCallNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
-    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = sizeofCallNode->createChild<DataTypeNode>(CodeLoc(fileName, rule->start));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1210,8 +1213,7 @@ std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueConte
       primitiveValueNode->type = PrimitiveValueNode::TY_STRING;
       std::string strValue = ctx->STRING_LITERAL()->toString();
       strValue = strValue.substr(1, strValue.size() - 2);
-      strValue = std::regex_replace(strValue, std::regex("\\\\n"), "\n");
-      strValue = std::regex_replace(strValue, std::regex("\\\\a"), "\a");
+      replaceEscapeChars(strValue);
       primitiveValueNode->data.stringValue = strValue;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TRUE) {
       primitiveValueNode->type = PrimitiveValueNode::TY_BOOL;
@@ -1461,4 +1463,16 @@ std::any AstBuilderVisitor::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext
     assert(false);
 
   return nullptr;
+}
+
+void AstBuilderVisitor::replaceEscapeChars(std::string &string) const {
+  CommonUtil::replaceAll(string, "\\a", "\a");
+  CommonUtil::replaceAll(string, "\\b", "\b");
+  CommonUtil::replaceAll(string, "\\f", "\f");
+  CommonUtil::replaceAll(string, "\\n", "\n");
+  CommonUtil::replaceAll(string, "\\r", "\r");
+  CommonUtil::replaceAll(string, "\\t", "\t");
+  CommonUtil::replaceAll(string, "\\v", "\v");
+  CommonUtil::replaceAll(string, "\\'", "\'");
+  CommonUtil::replaceAll(string, "\\?", "\?");
 }

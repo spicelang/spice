@@ -540,7 +540,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
   currentScope->insert(node->structName, symbolType, structSymbolSpecifiers, DECLARED, node->codeLoc);
 
   // Create scope for struct
-  SymbolTable *structScope = currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_STRUCT);
+  SymbolTable *structScope = currentScope = currentScope->createChildBlock(STRUCT_SCOPE_PREFIX + node->structName, SCOPE_STRUCT);
 
   // Insert a field for each field list entry
   std::vector<SymbolType> fieldTypes;

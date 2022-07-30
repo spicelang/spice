@@ -73,16 +73,6 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitEntry(this); }
-
-  // Public get methods
-  [[nodiscard]] std::vector<MainFctDefNode *> mainFctDefNode() const { return getChildren<MainFctDefNode>(); }
-  [[nodiscard]] std::vector<FctDefNode *> fctDefNode() const { return getChildren<FctDefNode>(); }
-  [[nodiscard]] std::vector<ProcDefNode *> procDefNode() const { return getChildren<ProcDefNode>(); }
-  [[nodiscard]] std::vector<StructDefNode *> structDefNode() const { return getChildren<StructDefNode>(); }
-  [[nodiscard]] std::vector<GenericTypeDefNode *> genericTypeDefNode() const { return getChildren<GenericTypeDefNode>(); }
-  [[nodiscard]] std::vector<GlobalVarDefNode *> globalVarDefNode() const { return getChildren<GlobalVarDefNode>(); }
-  [[nodiscard]] std::vector<ImportStmtNode *> importStmtNode() const { return getChildren<ImportStmtNode>(); }
-  [[nodiscard]] std::vector<ExtDeclNode *> extDeclNode() const { return getChildren<ExtDeclNode>(); }
 };
 
 // ======================================================== MainFctDefNode =======================================================
@@ -181,9 +171,6 @@ public:
 
   // Public get methods
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-
-  // Other methods
-  [[nodiscard]] std::string getScopeId() const { return "struct:" + codeLoc.toString(); }
 
   // Public members
   std::string structName;
