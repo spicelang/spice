@@ -1396,9 +1396,6 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
 
   std::vector<llvm::Value *> printfArgs;
   std::string stringTemplate = node->templatedString;
-  stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\n"), "\n");
-  stringTemplate = std::regex_replace(stringTemplate, std::regex("\\\\a"), "\a");
-  stringTemplate = stringTemplate.substr(1, stringTemplate.size() - 2);
   printfArgs.push_back(builder->CreateGlobalStringPtr(stringTemplate));
   for (const auto &arg : node->assignExpr()) {
     // Visit argument
@@ -2378,7 +2375,6 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   if (node->type == PrimitiveValueNode::TY_STRING) {
     currentSymbolType = SymbolType(TY_STRING);
     std::string value = node->data.stringValue;
-    value = std::regex_replace(value, std::regex("\\\\n"), "\n");
     return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
   }
 
@@ -2679,7 +2675,36 @@ std::any GeneratorVisitor::visitStructInstantiation(StructInstantiationNode *nod
 std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
   emitSourceLocation(node);
 
-  currentSymbolType = node->symbolType;
+  currentSymbolType = node->baseDataType()->symbolType;
+
+  size_t assignExprCounter = 0;
+  std::vector<AssignExprNode *> arraySizeExpr = node->arraySizeExpr();
+  std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
+  while (!tmQueue.empty()) {
+    DataTypeNode::TypeModifier typeModifier = tmQueue.front();
+    switch (typeModifier.modifierType) {
+    case DataTypeNode::TY_POINTER: {
+      currentSymbolType = currentSymbolType.toPointer(err.get(), node->codeLoc);
+      break;
+    }
+    case DataTypeNode::TY_ARRAY: {
+      if (typeModifier.isSizeHardcoded) {
+        currentSymbolType = currentSymbolType.toArray(err.get(), node->codeLoc, typeModifier.hardcodedSize);
+      } else {
+        AssignExprNode *indexExpr = arraySizeExpr[assignExprCounter++];
+        assert(indexExpr != nullptr);
+        auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(indexExpr));
+        dynamicArraySize = builder->CreateLoad(sizeValuePtr->getType()->getPointerElementType(), sizeValuePtr);
+        currentSymbolType = currentSymbolType.toPointer(err.get(), node->codeLoc, dynamicArraySize);
+      }
+      break;
+    }
+    default:
+      throw std::runtime_error("Modifier type fall-through");
+    }
+    tmQueue.pop();
+  }
+  node->symbolType = currentSymbolType;
 
   // Come up with the LLVM type
   llvm::Type *type = getTypeForSymbolType(currentSymbolType, currentScope);
@@ -2867,11 +2892,11 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType, Symbol
   currentSymbolType = symbolType;
 
   // Get base symbol type
-  std::stack<std::pair<SymbolSuperType, size_t>> pointerArrayList;
+  std::stack<std::pair<SymbolSuperType, long>> wrapperTypeStack;
   while (symbolType.isPointer() || symbolType.isArray()) {
     SymbolSuperType superType = symbolType.isPointer() ? TY_PTR : TY_ARRAY;
-    size_t arraySize = symbolType.isPointer() ? 0 : symbolType.getArraySize();
-    pointerArrayList.push(std::make_pair(superType, arraySize));
+    long arraySize = symbolType.isPointer() ? 0 : symbolType.getArraySize();
+    wrapperTypeStack.push({superType, arraySize});
     symbolType = symbolType.getContainedTy();
   }
 
@@ -2920,13 +2945,13 @@ llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType, Symbol
   }
 
   // Consider pointer/array hierarchy
-  while (!pointerArrayList.empty()) {
-    if (pointerArrayList.top().first == TY_PTR || pointerArrayList.top().second == 0) { // Pointer
+  while (!wrapperTypeStack.empty()) {
+    if (wrapperTypeStack.top().first == TY_PTR || wrapperTypeStack.top().second <= 0) { // Pointer
       llvmBaseType = llvmBaseType->getPointerTo();
     } else { // Otherwise, use the array type with a fixed size
-      llvmBaseType = llvm::ArrayType::get(llvmBaseType, pointerArrayList.top().second);
+      llvmBaseType = llvm::ArrayType::get(llvmBaseType, wrapperTypeStack.top().second);
     }
-    pointerArrayList.pop();
+    wrapperTypeStack.pop();
   }
 
   return llvmBaseType;

@@ -4,13 +4,15 @@
 
 #include <SpiceVisitor.h>
 
+#include <utility>
+
 // Forward declarations
 class AstNode;
 
 class AstBuilderVisitor : public SpiceVisitor {
 public:
   // Constructors
-  explicit AstBuilderVisitor(AstNode *rootNode) : currentNode(rootNode) {}
+  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName) : currentNode(rootNode), fileName(std::move(fileName)) {}
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -81,4 +83,5 @@ public:
 private:
   // Members
   AstNode *currentNode;
+  std::string fileName;
 };

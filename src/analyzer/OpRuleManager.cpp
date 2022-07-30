@@ -5,7 +5,7 @@
 #include <exception/ErrorFactory.h>
 
 SymbolType OpRuleManager::getAssignResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  // Skip type compatibility check if the lhs is of type dyn
+  // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhs.is(TY_DYN))
     return rhs;
   // Allow pointers, arrays and structs of the same type straight away

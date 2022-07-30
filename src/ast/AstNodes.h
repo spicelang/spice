@@ -36,7 +36,7 @@ public:
     return node;
   }
 
-  template <typename T> T *getChild(size_t i = 0) const {
+  template <typename T> [[nodiscard]] T *getChild(size_t i = 0) const {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
     size_t j = 0;
     for (auto &child : children) {
@@ -48,7 +48,7 @@ public:
     return nullptr;
   }
 
-  template <typename T> std::vector<T *> getChildren() const {
+  template <typename T> [[nodiscard]] std::vector<T *> getChildren() const {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
     std::vector<T *> nodes;
     for (auto &child : children) {
@@ -1122,9 +1122,9 @@ public:
 
   // Structs
   struct TypeModifier {
-    TypeModifierType modifierType;
-    bool isSizeHardcoded;
-    int hardcodedSize;
+    TypeModifierType modifierType = TY_POINTER;
+    bool isSizeHardcoded = false;
+    int hardcodedSize = 0;
   };
 
   // Constructors
@@ -1160,6 +1160,7 @@ public:
 
   // Public members
   Type type;
+  SymbolType symbolType = SymbolType(TY_INVALID);
 };
 
 // ==================================================== CustomDataTypeNode =======================================================

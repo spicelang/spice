@@ -123,7 +123,7 @@ void SourceFile::buildAST() {
     sourceFile.first->buildAST();
 
   // Transform this source file
-  AstBuilderVisitor astBuilder(ast.get());
+  AstBuilderVisitor astBuilder(ast.get(), filePath);
   astBuilder.visit(antlrCtx.parser->entry());
   antlrCtx.parser->reset();
 }

@@ -842,6 +842,9 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
   if (itemType.is(TY_DYN)) {
     itemType = arrayType.getContainedTy();
     itemVarSymbol->updateType(itemType, false);
+
+    // Update symbolType of the declaration data type
+    node->itemDecl()->dataType()->baseDataType()->symbolType = itemType.getBaseType();
   } else {
     if (itemType != arrayType.getContainedTy())
       throw err->get(node->itemDecl()->codeLoc, OPERATOR_WRONG_DATA_TYPE,
@@ -970,6 +973,9 @@ std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
     // If the rhs is of type array and was the array initialization, there must be a size attached
     if (symbolType.isArray() && symbolType.getArraySize() == 0 && currentVarName.empty())
       throw err->get(node->dataType()->codeLoc, ARRAY_SIZE_INVALID, "The declaration of an array type must have a size attached");
+
+    // Update symbolType of the declaration data type
+    node->dataType()->baseDataType()->symbolType = symbolType.getBaseType();
   }
 
   // Build symbol specifiers
@@ -2018,11 +2024,15 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
 
   size_t assignExprCounter = 0;
   std::vector<AssignExprNode *> arraySizeExpr = node->arraySizeExpr();
-  while (node->tmQueue.empty()) {
-    DataTypeNode::TypeModifier typeModifier = node->tmQueue.front();
-    if (typeModifier.modifierType == DataTypeNode::TY_POINTER) { // Pointer
+  std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
+  while (!tmQueue.empty()) {
+    DataTypeNode::TypeModifier typeModifier = tmQueue.front();
+    switch (typeModifier.modifierType) {
+    case DataTypeNode::TY_POINTER: {
       type = type.toPointer(err.get(), node->codeLoc);
-    } else { // Array
+      break;
+    }
+    case DataTypeNode::TY_ARRAY: {
       if (typeModifier.isSizeHardcoded) {
         if (typeModifier.hardcodedSize <= 1)
           throw err->get(node->codeLoc, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
@@ -2032,35 +2042,39 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
           throw err->get(node->codeLoc, ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
       }
       type = type.toArray(err.get(), node->codeLoc, typeModifier.hardcodedSize);
+      break;
     }
-    node->tmQueue.pop();
+    default:
+      throw std::runtime_error("Modifier type fall-through");
+    }
+    tmQueue.pop();
   }
 
-  return node->symbolType = type;
+  return type;
 }
 
 std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {
   switch (node->type) {
   case BaseDataTypeNode::TY_DOUBLE:
-    return SymbolType(TY_DOUBLE);
+    return node->symbolType = SymbolType(TY_DOUBLE);
   case BaseDataTypeNode::TY_INT:
-    return SymbolType(TY_INT);
+    return node->symbolType = SymbolType(TY_INT);
   case BaseDataTypeNode::TY_SHORT:
-    return SymbolType(TY_SHORT);
+    return node->symbolType = SymbolType(TY_SHORT);
   case BaseDataTypeNode::TY_LONG:
-    return SymbolType(TY_LONG);
+    return node->symbolType = SymbolType(TY_LONG);
   case BaseDataTypeNode::TY_BYTE:
-    return SymbolType(TY_BYTE);
+    return node->symbolType = SymbolType(TY_BYTE);
   case BaseDataTypeNode::TY_CHAR:
-    return SymbolType(TY_CHAR);
+    return node->symbolType = SymbolType(TY_CHAR);
   case BaseDataTypeNode::TY_STRING:
-    return SymbolType(TY_STRING);
+    return node->symbolType = SymbolType(TY_STRING);
   case BaseDataTypeNode::TY_BOOL:
-    return SymbolType(TY_BOOL);
+    return node->symbolType = SymbolType(TY_BOOL);
   case BaseDataTypeNode::TY_CUSTOM:
-    return visit(node->customDataType());
+    return node->symbolType = std::any_cast<SymbolType>(visit(node->customDataType()));
   default:
-    return SymbolType(TY_DYN);
+    return node->symbolType = SymbolType(TY_DYN);
   }
 }
 
