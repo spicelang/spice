@@ -412,9 +412,10 @@ std::any AstBuilderVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx)
 
   for (auto subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
+    if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
       currentNode = assertStmtNode->createChild<AssignExprNode>(CodeLoc(rule->start));
-    else
+      assertStmtNode->expressionString = rule->getText();
+    } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
     if (currentNode != assertStmtNode) {

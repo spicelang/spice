@@ -98,8 +98,6 @@ public:
   std::any visitArrayInitialization(ArrayInitializationNode *node) override;
   std::any visitStructInstantiation(StructInstantiationNode *node) override;
   std::any visitDataType(DataTypeNode *ctx) override;
-  std::any visitBaseDataType(BaseDataTypeNode *node) override;
-  std::any visitCustomDataType(CustomDataTypeNode *node) override;
 
 private:
   // Members

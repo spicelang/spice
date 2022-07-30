@@ -397,6 +397,9 @@ public:
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+
+  // Public members
+  std::string expressionString;
 };
 
 // ========================================================= StmtLstNode =========================================================
@@ -977,8 +980,8 @@ public:
 
   // Public get methods
   [[nodiscard]] AtomicExprNode *atomicExpr() const { return getChild<AtomicExprNode>(); }
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
+  [[nodiscard]] std::vector<AssignExprNode *> assignExpr() const { return getChildren<AssignExprNode>(); }
+  [[nodiscard]] std::vector<PostfixUnaryExprNode *> postfixUnaryExpr() const { return getChildren<PostfixUnaryExprNode>(); }
 
   // Public members
   std::queue<PostfixUnaryOp> opQueue;
@@ -1136,6 +1139,7 @@ public:
 
   // Public members
   std::queue<TypeModifier> tmQueue;
+  SymbolType symbolType = SymbolType(TY_INVALID);
 };
 
 // ==================================================== BaseDataTypeNode =========================================================

@@ -1398,22 +1398,28 @@ std::any AnalyzerVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
   // Check if at least one additive operator is applied
   if (node->operands().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(node->operands()[0]));
-    // Check if data types are compatible
-    unsigned int operatorIndex = 1;
-    for (int i = 1; i < node->operands().size(); i++) {
-      auto op = dynamic_cast<antlr4::tree::TerminalNode *>(node->children[operatorIndex]);
-      const size_t tokenType = op->getSymbol()->getType();
-      auto next = node->operands()[i];
-      auto nextType = any_cast<SymbolType>(visit(next));
 
-      if (tokenType == SpiceParser::PLUS) { // Operator was plus
-        currentType = opRuleManager->getPlusResultType(next->codeLoc, currentType, nextType);
-      } else if (tokenType == SpiceParser::MINUS) { // Operator was minus
-        currentType = opRuleManager->getMinusResultType(next->codeLoc, currentType, nextType);
+    std::queue<AdditiveExprNode::AdditiveOp> opQueue = node->opQueue;
+    size_t operandIndex = 1;
+    while (!opQueue.empty()) {
+      MultiplicativeExprNode *operand = node->operands()[operandIndex++];
+      assert(operand != nullptr);
+      auto operandType = any_cast<SymbolType>(visit(operand));
+
+      switch (opQueue.front()) {
+      case AdditiveExprNode::OP_PLUS:
+        currentType = opRuleManager->getPlusResultType(operand->codeLoc, currentType, operandType);
+        break;
+      case AdditiveExprNode::OP_MINUS:
+        currentType = opRuleManager->getMinusResultType(operand->codeLoc, currentType, operandType);
+        break;
+      default:
+        throw std::runtime_error("Additive expr fall-through");
       }
 
-      operatorIndex += 2;
+      opQueue.pop();
     }
+
     return currentType;
   }
   return visit(node->operands().front());
@@ -1423,24 +1429,31 @@ std::any AnalyzerVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) 
   // Check if at least one multiplicative operator is applied
   if (node->operands().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(node->operands()[0]));
-    // Check if data types are compatible
-    unsigned int operatorIndex = 1;
-    for (int i = 1; i < node->operands().size(); i++) {
-      auto op = dynamic_cast<antlr4::tree::TerminalNode *>(node->children[operatorIndex]);
-      const size_t tokenType = op->getSymbol()->getType();
-      auto next = node->operands()[i];
-      auto nextType = any_cast<SymbolType>(visit(next));
 
-      if (tokenType == SpiceParser::MUL) { // Operator is mul
-        currentType = opRuleManager->getMulResultType(next->codeLoc, currentType, nextType);
-      } else if (tokenType == SpiceParser::DIV) { // Operator is div
-        currentType = opRuleManager->getDivResultType(next->codeLoc, currentType, nextType);
-      } else if (tokenType == SpiceParser::REM) { // Operator is rem
-        currentType = opRuleManager->getRemResultType(next->codeLoc, currentType, nextType);
+    std::queue<MultiplicativeExprNode::MultiplicativeOp> opQueue = node->opQueue;
+    size_t operandIndex = 1;
+    while (!opQueue.empty()) {
+      CastExprNode *operand = node->operands()[operandIndex++];
+      assert(operand != nullptr);
+      auto operandType = any_cast<SymbolType>(visit(operand));
+
+      switch (opQueue.front()) {
+      case MultiplicativeExprNode::OP_MUL:
+        currentType = opRuleManager->getMulResultType(operand->codeLoc, currentType, operandType);
+        break;
+      case MultiplicativeExprNode::OP_DIV:
+        currentType = opRuleManager->getDivResultType(operand->codeLoc, currentType, operandType);
+        break;
+      case MultiplicativeExprNode::OP_REM:
+        currentType = opRuleManager->getRemResultType(operand->codeLoc, currentType, operandType);
+        break;
+      default:
+        throw std::runtime_error("Multiplicative expr fall-through");
       }
 
-      operatorIndex += 2;
+      opQueue.pop();
     }
+
     return currentType;
   }
   return visit(node->operands().front());
@@ -1517,6 +1530,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   auto lhs = any_cast<SymbolType>(visit(node->atomicExpr()));
 
   size_t subscriptCounter = 0;
+  size_t memberAccessCounter = 0;
 
   std::queue<PostfixUnaryExprNode::PostfixUnaryOp> opQueue = node->opQueue; // Copy to not modify the queue in the AST node
   while (!opQueue.empty()) {
@@ -1526,7 +1540,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       SymbolTableEntry *currentEntryBackup = currentEntry; // Save current entry
       ScopePath scopePathBackup = scopePath;               // Save scope path
 
-      auto indexType = any_cast<SymbolType>(visit(node->assignExpr()));
+      AssignExprNode *indexExpr = node->assignExpr()[subscriptCounter++];
+      auto indexType = any_cast<SymbolType>(visit(indexExpr));
 
       if (!indexType.is(TY_INT))
         throw err->get(node->codeLoc, ARRAY_INDEX_NO_INTEGER, "Array index must be of type int");
@@ -1560,10 +1575,12 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
       break;
     }
-    case PostfixUnaryExprNode::OP_MEMBER_ACCESS:
-      lhs = any_cast<SymbolType>(visit(node->postfixUnaryExpr())); // Visit rhs
+    case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
+      PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
+      lhs = any_cast<SymbolType>(visit(rhs)); // Visit rhs
       break;
-    case PostfixUnaryExprNode::OP_PLUS_PLUS:
+    }
+    case PostfixUnaryExprNode::OP_PLUS_PLUS: {
       lhs = opRuleManager->getPostfixPlusPlusResultType(node->atomicExpr()->codeLoc, lhs);
 
       // Update state in symbol table
@@ -1574,7 +1591,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       if (Capture *lhsCapture = currentScope->lookupCapture(currentVarName); lhsCapture)
         lhsCapture->setCaptureMode(READ_WRITE);
       break;
-    case PostfixUnaryExprNode::OP_MINUS_MINUS:
+    }
+    case PostfixUnaryExprNode::OP_MINUS_MINUS: {
       lhs = opRuleManager->getPostfixMinusMinusResultType(node->atomicExpr()->codeLoc, lhs);
 
       // Update state in symbol table
@@ -1586,7 +1604,9 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         lhsCapture->setCaptureMode(READ_WRITE);
       break;
     }
-
+    default:
+      throw std::runtime_error("PostfixUnary fall-through");
+    }
     opQueue.pop();
   }
 
@@ -2016,34 +2036,7 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
     node->tmQueue.pop();
   }
 
-  /*unsigned int tokenCounter = 1;
-  while (tokenCounter < node->children.size()) {
-    auto token = dynamic_cast<antlr4::tree::TerminalNode *>(node->children[tokenCounter]);
-    if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
-      type = type.toPointer(err.get(), node->codeLoc);
-    } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
-      tokenCounter++;                                                    // Consume LBRACKET
-      int size = 0;                                                      // Default to 0 when no size is attached
-      token = dynamic_cast<antlr4::tree::TerminalNode *>(node->children[tokenCounter]);
-      if (token && token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
-        size = std::stoi(token->toString());
-        // Check if size >1
-        if (size <= 1)
-          throw err->get(node->codeLoc, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
-        tokenCounter++; // Consume INTEGER
-      } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(node->children[tokenCounter])) {
-        auto sizeType = std::any_cast<SymbolType>(visit(rule));
-        if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))
-          throw err->get(node->codeLoc, ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
-        size = -1;      // Set size to -1 to signalize that the array is dynamically sized
-        tokenCounter++; // Consume assignExpr
-      }
-      type = type.toArray(err.get(), node->codeLoc, size);
-    }
-    tokenCounter++;
-  }*/
-
-  return type;
+  return node->symbolType = type;
 }
 
 std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {

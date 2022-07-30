@@ -1235,7 +1235,7 @@ std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
     moveInsertPointToBlock(bThen);
     // Generate IR for assertion error
     llvm::Function *printfFct = retrievePrintfFct();
-    std::string errorMsg = "Assertion failed: Condition '" + node->assignExpr()->getText() + "' evaluated to false.";
+    std::string errorMsg = "Assertion failed: Condition '" + node->expressionString + "' evaluated to false.";
     llvm::Value *templateString = builder->CreateGlobalStringPtr(errorMsg);
     builder->CreateCall(printfFct, templateString);
     // Generate call to exit
@@ -1412,9 +1412,6 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
     } else {
       argVal = builder->CreateLoad(argValPtr->getType()->getPointerElementType(), argValPtr);
     }
-
-    if (argVal == nullptr)
-      throw err->get(arg->codeLoc, PRINTF_NULL_TYPE, "'" + arg->getText() + "' is null");
 
     // Cast all integer types to 32 bit
     if (argVal->getType()->isIntegerTy(8) || argVal->getType()->isIntegerTy(16))
@@ -1798,11 +1795,14 @@ std::any GeneratorVisitor::visitEqualityExpr(EqualityExprNode *node) {
     llvm::Value *rhs = resolveValue(node->operands()[1]);
 
     llvm::Value *result;
-    if (node->EQUAL()) { // Equal
-      result = conversionsManager->getEqualInst(lhs, rhs, *node->EQUAL()->getSymbol());
-    } else if (node->NOT_EQUAL()) { // Not equal
-      result = conversionsManager->getNotEqualInst(lhs, rhs, *node->NOT_EQUAL()->getSymbol());
-    } else {
+    switch (node->op) {
+    case EqualityExprNode::OP_EQUAL:
+      result = conversionsManager->getEqualInst(lhs, rhs, node->codeLoc);
+      break;
+    case EqualityExprNode::OP_NOT_EQUAL:
+      result = conversionsManager->getNotEqualInst(lhs, rhs, node->codeLoc);
+      break;
+    default:
       throw std::runtime_error("Equality expr fall-through");
     }
     llvm::Value *resultPtr = insertAlloca(result->getType());
@@ -1820,15 +1820,20 @@ std::any GeneratorVisitor::visitRelationalExpr(RelationalExprNode *node) {
     llvm::Value *rhs = resolveValue(node->operands()[1]);
 
     llvm::Value *result;
-    if (node->LESS()) { // Less
+    switch (node->op) {
+    case RelationalExprNode::OP_LESS:
       result = conversionsManager->getLessInst(lhs, rhs);
-    } else if (node->GREATER()) { // Greater
+      break;
+    case RelationalExprNode::OP_GREATER:
       result = conversionsManager->getGreaterInst(lhs, rhs);
-    } else if (node->LESS_EQUAL()) { // Less equal
+      break;
+    case RelationalExprNode::OP_LESS_EQUAL:
       result = conversionsManager->getLessEqualInst(lhs, rhs);
-    } else if (node->GREATER_EQUAL()) { // Greater equal
+      break;
+    case RelationalExprNode::OP_GREATER_EQUAL:
       result = conversionsManager->getGreaterEqualInst(lhs, rhs);
-    } else {
+      break;
+    default:
       throw std::runtime_error("Relational expr fall-through");
     }
     llvm::Value *resultPtr = insertAlloca(result->getType());
@@ -1847,11 +1852,14 @@ std::any GeneratorVisitor::visitShiftExpr(ShiftExprNode *node) {
     llvm::Value *rhs = resolveValue(node->operands()[1]);
 
     llvm::Value *result;
-    if (!node->LESS().empty()) { // Shift expr is: additiveExpr SHL additiveExpr
+    switch (node->op) {
+    case ShiftExprNode::OP_SHIFT_LEFT:
       result = conversionsManager->getShiftLeftInst(lhs, rhs);
-    } else if (!node->GREATER().empty()) { // Shift expr is: additiveExpr SHR additiveExpr
+      break;
+    case ShiftExprNode::OP_SHIFT_RIGHT:
       result = conversionsManager->getShiftRightInst(lhs, rhs);
-    } else {
+      break;
+    default:
       throw std::runtime_error("Shift expr fall-through");
     }
     llvm::Value *resultPtr = insertAlloca(result->getType());
@@ -1865,19 +1873,28 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
   emitSourceLocation(node);
 
   // Check if at least one additive operator is applied
-  if (node->operands().size() > 1) {
+  if (!node->opQueue.empty()) {
     llvm::Value *lhs = resolveValue(node->operands().front());
-    unsigned int operatorIndex = 1;
-    for (int i = 1; i < node->operands().size(); i++) {
-      auto op = dynamic_cast<antlr4::tree::TerminalNode *>(node->children[operatorIndex]);
-      llvm::Value *rhs = resolveValue(node->operands()[i]);
 
-      if (op->getSymbol()->getType() == SpiceParser::PLUS)
-        lhs = conversionsManager->getPlusInst(lhs, rhs, *op->getSymbol());
-      else if (op->getSymbol()->getType() == SpiceParser::MINUS)
+    std::queue<AdditiveExprNode::AdditiveOp> opQueue = node->opQueue;
+    size_t operandIndex = 1;
+    while (!opQueue.empty()) {
+      MultiplicativeExprNode *operand = node->operands()[operandIndex++];
+      assert(operand != nullptr);
+      llvm::Value *rhs = resolveValue(operand);
+
+      switch (opQueue.front()) {
+      case AdditiveExprNode::OP_PLUS:
+        lhs = conversionsManager->getPlusInst(lhs, rhs, node->codeLoc);
+        break;
+      case AdditiveExprNode::OP_MINUS:
         lhs = conversionsManager->getMinusInst(lhs, rhs);
+        break;
+      default:
+        throw std::runtime_error("Additive expr fall-through");
+      }
 
-      operatorIndex += 2;
+      opQueue.pop();
     }
 
     llvm::Value *resultPtr = insertAlloca(lhs->getType());
@@ -1891,21 +1908,31 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
   emitSourceLocation(node);
 
   // Check if at least one multiplicative operator is applied
-  if (node->operands().size() > 1) {
+  if (!node->opQueue.empty()) {
     llvm::Value *lhs = resolveValue(node->operands().front());
-    unsigned int operatorIndex = 1;
-    for (int i = 1; i < node->operands().size(); i++) {
-      auto op = dynamic_cast<antlr4::tree::TerminalNode *>(node->children[operatorIndex]);
-      llvm::Value *rhs = resolveValue(node->operands()[i]);
 
-      if (op->getSymbol()->getType() == SpiceParser::MUL)
-        lhs = conversionsManager->getMulInst(lhs, rhs, *op->getSymbol());
-      else if (op->getSymbol()->getType() == SpiceParser::DIV)
+    std::queue<MultiplicativeExprNode::MultiplicativeOp> opQueue = node->opQueue;
+    size_t operandIndex = 1;
+    while (!opQueue.empty()) {
+      CastExprNode *operand = node->operands()[operandIndex++];
+      assert(operand != nullptr);
+      llvm::Value *rhs = resolveValue(operand);
+
+      switch (opQueue.front()) {
+      case MultiplicativeExprNode::OP_MUL:
+        lhs = conversionsManager->getMulInst(lhs, rhs, node->codeLoc);
+        break;
+      case MultiplicativeExprNode::OP_DIV:
         lhs = conversionsManager->getDivInst(lhs, rhs);
-      else if (op->getSymbol()->getType() == SpiceParser::REM)
+        break;
+      case MultiplicativeExprNode::OP_REM:
         lhs = conversionsManager->getRemInst(lhs, rhs);
+        break;
+      default:
+        throw std::runtime_error("Multiplicative expr fall-through");
+      }
 
-      operatorIndex += 2;
+      opQueue.pop();
     }
 
     llvm::Value *resultPtr = insertAlloca(lhs->getType());
@@ -2025,20 +2052,18 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   emitSourceLocation(node);
 
-  if (node->children.size() > 1) {
-    // Load the value
+  if (!node->opQueue.empty()) {
+    // Retrieve the address and the value if required
     llvm::Value *lhsPtr = resolveAddress(node->atomicExpr());
     llvm::Value *lhs = lhsPtr != nullptr ? builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr) : nullptr;
 
-    unsigned int tokenCounter = 1;
-    while (tokenCounter < node->children.size()) {
-      auto token = dynamic_cast<antlr4::tree::TerminalNode *>(node->children[tokenCounter]);
-      assert(token != nullptr);
-      size_t symbolType = token->getSymbol()->getType();
+    size_t subscriptCounter = 0;
+    size_t memberAccessCounter = 0;
 
-      if (symbolType == SpiceParser::LBRACKET) { // Consider subscript operator
-        tokenCounter++;                          // Consume LBRACKET
-
+    std::queue<PostfixUnaryExprNode::PostfixUnaryOp> opQueue = node->opQueue; // Copy to not modify the queue in the AST node
+    while (!opQueue.empty()) {
+      switch (opQueue.front()) {
+      case PostfixUnaryExprNode::OP_SUBSCRIPT: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
 
@@ -2050,9 +2075,8 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         llvm::Value *structAccessAddressBackup = structAccessAddress;
 
         // Get the index value
-        auto assignExpr = dynamic_cast<SpiceParser::AssignExprContext *>(node->children[tokenCounter]);
-        llvm::Value *indexValue = resolveValue(assignExpr);
-        tokenCounter++; // Consume assignExpr
+        AssignExprNode *indexExpr = node->assignExpr()[subscriptCounter++];
+        llvm::Value *indexValue = resolveValue(indexExpr);
 
         // Restore variables
         currentVarName = currentVarNameBackup;
@@ -2069,19 +2093,21 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         }
 
         lhs = nullptr;
-      } else if (symbolType == SpiceParser::DOT) { // Consider member access
-        tokenCounter++;                            // Consume dot
-
+        break;
+      }
+      case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
         // Auto de-reference pointer
         while (lhsPtr && lhsPtr->getType()->getPointerElementType()->isPointerTy())
           lhsPtr = structAccessAddress = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
 
         // Visit identifier after the dot
-        auto postfixUnary = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(node->children[tokenCounter]);
-        lhsPtr = resolveAddress(postfixUnary);
+        PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
+        lhsPtr = resolveAddress(rhs);
 
         lhs = nullptr;
-      } else if (symbolType == SpiceParser::PLUS_PLUS) { // Consider ++ operator
+        break;
+      }
+      case PostfixUnaryExprNode::OP_PLUS_PLUS: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         // Get the lhs variable entry
@@ -2091,7 +2117,9 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         builder->CreateStore(newLhsValue, lhsPtr, lhsVarEntry && lhsVarEntry->isVolatile());
         // Allocate new space and continue working with the new memory slot
         lhsPtr = insertAlloca(lhs->getType());
-      } else if (symbolType == SpiceParser::MINUS_MINUS) { // Consider -- operator
+        break;
+      }
+      case PostfixUnaryExprNode::OP_MINUS_MINUS: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
         // Get the lhs variable entry
@@ -2101,8 +2129,12 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         builder->CreateStore(newLhsValue, lhsPtr, lhsVarEntry && lhsVarEntry->isVolatile());
         // Allocate new space and continue working with the new memory slot
         lhsPtr = insertAlloca(lhs->getType());
+        break;
       }
-      tokenCounter++;
+      default:
+        throw std::runtime_error("PostfixUnary fall-through");
+      }
+      opQueue.pop();
     }
 
     if (lhs != nullptr) {
@@ -2647,80 +2679,13 @@ std::any GeneratorVisitor::visitStructInstantiation(StructInstantiationNode *nod
 std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
   emitSourceLocation(node);
 
-  currentSymbolType = any_cast<SymbolType>(visit(node->baseDataType()));
-
-  size_t tokenCounter = 1;
-  while (tokenCounter < node->children.size()) {
-    auto token = dynamic_cast<antlr4::tree::TerminalNode *>(node->children[tokenCounter]);
-    if (token->getSymbol()->getType() == SpiceParser::MUL) { // Consider de-referencing operators
-      currentSymbolType = currentSymbolType.toPointer(err.get(), *token->getSymbol());
-    } else if (token->getSymbol()->getType() == SpiceParser::LBRACKET) { // Consider array bracket pairs
-      tokenCounter++;                                                    // Consume LBRACKET
-      token = dynamic_cast<antlr4::tree::TerminalNode *>(node->children[tokenCounter]);
-      if (token && token->getSymbol()->getType() == SpiceParser::INTEGER) { // Size is attached
-        int size = std::stoi(token->toString());
-        currentSymbolType = currentSymbolType.toArray(err.get(), node->codeLoc, size);
-        tokenCounter++; // Consume INTEGER
-      } else if (auto rule = dynamic_cast<antlr4::RuleContext *>(node->children[tokenCounter])) {
-        auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(rule));
-        dynamicArraySize = builder->CreateLoad(sizeValuePtr->getType()->getPointerElementType(), sizeValuePtr);
-        currentSymbolType = currentSymbolType.toPointer(err.get(), node->codeLoc, dynamicArraySize);
-        tokenCounter++; // Consume assignExpr
-      } else {
-        currentSymbolType = currentSymbolType.toArray(err.get(), node->codeLoc, /* array size */ 0);
-      }
-    }
-    tokenCounter++;
-  }
+  currentSymbolType = node->symbolType;
 
   // Come up with the LLVM type
   llvm::Type *type = getTypeForSymbolType(currentSymbolType, currentScope);
   if (!type)
     throw err->get(node->codeLoc, UNEXPECTED_DYN_TYPE_IR, "Internal compiler error: Dyn was other"); // GCOV_EXCL_LINE
   return type;
-}
-
-std::any GeneratorVisitor::visitBaseDataType(BaseDataTypeNode *node) {
-  if (node->TYPE_DOUBLE())
-    return SymbolType(TY_DOUBLE);
-  if (node->TYPE_INT())
-    return SymbolType(TY_INT);
-  if (node->TYPE_SHORT())
-    return SymbolType(TY_SHORT);
-  if (node->TYPE_LONG())
-    return SymbolType(TY_LONG);
-  if (node->TYPE_BYTE())
-    return SymbolType(TY_BYTE);
-  if (node->TYPE_CHAR())
-    return SymbolType(TY_CHAR);
-  if (node->TYPE_STRING())
-    return SymbolType(TY_STRING);
-  if (node->TYPE_BOOL())
-    return SymbolType(TY_BOOL);
-  if (node->TYPE_DYN()) { // Data type is type inferred
-    assert(!currentVarName.empty());
-    SymbolTableEntry *symbolTableEntry = currentScope->lookup(currentVarName);
-    assert(symbolTableEntry != nullptr);
-    return symbolTableEntry->getType();
-  }
-  if (node->customDataType()) // Struct type or generic type
-    return visit(node->customDataType());
-  throw std::runtime_error("Internal compiler error: Base datatype generator fall-through");
-}
-
-std::any GeneratorVisitor::visitCustomDataType(CustomDataTypeNode *node) {
-  // Get type name in format: a.b.c<d>
-  std::string typeName = node->getText();
-
-  // Search in symbol for a struct
-  SymbolTableEntry *typeEntry = currentScope->lookup(typeName);
-  if (typeEntry != nullptr)
-    return SymbolType(TY_STRUCT, typeName);
-
-  // Search in generic types
-  GenericType *genericType = currentScope->lookupGenericType(typeName);
-  assert(genericType);
-  return SymbolType(genericType->getTypeChain());
 }
 
 llvm::Value *GeneratorVisitor::resolveValue(AstNode *node) {
