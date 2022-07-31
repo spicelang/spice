@@ -343,7 +343,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
       assert(currentScope);
 
       // Get return type
-      llvm::Type *returnType = getTypeForSymbolType(spiceFunc.getReturnType(), currentScope);
+      llvm::Type *returnType = spiceFunc.getReturnType().toLLVMType(*context, currentScope);
 
       // Arguments
       unsigned int currentArgIndex = 0;
@@ -355,7 +355,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
           SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
           assert(argSymbol != nullptr);
           currentConstSigned = argSymbol->getSpecifiers().isSigned();
-          argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex], currentScope));
+          argTypes.push_back(argSymbolTypes[currentArgIndex].toLLVMType(*context, currentScope));
         }
       }
 
@@ -533,7 +533,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
           SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
           assert(argSymbol != nullptr);
           currentConstSigned = argSymbol->getSpecifiers().isSigned();
-          argTypes.push_back(getTypeForSymbolType(argSymbolTypes[currentArgIndex], currentScope));
+          argTypes.push_back(argSymbolTypes[currentArgIndex].toLLVMType(*context, currentScope));
         }
       }
 
@@ -682,7 +682,7 @@ std::any GeneratorVisitor::visitStructDef(StructDefNode *node) {
         SymbolTableEntry *fieldEntry = currentScope->lookup(field->name);
         assert(fieldEntry && !fieldEntry->getType().is(TY_GENERIC));
         currentConstSigned = fieldEntry->getSpecifiers().isSigned();
-        fieldTypes.push_back(getTypeForSymbolType(fieldEntry->getType(), currentScope));
+        fieldTypes.push_back(fieldEntry->getType().toLLVMType(*context, currentScope));
       }
 
       // Set field types to struct type
@@ -1280,7 +1280,7 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
     generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress);
   } else { // Declaration with default value
     if (entry->getType().is(TY_PTR) && entry->getType().getDynamicArraySize() != nullptr) {
-      llvm::Type *itemType = getTypeForSymbolType(entry->getType().getContainedTy(), nullptr);
+      llvm::Type *itemType = entry->getType().getContainedTy().toLLVMType(*context, nullptr);
       dynamicArraySize = entry->getType().getDynamicArraySize();
       llvm::Value *arrayValue = allocateDynamicallySizedArray(itemType);
       memAddress = insertAlloca(arrayValue->getType(), lhsVarName);
@@ -1321,7 +1321,7 @@ std::any GeneratorVisitor::visitReturnStmt(ReturnStmtNode *node) {
   if (node->assignExpr()) {
     assert(returnVarEntry != nullptr);
     // Set the expected type of the value
-    lhsType = getTypeForSymbolType(returnVarEntry->getType(), currentScope);
+    lhsType = returnVarEntry->getType().toLLVMType(*context, currentScope);
     // Visit return value
     returnValuePtr = resolveAddress(node->assignExpr());
   } else if (returnVarEntry != nullptr) { // Function. Procedures do not have a return variable
@@ -2258,7 +2258,7 @@ std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
     }
 
     // If no variable was found, that has a valid address => allocate space for the original entry
-    llvm::Type *llvmType = getTypeForSymbolType(entry->getType(), currentScope);
+    llvm::Type *llvmType = entry->getType().toLLVMType(*context, currentScope);
     llvm::Value *memAddress = insertAlloca(llvmType, lhsVarName);
     entry->updateAddress(memAddress);
     return memAddress;
@@ -2422,7 +2422,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
 
       // Get address of variable in memory
       if (lhsVarName.empty()) {
-        llvm::Type *thisType = getTypeForSymbolType(spiceFunc->getThisType(), accessScope);
+        llvm::Type *thisType = spiceFunc->getThisType().toLLVMType(*context, accessScope);
         thisValuePtr = insertAlloca(thisType);
       } else {
         SymbolTableEntry *assignVarEntry = currentScope->lookup(lhsVarName);
@@ -2430,7 +2430,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
         if (assignVarEntry->getAddress() != nullptr) {
           thisValuePtr = assignVarEntry->getAddress();
         } else {
-          llvm::Type *llvmType = getTypeForSymbolType(assignVarEntry->getType(), currentScope);
+          llvm::Type *llvmType = assignVarEntry->getType().toLLVMType(*context, currentScope);
           thisValuePtr = insertAlloca(llvmType, lhsVarName);
         }
       }
@@ -2470,13 +2470,13 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     std::vector<SymbolType> argSymbolTypes = spiceFunc->getArgTypes();
 
     llvm::Type *returnType =
-        returnSymbolType.is(TY_DYN) ? llvm::Type::getVoidTy(*context) : getTypeForSymbolType(returnSymbolType, accessScope);
+        returnSymbolType.is(TY_DYN) ? llvm::Type::getVoidTy(*context) : returnSymbolType.toLLVMType(*context, accessScope);
 
     std::vector<llvm::Type *> argTypes;
     if (isMethod)
       argTypes.push_back(thisValuePtr->getType());
     for (auto &argSymbolType : argSymbolTypes)
-      argTypes.push_back(getTypeForSymbolType(argSymbolType, accessScope));
+      argTypes.push_back(argSymbolType.toLLVMType(*context, accessScope));
 
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
     module->getOrInsertFunction(fctIdentifier, fctType);
@@ -2682,38 +2682,11 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
   if (node->symbolType.is(TY_DYN)) {
     SymbolTableEntry *lhsVarEntry = currentScope->lookup(lhsVarName);
     assert(lhsVarEntry != nullptr);
-    return getTypeForSymbolType(lhsVarEntry->getType(), currentScope);
+    currentSymbolType = lhsVarEntry->getType();
+    return currentSymbolType.toLLVMType(*context, currentScope);
   }
 
   if (!node->arraySizeExpr().empty()) {
-    // Unwrap type chain
-    /*SymbolType::TypeChain reversedTypeChain;
-    while (!node->symbolType.isPrimitive()) {
-      reversedTypeChain.push(node->symbolType.getTypeChain().top());
-      node->symbolType.getTypeChain().pop();
-    }
-
-    // Wrap type chain again
-    size_t assignExprCounter = 0;
-    while (!reversedTypeChain.empty()) {
-      SymbolType::TypeChainElement element = reversedTypeChain.top();
-      switch (element.superType) {
-      case SymbolSuperType::TY_PTR: {
-
-        node->symbolType = node->symbolType.toPointer(err.get(), node->codeLoc, dynamicSize);
-        break;
-      }
-      case SymbolSuperType::TY_ARRAY: {
-        node->symbolType.getTypeChain().push(element);
-        break;
-      }
-      default:
-        throw std::runtime_error("Data type fall-through");
-      }
-      reversedTypeChain.pop();
-    }
-    currentSymbolType = node->symbolType;*/
-
     // Reset to base type because it will be rebuilt in the next step
     node->symbolType = node->symbolType.getBaseType();
 
@@ -2748,7 +2721,7 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
     }
   }
   currentSymbolType = node->symbolType;
-  return getTypeForSymbolType(currentSymbolType, currentScope);
+  return currentSymbolType.toLLVMType(*context, currentScope);
 }
 
 llvm::Value *GeneratorVisitor::resolveValue(AstNode *node) {
@@ -2924,75 +2897,6 @@ llvm::Function *GeneratorVisitor::retrieveStackRestoreFct() {
   llvm::FunctionType *stackRestoreFctTy = llvm::FunctionType::get(builder->getVoidTy(), builder->getInt8PtrTy(), false);
   module->getOrInsertFunction(stackRestoreFctName, stackRestoreFctTy);
   return module->getFunction(stackRestoreFctName);
-}
-
-llvm::Type *GeneratorVisitor::getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope) {
-  currentSymbolType = symbolType;
-
-  // Get base symbol type
-  std::stack<std::pair<SymbolSuperType, long>> wrapperTypeStack;
-  while (symbolType.isPointer() || symbolType.isArray()) {
-    SymbolSuperType superType = symbolType.isPointer() ? TY_PTR : TY_ARRAY;
-    long arraySize = symbolType.isPointer() ? 0 : symbolType.getArraySize();
-    wrapperTypeStack.push({superType, arraySize});
-    symbolType = symbolType.getContainedTy();
-  }
-
-  llvm::Type *llvmBaseType;
-  switch (symbolType.getSuperType()) {
-  case TY_DOUBLE: {
-    llvmBaseType = llvm::Type::getDoubleTy(*context);
-    break;
-  }
-  case TY_INT: {
-    llvmBaseType = llvm::Type::getInt32Ty(*context);
-    break;
-  }
-  case TY_SHORT: {
-    llvmBaseType = llvm::Type::getInt16Ty(*context);
-    break;
-  }
-  case TY_LONG: {
-    llvmBaseType = llvm::Type::getInt64Ty(*context);
-    break;
-  }
-  case TY_BYTE: // fallthrough
-  case TY_CHAR: {
-    llvmBaseType = llvm::Type::getInt8Ty(*context);
-    break;
-  }
-  case TY_STRING: {
-    llvmBaseType = llvm::Type::getInt8PtrTy(*context);
-    break;
-  }
-  case TY_BOOL: {
-    llvmBaseType = llvm::Type::getInt1Ty(*context);
-    break;
-  }
-  case TY_STRUCT: {
-    std::string structSignature = Struct::getSignature(symbolType.getSubType(), symbolType.getTemplateTypes());
-    SymbolTableEntry *structSymbol = accessScope->lookup(structSignature);
-    assert(structSymbol);
-    llvmBaseType = structSymbol->getLLVMType();
-    assert(llvmBaseType);
-    break;
-  }
-  default:
-    assert(!symbolType.is(TY_GENERIC));
-    throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + symbolType.getName(true));
-  }
-
-  // Consider pointer/array hierarchy
-  while (!wrapperTypeStack.empty()) {
-    if (wrapperTypeStack.top().first == TY_PTR || wrapperTypeStack.top().second <= 0) { // Pointer
-      llvmBaseType = llvmBaseType->getPointerTo();
-    } else { // Otherwise, use the array type with a fixed size
-      llvmBaseType = llvm::ArrayType::get(llvmBaseType, wrapperTypeStack.top().second);
-    }
-    wrapperTypeStack.pop();
-  }
-
-  return llvmBaseType;
 }
 
 llvm::Constant *GeneratorVisitor::getDefaultValueForType(llvm::Type *type, const std::string &subTypeName) {
