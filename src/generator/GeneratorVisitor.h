@@ -166,9 +166,9 @@ private:
   llvm::Function *retrieveExitFct();
   llvm::Function *retrieveStackSaveFct();
   llvm::Function *retrieveStackRestoreFct();
-  llvm::Constant *getDefaultValueForType(llvm::Type *type, const std::string &subTypeName);
+  llvm::Constant *getDefaultValueForSymbolType(SymbolType symbolType);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
-  bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);
+  // bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);
   llvm::Value *doImplicitCast(llvm::Value *lhs, llvm::Type *rhs);
   void initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir);
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
