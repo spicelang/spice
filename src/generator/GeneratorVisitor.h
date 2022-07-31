@@ -153,7 +153,7 @@ private:
   } debugInfo;
 
   // Private methods
-  llvm::Value *resolveValue(AstNode *node);
+  llvm::Value *resolveValue(AstNode *node, SymbolTable *accessScope = nullptr);
   llvm::Value *resolveAddress(AstNode *node, bool storeVolatile = false);
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);

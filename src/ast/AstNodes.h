@@ -58,10 +58,19 @@ public:
     return nodes;
   }
 
+  [[nodiscard]] SymbolType deduceSymbolType() const {
+    if (!symbolType.is(TY_INVALID))
+      return symbolType;
+    if (children.size() != 1)
+      throw std::runtime_error("Cannot deduce symbol type");
+    return children.front()->deduceSymbolType();
+  }
+
   // Public members
   AstNode *parent;
   std::vector<AstNode *> children;
   const CodeLoc codeLoc;
+  SymbolType symbolType = SymbolType(TY_INVALID);
 };
 
 // ========================================================== EntryNode ==========================================================
@@ -1130,7 +1139,6 @@ public:
 
   // Public members
   std::queue<TypeModifier> tmQueue;
-  SymbolType symbolType = SymbolType(TY_INVALID);
 };
 
 // ==================================================== BaseDataTypeNode =========================================================

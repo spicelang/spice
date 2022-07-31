@@ -748,7 +748,7 @@ std::any AnalyzerVisitor::visitThreadDef(ThreadDefNode *node) {
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  return SymbolType(TY_BYTE).toPointer(err.get(), node->codeLoc);
+  return node->symbolType = SymbolType(TY_BYTE).toPointer(err.get(), node->codeLoc);
 }
 
 std::any AnalyzerVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
@@ -792,7 +792,7 @@ std::any AnalyzerVisitor::visitForLoop(ForLoopNode *node) {
 
   // Return to old scope
   currentScope = currentScope->getParent();
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
@@ -861,7 +861,7 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitWhileLoop(WhileLoopNode *node) {
@@ -881,7 +881,7 @@ std::any AnalyzerVisitor::visitWhileLoop(WhileLoopNode *node) {
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitIfStmt(IfStmtNode *node) {
@@ -903,7 +903,7 @@ std::any AnalyzerVisitor::visitIfStmt(IfStmtNode *node) {
   if (node->elseStmt())
     visit(node->elseStmt());
 
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitElseStmt(ElseStmtNode *node) {
@@ -919,7 +919,7 @@ std::any AnalyzerVisitor::visitElseStmt(ElseStmtNode *node) {
     // Return to old scope
     currentScope = currentScope->getParent();
   }
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitAssertStmt(AssertStmtNode *node) {
@@ -929,7 +929,7 @@ std::any AnalyzerVisitor::visitAssertStmt(AssertStmtNode *node) {
   if (!assertConditionType.is(TY_BOOL))
     throw err->get(node->assignExpr()->codeLoc, ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool");
 
-  return assertConditionType;
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitParamLst(ParamLstNode *node) {
@@ -1000,7 +1000,7 @@ std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
   // Insert variable into symbol table
   currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, initialState, node->codeLoc);
 
-  return symbolType;
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitImportStmt(ImportStmtNode * /*node*/) {
@@ -1054,7 +1054,7 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
   for (SymbolTableEntry *varEntry : varsToDestruct)
     insertDestructorCall(node->codeLoc, varEntry);
 
-  return returnType;
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitBreakStmt(BreakStmtNode *node) {
@@ -1068,7 +1068,7 @@ std::any AnalyzerVisitor::visitBreakStmt(BreakStmtNode *node) {
   if (node->breakTimes > nestedLoopCounter)
     throw err->get(node->codeLoc, INVALID_BREAK_NUMBER,
                    "We can only break " + std::to_string(nestedLoopCounter) + " time(s) here");
-  return SymbolType(TY_INT);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitContinueStmt(ContinueStmtNode *node) {
@@ -1082,7 +1082,7 @@ std::any AnalyzerVisitor::visitContinueStmt(ContinueStmtNode *node) {
   if (node->continueTimes > nestedLoopCounter)
     throw err->get(node->codeLoc, INVALID_CONTINUE_NUMBER,
                    "We can only continue " + std::to_string(nestedLoopCounter) + " time(s) here");
-  return SymbolType(TY_INT);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
@@ -1155,7 +1155,7 @@ std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
     throw err->get(node->codeLoc, PRINTF_ARG_COUNT_ERROR,
                    "The placeholder string contains less placeholders that arguments were passed");
 
-  return SymbolType(TY_BOOL);
+  return node->symbolType = SymbolType(TY_BOOL);
 }
 
 std::any AnalyzerVisitor::visitSizeofCall(SizeofCallNode *node) {
@@ -1164,7 +1164,7 @@ std::any AnalyzerVisitor::visitSizeofCall(SizeofCallNode *node) {
   } else { // Size of value
     any_cast<SymbolType>(visit(node->assignExpr()));
   }
-  return SymbolType(TY_INT);
+  return node->symbolType = SymbolType(TY_INT);
 }
 
 std::any AnalyzerVisitor::visitLenCall(LenCallNode *node) {
@@ -1174,12 +1174,12 @@ std::any AnalyzerVisitor::visitLenCall(LenCallNode *node) {
   if (!argType.isArray())
     throw err->get(node->assignExpr()->codeLoc, EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays");
 
-  return SymbolType(TY_INT);
+  return node->symbolType = SymbolType(TY_INT);
 }
 
-std::any AnalyzerVisitor::visitTidCall(TidCallNode * /*node*/) {
+std::any AnalyzerVisitor::visitTidCall(TidCallNode *node) {
   // Nothing to check here. Tid builtin has no arguments
-  return SymbolType(TY_INT);
+  return node->symbolType = SymbolType(TY_INT);
 }
 
 std::any AnalyzerVisitor::visitJoinCall(JoinCallNode *node) {
@@ -1192,7 +1192,7 @@ std::any AnalyzerVisitor::visitJoinCall(JoinCallNode *node) {
   }
 
   // Return the number of threads that were joined
-  return SymbolType(TY_INT);
+  return node->symbolType = SymbolType(TY_INT);
 }
 
 std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
@@ -1259,7 +1259,7 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
             .print();
     }
 
-    return rhsTy;
+    return node->symbolType = rhsTy;
   } else if (node->ternaryExpr()) {
     return visit(node->ternaryExpr());
   } else if (node->threadDef()) {
@@ -1283,7 +1283,7 @@ std::any AnalyzerVisitor::visitTernaryExpr(TernaryExprNode *node) {
     // Check if trueType and falseType are matching
     if (trueType != falseType)
       throw err->get(node->codeLoc, OPERATOR_WRONG_DATA_TYPE, "True and false operands in ternary must be of same data type");
-    return trueType;
+    return node->symbolType = trueType;
   }
   return visit(node->operands().front());
 }
@@ -1296,7 +1296,7 @@ std::any AnalyzerVisitor::visitLogicalOrExpr(LogicalOrExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getLogicalOrResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->symbolType = lhsTy;
   }
   return visit(node->operands().front());
 }
@@ -1309,7 +1309,7 @@ std::any AnalyzerVisitor::visitLogicalAndExpr(LogicalAndExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getLogicalAndResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->symbolType = lhsTy;
   }
   return visit(node->operands().front());
 }
@@ -1322,7 +1322,7 @@ std::any AnalyzerVisitor::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getBitwiseOrResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->symbolType = lhsTy;
   }
   return visit(node->operands().front());
 }
@@ -1335,7 +1335,7 @@ std::any AnalyzerVisitor::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getBitwiseXorResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->symbolType = lhsTy;
   }
   return visit(node->operands().front());
 }
@@ -1348,7 +1348,7 @@ std::any AnalyzerVisitor::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getBitwiseAndResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->symbolType = lhsTy;
   }
   return visit(node->operands().front());
 }
@@ -1360,9 +1360,9 @@ std::any AnalyzerVisitor::visitEqualityExpr(EqualityExprNode *node) {
     auto rhsTy = any_cast<SymbolType>(visit(node->operands()[1]));
 
     if (node->op == EqualityExprNode::OP_EQUAL) // Operator was equal
-      return opRuleManager->getEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->symbolType = opRuleManager->getEqualResultType(node->codeLoc, lhsTy, rhsTy);
     else if (node->op == EqualityExprNode::OP_NOT_EQUAL) // Operator was not equal
-      return opRuleManager->getNotEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->symbolType = opRuleManager->getNotEqualResultType(node->codeLoc, lhsTy, rhsTy);
   }
   return visit(node->operands().front());
 }
@@ -1374,13 +1374,13 @@ std::any AnalyzerVisitor::visitRelationalExpr(RelationalExprNode *node) {
     auto rhsTy = any_cast<SymbolType>(visit(node->operands()[1]));
 
     if (node->op == RelationalExprNode::OP_LESS) // Operator was less
-      return opRuleManager->getLessResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->symbolType = opRuleManager->getLessResultType(node->codeLoc, lhsTy, rhsTy);
     else if (node->op == RelationalExprNode::OP_GREATER) // Operator was greater
-      return opRuleManager->getGreaterResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->symbolType = opRuleManager->getGreaterResultType(node->codeLoc, lhsTy, rhsTy);
     else if (node->op == RelationalExprNode::OP_LESS_EQUAL) // Operator was less equal
-      return opRuleManager->getLessEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->symbolType = opRuleManager->getLessEqualResultType(node->codeLoc, lhsTy, rhsTy);
     else if (node->op == RelationalExprNode::OP_GREATER_EQUAL) // Operator was greater equal
-      return opRuleManager->getGreaterEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->symbolType = opRuleManager->getGreaterEqualResultType(node->codeLoc, lhsTy, rhsTy);
   }
   return visit(node->operands().front());
 }
@@ -1392,9 +1392,9 @@ std::any AnalyzerVisitor::visitShiftExpr(ShiftExprNode *node) {
     auto rhsTy = any_cast<SymbolType>(visit(node->operands()[1]));
 
     if (node->op == ShiftExprNode::OP_SHIFT_LEFT) // Operator was shl
-      return opRuleManager->getShiftLeftResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->symbolType = opRuleManager->getShiftLeftResultType(node->codeLoc, lhsTy, rhsTy);
     else if (node->op == ShiftExprNode::OP_SHIFT_RIGHT) // Operator was shr
-      return opRuleManager->getShiftRightResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->symbolType = opRuleManager->getShiftRightResultType(node->codeLoc, lhsTy, rhsTy);
   }
   return visit(node->operands().front());
 }
@@ -1425,7 +1425,7 @@ std::any AnalyzerVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
       opQueue.pop();
     }
 
-    return currentType;
+    return node->symbolType = currentType;
   }
   return visit(node->operands().front());
 }
@@ -1459,7 +1459,7 @@ std::any AnalyzerVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) 
       opQueue.pop();
     }
 
-    return currentType;
+    return node->symbolType = currentType;
   }
   return visit(node->operands().front());
 }
@@ -1469,7 +1469,7 @@ std::any AnalyzerVisitor::visitCastExpr(CastExprNode *node) {
 
   if (node->isCasted) { // Cast is applied
     auto dstType = any_cast<SymbolType>(visit(node->dataType()));
-    return opRuleManager->getCastResultType(node->codeLoc, dstType, any_cast<SymbolType>(rhs));
+    return node->symbolType = opRuleManager->getCastResultType(node->codeLoc, dstType, any_cast<SymbolType>(rhs));
   }
 
   return rhs;
@@ -1528,7 +1528,7 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     opStack.pop();
   }
 
-  return rhs;
+  return node->symbolType = rhs;
 }
 
 std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
@@ -1619,7 +1619,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     throw err->get(node->codeLoc, REFERENCED_UNDEFINED_VARIABLE,
                    "Variable '" + currentVarName + "' was referenced before declared");
 
-  return lhs;
+  return node->symbolType = lhs;
 }
 
 std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
@@ -1701,7 +1701,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
     // Otherwise, push the retrieved scope to the scope path
     scopePath.pushFragment(currentVarName, accessScope);
 
-    return entry->getType();
+    return node->symbolType = entry->getType();
   }
 
   if (node->printfCall())
@@ -1744,7 +1744,7 @@ std::any AnalyzerVisitor::visitValue(ValueNode *node) {
     auto nilType = any_cast<SymbolType>(visit(node->nilType()));
     if (nilType.is(TY_DYN))
       throw err->get(node->nilType()->codeLoc, UNEXPECTED_DYN_TYPE_SA, "Nil must have an explicit type");
-    return nilType;
+    return node->symbolType = nilType;
   }
 
   throw std::runtime_error("Value fall-through");
@@ -1753,21 +1753,21 @@ std::any AnalyzerVisitor::visitValue(ValueNode *node) {
 std::any AnalyzerVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   switch (node->type) {
   case PrimitiveValueNode::TY_DOUBLE:
-    return SymbolType(TY_DOUBLE);
+    return node->symbolType = SymbolType(TY_DOUBLE);
   case PrimitiveValueNode::TY_INT:
-    return SymbolType(TY_INT);
+    return node->symbolType = SymbolType(TY_INT);
   case PrimitiveValueNode::TY_SHORT:
-    return SymbolType(TY_SHORT);
+    return node->symbolType = SymbolType(TY_SHORT);
   case PrimitiveValueNode::TY_LONG:
-    return SymbolType(TY_LONG);
+    return node->symbolType = SymbolType(TY_LONG);
   case PrimitiveValueNode::TY_BYTE:
-    return SymbolType(TY_BYTE);
+    return node->symbolType = SymbolType(TY_BYTE);
   case PrimitiveValueNode::TY_CHAR:
-    return SymbolType(TY_CHAR);
+    return node->symbolType = SymbolType(TY_CHAR);
   case PrimitiveValueNode::TY_STRING:
-    return SymbolType(TY_STRING);
+    return node->symbolType = SymbolType(TY_STRING);
   case PrimitiveValueNode::TY_BOOL:
-    return SymbolType(TY_BOOL);
+    return node->symbolType = SymbolType(TY_BOOL);
   }
   throw std::runtime_error("Primitive value fall-through");
 }
@@ -1878,21 +1878,21 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // Return struct type on constructor call
   if (constructorCall)
-    return thisType;
+    return node->symbolType = thisType;
 
   // If the callee is a procedure, return type bool
   if (spiceFunc->isProcedure() || spiceFunc->getReturnType().is(TY_DYN))
-    return SymbolType(TY_BOOL);
+    return node->symbolType = SymbolType(TY_BOOL);
 
   // Retrieve the return type of the function
   SymbolType returnType = spiceFunc->getReturnType();
 
   // If the return type is an external struct, initialize it
   if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope))
-    return initExtStruct(scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true), returnType.getSubType(),
-                         thisType.getTemplateTypes(), node->codeLoc);
+    return node->symbolType = initExtStruct(scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true),
+                                            returnType.getSubType(), thisType.getTemplateTypes(), node->codeLoc);
 
-  return returnType;
+  return node->symbolType = returnType;
 }
 
 std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node) {
@@ -1925,7 +1925,7 @@ std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node
     actualItemType = expectedType.getContainedTy();
   }
 
-  return actualItemType.toArray(err.get(), node->codeLoc, actualSize);
+  return node->symbolType = actualItemType.toArray(err.get(), node->codeLoc, actualSize);
 }
 
 std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node) {
@@ -2015,7 +2015,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
     }
   }
 
-  return structType;
+  return node->symbolType = structType;
 }
 
 std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
@@ -2057,25 +2057,25 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
 std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {
   switch (node->type) {
   case BaseDataTypeNode::TY_DOUBLE:
-    return SymbolType(TY_DOUBLE);
+    return node->symbolType = SymbolType(TY_DOUBLE);
   case BaseDataTypeNode::TY_INT:
-    return SymbolType(TY_INT);
+    return node->symbolType = SymbolType(TY_INT);
   case BaseDataTypeNode::TY_SHORT:
-    return SymbolType(TY_SHORT);
+    return node->symbolType = SymbolType(TY_SHORT);
   case BaseDataTypeNode::TY_LONG:
-    return SymbolType(TY_LONG);
+    return node->symbolType = SymbolType(TY_LONG);
   case BaseDataTypeNode::TY_BYTE:
-    return SymbolType(TY_BYTE);
+    return node->symbolType = SymbolType(TY_BYTE);
   case BaseDataTypeNode::TY_CHAR:
-    return SymbolType(TY_CHAR);
+    return node->symbolType = SymbolType(TY_CHAR);
   case BaseDataTypeNode::TY_STRING:
-    return SymbolType(TY_STRING);
+    return node->symbolType = SymbolType(TY_STRING);
   case BaseDataTypeNode::TY_BOOL:
-    return SymbolType(TY_BOOL);
+    return node->symbolType = SymbolType(TY_BOOL);
   case BaseDataTypeNode::TY_CUSTOM:
-    return std::any_cast<SymbolType>(visit(node->customDataType()));
+    return node->symbolType = std::any_cast<SymbolType>(visit(node->customDataType()));
   default:
-    return SymbolType(TY_DYN);
+    return node->symbolType = SymbolType(TY_DYN);
   }
 }
 
@@ -2084,7 +2084,7 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   std::string firstFragment = node->typeNameFragments.front();
   SymbolTableEntry *entry = currentScope->lookup(firstFragment);
   if (node->typeNameFragments.size() == 1 && !entry && currentScope->lookupGenericType(firstFragment))
-    return *static_cast<SymbolType *>(currentScope->lookupGenericType(firstFragment));
+    return node->symbolType = *static_cast<SymbolType *>(currentScope->lookupGenericType(firstFragment));
 
   // It is a struct type -> get the access scope
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
@@ -2123,7 +2123,7 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
     spiceStruct->setUsed();
 
   if (structIsImported) // Imported struct
-    return initExtStruct(accessScope, accessScopePrefix, structName, concreteTemplateTypes, node->codeLoc);
+    return node->symbolType = initExtStruct(accessScope, accessScopePrefix, structName, concreteTemplateTypes, node->codeLoc);
 
   // Check if struct was declared
   SymbolTableEntry *structSymbol = accessScope->lookup(structName);
@@ -2131,7 +2131,7 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
     throw err->get(node->codeLoc, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
   structSymbol->setUsed();
 
-  return SymbolType(TY_STRUCT, structName, concreteTemplateTypes);
+  return node->symbolType = SymbolType(TY_STRUCT, structName, concreteTemplateTypes);
 }
 
 void AnalyzerVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {

@@ -276,7 +276,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
 
       // Create return stmt
       llvm::Value *result = returnSymbol->getAddress();
-      builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
+      builder->CreateRet(builder->CreateLoad(fct->getReturnType(), result));
     }
 
     // Conclude debug information
@@ -451,7 +451,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
           builder->CreateCall(retrieveStackRestoreFct(), {stackState});
         // Create return stmt
         llvm::Value *result = returnSymbol->getAddress();
-        builder->CreateRet(builder->CreateLoad(result->getType()->getPointerElementType(), result));
+        builder->CreateRet(builder->CreateLoad(fct->getReturnType(), result));
       }
 
       // Conclude debug information
@@ -825,12 +825,13 @@ std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
   // Store function args
   llvm::Value *recArgStructPtr = builder->CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
   unsigned int i = 0;
-  for (const auto &capture : currentScope->getCaptures()) {
+  for (const auto &[name, capture] : currentScope->getCaptures()) {
     std::string argName = argStructFieldNames[i];
     llvm::Value *memAddress = builder->CreateStructGEP(argStructTy, recArgStructPtr, i);
-    memAddress = builder->CreateLoad(memAddress->getType()->getPointerElementType(), memAddress);
+    llvm::Type *loadType = capture.getEntry()->getType().toLLVMType(*context, currentScope)->getPointerTo();
+    memAddress = builder->CreateLoad(loadType, memAddress);
     // Push address to each capture to ensure that the address is valid and known to the inner function
-    capture.second.getEntry()->pushAddress(memAddress);
+    capture.getEntry()->pushAddress(memAddress);
     i++;
   }
 
@@ -1274,7 +1275,6 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   llvm::Value *memAddress = nullptr;
   if (node->assignExpr()) { // Declaration with assignment
     memAddress = resolveAddress(node->assignExpr());
-    assert(memAddress->getType()->getPointerElementType() == varType);
 
     // Generate debug info for local variable
     generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress);
@@ -1399,14 +1399,14 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
   for (const auto &arg : node->assignExpr()) {
     // Visit argument
     auto argValPtr = resolveAddress(arg);
+    llvm::Type *targetType = arg->symbolType.toLLVMType(*context, currentScope)->getPointerTo();
 
     llvm::Value *argVal;
-    if (argValPtr->getType()->getPointerElementType()->isArrayTy()) { // Convert array type to pointer type
+    if (arg->symbolType.isArray()) { // Convert array type to pointer type
       llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(0)};
-      llvm::Type *targetType = argValPtr->getType()->getPointerElementType();
       argVal = builder->CreateInBoundsGEP(targetType, argValPtr, indices);
     } else {
-      argVal = builder->CreateLoad(argValPtr->getType()->getPointerElementType(), argValPtr);
+      argVal = builder->CreateLoad(targetType, argValPtr);
     }
 
     // Cast all integer types to 32 bit
@@ -2724,21 +2724,29 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
   return currentSymbolType.toLLVMType(*context, currentScope);
 }
 
-llvm::Value *GeneratorVisitor::resolveValue(AstNode *node) {
+llvm::Value *GeneratorVisitor::resolveValue(AstNode *node, SymbolTable *accessScope) {
+  if (!accessScope)
+    accessScope = currentScope;
+
   std::any valueAny = visit(node);
+
   if (!valueAny.has_value() && currentConstValue)
     return currentConstValue;
+
   auto valueAddr = any_cast<llvm::Value *>(valueAny);
-  return builder->CreateLoad(valueAddr->getType()->getPointerElementType(), valueAddr);
+  llvm::Type *dstType = node->deduceSymbolType().toLLVMType(*context, accessScope);
+  return builder->CreateLoad(dstType->getPointerTo(), valueAddr);
 }
 
 llvm::Value *GeneratorVisitor::resolveAddress(AstNode *node, bool storeVolatile) {
   std::any valueAny = visit(node);
+
   if (!valueAny.has_value() && currentConstValue) {
     llvm::Value *valueAddr = insertAlloca(currentConstValue->getType(), lhsVarName);
     builder->CreateStore(currentConstValue, valueAddr, storeVolatile);
     return valueAddr;
   }
+
   return any_cast<llvm::Value *>(valueAny);
 }
 
@@ -2861,7 +2869,7 @@ llvm::Function *GeneratorVisitor::retrievePrintfFct() {
   if (printfFct)
     return printfFct;
   // Not found -> declare it for linkage
-  llvm::FunctionType *printfFctTy = llvm::FunctionType::get(builder->getInt32Ty(), builder->getInt8PtrTy(), true);
+  llvm::FunctionType *printfFctTy = llvm::FunctionType::get(builder->getInt32Ty(), builder->getPtrTy(), true);
   module->getOrInsertFunction(printfFctName, printfFctTy);
   return module->getFunction(printfFctName);
 }
