@@ -7,6 +7,9 @@
 #include <utility>
 
 #include <exception/ErrorFactory.h>
+#include <symbol/Struct.h>
+#include <symbol/SymbolTable.h>
+#include <symbol/SymbolTableEntry.h>
 
 /**
  * Retrieve the type chain of the symbol type
@@ -81,7 +84,7 @@ SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
 SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   // Copy the stack to not destroy the present one
   TypeChain chainCopy = typeChain;
-  // Unwrap the chain until the base type can be retrieved. To be able to restore the structure later, save it to the tmp chain
+  // Reverse type chain
   TypeChain tmp;
   while (chainCopy.top().superType == TY_PTR || chainCopy.top().superType == TY_ARRAY) {
     tmp.push(chainCopy.top());
@@ -95,6 +98,58 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   }
   // Return the new chain as a symbol type
   return SymbolType(chainCopy);
+}
+
+/**
+ * Return the LLVM type for this symbol type
+ *
+ * @return Corresponding LLVM type
+ */
+llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const {
+  assert(!isOneOf({TY_DYN, TY_INVALID}));
+
+  if (is(TY_DOUBLE))
+    return llvm::Type::getDoubleTy(context);
+
+  if (is(TY_INT))
+    return llvm::Type::getInt32Ty(context);
+
+  if (is(TY_SHORT))
+    return llvm::Type::getInt16Ty(context);
+
+  if (is(TY_LONG))
+    return llvm::Type::getInt64Ty(context);
+
+  if (isOneOf({TY_CHAR, TY_BYTE}))
+    return llvm::Type::getInt8Ty(context);
+
+  if (is(TY_STRING))
+    return llvm::Type::getInt8PtrTy(context);
+
+  if (is(TY_BOOL))
+    return llvm::Type::getInt1Ty(context);
+
+  if (is(TY_STRUCT)) {
+    std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
+    SymbolTableEntry *structSymbol = accessScope->lookup(structSignature);
+    assert(structSymbol);
+    llvm::Type *structType = structSymbol->getLLVMType();
+    assert(structType);
+    return structType;
+  }
+
+  if (isPointer() || (isArray() && getArraySize() <= 0)) {
+    llvm::PointerType *pointerType = getContainedTy().toLLVMType(context, accessScope)->getPointerTo();
+    return static_cast<llvm::Type *>(pointerType);
+  }
+
+  if (isArray()) {
+    llvm::ArrayType *arrayType = llvm::ArrayType::get(getContainedTy().toLLVMType(context, accessScope), getArraySize());
+    return static_cast<llvm::Type *>(arrayType);
+  }
+
+  assert(!is(TY_GENERIC));
+  throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + getName(true));
 }
 
 /**

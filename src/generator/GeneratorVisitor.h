@@ -166,7 +166,6 @@ private:
   llvm::Function *retrieveExitFct();
   llvm::Function *retrieveStackSaveFct();
   llvm::Function *retrieveStackRestoreFct();
-  llvm::Type *getTypeForSymbolType(SymbolType symbolType, SymbolTable *accessScope);
   llvm::Constant *getDefaultValueForType(llvm::Type *type, const std::string &subTypeName);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);

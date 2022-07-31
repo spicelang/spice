@@ -6,10 +6,13 @@
 #include <string>
 #include <vector>
 
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
 // Forward declarations
 class ErrorFactory;
+class SymbolTable;
 struct CodeLoc;
 
 enum SymbolSuperType {
@@ -66,6 +69,7 @@ public:
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
+  [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const;
   [[nodiscard]] bool isPointer() const;
   [[nodiscard]] bool isPointerOf(SymbolSuperType superType) const;
   [[nodiscard]] bool isArray() const;
