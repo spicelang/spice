@@ -64,7 +64,7 @@ digraph {
  L2C4_printfCall -> L2C4
  L2C10 [color="lightblue",label="LPAREN: ("];
  L2C4_printfCall -> L2C10
- L2C11 [color="lightblue",label="STRING_LITERAL: \"Hello World!\""];
+ L2C11 [color="lightblue",label="STRING_LIT: \"Hello World!\""];
  L2C4_printfCall -> L2C11
  L2C25 [color="lightblue",label="RPAREN: )"];
  L2C4_printfCall -> L2C25

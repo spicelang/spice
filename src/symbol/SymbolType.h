@@ -33,7 +33,8 @@ enum SymbolSuperType {
 };
 
 class SymbolType {
-private:
+public:
+  // Structs
   struct TypeChainElement {
     SymbolSuperType superType;
     std::string subType;
@@ -45,9 +46,10 @@ private:
              lhs.dynamicArraySize == rhs.dynamicArraySize;
     }
   };
+
+  // Type defs
   typedef std::stack<TypeChainElement> TypeChain;
 
-public:
   // Constructors
   explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}, nullptr}}) {}
   explicit SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}, nullptr}}) {}

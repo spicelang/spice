@@ -96,7 +96,7 @@ digraph {
  L2C12_atomicExpr -> L2C12_value;
  L2C12_primitiveValue [color="lightgreen",label="primitiveValue"];
  L2C12_value -> L2C12_primitiveValue;
- L2C12 [color="lightblue",label="INTEGER: 2"];
+ L2C12 [color="lightblue",label="INT_LIT: 2"];
  L2C12_primitiveValue -> L2C12
  L2C14 [color="lightblue",label="LBRACE: {"];
  L2C4_ifStmt -> L2C14
@@ -144,7 +144,7 @@ digraph {
  L2C23_atomicExpr -> L2C23_value;
  L2C23_primitiveValue [color="lightgreen",label="primitiveValue"];
  L2C23_value -> L2C23_primitiveValue;
- L2C23 [color="lightblue",label="INTEGER: 1"];
+ L2C23 [color="lightblue",label="INT_LIT: 1"];
  L2C23_primitiveValue -> L2C23
  L2C24 [color="lightblue",label="SEMICOLON: ;"];
  L2C16_stmt -> L2C24
@@ -248,7 +248,7 @@ digraph {
  L3C19_atomicExpr -> L3C19_value;
  L3C19_primitiveValue [color="lightgreen",label="primitiveValue"];
  L3C19_value -> L3C19_primitiveValue;
- L3C19 [color="lightblue",label="INTEGER: 1"];
+ L3C19 [color="lightblue",label="INT_LIT: 1"];
  L3C19_primitiveValue -> L3C19
  L3C20 [color="lightblue",label="RPAREN: )"];
  L3C11_functionCall -> L3C20
@@ -324,7 +324,7 @@ digraph {
  L3C32_atomicExpr -> L3C32_value;
  L3C32_primitiveValue [color="lightgreen",label="primitiveValue"];
  L3C32_value -> L3C32_primitiveValue;
- L3C32 [color="lightblue",label="INTEGER: 2"];
+ L3C32 [color="lightblue",label="INT_LIT: 2"];
  L3C32_primitiveValue -> L3C32
  L3C33 [color="lightblue",label="RPAREN: )"];
  L3C24_functionCall -> L3C33
@@ -402,7 +402,7 @@ digraph {
  L7C15_atomicExpr -> L7C15_value;
  L7C15_primitiveValue [color="lightgreen",label="primitiveValue"];
  L7C15_value -> L7C15_primitiveValue;
- L7C15 [color="lightblue",label="INTEGER: 46"];
+ L7C15 [color="lightblue",label="INT_LIT: 46"];
  L7C15_primitiveValue -> L7C15
  L7C17 [color="lightblue",label="SEMICOLON: ;"];
  L7C4_stmt -> L7C17
@@ -448,7 +448,7 @@ digraph {
  L8C4_printfCall -> L8C4
  L8C10 [color="lightblue",label="LPAREN: ("];
  L8C4_printfCall -> L8C10
- L8C11 [color="lightblue",label="STRING_LITERAL: \"Fibonacci of %d: %d\""];
+ L8C11 [color="lightblue",label="STRING_LIT: \"Fibonacci of %d: %d\""];
  L8C4_printfCall -> L8C11
  L8C32 [color="lightblue",label="COMMA: ,"];
  L8C4_printfCall -> L8C32

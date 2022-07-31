@@ -132,7 +132,7 @@ digraph {
  L2C4_printfCall -> L2C4
  L2C10 [color="lightblue",label="LPAREN: ("];
  L2C4_printfCall -> L2C10
- L2C11 [color="lightblue",label="STRING_LITERAL: \"Mandatory: %d\\n\""];
+ L2C11 [color="lightblue",label="STRING_LIT: \"Mandatory: %d\\n\""];
  L2C4_printfCall -> L2C11
  L2C28 [color="lightblue",label="COMMA: ,"];
  L2C4_printfCall -> L2C28
@@ -216,7 +216,7 @@ digraph {
  L3C4_printfCall -> L3C4
  L3C10 [color="lightblue",label="LPAREN: ("];
  L3C4_printfCall -> L3C10
- L3C11 [color="lightblue",label="STRING_LITERAL: \"Optional: %d\\n\""];
+ L3C11 [color="lightblue",label="STRING_LIT: \"Optional: %d\\n\""];
  L3C4_printfCall -> L3C11
  L3C27 [color="lightblue",label="COMMA: ,"];
  L3C4_printfCall -> L3C27
@@ -300,7 +300,7 @@ digraph {
  L4C11_atomicExpr -> L4C11_value;
  L4C11_primitiveValue [color="lightgreen",label="primitiveValue"];
  L4C11_value -> L4C11_primitiveValue;
- L4C11 [color="lightblue",label="DOUBLE: 0.1"];
+ L4C11 [color="lightblue",label="DOUBLE_LIT: 0.1"];
  L4C11_primitiveValue -> L4C11
  L4C14 [color="lightblue",label="SEMICOLON: ;"];
  L4C4_stmt -> L4C14
@@ -384,7 +384,7 @@ digraph {
  L8C4_printfCall -> L8C4
  L8C10 [color="lightblue",label="LPAREN: ("];
  L8C4_printfCall -> L8C10
- L8C11 [color="lightblue",label="STRING_LITERAL: \"String: %s\""];
+ L8C11 [color="lightblue",label="STRING_LIT: \"String: %s\""];
  L8C4_printfCall -> L8C11
  L8C23 [color="lightblue",label="COMMA: ,"];
  L8C4_printfCall -> L8C23
@@ -468,7 +468,7 @@ digraph {
  L9C11_atomicExpr -> L9C11_value;
  L9C11_primitiveValue [color="lightgreen",label="primitiveValue"];
  L9C11_value -> L9C11_primitiveValue;
- L9C11 [color="lightblue",label="DOUBLE: 0.3"];
+ L9C11 [color="lightblue",label="DOUBLE_LIT: 0.3"];
  L9C11_primitiveValue -> L9C11
  L9C14 [color="lightblue",label="SEMICOLON: ;"];
  L9C4_stmt -> L9C14
@@ -586,7 +586,7 @@ digraph {
  L13C29_atomicExpr -> L13C29_value;
  L13C29_primitiveValue [color="lightgreen",label="primitiveValue"];
  L13C29_value -> L13C29_primitiveValue;
- L13C29 [color="lightblue",label="INTEGER: 1"];
+ L13C29 [color="lightblue",label="INT_LIT: 1"];
  L13C29_primitiveValue -> L13C29
  L13C30 [color="lightblue",label="COMMA: ,"];
  L13C29_argLst -> L13C30
@@ -674,7 +674,7 @@ digraph {
  L14C4_printfCall -> L14C4
  L14C10 [color="lightblue",label="LPAREN: ("];
  L14C4_printfCall -> L14C10
- L14C11 [color="lightblue",label="STRING_LITERAL: \"Result: %f\\n\""];
+ L14C11 [color="lightblue",label="STRING_LIT: \"Result: %f\\n\""];
  L14C4_printfCall -> L14C11
  L14C25 [color="lightblue",label="COMMA: ,"];
  L14C4_printfCall -> L14C25
@@ -796,7 +796,7 @@ digraph {
  L15C19_atomicExpr -> L15C19_value;
  L15C19_primitiveValue [color="lightgreen",label="primitiveValue"];
  L15C19_value -> L15C19_primitiveValue;
- L15C19 [color="lightblue",label="STRING_LITERAL: \"test\""];
+ L15C19 [color="lightblue",label="STRING_LIT: \"test\""];
  L15C19_primitiveValue -> L15C19
  L15C25 [color="lightblue",label="RPAREN: )"];
  L15C4_functionCall -> L15C25

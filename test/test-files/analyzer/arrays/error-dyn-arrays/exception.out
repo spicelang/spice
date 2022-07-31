@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/arrays/error-dyn-arrays/source.spice:2:5: Array size invalid: The size of an array must be > 1 and explicitly stated
+Semantic error in ./test-files/analyzer/arrays/error-dyn-arrays/source.spice:2:5: Dyn arrays not allowed: Just use the dyn type without '[]' instead

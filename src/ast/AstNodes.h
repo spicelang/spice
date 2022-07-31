@@ -1113,6 +1113,7 @@ public:
   // Structs
   struct TypeModifier {
     TypeModifierType modifierType = TY_POINTER;
+    bool hasSize = false;
     bool isSizeHardcoded = false;
     int hardcodedSize = 0;
   };
@@ -1150,7 +1151,6 @@ public:
 
   // Public members
   Type type;
-  SymbolType symbolType = SymbolType(TY_INVALID);
 };
 
 // ==================================================== CustomDataTypeNode =======================================================

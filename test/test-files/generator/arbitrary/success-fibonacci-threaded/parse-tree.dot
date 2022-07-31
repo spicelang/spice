@@ -96,7 +96,7 @@ digraph {
  L2C12_atomicExpr -> L2C12_value;
  L2C12_primitiveValue [color="lightgreen",label="primitiveValue"];
  L2C12_value -> L2C12_primitiveValue;
- L2C12 [color="lightblue",label="INTEGER: 2"];
+ L2C12 [color="lightblue",label="INT_LIT: 2"];
  L2C12_primitiveValue -> L2C12
  L2C14 [color="lightblue",label="LBRACE: {"];
  L2C4_ifStmt -> L2C14
@@ -144,7 +144,7 @@ digraph {
  L2C23_atomicExpr -> L2C23_value;
  L2C23_primitiveValue [color="lightgreen",label="primitiveValue"];
  L2C23_value -> L2C23_primitiveValue;
- L2C23 [color="lightblue",label="INTEGER: 1"];
+ L2C23 [color="lightblue",label="INT_LIT: 1"];
  L2C23_primitiveValue -> L2C23
  L2C24 [color="lightblue",label="SEMICOLON: ;"];
  L2C16_stmt -> L2C24
@@ -248,7 +248,7 @@ digraph {
  L3C19_atomicExpr -> L3C19_value;
  L3C19_primitiveValue [color="lightgreen",label="primitiveValue"];
  L3C19_value -> L3C19_primitiveValue;
- L3C19 [color="lightblue",label="INTEGER: 1"];
+ L3C19 [color="lightblue",label="INT_LIT: 1"];
  L3C19_primitiveValue -> L3C19
  L3C20 [color="lightblue",label="RPAREN: )"];
  L3C11_functionCall -> L3C20
@@ -324,7 +324,7 @@ digraph {
  L3C32_atomicExpr -> L3C32_value;
  L3C32_primitiveValue [color="lightgreen",label="primitiveValue"];
  L3C32_value -> L3C32_primitiveValue;
- L3C32 [color="lightblue",label="INTEGER: 2"];
+ L3C32 [color="lightblue",label="INT_LIT: 2"];
  L3C32_primitiveValue -> L3C32
  L3C33 [color="lightblue",label="RPAREN: )"];
  L3C24_functionCall -> L3C33
@@ -402,7 +402,7 @@ digraph {
  L7C22_atomicExpr -> L7C22_value;
  L7C22_primitiveValue [color="lightgreen",label="primitiveValue"];
  L7C22_value -> L7C22_primitiveValue;
- L7C22 [color="lightblue",label="INTEGER: 8"];
+ L7C22 [color="lightblue",label="INT_LIT: 8"];
  L7C22_primitiveValue -> L7C22
  L7C23 [color="lightblue",label="SEMICOLON: ;"];
  L7C4_stmt -> L7C23
@@ -420,7 +420,7 @@ digraph {
  L8C4_dataType -> L8C8
  L8C9 [color="lightblue",label="LBRACKET: ["];
  L8C4_dataType -> L8C9
- L8C10 [color="lightblue",label="INTEGER: 8"];
+ L8C10 [color="lightblue",label="INT_LIT: 8"];
  L8C4_dataType -> L8C10
  L8C11 [color="lightblue",label="RBRACKET: ]"];
  L8C4_dataType -> L8C11
@@ -524,7 +524,7 @@ digraph {
  L9C16_atomicExpr -> L9C16_value;
  L9C16_primitiveValue [color="lightgreen",label="primitiveValue"];
  L9C16_value -> L9C16_primitiveValue;
- L9C16 [color="lightblue",label="INTEGER: 0"];
+ L9C16 [color="lightblue",label="INT_LIT: 0"];
  L9C16_primitiveValue -> L9C16
  L9C17 [color="lightblue",label="SEMICOLON: ;"];
  L9C8_forHead -> L9C17
@@ -778,7 +778,7 @@ digraph {
  L11C29_atomicExpr -> L11C29_value;
  L11C29_primitiveValue [color="lightgreen",label="primitiveValue"];
  L11C29_value -> L11C29_primitiveValue;
- L11C29 [color="lightblue",label="INTEGER: 46"];
+ L11C29 [color="lightblue",label="INT_LIT: 46"];
  L11C29_primitiveValue -> L11C29
  L11C31 [color="lightblue",label="RPAREN: )"];
  L11C25_functionCall -> L11C31
@@ -826,7 +826,7 @@ digraph {
  L12C12_printfCall -> L12C12
  L12C18 [color="lightblue",label="LPAREN: ("];
  L12C12_printfCall -> L12C18
- L12C19 [color="lightblue",label="STRING_LITERAL: \"Thread returned with result: %d\\n\""];
+ L12C19 [color="lightblue",label="STRING_LIT: \"Thread returned with result: %d\\n\""];
  L12C12_printfCall -> L12C19
  L12C54 [color="lightblue",label="COMMA: ,"];
  L12C12_printfCall -> L12C54
@@ -916,7 +916,7 @@ digraph {
  L15C4_printfCall -> L15C4
  L15C10 [color="lightblue",label="LPAREN: ("];
  L15C4_printfCall -> L15C10
- L15C11 [color="lightblue",label="STRING_LITERAL: \"Started all threads. Waiting for results ...\\n\""];
+ L15C11 [color="lightblue",label="STRING_LIT: \"Started all threads. Waiting for results ...\\n\""];
  L15C4_printfCall -> L15C11
  L15C59 [color="lightblue",label="RPAREN: )"];
  L15C4_printfCall -> L15C59
@@ -1044,7 +1044,7 @@ digraph {
  L17C4_printfCall -> L17C4
  L17C10 [color="lightblue",label="LPAREN: ("];
  L17C4_printfCall -> L17C10
- L17C11 [color="lightblue",label="STRING_LITERAL: \"Program finished\""];
+ L17C11 [color="lightblue",label="STRING_LIT: \"Program finished\""];
  L17C4_printfCall -> L17C11
  L17C29 [color="lightblue",label="RPAREN: )"];
  L17C4_printfCall -> L17C29

@@ -1265,8 +1265,6 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
 
   // Get data type
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(node->dataType()));
-  if (!varType)
-    varType = lhsType = getTypeForSymbolType(entry->getType(), currentScope);
   entry->updateLLVMType(varType);
   entry->updateType(currentSymbolType, true);
 
@@ -2681,45 +2679,76 @@ std::any GeneratorVisitor::visitStructInstantiation(StructInstantiationNode *nod
 std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
   emitSourceLocation(node);
 
-  currentSymbolType = node->baseDataType()->symbolType;
-
-  if (currentSymbolType.is(TY_DYN))
-    return static_cast<llvm::Type *>(nullptr);
-
-  size_t assignExprCounter = 0;
-  std::vector<AssignExprNode *> arraySizeExpr = node->arraySizeExpr();
-  std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
-  while (!tmQueue.empty()) {
-    DataTypeNode::TypeModifier typeModifier = tmQueue.front();
-    switch (typeModifier.modifierType) {
-    case DataTypeNode::TY_POINTER: {
-      currentSymbolType = currentSymbolType.toPointer(err.get(), node->codeLoc);
-      break;
-    }
-    case DataTypeNode::TY_ARRAY: {
-      if (typeModifier.isSizeHardcoded) {
-        currentSymbolType = currentSymbolType.toArray(err.get(), node->codeLoc, typeModifier.hardcodedSize);
-      } else {
-        AssignExprNode *indexExpr = arraySizeExpr[assignExprCounter++];
-        assert(indexExpr != nullptr);
-        auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(indexExpr));
-        dynamicArraySize = builder->CreateLoad(sizeValuePtr->getType()->getPointerElementType(), sizeValuePtr);
-        currentSymbolType = currentSymbolType.toPointer(err.get(), node->codeLoc, dynamicArraySize);
-      }
-      break;
-    }
-    default:
-      throw std::runtime_error("Modifier type fall-through");
-    }
-    tmQueue.pop();
+  if (node->symbolType.is(TY_DYN)) {
+    SymbolTableEntry *lhsVarEntry = currentScope->lookup(lhsVarName);
+    assert(lhsVarEntry != nullptr);
+    return getTypeForSymbolType(lhsVarEntry->getType(), currentScope);
   }
-  node->symbolType = currentSymbolType;
 
-  // Come up with the LLVM type
-  llvm::Type *type = getTypeForSymbolType(currentSymbolType, currentScope);
-  if (!type)
-    throw err->get(node->codeLoc, UNEXPECTED_DYN_TYPE_IR, "Internal compiler error: Dyn was other"); // GCOV_EXCL_LINE
-  return type;
+  if (!node->arraySizeExpr().empty()) {
+    // Unwrap type chain
+    /*SymbolType::TypeChain reversedTypeChain;
+    while (!node->symbolType.isPrimitive()) {
+      reversedTypeChain.push(node->symbolType.getTypeChain().top());
+      node->symbolType.getTypeChain().pop();
+    }
+
+    // Wrap type chain again
+    size_t assignExprCounter = 0;
+    while (!reversedTypeChain.empty()) {
+      SymbolType::TypeChainElement element = reversedTypeChain.top();
+      switch (element.superType) {
+      case SymbolSuperType::TY_PTR: {
+
+        node->symbolType = node->symbolType.toPointer(err.get(), node->codeLoc, dynamicSize);
+        break;
+      }
+      case SymbolSuperType::TY_ARRAY: {
+        node->symbolType.getTypeChain().push(element);
+        break;
+      }
+      default:
+        throw std::runtime_error("Data type fall-through");
+      }
+      reversedTypeChain.pop();
+    }
+    currentSymbolType = node->symbolType;*/
+
+    // Reset to base type because it will be rebuilt in the next step
+    node->symbolType = node->symbolType.getBaseType();
+
+    size_t assignExprCounter = 0;
+    std::vector<AssignExprNode *> arraySizeExpr = node->arraySizeExpr();
+    std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
+    while (!tmQueue.empty()) {
+      DataTypeNode::TypeModifier typeModifier = tmQueue.front();
+      switch (typeModifier.modifierType) {
+      case DataTypeNode::TY_POINTER: {
+        node->symbolType = node->symbolType.toPointer(err.get(), node->codeLoc);
+        break;
+      }
+      case DataTypeNode::TY_ARRAY: {
+        if (!typeModifier.hasSize) {
+          node->symbolType = node->symbolType.toPointer(err.get(), node->codeLoc);
+        } else if (typeModifier.isSizeHardcoded) {
+          node->symbolType = node->symbolType.toArray(err.get(), node->codeLoc, typeModifier.hardcodedSize);
+        } else {
+          AssignExprNode *indexExpr = arraySizeExpr[assignExprCounter++];
+          assert(indexExpr != nullptr);
+          auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(indexExpr));
+          dynamicArraySize = builder->CreateLoad(sizeValuePtr->getType()->getPointerElementType(), sizeValuePtr);
+          node->symbolType = node->symbolType.toPointer(err.get(), node->codeLoc, dynamicArraySize);
+        }
+        break;
+      }
+      default:
+        throw std::runtime_error("Modifier type fall-through");
+      }
+      tmQueue.pop();
+    }
+  }
+  currentSymbolType = node->symbolType;
+  return getTypeForSymbolType(currentSymbolType, currentScope);
 }
 
 llvm::Value *GeneratorVisitor::resolveValue(AstNode *node) {
