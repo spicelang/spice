@@ -29,9 +29,6 @@ void compileProject(CliOptions &options) {
     // Create source file instance for main source file
     SourceFile mainSourceFile = SourceFile(options, nullptr, "root", options.mainSourceFile, false);
 
-    // Pre-analyze the project (collect imports, etc.)
-    mainSourceFile.preAnalyze();
-
     // Visualize the parse tree (only runs in debug mode)
     mainSourceFile.visualizeCST(nullptr);
 
@@ -40,6 +37,9 @@ void compileProject(CliOptions &options) {
 
     // Visualize the AST (only runs in debug mode)
     mainSourceFile.visualizeAST(nullptr);
+
+    // Pre-analyze the project (collect imports, etc.)
+    mainSourceFile.preAnalyze();
 
     // Analyze the project (semantic analysis, build symbol table, type inference, type checking, etc.)
     mainSourceFile.analyze(context, builder, threadFactory);

@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/variables/error-global-var-different-type-assign/source.spice at 1:33: Wrong data type for operator: Cannot apply the assign operator on different data types. You provided short and int
+Semantic error in ./test-files/analyzer/variables/error-global-var-different-type-assign/source.spice:1:33: Wrong data type for operator: Cannot apply the assign operator on different data types. You provided short and int

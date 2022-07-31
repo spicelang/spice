@@ -73,6 +73,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitEntry(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<ImportStmtNode *> importStmts() const { return getChildren<ImportStmtNode>(); }
 };
 
 // ======================================================== MainFctDefNode =======================================================

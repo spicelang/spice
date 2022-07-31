@@ -4,13 +4,11 @@
 
 #include <ast/AstNodes.h>
 
-std::any AbstractAstVisitor::visit(AstNode *ctx) {
-  return ctx->accept(this);
-}
+std::any AbstractAstVisitor::visit(AstNode *node) { return node->accept(this); }
 
-std::any AbstractAstVisitor::visitChildren(AstNode *ctx) {
+std::any AbstractAstVisitor::visitChildren(AstNode *node) {
   std::any result = std::any();
-  for (const auto child : ctx->children)
+  for (const auto child : node->children)
     result = child->accept(this);
   return result;
 }

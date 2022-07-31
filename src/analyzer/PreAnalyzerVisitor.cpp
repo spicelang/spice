@@ -9,6 +9,12 @@
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
+std::any PreAnalyzerVisitor::visitEntry(EntryNode *node) {
+  for (auto &importStmt : node->importStmts())
+    visit(importStmt);
+  return nullptr;
+}
+
 std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
   // Get the file path from the identifier
   bool isImportStd = node->importPath.rfind("std/", 0) == 0;

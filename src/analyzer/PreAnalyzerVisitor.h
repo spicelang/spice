@@ -23,6 +23,7 @@ public:
   explicit PreAnalyzerVisitor(const CliOptions &options, SourceFile &sourceFile) : cliOptions(options), sourceFile(sourceFile) {}
 
   // Public methods
+  std::any visitEntry(EntryNode *node) override;
   std::any visitImportStmt(ImportStmtNode *node) override;
 
 private:

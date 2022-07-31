@@ -1264,7 +1264,9 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   currentConstSigned = entry->getSpecifiers().isSigned();
 
   // Get data type
-  llvm::Type *varType = lhsType = getTypeForSymbolType(entry->getType(), currentScope);
+  llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(node->dataType()));
+  if (!varType)
+    varType = lhsType = getTypeForSymbolType(entry->getType(), currentScope);
   entry->updateLLVMType(varType);
   entry->updateType(currentSymbolType, true);
 
@@ -2680,6 +2682,9 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
   emitSourceLocation(node);
 
   currentSymbolType = node->baseDataType()->symbolType;
+
+  if (currentSymbolType.is(TY_DYN))
+    return static_cast<llvm::Type *>(nullptr);
 
   size_t assignExprCounter = 0;
   std::vector<AssignExprNode *> arraySizeExpr = node->arraySizeExpr();

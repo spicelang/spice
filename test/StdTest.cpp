@@ -107,9 +107,6 @@ void executeStdTest(const TestCase &testCase) {
     // Create main source file
     SourceFile mainSourceFile = SourceFile(options, nullptr, "root", sourceFile, false);
 
-    // Execute pre-analyzer
-    mainSourceFile.preAnalyze();
-
     // Check if the CST matches the expected output
     std::string cstFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "parse-tree.dot";
     if (FileUtil::fileExists(cstFileName)) {
@@ -144,6 +141,9 @@ void executeStdTest(const TestCase &testCase) {
         EXPECT_EQ(expectedAST, mainSourceFile.compilerOutput.astString);
       }
     }
+
+    // Execute pre-analyzer
+    mainSourceFile.preAnalyze();
 
     // Execute semantic analysis
     mainSourceFile.analyze(context, builder, threadFactory);

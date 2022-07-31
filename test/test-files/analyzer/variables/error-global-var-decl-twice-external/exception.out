@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/variables/error-global-var-decl-twice-external/source.spice at 3:1: Multiple declarations of the same variable: A global variable named 'GLOBAL_VARIABLE' is already declared in another module. Please use a different name.
+Semantic error in ./test-files/analyzer/variables/error-global-var-decl-twice-external/source.spice:3:1: Multiple declarations of the same variable: A global variable named 'GLOBAL_VARIABLE' is already declared in another module. Please use a different name.

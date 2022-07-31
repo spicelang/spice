@@ -57,22 +57,6 @@ SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name
   symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
 }
 
-/**
- * Runs the pre-analyzer on the source file. This visitor collects all imported source files on the fly and visits the afterwards
- *
- * @param options applied cli options
- */
-void SourceFile::preAnalyze() {
-  // Pre-analyze this source file
-  PreAnalyzerVisitor preAnalyzer(options, *this);
-  preAnalyzer.visit(ast.get());
-  antlrCtx.parser->reset();
-
-  // Analyze the imported source files
-  for (auto &[_, sourceFile] : dependencies)
-    sourceFile.first->preAnalyze();
-}
-
 void SourceFile::visualizeCST(std::string *output) {
   // Only execute if enabled
   if (!options.dumpCST && !options.testMode)
@@ -168,6 +152,19 @@ void SourceFile::visualizeAST(std::string *output) {
       std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
       std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
     }
+  }
+}
+
+void SourceFile::preAnalyze() {
+  // Pre-analyze this source file
+  PreAnalyzerVisitor preAnalyzer(options, *this);
+  preAnalyzer.visit(ast.get());
+  antlrCtx.parser->reset();
+
+  // Analyze the imported source files
+  for (auto &[_, sourceFile] : dependencies) {
+    sourceFile.first->buildAST();
+    sourceFile.first->preAnalyze();
   }
 }
 

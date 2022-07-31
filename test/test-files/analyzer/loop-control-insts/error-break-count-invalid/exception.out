@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/loop-control-insts/error-break-count-invalid/source.spice at 3:15: Invalid number of break calls: Break count must be >= 1, you provided 0
+Semantic error in ./test-files/analyzer/loop-control-insts/error-break-count-invalid/source.spice:3:9: Invalid number of break calls: Break count must be >= 1, you provided 0

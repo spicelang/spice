@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/while-loops/error-while-condition-bool/source.spice at 2:11: Condition must be bool: While loop condition must be of type bool
+Semantic error in ./test-files/analyzer/while-loops/error-while-condition-bool/source.spice:2:11: Condition must be bool: While loop condition must be of type bool

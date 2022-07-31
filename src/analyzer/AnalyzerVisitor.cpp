@@ -555,7 +555,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
     }
 
     auto fieldSymbolSpecifiers = SymbolSpecifiers(symbolType);
-    if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    if (SpecifierLstNode *specifierLst = field->specifierLst(); specifierLst) {
       for (const auto &specifier : specifierLst->specifiers()) {
         if (specifier->type == SpecifierNode::TY_CONST)
           throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT,
@@ -970,10 +970,6 @@ std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
     symbolType = opRuleManager->getAssignResultType(node->codeLoc, symbolType, rhsTy);
     initialState = INITIALIZED;
 
-    // If the rhs is of type array and was the array initialization, there must be a size attached
-    if (symbolType.isArray() && symbolType.getArraySize() == 0 && currentVarName.empty())
-      throw err->get(node->dataType()->codeLoc, ARRAY_SIZE_INVALID, "The declaration of an array type must have a size attached");
-
     // Update symbolType of the declaration data type
     node->dataType()->baseDataType()->symbolType = symbolType.getBaseType();
   }
@@ -1072,7 +1068,6 @@ std::any AnalyzerVisitor::visitBreakStmt(BreakStmtNode *node) {
 }
 
 std::any AnalyzerVisitor::visitContinueStmt(ContinueStmtNode *node) {
-  int continueCount = 1;
   if (node->continueTimes != 1) {
     // Check if the stated number is valid
     if (node->continueTimes < 1)
@@ -1080,7 +1075,7 @@ std::any AnalyzerVisitor::visitContinueStmt(ContinueStmtNode *node) {
                      "Continue count must be >= 1, you provided " + std::to_string(node->continueTimes));
   }
   // Check if we can continue this often
-  if (continueCount > nestedLoopCounter)
+  if (node->continueTimes > nestedLoopCounter)
     throw err->get(node->codeLoc, INVALID_CONTINUE_NUMBER,
                    "We can only continue " + std::to_string(nestedLoopCounter) + " time(s) here");
   return SymbolType(TY_INT);
@@ -2035,7 +2030,7 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
     case DataTypeNode::TY_ARRAY: {
       if (typeModifier.isSizeHardcoded) {
         if (typeModifier.hardcodedSize <= 1)
-          throw err->get(node->codeLoc, ARRAY_SIZE_INVALID, "The size of an array must be > 1");
+          throw err->get(node->codeLoc, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated");
       } else {
         auto sizeType = std::any_cast<SymbolType>(visit(arraySizeExpr[assignExprCounter++]));
         if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))

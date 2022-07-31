@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/functions/error-duplicate-main-function-def/source.spice at 5:1: Multiple declarations of a function/procedure: Main function is declared twice
+Semantic error in ./test-files/analyzer/functions/error-duplicate-main-function-def/source.spice:5:1: Multiple declarations of a function/procedure: Main function is declared twice
