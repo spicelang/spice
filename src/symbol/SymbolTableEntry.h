@@ -5,8 +5,6 @@
 #include <string>
 #include <utility>
 
-#include <Token.h>
-
 #include <symbol/SymbolSpecifiers.h>
 #include <symbol/SymbolType.h>
 
@@ -17,6 +15,7 @@
 // Forward declarations
 class SymbolTable;
 class ErrorFactory;
+struct CodeLoc;
 
 enum SymbolState { DECLARED, INITIALIZED };
 
@@ -27,8 +26,8 @@ class SymbolTableEntry {
 public:
   // Constructors
   SymbolTableEntry(std::string name, const SymbolType &type, SymbolTable *scope, SymbolSpecifiers specifiers, SymbolState state,
-                   const antlr4::Token &declToken, unsigned int orderIndex, const bool global)
-      : name(std::move(name)), type(type), scope(scope), specifiers(specifiers), state(state), declToken(declToken),
+                   const CodeLoc &declCodeLoc, unsigned int orderIndex, const bool global)
+      : name(std::move(name)), type(type), scope(scope), specifiers(specifiers), state(state), declCodeLoc(declCodeLoc),
         orderIndex(orderIndex), global(global){};
 
   // Public methods
@@ -38,8 +37,8 @@ public:
   [[nodiscard]] SymbolTable *getScope() const;
   [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
   [[nodiscard]] SymbolState getState() const;
-  void updateState(SymbolState newState, const ErrorFactory *errorFactory, const antlr4::Token &token, bool force = false);
-  [[nodiscard]] const antlr4::Token &getDeclToken() const;
+  void updateState(SymbolState newState, const ErrorFactory *errorFactory, const CodeLoc &codeLoc, bool force = false);
+  [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::Type *getLLVMType() const;
   void updateLLVMType(llvm::Type *newType);
   [[nodiscard]] virtual llvm::Value *getAddress() const;
@@ -65,7 +64,7 @@ private:
   llvm::Type *llvmType = nullptr;
   SymbolState state;
   // size_t refCount = 0;
-  const antlr4::Token &declToken;
+  const CodeLoc &declCodeLoc;
   std::stack<llvm::Value *> memAddress;
   unsigned int orderIndex;
   const bool global;

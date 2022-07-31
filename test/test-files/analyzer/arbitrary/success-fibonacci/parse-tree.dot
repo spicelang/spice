@@ -20,10 +20,10 @@ digraph {
  L1C0_functionDef -> L1C7
  L1C11 [color="lightblue",label="LPAREN: ("];
  L1C0_functionDef -> L1C11
- L1C12_argLstDef [color="lightgreen",label="argLstDef"];
- L1C0_functionDef -> L1C12_argLstDef;
+ L1C12_paramLst [color="lightgreen",label="paramLst"];
+ L1C0_functionDef -> L1C12_paramLst;
  L1C12_declStmt [color="lightgreen",label="declStmt"];
- L1C12_argLstDef -> L1C12_declStmt;
+ L1C12_paramLst -> L1C12_declStmt;
  L1C12_dataType [color="lightgreen",label="dataType"];
  L1C12_declStmt -> L1C12_dataType;
  L1C12_baseDataType [color="lightgreen",label="baseDataType"];
@@ -96,7 +96,7 @@ digraph {
  L2C12_atomicExpr -> L2C12_value;
  L2C12_primitiveValue [color="lightgreen",label="primitiveValue"];
  L2C12_value -> L2C12_primitiveValue;
- L2C12 [color="lightblue",label="INTEGER: 1"];
+ L2C12 [color="lightblue",label="INT_LIT: 1"];
  L2C12_primitiveValue -> L2C12
  L2C14 [color="lightblue",label="LBRACE: {"];
  L2C4_ifStmt -> L2C14
@@ -244,7 +244,7 @@ digraph {
  L3C20_atomicExpr -> L3C20_value;
  L3C20_primitiveValue [color="lightgreen",label="primitiveValue"];
  L3C20_value -> L3C20_primitiveValue;
- L3C20 [color="lightblue",label="INTEGER: 1"];
+ L3C20 [color="lightblue",label="INT_LIT: 1"];
  L3C20_primitiveValue -> L3C20
  L3C21 [color="lightblue",label="RPAREN: )"];
  L3C11_functionCall -> L3C21
@@ -320,7 +320,7 @@ digraph {
  L3C34_atomicExpr -> L3C34_value;
  L3C34_primitiveValue [color="lightgreen",label="primitiveValue"];
  L3C34_value -> L3C34_primitiveValue;
- L3C34 [color="lightblue",label="INTEGER: 2"];
+ L3C34 [color="lightblue",label="INT_LIT: 2"];
  L3C34_primitiveValue -> L3C34
  L3C35 [color="lightblue",label="RPAREN: )"];
  L3C25_functionCall -> L3C35
@@ -390,7 +390,7 @@ digraph {
  L7C4_printfCall -> L7C4
  L7C10 [color="lightblue",label="LPAREN: ("];
  L7C4_printfCall -> L7C10
- L7C11 [color="lightblue",label="STRING_LITERAL: \"Result: %d\""];
+ L7C11 [color="lightblue",label="STRING_LIT: \"Result: %d\""];
  L7C4_printfCall -> L7C11
  L7C23 [color="lightblue",label="COMMA: ,"];
  L7C4_printfCall -> L7C23
@@ -472,7 +472,7 @@ digraph {
  L7C30_atomicExpr -> L7C30_value;
  L7C30_primitiveValue [color="lightgreen",label="primitiveValue"];
  L7C30_value -> L7C30_primitiveValue;
- L7C30 [color="lightblue",label="INTEGER: 30"];
+ L7C30 [color="lightblue",label="INT_LIT: 30"];
  L7C30_primitiveValue -> L7C30
  L7C32 [color="lightblue",label="RPAREN: )"];
  L7C25_functionCall -> L7C32

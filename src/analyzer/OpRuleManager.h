@@ -585,45 +585,45 @@ public:
       : err(errorFactory), withinUnsafeBlock(isUnsafe) {}
 
   // Public methods
-  SymbolType getAssignResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getPlusEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getMinusEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getMulEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getDivEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getRemEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getSHLEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getSHREqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getAndEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getOrEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getXorEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getLogicalAndResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getLogicalOrResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getBitwiseAndResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getBitwiseOrResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getBitwiseXorResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getNotEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getLessResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getGreaterResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getLessEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getGreaterEqualResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getShiftLeftResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getShiftRightResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getPlusResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getMinusResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getMulResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getDivResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getRemResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getPrefixMinusResultType(const antlr4::Token &token, const SymbolType &lhs);
-  SymbolType getPrefixPlusPlusResultType(const antlr4::Token &token, const SymbolType &lhs);
-  SymbolType getPrefixMinusMinusResultType(const antlr4::Token &token, const SymbolType &lhs);
-  SymbolType getPrefixNotResultType(const antlr4::Token &token, const SymbolType &lhs);
-  SymbolType getPrefixBitwiseNotResultType(const antlr4::Token &token, const SymbolType &lhs);
-  SymbolType getPrefixMulResultType(const antlr4::Token &token, const SymbolType &lhs);
-  SymbolType getPrefixBitwiseAndResultType(const antlr4::Token &token, SymbolType lhs);
-  SymbolType getPostfixPlusPlusResultType(const antlr4::Token &token, const SymbolType &lhs);
-  SymbolType getPostfixMinusMinusResultType(const antlr4::Token &token, const SymbolType &lhs);
-  SymbolType getCastResultType(const antlr4::Token &token, const SymbolType &lhs, const SymbolType &);
+  SymbolType getAssignResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getPlusEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getMinusEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getMulEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getDivEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getRemEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getSHLEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getSHREqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getAndEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getOrEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getXorEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getLogicalAndResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getLogicalOrResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getBitwiseAndResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getBitwiseOrResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getBitwiseXorResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getNotEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getLessResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getGreaterResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getLessEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getGreaterEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getShiftLeftResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getShiftRightResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getMulResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getDivResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getRemResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getPrefixMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
+  SymbolType getPrefixPlusPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
+  SymbolType getPrefixMinusMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
+  SymbolType getPrefixNotResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
+  SymbolType getPrefixBitwiseNotResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
+  SymbolType getPrefixMulResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
+  SymbolType getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, SymbolType lhs);
+  SymbolType getPostfixPlusPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
+  SymbolType getPostfixMinusMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
+  SymbolType getCastResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &);
 
 private:
   // Members
@@ -631,13 +631,13 @@ private:
   const bool &withinUnsafeBlock;
 
   // Private methods
-  SymbolType validateBinaryOperation(const antlr4::Token &token, const std::vector<BinaryOpRule> &opRules,
-                                     const std::string &opName, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType validateUnaryOperation(const antlr4::Token &token, const std::vector<UnaryOpRule> &opRules,
-                                    const std::string &opName, const SymbolType &lhs);
-  SemanticError printErrorMessageBinary(const antlr4::Token &token, const std::string &operatorName, const SymbolType &lhs,
+  SymbolType validateBinaryOperation(const CodeLoc &codeLoc, const std::vector<BinaryOpRule> &opRules, const std::string &opName,
+                                     const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType validateUnaryOperation(const CodeLoc &codeLoc, const std::vector<UnaryOpRule> &opRules, const std::string &opName,
+                                    const SymbolType &lhs);
+  SemanticError printErrorMessageBinary(const CodeLoc &codeLoc, const std::string &operatorName, const SymbolType &lhs,
                                         const SymbolType &rhs);
-  SemanticError printErrorMessageUnary(const antlr4::Token &token, const std::string &operatorName, const SymbolType &lhs);
-  SemanticError printErrorMessageUnsafe(const antlr4::Token &token, const std::string &operatorName, const SymbolType &lhs,
+  SemanticError printErrorMessageUnary(const CodeLoc &codeLoc, const std::string &operatorName, const SymbolType &lhs);
+  SemanticError printErrorMessageUnsafe(const CodeLoc &codeLoc, const std::string &operatorName, const SymbolType &lhs,
                                         const SymbolType &rhs);
 };

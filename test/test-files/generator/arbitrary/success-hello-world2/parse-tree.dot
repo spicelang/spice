@@ -26,12 +26,12 @@ digraph {
  L4C4_stmtLst -> L4C4_stmt;
  L4C4_declStmt [color="lightgreen",label="declStmt"];
  L4C4_stmt -> L4C4_declStmt;
- L4C4_declSpecifiers [color="lightgreen",label="declSpecifiers"];
- L4C4_declStmt -> L4C4_declSpecifiers;
- L4C4_declSpecifier [color="lightgreen",label="declSpecifier"];
- L4C4_declSpecifiers -> L4C4_declSpecifier;
+ L4C4_specifierLst [color="lightgreen",label="specifierLst"];
+ L4C4_declStmt -> L4C4_specifierLst;
+ L4C4_specifier [color="lightgreen",label="specifier"];
+ L4C4_specifierLst -> L4C4_specifier;
  L4C4 [color="lightblue",label="UNSIGNED: unsigned"];
- L4C4_declSpecifier -> L4C4
+ L4C4_specifier -> L4C4
  L4C13_dataType [color="lightgreen",label="dataType"];
  L4C4_declStmt -> L4C13_dataType;
  L4C13_baseDataType [color="lightgreen",label="baseDataType"];
@@ -78,7 +78,7 @@ digraph {
  L4C23_atomicExpr -> L4C23_value;
  L4C23_primitiveValue [color="lightgreen",label="primitiveValue"];
  L4C23_value -> L4C23_primitiveValue;
- L4C23 [color="lightblue",label="LONG: 32183114504l"];
+ L4C23 [color="lightblue",label="LONG_LIT: 32183114504l"];
  L4C23_primitiveValue -> L4C23
  L4C35 [color="lightblue",label="SEMICOLON: ;"];
  L4C4_stmt -> L4C35
@@ -140,7 +140,7 @@ digraph {
  L5C15_atomicExpr -> L5C15_value;
  L5C15_primitiveValue [color="lightgreen",label="primitiveValue"];
  L5C15_value -> L5C15_primitiveValue;
- L5C15 [color="lightblue",label="INTEGER: 0"];
+ L5C15 [color="lightblue",label="INT_LIT: 0"];
  L5C15_primitiveValue -> L5C15
  L5C17 [color="lightblue",label="LBRACE: {"];
  L5C4_whileLoop -> L5C17
@@ -188,7 +188,7 @@ digraph {
  L6C8_printfCall -> L6C8
  L6C14 [color="lightblue",label="LPAREN: ("];
  L6C8_printfCall -> L6C14
- L6C15 [color="lightblue",label="STRING_LITERAL: \"%c\""];
+ L6C15 [color="lightblue",label="STRING_LIT: \"%c\""];
  L6C8_printfCall -> L6C15
  L6C19 [color="lightblue",label="COMMA: ,"];
  L6C8_printfCall -> L6C19
@@ -272,7 +272,7 @@ digraph {
  L6C29_atomicExpr -> L6C29_value;
  L6C29_primitiveValue [color="lightgreen",label="primitiveValue"];
  L6C29_value -> L6C29_primitiveValue;
- L6C29 [color="lightblue",label="LONG: 8245928625469605920l"];
+ L6C29 [color="lightblue",label="LONG_LIT: 8245928625469605920l"];
  L6C29_primitiveValue -> L6C29
  L6C50 [color="lightblue",label="GREATER: >"];
  L6C29_shiftExpr -> L6C50
@@ -410,7 +410,7 @@ digraph {
  L6C63_atomicExpr -> L6C63_value;
  L6C63_primitiveValue [color="lightgreen",label="primitiveValue"];
  L6C63_value -> L6C63_primitiveValue;
- L6C63 [color="lightblue",label="LONG: 3l"];
+ L6C63 [color="lightblue",label="LONG_LIT: 3l"];
  L6C63_primitiveValue -> L6C63
  L6C65 [color="lightblue",label="RPAREN: )"];
  L6C55_atomicExpr -> L6C65
@@ -438,7 +438,7 @@ digraph {
  L6C69_atomicExpr -> L6C69_value;
  L6C69_primitiveValue [color="lightgreen",label="primitiveValue"];
  L6C69_value -> L6C69_primitiveValue;
- L6C69 [color="lightblue",label="LONG: 7l"];
+ L6C69 [color="lightblue",label="LONG_LIT: 7l"];
  L6C69_primitiveValue -> L6C69
  L6C71 [color="lightblue",label="RPAREN: )"];
  L6C54_atomicExpr -> L6C71
@@ -462,7 +462,7 @@ digraph {
  L6C76_atomicExpr -> L6C76_value;
  L6C76_primitiveValue [color="lightgreen",label="primitiveValue"];
  L6C76_value -> L6C76_primitiveValue;
- L6C76 [color="lightblue",label="LONG: 3l"];
+ L6C76 [color="lightblue",label="LONG_LIT: 3l"];
  L6C76_primitiveValue -> L6C76
  L6C78 [color="lightblue",label="RPAREN: )"];
  L6C53_atomicExpr -> L6C78
@@ -490,7 +490,7 @@ digraph {
  L6C82_atomicExpr -> L6C82_value;
  L6C82_primitiveValue [color="lightgreen",label="primitiveValue"];
  L6C82_value -> L6C82_primitiveValue;
- L6C82 [color="lightblue",label="LONG: 255l"];
+ L6C82 [color="lightblue",label="LONG_LIT: 255l"];
  L6C82_primitiveValue -> L6C82
  L6C86 [color="lightblue",label="RPAREN: )"];
  L6C28_atomicExpr -> L6C86

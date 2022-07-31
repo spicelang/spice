@@ -2,6 +2,8 @@
 
 #include "CompilerWarning.h"
 
+#include <util/CodeLoc.h>
+
 /**
  * Constructor: Used in case that the exact code position where the warning occurred is known
  *
@@ -9,9 +11,8 @@
  * @param type Type of the warning
  * @param message Warning message suffix
  */
-CompilerWarning::CompilerWarning(const antlr4::Token &token, CompilerWarningType type, const std::string &message) {
-  auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
-  warningMessage = "Warning at " + codeLoc + ": " + getMessagePrefix(type) + ": " + message;
+CompilerWarning::CompilerWarning(const CodeLoc &codeLoc, CompilerWarningType type, const std::string &message) {
+  warningMessage = "Warning at " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

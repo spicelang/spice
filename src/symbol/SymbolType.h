@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <Token.h>
-
 #include <stack>
 #include <string>
 #include <vector>
@@ -12,6 +10,7 @@
 
 // Forward declarations
 class ErrorFactory;
+struct CodeLoc;
 
 enum SymbolSuperType {
   TY_INVALID,
@@ -34,7 +33,8 @@ enum SymbolSuperType {
 };
 
 class SymbolType {
-private:
+public:
+  // Structs
   struct TypeChainElement {
     SymbolSuperType superType;
     std::string subType;
@@ -46,9 +46,10 @@ private:
              lhs.dynamicArraySize == rhs.dynamicArraySize;
     }
   };
+
+  // Type defs
   typedef std::stack<TypeChainElement> TypeChain;
 
-public:
   // Constructors
   explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}, nullptr}}) {}
   explicit SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}, nullptr}}) {}
@@ -60,8 +61,8 @@ public:
 
   // Public methods
   [[nodiscard]] TypeChain getTypeChain() const;
-  SymbolType toPointer(const ErrorFactory *err, const antlr4::Token &token, llvm::Value *dynamicSize = nullptr) const;
-  SymbolType toArray(const ErrorFactory *err, const antlr4::Token &token, int size = 0) const;
+  SymbolType toPointer(const ErrorFactory *err, const CodeLoc &codeLoc, llvm::Value *dynamicSize = nullptr) const;
+  SymbolType toArray(const ErrorFactory *err, const CodeLoc &codeLoc, int size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;

@@ -5,8 +5,9 @@
 #include <stdexcept>
 
 #include <exception/ErrorFactory.h>
+#include <util/CodeLoc.h>
 
-llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
+llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
   OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
@@ -41,10 +42,10 @@ llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::
     return builder->CreateAdd(lhs, rhs);
   case COMB(P_TY_STRING, P_TY_BYTE_OR_CHAR):
     // ToDo(@marcauberer): Insert call to appendChar in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
   case COMB(P_TY_STRING, P_TY_STRING):
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");
   case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
   case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
   case COMB(P_TY_PTR, P_TY_LONG):
@@ -395,7 +396,7 @@ llvm::Value *OpRuleConversionsManager::getBitwiseXorInst(llvm::Value *lhs, llvm:
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
+llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
 
@@ -488,14 +489,14 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Valu
     return builder->CreateICmpEQ(lhs, rhs);
   case COMB(P_TY_STRING, P_TY_STRING):
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '==' operator for lhs=string and rhs=string yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '==' operator for lhs=string and rhs=string yet");
   case COMB(P_TY_BOOL, P_TY_BOOL):
     return builder->CreateICmpEQ(lhs, rhs);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
+llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
 
@@ -587,7 +588,7 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::V
     return builder->CreateICmpNE(lhs, rhs);
   case COMB(P_TY_STRING, P_TY_STRING):
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '!=' operator for lhs=string and rhs=string yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '!=' operator for lhs=string and rhs=string yet");
   case COMB(P_TY_BOOL, P_TY_BOOL):
     return builder->CreateICmpNE(lhs, rhs);
   }
@@ -898,7 +899,7 @@ llvm::Value *OpRuleConversionsManager::getShiftRightInst(llvm::Value *lhs, llvm:
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >>"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
+llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
   OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
@@ -964,7 +965,7 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     return builder->CreateAdd(lhs, rhs);
   case COMB(P_TY_STRING, P_TY_STRING):
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
   case COMB(P_TY_PTR, P_TY_INT):   // fallthrough
   case COMB(P_TY_PTR, P_TY_SHORT): // fallthrough
   case COMB(P_TY_PTR, P_TY_LONG):
@@ -1045,7 +1046,7 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Valu
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value *rhs, const antlr4::Token &token) {
+llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value *rhs, const CodeLoc &codeLoc) {
   llvm::Type *lhsTy = lhs->getType();
   llvm::Type *rhsTy = rhs->getType();
   OpRuleType lhsPTy = getSymbolTypeFromLLVMType(lhsTy);
@@ -1075,11 +1076,11 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
   }
   case COMB(P_TY_INT, P_TY_BYTE_OR_CHAR): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=char yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=char yet");
   }
   case COMB(P_TY_INT, P_TY_STRING): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
   }
   case COMB(P_TY_SHORT, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
@@ -1097,11 +1098,11 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
   }
   case COMB(P_TY_SHORT, P_TY_BYTE_OR_CHAR): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=char yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=char yet");
   }
   case COMB(P_TY_SHORT, P_TY_STRING): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=string yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=string yet");
   }
   case COMB(P_TY_LONG, P_TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
@@ -1116,37 +1117,37 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
     return builder->CreateMul(lhs, rhs);
   case COMB(P_TY_LONG, P_TY_BYTE_OR_CHAR): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=char yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=char yet");
   }
   case COMB(P_TY_LONG, P_TY_STRING): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=string yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=string yet");
   }
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_BYTE_OR_CHAR):
     return builder->CreateMul(lhs, rhs);
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_INT): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=int yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=int yet");
   }
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_SHORT): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=short yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=short yet");
   }
   case COMB(P_TY_BYTE_OR_CHAR, P_TY_LONG): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=long yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=long yet");
   }
   case COMB(P_TY_STRING, P_TY_INT): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
   }
   case COMB(P_TY_STRING, P_TY_SHORT): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=short yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=short yet");
   }
   case COMB(P_TY_STRING, P_TY_LONG): {
     // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
-    throw err->get(token, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=long yet");
+    throw err->get(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=long yet");
   }
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *"); // GCOV_EXCL_LINE

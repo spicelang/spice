@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/functions/error-mandatory-after-optional-arg/source.spice at 1:28: Invalid argument order: Mandatory arguments must go before any optional arguments
+Semantic error in ./test-files/analyzer/functions/error-mandatory-after-optional-arg/source.spice:1:28: Invalid argument order: Mandatory parameters must go before any optional parameters

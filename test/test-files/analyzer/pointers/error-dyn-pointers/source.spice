@@ -1,0 +1,4 @@
+f<int> main() {
+    int i = 12;
+    dyn* test = &i;
+}

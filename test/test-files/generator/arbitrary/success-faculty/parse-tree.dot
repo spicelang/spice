@@ -20,10 +20,10 @@ digraph {
  L1C0_functionDef -> L1C7
  L1C14 [color="lightblue",label="LPAREN: ("];
  L1C0_functionDef -> L1C14
- L1C15_argLstDef [color="lightgreen",label="argLstDef"];
- L1C0_functionDef -> L1C15_argLstDef;
+ L1C15_paramLst [color="lightgreen",label="paramLst"];
+ L1C0_functionDef -> L1C15_paramLst;
  L1C15_declStmt [color="lightgreen",label="declStmt"];
- L1C15_argLstDef -> L1C15_declStmt;
+ L1C15_paramLst -> L1C15_declStmt;
  L1C15_dataType [color="lightgreen",label="dataType"];
  L1C15_declStmt -> L1C15_dataType;
  L1C15_baseDataType [color="lightgreen",label="baseDataType"];
@@ -96,7 +96,7 @@ digraph {
  L2C15_atomicExpr -> L2C15_value;
  L2C15_primitiveValue [color="lightgreen",label="primitiveValue"];
  L2C15_value -> L2C15_primitiveValue;
- L2C15 [color="lightblue",label="INTEGER: 2"];
+ L2C15 [color="lightblue",label="INT_LIT: 2"];
  L2C15_primitiveValue -> L2C15
  L2C17 [color="lightblue",label="LBRACE: {"];
  L2C4_ifStmt -> L2C17
@@ -144,7 +144,7 @@ digraph {
  L3C15_atomicExpr -> L3C15_value;
  L3C15_primitiveValue [color="lightgreen",label="primitiveValue"];
  L3C15_value -> L3C15_primitiveValue;
- L3C15 [color="lightblue",label="INTEGER: 1"];
+ L3C15 [color="lightblue",label="INT_LIT: 1"];
  L3C15_primitiveValue -> L3C15
  L3C16 [color="lightblue",label="SEMICOLON: ;"];
  L3C8_stmt -> L3C16
@@ -270,7 +270,7 @@ digraph {
  L5C37_atomicExpr -> L5C37_value;
  L5C37_primitiveValue [color="lightgreen",label="primitiveValue"];
  L5C37_value -> L5C37_primitiveValue;
- L5C37 [color="lightblue",label="INTEGER: 1"];
+ L5C37 [color="lightblue",label="INT_LIT: 1"];
  L5C37_primitiveValue -> L5C37
  L5C38 [color="lightblue",label="RPAREN: )"];
  L5C21_functionCall -> L5C38
@@ -348,7 +348,7 @@ digraph {
  L9C16_atomicExpr -> L9C16_value;
  L9C16_primitiveValue [color="lightgreen",label="primitiveValue"];
  L9C16_value -> L9C16_primitiveValue;
- L9C16 [color="lightblue",label="INTEGER: 10"];
+ L9C16 [color="lightblue",label="INT_LIT: 10"];
  L9C16_primitiveValue -> L9C16
  L9C18 [color="lightblue",label="SEMICOLON: ;"];
  L9C4_stmt -> L9C18
@@ -488,7 +488,7 @@ digraph {
  L11C4_printfCall -> L11C4
  L11C10 [color="lightblue",label="LPAREN: ("];
  L11C4_printfCall -> L11C10
- L11C11 [color="lightblue",label="STRING_LITERAL: \"Faculty of %d is: %d\""];
+ L11C11 [color="lightblue",label="STRING_LIT: \"Faculty of %d is: %d\""];
  L11C4_printfCall -> L11C11
  L11C33 [color="lightblue",label="COMMA: ,"];
  L11C4_printfCall -> L11C33

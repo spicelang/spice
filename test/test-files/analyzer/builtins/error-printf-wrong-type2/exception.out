@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/builtins/error-printf-wrong-type2/source.spice at 2:18: Types of printf call not matching: Template string expects double, but got bool
+Semantic error in ./test-files/analyzer/builtins/error-printf-wrong-type2/source.spice:2:18: Types of printf call not matching: Template string expects double, but got bool

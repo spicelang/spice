@@ -6,7 +6,7 @@
 
 std::string CSTVisualizerVisitor::buildRule(antlr4::ParserRuleContext *ctx) {
   // Prepare strings
-  std::string codeLoc = CommonUtil::tokenToCodeLoc(*ctx->start);
+  std::string codeLoc = tokenToCodeLoc(*ctx->start);
   std::string ruleName = ruleNames[ctx->getRuleIndex()];
   std::string nodeId = codeLoc + "_" + ruleName;
 
@@ -25,7 +25,7 @@ std::string CSTVisualizerVisitor::buildRule(antlr4::ParserRuleContext *ctx) {
 
     auto token = dynamic_cast<antlr4::tree::TerminalNode *>(child);
     if (token) { // Terminal node
-      std::string terminalCodeLoc = CommonUtil::tokenToCodeLoc(*token->getSymbol());
+      std::string terminalCodeLoc = tokenToCodeLoc(*token->getSymbol());
       std::string terminalText = token->getText();
       CommonUtil::replaceAll(terminalText, "\\", "\\\\");
       CommonUtil::replaceAll(terminalText, "\"", "\\\"");
@@ -49,4 +49,8 @@ std::string CSTVisualizerVisitor::getSpaces() const {
   for (int i = 0; i < currentTabs; i++)
     spaces += " ";
   return spaces;
+}
+
+std::string CSTVisualizerVisitor::tokenToCodeLoc(const antlr4::Token &token) {
+  return "L" + std::to_string(token.getLine()) + "C" + std::to_string(token.getCharPositionInLine());
 }

@@ -199,19 +199,20 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
   for (const auto &argType : argList) {
     if (argType.second) {         // Met optional argument
       if (!metFirstOptionalArg) { // Add substantiation without the optional argument
-        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declToken);
+        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
+                                       declCodeLoc);
         metFirstOptionalArg = true;
       }
       // Add substantiation with the optional argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
-      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declToken);
+      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declCodeLoc);
     } else { // Met mandatory argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
     }
   }
 
   if (definiteFunctions.empty())
-    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declToken);
+    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declCodeLoc);
 
   return definiteFunctions;
 }
@@ -226,7 +227,7 @@ Function Function::substantiateGenerics(const ArgList &concreteArgList, const Sy
   // Substantiate return type
   SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
 
-  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, declToken);
+  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, declCodeLoc);
 }
 
 /**
@@ -282,19 +283,8 @@ void Function::setAnalyzed() { alreadyAnalyzed = true; }
 bool Function::wasAlreadyAnalyzed() const { return alreadyAnalyzed; }
 
 /**
- * Retrieve the declaration token of this function
- *
- * @return Declaration token
- */
-const antlr4::Token &Function::getDeclToken() const { return declToken; }
-
-/**
  * Retrieve the declaration code location of this function
  *
- * @return Declaration code loc
+ * @return Declaration code location
  */
-const std::string &Function::getDeclCodeLoc() {
-  if (declCodeLoc.empty())
-    declCodeLoc = CommonUtil::tokenToCodeLoc(declToken);
-  return declCodeLoc;
-}
+const CodeLoc &Function::getDeclCodeLoc() const { return declCodeLoc; }

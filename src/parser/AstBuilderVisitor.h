@@ -4,13 +4,15 @@
 
 #include <SpiceVisitor.h>
 
+#include <utility>
+
 // Forward declarations
 class AstNode;
 
 class AstBuilderVisitor : public SpiceVisitor {
 public:
   // Constructors
-  AstBuilderVisitor(AstNode *rootNode) : currentNode(rootNode) {}
+  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName) : currentNode(rootNode), fileName(std::move(fileName)) {}
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -34,13 +36,13 @@ public:
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override;
   std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override;
-  std::any visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) override;
+  std::any visitParamLst(SpiceParser::ParamLstContext *ctx) override;
   std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override;
   std::any visitField(SpiceParser::FieldContext *ctx) override;
   std::any visitStmt(SpiceParser::StmtContext *ctx) override;
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
-  std::any visitDeclSpecifiers(SpiceParser::DeclSpecifiersContext *ctx) override;
-  std::any visitDeclSpecifier(SpiceParser::DeclSpecifierContext *ctx) override;
+  std::any visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) override;
+  std::any visitSpecifier(SpiceParser::SpecifierContext *ctx) override;
   std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
@@ -81,4 +83,8 @@ public:
 private:
   // Members
   AstNode *currentNode;
+  std::string fileName;
+
+  // Private methods
+  void replaceEscapeChars(std::string &string) const;
 };

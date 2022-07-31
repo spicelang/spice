@@ -4,11 +4,12 @@
 
 #include <regex>
 
+#include <ast/AstNodes.h>
+#include <ast/AstVisitor.h>
+
 #include <generator/OpRuleConversionsManager.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
-
-#include <SpiceBaseVisitor.h>
 
 #include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/IRBuilder.h>
@@ -35,7 +36,7 @@ class Struct;
  * - Optimization
  * - Emitting object files
  */
-class GeneratorVisitor : public SpiceBaseVisitor {
+class GeneratorVisitor : public AstVisitor {
 public:
   // Constructors
   explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
@@ -48,58 +49,55 @@ public:
   void dumpIR();
   std::string getIRString();
   void dumpAsm();
-  std::any visitEntry(SpiceParser::EntryContext *ctx) override;
-  std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
-  std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
-  std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
-  std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
-  std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
-  std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
-  std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
-  std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override;
-  std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
-  std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override;
-  std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
-  std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
-  std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override;
-  std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
-  std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
-  std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
-  std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
-  std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
-  std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
-  std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
-  std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override;
-  std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override;
-  std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override;
-  std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override;
-  std::any visitLenCall(SpiceParser::LenCallContext *ctx) override;
-  std::any visitTidCall(SpiceParser::TidCallContext *ctx) override;
-  std::any visitJoinCall(SpiceParser::JoinCallContext *ctx) override;
-  std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override;
-  std::any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override;
-  std::any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override;
-  std::any visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) override;
-  std::any visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) override;
-  std::any visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) override;
-  std::any visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) override;
-  std::any visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) override;
-  std::any visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) override;
-  std::any visitShiftExpr(SpiceParser::ShiftExprContext *ctx) override;
-  std::any visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) override;
-  std::any visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) override;
-  std::any visitCastExpr(SpiceParser::CastExprContext *ctx) override;
-  std::any visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) override;
-  std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
-  std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
-  std::any visitValue(SpiceParser::ValueContext *ctx) override;
-  std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override;
-  std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
-  std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override;
-  std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override;
-  std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
-  std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
-  std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;
+  std::any visitEntry(EntryNode *node) override;
+  std::any visitMainFctDef(MainFctDefNode *node) override;
+  std::any visitFctDef(FctDefNode *node) override;
+  std::any visitProcDef(ProcDefNode *node) override;
+  std::any visitStructDef(StructDefNode *node) override;
+  std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
+  std::any visitExtDecl(ExtDeclNode *node) override;
+  std::any visitThreadDef(ThreadDefNode *node) override;
+  std::any visitUnsafeBlockDef(UnsafeBlockDefNode *node) override;
+  std::any visitForLoop(ForLoopNode *node) override;
+  std::any visitForeachLoop(ForeachLoopNode *node) override;
+  std::any visitWhileLoop(WhileLoopNode *node) override;
+  std::any visitStmtLst(StmtLstNode *node) override;
+  std::any visitTypeAltsLst(TypeAltsLstNode *node) override;
+  std::any visitIfStmt(IfStmtNode *node) override;
+  std::any visitElseStmt(ElseStmtNode *node) override;
+  std::any visitAssertStmt(AssertStmtNode *node) override;
+  std::any visitDeclStmt(DeclStmtNode *node) override;
+  std::any visitImportStmt(ImportStmtNode *node) override;
+  std::any visitReturnStmt(ReturnStmtNode *node) override;
+  std::any visitBreakStmt(BreakStmtNode *node) override;
+  std::any visitContinueStmt(ContinueStmtNode *node) override;
+  std::any visitPrintfCall(PrintfCallNode *node) override;
+  std::any visitSizeofCall(SizeofCallNode *node) override;
+  std::any visitLenCall(LenCallNode *node) override;
+  std::any visitTidCall(TidCallNode *node) override;
+  std::any visitJoinCall(JoinCallNode *node) override;
+  std::any visitAssignExpr(AssignExprNode *node) override;
+  std::any visitTernaryExpr(TernaryExprNode *cnodetx) override;
+  std::any visitLogicalOrExpr(LogicalOrExprNode *node) override;
+  std::any visitLogicalAndExpr(LogicalAndExprNode *node) override;
+  std::any visitBitwiseOrExpr(BitwiseOrExprNode *node) override;
+  std::any visitBitwiseXorExpr(BitwiseXorExprNode *node) override;
+  std::any visitBitwiseAndExpr(BitwiseAndExprNode *node) override;
+  std::any visitEqualityExpr(EqualityExprNode *node) override;
+  std::any visitRelationalExpr(RelationalExprNode *node) override;
+  std::any visitShiftExpr(ShiftExprNode *node) override;
+  std::any visitAdditiveExpr(AdditiveExprNode *node) override;
+  std::any visitMultiplicativeExpr(MultiplicativeExprNode *node) override;
+  std::any visitCastExpr(CastExprNode *node) override;
+  std::any visitPrefixUnaryExpr(PrefixUnaryExprNode *node) override;
+  std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *node) override;
+  std::any visitAtomicExpr(AtomicExprNode *node) override;
+  std::any visitValue(ValueNode *node) override;
+  std::any visitPrimitiveValue(PrimitiveValueNode *node) override;
+  std::any visitFunctionCall(FunctionCallNode *node) override;
+  std::any visitArrayInitialization(ArrayInitializationNode *node) override;
+  std::any visitStructInstantiation(StructInstantiationNode *node) override;
+  std::any visitDataType(DataTypeNode *node) override;
 
 private:
   // Members
@@ -155,15 +153,15 @@ private:
   } debugInfo;
 
   // Private methods
-  llvm::Value *resolveValue(antlr4::tree::ParseTree *tree);
-  llvm::Value *resolveAddress(antlr4::tree::ParseTree *tree, bool storeVolatile = false);
+  llvm::Value *resolveValue(AstNode *node);
+  llvm::Value *resolveAddress(AstNode *node, bool storeVolatile = false);
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
   llvm::Value *createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants);
-  bool insertDestructorCall(const antlr4::Token &token, SymbolTableEntry *varEntry);
+  bool insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
   llvm::Function *retrieveStackSaveFct();
@@ -176,9 +174,9 @@ private:
   void initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir);
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
-  void generateDeclDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *address);
-  void generateAssignDebugInfo(const antlr4::Token &token, const std::string &varName, llvm::Value *value);
-  void emitSourceLocation(antlr4::ParserRuleContext *ctx);
+  void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address);
+  void generateAssignDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *value);
+  void emitSourceLocation(AstNode *ctx);
   [[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };
