@@ -49,7 +49,7 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ..
-          git clone --depth 1 --branch llvmorg-14.0.5 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-15.0.0-rc1 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
@@ -61,7 +61,7 @@ jobs:
           cd ./lib
           git clone --depth 1 --branch 4.10.1 https://github.com/antlr/antlr4.git
           mkdir json
-          curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
+          curl -SsL "https://github.com/nlohmann/json/releases/download/v3.11.0/json.hpp" --output json/json.hpp
           mkdir cli11
           curl -SsL "https://github.com/spicelang/CLI11/releases/download/v2.2.0-spice/CLI11.hpp" --output cli11/CLI11.hpp
 
