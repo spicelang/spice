@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "SymbolType.h"
+#include "analyzer/AnalyzerVisitor.h"
 
 #include <stdexcept>
 #include <tuple>
@@ -103,6 +104,8 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
 /**
  * Return the LLVM type for this symbol type
  *
+ * @param context LLVM context
+ * @param accessScope Access scope for structs
  * @return Corresponding LLVM type
  */
 llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const {

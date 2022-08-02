@@ -2568,7 +2568,10 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
   // Get data type
   size_t actualItemCount = node->itemLst() ? node->itemLst()->args().size() : 0;
   size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
-  auto arrayType = lhsType;
+  SymbolType arraySymbolType = node->deduceSymbolType();
+  SymbolType itemSymbolType = arraySymbolType.getContainedTy();
+  llvm::Type *arrayType = arraySymbolType.toLLVMType(*context, currentScope);
+  llvm::Type *itemType = itemSymbolType.toLLVMType(*context, currentScope);
 
   bool dynamicallySized = false;
   if (!lhsVarName.empty()) {
@@ -2593,30 +2596,11 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     }
   }
 
-  llvm::Type *itemType = nullptr;
-  if (arrayType) {
-    // Check if array type matches the item type
-    if (arrayType->isArrayTy()) { // Array
-      assert(itemConstants.empty() || !itemConstants.front() ||
-             arrayType->getArrayElementType() == itemConstants.front()->getType());
-      itemType = arrayType->getArrayElementType();
-    } else { // Pointer
-      assert(itemConstants.empty() || !itemConstants.front() ||
-             arrayType->getPointerElementType() == itemConstants.front()->getType());
-      itemType = arrayType->getPointerElementType();
-    }
-  } else {
-    // Infer type of array from the item type
-    assert(!itemConstants.empty());
-    itemType = itemConstants.front()->getType();
-    arrayType = llvm::ArrayType::get(itemType, arraySize);
-  }
-
   // Decide if the array can be defined globally
   if (allArgsHardcoded && !dynamicallySized && !itemType->isStructTy()) { // Global array is possible
     // Fill up the rest of the items with default values
     if (itemConstants.size() < arraySize) {
-      llvm::Constant *constantValue = getDefaultValueForSymbolType(itemType, ""); // ToDo: Fill empty string
+      llvm::Constant *constantValue = getDefaultValueForSymbolType(itemSymbolType);
       for (size_t i = itemConstants.size(); i < arraySize; i++)
         itemConstants.push_back(constantValue);
     }
@@ -2626,19 +2610,13 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     return createGlobalArray(arrayType, itemConstants);
   } else { // Global array is not possible => fallback to individual indexing
     // Allocate array
-    llvm::Value *arrayAddress = nullptr;
-    if (dynamicallySized) {
-      arrayAddress = allocateDynamicallySizedArray(itemType);
-      arrayType = arrayAddress->getType()->getPointerElementType();
-    } else {
-      arrayAddress = insertAlloca(arrayType, lhsVarName);
-    }
+    llvm::Value *arrayAddress = dynamicallySized ? allocateDynamicallySizedArray(itemType) : insertAlloca(arrayType, lhsVarName);
 
     // Insert all given values
-    llvm::Value *itemDefaultValue = getDefaultValueForSymbolType(itemType, "");
+    llvm::Value *itemDefaultValue = getDefaultValueForSymbolType(itemSymbolType);
     for (size_t valueIndex = 0; valueIndex < arraySize; valueIndex++) {
       // Calculate item address
-      llvm::Value *itemAddress = nullptr;
+      llvm::Value *itemAddress;
       if (arrayType->isArrayTy()) {
         llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
         itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
@@ -2946,7 +2924,7 @@ llvm::Function *GeneratorVisitor::retrieveStackRestoreFct() {
   return module->getFunction(stackRestoreFctName);
 }
 
-llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbolType) {
+llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(const SymbolType &symbolType) {
   // Double
   if (symbolType.is(TY_DOUBLE))
     return currentConstValue = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
@@ -2995,28 +2973,29 @@ llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(SymbolType symbol
 
   // Struct
   if (symbolType.is(TY_STRUCT)) {
-    assert(!subTypeName.empty());
-    SymbolTable *childTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + subTypeName);
-    assert(childTable != nullptr);
+    // Get struct entry
+    std::string structName = symbolType.getSubType();
+    SymbolTableEntry *structEntry = currentScope->lookup(structName);
+    assert(structEntry != nullptr);
 
-    size_t fieldNumber = type->getStructNumElements();
-    auto structType = static_cast<llvm::StructType *>(type);
+    // Get struct table
+    SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structName);
+    assert(structTable != nullptr);
+
+    size_t fieldCount = structTable->getFieldCount();
+    auto structType = static_cast<llvm::StructType *>(structEntry->getLLVMType());
 
     // Allocate space for the struct in memory
     llvm::Value *structAddress = insertAlloca(structType);
 
-    std::vector<llvm::Type *> fieldTypes;
     std::vector<llvm::Constant *> fieldConstants;
-    fieldTypes.reserve(fieldNumber);
-    fieldConstants.reserve(fieldNumber);
-    for (int i = 0; i < fieldNumber; i++) {
-      SymbolTableEntry *fieldEntry = childTable->lookupByIndex(i);
+    fieldConstants.reserve(fieldCount);
+    for (int i = 0; i < fieldCount; i++) {
+      SymbolTableEntry *fieldEntry = structTable->lookupByIndex(i);
       assert(fieldEntry != nullptr);
-      llvm::Type *fieldType = type->getContainedType(i);
-      fieldEntry->updateLLVMType(fieldType);
-      fieldTypes.push_back(fieldType);
-      llvm::Constant *defaultFieldValue =
-          getDefaultValueForSymbolType(fieldType, fieldEntry->getType().getBaseType().getSubType());
+
+      // Retrieve default field value
+      llvm::Constant *defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getType());
 
       // Get pointer to struct element
       llvm::Value *fieldAddress = builder->CreateStructGEP(structType, structAddress, i);
@@ -3048,40 +3027,29 @@ SymbolTableEntry *GeneratorVisitor::initExtGlobal(const std::string &globalName,
   return global;
 }
 
-/*bool GeneratorVisitor::compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs) {
-  if (lhs->getTypeID() != rhs->getTypeID())
-    return false;
-  if (lhs->getTypeID() == llvm::Type::PointerTyID)
-    return compareLLVMTypes(lhs->getPointerElementType(), rhs->getPointerElementType());
-  if (lhs->getTypeID() == llvm::Type::ArrayTyID)
-    return compareLLVMTypes(lhs->getArrayElementType(), rhs->getArrayElementType());
-  return true;
-}*/
-
-llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *srcValue, llvm::Type *dstType) {
+llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *src, llvm::Type *dstTy, SymbolType srcType) {
   // Unpack the pointers until a pointer of another type is met
   unsigned int loadCounter = 0;
-  while (srcValue->getType()->getPointerElementType()->isPointerTy()) {
-    srcValue = builder->CreateLoad(srcValue->getType()->getPointerElementType(), srcValue);
+  while (srcType.isPointer()) {
+    src = builder->CreateLoad(srcType.toLLVMType(*context, currentScope), src);
+    srcType = srcType.getContainedTy();
     loadCounter++;
   }
   // GEP or bit-cast
-  if (dstType->isPointerTy() && srcValue->getType()->getPointerElementType()->isArrayTy()) {
+  if (dstTy->isPointerTy() && srcType.isArray()) {
     llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(0)};
-    llvm::Type *actualArgType = srcValue->getType()->getPointerElementType();
-    srcValue = builder->CreateInBoundsGEP(actualArgType, srcValue, indices);
+    src = builder->CreateInBoundsGEP(srcType.toLLVMType(*context, currentScope), src, indices);
   } else {
-    llvm::Type *actualArgType = srcValue->getType()->getPointerElementType();
-    srcValue = builder->CreateLoad(actualArgType, srcValue);
-    srcValue = builder->CreateBitCast(srcValue, dstType);
+    src = builder->CreateLoad(srcType.toLLVMType(*context, currentScope), src);
+    src = builder->CreateBitCast(src, dstTy);
   }
   // Pack the pointers together again
   for (; loadCounter > 0; loadCounter--) {
-    llvm::Value *newActualArg = insertAlloca(srcValue->getType());
-    builder->CreateStore(srcValue, newActualArg);
-    srcValue = newActualArg;
+    llvm::Value *newActualArg = insertAlloca(src->getType());
+    builder->CreateStore(src, newActualArg);
+    src = newActualArg;
   }
-  return srcValue;
+  return src;
 }
 
 void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir) {
@@ -3163,14 +3131,14 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
   debugInfo.lexicalBlocks.push_back(subprogram);
 }
 
-llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
+/*llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
   size_t lineNumber = spiceStruct->getDeclCodeLoc().line;
   size_t sizeInBits = module->getDataLayout().getTypeSizeInBits(llvmStructTy);
   llvm::DINode::DIFlags flags = spiceStruct->getSpecifiers().isPublic() ? llvm::DINode::FlagPublic : llvm::DINode::FlagPrivate;
   llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
   return diBuilder->createStructType(unit, spiceStruct->getName(), unit, lineNumber, sizeInBits, 0, flags, nullptr, elements);
-}
+}*/
 
 void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address) {
   if (!cliOptions.generateDebugInfo)
