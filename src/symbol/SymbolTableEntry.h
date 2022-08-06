@@ -39,8 +39,6 @@ public:
   [[nodiscard]] SymbolState getState() const;
   void updateState(SymbolState newState, const ErrorFactory *errorFactory, const CodeLoc &codeLoc, bool force = false);
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
-  [[nodiscard]] llvm::Type *getLLVMType() const;
-  void updateLLVMType(llvm::Type *newType);
   [[nodiscard]] virtual llvm::Value *getAddress() const;
   void updateAddress(llvm::Value *address);
   void pushAddress(llvm::Value *address);

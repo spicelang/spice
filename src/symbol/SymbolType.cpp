@@ -134,11 +134,18 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
 
   if (is(TY_STRUCT)) {
     std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
+    SymbolTable *structScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
     SymbolTableEntry *structSymbol = accessScope->lookup(structSignature);
     assert(structSymbol);
-    llvm::Type *structType = structSymbol->getLLVMType();
-    assert(structType);
-    return structType;
+    size_t structFieldCount = structScope->getFieldCount();
+    std::vector<llvm::Type *> elementTypes;
+    elementTypes.reserve(structFieldCount);
+    for (size_t i = 0; i < structFieldCount; i++) {
+      SymbolTableEntry *fieldEntry = structScope->lookupByIndex(i);
+      assert(fieldEntry != nullptr);
+      elementTypes.push_back(fieldEntry->getType().toLLVMType(context, accessScope));
+    }
+    return llvm::StructType::get(context, elementTypes);
   }
 
   if (isPointer() || (isArray() && getArraySize() <= 0)) {

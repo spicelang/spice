@@ -10,7 +10,18 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
+import "std/data/queue" as que;
+
 f<int> main() {
-    int i = 12;
-    printf("%d", i + 4);
+    dyn q1 = que.Queue<char>();
+    q1.push('H');
+    q1.push('e');
+    q1.push('l');
+    q1.push('l');
+    q1.push('o');
+    q1.push('!');
+    printf("Size: %d, Capacity: %d\n", q1.getSize(), q1.getCapacity());
+    while (!q1.isEmpty()) {
+        printf("%c", q1.pop());
+    }
 }

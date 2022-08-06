@@ -443,7 +443,8 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
         if ((f.isMethodFunction() || f.isMethodProcedure()) && !fctThisType.getTemplateTypes().empty()) {
           SymbolTableEntry *thisEntry = childBlock->lookup(THIS_VARIABLE_NAME);
           assert(thisEntry != nullptr);
-          thisEntry->updateType(callThisType.toPointer(err, codeLoc), true);
+          SymbolType newThisType = callThisType.toPointer(err, codeLoc);
+          thisEntry->updateType(newThisType, true);
         }
       }
 

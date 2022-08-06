@@ -78,21 +78,6 @@ void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err
  * @return Declaration code location
  */
 const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declCodeLoc; }
-
-/**
- * Retrieve the llvm type of the current symbol
- *
- * @return LLVM type of the current symbol
- */
-llvm::Type *SymbolTableEntry::getLLVMType() const { return llvmType; }
-
-/**
- * Update the LLVM type of a symbol
- *
- * @param newType New LLVM type
- */
-void SymbolTableEntry::updateLLVMType(llvm::Type *newType) { llvmType = newType; }
-
 /**
  * Retrieve the address of the assigned value
  *

@@ -131,12 +131,12 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     // Get 'this' type
     std::vector<GenericType> templateTypes;
     SymbolType thisType = SymbolType(TY_DYN);
-    SymbolType thisTypePtr = thisType;
+    SymbolType thisPtrType = thisType;
     if (node->isMethod) {
       SymbolTableEntry *structEntry = currentScope->lookup(node->structName);
       assert(structEntry != nullptr);
       thisType = structEntry->getType();
-      thisTypePtr = thisType.toPointer(err.get(), node->codeLoc);
+      thisPtrType = thisType.toPointer(err.get(), node->codeLoc);
       for (const auto &templateType : thisType.getTemplateTypes())
         templateTypes.emplace_back(templateType);
     }
@@ -177,9 +177,9 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
 
     // Declare 'this' variable in new scope
     if (node->isMethod) {
-      SymbolSpecifiers thisTypeSpecifiers(thisTypePtr);
+      SymbolSpecifiers thisTypeSpecifiers(thisPtrType);
       thisTypeSpecifiers.setConst(true);
-      currentScope->insert(THIS_VARIABLE_NAME, thisTypePtr, thisTypeSpecifiers, INITIALIZED, node->codeLoc);
+      currentScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisTypeSpecifiers, INITIALIZED, node->codeLoc);
     }
 
     // Declare variable for the return value in the function scope
@@ -253,11 +253,11 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         assert(currentScope != nullptr);
 
         // Replace this type
-        if (spiceFunc.isMethodFunction()) {
+        /*if (spiceFunc.isMethodFunction()) {
           SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
           assert(thisVar != nullptr);
           thisVar->updateType(spiceFunc.getThisType(), true);
-        }
+        }*/
 
         // Morph the generic return type
         SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
@@ -335,11 +335,11 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     // Get 'this' type
     std::vector<GenericType> templateTypes;
     SymbolType thisType = SymbolType(TY_DYN);
-    SymbolType thisTypePtr = thisType;
+    SymbolType thisPtrType = thisType;
     if (node->isMethod) {
       SymbolTableEntry *structEntry = currentScope->lookup(node->structName);
       thisType = structEntry->getType();
-      thisTypePtr = thisType.toPointer(err.get(), node->codeLoc);
+      thisPtrType = thisType.toPointer(err.get(), node->codeLoc);
       for (const auto &templateType : thisType.getTemplateTypes())
         templateTypes.emplace_back(templateType);
     }
@@ -380,9 +380,9 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
 
     // Declare 'this' variable in new scope
     if (node->isMethod) {
-      auto thisSymbolSpecifiers = SymbolSpecifiers(thisTypePtr);
+      auto thisSymbolSpecifiers = SymbolSpecifiers(thisPtrType);
       thisSymbolSpecifiers.setConst(true);
-      currentScope->insert(THIS_VARIABLE_NAME, thisTypePtr, thisSymbolSpecifiers, INITIALIZED, node->codeLoc);
+      currentScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisSymbolSpecifiers, INITIALIZED, node->codeLoc);
     }
 
     // Return to old scope
@@ -448,11 +448,11 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         assert(currentScope != nullptr);
 
         // Replace this type
-        if (spiceProc.isMethodProcedure()) {
+        /*if (spiceProc.isMethodProcedure()) {
           SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
           assert(thisVar != nullptr);
           thisVar->updateType(spiceProc.getThisType(), true);
-        }
+        }*/
 
         // Get parameter types
         std::vector<std::pair<std::string, SymbolType>> params;
@@ -936,7 +936,8 @@ std::any AnalyzerVisitor::visitParamLst(ParamLstNode *node) {
   NamedParamList namedParamList;
   bool metOptional = false;
   for (const auto &param : node->params()) {
-    auto paramType = any_cast<SymbolType>(visit(param));
+    visit(param);
+    SymbolType paramType = param->dataType()->deduceSymbolType();
 
     // Check if the type could be inferred. Dyn without a default value is forbidden
     if (paramType.is(TY_DYN))
@@ -1687,8 +1688,8 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
         SymbolTableEntry *parentStruct = currentScope->lookup(scopePath.getLastScopeName());
         assert(parentStruct != nullptr);
         std::string scopePrefix = CommonUtil::getPrefix(parentStruct->getType().getSubType(), ".");
-        return initExtStruct(accessScope, scopePrefix, entry->getType().getBaseType().getSubType(),
-                             currentThisType.getTemplateTypes(), node->codeLoc);
+        return node->symbolType = initExtStruct(accessScope, scopePrefix, entry->getType().getBaseType().getSubType(),
+                                                currentThisType.getTemplateTypes(), node->codeLoc);
       }
     } else {
       // Check if we have seen a 'this.' prefix, because the generator needs that
