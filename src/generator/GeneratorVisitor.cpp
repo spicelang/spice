@@ -214,7 +214,8 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
     }
 
     // Create entry block
-    llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+    std::string codeLine = node->codeLoc.toPrettyLine();
+    llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry." + codeLine);
     fct->getBasicBlockList().push_back(bEntry);
     moveInsertPointToBlock(bEntry);
     allocaInsertInst = nullptr;
@@ -250,7 +251,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
       if (!varsToDestruct.empty()) {
         llvm::BasicBlock *predecessor = builder->GetInsertBlock();
         // Generate cleanup block
-        llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
+        llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup." + codeLine);
         moveInsertPointToBlock(bCleanup);
 
         // Generate cleanup instructions (e.g. dtor calls)
@@ -383,7 +384,8 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         generateFunctionDebugInfo(fct, &spiceFunc);
 
       // Create entry block
-      llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+      std::string codeLine = node->codeLoc.toPrettyLine();
+      llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry." + codeLine);
       allocaInsertInst = nullptr;
       fct->getBasicBlockList().push_back(bEntry);
       moveInsertPointToBlock(bEntry);
@@ -424,7 +426,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         if (!varsToDestruct.empty()) {
           llvm::BasicBlock *predecessor = builder->GetInsertBlock();
           // Generate cleanup block
-          llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
+          llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup." + codeLine);
           moveInsertPointToBlock(bCleanup);
 
           // Generate cleanup instructions (e.g. dtor calls)
@@ -558,7 +560,8 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         generateFunctionDebugInfo(proc, &spiceProc);
 
       // Create entry block
-      llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+      std::string codeLine = node->codeLoc.toPrettyLine();
+      llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry." + codeLine);
       allocaInsertInst = nullptr;
       proc->getBasicBlockList().push_back(bEntry);
       moveInsertPointToBlock(bEntry);
@@ -593,7 +596,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         if (!varsToDestruct.empty()) {
           llvm::BasicBlock *predecessor = builder->GetInsertBlock();
           // Generate cleanup block
-          llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup");
+          llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup." + codeLine);
           moveInsertPointToBlock(bCleanup);
 
           // Generate cleanup instructions (e.g. dtor calls)
@@ -809,7 +812,8 @@ std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
   // Create entry block for thread function
   llvm::BasicBlock *allocaInsertBlockBackup = allocaInsertBlock;
   llvm::Instruction *allocaInsertInstBackup = allocaInsertInst;
-  llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry");
+  std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "thread.entry." + codeLine);
   allocaInsertInst = nullptr;
   threadFct->getBasicBlockList().push_back(bEntry);
   moveInsertPointToBlock(bEntry);
@@ -898,10 +902,11 @@ std::any GeneratorVisitor::visitForLoop(ForLoopNode *node) {
   emitSourceLocation(node);
 
   // Create blocks
-  llvm::BasicBlock *bCond = llvm::BasicBlock::Create(*context, "for.cond");
-  llvm::BasicBlock *bInc = llvm::BasicBlock::Create(*context, "for.inc");
-  llvm::BasicBlock *bLoop = llvm::BasicBlock::Create(*context, "for");
-  llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "for.end");
+  std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bCond = llvm::BasicBlock::Create(*context, "for.cond." + codeLine);
+  llvm::BasicBlock *bInc = llvm::BasicBlock::Create(*context, "for.inc." + codeLine);
+  llvm::BasicBlock *bLoop = llvm::BasicBlock::Create(*context, "for." + codeLine);
+  llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "for.end." + codeLine);
 
   // Change scope
   currentScope = currentScope->getChild(node->getScopeId());
@@ -960,10 +965,11 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   emitSourceLocation(node);
 
   // Create blocks
-  llvm::BasicBlock *bCond = llvm::BasicBlock::Create(*context, "foreach.cond");
-  llvm::BasicBlock *bInc = llvm::BasicBlock::Create(*context, "foreach.inc");
-  llvm::BasicBlock *bLoop = llvm::BasicBlock::Create(*context, "foreach.loop");
-  llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "foreach.end");
+  std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bCond = llvm::BasicBlock::Create(*context, "foreach.cond." + codeLine);
+  llvm::BasicBlock *bInc = llvm::BasicBlock::Create(*context, "foreach.inc." + codeLine);
+  llvm::BasicBlock *bLoop = llvm::BasicBlock::Create(*context, "foreach.loop." + codeLine);
+  llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "foreach.end." + codeLine);
 
   // Change scope
   currentScope = currentScope->getChild(node->getScopeId());
@@ -1086,9 +1092,10 @@ std::any GeneratorVisitor::visitWhileLoop(WhileLoopNode *node) {
   llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
   // Create blocks
-  llvm::BasicBlock *bCond = llvm::BasicBlock::Create(*context, "while.cond");
-  llvm::BasicBlock *bLoop = llvm::BasicBlock::Create(*context, "while");
-  llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "while.end");
+  std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bCond = llvm::BasicBlock::Create(*context, "while.cond." + codeLine);
+  llvm::BasicBlock *bLoop = llvm::BasicBlock::Create(*context, "while." + codeLine);
+  llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "while.end." + codeLine);
 
   // Change scope
   currentScope = currentScope->getChild(node->getScopeId());
@@ -1152,9 +1159,10 @@ std::any GeneratorVisitor::visitIfStmt(IfStmtNode *node) {
   llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
   // Create blocks
-  llvm::BasicBlock *bThen = llvm::BasicBlock::Create(*context, "if.then");
-  llvm::BasicBlock *bElse = llvm::BasicBlock::Create(*context, "if.else");
-  llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "if.end");
+  std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bThen = llvm::BasicBlock::Create(*context, "if.then." + codeLine);
+  llvm::BasicBlock *bElse = llvm::BasicBlock::Create(*context, "if.else." + codeLine);
+  llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "if.end." + codeLine);
 
   // Check if condition is fulfilled
   createCondBr(condValue, bThen, node->elseStmt() ? bElse : bEnd);
@@ -1216,8 +1224,9 @@ std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
     llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
     // Create blocks
-    llvm::BasicBlock *bThen = llvm::BasicBlock::Create(*context, "if.then");
-    llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "if.end");
+    std::string codeLine = node->codeLoc.toPrettyLine();
+    llvm::BasicBlock *bThen = llvm::BasicBlock::Create(*context, "assert.then." + codeLine);
+    llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "assert.end." + codeLine);
 
     // Check if condition is fulfilled
     createCondBr(condValue, bEnd, bThen);
@@ -1634,9 +1643,10 @@ std::any GeneratorVisitor::visitLogicalOrExpr(LogicalOrExprNode *node) {
   emitSourceLocation(node);
 
   if (node->operands().size() > 1) {
+    std::string codeLine = node->codeLoc.toPrettyLine();
     // Prepare for short-circuiting
     std::pair<llvm::Value *, llvm::BasicBlock *> incomingBlocks[node->operands().size()];
-    llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "lor.end");
+    llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "lor.end." + codeLine);
     llvm::Function *parentFunction = builder->GetInsertBlock()->getParent();
 
     // Visit the first condition
@@ -1645,7 +1655,7 @@ std::any GeneratorVisitor::visitLogicalOrExpr(LogicalOrExprNode *node) {
     // Prepare the blocks
     incomingBlocks[0] = {lhs, builder->GetInsertBlock()};
     for (int i = 1; i < node->operands().size(); i++) {
-      llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "lor." + std::to_string(i));
+      llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "lor." + std::to_string(i) + "." + codeLine);
       parentFunction->getBasicBlockList().push_back(bb);
       incomingBlocks[i] = {nullptr, bb};
     }
@@ -1683,9 +1693,10 @@ std::any GeneratorVisitor::visitLogicalAndExpr(LogicalAndExprNode *node) {
   emitSourceLocation(node);
 
   if (node->operands().size() > 1) {
+    std::string codeLine = node->codeLoc.toPrettyLine();
     // Prepare for short-circuiting
     std::pair<llvm::Value *, llvm::BasicBlock *> incomingBlocks[node->operands().size()];
-    llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "land.end");
+    llvm::BasicBlock *bEnd = llvm::BasicBlock::Create(*context, "land.end." + codeLine);
     llvm::Function *parentFunction = builder->GetInsertBlock()->getParent();
 
     // Visit the first condition
@@ -1694,7 +1705,7 @@ std::any GeneratorVisitor::visitLogicalAndExpr(LogicalAndExprNode *node) {
     // Prepare the blocks
     incomingBlocks[0] = {lhs, builder->GetInsertBlock()};
     for (int i = 1; i < node->operands().size(); i++) {
-      llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "land." + std::to_string(i));
+      llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "land." + std::to_string(i) + "." + codeLine);
       parentFunction->getBasicBlockList().push_back(bb);
       incomingBlocks[i] = {nullptr, bb};
     }
@@ -2086,7 +2097,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     // Retrieve the address and the value if required
     AtomicExprNode *lhsOperand = node->atomicExpr();
     SymbolType lhsSymbolType = lhsOperand->deduceSymbolType();
-    llvm::Type *lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
+    llvm::Type *lhsTy = lhsSymbolType.is(TY_IMPORT) ? nullptr : lhsSymbolType.toLLVMType(*context, currentScope);
     llvm::Value *lhsPtr = resolveAddress(lhsOperand);
     llvm::Value *lhs = lhsPtr != nullptr ? builder->CreateLoad(lhsTy, lhsPtr) : nullptr;
 
@@ -2934,7 +2945,7 @@ llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(const SymbolType 
   // Pointer
   if (symbolType.is(TY_PTR)) {
     llvm::Type *baseType = symbolType.getContainedTy().toLLVMType(*context, currentScope);
-    return currentConstValue = llvm::Constant::getNullValue(baseType);
+    return currentConstValue = llvm::Constant::getNullValue(baseType->getPointerTo());
   }
 
   // Array

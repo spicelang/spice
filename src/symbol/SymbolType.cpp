@@ -158,7 +158,6 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
     return static_cast<llvm::Type *>(arrayType);
   }
 
-  assert(!is(TY_GENERIC));
   throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + getName(true));
 }
 
