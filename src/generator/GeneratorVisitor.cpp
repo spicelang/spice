@@ -1335,14 +1335,17 @@ std::any GeneratorVisitor::visitReturnStmt(ReturnStmtNode *node) {
 
   // Check if a value is attached to the return statement
   llvm::Value *returnValuePtr = nullptr;
+  llvm::Type *returnValueType;
   if (node->assignExpr()) {
     assert(returnVarEntry != nullptr);
     // Set the expected type of the value
     lhsType = returnVarEntry->getType().toLLVMType(*context, currentScope);
     // Visit return value
     returnValuePtr = resolveAddress(node->assignExpr());
+    returnValueType = node->assignExpr()->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
   } else if (returnVarEntry != nullptr) { // Function. Procedures do not have a return variable
     returnValuePtr = returnVarEntry->getAddress();
+    returnValueType = returnVarEntry->getType().toLLVMType(*context, currentScope);
   }
 
   // Insert destructor calls to variables, going out of scope
@@ -1378,7 +1381,7 @@ std::any GeneratorVisitor::visitReturnStmt(ReturnStmtNode *node) {
   }
 
   // Return value
-  llvm::Value *returnValue = builder->CreateLoad(returnValuePtr->getType()->getPointerElementType(), returnValuePtr);
+  llvm::Value *returnValue = builder->CreateLoad(returnValueType, returnValuePtr);
   builder->CreateRet(returnValue);
   return returnValuePtr;
 }
