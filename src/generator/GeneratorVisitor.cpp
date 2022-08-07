@@ -688,6 +688,7 @@ std::any GeneratorVisitor::visitStructDef(StructDefNode *node) {
       llvm::StructType *structType = llvm::StructType::create(*context, mangledName);
       SymbolTableEntry *structSymbol = currentScope->lookup(spiceStruct.getSignature());
       assert(structSymbol);
+      structSymbol->setStructLLVMType(structType);
 
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
