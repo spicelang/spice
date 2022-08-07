@@ -21,7 +21,7 @@ public:
 
   // Destructors
   virtual ~AstNode() {
-    for (auto child : children)
+    for (const auto child : children)
       delete child;
   }
 
@@ -39,7 +39,7 @@ public:
   template <typename T> [[nodiscard]] T *getChild(size_t i = 0) const {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
     size_t j = 0;
-    for (auto &child : children) {
+    for (const auto &child : children) {
       if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr) {
         if (j++ == i)
           return typedChild;
@@ -51,7 +51,7 @@ public:
   template <typename T> [[nodiscard]] std::vector<T *> getChildren() const {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
     std::vector<T *> nodes;
-    for (auto &child : children) {
+    for (const auto &child : children) {
       if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr)
         nodes.push_back(typedChild);
     }
@@ -86,7 +86,7 @@ public:
 
   void reset() {
     // Reset all children
-    for (auto &child : children)
+    for (const auto &child : children)
       child->reset();
     // Reset the symbolTypeIndex counter
     symbolTypeIndex = SIZE_MAX;

@@ -11,7 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @usleep(i32)
 
 define i32 @main() {
-entry:
+entry.l3:
   %result = alloca i32, align 4
   %i = alloca i32, align 4
   %0 = alloca { i32* }, align 8
@@ -22,9 +22,9 @@ entry:
   store i32 0, i32* %result, align 4
   %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0))
   store i32 1, i32* %i, align 4
-  br label %for.cond
+  br label %for.cond.l5
 
-for:                                              ; preds = %for.cond
+for.l5:                                           ; preds = %for.cond.l5
   %6 = load i32, i32* %i, align 4
   %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %6)
   %8 = getelementptr inbounds { i32* }, { i32* }* %0, i32 0, i32 0
@@ -32,23 +32,23 @@ for:                                              ; preds = %for.cond
   %9 = alloca i8*, align 8
   %10 = bitcast { i32* }* %0 to i8*
   %11 = call i32 @pthread_create(i8** %9, i8* null, i8* (i8*)* @_thread0, i8* %10)
-  br label %for.inc
+  br label %for.inc.l5
 
-for.inc:                                          ; preds = %for
+for.inc.l5:                                       ; preds = %for.l5
   %12 = load i32, i32* %i, align 4
   %13 = add i32 %12, 1
   store i32 %13, i32* %i, align 4
   store i32 %12, i32* %1, align 4
-  br label %for.cond
+  br label %for.cond.l5
 
-for.cond:                                         ; preds = %for.inc, %entry
+for.cond.l5:                                      ; preds = %for.inc.l5, %entry.l3
   %14 = load i32, i32* %i, align 4
   %15 = icmp sle i32 %14, 8
   store i1 %15, i1* %2, align 1
   %16 = load i1, i1* %2, align 1
-  br i1 %16, label %for, label %for.end
+  br i1 %16, label %for.l5, label %for.end.l5
 
-for.end:                                          ; preds = %for.cond
+for.end.l5:                                       ; preds = %for.cond.l5
   store i32 1000000, i32* %3, align 4
   %17 = load i32, i32* %3, align 4
   %18 = call i32 @usleep(i32 %17)
@@ -61,7 +61,7 @@ for.end:                                          ; preds = %for.cond
 declare i32 @printf(i8*, ...)
 
 define internal i8* @_thread0(i8* %0) {
-entry:
+thread.entry.l7:
   %1 = bitcast i8* %0 to { i32* }*
   %2 = getelementptr inbounds { i32* }, { i32* }* %1, i32 0, i32 0
   %3 = load i32*, i32** %2, align 8

@@ -18,7 +18,7 @@ target triple = "x86_64-w64-windows-gnu"
 @10 = private unnamed_addr constant [24 x i8] c"Struct array value: %s\0A\00", align 1
 
 define i32 @main() {
-entry:
+entry.l11:
   %result = alloca i32, align 4
   %doubleVar = alloca double, align 8
   %intVar = alloca i32, align 4
@@ -66,9 +66,9 @@ entry:
   store [4 x %_s__NestedStruct__int_string] [%_s__NestedStruct__int_string { i32 0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @9, i32 0, i32 0) }, %_s__NestedStruct__int_string { i32 0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @9, i32 0, i32 0) }, %_s__NestedStruct__int_string { i32 0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @9, i32 0, i32 0) }, %_s__NestedStruct__int_string { i32 0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @9, i32 0, i32 0) }], [4 x %_s__NestedStruct__int_string]* %structArrayVar, align 8
   %23 = load [4 x %_s__NestedStruct__int_string], [4 x %_s__NestedStruct__int_string]* %structArrayVar, align 8
   %24 = getelementptr inbounds [4 x %_s__NestedStruct__int_string], [4 x %_s__NestedStruct__int_string]* %structArrayVar, i32 0, i32 2
-  %25 = getelementptr inbounds [4 x %_s__NestedStruct__int_string], [4 x %_s__NestedStruct__int_string]* %structArrayVar, i32 0, i32 1
-  %26 = load %_s__NestedStruct__int_string, %_s__NestedStruct__int_string* %25, align 8
-  %27 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @10, i32 0, i32 0), %_s__NestedStruct__int_string %26)
+  %25 = getelementptr inbounds %_s__NestedStruct__int_string, %_s__NestedStruct__int_string* %24, i32 0, i32 1
+  %26 = load i8*, i8** %25, align 8
+  %27 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @10, i32 0, i32 0), i8* %26)
   %28 = load i32, i32* %result, align 4
   ret i32 %28
 }

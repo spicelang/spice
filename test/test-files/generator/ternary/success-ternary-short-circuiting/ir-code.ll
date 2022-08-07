@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
 
 define internal i1 @_f__void__condition1() {
-entry:
+entry.l1:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
   store i1 false, i1* %0, align 1
@@ -15,7 +15,7 @@ entry:
 }
 
 define internal i1 @_f__void__condition2() {
-entry:
+entry.l5:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
   store i1 true, i1* %0, align 1
@@ -24,7 +24,7 @@ entry:
 }
 
 define i32 @main() {
-entry:
+entry.l9:
   %result = alloca i32, align 4
   %0 = alloca i1, align 1
   %1 = alloca i1, align 1
@@ -35,16 +35,16 @@ entry:
   %5 = call i1 @_f__void__condition1()
   store i1 %5, i1* %0, align 1
   %6 = load i1, i1* %0, align 1
-  br i1 %6, label %land.1, label %land.end
+  br i1 %6, label %land.1.l10, label %land.end.l10
 
-land.1:                                           ; preds = %entry
+land.1.l10:                                       ; preds = %entry.l9
   %7 = call i1 @_f__void__condition2()
   store i1 %7, i1* %1, align 1
   %8 = load i1, i1* %1, align 1
-  br label %land.end
+  br label %land.end.l10
 
-land.end:                                         ; preds = %land.1, %entry
-  %land_phi = phi i1 [ %6, %entry ], [ %8, %land.1 ]
+land.end.l10:                                     ; preds = %land.1.l10, %entry.l9
+  %land_phi = phi i1 [ %6, %entry.l9 ], [ %8, %land.1.l10 ]
   store i1 %land_phi, i1* %2, align 1
   store i32 2, i32* %3, align 4
   store i32 3, i32* %4, align 4

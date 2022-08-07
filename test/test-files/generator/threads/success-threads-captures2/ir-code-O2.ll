@@ -11,7 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @usleep(i32) local_unnamed_addr
 
 define i32 @main() local_unnamed_addr {
-entry:
+entry.l3:
   %capturedVariable = alloca i32, align 4
   %i = alloca i32, align 4
   %0 = alloca { i32*, i32* }, align 8
@@ -21,10 +21,10 @@ entry:
   %1 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i64 0, i32 0
   %2 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i64 0, i32 1
   %3 = bitcast { i32*, i32* }* %0 to i8*
-  br label %for
+  br label %for.l6
 
-for:                                              ; preds = %entry, %for
-  %storemerge2 = phi i32 [ 1, %entry ], [ %8, %for ]
+for.l6:                                           ; preds = %entry.l3, %for.l6
+  %storemerge2 = phi i32 [ 1, %entry.l3 ], [ %8, %for.l6 ]
   %4 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i32 %storemerge2)
   store i32* %capturedVariable, i32** %1, align 8
   store i32* %i, i32** %2, align 8
@@ -34,9 +34,9 @@ for:                                              ; preds = %entry, %for
   %8 = add i32 %7, 1
   store i32 %8, i32* %i, align 4
   %9 = icmp slt i32 %8, 9
-  br i1 %9, label %for, label %for.end
+  br i1 %9, label %for.l6, label %for.end.l6
 
-for.end:                                          ; preds = %for
+for.end.l6:                                       ; preds = %for.l6
   %10 = call i32 @usleep(i32 1000000)
   %puts1 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
   ret i32 0
@@ -46,7 +46,7 @@ for.end:                                          ; preds = %for
 declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
 
 define internal noalias i8* @_thread0(i8* nocapture readonly %0) {
-entry:
+thread.entry.l8:
   %1 = bitcast i8* %0 to i32**
   %2 = load i32*, i32** %1, align 8
   %3 = getelementptr inbounds i8, i8* %0, i64 8

@@ -11,7 +11,7 @@
 
 std::any PreAnalyzerVisitor::visitEntry(EntryNode *node) {
   // Visit all import statements
-  for (auto &importStmt : node->importStmts())
+  for (const auto &importStmt : node->importStmts())
     visit(importStmt);
 
   // Reset the AST

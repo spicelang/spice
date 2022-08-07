@@ -134,7 +134,7 @@ void SymbolTableEntry::popAddress() { memAddress.pop(); }
  *
  * @return Order index
  */
-unsigned int SymbolTableEntry::getOrderIndex() const { return orderIndex; }
+size_t SymbolTableEntry::getOrderIndex() const { return orderIndex; }
 
 /**
  * Returns if the symbol is in a local scope or in the global scope

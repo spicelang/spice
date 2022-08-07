@@ -206,7 +206,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
     if (cliOptions.generateDebugInfo) {
       // Get arg types
       std::vector<std::pair<SymbolType, bool>> argTypes;
-      for (auto &argName : argNames) {
+      for (const auto &argName : argNames) {
         SymbolTableEntry *argEntry = currentScope->lookup(argName);
         assert(argEntry != nullptr);
         argTypes.emplace_back(argEntry->getType(), true);
@@ -1417,7 +1417,7 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
     SymbolType argSymbolType = arg->getEvaluatedSymbolType();
 
     // Visit argument
-    auto argValPtr = resolveAddress(arg);
+    llvm::Value *argValPtr = resolveAddress(arg);
     llvm::Type *targetType = argSymbolType.toLLVMType(*context, currentScope);
 
     llvm::Value *argVal;
@@ -1436,7 +1436,9 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
 
     printfArgs.push_back(argVal);
   }
-  return static_cast<llvm::Value *>(builder->CreateCall(printfFct, printfArgs));
+
+  llvm::Value *returnValue = builder->CreateCall(printfFct, printfArgs);
+  return returnValue;
 }
 
 std::any GeneratorVisitor::visitSizeofCall(SizeofCallNode *node) {
@@ -2162,6 +2164,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           // Calculate address of pointer offset
           lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indexValue);
         }
+        structAccessAddress = lhsPtr;
 
         lhs = nullptr;
         break;
@@ -2530,7 +2533,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     std::vector<llvm::Type *> argTypes;
     if (isMethod)
       argTypes.push_back(thisSymbolType.toLLVMType(*context, accessScope)->getPointerTo());
-    for (auto &argSymbolType : argSymbolTypes)
+    for (const auto &argSymbolType : argSymbolTypes)
       argTypes.push_back(argSymbolType.toLLVMType(*context, accessScope));
 
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
@@ -3143,7 +3146,7 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
   argTypes.push_back(getDITypeForSymbolType(spiceFunc->getReturnType())); // Add result type
-  for (auto &argType : spiceFunc->getArgTypes())                          // Add arg types
+  for (const auto &argType : spiceFunc->getArgTypes())                    // Add arg types
     argTypes.push_back(getDITypeForSymbolType(argType));
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
 

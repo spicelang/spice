@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @GLOBAL = external global i8*
 
 define i32 @main() {
-entry:
+entry.l3:
   %result = alloca i32, align 4
   store i32 0, i32* %result, align 4
   %0 = load i8*, i8** @GLOBAL, align 8

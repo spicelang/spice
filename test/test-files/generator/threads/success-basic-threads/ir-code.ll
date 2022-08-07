@@ -11,7 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @usleep(i32)
 
 define i32 @main() {
-entry:
+entry.l3:
   %result = alloca i32, align 4
   %0 = alloca {}, align 8
   %1 = alloca {}, align 8
@@ -37,7 +37,7 @@ entry:
 declare i32 @printf(i8*, ...)
 
 define internal i8* @_thread0(i8* %0) {
-entry:
+thread.entry.l5:
   %1 = bitcast i8* %0 to {}*
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
@@ -52,7 +52,7 @@ entry:
 declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*)
 
 define internal i8* @_thread1(i8* %0) {
-entry:
+thread.entry.l9:
   %1 = bitcast i8* %0 to {}*
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4

@@ -1883,7 +1883,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
 
     ArgList errArgTypes;
-    for (auto &argType : argTypes)
+    for (const auto &argType : argTypes)
       errArgTypes.emplace_back(argType, false);
 
     Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, node->codeLoc);
@@ -1934,7 +1934,7 @@ std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node
   int actualSize = 0;
   SymbolType actualItemType = SymbolType(TY_DYN);
   if (node->itemLst()) {
-    for (auto &arg : node->itemLst()->args()) {
+    for (const auto &arg : node->itemLst()->args()) {
       auto itemType = any_cast<SymbolType>(visit(arg));
       if (actualItemType.is(TY_DYN)) {
         actualItemType = itemType;
@@ -2017,7 +2017,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
   // Set template types to the struct
   std::vector<GenericType> genericTemplateTypes = spiceStruct->getTemplateTypes();
   std::vector<SymbolType> templateTypes;
-  for (auto &genericType : genericTemplateTypes)
+  for (const auto &genericType : genericTemplateTypes)
     templateTypes.emplace_back(genericType.getTypeChain());
   structType.setTemplateTypes(templateTypes);
 
@@ -2211,7 +2211,7 @@ SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, const std::s
   SymbolTable *externalStructTable = sourceScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
 
   // Initialize potential structs for field types
-  for (auto &[_, entry] : externalStructTable->getSymbols()) {
+  for (const auto &[_, entry] : externalStructTable->getSymbols()) {
     if (entry.getType().isBaseType(TY_STRUCT)) {
       std::string nestedStructName = CommonUtil::getLastFragment(entry.getType().getBaseType().getSubType(), ".");
       std::string nestedStructPrefix = CommonUtil::getPrefix(entry.getType().getBaseType().getSubType(), ".");

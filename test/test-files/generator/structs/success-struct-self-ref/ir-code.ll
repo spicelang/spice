@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [21 x i8] c"Root node number: %d\00", align 1
 
 define i32 @main() {
-entry:
+entry.l13:
   %result = alloca i32, align 4
   %0 = alloca %_s__TreeNode__TreeNodeptr_int, align 8
   %rootNode = alloca %_s__TreeNode__TreeNodeptr_int*, align 8
@@ -47,9 +47,9 @@ entry:
   %21 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %5, i32 0, i32 1
   store i32 3, i32* %21, align 4
   store %_s__TreeNode__TreeNodeptr_int* %5, %_s__TreeNode__TreeNodeptr_int** %7, align 8
-  br label %while.cond
+  br label %while.cond.l21
 
-while.cond:                                       ; preds = %while, %entry
+while.cond.l21:                                   ; preds = %while.l21, %entry.l13
   %22 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   %23 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   %24 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %23, i32 0, i32 0
@@ -59,17 +59,17 @@ while.cond:                                       ; preds = %while, %entry
   %27 = icmp ne %_s__TreeNode__TreeNodeptr_int* %25, %26
   store i1 %27, i1* %9, align 1
   %28 = load i1, i1* %9, align 1
-  br i1 %28, label %while, label %while.end
+  br i1 %28, label %while.l21, label %while.end.l21
 
-while:                                            ; preds = %while.cond
+while.l21:                                        ; preds = %while.cond.l21
   %29 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   %30 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   %31 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %30, i32 0, i32 0
   %32 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %31, align 8
   store %_s__TreeNode__TreeNodeptr_int* %32, %_s__TreeNode__TreeNodeptr_int** %7, align 8
-  br label %while.cond
+  br label %while.cond.l21
 
-while.end:                                        ; preds = %while.cond
+while.end.l21:                                    ; preds = %while.cond.l21
   %33 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   %34 = load %_s__TreeNode__TreeNodeptr_int*, %_s__TreeNode__TreeNodeptr_int** %7, align 8
   %35 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, %_s__TreeNode__TreeNodeptr_int* %34, i32 0, i32 1

@@ -9,7 +9,7 @@
 
 std::any AstBuilderVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = dynamic_cast<EntryNode *>(currentNode);
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     // Create child for the current node
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::MainFunctionDefContext *>(subTree); rule != nullptr) // MainFctDef
@@ -41,7 +41,7 @@ std::any AstBuilderVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
 
 std::any AstBuilderVisitor::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
   auto mainFctDefNode = dynamic_cast<MainFctDefNode *>(currentNode);
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ArgLstDef
       currentNode = mainFctDefNode->createChild<ParamLstNode>(CodeLoc(fileName, rule->start));
@@ -70,7 +70,7 @@ std::any AstBuilderVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ct
     fctDefNode->isMethod = true;
   }
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = fctDefNode->createChild<SpecifierLstNode>(CodeLoc(fileName, rule->start));
@@ -106,7 +106,7 @@ std::any AstBuilderVisitor::visitProcedureDef(SpiceParser::ProcedureDefContext *
     procDefNode->isMethod = true;
   }
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = procDefNode->createChild<SpecifierLstNode>(CodeLoc(fileName, rule->start));
@@ -135,7 +135,7 @@ std::any AstBuilderVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   // Extract struct name
   structDefNode->structName = ctx->IDENTIFIER()->getText();
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = structDefNode->createChild<SpecifierLstNode>(CodeLoc(fileName, rule->start));
@@ -161,7 +161,7 @@ std::any AstBuilderVisitor::visitGenericTypeDef(SpiceParser::GenericTypeDefConte
   // Extract type name
   genericTypeDefNode->typeName = ctx->IDENTIFIER()->getText();
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = genericTypeDefNode->createChild<SpecifierLstNode>(CodeLoc(fileName, rule->start));
@@ -187,7 +187,7 @@ std::any AstBuilderVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *
   // Extract negative
   globalVarDefNode->negative = ctx->MINUS();
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = globalVarDefNode->createChild<SpecifierLstNode>(CodeLoc(fileName, rule->start));
@@ -212,7 +212,7 @@ std::any AstBuilderVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   // Extract function name
   extDeclNode->extFunctionName = ctx->IDENTIFIER()->getText();
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = extDeclNode->createChild<DataTypeNode>(CodeLoc(fileName, rule->start));
@@ -234,7 +234,7 @@ std::any AstBuilderVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 std::any AstBuilderVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   auto threadDefNode = dynamic_cast<ThreadDefNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
       currentNode = threadDefNode->createChild<StmtLstNode>(CodeLoc(fileName, rule->start));
@@ -252,7 +252,7 @@ std::any AstBuilderVisitor::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
 std::any AstBuilderVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
   auto unsafeBlockDefNode = dynamic_cast<UnsafeBlockDefNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
       currentNode = unsafeBlockDefNode->createChild<StmtLstNode>(CodeLoc(fileName, rule->start));
@@ -270,7 +270,7 @@ std::any AstBuilderVisitor::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefConte
 std::any AstBuilderVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto forLoopNode = dynamic_cast<ForLoopNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::ForHeadContext *>(subTree); rule != nullptr) // ForHead
       visit(rule);
@@ -290,7 +290,7 @@ std::any AstBuilderVisitor::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 std::any AstBuilderVisitor::visitForHead(SpiceParser::ForHeadContext *ctx) {
   auto forLoopNode = dynamic_cast<ForLoopNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::DeclStmtContext *>(subTree); rule != nullptr) // DeclStmt
       currentNode = forLoopNode->createChild<DeclStmtNode>(CodeLoc(fileName, rule->start));
@@ -310,7 +310,7 @@ std::any AstBuilderVisitor::visitForHead(SpiceParser::ForHeadContext *ctx) {
 std::any AstBuilderVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
   auto foreachLoopNode = dynamic_cast<ForeachLoopNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::ForeachHeadContext *>(subTree); rule != nullptr) // ForeachHead
       visit(rule);
@@ -330,7 +330,7 @@ std::any AstBuilderVisitor::visitForeachLoop(SpiceParser::ForeachLoopContext *ct
 std::any AstBuilderVisitor::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
   auto foreachLoopNode = dynamic_cast<ForeachLoopNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::DeclStmtContext *>(subTree); rule != nullptr) // DeclStmt
       currentNode = foreachLoopNode->createChild<DeclStmtNode>(CodeLoc(fileName, rule->start));
@@ -350,7 +350,7 @@ std::any AstBuilderVisitor::visitForeachHead(SpiceParser::ForeachHeadContext *ct
 std::any AstBuilderVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   auto whileLoopNode = dynamic_cast<WhileLoopNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = whileLoopNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
@@ -370,7 +370,7 @@ std::any AstBuilderVisitor::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
 std::any AstBuilderVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   auto ifStmtNode = dynamic_cast<IfStmtNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = ifStmtNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
@@ -392,7 +392,7 @@ std::any AstBuilderVisitor::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
 std::any AstBuilderVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   auto elseStmtNode = dynamic_cast<ElseStmtNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::IfStmtContext *>(subTree); rule != nullptr) { // IfStmt
       currentNode = elseStmtNode->createChild<IfStmtNode>(CodeLoc(fileName, rule->start));
@@ -413,7 +413,7 @@ std::any AstBuilderVisitor::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
 std::any AstBuilderVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   auto assertStmtNode = dynamic_cast<AssertStmtNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
       currentNode = assertStmtNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
@@ -431,7 +431,7 @@ std::any AstBuilderVisitor::visitAssertStmt(SpiceParser::AssertStmtContext *ctx)
 
 std::any AstBuilderVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   auto stmtLstNode = dynamic_cast<StmtLstNode *>(currentNode);
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::StmtContext *>(subTree); rule != nullptr) // Stmt
       currentNode = stmtLstNode->createChild<StmtNode>(CodeLoc(fileName, rule->start));
@@ -463,7 +463,7 @@ std::any AstBuilderVisitor::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
 std::any AstBuilderVisitor::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
   auto typeLstNode = dynamic_cast<TypeLstNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
       currentNode = typeLstNode->createChild<DataTypeNode>(CodeLoc(fileName, rule->start));
@@ -482,7 +482,7 @@ std::any AstBuilderVisitor::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
 std::any AstBuilderVisitor::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
   auto typeAltsLstNode = dynamic_cast<TypeAltsLstNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
       currentNode = typeAltsLstNode->createChild<DataTypeNode>(CodeLoc(fileName, rule->start));
@@ -501,7 +501,7 @@ std::any AstBuilderVisitor::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ct
 std::any AstBuilderVisitor::visitParamLst(SpiceParser::ParamLstContext *ctx) {
   auto argLstDefNode = dynamic_cast<ParamLstNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::DeclStmtContext *>(subTree); rule != nullptr) // DeclStmt
       currentNode = argLstDefNode->createChild<DeclStmtNode>(CodeLoc(fileName, rule->start));
@@ -519,7 +519,7 @@ std::any AstBuilderVisitor::visitParamLst(SpiceParser::ParamLstContext *ctx) {
 std::any AstBuilderVisitor::visitArgLst(SpiceParser::ArgLstContext *ctx) {
   auto argLstNode = dynamic_cast<ArgLstNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignStmt
       currentNode = argLstNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
@@ -540,7 +540,7 @@ std::any AstBuilderVisitor::visitField(SpiceParser::FieldContext *ctx) {
   // Extract field name
   fieldNode->name = ctx->IDENTIFIER()->getText();
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = fieldNode->createChild<SpecifierLstNode>(CodeLoc(fileName, rule->start));
@@ -560,7 +560,7 @@ std::any AstBuilderVisitor::visitField(SpiceParser::FieldContext *ctx) {
 std::any AstBuilderVisitor::visitStmt(SpiceParser::StmtContext *ctx) {
   auto stmtNode = dynamic_cast<StmtNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::DeclStmtContext *>(subTree); rule != nullptr) // DeclStmt
       currentNode = stmtNode->createChild<DeclStmtNode>(CodeLoc(fileName, rule->start));
@@ -589,7 +589,7 @@ std::any AstBuilderVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   // Extract var name
   declStmtNode->varName = ctx->IDENTIFIER()->getText();
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = declStmtNode->createChild<SpecifierLstNode>(CodeLoc(fileName, rule->start));
@@ -612,7 +612,7 @@ std::any AstBuilderVisitor::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 std::any AstBuilderVisitor::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
   auto specifierLstNode = dynamic_cast<SpecifierLstNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierContext *>(subTree); rule != nullptr) // DeclSpecifier
       currentNode = specifierLstNode->createChild<SpecifierNode>(CodeLoc(fileName, rule->start));
@@ -630,7 +630,7 @@ std::any AstBuilderVisitor::visitSpecifierLst(SpiceParser::SpecifierLstContext *
 std::any AstBuilderVisitor::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
   auto specifierNode = dynamic_cast<SpecifierNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     auto token = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
     assert(token != nullptr);
     size_t symbolType = token->getSymbol()->getType();
@@ -666,7 +666,7 @@ std::any AstBuilderVisitor::visitImportStmt(SpiceParser::ImportStmtContext *ctx)
 std::any AstBuilderVisitor::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   auto returnStmtNode = dynamic_cast<ReturnStmtNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
       currentNode = returnStmtNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
@@ -703,7 +703,7 @@ std::any AstBuilderVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *
 std::any AstBuilderVisitor::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
   auto atomicExprNode = dynamic_cast<AtomicExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::PrintfCallContext *>(subTree); rule != nullptr) // PrintfCall
       currentNode = atomicExprNode->createChild<PrintfCallNode>(CodeLoc(fileName, rule->start));
@@ -735,7 +735,7 @@ std::any AstBuilderVisitor::visitPrintfCall(SpiceParser::PrintfCallContext *ctx)
   replaceEscapeChars(templatedString);
   printfCallNode->templatedString = templatedString;
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = printfCallNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
@@ -756,7 +756,7 @@ std::any AstBuilderVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx)
   // Check if type or value
   sizeofCallNode->isType = ctx->TYPE();
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = sizeofCallNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
@@ -776,7 +776,7 @@ std::any AstBuilderVisitor::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx)
 std::any AstBuilderVisitor::visitLenCall(SpiceParser::LenCallContext *ctx) {
   auto lenCallNode = dynamic_cast<LenCallNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = lenCallNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
@@ -796,7 +796,7 @@ std::any AstBuilderVisitor::visitTidCall(SpiceParser::TidCallContext *ctx) { ret
 std::any AstBuilderVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
   auto joinCallNode = dynamic_cast<JoinCallNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = joinCallNode->createChild<AssignExprNode>(CodeLoc(fileName, rule->start));
@@ -814,7 +814,7 @@ std::any AstBuilderVisitor::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
 std::any AstBuilderVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   auto assignExprNode = dynamic_cast<AssignExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::PrefixUnaryExprContext *>(subTree); rule != nullptr) // PrefixUnaryExpr
       currentNode = assignExprNode->createChild<PrefixUnaryExprNode>(CodeLoc(fileName, rule->start));
@@ -840,7 +840,7 @@ std::any AstBuilderVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx)
 std::any AstBuilderVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   auto ternaryExprNode = dynamic_cast<TernaryExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::LogicalOrExprContext *>(subTree); rule != nullptr) // LogicalOrExpr
       currentNode = ternaryExprNode->createChild<LogicalOrExprNode>(CodeLoc(fileName, rule->start));
@@ -858,7 +858,7 @@ std::any AstBuilderVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ct
 std::any AstBuilderVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
   auto logicalOrExprNode = dynamic_cast<LogicalOrExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::LogicalAndExprContext *>(subTree); rule != nullptr) // LogicalAndExpr
       currentNode = logicalOrExprNode->createChild<LogicalAndExprNode>(CodeLoc(fileName, rule->start));
@@ -876,7 +876,7 @@ std::any AstBuilderVisitor::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext
 std::any AstBuilderVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
   auto logicalAndExprNode = dynamic_cast<LogicalAndExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::BitwiseOrExprContext *>(subTree); rule != nullptr) // BitwiseOr
       currentNode = logicalAndExprNode->createChild<BitwiseOrExprNode>(CodeLoc(fileName, rule->start));
@@ -894,7 +894,7 @@ std::any AstBuilderVisitor::visitLogicalAndExpr(SpiceParser::LogicalAndExprConte
 std::any AstBuilderVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
   auto bitwiseOrExprNode = dynamic_cast<BitwiseOrExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::BitwiseXorExprContext *>(subTree); rule != nullptr) // BitwiseXor
       currentNode = bitwiseOrExprNode->createChild<BitwiseXorExprNode>(CodeLoc(fileName, rule->start));
@@ -912,7 +912,7 @@ std::any AstBuilderVisitor::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext
 std::any AstBuilderVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
   auto bitwiseXorExprNode = dynamic_cast<BitwiseXorExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::BitwiseAndExprContext *>(subTree); rule != nullptr) // BitwiseAnd
       currentNode = bitwiseXorExprNode->createChild<BitwiseAndExprNode>(CodeLoc(fileName, rule->start));
@@ -930,7 +930,7 @@ std::any AstBuilderVisitor::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprConte
 std::any AstBuilderVisitor::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
   auto bitwiseAndExprNode = dynamic_cast<BitwiseAndExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::EqualityExprContext *>(subTree); rule != nullptr) // EqualityExpr
       currentNode = bitwiseAndExprNode->createChild<EqualityExprNode>(CodeLoc(fileName, rule->start));
@@ -954,7 +954,7 @@ std::any AstBuilderVisitor::visitEqualityExpr(SpiceParser::EqualityExprContext *
   else if (ctx->NOT_EQUAL())
     equalityExprNode->op = EqualityExprNode::OP_NOT_EQUAL;
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::RelationalExprContext *>(subTree); rule != nullptr) // RelationalExpr
       currentNode = equalityExprNode->createChild<RelationalExprNode>(CodeLoc(fileName, rule->start));
@@ -982,7 +982,7 @@ std::any AstBuilderVisitor::visitRelationalExpr(SpiceParser::RelationalExprConte
   else if (ctx->GREATER_EQUAL())
     relationalExprNode->op = RelationalExprNode::OP_GREATER_EQUAL;
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::ShiftExprContext *>(subTree); rule != nullptr) // ShiftExpr
       currentNode = relationalExprNode->createChild<ShiftExprNode>(CodeLoc(fileName, rule->start));
@@ -1006,7 +1006,7 @@ std::any AstBuilderVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   else if (!ctx->GREATER().empty())
     shiftExprNode->op = ShiftExprNode::OP_SHIFT_RIGHT;
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AdditiveExprContext *>(subTree); rule != nullptr) // AdditiveExpr
       currentNode = shiftExprNode->createChild<AdditiveExprNode>(CodeLoc(fileName, rule->start));
@@ -1024,7 +1024,7 @@ std::any AstBuilderVisitor::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
 std::any AstBuilderVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
   auto additiveExprNode = dynamic_cast<AdditiveExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::MultiplicativeExprContext *>(subTree); rule != nullptr) // MultiplicativeExpr
       currentNode = additiveExprNode->createChild<MultiplicativeExprNode>(CodeLoc(fileName, rule->start));
@@ -1046,7 +1046,7 @@ std::any AstBuilderVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *
 std::any AstBuilderVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
   auto multiplicativeExprNode = dynamic_cast<MultiplicativeExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::CastExprContext *>(subTree); rule != nullptr) // CastExpr
       currentNode = multiplicativeExprNode->createChild<CastExprNode>(CodeLoc(fileName, rule->start));
@@ -1068,7 +1068,7 @@ std::any AstBuilderVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeE
 std::any AstBuilderVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   auto castExprNode = dynamic_cast<CastExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::PrefixUnaryExprContext *>(subTree); rule != nullptr) // PrefixUnaryExpr
       currentNode = castExprNode->createChild<PrefixUnaryExprNode>(CodeLoc(fileName, rule->start));
@@ -1089,7 +1089,7 @@ std::any AstBuilderVisitor::visitCastExpr(SpiceParser::CastExprContext *ctx) {
 std::any AstBuilderVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
   auto prefixUnaryExprNode = dynamic_cast<PrefixUnaryExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::PrefixUnaryOpContext *>(subTree); rule != nullptr) // PrefixUnaryOp
       visit(rule);
@@ -1109,7 +1109,7 @@ std::any AstBuilderVisitor::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprCon
 std::any AstBuilderVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
   auto postfixUnaryExprNode = dynamic_cast<PostfixUnaryExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AtomicExprContext *>(subTree); rule != nullptr) // AtomicExpr
       currentNode = postfixUnaryExprNode->createChild<AtomicExprNode>(CodeLoc(fileName, rule->start));
@@ -1139,7 +1139,7 @@ std::any AstBuilderVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprC
 std::any AstBuilderVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   auto atomicExprNode = dynamic_cast<AtomicExprNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::ValueContext *>(subTree); rule != nullptr) // Value
       currentNode = atomicExprNode->createChild<ValueNode>(CodeLoc(fileName, rule->start));
@@ -1163,7 +1163,7 @@ std::any AstBuilderVisitor::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx)
 std::any AstBuilderVisitor::visitValue(SpiceParser::ValueContext *ctx) {
   auto valueNode = dynamic_cast<ValueNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::PrimitiveValueContext *>(subTree); rule != nullptr) // PrimitiveValue
       currentNode = valueNode->createChild<PrimitiveValueNode>(CodeLoc(fileName, rule->start));
@@ -1190,7 +1190,7 @@ std::any AstBuilderVisitor::visitValue(SpiceParser::ValueContext *ctx) {
 std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
   auto primitiveValueNode = dynamic_cast<PrimitiveValueNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::DOUBLE_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TY_DOUBLE;
@@ -1236,7 +1236,7 @@ std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueConte
 std::any AstBuilderVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
   auto fctCallNode = dynamic_cast<FunctionCallNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = fctCallNode->createChild<TypeLstNode>(CodeLoc(fileName, rule->start));
@@ -1265,7 +1265,7 @@ std::any AstBuilderVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *
 std::any AstBuilderVisitor::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
   auto arrayInitializationNode = dynamic_cast<ArrayInitializationNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) // ArgLst
       currentNode = arrayInitializationNode->createChild<ArgLstNode>(CodeLoc(fileName, rule->start));
@@ -1283,7 +1283,7 @@ std::any AstBuilderVisitor::visitArrayInitialization(SpiceParser::ArrayInitializ
 std::any AstBuilderVisitor::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
   auto structInstantiationNode = dynamic_cast<StructInstantiationNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) // TypeLst
       currentNode = structInstantiationNode->createChild<TypeLstNode>(CodeLoc(fileName, rule->start));
@@ -1349,7 +1349,7 @@ std::any AstBuilderVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
 std::any AstBuilderVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
   auto baseDataTypeNode = dynamic_cast<BaseDataTypeNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::CustomDataTypeContext *>(subTree); rule != nullptr) { // CustomDataType
       baseDataTypeNode->type = BaseDataTypeNode::TY_CUSTOM;
@@ -1387,7 +1387,7 @@ std::any AstBuilderVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *
 std::any AstBuilderVisitor::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
   auto customDataTypeNode = dynamic_cast<CustomDataTypeNode *>(currentNode);
 
-  for (auto subTree : ctx->children) {
+  for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) // TypeLst
       currentNode = customDataTypeNode->createChild<TypeLstNode>(CodeLoc(fileName, rule->start));

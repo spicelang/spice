@@ -3,7 +3,6 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
 @str = private unnamed_addr constant [17 x i8] c"Program finished\00", align 1
 @str.1 = private unnamed_addr constant [18 x i8] c"Thread 1 finished\00", align 1
 @str.2 = private unnamed_addr constant [18 x i8] c"Thread 2 finished\00", align 1
@@ -12,12 +11,12 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @usleep(i32) local_unnamed_addr
 
 define i32 @main() local_unnamed_addr {
-entry:
+entry.l3:
   %0 = alloca {}, align 8
   %t1 = alloca i8*, align 8
   %t3 = alloca i8*, align 8
   %1 = alloca { i8**, i8** }, align 8
-  store i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i64 0, i64 0), i8** %t3, align 8
+  store i8* null, i8** %t3, align 8
   %2 = alloca i8*, align 8
   %3 = bitcast {}* %0 to i8*
   %4 = call i32 @pthread_create(i8** nonnull %2, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %3)
@@ -45,7 +44,7 @@ entry:
 }
 
 define internal noalias i8* @_thread0(i8* nocapture readnone %0) {
-entry:
+thread.entry.l8:
   %1 = tail call i32 @usleep(i32 300000)
   %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @str.1, i64 0, i64 0))
   ret i8* null
@@ -54,7 +53,7 @@ entry:
 declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*) local_unnamed_addr
 
 define internal noalias i8* @_thread1(i8* nocapture readonly %0) {
-entry:
+thread.entry.l13:
   %1 = bitcast i8* %0 to i8***
   %2 = load i8**, i8*** %1, align 8
   %3 = getelementptr inbounds i8, i8* %0, i64 8
@@ -71,7 +70,7 @@ entry:
 declare i32 @pthread_join(i8*, i8**) local_unnamed_addr
 
 define internal noalias i8* @_thread2(i8* nocapture readnone %0) {
-entry:
+thread.entry.l18:
   %1 = tail call i32 @usleep(i32 200000)
   %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([18 x i8], [18 x i8]* @str.3, i64 0, i64 0))
   ret i8* null

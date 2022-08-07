@@ -10,28 +10,49 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-type TreeNode struct {
-    TreeNode* parent
-    int value
+type NestedStruct struct {
+    int field1
+    string field2
 }
 
-/*
-  0
- / \
-1   2
-   /
-  3
-*/
-f<int> main() {
-    dyn rootNode = TreeNode { nil<TreeNode*>, 0 };
-    dyn childNode1 = TreeNode { &rootNode, 1 };
-    dyn childNode2 = TreeNode { &rootNode, 2 };
-    dyn childNode21 = TreeNode { &childNode2, 3 };
+type TestStruct struct {
+    int* field1
+    NestedStruct* field2
+}
 
-    // Find root node
-    TreeNode* curNode = &childNode21;
-    while curNode.parent != nil<TreeNode*> {
-        curNode = curNode.parent;
-    }
-    printf("Root node number: %d", curNode.value);
+f<int> main() {
+    double doubleVar;
+    printf("Double value: %f\n", doubleVar);
+
+    int intVar;
+    printf("Int value: %d\n", intVar);
+
+    short shortVar;
+    printf("Short value: %d\n", shortVar);
+
+    long longVar;
+    printf("Long value: %d\n", longVar);
+
+    string stringVar;
+    printf("String value: %s\n", stringVar);
+
+    byte byteVar;
+    printf("Byte value: %d\n", byteVar);
+
+    char charVar;
+    printf("Char value: %c\n", charVar);
+
+    bool boolVar;
+    printf("Bool value: %d\n", boolVar);
+
+    // Disabled because the output is different on GitHub actions
+    //int* intPtrVar;
+    //printf("Int pointer value: %p\n", intPtrVar);
+
+    NestedStruct[4] structArrayVar;
+    printf("Struct array value: %s\n", structArrayVar[2].field2);
+
+    // Disabled because the output is different on GitHub actions
+    //TestStruct structVar;
+    //printf("Nested struct field value: %d\n", structVar.field2.field1);
 }
