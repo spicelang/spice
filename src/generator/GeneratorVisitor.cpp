@@ -1003,16 +1003,18 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
 
   // Initialize loop variables
   llvm::Value *idxVarPtr;
+  llvm::Type *idxVarType;
   if (node->idxVarDecl()) {
     auto idxVarName = any_cast<std::string>(visit(node->idxVarDecl()));
     SymbolTableEntry *idxVarEntry = currentScope->lookup(idxVarName);
     assert(idxVarEntry != nullptr);
     idxVarPtr = idxVarEntry->getAddress();
+    idxVarType = idxVarEntry->getType().toLLVMType(*context, currentScope);
   } else {
     std::string indexVariableName = FOREACH_DEFAULT_IDX_VARIABLE_NAME;
     // Create local variable for
-    llvm::Type *indexVariableType = llvm::Type::getInt32Ty(*context);
-    idxVarPtr = insertAlloca(indexVariableType, indexVariableName);
+    idxVarType = llvm::Type::getInt32Ty(*context);
+    idxVarPtr = insertAlloca(idxVarType, indexVariableName);
     SymbolTableEntry *idxVarEntry = currentScope->lookup(indexVariableName);
     assert(idxVarEntry != nullptr);
     idxVarEntry->updateAddress(idxVarPtr);
@@ -1027,7 +1029,9 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
 
   // Do loop variable initialization
   llvm::Value *arrayValuePtr = resolveAddress(node->arrayAssign());
-  llvm::Value *arrayValue = builder->CreateLoad(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr);
+  SymbolType arraySymbolType = node->arrayAssign()->getEvaluatedSymbolType();
+  llvm::Type *arrayValueType = arraySymbolType.toLLVMType(*context, currentScope);
+  llvm::Value *arrayValue = builder->CreateLoad(arrayValueType, arrayValuePtr);
   llvm::Value *arraySizeValue = dynamicallySized ? arrayVarEntry->getType().getDynamicArraySize()
                                                  : builder->getInt32(arrayValue->getType()->getArrayNumElements());
 
@@ -1036,17 +1040,19 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
     arraySizeValue = builder->CreateSExtOrTrunc(arraySizeValue, builder->getInt32Ty());
 
   // Load the first item into item variable
-  llvm::Value *index = builder->CreateLoad(idxVarPtr->getType()->getPointerElementType(), idxVarPtr);
+  llvm::Value *index = builder->CreateLoad(idxVarType, idxVarPtr);
 
   llvm::Value *itemPtr;
   llvm::Value *indices[2] = {builder->getInt32(0), index};
   if (dynamicallySized) {
-    arrayValuePtr = builder->CreateLoad(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr);
-    itemPtr = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr, index);
+    arrayValuePtr = builder->CreateLoad(arrayValueType, arrayValuePtr);
+    arrayValueType = arraySymbolType.getContainedTy().toLLVMType(*context, currentScope);
+    itemPtr = builder->CreateInBoundsGEP(arrayValueType, arrayValuePtr, index);
   } else {
-    itemPtr = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr, indices);
+    itemPtr = builder->CreateInBoundsGEP(arrayValueType, arrayValuePtr, indices);
   }
-  llvm::Value *newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
+  llvm::Type *itemPtrType = arraySymbolType.getContainedTy().toLLVMType(*context, currentScope);
+  llvm::Value *newItemValue = builder->CreateLoad(itemPtrType, itemPtr);
   builder->CreateStore(newItemValue, itemVarPtr);
   createBr(bLoop);
 
@@ -1066,17 +1072,17 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   parentFct->getBasicBlockList().push_back(bInc);
   moveInsertPointToBlock(bInc);
   // Increment index variable
-  index = builder->CreateLoad(idxVarPtr->getType()->getPointerElementType(), idxVarPtr, "idx");
+  index = builder->CreateLoad(idxVarType, idxVarPtr, "idx");
   index = builder->CreateAdd(index, builder->getInt32(1), "idx.inc");
   builder->CreateStore(index, idxVarPtr);
   // Load new item into item variable
   indices[1] = index;
   if (dynamicallySized) {
-    itemPtr = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr, index);
+    itemPtr = builder->CreateInBoundsGEP(arrayValueType, arrayValuePtr, index);
   } else {
-    itemPtr = builder->CreateInBoundsGEP(arrayValuePtr->getType()->getPointerElementType(), arrayValuePtr, indices);
+    itemPtr = builder->CreateInBoundsGEP(arrayValueType, arrayValuePtr, indices);
   }
-  newItemValue = builder->CreateLoad(itemPtr->getType()->getPointerElementType(), itemPtr);
+  newItemValue = builder->CreateLoad(itemPtrType, itemPtr);
   builder->CreateStore(newItemValue, itemVarPtr);
   createBr(bCond);
 
@@ -1084,7 +1090,7 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   parentFct->getBasicBlockList().push_back(bCond);
   moveInsertPointToBlock(bCond);
   // Check condition
-  index = builder->CreateLoad(idxVarPtr->getType()->getPointerElementType(), idxVarPtr);
+  index = builder->CreateLoad(idxVarType, idxVarPtr);
   llvm::Value *cond = builder->CreateICmpULT(index, arraySizeValue);
   createCondBr(cond, bLoop, bEnd);
 
@@ -1523,13 +1529,13 @@ std::any GeneratorVisitor::visitJoinCall(JoinCallNode *node) {
     // Check if it is an id or an array of ids
     auto threadIdPtr = resolveAddress(assignExpr);
     assert(threadIdPtr != nullptr && threadIdPtr->getType()->isPointerTy());
-    llvm::Type *threadIdPtrTy = threadIdPtr->getType()->getPointerElementType();
-    if (threadIdPtr->getType()->getPointerElementType()->isArrayTy()) { // Array of ids
+    llvm::Type *threadIdPtrTy = assignExpr->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
+    if (threadIdPtrTy->isArrayTy()) { // Array of ids
       for (int i = 0; i < threadIdPtrTy->getArrayNumElements(); i++) {
         // Get thread id that has to be joined
         llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(i)};
         llvm::Value *threadIdAddr = builder->CreateGEP(threadIdPtrTy, threadIdPtr, indices);
-        llvm::Value *threadId = builder->CreateLoad(threadIdAddr->getType()->getPointerElementType(), threadIdAddr);
+        llvm::Value *threadId = builder->CreateLoad(threadIdPtrTy, threadIdAddr);
 
         // Create call to pthread_join
         llvm::Value *voidPtrPtrNull = llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(*context)->getPointerTo());
