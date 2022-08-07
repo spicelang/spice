@@ -10,7 +10,7 @@ target triple = "x86_64-w64-windows-gnu"
 @4 = private unnamed_addr constant [28 x i8] c"Restored value address: %p\0A\00", align 1
 
 define i32 @main() {
-entry:
+entry.l1:
   %result = alloca i32, align 4
   %food = alloca i8*, align 8
   %0 = alloca i8**, align 8

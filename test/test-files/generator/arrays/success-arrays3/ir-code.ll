@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [17 x i8] c"intArray[1]: %d\0A\00", align 1
 
 define i32 @main() {
-entry:
+entry.l1:
   %result = alloca i32, align 4
   %intArray = alloca [2 x i32], align 4
   %intArray1 = alloca [2 x i32], align 4

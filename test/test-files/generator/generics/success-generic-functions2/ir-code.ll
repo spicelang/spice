@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [17 x i8] c"Results: %d, %d\0A\00", align 1
 
 define internal i32 @_f__void__sumNumbers__longarray_int(i64* %0, i32 %1) {
-entry:
+entry.l4:
   %numberArray = alloca i64*, align 8
   %arrayLength = alloca i32, align 4
   %result = alloca i32, align 4
@@ -20,9 +20,9 @@ entry:
   store i32 %1, i32* %arrayLength, align 4
   store i32 0, i32* %result, align 4
   store i32 0, i32* %i, align 4
-  br label %for.cond
+  br label %for.cond.l6
 
-for:                                              ; preds = %for.cond
+for.l6:                                           ; preds = %for.cond.l6
   %4 = load i64*, i64** %numberArray, align 8
   %5 = load i32, i32* %i, align 4
   %6 = getelementptr inbounds i64, i64* %4, i32 %5
@@ -31,30 +31,30 @@ for:                                              ; preds = %for.cond
   %9 = trunc i64 %7 to i32
   %10 = add i32 %8, %9
   store i32 %10, i32* %result, align 4
-  br label %for.inc
+  br label %for.inc.l6
 
-for.inc:                                          ; preds = %for
+for.inc.l6:                                       ; preds = %for.l6
   %11 = load i32, i32* %i, align 4
   %12 = add i32 %11, 1
   store i32 %12, i32* %i, align 4
   store i32 %11, i32* %2, align 4
-  br label %for.cond
+  br label %for.cond.l6
 
-for.cond:                                         ; preds = %for.inc, %entry
+for.cond.l6:                                      ; preds = %for.inc.l6, %entry.l4
   %13 = load i32, i32* %i, align 4
   %14 = load i32, i32* %arrayLength, align 4
   %15 = icmp slt i32 %13, %14
   store i1 %15, i1* %3, align 1
   %16 = load i1, i1* %3, align 1
-  br i1 %16, label %for, label %for.end
+  br i1 %16, label %for.l6, label %for.end.l6
 
-for.end:                                          ; preds = %for.cond
+for.end.l6:                                       ; preds = %for.cond.l6
   %17 = load i32, i32* %result, align 4
   ret i32 %17
 }
 
 define internal i32 @_f__void__sumNumbers__shortarray_int(i16* %0, i32 %1) {
-entry:
+entry.l4:
   %numberArray = alloca i16*, align 8
   %arrayLength = alloca i32, align 4
   %result = alloca i32, align 4
@@ -65,9 +65,9 @@ entry:
   store i32 %1, i32* %arrayLength, align 4
   store i32 0, i32* %result, align 4
   store i32 0, i32* %i, align 4
-  br label %for.cond
+  br label %for.cond.l6
 
-for:                                              ; preds = %for.cond
+for.l6:                                           ; preds = %for.cond.l6
   %4 = load i16*, i16** %numberArray, align 8
   %5 = load i32, i32* %i, align 4
   %6 = getelementptr inbounds i16, i16* %4, i32 %5
@@ -76,30 +76,30 @@ for:                                              ; preds = %for.cond
   %9 = sext i16 %7 to i32
   %10 = add i32 %8, %9
   store i32 %10, i32* %result, align 4
-  br label %for.inc
+  br label %for.inc.l6
 
-for.inc:                                          ; preds = %for
+for.inc.l6:                                       ; preds = %for.l6
   %11 = load i32, i32* %i, align 4
   %12 = add i32 %11, 1
   store i32 %12, i32* %i, align 4
   store i32 %11, i32* %2, align 4
-  br label %for.cond
+  br label %for.cond.l6
 
-for.cond:                                         ; preds = %for.inc, %entry
+for.cond.l6:                                      ; preds = %for.inc.l6, %entry.l4
   %13 = load i32, i32* %i, align 4
   %14 = load i32, i32* %arrayLength, align 4
   %15 = icmp slt i32 %13, %14
   store i1 %15, i1* %3, align 1
   %16 = load i1, i1* %3, align 1
-  br i1 %16, label %for, label %for.end
+  br i1 %16, label %for.l6, label %for.end.l6
 
-for.end:                                          ; preds = %for.cond
+for.end.l6:                                       ; preds = %for.cond.l6
   %17 = load i32, i32* %result, align 4
   ret i32 %17
 }
 
 define internal void @_p__void__printData__int_intarray(i32 %0, [2 x i32] %1) {
-entry:
+entry.l11:
   %arrayLength = alloca i32, align 4
   %list = alloca [2 x i32], align 4
   %i = alloca i32, align 4
@@ -108,39 +108,39 @@ entry:
   store i32 %0, i32* %arrayLength, align 4
   store [2 x i32] %1, [2 x i32]* %list, align 4
   store i32 0, i32* %i, align 4
-  br label %for.cond
+  br label %for.cond.l12
 
-for:                                              ; preds = %for.cond
+for.l12:                                          ; preds = %for.cond.l12
   %4 = load [2 x i32], [2 x i32]* %list, align 4
   %5 = load i32, i32* %i, align 4
   %6 = getelementptr inbounds [2 x i32], [2 x i32]* %list, i32 0, i32 %5
   %7 = load i32, i32* %6, align 4
   %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0), i32 %7)
-  br label %for.inc
+  br label %for.inc.l12
 
-for.inc:                                          ; preds = %for
+for.inc.l12:                                      ; preds = %for.l12
   %9 = load i32, i32* %i, align 4
   %10 = add i32 %9, 1
   store i32 %10, i32* %i, align 4
   store i32 %9, i32* %2, align 4
-  br label %for.cond
+  br label %for.cond.l12
 
-for.cond:                                         ; preds = %for.inc, %entry
+for.cond.l12:                                     ; preds = %for.inc.l12, %entry.l11
   %11 = load i32, i32* %i, align 4
   %12 = load i32, i32* %arrayLength, align 4
   %13 = icmp slt i32 %11, %12
   store i1 %13, i1* %3, align 1
   %14 = load i1, i1* %3, align 1
-  br i1 %14, label %for, label %for.end
+  br i1 %14, label %for.l12, label %for.end.l12
 
-for.end:                                          ; preds = %for.cond
+for.end.l12:                                      ; preds = %for.cond.l12
   ret void
 }
 
 declare i32 @printf(i8*, ...)
 
 define i32 @main() {
-entry:
+entry.l17:
   %result = alloca i32, align 4
   %numberList1 = alloca [7 x i16], align 2
   %0 = alloca i32, align 4

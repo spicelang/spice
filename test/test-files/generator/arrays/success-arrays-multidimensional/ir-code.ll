@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [15 x i8] c"Cell [1,3]: %d\00", align 1
 
 define i32 @main() {
-entry:
+entry.l1:
   %result = alloca i32, align 4
   %a = alloca [10 x [10 x i32]], align 4
   %i = alloca i32, align 4
@@ -19,13 +19,13 @@ entry:
   store i32 0, i32* %result, align 4
   store [10 x [10 x i32]] zeroinitializer, [10 x [10 x i32]]* %a, align 4
   store i32 0, i32* %i, align 4
-  br label %for.cond3
+  br label %for.cond.l3
 
-for:                                              ; preds = %for.cond3
+for.l3:                                           ; preds = %for.cond.l3
   store i32 0, i32* %j, align 4
-  br label %for.cond
+  br label %for.cond.l4
 
-for1:                                             ; preds = %for.cond
+for.l4:                                           ; preds = %for.cond.l4
   %5 = load i32, i32* %i, align 4
   %6 = load i32, i32* %j, align 4
   %7 = mul i32 %5, %6
@@ -38,40 +38,40 @@ for1:                                             ; preds = %for.cond
   %13 = load i32, i32* %j, align 4
   %14 = getelementptr inbounds [10 x i32], [10 x i32]* %11, i32 0, i32 %13
   store i32 %8, i32* %14, align 4
-  br label %for.inc
+  br label %for.inc.l4
 
-for.inc:                                          ; preds = %for1
+for.inc.l4:                                       ; preds = %for.l4
   %15 = load i32, i32* %j, align 4
   %16 = add i32 %15, 1
   store i32 %16, i32* %j, align 4
   store i32 %15, i32* %1, align 4
-  br label %for.cond
+  br label %for.cond.l4
 
-for.cond:                                         ; preds = %for.inc, %for
+for.cond.l4:                                      ; preds = %for.inc.l4, %for.l3
   %17 = load i32, i32* %j, align 4
   %18 = icmp slt i32 %17, 10
   store i1 %18, i1* %2, align 1
   %19 = load i1, i1* %2, align 1
-  br i1 %19, label %for1, label %for.end
+  br i1 %19, label %for.l4, label %for.end.l4
 
-for.end:                                          ; preds = %for.cond
-  br label %for.inc2
+for.end.l4:                                       ; preds = %for.cond.l4
+  br label %for.inc.l3
 
-for.inc2:                                         ; preds = %for.end
+for.inc.l3:                                       ; preds = %for.end.l4
   %20 = load i32, i32* %i, align 4
   %21 = add i32 %20, 1
   store i32 %21, i32* %i, align 4
   store i32 %20, i32* %3, align 4
-  br label %for.cond3
+  br label %for.cond.l3
 
-for.cond3:                                        ; preds = %for.inc2, %entry
+for.cond.l3:                                      ; preds = %for.inc.l3, %entry.l1
   %22 = load i32, i32* %i, align 4
   %23 = icmp slt i32 %22, 10
   store i1 %23, i1* %4, align 1
   %24 = load i1, i1* %4, align 1
-  br i1 %24, label %for, label %for.end4
+  br i1 %24, label %for.l3, label %for.end.l3
 
-for.end4:                                         ; preds = %for.cond3
+for.end.l3:                                       ; preds = %for.cond.l3
   %25 = load [10 x [10 x i32]], [10 x [10 x i32]]* %a, align 4
   %26 = getelementptr inbounds [10 x [10 x i32]], [10 x [10 x i32]]* %a, i32 0, i32 1
   %27 = load [10 x i32], [10 x i32]* %26, align 4

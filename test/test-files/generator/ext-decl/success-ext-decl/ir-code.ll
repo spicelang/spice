@@ -17,7 +17,7 @@ declare i32 @rmdir(i8*)
 declare void @free(i8*)
 
 define i32 @main() {
-entry:
+entry.l7:
   %result = alloca i32, align 4
   %0 = alloca i8*, align 8
   %1 = alloca i32, align 4

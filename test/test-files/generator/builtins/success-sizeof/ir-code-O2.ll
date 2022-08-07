@@ -18,7 +18,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
-entry:
+entry.l7:
   %0 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @0, i64 0, i64 0), i32 64)
   %1 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([17 x i8], [17 x i8]* @1, i64 0, i64 0), i32 32)
   %2 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @2, i64 0, i64 0), i32 16)

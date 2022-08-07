@@ -18,7 +18,7 @@ target triple = "x86_64-w64-windows-gnu"
 @11 = private unnamed_addr constant [29 x i8] c"Size of struct instance: %d\0A\00", align 1
 
 define i32 @main() {
-entry:
+entry.l7:
   %result = alloca i32, align 4
   %0 = alloca double, align 8
   %1 = alloca double, align 8

@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 1
 
 define internal i8* @_f__void__getTestString__int_double_bool(i32 %0, double %1, i1 %2) {
-entry:
+entry.l1:
   %arg0 = alloca i32, align 4
   %arg1 = alloca double, align 8
   %arg2 = alloca i1, align 1
@@ -24,7 +24,7 @@ entry:
 }
 
 define i32 @main() {
-entry:
+entry.l5:
   %result = alloca i32, align 4
   %0 = alloca i32, align 4
   %1 = alloca double, align 8

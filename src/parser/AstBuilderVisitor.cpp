@@ -1029,9 +1029,9 @@ std::any AstBuilderVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *
     if (rule = dynamic_cast<SpiceParser::MultiplicativeExprContext *>(subTree); rule != nullptr) // MultiplicativeExpr
       currentNode = additiveExprNode->createChild<MultiplicativeExprNode>(CodeLoc(fileName, rule->start));
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::PLUS)
-      additiveExprNode->opQueue.push(AdditiveExprNode::OP_PLUS);
+      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_PLUS, SymbolType(TY_INVALID));
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::MINUS)
-      additiveExprNode->opQueue.push(AdditiveExprNode::OP_MINUS);
+      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, SymbolType(TY_INVALID));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1051,9 +1051,9 @@ std::any AstBuilderVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeE
     if (rule = dynamic_cast<SpiceParser::CastExprContext *>(subTree); rule != nullptr) // CastExpr
       currentNode = multiplicativeExprNode->createChild<CastExprNode>(CodeLoc(fileName, rule->start));
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::MUL)
-      multiplicativeExprNode->opQueue.push(MultiplicativeExprNode::OP_MUL);
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_MUL, SymbolType(TY_INVALID));
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::DIV)
-      multiplicativeExprNode->opQueue.push(MultiplicativeExprNode::OP_DIV);
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_DIV, SymbolType(TY_INVALID));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1118,13 +1118,13 @@ std::any AstBuilderVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprC
     else if (rule = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(subTree); rule != nullptr) // PostfixUnaryExpr
       currentNode = postfixUnaryExprNode->createChild<PostfixUnaryExprNode>(CodeLoc(fileName, rule->start));
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::LBRACKET)
-      postfixUnaryExprNode->opQueue.push(PostfixUnaryExprNode::OP_SUBSCRIPT);
+      postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_SUBSCRIPT, SymbolType(TY_INVALID));
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::DOT)
-      postfixUnaryExprNode->opQueue.push(PostfixUnaryExprNode::OP_MEMBER_ACCESS);
+      postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_MEMBER_ACCESS, SymbolType(TY_INVALID));
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::PLUS_PLUS)
-      postfixUnaryExprNode->opQueue.push(PostfixUnaryExprNode::OP_PLUS_PLUS);
+      postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_PLUS_PLUS, SymbolType(TY_INVALID));
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::MINUS_MINUS)
-      postfixUnaryExprNode->opQueue.push(PostfixUnaryExprNode::OP_MINUS_MINUS);
+      postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_MINUS_MINUS, SymbolType(TY_INVALID));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1447,29 +1447,29 @@ std::any AstBuilderVisitor::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext
 
   // Extract assign operator
   if (ctx->MINUS())
-    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_MINUS);
+    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_MINUS, SymbolType(TY_INVALID));
   else if (ctx->PLUS_PLUS())
-    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_PLUS_PLUS);
+    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_PLUS_PLUS, SymbolType(TY_INVALID));
   else if (ctx->MINUS_MINUS())
-    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_MINUS_MINUS);
+    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_MINUS_MINUS, SymbolType(TY_INVALID));
   else if (ctx->NOT())
-    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_NOT);
+    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_NOT, SymbolType(TY_INVALID));
   else if (ctx->BITWISE_NOT())
-    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_BITWISE_NOT);
+    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_BITWISE_NOT, SymbolType(TY_INVALID));
   else if (ctx->MUL())
-    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_INDIRECTION);
+    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_INDIRECTION, SymbolType(TY_INVALID));
   else if (ctx->BITWISE_AND())
-    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_ADDRESS_OF);
+    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
   else if (ctx->LOGICAL_AND()) {
-    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_ADDRESS_OF);
-    prefixUnaryExprNode->opStack.push(PrefixUnaryExprNode::OP_ADDRESS_OF);
+    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
   } else
     assert(false);
 
   return nullptr;
 }
 
-void AstBuilderVisitor::replaceEscapeChars(std::string &string) const {
+void AstBuilderVisitor::replaceEscapeChars(std::string &string) {
   CommonUtil::replaceAll(string, "\\a", "\a");
   CommonUtil::replaceAll(string, "\\b", "\b");
   CommonUtil::replaceAll(string, "\\f", "\f");

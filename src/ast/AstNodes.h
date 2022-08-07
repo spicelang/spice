@@ -918,7 +918,7 @@ public:
   [[nodiscard]] std::vector<MultiplicativeExprNode *> operands() const { return getChildren<MultiplicativeExprNode>(); }
 
   // Public members
-  std::queue<AdditiveOp> opQueue;
+  std::queue<std::pair<AdditiveOp, SymbolType>> opQueue;
 };
 
 // ================================================== MultiplicativeExprNode =====================================================
@@ -942,7 +942,7 @@ public:
   [[nodiscard]] std::vector<CastExprNode *> operands() const { return getChildren<CastExprNode>(); }
 
   // Public members
-  std::queue<MultiplicativeOp> opQueue;
+  std::queue<std::pair<MultiplicativeOp, SymbolType>> opQueue;
 };
 
 // ======================================================= CastExprNode ==========================================================
@@ -988,7 +988,7 @@ public:
   [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
 
   // Public members
-  std::stack<PrefixUnaryOp> opStack;
+  std::stack<std::pair<PrefixUnaryOp, SymbolType>> opStack;
 };
 
 // =================================================== PostfixUnaryExprNode ======================================================
@@ -1010,7 +1010,7 @@ public:
   [[nodiscard]] std::vector<PostfixUnaryExprNode *> postfixUnaryExpr() const { return getChildren<PostfixUnaryExprNode>(); }
 
   // Public members
-  std::queue<PostfixUnaryOp> opQueue;
+  std::queue<std::pair<PostfixUnaryOp, SymbolType>> opQueue;
 };
 
 // ====================================================== AtomicExprNode =========================================================

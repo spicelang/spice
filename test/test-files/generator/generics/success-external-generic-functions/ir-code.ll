@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anonymous.0 = constant [2 x i8*] [i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0)]
 
 define i32 @main() {
-entry:
+entry.l3:
   %result = alloca i32, align 4
   %0 = alloca double, align 8
   %1 = alloca i1, align 1

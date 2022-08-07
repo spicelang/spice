@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 @5 = private unnamed_addr constant [7 x i8] c"./test\00", align 1
 
 define i32 @main() local_unnamed_addr {
-entry:
+entry.l3:
   %0 = tail call i1 @_f__void__dirExists__string(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @5, i64 0, i64 0))
   %1 = zext i1 %0 to i32
   %2 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([28 x i8], [28 x i8]* @0, i64 0, i64 0), i32 %1)

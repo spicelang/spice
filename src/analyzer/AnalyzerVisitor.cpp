@@ -1420,14 +1420,15 @@ std::any AnalyzerVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
   if (node->operands().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(node->operands()[0]));
 
-    std::queue<AdditiveExprNode::AdditiveOp> opQueue = node->opQueue;
+    auto opQueue = node->opQueue;
+    std::queue<std::pair<AdditiveExprNode::AdditiveOp, SymbolType>> newOpQueue;
     size_t operandIndex = 1;
     while (!opQueue.empty()) {
       MultiplicativeExprNode *operand = node->operands()[operandIndex++];
       assert(operand != nullptr);
       auto operandType = any_cast<SymbolType>(visit(operand));
 
-      switch (opQueue.front()) {
+      switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
         currentType = opRuleManager->getPlusResultType(operand->codeLoc, currentType, operandType);
         break;
@@ -1438,8 +1439,10 @@ std::any AnalyzerVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
         throw std::runtime_error("Additive expr fall-through");
       }
 
+      newOpQueue.emplace(opQueue.front().first, currentType);
       opQueue.pop();
     }
+    node->opQueue = newOpQueue;
 
     return node->setEvaluatedSymbolType(currentType);
   }
@@ -1451,14 +1454,15 @@ std::any AnalyzerVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) 
   if (node->operands().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(node->operands()[0]));
 
-    std::queue<MultiplicativeExprNode::MultiplicativeOp> opQueue = node->opQueue;
+    auto opQueue = node->opQueue;
+    std::queue<std::pair<MultiplicativeExprNode::MultiplicativeOp, SymbolType>> newOpQueue;
     size_t operandIndex = 1;
     while (!opQueue.empty()) {
       CastExprNode *operand = node->operands()[operandIndex++];
       assert(operand != nullptr);
       auto operandType = any_cast<SymbolType>(visit(operand));
 
-      switch (opQueue.front()) {
+      switch (opQueue.front().first) {
       case MultiplicativeExprNode::OP_MUL:
         currentType = opRuleManager->getMulResultType(operand->codeLoc, currentType, operandType);
         break;
@@ -1472,8 +1476,10 @@ std::any AnalyzerVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) 
         throw std::runtime_error("Multiplicative expr fall-through");
       }
 
+      newOpQueue.emplace(opQueue.front().first, currentType);
       opQueue.pop();
     }
+    node->opQueue = newOpQueue;
 
     return node->setEvaluatedSymbolType(currentType);
   }
@@ -1500,9 +1506,10 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
   auto rhs = any_cast<SymbolType>(visit(node->postfixUnaryExpr()));
 
-  std::stack<PrefixUnaryExprNode::PrefixUnaryOp> opStack = node->opStack; // Copy to not modify the stack in the AST node
+  auto opStack = node->opStack;
+  std::stack<std::pair<PrefixUnaryExprNode::PrefixUnaryOp, SymbolType>> newOpStack;
   while (!opStack.empty()) {
-    switch (opStack.top()) {
+    switch (opStack.top().first) {
     case PrefixUnaryExprNode::OP_MINUS:
       rhs = opRuleManager->getPrefixMinusResultType(node->postfixUnaryExpr()->codeLoc, rhs);
       break;
@@ -1543,8 +1550,11 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     default:
       throw std::runtime_error("Prefix unary fall-through");
     }
+
+    newOpStack.emplace(opStack.top().first, rhs);
     opStack.pop();
   }
+  node->opStack = newOpStack;
 
   return node->setEvaluatedSymbolType(rhs);
 }
@@ -1555,9 +1565,10 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   size_t subscriptCounter = 0;
   size_t memberAccessCounter = 0;
 
-  std::queue<PostfixUnaryExprNode::PostfixUnaryOp> opQueue = node->opQueue; // Copy to not modify the queue in the AST node
+  auto opQueue = node->opQueue;
+  std::queue<std::pair<PostfixUnaryExprNode::PostfixUnaryOp, SymbolType>> newOpQueue;
   while (!opQueue.empty()) {
-    switch (opQueue.front()) {
+    switch (opQueue.front().first) {
     case PostfixUnaryExprNode::OP_SUBSCRIPT: {
       std::string arrayName = currentVarName;              // Save array name
       SymbolTableEntry *currentEntryBackup = currentEntry; // Save current entry
@@ -1630,6 +1641,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     default:
       throw std::runtime_error("PostfixUnary fall-through");
     }
+
+    newOpQueue.emplace(opQueue.front().first, lhs);
     opQueue.pop();
   }
 

@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @2 = private unnamed_addr constant [16 x i8] c"Argv no. 1: %s\0A\00", align 1
 
 define i32 @main(i32 %0, i8** %1) {
-entry:
+entry.l1:
   %argc = alloca i32, align 4
   %argv = alloca i8**, align 8
   %result = alloca i32, align 4
@@ -26,16 +26,16 @@ entry:
   %10 = icmp sgt i32 %9, 1
   store i1 %10, i1* %2, align 1
   %11 = load i1, i1* %2, align 1
-  br i1 %11, label %if.then, label %if.end
+  br i1 %11, label %if.then.l4, label %if.end.l4
 
-if.then:                                          ; preds = %entry
+if.then.l4:                                       ; preds = %entry.l1
   %12 = load i8**, i8*** %argv, align 8
   %13 = getelementptr inbounds i8*, i8** %12, i32 1
   %14 = load i8*, i8** %13, align 8
   %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @2, i32 0, i32 0), i8* %14)
-  br label %if.end
+  br label %if.end.l4
 
-if.end:                                           ; preds = %if.then, %entry
+if.end.l4:                                        ; preds = %if.then.l4, %entry.l1
   %16 = load i32, i32* %result, align 4
   ret i32 %16
 }

@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: alwaysinline
 define internal i64 @_f__void__getInlinedValue() #0 {
-entry:
+entry.l1:
   %result = alloca i64, align 8
   %0 = alloca i64, align 8
   store i64 12, i64* %0, align 8
@@ -16,7 +16,7 @@ entry:
 }
 
 define i32 @main() {
-entry:
+entry.l5:
   %result = alloca i32, align 4
   %0 = alloca i64, align 8
   store i32 0, i32* %result, align 4

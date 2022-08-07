@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
 
 define i32 @main() {
-entry:
+entry.l3:
   %result = alloca i32, align 4
   %0 = alloca i32, align 4
   store i32 0, i32* %result, align 4

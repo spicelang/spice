@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [2 x i8] c".\00", align 1
 
 define i32 @main() {
-entry:
+entry.l4:
   %result = alloca i32, align 4
   %q = alloca i64, align 8
   %q_new = alloca i64, align 8
@@ -71,9 +71,9 @@ entry:
   store i32 20, i32* %iterations, align 4
   store i32 0, i32* %printedDigits, align 4
   store i32 0, i32* %i, align 4
-  br label %for.cond
+  br label %for.cond.l21
 
-for:                                              ; preds = %for.cond
+for.l21:                                          ; preds = %for.cond.l21
   %31 = load i64, i64* %q, align 8
   %32 = mul i64 4, %31
   store i64 %32, i64* %0, align 8
@@ -92,22 +92,22 @@ for:                                              ; preds = %for.cond
   %43 = icmp slt i64 %38, %42
   store i1 %43, i1* %3, align 1
   %44 = load i1, i1* %3, align 1
-  br i1 %44, label %if.then, label %if.else
+  br i1 %44, label %if.then.l22, label %if.else.l22
 
-if.then:                                          ; preds = %for
+if.then.l22:                                      ; preds = %for.l21
   %45 = load i64, i64* %m, align 8
   %46 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @0, i32 0, i32 0), i64 %45)
   %47 = load i32, i32* %printedDigits, align 4
   %48 = icmp eq i32 %47, 0
   store i1 %48, i1* %4, align 1
   %49 = load i1, i1* %4, align 1
-  br i1 %49, label %if.then1, label %if.end
+  br i1 %49, label %if.then.l24, label %if.end.l24
 
-if.then1:                                         ; preds = %if.then
+if.then.l24:                                      ; preds = %if.then.l22
   %50 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0))
-  br label %if.end
+  br label %if.end.l24
 
-if.end:                                           ; preds = %if.then1, %if.then
+if.end.l24:                                       ; preds = %if.then.l24, %if.then.l22
   %51 = load i32, i32* %printedDigits, align 4
   %52 = add i32 %51, 1
   store i32 %52, i32* %printedDigits, align 4
@@ -157,9 +157,9 @@ if.end:                                           ; preds = %if.then1, %if.then
   store i64 %81, i64* %q, align 8
   %82 = load i64, i64* %r_new, align 8
   store i64 %82, i64* %r, align 8
-  br label %if.end2
+  br label %if.end.l22
 
-if.else:                                          ; preds = %for
+if.else.l22:                                      ; preds = %for.l21
   %83 = load i64, i64* %q, align 8
   %84 = load i64, i64* %k, align 8
   %85 = mul i64 %83, %84
@@ -229,27 +229,27 @@ if.else:                                          ; preds = %for
   store i64 %127, i64* %t, align 8
   %128 = load i64, i64* %k_new, align 8
   store i64 %128, i64* %k, align 8
-  br label %if.end2
+  br label %if.end.l22
 
-if.end2:                                          ; preds = %if.else, %if.end
-  br label %for.inc
+if.end.l22:                                       ; preds = %if.else.l22, %if.end.l24
+  br label %for.inc.l21
 
-for.inc:                                          ; preds = %if.end2
+for.inc.l21:                                      ; preds = %if.end.l22
   %129 = load i32, i32* %i, align 4
   %130 = add i32 %129, 1
   store i32 %130, i32* %i, align 4
   store i32 %129, i32* %29, align 4
-  br label %for.cond
+  br label %for.cond.l21
 
-for.cond:                                         ; preds = %for.inc, %entry
+for.cond.l21:                                     ; preds = %for.inc.l21, %entry.l4
   %131 = load i32, i32* %i, align 4
   %132 = load i32, i32* %iterations, align 4
   %133 = icmp slt i32 %131, %132
   store i1 %133, i1* %30, align 1
   %134 = load i1, i1* %30, align 1
-  br i1 %134, label %for, label %for.end
+  br i1 %134, label %for.l21, label %for.end.l21
 
-for.end:                                          ; preds = %for.cond
+for.end.l21:                                      ; preds = %for.cond.l21
   %135 = load i32, i32* %result, align 4
   ret i32 %135
 }

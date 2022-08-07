@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 @5 = private unnamed_addr constant [17 x i8] c"Word no. %d: %s\0A\00", align 1
 
 define i32 @main() {
-entry:
+entry.l1:
   %result = alloca i32, align 4
   %welcomeMessage = alloca [5 x i8*], align 8
   %i = alloca i32, align 4
@@ -26,29 +26,29 @@ entry:
   %2 = getelementptr inbounds [5 x i8*], [5 x i8*]* %welcomeMessage, i32 0, i32 %1
   %3 = load i8*, i8** %2, align 8
   store i8* %3, i8** %word, align 8
-  br label %foreach.loop
+  br label %foreach.loop.l3
 
-foreach.loop:                                     ; preds = %foreach.cond, %entry
+foreach.loop.l3:                                  ; preds = %foreach.cond.l3, %entry.l1
   %4 = load i32, i32* %i, align 4
   %5 = load i8*, i8** %word, align 8
   %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @5, i32 0, i32 0), i32 %4, i8* %5)
-  br label %foreach.inc
+  br label %foreach.inc.l3
 
-foreach.inc:                                      ; preds = %foreach.loop
+foreach.inc.l3:                                   ; preds = %foreach.loop.l3
   %idx = load i32, i32* %i, align 4
   %idx.inc = add i32 %idx, 1
   store i32 %idx.inc, i32* %i, align 4
   %7 = getelementptr inbounds [5 x i8*], [5 x i8*]* %welcomeMessage, i32 0, i32 %idx.inc
   %8 = load i8*, i8** %7, align 8
   store i8* %8, i8** %word, align 8
-  br label %foreach.cond
+  br label %foreach.cond.l3
 
-foreach.cond:                                     ; preds = %foreach.inc
+foreach.cond.l3:                                  ; preds = %foreach.inc.l3
   %9 = load i32, i32* %i, align 4
   %10 = icmp ult i32 %9, 5
-  br i1 %10, label %foreach.loop, label %foreach.end
+  br i1 %10, label %foreach.loop.l3, label %foreach.end.l3
 
-foreach.end:                                      ; preds = %foreach.cond
+foreach.end.l3:                                   ; preds = %foreach.cond.l3
   %11 = load i32, i32* %result, align 4
   ret i32 %11
 }

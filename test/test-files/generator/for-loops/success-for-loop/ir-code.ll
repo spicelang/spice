@@ -6,33 +6,33 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [9 x i8] c"Step %d\0A\00", align 1
 
 define i32 @main() {
-entry:
+entry.l1:
   %result = alloca i32, align 4
   %i = alloca i32, align 4
   %0 = alloca i1, align 1
   store i32 0, i32* %result, align 4
   store i32 0, i32* %i, align 4
-  br label %for.cond
+  br label %for.cond.l2
 
-for:                                              ; preds = %for.cond
+for.l2:                                           ; preds = %for.cond.l2
   %1 = load i32, i32* %i, align 4
   %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0), i32 %1)
-  br label %for.inc
+  br label %for.inc.l2
 
-for.inc:                                          ; preds = %for
+for.inc.l2:                                       ; preds = %for.l2
   %3 = load i32, i32* %i, align 4
   %4 = add i32 %3, 2
   store i32 %4, i32* %i, align 4
-  br label %for.cond
+  br label %for.cond.l2
 
-for.cond:                                         ; preds = %for.inc, %entry
+for.cond.l2:                                      ; preds = %for.inc.l2, %entry.l1
   %5 = load i32, i32* %i, align 4
   %6 = icmp slt i32 %5, 10
   store i1 %6, i1* %0, align 1
   %7 = load i1, i1* %0, align 1
-  br i1 %7, label %for, label %for.end
+  br i1 %7, label %for.l2, label %for.end.l2
 
-for.end:                                          ; preds = %for.cond
+for.end.l2:                                       ; preds = %for.cond.l2
   %8 = load i32, i32* %result, align 4
   ret i32 %8
 }

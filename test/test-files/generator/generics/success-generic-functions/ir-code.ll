@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
 
 define internal double @_f__void__genericFunction__int_double(i32 %0, double %1) {
-entry:
+entry.l4:
   %arg1 = alloca i32, align 4
   %arg2 = alloca double, align 8
   %arg3 = alloca i32, align 4
@@ -29,7 +29,7 @@ entry:
 }
 
 define internal double @_f__void__genericFunction__long_double(i64 %0, double %1) {
-entry:
+entry.l4:
   %arg1 = alloca i64, align 8
   %arg2 = alloca double, align 8
   %arg3 = alloca i32, align 4
@@ -51,7 +51,7 @@ entry:
 }
 
 define i32 @main() {
-entry:
+entry.l12:
   %result = alloca i32, align 4
   %0 = alloca i32, align 4
   %1 = alloca double, align 8

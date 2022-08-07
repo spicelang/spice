@@ -16,7 +16,7 @@ declare noundef i32 @rmdir(i8* nocapture noundef readonly) local_unnamed_addr #0
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
-entry:
+entry.l7:
   %puts = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([17 x i8], [17 x i8]* @str, i64 0, i64 0))
   %0 = call i32 @mkdir(i8* getelementptr inbounds ([11 x i8], [11 x i8]* @0, i64 0, i64 0), i32 511)
   %puts2 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([17 x i8], [17 x i8]* @str.1, i64 0, i64 0))

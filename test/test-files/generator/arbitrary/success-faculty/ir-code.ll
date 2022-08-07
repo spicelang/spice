@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 1
 
 define internal i32 @_f__void__faculty__int(i32 %0) {
-entry:
+entry.l1:
   %input = alloca i32, align 4
   %result = alloca i32, align 4
   %1 = alloca i1, align 1
@@ -19,14 +19,14 @@ entry:
   %7 = icmp slt i32 %6, 2
   store i1 %7, i1* %1, align 1
   %8 = load i1, i1* %1, align 1
-  br i1 %8, label %if.then, label %if.end
+  br i1 %8, label %if.then.l2, label %if.end.l2
 
-if.then:                                          ; preds = %entry
+if.then.l2:                                       ; preds = %entry.l1
   store i32 1, i32* %2, align 4
   %9 = load i32, i32* %2, align 4
   ret i32 %9
 
-if.end:                                           ; preds = %entry
+if.end.l2:                                        ; preds = %entry.l1
   %10 = load i32, i32* %input, align 4
   %11 = load i32, i32* %input, align 4
   %12 = sub i32 %11, 1
@@ -44,7 +44,7 @@ if.end:                                           ; preds = %entry
 }
 
 define i32 @main() {
-entry:
+entry.l8:
   %result = alloca i32, align 4
   %input = alloca i32, align 4
   %0 = alloca i32, align 4

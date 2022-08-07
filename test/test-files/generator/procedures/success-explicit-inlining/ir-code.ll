@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: alwaysinline
 define internal void @_p__void__printAValue() #0 {
-entry:
+entry.l1:
   %0 = alloca i32, align 4
   store i32 5, i32* %0, align 4
   %1 = load i32, i32* %0, align 4
@@ -20,7 +20,7 @@ entry:
 declare i32 @printf(i8*, ...)
 
 define i32 @main() {
-entry:
+entry.l5:
   %result = alloca i32, align 4
   %0 = alloca i1, align 1
   store i32 0, i32* %result, align 4

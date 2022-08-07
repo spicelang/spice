@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @3 = private unnamed_addr constant [29 x i8] c"Logical or evaluated to: %d\0A\00", align 1
 
 define internal i1 @_f__void__functionTrue() {
-entry:
+entry.l1:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
   %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @0, i32 0, i32 0))
@@ -21,7 +21,7 @@ entry:
 declare i32 @printf(i8*, ...)
 
 define internal i1 @_f__void__functionFalse() {
-entry:
+entry.l6:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
   %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @1, i32 0, i32 0))
@@ -31,7 +31,7 @@ entry:
 }
 
 define i32 @main() {
-entry:
+entry.l11:
   %result = alloca i32, align 4
   %0 = alloca i1, align 1
   %1 = alloca i1, align 1
@@ -43,16 +43,16 @@ entry:
   %6 = call i1 @_f__void__functionFalse()
   store i1 %6, i1* %0, align 1
   %7 = load i1, i1* %0, align 1
-  br i1 %7, label %land.1, label %land.end
+  br i1 %7, label %land.1.l13, label %land.end.l13
 
-land.1:                                           ; preds = %entry
+land.1.l13:                                       ; preds = %entry.l11
   %8 = call i1 @_f__void__functionTrue()
   store i1 %8, i1* %1, align 1
   %9 = load i1, i1* %1, align 1
-  br label %land.end
+  br label %land.end.l13
 
-land.end:                                         ; preds = %land.1, %entry
-  %land_phi = phi i1 [ %7, %entry ], [ %9, %land.1 ]
+land.end.l13:                                     ; preds = %land.1.l13, %entry.l11
+  %land_phi = phi i1 [ %7, %entry.l11 ], [ %9, %land.1.l13 ]
   store i1 %land_phi, i1* %2, align 1
   %10 = load i1, i1* %2, align 1
   %11 = zext i1 %10 to i32
@@ -60,16 +60,16 @@ land.end:                                         ; preds = %land.1, %entry
   %13 = call i1 @_f__void__functionTrue()
   store i1 %13, i1* %3, align 1
   %14 = load i1, i1* %3, align 1
-  br i1 %14, label %lor.end, label %lor.1
+  br i1 %14, label %lor.end.l16, label %lor.1.l16
 
-lor.1:                                            ; preds = %land.end
+lor.1.l16:                                        ; preds = %land.end.l13
   %15 = call i1 @_f__void__functionFalse()
   store i1 %15, i1* %4, align 1
   %16 = load i1, i1* %4, align 1
-  br label %lor.end
+  br label %lor.end.l16
 
-lor.end:                                          ; preds = %lor.1, %land.end
-  %lor_phi = phi i1 [ %14, %land.end ], [ %16, %lor.1 ]
+lor.end.l16:                                      ; preds = %lor.1.l16, %land.end.l13
+  %lor_phi = phi i1 [ %14, %land.end.l13 ], [ %16, %lor.1.l16 ]
   store i1 %lor_phi, i1* %5, align 1
   %17 = load i1, i1* %5, align 1
   %18 = zext i1 %17 to i32

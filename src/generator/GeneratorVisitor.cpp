@@ -1919,7 +1919,7 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
     SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Value *lhs = resolveValue(lhsOperand);
 
-    std::queue<AdditiveExprNode::AdditiveOp> opQueue = node->opQueue;
+    auto opQueue = node->opQueue;
     size_t operandIndex = 1;
     while (!opQueue.empty()) {
       MultiplicativeExprNode *rhsOperand = node->operands()[operandIndex++];
@@ -1927,7 +1927,7 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
       SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
       llvm::Value *rhs = resolveValue(rhsOperand);
 
-      switch (opQueue.front()) {
+      switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
         lhs = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, node->codeLoc);
         break;
@@ -1938,6 +1938,7 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
         throw std::runtime_error("Additive expr fall-through");
       }
 
+      lhsSymbolType = opQueue.front().second;
       opQueue.pop();
     }
 
@@ -1957,7 +1958,7 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
     SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Value *lhs = resolveValue(lhsOperand);
 
-    std::queue<MultiplicativeExprNode::MultiplicativeOp> opQueue = node->opQueue;
+    auto opQueue = node->opQueue;
     size_t operandIndex = 1;
     while (!opQueue.empty()) {
       CastExprNode *rhsOperand = node->operands()[operandIndex++];
@@ -1965,7 +1966,7 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
       SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
       llvm::Value *rhs = resolveValue(rhsOperand);
 
-      switch (opQueue.front()) {
+      switch (opQueue.front().first) {
       case MultiplicativeExprNode::OP_MUL:
         lhs = conversionsManager->getMulInst(lhs, rhs, lhsSymbolType, rhsSymbolType, node->codeLoc);
         break;
@@ -1979,6 +1980,7 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
         throw std::runtime_error("Multiplicative expr fall-through");
       }
 
+      lhsSymbolType = opQueue.front().second;
       opQueue.pop();
     }
 
@@ -2027,9 +2029,9 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     bool isVolatile = false;
     bool storeValue = true;
 
-    std::stack<PrefixUnaryExprNode::PrefixUnaryOp> opStack = node->opStack;
+    auto opStack = node->opStack;
     while (!opStack.empty()) {
-      switch (opStack.top()) {
+      switch (opStack.top().first) {
       case PrefixUnaryExprNode::OP_MINUS: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsTy, lhsPtr);
@@ -2074,8 +2076,11 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
         break;
       }
       case PrefixUnaryExprNode::OP_INDIRECTION: {
-        if (!lhs)
+        if (!lhs) {
           lhs = builder->CreateLoad(lhsTy, lhsPtr);
+          lhsSymbolType = lhsSymbolType.getContainedTy();
+          lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
+        }
         // Indirect pointer
         lhsPtr = lhs;
         lhs = builder->CreateLoad(lhsTy, lhs);
@@ -2093,6 +2098,8 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
         throw std::runtime_error("PrefixUnary fall-through");
       }
 
+      lhsSymbolType = opStack.top().second;
+      lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
       opStack.pop();
     }
 
@@ -2123,9 +2130,9 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     size_t subscriptCounter = 0;
     size_t memberAccessCounter = 0;
 
-    std::queue<PostfixUnaryExprNode::PostfixUnaryOp> opQueue = node->opQueue; // Copy to not modify the queue in the AST node
+    auto opQueue = node->opQueue;
     while (!opQueue.empty()) {
-      switch (opQueue.front()) {
+      switch (opQueue.front().first) {
       case PostfixUnaryExprNode::OP_SUBSCRIPT: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
@@ -2176,7 +2183,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         // Get the lhs variable entry
         SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         // Save the new value to the old pointer
-        llvm::Value *newLhsValue = conversionsManager->getPostfixPlusPlusInst(lhs, lhsVarEntry->getType());
+        llvm::Value *newLhsValue = conversionsManager->getPostfixPlusPlusInst(lhs, lhsSymbolType);
         builder->CreateStore(newLhsValue, lhsPtr, lhsVarEntry && lhsVarEntry->isVolatile());
         // Allocate new space and continue working with the new memory slot
         lhsPtr = insertAlloca(lhs->getType());
@@ -2188,7 +2195,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         // Get the lhs variable entry
         SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         // Save the new value to the old pointer
-        llvm::Value *newLhsValue = conversionsManager->getPostfixMinusMinusInst(lhs, lhsVarEntry->getType());
+        llvm::Value *newLhsValue = conversionsManager->getPostfixMinusMinusInst(lhs, lhsSymbolType);
         builder->CreateStore(newLhsValue, lhsPtr, lhsVarEntry && lhsVarEntry->isVolatile());
         // Allocate new space and continue working with the new memory slot
         lhsPtr = insertAlloca(lhs->getType());
@@ -2197,6 +2204,8 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       default:
         throw std::runtime_error("PostfixUnary fall-through");
       }
+
+      lhsSymbolType = opQueue.front().second;
       opQueue.pop();
     }
 

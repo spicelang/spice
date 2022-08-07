@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [20 x i8] c"Fibonacci of %d: %d\00", align 1
 
 define internal i32 @_f__void__fib__int(i32 %0) {
-entry:
+entry.l1:
   %n = alloca i32, align 4
   %result = alloca i32, align 4
   %1 = alloca i1, align 1
@@ -21,14 +21,14 @@ entry:
   %9 = icmp sle i32 %8, 2
   store i1 %9, i1* %1, align 1
   %10 = load i1, i1* %1, align 1
-  br i1 %10, label %if.then, label %if.end
+  br i1 %10, label %if.then.l2, label %if.end.l2
 
-if.then:                                          ; preds = %entry
+if.then.l2:                                       ; preds = %entry.l1
   store i32 1, i32* %2, align 4
   %11 = load i32, i32* %2, align 4
   ret i32 %11
 
-if.end:                                           ; preds = %entry
+if.end.l2:                                        ; preds = %entry.l1
   %12 = load i32, i32* %n, align 4
   %13 = sub i32 %12, 1
   store i32 %13, i32* %3, align 4
@@ -50,7 +50,7 @@ if.end:                                           ; preds = %entry
 }
 
 define i32 @main() {
-entry:
+entry.l6:
   %result = alloca i32, align 4
   %base = alloca i32, align 4
   %0 = alloca i32, align 4

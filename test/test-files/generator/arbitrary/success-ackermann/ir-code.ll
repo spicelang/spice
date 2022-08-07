@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
 
 define internal i32 @_f__void__ack__int_int(i32 %0, i32 %1) {
-entry:
+entry.l1:
   %m = alloca i32, align 4
   %n = alloca i32, align 4
   %result = alloca i32, align 4
@@ -26,23 +26,23 @@ entry:
   %13 = icmp eq i32 %12, 0
   store i1 %13, i1* %2, align 1
   %14 = load i1, i1* %2, align 1
-  br i1 %14, label %if.then, label %if.end
+  br i1 %14, label %if.then.l2, label %if.end.l2
 
-if.then:                                          ; preds = %entry
+if.then.l2:                                       ; preds = %entry.l1
   %15 = load i32, i32* %n, align 4
   %16 = add i32 %15, 1
   store i32 %16, i32* %3, align 4
   %17 = load i32, i32* %3, align 4
   ret i32 %17
 
-if.end:                                           ; preds = %entry
+if.end.l2:                                        ; preds = %entry.l1
   %18 = load i32, i32* %n, align 4
   %19 = icmp eq i32 %18, 0
   store i1 %19, i1* %4, align 1
   %20 = load i1, i1* %4, align 1
-  br i1 %20, label %if.then1, label %if.end2
+  br i1 %20, label %if.then.l3, label %if.end.l3
 
-if.then1:                                         ; preds = %if.end
+if.then.l3:                                       ; preds = %if.end.l2
   %21 = load i32, i32* %m, align 4
   %22 = sub i32 %21, 1
   store i32 %22, i32* %5, align 4
@@ -54,7 +54,7 @@ if.then1:                                         ; preds = %if.end
   %26 = load i32, i32* %7, align 4
   ret i32 %26
 
-if.end2:                                          ; preds = %if.end
+if.end.l3:                                        ; preds = %if.end.l2
   %27 = load i32, i32* %m, align 4
   %28 = sub i32 %27, 1
   store i32 %28, i32* %8, align 4
@@ -74,7 +74,7 @@ if.end2:                                          ; preds = %if.end
 }
 
 define i32 @main() {
-entry:
+entry.l7:
   %result = alloca i32, align 4
   %baseM = alloca i32, align 4
   %baseN = alloca i32, align 4

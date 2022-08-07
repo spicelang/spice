@@ -11,7 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 @4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 1
 
 define internal void @_p__void__testProc__intarrayptrptrptr(i32**** %0) {
-entry:
+entry.l1:
   %nums = alloca i32****, align 8
   store i32**** %0, i32***** %nums, align 8
   %1 = load i32****, i32***** %nums, align 8
@@ -46,7 +46,7 @@ entry:
 declare i32 @printf(i8*, ...)
 
 define i32 @main() {
-entry:
+entry.l11:
   %result = alloca i32, align 4
   %intArray = alloca [4 x i32], align 4
   %0 = alloca [4 x i32]*, align 8
