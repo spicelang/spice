@@ -144,8 +144,13 @@ void GeneratorVisitor::dumpAsm() {
 }
 
 std::any GeneratorVisitor::visitEntry(EntryNode *node) {
+  // Visit children
   AstVisitor::visitEntry(node);
 
+  // Reset the AST
+  node->reset();
+
+  // Check if we need to re-analyze
   if (!secondRun) {
     secondRun = true;
     return true;
@@ -311,6 +316,9 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
   // Get all substantiated function which result from this function declaration
   std::map<std::string, Function> *manifestations = accessScope->getFunctionManifestations(node->codeLoc);
 
+  // Set the symbolTypeIndex to 0
+  node->symbolTypeIndex = 0;
+
   if (manifestations) {
     for (const auto &[mangledName, spiceFunc] : *manifestations) {
       // Check if the function is substantiated
@@ -473,6 +481,9 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         currentScope = currentScope->getParent();
         assert(currentScope);
       }
+
+      // Increase the symbolTypeIndex
+      node->symbolTypeIndex++;
     }
   }
   return nullptr;
@@ -490,6 +501,9 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
 
   // Get all substantiated function which result from this function declaration
   std::map<std::string, Function> *manifestations = accessScope->getFunctionManifestations(node->codeLoc);
+
+  // Set the symbolTypeIndex to 0
+  node->symbolTypeIndex = 0;
 
   if (manifestations) {
     for (const auto &[mangledName, spiceProc] : *manifestations) {
@@ -642,6 +656,9 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         currentScope = currentScope->getParent();
         assert(currentScope);
       }
+
+      // Increase the symbolTypeIndex
+      node->symbolTypeIndex++;
     }
   }
   return nullptr;
@@ -1396,7 +1413,7 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
   std::vector<llvm::Value *> printfArgs;
   printfArgs.push_back(builder->CreateGlobalStringPtr(node->templatedString));
   for (const auto &arg : node->assignExpr()) {
-    SymbolType argSymbolType = arg->deduceSymbolType();
+    SymbolType argSymbolType = arg->getEvaluatedSymbolType();
 
     // Visit argument
     auto argValPtr = resolveAddress(arg);
@@ -1423,12 +1440,12 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
 
 std::any GeneratorVisitor::visitSizeofCall(SizeofCallNode *node) {
   llvm::Type *type;
-  if (node->assignExpr()) { // Assign expression
+  if (node->isType) { // Size of type
+    type = any_cast<llvm::Type *>(visit(node->dataType()));
+  } else { // Size of value
     // Visit the argument
     llvm::Value *value = resolveValue(node->assignExpr());
     type = value->getType();
-  } else { // Type
-    type = any_cast<llvm::Type *>(visit(node->dataType()));
   }
   // Calculate size at compile-time
   unsigned int size = module->getDataLayout().getTypeSizeInBits(type);
@@ -1546,11 +1563,11 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
 
     // Get value of right side
     llvm::Value *rhs = resolveValue(node->rhs());
-    SymbolType rhsTy = node->rhs()->deduceSymbolType();
+    SymbolType rhsTy = node->rhs()->getEvaluatedSymbolType();
 
     // Visit the left side
     llvm::Value *lhsPtr = resolveAddress(node->lhs());
-    SymbolType lhsTy = node->lhs()->deduceSymbolType();
+    SymbolType lhsTy = node->lhs()->getEvaluatedSymbolType();
     lhsVarName = currentVarName;
 
     // Take a look at the operator
@@ -1748,7 +1765,8 @@ std::any GeneratorVisitor::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
     for (int i = 1; i < node->operands().size(); i++) {
       BitwiseXorExprNode *rhsOperand = node->operands()[i];
       llvm::Value *rhs = resolveValue(rhsOperand);
-      lhs = conversionsManager->getBitwiseOrInst(lhs, rhs, lhsOperand->deduceSymbolType(), rhsOperand->deduceSymbolType());
+      lhs = conversionsManager->getBitwiseOrInst(lhs, rhs, lhsOperand->getEvaluatedSymbolType(),
+                                                 rhsOperand->getEvaluatedSymbolType());
     }
     llvm::Value *resultPtr = insertAlloca(lhs->getType());
     builder->CreateStore(lhs, resultPtr);
@@ -1766,7 +1784,8 @@ std::any GeneratorVisitor::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
     for (int i = 1; i < node->operands().size(); i++) {
       BitwiseAndExprNode *rhsOperand = node->operands()[i];
       llvm::Value *rhs = resolveValue(rhsOperand);
-      lhs = conversionsManager->getBitwiseXorInst(lhs, rhs, lhsOperand->deduceSymbolType(), rhsOperand->deduceSymbolType());
+      lhs = conversionsManager->getBitwiseXorInst(lhs, rhs, lhsOperand->getEvaluatedSymbolType(),
+                                                  rhsOperand->getEvaluatedSymbolType());
     }
     llvm::Value *resultPtr = insertAlloca(lhs->getType());
     builder->CreateStore(lhs, resultPtr);
@@ -1784,7 +1803,8 @@ std::any GeneratorVisitor::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
     for (int i = 1; i < node->operands().size(); i++) {
       EqualityExprNode *rhsOperand = node->operands()[i];
       llvm::Value *rhs = resolveValue(rhsOperand);
-      lhs = conversionsManager->getBitwiseAndInst(lhs, rhs, lhsOperand->deduceSymbolType(), rhsOperand->deduceSymbolType());
+      lhs = conversionsManager->getBitwiseAndInst(lhs, rhs, lhsOperand->getEvaluatedSymbolType(),
+                                                  rhsOperand->getEvaluatedSymbolType());
     }
     llvm::Value *resultPtr = insertAlloca(lhs->getType());
     builder->CreateStore(lhs, resultPtr);
@@ -1798,11 +1818,11 @@ std::any GeneratorVisitor::visitEqualityExpr(EqualityExprNode *node) {
 
   if (node->operands().size() > 1) {
     RelationalExprNode *lhsOperand = node->operands()[0];
-    SymbolType lhsSymbolType = lhsOperand->deduceSymbolType();
+    SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Value *lhs = resolveValue(lhsOperand);
 
     RelationalExprNode *rhsOperand = node->operands()[1];
-    SymbolType rhsSymbolType = rhsOperand->deduceSymbolType();
+    SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
     llvm::Value *rhs = resolveValue(rhsOperand);
 
     llvm::Value *result;
@@ -1828,11 +1848,11 @@ std::any GeneratorVisitor::visitRelationalExpr(RelationalExprNode *node) {
 
   if (node->operands().size() > 1) {
     ShiftExprNode *lhsOperand = node->operands()[0];
-    SymbolType lhsSymbolType = lhsOperand->deduceSymbolType();
+    SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Value *lhs = resolveValue(lhsOperand);
 
     ShiftExprNode *rhsOperand = node->operands()[1];
-    SymbolType rhsSymbolType = rhsOperand->deduceSymbolType();
+    SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
     llvm::Value *rhs = resolveValue(rhsOperand);
 
     llvm::Value *result;
@@ -1865,11 +1885,11 @@ std::any GeneratorVisitor::visitShiftExpr(ShiftExprNode *node) {
   // Check if there is a shift operation attached
   if (node->operands().size() > 1) {
     AdditiveExprNode *lhsOperand = node->operands()[0];
-    SymbolType lhsSymbolType = lhsOperand->deduceSymbolType();
+    SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Value *lhs = resolveValue(lhsOperand);
 
     AdditiveExprNode *rhsOperand = node->operands()[1];
-    SymbolType rhsSymbolType = rhsOperand->deduceSymbolType();
+    SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
     llvm::Value *rhs = resolveValue(rhsOperand);
 
     llvm::Value *result;
@@ -1896,7 +1916,7 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
   // Check if at least one additive operator is applied
   if (!node->opQueue.empty()) {
     MultiplicativeExprNode *lhsOperand = node->operands().front();
-    SymbolType lhsSymbolType = lhsOperand->deduceSymbolType();
+    SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Value *lhs = resolveValue(lhsOperand);
 
     std::queue<AdditiveExprNode::AdditiveOp> opQueue = node->opQueue;
@@ -1904,7 +1924,7 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
     while (!opQueue.empty()) {
       MultiplicativeExprNode *rhsOperand = node->operands()[operandIndex++];
       assert(rhsOperand != nullptr);
-      SymbolType rhsSymbolType = rhsOperand->deduceSymbolType();
+      SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
       llvm::Value *rhs = resolveValue(rhsOperand);
 
       switch (opQueue.front()) {
@@ -1934,7 +1954,7 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
   // Check if at least one multiplicative operator is applied
   if (!node->opQueue.empty()) {
     CastExprNode *lhsOperand = node->operands().front();
-    SymbolType lhsSymbolType = lhsOperand->deduceSymbolType();
+    SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Value *lhs = resolveValue(lhsOperand);
 
     std::queue<MultiplicativeExprNode::MultiplicativeOp> opQueue = node->opQueue;
@@ -1942,7 +1962,7 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
     while (!opQueue.empty()) {
       CastExprNode *rhsOperand = node->operands()[operandIndex++];
       assert(rhsOperand != nullptr);
-      SymbolType rhsSymbolType = rhsOperand->deduceSymbolType();
+      SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
       llvm::Value *rhs = resolveValue(rhsOperand);
 
       switch (opQueue.front()) {
@@ -1973,11 +1993,10 @@ std::any GeneratorVisitor::visitCastExpr(CastExprNode *node) {
   emitSourceLocation(node);
 
   if (node->isCasted) { // Cast operator is applied
-    visit(node->dataType());
-    SymbolType lhsSymbolType = node->dataType()->deduceSymbolType();
+    SymbolType lhsSymbolType = node->getEvaluatedSymbolType();
 
     PrefixUnaryExprNode *rhsOperand = node->prefixUnaryExpr();
-    SymbolType rhsSymbolType = rhsOperand->deduceSymbolType();
+    SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
     llvm::Value *rhs = resolveValue(rhsOperand);
 
     llvm::Value *result = conversionsManager->getCastInst(rhs, lhsSymbolType, rhsSymbolType, currentScope);
@@ -2000,7 +2019,7 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   if (!node->opStack.empty()) {
     // Load the value
     PostfixUnaryExprNode *lhsOperand = node->postfixUnaryExpr();
-    SymbolType lhsSymbolType = lhsOperand->deduceSymbolType();
+    SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Type *lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
     llvm::Value *lhsPtr = resolveAddress(lhsOperand);
     llvm::Value *lhs = nullptr;
@@ -2096,7 +2115,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   if (!node->opQueue.empty()) {
     // Retrieve the address and the value if required
     AtomicExprNode *lhsOperand = node->atomicExpr();
-    SymbolType lhsSymbolType = lhsOperand->deduceSymbolType();
+    SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Type *lhsTy = lhsSymbolType.is(TY_IMPORT) ? nullptr : lhsSymbolType.toLLVMType(*context, currentScope);
     llvm::Value *lhsPtr = resolveAddress(lhsOperand);
     llvm::Value *lhs = lhsPtr != nullptr ? builder->CreateLoad(lhsTy, lhsPtr) : nullptr;
@@ -2526,7 +2545,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
       SymbolType expectedArgSymbolType = spiceFunc->getArgTypes()[isMethod ? argIndex - 1 : argIndex];
       llvm::Type *expectedArgType = fctType->getParamType(argIndex);
       // Get the actual arg value
-      SymbolType actualArgSymbolType = arg->deduceSymbolType();
+      SymbolType actualArgSymbolType = arg->getEvaluatedSymbolType();
       llvm::Value *actualArgPtr = resolveAddress(arg);
       if (actualArgSymbolType != expectedArgSymbolType) {
         argValues.push_back(doImplicitCast(actualArgPtr, expectedArgType, actualArgSymbolType));
@@ -2557,7 +2576,7 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
   // Get data type
   size_t actualItemCount = node->itemLst() ? node->itemLst()->args().size() : 0;
   size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
-  SymbolType arraySymbolType = node->deduceSymbolType();
+  SymbolType arraySymbolType = node->getEvaluatedSymbolType();
   SymbolType itemSymbolType = arraySymbolType.getContainedTy();
   llvm::Type *arrayType = arraySymbolType.toLLVMType(*context, currentScope);
   llvm::Type *itemType = itemSymbolType.toLLVMType(*context, currentScope);
@@ -2599,7 +2618,13 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     return createGlobalArray(arrayType, itemConstants);
   } else { // Global array is not possible => fallback to individual indexing
     // Allocate array
-    llvm::Value *arrayAddress = dynamicallySized ? allocateDynamicallySizedArray(itemType) : insertAlloca(arrayType, lhsVarName);
+    llvm::Value *arrayAddress;
+    if (dynamicallySized) {
+      arrayAddress = allocateDynamicallySizedArray(itemType);
+      arrayType = arraySymbolType.getContainedTy().toLLVMType(*context, currentScope);
+    } else {
+      arrayAddress = insertAlloca(arrayType, lhsVarName);
+    }
 
     // Insert all given values
     llvm::Value *itemDefaultValue = getDefaultValueForSymbolType(itemSymbolType);
@@ -2685,7 +2710,8 @@ std::any GeneratorVisitor::visitStructInstantiation(StructInstantiationNode *nod
 std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
   emitSourceLocation(node);
 
-  if (node->symbolType.is(TY_DYN)) {
+  SymbolType symbolType = node->getEvaluatedSymbolType();
+  if (symbolType.is(TY_DYN)) {
     SymbolTableEntry *lhsVarEntry = currentScope->lookup(lhsVarName);
     assert(lhsVarEntry != nullptr);
     currentSymbolType = lhsVarEntry->getType();
@@ -2694,7 +2720,7 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
 
   if (!node->arraySizeExpr().empty()) {
     // Reset to base type because it will be rebuilt in the next step
-    node->symbolType = node->symbolType.getBaseType();
+    symbolType = symbolType.getBaseType();
 
     size_t assignExprCounter = 0;
     std::vector<AssignExprNode *> arraySizeExpr = node->arraySizeExpr();
@@ -2703,20 +2729,21 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
       DataTypeNode::TypeModifier typeModifier = tmQueue.front();
       switch (typeModifier.modifierType) {
       case DataTypeNode::TY_POINTER: {
-        node->symbolType = node->symbolType.toPointer(err.get(), node->codeLoc);
+        symbolType = symbolType.toPointer(err.get(), node->codeLoc);
         break;
       }
       case DataTypeNode::TY_ARRAY: {
         if (!typeModifier.hasSize) {
-          node->symbolType = node->symbolType.toPointer(err.get(), node->codeLoc);
+          symbolType = symbolType.toPointer(err.get(), node->codeLoc);
         } else if (typeModifier.isSizeHardcoded) {
-          node->symbolType = node->symbolType.toArray(err.get(), node->codeLoc, typeModifier.hardcodedSize);
+          symbolType = symbolType.toArray(err.get(), node->codeLoc, typeModifier.hardcodedSize);
         } else {
           AssignExprNode *indexExpr = arraySizeExpr[assignExprCounter++];
           assert(indexExpr != nullptr);
-          auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(indexExpr));
-          dynamicArraySize = builder->CreateLoad(builder->getInt32Ty(), sizeValuePtr);
-          node->symbolType = node->symbolType.toPointer(err.get(), node->codeLoc, dynamicArraySize);
+          auto sizeValuePtr = any_cast<llvm::Value *>(visit(indexExpr));
+          llvm::Type *sizeType = indexExpr->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
+          dynamicArraySize = builder->CreateLoad(sizeType, sizeValuePtr);
+          symbolType = symbolType.toPointer(err.get(), node->codeLoc, dynamicArraySize);
         }
         break;
       }
@@ -2726,7 +2753,7 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
       tmQueue.pop();
     }
   }
-  currentSymbolType = node->symbolType;
+  currentSymbolType = symbolType;
   return currentSymbolType.toLLVMType(*context, currentScope);
 }
 
@@ -2740,7 +2767,7 @@ llvm::Value *GeneratorVisitor::resolveValue(AstNode *node, SymbolTable *accessSc
     return currentConstValue;
 
   auto valueAddr = any_cast<llvm::Value *>(valueAny);
-  llvm::Type *dstType = node->deduceSymbolType().toLLVMType(*context, accessScope);
+  llvm::Type *dstType = node->getEvaluatedSymbolType().toLLVMType(*context, accessScope);
   return builder->CreateLoad(dstType, valueAddr);
 }
 

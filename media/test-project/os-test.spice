@@ -10,36 +10,18 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
+import "std/data/queue" as que;
+
 f<int> main() {
-    printf("Array1:\n");
-    short arraySize1 = 4s;
-    int[arraySize1] array1 = {1, 2, 3};
-    array1[3] = 0;
-    foreach dyn item : array1 {
-        printf("Item: %d\n", item);
-    }
-
-    printf("Array2:\n");
-    long arraySize2 = 2l;
-    string[arraySize2] array2;
-    array2[0] = "Hello";
-    array2[1] = "world";
-    foreach dyn item : array2 {
-        printf("Item: %s\n", item);
-    }
-
-    printf("Array3:\n");
-    int arraySize3 = 3;
-    int[arraySize3] array3 = {1, arraySize3, arraySize3};
-    foreach dyn item : array3 {
-        printf("Item: %d\n", item);
-    }
-
-    printf("Array4:\n");
-    int arraySize4 = 3;
-    int[arraySize4] array4;
-    array4 = {1, arraySize4, arraySize4};
-    foreach dyn item : array4 {
-        printf("Item: %d\n", item);
+    dyn q1 = que.Queue<char>();
+    q1.push('H');
+    q1.push('e');
+    q1.push('l');
+    q1.push('l');
+    q1.push('o');
+    q1.push('!');
+    printf("Size: %d, Capacity: %d\n", q1.getSize(), q1.getCapacity());
+    while (!q1.isEmpty()) {
+        printf("%c", q1.pop());
     }
 }

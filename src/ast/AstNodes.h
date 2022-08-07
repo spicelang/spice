@@ -58,19 +58,46 @@ public:
     return nodes;
   }
 
-  [[nodiscard]] SymbolType deduceSymbolType() const {
-    if (!symbolType.is(TY_INVALID))
-      return symbolType;
+  [[nodiscard]] size_t getSymbolTypeIndex() const {
+    if (symbolTypeIndex == SIZE_MAX) {
+      if (parent != nullptr)
+        return parent->getSymbolTypeIndex();
+      return 0;
+    }
+    return symbolTypeIndex;
+  }
+
+  SymbolType setEvaluatedSymbolType(const SymbolType &symbolType) {
+    size_t index = getSymbolTypeIndex();
+    // if (symbolTypes.capacity() <= index)
+    //   symbolTypes.reserve(index + 1);
+    symbolTypes.insert(symbolTypes.begin() + index, symbolType);
+    return symbolType;
+  }
+
+  SymbolType getEvaluatedSymbolType() {
+    size_t symbolTypeIndex = getSymbolTypeIndex();
+    if (!symbolTypes.empty() && !symbolTypes[symbolTypeIndex].is(TY_INVALID))
+      return symbolTypes.at(symbolTypeIndex);
     if (children.size() != 1)
-      throw std::runtime_error("Cannot deduce symbol type");
-    return children.front()->deduceSymbolType();
+      throw std::runtime_error("Cannot deduce evaluated symbol type");
+    return children.front()->getEvaluatedSymbolType();
+  }
+
+  void reset() {
+    // Reset all children
+    for (auto &child : children)
+      child->reset();
+    // Reset the symbolTypeIndex counter
+    symbolTypeIndex = SIZE_MAX;
   }
 
   // Public members
   AstNode *parent;
   std::vector<AstNode *> children;
   const CodeLoc codeLoc;
-  SymbolType symbolType = SymbolType(TY_INVALID);
+  size_t symbolTypeIndex = SIZE_MAX;
+  std::vector<SymbolType> symbolTypes;
 };
 
 // ========================================================== EntryNode ==========================================================

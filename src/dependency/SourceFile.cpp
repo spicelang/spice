@@ -230,7 +230,7 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   bool repetitionRequired;
   unsigned int generateCount = 0;
   do {
-    repetitionRequired = std::any_cast<bool>(generator->visit(ast.get()));
+    repetitionRequired = any_cast<bool>(generator->visit(ast.get()));
     antlrCtx.parser->reset();
     generateCount++;
     if (generateCount >= 10)

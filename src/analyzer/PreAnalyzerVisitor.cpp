@@ -10,8 +10,13 @@
 #include <util/FileUtil.h>
 
 std::any PreAnalyzerVisitor::visitEntry(EntryNode *node) {
+  // Visit all import statements
   for (auto &importStmt : node->importStmts())
     visit(importStmt);
+
+  // Reset the AST
+  node->reset();
+
   return nullptr;
 }
 
