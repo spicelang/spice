@@ -1529,13 +1529,15 @@ std::any GeneratorVisitor::visitJoinCall(JoinCallNode *node) {
     // Check if it is an id or an array of ids
     auto threadIdPtr = resolveAddress(assignExpr);
     assert(threadIdPtr != nullptr && threadIdPtr->getType()->isPointerTy());
-    llvm::Type *threadIdPtrTy = assignExpr->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
+    SymbolType threadIdSymbolType = assignExpr->getEvaluatedSymbolType();
+    llvm::Type *threadIdPtrTy = threadIdSymbolType.toLLVMType(*context, currentScope);
     if (threadIdPtrTy->isArrayTy()) { // Array of ids
       for (int i = 0; i < threadIdPtrTy->getArrayNumElements(); i++) {
         // Get thread id that has to be joined
         llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(i)};
         llvm::Value *threadIdAddr = builder->CreateGEP(threadIdPtrTy, threadIdPtr, indices);
-        llvm::Value *threadId = builder->CreateLoad(threadIdPtrTy, threadIdAddr);
+        llvm::Type *threadIdType = threadIdSymbolType.getContainedTy().toLLVMType(*context, currentScope);
+        llvm::Value *threadId = builder->CreateLoad(threadIdType, threadIdAddr);
 
         // Create call to pthread_join
         llvm::Value *voidPtrPtrNull = llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(*context)->getPointerTo());
@@ -1662,7 +1664,8 @@ std::any GeneratorVisitor::visitTernaryExpr(TernaryExprNode *node) {
     auto trueValuePtr = resolveAddress(node->operands()[1]);
     auto falseValuePtr = resolveAddress(node->operands()[2]);
 
-    llvm::Value *condition = builder->CreateLoad(conditionPtr->getType()->getPointerElementType(), conditionPtr);
+    llvm::Type *conditionType = node->operands().front()->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
+    llvm::Value *condition = builder->CreateLoad(conditionType, conditionPtr);
     return builder->CreateSelect(condition, trueValuePtr, falseValuePtr);
   }
   return visit(node->operands().front());
@@ -2180,8 +2183,10 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       }
       case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
         // Auto de-reference pointer
-        while (lhsPtr && lhsPtr->getType()->getPointerElementType()->isPointerTy())
-          lhsPtr = structAccessAddress = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+        while (lhsPtr && lhsSymbolType.isPointer()) {
+          lhsPtr = structAccessAddress = builder->CreateLoad(lhsTy, lhsPtr);
+          lhsSymbolType = lhsSymbolType.getContainedTy();
+        }
 
         // Visit identifier after the dot
         PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
@@ -2192,7 +2197,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       }
       case PostfixUnaryExprNode::OP_PLUS_PLUS: {
         if (!lhs)
-          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+          lhs = builder->CreateLoad(lhsTy, lhsPtr);
         // Get the lhs variable entry
         SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         // Save the new value to the old pointer
@@ -2204,7 +2209,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       }
       case PostfixUnaryExprNode::OP_MINUS_MINUS: {
         if (!lhs)
-          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+          lhs = builder->CreateLoad(lhsTy, lhsPtr);
         // Get the lhs variable entry
         SymbolTableEntry *lhsVarEntry = currentScope->lookup(currentVarName);
         // Save the new value to the old pointer
