@@ -170,18 +170,19 @@ DOT: '.';
 ELLIPSIS: '...';
 
 // Regex tokens
+DOUBLE_LIT: [0-9]*[.][0-9]+;
+INT_LIT: NUM_LIT;
+SHORT_LIT: NUM_LIT 's';
+LONG_LIT: NUM_LIT 'l';
 CHAR_LIT: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
 STRING_LIT: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
-INT_LIT: NONZERO_DIGIT DIGIT* | ZERO;
-DOUBLE_LIT: DIGIT+ DOT DIGIT+;
-SHORT_LIT: INT_LIT 's';
-LONG_LIT: INT_LIT 'l';
-IDENTIFIER: NONDIGIT (NONDIGIT | DIGIT)*;
+IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
 
-fragment ZERO: [0];
-fragment DIGIT: [0-9];
-fragment NONZERO_DIGIT: [1-9];
-fragment NONDIGIT: [a-zA-Z_];
+fragment NUM_LIT: DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT;
+fragment DEC_LIT: ([0][dD])?[0-9]+;
+fragment BIN_LIT: [0][bB][01]+;
+fragment HEX_LIT: [0][xXhH][0-9a-fA-F]+;
+fragment OCT_LIT: [0][oO][0-7]+;
 
 // Skipped tokens
 BLOCK_COMMENT: '/*' .*? '*/' -> skip;

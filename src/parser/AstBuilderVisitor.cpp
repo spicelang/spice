@@ -1197,24 +1197,21 @@ std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueConte
       primitiveValueNode->data.doubleValue = std::stod(t->toString());
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INT_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TY_INT;
-      primitiveValueNode->data.intValue = std::stoi(t->toString());
+      primitiveValueNode->data.intValue = parseInt(t->toString());
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t->getSymbol()->getType() == SpiceParser::SHORT_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TY_SHORT;
-      primitiveValueNode->data.shortValue = (short)std::stoi(t->toString());
+      primitiveValueNode->data.shortValue = parseShort(t->toString());
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::LONG_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TY_LONG;
-      primitiveValueNode->data.longValue = std::stoll(t->toString());
+      primitiveValueNode->data.longValue = parseLong(t->toString());
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::CHAR_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TY_CHAR;
-      primitiveValueNode->data.charValue = ctx->CHAR_LIT()->toString()[1];
+      primitiveValueNode->data.charValue = parseChar(ctx->CHAR_LIT()->toString());
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t->getSymbol()->getType() == SpiceParser::STRING_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TY_STRING;
-      std::string strValue = ctx->STRING_LIT()->toString();
-      strValue = strValue.substr(1, strValue.size() - 2);
-      replaceEscapeChars(strValue);
-      primitiveValueNode->data.stringValue = strValue;
+      primitiveValueNode->data.stringValue = parseString(ctx->STRING_LIT()->toString());
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TRUE) {
       primitiveValueNode->type = PrimitiveValueNode::TY_BOOL;
       primitiveValueNode->data.boolValue = true;
@@ -1479,4 +1476,61 @@ void AstBuilderVisitor::replaceEscapeChars(std::string &string) {
   CommonUtil::replaceAll(string, "\\v", "\v");
   CommonUtil::replaceAll(string, "\\'", "\'");
   CommonUtil::replaceAll(string, "\\?", "\?");
+}
+
+int32_t AstBuilderVisitor::parseInt(const std::string &input) {
+  std::function<int32_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
+    return std::stoi(substr, nullptr, base);
+  };
+  return parseNumeric(input, cb);
+}
+int16_t AstBuilderVisitor::parseShort(const std::string &input) {
+  std::function<int16_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
+    return (int16_t)std::stoi(substr, nullptr, base);
+  };
+  return parseNumeric(input, cb);
+}
+
+int64_t AstBuilderVisitor::parseLong(const std::string &input) {
+  std::function<int64_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
+    return std::stoll(substr, nullptr, base);
+  };
+  return parseNumeric(input, cb);
+}
+
+int8_t AstBuilderVisitor::parseChar(const std::string &input) { return input[1]; }
+
+std::string AstBuilderVisitor::parseString(std::string input) {
+  input = input.substr(1, input.size() - 2);
+  replaceEscapeChars(input);
+  return input;
+}
+
+template <typename T> T AstBuilderVisitor::parseNumeric(const std::string &input, std::function<T(const std::string &, int)> cb) {
+  if (input.length() >= 3) {
+    char c1 = input[0];
+    char c2 = input[1];
+    std::string substr = input.substr(2);
+    if (c1 == '0') {
+      switch (c2) {
+      case 'd':
+      case 'D':
+        return cb(substr, 10);
+      case 'b':
+      case 'B':
+        return cb(substr, 2);
+      case 'h':
+      case 'H':
+      case 'x':
+      case 'X':
+        return cb(substr, 16);
+      case 'o':
+      case 'O':
+        return cb(substr, 8);
+      default:
+        return cb(input, 10);
+      }
+    }
+  }
+  return cb(input, 10);
 }
