@@ -2158,6 +2158,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         std::string currentVarNameBackup = currentVarName;
         ScopePath scopePathBackup = scopePath;
         llvm::Value *structAccessAddressBackup = structAccessAddress;
+        llvm::Type *structAccessTypeBackup = structAccessType;
 
         // Get the index value
         AssignExprNode *indexExpr = node->assignExpr()[subscriptCounter++];
@@ -2167,14 +2168,19 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         currentVarName = currentVarNameBackup;
         scopePath = scopePathBackup;
         structAccessAddress = structAccessAddressBackup;
+        structAccessType = structAccessTypeBackup;
 
         if (lhs->getType()->isArrayTy()) {
+          lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
           // Calculate address of array item
           llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
-          lhsPtr = builder->CreateInBoundsGEP(lhsPtr->getType()->getPointerElementType(), lhsPtr, indices);
+          lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indices);
+          structAccessType = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
         } else {
+          lhsTy = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
           // Calculate address of pointer offset
-          lhsPtr = builder->CreateInBoundsGEP(lhs->getType()->getPointerElementType(), lhs, indexValue);
+          lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhs, indexValue);
+          structAccessType = lhsTy;
         }
         structAccessAddress = lhsPtr;
 
@@ -2184,8 +2190,10 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
         // Auto de-reference pointer
         while (lhsPtr && lhsSymbolType.isPointer()) {
+          lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
           lhsPtr = structAccessAddress = builder->CreateLoad(lhsTy, lhsPtr);
           lhsSymbolType = lhsSymbolType.getContainedTy();
+          structAccessType = lhsSymbolType.toLLVMType(*context, currentScope);
         }
 
         // Visit identifier after the dot
@@ -2286,13 +2294,16 @@ std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
 
       if (structAccessAddress == nullptr) {
         // Auto de-referencing is done by the dot operator
+        structAccessType = node->getEvaluatedSymbolType().toLLVMType(*context, accessScope);
         return structAccessAddress = entry->getAddress();
       } else {
         unsigned int fieldIndex = entry->getOrderIndex();
         llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(fieldIndex)};
+        SymbolTableEntry *structEntry = accessScope->lookup(entry->getType().getName());
         // Auto de-referencing is done by the dot operator
-        return structAccessAddress = builder->CreateInBoundsGEP(structAccessAddress->getType()->getPointerElementType(),
-                                                                structAccessAddress, indices);
+        llvm::Value *address = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, indices);
+        structAccessType = node->getEvaluatedSymbolType().toLLVMType(*context, accessScope);
+        return structAccessAddress = address;
       }
     }
 
@@ -2303,10 +2314,10 @@ std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
       llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(fieldIndex)};
 
       // Calculate field address
-      llvm::Value *fieldAddress =
-          builder->CreateInBoundsGEP(structAccessAddress->getType()->getPointerElementType(), structAccessAddress, indices);
+      llvm::Value *fieldAddress = builder->CreateInBoundsGEP(structAccessType, structAccessAddress, indices);
 
       structAccessAddress = nullptr;
+      structAccessType = nullptr;
       return fieldAddress;
     }
 

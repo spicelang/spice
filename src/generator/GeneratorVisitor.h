@@ -130,6 +130,7 @@ private:
   std::string lhsVarName;
   llvm::Type *lhsType = nullptr;
   llvm::Value *structAccessAddress = nullptr;
+  llvm::Type *structAccessType = nullptr;
   llvm::Value *dynamicArraySize = nullptr;
   llvm::Value *stackState = nullptr;
   bool secondRun = false;

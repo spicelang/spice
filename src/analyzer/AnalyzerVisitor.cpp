@@ -1645,6 +1645,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     newOpQueue.emplace(opQueue.front().first, lhs);
     opQueue.pop();
   }
+  node->opQueue = newOpQueue;
 
   if (lhs.is(TY_INVALID))
     throw err->get(node->codeLoc, REFERENCED_UNDEFINED_VARIABLE,
