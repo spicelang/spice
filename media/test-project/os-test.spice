@@ -11,5 +11,5 @@ f<int> main() {
 }*/
 
 f<int> main() {
-    printf("Test: %d\n", 0xfff);
+    printf("Test: %d\n", 0o0000777);
 }
