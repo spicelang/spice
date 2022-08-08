@@ -4,6 +4,7 @@
 
 #include <SpiceVisitor.h>
 
+#include <functional>
 #include <utility>
 
 // Forward declarations
@@ -86,5 +87,11 @@ private:
   std::string fileName;
 
   // Private methods
+  static int32_t parseInt(const std::string &input);
+  static int16_t parseShort(const std::string &input);
+  static int64_t parseLong(const std::string &input);
+  static int8_t parseChar(const std::string &input);
+  static std::string parseString(std::string input);
+  template <typename T> T static parseNumeric(const std::string &input, std::function<T(const std::string &, int)> cb);
   static void replaceEscapeChars(std::string &string);
 };

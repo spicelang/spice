@@ -1,13 +1,13 @@
 // File open modes
-public const string MODE_READ                  = "r";
-public const string MODE_WRITE                 = "w";
-public const string MODE_APPEND                = "a";
-public const string MODE_READ_WRITE            = "r+";
-public const string MODE_READ_WRITE_OVERWRITE  = "w+";
-public const string MODE_READ_WRITE_APPEND     = "a+";
+public const string MODE_READ                 = "r";
+public const string MODE_WRITE                = "w";
+public const string MODE_APPEND               = "a";
+public const string MODE_READ_WRITE           = "r+";
+public const string MODE_READ_WRITE_OVERWRITE = "w+";
+public const string MODE_READ_WRITE_APPEND    = "a+";
 
-const int MODE_CREATE   = 64; // Decimal for octal: 100
-const int MODE_RDWR     = 2;  // Decimal for octal: 2
+const int MODE_CREATE = 0x100;
+const int MODE_RDWR   = 0x002;
 
 const int F_OK = 0; // File existence
 const int X_OK = 1; // Can execute
@@ -50,7 +50,7 @@ public f<int> createFile(string path) {
 
 /**
  * Opens a (new) file at the specified path with the specified mode.
- * 
+ *
  * There are predefined constants for the mode available:
  * MODE_READ, MODE_WRITE, MODE_APPEND,
  * MODE_READ_WRITE, MODE_READ_WRITE_OVERWRITE, MODE_READ_WRITE_APPEND
@@ -84,7 +84,7 @@ public f<int> File.readChar() {
 
 /**
  * Writes a single character to the file.
- * 
+ *
  * @return Result code of the write operation: 0 = successful, -1 = failed
  */
 public f<int> File.writeChar(char value) {
@@ -169,7 +169,7 @@ public f<long> getFileSize(string path) {
 
 /**
  * Checks if a file exists. The function also returns true if the specified path points to a directory.
- * 
+ *
  * @return Existing / not existing
  */
 public f<bool> fileExists(string path) {
@@ -178,7 +178,7 @@ public f<bool> fileExists(string path) {
 
 /**
  * Checks if the read permissions to a file are given.
- * 
+ *
  * @return Readable / not readable
  */
 public f<bool> fileReadable(string path) {
@@ -187,7 +187,7 @@ public f<bool> fileReadable(string path) {
 
 /**
  * Checks if the write permissions to a file are given.
- * 
+ *
  * @return Writable / not writable
  */
 public f<bool> fileWritable(string path) {
@@ -196,7 +196,7 @@ public f<bool> fileWritable(string path) {
 
 /**
  * Checks if the execute permissions to a file are given.
- * 
+ *
  * @return Executable / not executable
  */
 public f<bool> fileExecutable(string path) {
