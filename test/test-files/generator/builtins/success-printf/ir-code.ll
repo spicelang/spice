@@ -8,10 +8,10 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  store i32 0, i32* %result, align 4
-  %0 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @0, i32 0, i32 0))
-  %1 = load i32, i32* %result, align 4
+  store i32 0, ptr %result, align 4
+  %0 = call i32 (ptr, ...) @printf(ptr @0)
+  %1 = load i32, ptr %result, align 4
   ret i32 %1
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)

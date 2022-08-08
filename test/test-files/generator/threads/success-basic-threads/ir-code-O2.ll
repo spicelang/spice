@@ -13,34 +13,33 @@ declare i32 @usleep(i32) local_unnamed_addr
 define i32 @main() local_unnamed_addr {
 entry.l3:
   %0 = alloca {}, align 8
-  %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @str, i64 0, i64 0))
-  %1 = alloca i8*, align 8
-  %2 = bitcast {}* %0 to i8*
-  %3 = call i32 @pthread_create(i8** nonnull %1, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %2)
-  %4 = alloca i8*, align 8
-  %5 = call i32 @pthread_create(i8** nonnull %4, i8* null, i8* (i8*)* nonnull @_thread1, i8* nonnull %2)
-  %6 = call i32 @usleep(i32 1000000)
-  %puts1 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
+  %puts = tail call i32 @puts(ptr nonnull @str)
+  %1 = alloca ptr, align 8
+  %2 = call i32 @pthread_create(ptr nonnull %1, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %3 = alloca ptr, align 8
+  %4 = call i32 @pthread_create(ptr nonnull %3, ptr null, ptr nonnull @_thread1, ptr nonnull %0)
+  %5 = call i32 @usleep(i32 1000000)
+  %puts1 = call i32 @puts(ptr nonnull @str.1)
   ret i32 0
 }
 
-define internal noalias i8* @_thread0(i8* nocapture readnone %0) {
+define internal noalias ptr @_thread0(ptr nocapture readnone %0) {
 thread.entry.l5:
   %1 = tail call i32 @usleep(i32 500000)
-  %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @str.2, i64 0, i64 0))
-  ret i8* null
+  %puts = tail call i32 @puts(ptr nonnull @str.2)
+  ret ptr null
 }
 
-declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*) local_unnamed_addr
+declare i32 @pthread_create(ptr, ptr, ptr, ptr) local_unnamed_addr
 
-define internal noalias i8* @_thread1(i8* nocapture readnone %0) {
+define internal noalias ptr @_thread1(ptr nocapture readnone %0) {
 thread.entry.l9:
   %1 = tail call i32 @usleep(i32 200000)
-  %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @str.3, i64 0, i64 0))
-  ret i8* null
+  %puts = tail call i32 @puts(ptr nonnull @str.3)
+  ret ptr null
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @puts(i8* nocapture noundef readonly) local_unnamed_addr #0
+declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }

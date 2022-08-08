@@ -27,7 +27,7 @@ for.l21:                                          ; preds = %entry.l4, %for.inc.
   br i1 %4, label %if.then.l22, label %if.else.l22
 
 if.then.l22:                                      ; preds = %for.l21
-  %5 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([3 x i8], [3 x i8]* @0, i64 0, i64 0), i64 %m.158)
+  %5 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i64 %m.158)
   %6 = icmp eq i32 %printedDigits.156, 0
   br i1 %6, label %if.then.l24, label %if.end.l24
 
@@ -81,7 +81,7 @@ for.end.l21:                                      ; preds = %for.inc.l21
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #0

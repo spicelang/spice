@@ -14,35 +14,35 @@ entry.l1:
   %0 = alloca i1, align 1
   %1 = alloca i1, align 1
   %2 = alloca i1, align 1
-  store i32 0, i32* %result, align 4
-  store i1 false, i1* %0, align 1
-  %3 = load i1, i1* %0, align 1
+  store i32 0, ptr %result, align 4
+  store i1 false, ptr %0, align 1
+  %3 = load i1, ptr %0, align 1
   br i1 %3, label %if.then.l2, label %if.else.l2
 
 if.then.l2:                                       ; preds = %entry.l1
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @0, i32 0, i32 0))
+  %4 = call i32 (ptr, ...) @printf(ptr @0)
   br label %if.end.l2
 
 if.else.l2:                                       ; preds = %entry.l1
-  store i1 false, i1* %1, align 1
-  %5 = load i1, i1* %1, align 1
+  store i1 false, ptr %1, align 1
+  %5 = load i1, ptr %1, align 1
   br i1 %5, label %if.then.l4, label %if.else.l4
 
 if.then.l4:                                       ; preds = %if.else.l2
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @1, i32 0, i32 0))
+  %6 = call i32 (ptr, ...) @printf(ptr @1)
   br label %if.end.l4
 
 if.else.l4:                                       ; preds = %if.else.l2
-  store i1 false, i1* %2, align 1
-  %7 = load i1, i1* %2, align 1
+  store i1 false, ptr %2, align 1
+  %7 = load i1, ptr %2, align 1
   br i1 %7, label %if.then.l6, label %if.else.l6
 
 if.then.l6:                                       ; preds = %if.else.l4
-  %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @2, i32 0, i32 0))
+  %8 = call i32 (ptr, ...) @printf(ptr @2)
   br label %if.end.l6
 
 if.else.l6:                                       ; preds = %if.else.l4
-  %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @3, i32 0, i32 0))
+  %9 = call i32 (ptr, ...) @printf(ptr @3)
   br label %if.end.l6
 
 if.end.l6:                                        ; preds = %if.else.l6, %if.then.l6
@@ -52,8 +52,8 @@ if.end.l4:                                        ; preds = %if.end.l6, %if.then
   br label %if.end.l2
 
 if.end.l2:                                        ; preds = %if.end.l4, %if.then.l2
-  %10 = load i32, i32* %result, align 4
+  %10 = load i32, ptr %result, align 4
   ret i32 %10
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)

@@ -17,11 +17,11 @@ while.l3:                                         ; preds = %entry.l1, %while.co
   br i1 %1, label %while.cond.l3.backedge.loopexit, label %while.cond.l3.backedge
 
 while.cond.l3.backedge.loopexit:                  ; preds = %while.l3
-  %2 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 10)
-  %3 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 9)
-  %4 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 8)
-  %5 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 7)
-  %6 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 6)
+  %2 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 10)
+  %3 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 9)
+  %4 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 8)
+  %5 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 7)
+  %6 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 6)
   br label %while.cond.l3.backedge
 
 while.cond.l3.backedge:                           ; preds = %while.cond.l3.backedge.loopexit, %while.l3
@@ -33,6 +33,6 @@ while.end.l3:                                     ; preds = %while.cond.l3.backe
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }

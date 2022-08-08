@@ -35,61 +35,60 @@ if.end.l2:                                        ; preds = %entry.l1, %if.end.l
 define i32 @main() local_unnamed_addr {
 entry.l6:
   %0 = alloca {}, align 8
-  %1 = bitcast {}* %0 to i8*
-  %2 = alloca i8*, align 8
-  %3 = call i32 @pthread_create(i8** nonnull %2, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %1)
-  %4 = load i8*, i8** %2, align 8
-  %5 = alloca i8*, align 8
-  %6 = call i32 @pthread_create(i8** nonnull %5, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %1)
-  %7 = load i8*, i8** %5, align 8
-  %8 = alloca i8*, align 8
-  %9 = call i32 @pthread_create(i8** nonnull %8, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %1)
-  %10 = load i8*, i8** %8, align 8
-  %11 = alloca i8*, align 8
-  %12 = call i32 @pthread_create(i8** nonnull %11, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %1)
-  %13 = load i8*, i8** %11, align 8
-  %14 = alloca i8*, align 8
-  %15 = call i32 @pthread_create(i8** nonnull %14, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %1)
-  %16 = load i8*, i8** %14, align 8
-  %17 = alloca i8*, align 8
-  %18 = call i32 @pthread_create(i8** nonnull %17, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %1)
-  %19 = load i8*, i8** %17, align 8
-  %20 = alloca i8*, align 8
-  %21 = call i32 @pthread_create(i8** nonnull %20, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %1)
-  %22 = load i8*, i8** %20, align 8
-  %23 = alloca i8*, align 8
-  %24 = call i32 @pthread_create(i8** nonnull %23, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %1)
-  %25 = load i8*, i8** %23, align 8
-  %puts = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([45 x i8], [45 x i8]* @str, i64 0, i64 0))
-  %26 = call i32 @pthread_join(i8* %4, i8** null)
-  %27 = call i32 @pthread_join(i8* %7, i8** null)
-  %28 = call i32 @pthread_join(i8* %10, i8** null)
-  %29 = call i32 @pthread_join(i8* %13, i8** null)
-  %30 = call i32 @pthread_join(i8* %16, i8** null)
-  %31 = call i32 @pthread_join(i8* %19, i8** null)
-  %32 = call i32 @pthread_join(i8* %22, i8** null)
-  %33 = call i32 @pthread_join(i8* %25, i8** null)
-  %34 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([17 x i8], [17 x i8]* @1, i64 0, i64 0))
+  %1 = alloca ptr, align 8
+  %2 = call i32 @pthread_create(ptr nonnull %1, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %3 = load ptr, ptr %1, align 8
+  %4 = alloca ptr, align 8
+  %5 = call i32 @pthread_create(ptr nonnull %4, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %6 = load ptr, ptr %4, align 8
+  %7 = alloca ptr, align 8
+  %8 = call i32 @pthread_create(ptr nonnull %7, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %9 = load ptr, ptr %7, align 8
+  %10 = alloca ptr, align 8
+  %11 = call i32 @pthread_create(ptr nonnull %10, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %12 = load ptr, ptr %10, align 8
+  %13 = alloca ptr, align 8
+  %14 = call i32 @pthread_create(ptr nonnull %13, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %15 = load ptr, ptr %13, align 8
+  %16 = alloca ptr, align 8
+  %17 = call i32 @pthread_create(ptr nonnull %16, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %18 = load ptr, ptr %16, align 8
+  %19 = alloca ptr, align 8
+  %20 = call i32 @pthread_create(ptr nonnull %19, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %21 = load ptr, ptr %19, align 8
+  %22 = alloca ptr, align 8
+  %23 = call i32 @pthread_create(ptr nonnull %22, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %24 = load ptr, ptr %22, align 8
+  %puts = call i32 @puts(ptr nonnull @str)
+  %25 = call i32 @pthread_join(ptr %3, ptr null)
+  %26 = call i32 @pthread_join(ptr %6, ptr null)
+  %27 = call i32 @pthread_join(ptr %9, ptr null)
+  %28 = call i32 @pthread_join(ptr %12, ptr null)
+  %29 = call i32 @pthread_join(ptr %15, ptr null)
+  %30 = call i32 @pthread_join(ptr %18, ptr null)
+  %31 = call i32 @pthread_join(ptr %21, ptr null)
+  %32 = call i32 @pthread_join(ptr %24, ptr null)
+  %33 = call i32 (ptr, ...) @printf(ptr nonnull @1)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
-define internal noalias i8* @_thread0(i8* nocapture readnone %0) #1 {
+define internal noalias ptr @_thread0(ptr nocapture readnone %0) #1 {
 thread.entry.l10:
   %1 = tail call fastcc i32 @_f__void__fib__int(i32 46)
-  %2 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([33 x i8], [33 x i8]* @0, i64 0, i64 0), i32 %1)
-  ret i8* null
+  %2 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 %1)
+  ret ptr null
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
-declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*) local_unnamed_addr
+declare i32 @pthread_create(ptr, ptr, ptr, ptr) local_unnamed_addr
 
-declare i32 @pthread_join(i8*, i8**) local_unnamed_addr
+declare i32 @pthread_join(ptr, ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @puts(i8* nocapture noundef readonly) local_unnamed_addr #1
+declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #1
 
 attributes #0 = { nofree nosync nounwind readnone }
 attributes #1 = { nofree nounwind }

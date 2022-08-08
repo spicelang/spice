@@ -10,22 +10,22 @@ define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
   %0 = alloca i1, align 1
-  store i32 0, i32* %result, align 4
-  store i1 false, i1* %0, align 1
-  %1 = load i1, i1* %0, align 1
+  store i32 0, ptr %result, align 4
+  store i1 false, ptr %0, align 1
+  %1 = load i1, ptr %0, align 1
   br i1 %1, label %assert.end.l2, label %assert.then.l2
 
 assert.then.l2:                                   ; preds = %entry.l1
-  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([55 x i8], [55 x i8]* @0, i32 0, i32 0))
+  %2 = call i32 (ptr, ...) @printf(ptr @0)
   call void @exit(i32 1)
   unreachable
 
 assert.end.l2:                                    ; preds = %entry.l1
-  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @1, i32 0, i32 0))
-  %4 = load i32, i32* %result, align 4
+  %3 = call i32 (ptr, ...) @printf(ptr @1)
+  %4 = load i32, ptr %result, align 4
   ret i32 %4
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)
 
 declare void @exit(i32)
