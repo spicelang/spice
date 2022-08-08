@@ -68,7 +68,7 @@ void SourceFile::visualizeCST(std::string *output) {
   dotCode += " label=\"" + replacedFilePath + "\";\n ";
 
   // Visualize the imported source files
-  for (auto &[_, sourceFile] : dependencies)
+  for (const auto &[_, sourceFile] : dependencies)
     sourceFile.first->visualizeCST(output);
 
   // Generate dot code for this source file
@@ -103,7 +103,7 @@ void SourceFile::visualizeCST(std::string *output) {
 
 void SourceFile::buildAST() {
   // Transform the imported source files
-  for (auto &[_, sourceFile] : dependencies)
+  for (const auto &[_, sourceFile] : dependencies)
     sourceFile.first->buildAST();
 
   // Transform this source file
@@ -123,7 +123,7 @@ void SourceFile::visualizeAST(std::string *output) {
   dotCode += " label=\"" + replacedFilePath + "\";\n ";
 
   // Visualize the imported source files
-  for (auto &[_, sourceFile] : dependencies)
+  for (const auto &[_, sourceFile] : dependencies)
     sourceFile.first->visualizeAST(output);
 
   // Generate dot code for this source file
@@ -162,7 +162,7 @@ void SourceFile::preAnalyze() {
   antlrCtx.parser->reset();
 
   // Analyze the imported source files
-  for (auto &[_, sourceFile] : dependencies) {
+  for (const auto &[_, sourceFile] : dependencies) {
     sourceFile.first->buildAST();
     sourceFile.first->preAnalyze();
   }
@@ -171,7 +171,7 @@ void SourceFile::preAnalyze() {
 void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                          const ThreadFactory &threadFactory) {
   // Analyze the imported source files
-  for (auto &[importName, sourceFile] : dependencies) {
+  for (const auto &[importName, sourceFile] : dependencies) {
     // Analyze the imported source file
     sourceFile.first->analyze(context, builder, threadFactory);
 
@@ -206,7 +206,7 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
   } while (repetitionRequired);
 
   // Re-analyze the imported source files
-  for (auto &[importName, sourceFile] : dependencies)
+  for (const auto &[importName, sourceFile] : dependencies)
     sourceFile.first->reAnalyze(context, builder, threadFactory);
 
   // Save the JSON version in the compiler output
@@ -222,7 +222,7 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
 void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                           ThreadFactory &threadFactory, LinkerInterface &linker) {
   // Generate the imported source files
-  for (auto &[_, sourceFile] : dependencies)
+  for (const auto &[_, sourceFile] : dependencies)
     sourceFile.first->generate(context, builder, threadFactory, linker);
 
   // Generate this source file
@@ -230,7 +230,7 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   bool repetitionRequired;
   unsigned int generateCount = 0;
   do {
-    repetitionRequired = std::any_cast<bool>(generator->visit(ast.get()));
+    repetitionRequired = any_cast<bool>(generator->visit(ast.get()));
     antlrCtx.parser->reset();
     generateCount++;
     if (generateCount >= 10)

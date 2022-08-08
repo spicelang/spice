@@ -11,71 +11,69 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @usleep(i32)
 
 define i32 @main() {
-entry:
+entry.l3:
   %result = alloca i32, align 4
   %i = alloca i32, align 4
-  %0 = alloca { i32* }, align 8
+  %0 = alloca { ptr }, align 8
   %1 = alloca i32, align 4
   %2 = alloca i1, align 1
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
-  store i32 0, i32* %result, align 4
-  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @0, i32 0, i32 0))
-  store i32 1, i32* %i, align 4
-  br label %for.cond
+  store i32 0, ptr %result, align 4
+  %5 = call i32 (ptr, ...) @printf(ptr @0)
+  store i32 1, ptr %i, align 4
+  br label %for.cond.l5
 
-for:                                              ; preds = %for.cond
-  %6 = load i32, i32* %i, align 4
-  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0), i32 %6)
-  %8 = getelementptr inbounds { i32* }, { i32* }* %0, i32 0, i32 0
-  store i32* %i, i32** %8, align 8
-  %9 = alloca i8*, align 8
-  %10 = bitcast { i32* }* %0 to i8*
-  %11 = call i32 @pthread_create(i8** %9, i8* null, i8* (i8*)* @_thread0, i8* %10)
-  br label %for.inc
+for.l5:                                           ; preds = %for.cond.l5
+  %6 = load i32, ptr %i, align 4
+  %7 = call i32 (ptr, ...) @printf(ptr @1, i32 %6)
+  %8 = getelementptr inbounds { ptr }, ptr %0, i32 0, i32 0
+  store ptr %i, ptr %8, align 8
+  %9 = alloca ptr, align 8
+  %10 = call i32 @pthread_create(ptr %9, ptr null, ptr @_thread0, ptr %0)
+  br label %for.inc.l5
 
-for.inc:                                          ; preds = %for
-  %12 = load i32, i32* %i, align 4
-  %13 = add i32 %12, 1
-  store i32 %13, i32* %i, align 4
-  store i32 %12, i32* %1, align 4
-  br label %for.cond
+for.inc.l5:                                       ; preds = %for.l5
+  %11 = load i32, ptr %i, align 4
+  %12 = add i32 %11, 1
+  store i32 %12, ptr %i, align 4
+  store i32 %11, ptr %1, align 4
+  br label %for.cond.l5
 
-for.cond:                                         ; preds = %for.inc, %entry
-  %14 = load i32, i32* %i, align 4
-  %15 = icmp sle i32 %14, 8
-  store i1 %15, i1* %2, align 1
-  %16 = load i1, i1* %2, align 1
-  br i1 %16, label %for, label %for.end
+for.cond.l5:                                      ; preds = %for.inc.l5, %entry.l3
+  %13 = load i32, ptr %i, align 4
+  %14 = icmp sle i32 %13, 8
+  store i1 %14, ptr %2, align 1
+  %15 = load i1, ptr %2, align 1
+  br i1 %15, label %for.l5, label %for.end.l5
 
-for.end:                                          ; preds = %for.cond
-  store i32 1000000, i32* %3, align 4
-  %17 = load i32, i32* %3, align 4
-  %18 = call i32 @usleep(i32 %17)
-  store i32 %18, i32* %4, align 4
-  %19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
-  %20 = load i32, i32* %result, align 4
-  ret i32 %20
+for.end.l5:                                       ; preds = %for.cond.l5
+  store i32 1000000, ptr %3, align 4
+  %16 = load i32, ptr %3, align 4
+  %17 = call i32 @usleep(i32 %16)
+  store i32 %17, ptr %4, align 4
+  %18 = call i32 (ptr, ...) @printf(ptr @3)
+  %19 = load i32, ptr %result, align 4
+  ret i32 %19
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)
 
-define internal i8* @_thread0(i8* %0) {
-entry:
-  %1 = bitcast i8* %0 to { i32* }*
-  %2 = getelementptr inbounds { i32* }, { i32* }* %1, i32 0, i32 0
-  %3 = load i32*, i32** %2, align 8
-  %4 = load i32, i32* %3, align 4
-  %5 = mul i32 100, %4
-  %6 = mul i32 %5, 1000
+define internal ptr @_thread0(ptr %0) {
+thread.entry.l7:
+  %1 = getelementptr inbounds { ptr }, ptr %0, i32 0, i32 0
+  %2 = load ptr, ptr %1, align 8
+  %3 = load i32, ptr %2, align 4
+  %4 = mul i32 100, %3
+  %5 = mul i32 %4, 1000
+  %6 = alloca i32, align 4
   %7 = alloca i32, align 4
-  %8 = alloca i32, align 4
-  store i32 %6, i32* %7, align 4
-  %9 = load i32, i32* %7, align 4
-  %10 = call i32 @usleep(i32 %9)
-  store i32 %10, i32* %8, align 4
-  %11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @2, i32 0, i32 0))
-  ret i8* null
+  store i32 %5, ptr %6, align 4
+  %8 = load i32, ptr %6, align 4
+  %9 = call i32 @usleep(i32 %8)
+  store i32 %9, ptr %7, align 4
+  %10 = call i32 (ptr, ...) @printf(ptr @2)
+  ret ptr null
 }
 
-declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*)
+declare i32 @pthread_create(ptr, ptr, ptr, ptr)

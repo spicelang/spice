@@ -50,6 +50,9 @@ std::any AnalyzerVisitor::visitEntry(EntryNode *node) {
   // if (requiresMainFct && secondRun)
   //  rootScope->purgeSubstantiationRemnants();
 
+  // Reset the AST
+  node->reset();
+
   bool reAnalyze = reAnalyzeRequired;
 
   // Check if the visitor got a main function
@@ -131,12 +134,12 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     // Get 'this' type
     std::vector<GenericType> templateTypes;
     SymbolType thisType = SymbolType(TY_DYN);
-    SymbolType thisTypePtr = thisType;
+    SymbolType thisPtrType = thisType;
     if (node->isMethod) {
       SymbolTableEntry *structEntry = currentScope->lookup(node->structName);
       assert(structEntry != nullptr);
       thisType = structEntry->getType();
-      thisTypePtr = thisType.toPointer(err.get(), node->codeLoc);
+      thisPtrType = thisType.toPointer(err.get(), node->codeLoc);
       for (const auto &templateType : thisType.getTemplateTypes())
         templateTypes.emplace_back(templateType);
     }
@@ -177,9 +180,9 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
 
     // Declare 'this' variable in new scope
     if (node->isMethod) {
-      SymbolSpecifiers thisTypeSpecifiers(thisTypePtr);
+      SymbolSpecifiers thisTypeSpecifiers(thisPtrType);
       thisTypeSpecifiers.setConst(true);
-      currentScope->insert(THIS_VARIABLE_NAME, thisTypePtr, thisTypeSpecifiers, INITIALIZED, node->codeLoc);
+      currentScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisTypeSpecifiers, INITIALIZED, node->codeLoc);
     }
 
     // Declare variable for the return value in the function scope
@@ -232,6 +235,9 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     if (node->isMethod)
       currentScope = currentScope->getParent();
 
+    // Set the symbolTypeIndex to 0
+    node->symbolTypeIndex = 0;
+
     if (manifestations) {
       for (auto &[mangledName, spiceFunc] : *manifestations) {
         // Check if the function is substantiated
@@ -253,11 +259,11 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         assert(currentScope != nullptr);
 
         // Replace this type
-        if (spiceFunc.isMethodFunction()) {
+        /*if (spiceFunc.isMethodFunction()) {
           SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
           assert(thisVar != nullptr);
           thisVar->updateType(spiceFunc.getThisType(), true);
-        }
+        }*/
 
         // Morph the generic return type
         SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
@@ -313,6 +319,9 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
           currentScope = currentScope->getParent();
 
         spiceFunc.setAnalyzed();
+
+        // Increase the symbolTypeIndex
+        node->symbolTypeIndex++;
       }
     }
   }
@@ -335,11 +344,11 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     // Get 'this' type
     std::vector<GenericType> templateTypes;
     SymbolType thisType = SymbolType(TY_DYN);
-    SymbolType thisTypePtr = thisType;
+    SymbolType thisPtrType = thisType;
     if (node->isMethod) {
       SymbolTableEntry *structEntry = currentScope->lookup(node->structName);
       thisType = structEntry->getType();
-      thisTypePtr = thisType.toPointer(err.get(), node->codeLoc);
+      thisPtrType = thisType.toPointer(err.get(), node->codeLoc);
       for (const auto &templateType : thisType.getTemplateTypes())
         templateTypes.emplace_back(templateType);
     }
@@ -380,9 +389,9 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
 
     // Declare 'this' variable in new scope
     if (node->isMethod) {
-      auto thisSymbolSpecifiers = SymbolSpecifiers(thisTypePtr);
+      auto thisSymbolSpecifiers = SymbolSpecifiers(thisPtrType);
       thisSymbolSpecifiers.setConst(true);
-      currentScope->insert(THIS_VARIABLE_NAME, thisTypePtr, thisSymbolSpecifiers, INITIALIZED, node->codeLoc);
+      currentScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisSymbolSpecifiers, INITIALIZED, node->codeLoc);
     }
 
     // Return to old scope
@@ -427,6 +436,9 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     if (node->isMethod)
       currentScope = currentScope->getParent();
 
+    // Set the symbolTypeIndex to 0
+    node->symbolTypeIndex = 0;
+
     if (manifestations) {
       for (auto &[mangledName, spiceProc] : *manifestations) {
         // Check if the function is substantiated
@@ -448,11 +460,11 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         assert(currentScope != nullptr);
 
         // Replace this type
-        if (spiceProc.isMethodProcedure()) {
+        /*if (spiceProc.isMethodProcedure()) {
           SymbolTableEntry *thisVar = currentScope->lookup(THIS_VARIABLE_NAME);
           assert(thisVar != nullptr);
           thisVar->updateType(spiceProc.getThisType(), true);
-        }
+        }*/
 
         // Get parameter types
         std::vector<std::pair<std::string, SymbolType>> params;
@@ -494,6 +506,9 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
           currentScope = currentScope->getParent();
 
         spiceProc.setAnalyzed();
+
+        // Increase the symbolTypeIndex
+        node->symbolTypeIndex++;
       }
     }
   }
@@ -748,7 +763,7 @@ std::any AnalyzerVisitor::visitThreadDef(ThreadDefNode *node) {
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  return SymbolType(TY_BYTE).toPointer(err.get(), node->codeLoc);
+  return node->setEvaluatedSymbolType(SymbolType(TY_BYTE).toPointer(err.get(), node->codeLoc));
 }
 
 std::any AnalyzerVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
@@ -792,7 +807,7 @@ std::any AnalyzerVisitor::visitForLoop(ForLoopNode *node) {
 
   // Return to old scope
   currentScope = currentScope->getParent();
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
@@ -844,7 +859,7 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
     itemVarSymbol->updateType(itemType, false);
 
     // Update symbolType of the declaration data type
-    node->itemDecl()->dataType()->symbolType = itemType;
+    node->itemDecl()->dataType()->setEvaluatedSymbolType(itemType);
   } else {
     if (itemType != arrayType.getContainedTy())
       throw err->get(node->itemDecl()->codeLoc, OPERATOR_WRONG_DATA_TYPE,
@@ -861,7 +876,7 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitWhileLoop(WhileLoopNode *node) {
@@ -881,7 +896,7 @@ std::any AnalyzerVisitor::visitWhileLoop(WhileLoopNode *node) {
   // Return to old scope
   currentScope = currentScope->getParent();
 
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitIfStmt(IfStmtNode *node) {
@@ -903,7 +918,7 @@ std::any AnalyzerVisitor::visitIfStmt(IfStmtNode *node) {
   if (node->elseStmt())
     visit(node->elseStmt());
 
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitElseStmt(ElseStmtNode *node) {
@@ -919,7 +934,7 @@ std::any AnalyzerVisitor::visitElseStmt(ElseStmtNode *node) {
     // Return to old scope
     currentScope = currentScope->getParent();
   }
-  return SymbolType(TY_BOOL);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitAssertStmt(AssertStmtNode *node) {
@@ -929,14 +944,15 @@ std::any AnalyzerVisitor::visitAssertStmt(AssertStmtNode *node) {
   if (!assertConditionType.is(TY_BOOL))
     throw err->get(node->assignExpr()->codeLoc, ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool");
 
-  return assertConditionType;
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitParamLst(ParamLstNode *node) {
   NamedParamList namedParamList;
   bool metOptional = false;
   for (const auto &param : node->params()) {
-    auto paramType = any_cast<SymbolType>(visit(param));
+    visit(param);
+    SymbolType paramType = param->dataType()->getEvaluatedSymbolType();
 
     // Check if the type could be inferred. Dyn without a default value is forbidden
     if (paramType.is(TY_DYN))
@@ -970,8 +986,8 @@ std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
     symbolType = opRuleManager->getAssignResultType(node->codeLoc, symbolType, rhsTy);
     initialState = INITIALIZED;
 
-    // Update symbolType of the declaration data type
-    node->dataType()->symbolType = symbolType;
+    // Push symbolType to the declaration data type
+    node->dataType()->setEvaluatedSymbolType(symbolType);
 
     // If the rhs is of type array and was the array initialization, there must be a size attached
     if (symbolType.isArray() && symbolType.getArraySize() == 0 && currentVarName.empty())
@@ -1054,7 +1070,7 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
   for (SymbolTableEntry *varEntry : varsToDestruct)
     insertDestructorCall(node->codeLoc, varEntry);
 
-  return returnType;
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitBreakStmt(BreakStmtNode *node) {
@@ -1068,7 +1084,7 @@ std::any AnalyzerVisitor::visitBreakStmt(BreakStmtNode *node) {
   if (node->breakTimes > nestedLoopCounter)
     throw err->get(node->codeLoc, INVALID_BREAK_NUMBER,
                    "We can only break " + std::to_string(nestedLoopCounter) + " time(s) here");
-  return SymbolType(TY_INT);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitContinueStmt(ContinueStmtNode *node) {
@@ -1082,7 +1098,7 @@ std::any AnalyzerVisitor::visitContinueStmt(ContinueStmtNode *node) {
   if (node->continueTimes > nestedLoopCounter)
     throw err->get(node->codeLoc, INVALID_CONTINUE_NUMBER,
                    "We can only continue " + std::to_string(nestedLoopCounter) + " time(s) here");
-  return SymbolType(TY_INT);
+  return nullptr;
 }
 
 std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
@@ -1155,7 +1171,7 @@ std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
     throw err->get(node->codeLoc, PRINTF_ARG_COUNT_ERROR,
                    "The placeholder string contains less placeholders that arguments were passed");
 
-  return SymbolType(TY_BOOL);
+  return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
 }
 
 std::any AnalyzerVisitor::visitSizeofCall(SizeofCallNode *node) {
@@ -1164,7 +1180,7 @@ std::any AnalyzerVisitor::visitSizeofCall(SizeofCallNode *node) {
   } else { // Size of value
     any_cast<SymbolType>(visit(node->assignExpr()));
   }
-  return SymbolType(TY_INT);
+  return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 
 std::any AnalyzerVisitor::visitLenCall(LenCallNode *node) {
@@ -1174,12 +1190,12 @@ std::any AnalyzerVisitor::visitLenCall(LenCallNode *node) {
   if (!argType.isArray())
     throw err->get(node->assignExpr()->codeLoc, EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays");
 
-  return SymbolType(TY_INT);
+  return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 
-std::any AnalyzerVisitor::visitTidCall(TidCallNode * /*node*/) {
+std::any AnalyzerVisitor::visitTidCall(TidCallNode *node) {
   // Nothing to check here. Tid builtin has no arguments
-  return SymbolType(TY_INT);
+  return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 
 std::any AnalyzerVisitor::visitJoinCall(JoinCallNode *node) {
@@ -1192,7 +1208,7 @@ std::any AnalyzerVisitor::visitJoinCall(JoinCallNode *node) {
   }
 
   // Return the number of threads that were joined
-  return SymbolType(TY_INT);
+  return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 
 std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
@@ -1259,7 +1275,7 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
             .print();
     }
 
-    return rhsTy;
+    return node->setEvaluatedSymbolType(rhsTy);
   } else if (node->ternaryExpr()) {
     return visit(node->ternaryExpr());
   } else if (node->threadDef()) {
@@ -1283,7 +1299,7 @@ std::any AnalyzerVisitor::visitTernaryExpr(TernaryExprNode *node) {
     // Check if trueType and falseType are matching
     if (trueType != falseType)
       throw err->get(node->codeLoc, OPERATOR_WRONG_DATA_TYPE, "True and false operands in ternary must be of same data type");
-    return trueType;
+    return node->setEvaluatedSymbolType(trueType);
   }
   return visit(node->operands().front());
 }
@@ -1296,7 +1312,7 @@ std::any AnalyzerVisitor::visitLogicalOrExpr(LogicalOrExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getLogicalOrResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->setEvaluatedSymbolType(lhsTy);
   }
   return visit(node->operands().front());
 }
@@ -1309,7 +1325,7 @@ std::any AnalyzerVisitor::visitLogicalAndExpr(LogicalAndExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getLogicalAndResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->setEvaluatedSymbolType(lhsTy);
   }
   return visit(node->operands().front());
 }
@@ -1322,7 +1338,7 @@ std::any AnalyzerVisitor::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getBitwiseOrResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->setEvaluatedSymbolType(lhsTy);
   }
   return visit(node->operands().front());
 }
@@ -1335,7 +1351,7 @@ std::any AnalyzerVisitor::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getBitwiseXorResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->setEvaluatedSymbolType(lhsTy);
   }
   return visit(node->operands().front());
 }
@@ -1348,7 +1364,7 @@ std::any AnalyzerVisitor::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
       auto rhsTy = any_cast<SymbolType>(visit(node->operands()[i]));
       lhsTy = opRuleManager->getBitwiseAndResultType(node->codeLoc, lhsTy, rhsTy);
     }
-    return lhsTy;
+    return node->setEvaluatedSymbolType(lhsTy);
   }
   return visit(node->operands().front());
 }
@@ -1360,9 +1376,9 @@ std::any AnalyzerVisitor::visitEqualityExpr(EqualityExprNode *node) {
     auto rhsTy = any_cast<SymbolType>(visit(node->operands()[1]));
 
     if (node->op == EqualityExprNode::OP_EQUAL) // Operator was equal
-      return opRuleManager->getEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->setEvaluatedSymbolType(opRuleManager->getEqualResultType(node->codeLoc, lhsTy, rhsTy));
     else if (node->op == EqualityExprNode::OP_NOT_EQUAL) // Operator was not equal
-      return opRuleManager->getNotEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->setEvaluatedSymbolType(opRuleManager->getNotEqualResultType(node->codeLoc, lhsTy, rhsTy));
   }
   return visit(node->operands().front());
 }
@@ -1374,13 +1390,13 @@ std::any AnalyzerVisitor::visitRelationalExpr(RelationalExprNode *node) {
     auto rhsTy = any_cast<SymbolType>(visit(node->operands()[1]));
 
     if (node->op == RelationalExprNode::OP_LESS) // Operator was less
-      return opRuleManager->getLessResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->setEvaluatedSymbolType(opRuleManager->getLessResultType(node->codeLoc, lhsTy, rhsTy));
     else if (node->op == RelationalExprNode::OP_GREATER) // Operator was greater
-      return opRuleManager->getGreaterResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->setEvaluatedSymbolType(opRuleManager->getGreaterResultType(node->codeLoc, lhsTy, rhsTy));
     else if (node->op == RelationalExprNode::OP_LESS_EQUAL) // Operator was less equal
-      return opRuleManager->getLessEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->setEvaluatedSymbolType(opRuleManager->getLessEqualResultType(node->codeLoc, lhsTy, rhsTy));
     else if (node->op == RelationalExprNode::OP_GREATER_EQUAL) // Operator was greater equal
-      return opRuleManager->getGreaterEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->setEvaluatedSymbolType(opRuleManager->getGreaterEqualResultType(node->codeLoc, lhsTy, rhsTy));
   }
   return visit(node->operands().front());
 }
@@ -1392,9 +1408,9 @@ std::any AnalyzerVisitor::visitShiftExpr(ShiftExprNode *node) {
     auto rhsTy = any_cast<SymbolType>(visit(node->operands()[1]));
 
     if (node->op == ShiftExprNode::OP_SHIFT_LEFT) // Operator was shl
-      return opRuleManager->getShiftLeftResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->setEvaluatedSymbolType(opRuleManager->getShiftLeftResultType(node->codeLoc, lhsTy, rhsTy));
     else if (node->op == ShiftExprNode::OP_SHIFT_RIGHT) // Operator was shr
-      return opRuleManager->getShiftRightResultType(node->codeLoc, lhsTy, rhsTy);
+      return node->setEvaluatedSymbolType(opRuleManager->getShiftRightResultType(node->codeLoc, lhsTy, rhsTy));
   }
   return visit(node->operands().front());
 }
@@ -1404,14 +1420,15 @@ std::any AnalyzerVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
   if (node->operands().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(node->operands()[0]));
 
-    std::queue<AdditiveExprNode::AdditiveOp> opQueue = node->opQueue;
+    auto opQueue = node->opQueue;
+    std::queue<std::pair<AdditiveExprNode::AdditiveOp, SymbolType>> newOpQueue;
     size_t operandIndex = 1;
     while (!opQueue.empty()) {
       MultiplicativeExprNode *operand = node->operands()[operandIndex++];
       assert(operand != nullptr);
       auto operandType = any_cast<SymbolType>(visit(operand));
 
-      switch (opQueue.front()) {
+      switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
         currentType = opRuleManager->getPlusResultType(operand->codeLoc, currentType, operandType);
         break;
@@ -1422,10 +1439,12 @@ std::any AnalyzerVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
         throw std::runtime_error("Additive expr fall-through");
       }
 
+      newOpQueue.emplace(opQueue.front().first, currentType);
       opQueue.pop();
     }
+    node->opQueue = newOpQueue;
 
-    return currentType;
+    return node->setEvaluatedSymbolType(currentType);
   }
   return visit(node->operands().front());
 }
@@ -1435,14 +1454,15 @@ std::any AnalyzerVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) 
   if (node->operands().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(node->operands()[0]));
 
-    std::queue<MultiplicativeExprNode::MultiplicativeOp> opQueue = node->opQueue;
+    auto opQueue = node->opQueue;
+    std::queue<std::pair<MultiplicativeExprNode::MultiplicativeOp, SymbolType>> newOpQueue;
     size_t operandIndex = 1;
     while (!opQueue.empty()) {
       CastExprNode *operand = node->operands()[operandIndex++];
       assert(operand != nullptr);
       auto operandType = any_cast<SymbolType>(visit(operand));
 
-      switch (opQueue.front()) {
+      switch (opQueue.front().first) {
       case MultiplicativeExprNode::OP_MUL:
         currentType = opRuleManager->getMulResultType(operand->codeLoc, currentType, operandType);
         break;
@@ -1456,10 +1476,12 @@ std::any AnalyzerVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) 
         throw std::runtime_error("Multiplicative expr fall-through");
       }
 
+      newOpQueue.emplace(opQueue.front().first, currentType);
       opQueue.pop();
     }
+    node->opQueue = newOpQueue;
 
-    return currentType;
+    return node->setEvaluatedSymbolType(currentType);
   }
   return visit(node->operands().front());
 }
@@ -1468,8 +1490,10 @@ std::any AnalyzerVisitor::visitCastExpr(CastExprNode *node) {
   std::any rhs = visit(node->prefixUnaryExpr());
 
   if (node->isCasted) { // Cast is applied
+    auto srcType = any_cast<SymbolType>(rhs);
     auto dstType = any_cast<SymbolType>(visit(node->dataType()));
-    return opRuleManager->getCastResultType(node->codeLoc, dstType, any_cast<SymbolType>(rhs));
+    SymbolType symbolType = opRuleManager->getCastResultType(node->codeLoc, dstType, any_cast<SymbolType>(rhs));
+    return node->setEvaluatedSymbolType(symbolType);
   }
 
   return rhs;
@@ -1482,9 +1506,10 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
   auto rhs = any_cast<SymbolType>(visit(node->postfixUnaryExpr()));
 
-  std::stack<PrefixUnaryExprNode::PrefixUnaryOp> opStack = node->opStack; // Copy to not modify the stack in the AST node
+  auto opStack = node->opStack;
+  std::stack<std::pair<PrefixUnaryExprNode::PrefixUnaryOp, SymbolType>> newOpStack;
   while (!opStack.empty()) {
-    switch (opStack.top()) {
+    switch (opStack.top().first) {
     case PrefixUnaryExprNode::OP_MINUS:
       rhs = opRuleManager->getPrefixMinusResultType(node->postfixUnaryExpr()->codeLoc, rhs);
       break;
@@ -1525,10 +1550,13 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     default:
       throw std::runtime_error("Prefix unary fall-through");
     }
+
+    newOpStack.emplace(opStack.top().first, rhs);
     opStack.pop();
   }
+  node->opStack = newOpStack;
 
-  return rhs;
+  return node->setEvaluatedSymbolType(rhs);
 }
 
 std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
@@ -1537,9 +1565,10 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   size_t subscriptCounter = 0;
   size_t memberAccessCounter = 0;
 
-  std::queue<PostfixUnaryExprNode::PostfixUnaryOp> opQueue = node->opQueue; // Copy to not modify the queue in the AST node
+  auto opQueue = node->opQueue;
+  std::queue<std::pair<PostfixUnaryExprNode::PostfixUnaryOp, SymbolType>> newOpQueue;
   while (!opQueue.empty()) {
-    switch (opQueue.front()) {
+    switch (opQueue.front().first) {
     case PostfixUnaryExprNode::OP_SUBSCRIPT: {
       std::string arrayName = currentVarName;              // Save array name
       SymbolTableEntry *currentEntryBackup = currentEntry; // Save current entry
@@ -1612,14 +1641,17 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     default:
       throw std::runtime_error("PostfixUnary fall-through");
     }
+
+    newOpQueue.emplace(opQueue.front().first, lhs);
     opQueue.pop();
   }
+  node->opQueue = newOpQueue;
 
   if (lhs.is(TY_INVALID))
     throw err->get(node->codeLoc, REFERENCED_UNDEFINED_VARIABLE,
                    "Variable '" + currentVarName + "' was referenced before declared");
 
-  return lhs;
+  return node->setEvaluatedSymbolType(lhs);
 }
 
 std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
@@ -1687,8 +1719,9 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
         SymbolTableEntry *parentStruct = currentScope->lookup(scopePath.getLastScopeName());
         assert(parentStruct != nullptr);
         std::string scopePrefix = CommonUtil::getPrefix(parentStruct->getType().getSubType(), ".");
-        return initExtStruct(accessScope, scopePrefix, entry->getType().getBaseType().getSubType(),
-                             currentThisType.getTemplateTypes(), node->codeLoc);
+        SymbolType symbolType = initExtStruct(accessScope, scopePrefix, entry->getType().getBaseType().getSubType(),
+                                              currentThisType.getTemplateTypes(), node->codeLoc);
+        return node->setEvaluatedSymbolType(symbolType);
       }
     } else {
       // Check if we have seen a 'this.' prefix, because the generator needs that
@@ -1701,7 +1734,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
     // Otherwise, push the retrieved scope to the scope path
     scopePath.pushFragment(currentVarName, accessScope);
 
-    return entry->getType();
+    return node->setEvaluatedSymbolType(entry->getType());
   }
 
   if (node->printfCall())
@@ -1744,7 +1777,7 @@ std::any AnalyzerVisitor::visitValue(ValueNode *node) {
     auto nilType = any_cast<SymbolType>(visit(node->nilType()));
     if (nilType.is(TY_DYN))
       throw err->get(node->nilType()->codeLoc, UNEXPECTED_DYN_TYPE_SA, "Nil must have an explicit type");
-    return nilType;
+    return node->setEvaluatedSymbolType(nilType);
   }
 
   throw std::runtime_error("Value fall-through");
@@ -1753,21 +1786,21 @@ std::any AnalyzerVisitor::visitValue(ValueNode *node) {
 std::any AnalyzerVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   switch (node->type) {
   case PrimitiveValueNode::TY_DOUBLE:
-    return SymbolType(TY_DOUBLE);
+    return node->setEvaluatedSymbolType(SymbolType(TY_DOUBLE));
   case PrimitiveValueNode::TY_INT:
-    return SymbolType(TY_INT);
+    return node->setEvaluatedSymbolType(SymbolType(TY_INT));
   case PrimitiveValueNode::TY_SHORT:
-    return SymbolType(TY_SHORT);
+    return node->setEvaluatedSymbolType(SymbolType(TY_SHORT));
   case PrimitiveValueNode::TY_LONG:
-    return SymbolType(TY_LONG);
+    return node->setEvaluatedSymbolType(SymbolType(TY_LONG));
   case PrimitiveValueNode::TY_BYTE:
-    return SymbolType(TY_BYTE);
+    return node->setEvaluatedSymbolType(SymbolType(TY_BYTE));
   case PrimitiveValueNode::TY_CHAR:
-    return SymbolType(TY_CHAR);
+    return node->setEvaluatedSymbolType(SymbolType(TY_CHAR));
   case PrimitiveValueNode::TY_STRING:
-    return SymbolType(TY_STRING);
+    return node->setEvaluatedSymbolType(SymbolType(TY_STRING));
   case PrimitiveValueNode::TY_BOOL:
-    return SymbolType(TY_BOOL);
+    return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
   }
   throw std::runtime_error("Primitive value fall-through");
 }
@@ -1851,7 +1884,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
 
     ArgList errArgTypes;
-    for (auto &argType : argTypes)
+    for (const auto &argType : argTypes)
       errArgTypes.emplace_back(argType, false);
 
     Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, node->codeLoc);
@@ -1878,21 +1911,23 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // Return struct type on constructor call
   if (constructorCall)
-    return thisType;
+    return node->setEvaluatedSymbolType(thisType);
 
   // If the callee is a procedure, return type bool
   if (spiceFunc->isProcedure() || spiceFunc->getReturnType().is(TY_DYN))
-    return SymbolType(TY_BOOL);
+    return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
 
   // Retrieve the return type of the function
   SymbolType returnType = spiceFunc->getReturnType();
 
   // If the return type is an external struct, initialize it
-  if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope))
-    return initExtStruct(scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true), returnType.getSubType(),
-                         thisType.getTemplateTypes(), node->codeLoc);
+  if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
+    SymbolType symbolType = initExtStruct(scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true),
+                                          returnType.getSubType(), thisType.getTemplateTypes(), node->codeLoc);
+    return node->setEvaluatedSymbolType(symbolType);
+  }
 
-  return returnType;
+  return node->setEvaluatedSymbolType(returnType);
 }
 
 std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node) {
@@ -1900,7 +1935,7 @@ std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node
   int actualSize = 0;
   SymbolType actualItemType = SymbolType(TY_DYN);
   if (node->itemLst()) {
-    for (auto &arg : node->itemLst()->args()) {
+    for (const auto &arg : node->itemLst()->args()) {
       auto itemType = any_cast<SymbolType>(visit(arg));
       if (actualItemType.is(TY_DYN)) {
         actualItemType = itemType;
@@ -1925,7 +1960,7 @@ std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node
     actualItemType = expectedType.getContainedTy();
   }
 
-  return actualItemType.toArray(err.get(), node->codeLoc, actualSize);
+  return node->setEvaluatedSymbolType(actualItemType.toArray(err.get(), node->codeLoc, actualSize));
 }
 
 std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node) {
@@ -1983,7 +2018,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
   // Set template types to the struct
   std::vector<GenericType> genericTemplateTypes = spiceStruct->getTemplateTypes();
   std::vector<SymbolType> templateTypes;
-  for (auto &genericType : genericTemplateTypes)
+  for (const auto &genericType : genericTemplateTypes)
     templateTypes.emplace_back(genericType.getTypeChain());
   structType.setTemplateTypes(templateTypes);
 
@@ -2015,7 +2050,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
     }
   }
 
-  return structType;
+  return node->setEvaluatedSymbolType(structType);
 }
 
 std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
@@ -2037,7 +2072,7 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
           if (typeModifier.hardcodedSize <= 1)
             throw err->get(node->codeLoc, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated");
         } else {
-          auto sizeType = std::any_cast<SymbolType>(visit(arraySizeExpr[assignExprCounter++]));
+          auto sizeType = any_cast<SymbolType>(visit(arraySizeExpr[assignExprCounter++]));
           if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))
             throw err->get(node->codeLoc, ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
         }
@@ -2051,31 +2086,31 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
     tmQueue.pop();
   }
 
-  return node->symbolType = type;
+  return node->setEvaluatedSymbolType(type);
 }
 
 std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {
   switch (node->type) {
   case BaseDataTypeNode::TY_DOUBLE:
-    return SymbolType(TY_DOUBLE);
+    return node->setEvaluatedSymbolType(SymbolType(TY_DOUBLE));
   case BaseDataTypeNode::TY_INT:
-    return SymbolType(TY_INT);
+    return node->setEvaluatedSymbolType(SymbolType(TY_INT));
   case BaseDataTypeNode::TY_SHORT:
-    return SymbolType(TY_SHORT);
+    return node->setEvaluatedSymbolType(SymbolType(TY_SHORT));
   case BaseDataTypeNode::TY_LONG:
-    return SymbolType(TY_LONG);
+    return node->setEvaluatedSymbolType(SymbolType(TY_LONG));
   case BaseDataTypeNode::TY_BYTE:
-    return SymbolType(TY_BYTE);
+    return node->setEvaluatedSymbolType(SymbolType(TY_BYTE));
   case BaseDataTypeNode::TY_CHAR:
-    return SymbolType(TY_CHAR);
+    return node->setEvaluatedSymbolType(SymbolType(TY_CHAR));
   case BaseDataTypeNode::TY_STRING:
-    return SymbolType(TY_STRING);
+    return node->setEvaluatedSymbolType(SymbolType(TY_STRING));
   case BaseDataTypeNode::TY_BOOL:
-    return SymbolType(TY_BOOL);
+    return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
   case BaseDataTypeNode::TY_CUSTOM:
-    return std::any_cast<SymbolType>(visit(node->customDataType()));
+    return node->setEvaluatedSymbolType(any_cast<SymbolType>(visit(node->customDataType())));
   default:
-    return SymbolType(TY_DYN);
+    return node->setEvaluatedSymbolType(SymbolType(TY_DYN));
   }
 }
 
@@ -2083,8 +2118,10 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   // Check if it is a generic type
   std::string firstFragment = node->typeNameFragments.front();
   SymbolTableEntry *entry = currentScope->lookup(firstFragment);
-  if (node->typeNameFragments.size() == 1 && !entry && currentScope->lookupGenericType(firstFragment))
-    return *static_cast<SymbolType *>(currentScope->lookupGenericType(firstFragment));
+  if (node->typeNameFragments.size() == 1 && !entry && currentScope->lookupGenericType(firstFragment)) {
+    SymbolType symbolType = *static_cast<SymbolType *>(currentScope->lookupGenericType(firstFragment));
+    return node->setEvaluatedSymbolType(symbolType);
+  }
 
   // It is a struct type -> get the access scope
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
@@ -2122,8 +2159,10 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   if (spiceStruct)
     spiceStruct->setUsed();
 
-  if (structIsImported) // Imported struct
-    return initExtStruct(accessScope, accessScopePrefix, structName, concreteTemplateTypes, node->codeLoc);
+  if (structIsImported) { // Imported struct
+    SymbolType symbolType = initExtStruct(accessScope, accessScopePrefix, structName, concreteTemplateTypes, node->codeLoc);
+    return node->setEvaluatedSymbolType(symbolType);
+  }
 
   // Check if struct was declared
   SymbolTableEntry *structSymbol = accessScope->lookup(structName);
@@ -2131,7 +2170,7 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
     throw err->get(node->codeLoc, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
   structSymbol->setUsed();
 
-  return SymbolType(TY_STRUCT, structName, concreteTemplateTypes);
+  return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, structName, concreteTemplateTypes));
 }
 
 void AnalyzerVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
@@ -2173,7 +2212,7 @@ SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, const std::s
   SymbolTable *externalStructTable = sourceScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
 
   // Initialize potential structs for field types
-  for (auto &[_, entry] : externalStructTable->getSymbols()) {
+  for (const auto &[_, entry] : externalStructTable->getSymbols()) {
     if (entry.getType().isBaseType(TY_STRUCT)) {
       std::string nestedStructName = CommonUtil::getLastFragment(entry.getType().getBaseType().getSubType(), ".");
       std::string nestedStructPrefix = CommonUtil::getPrefix(entry.getType().getBaseType().getSubType(), ".");

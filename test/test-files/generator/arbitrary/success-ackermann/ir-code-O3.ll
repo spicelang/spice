@@ -7,43 +7,43 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: nofree nosync nounwind readnone
 define internal fastcc i32 @_f__void__ack__int_int(i32 %0, i32 %1) unnamed_addr #0 {
-entry:
+entry.l1:
   %2 = icmp eq i32 %0, 0
-  br i1 %2, label %if.then, label %if.end
+  br i1 %2, label %if.then.l2, label %if.end.l2
 
-if.then:                                          ; preds = %tailrecurse.backedge, %entry
-  %.tr17.lcssa = phi i32 [ %1, %entry ], [ %.tr17.be, %tailrecurse.backedge ]
-  %3 = add i32 %.tr17.lcssa, 1
+if.then.l2:                                       ; preds = %tailrecurse.backedge, %entry.l1
+  %.tr15.lcssa = phi i32 [ %1, %entry.l1 ], [ %.tr15.be, %tailrecurse.backedge ]
+  %3 = add i32 %.tr15.lcssa, 1
   ret i32 %3
 
-if.end:                                           ; preds = %entry, %tailrecurse.backedge
-  %.tr1719 = phi i32 [ %.tr17.be, %tailrecurse.backedge ], [ %1, %entry ]
-  %.tr18 = phi i32 [ %.tr.be, %tailrecurse.backedge ], [ %0, %entry ]
-  %4 = icmp eq i32 %.tr1719, 0
-  br i1 %4, label %tailrecurse.backedge, label %if.end2
+if.end.l2:                                        ; preds = %entry.l1, %tailrecurse.backedge
+  %.tr1517 = phi i32 [ %.tr15.be, %tailrecurse.backedge ], [ %1, %entry.l1 ]
+  %.tr16 = phi i32 [ %.tr.be, %tailrecurse.backedge ], [ %0, %entry.l1 ]
+  %4 = icmp eq i32 %.tr1517, 0
+  br i1 %4, label %tailrecurse.backedge, label %if.end.l3
 
-tailrecurse.backedge:                             ; preds = %if.end, %if.end2
-  %.tr17.be = phi i32 [ %7, %if.end2 ], [ 1, %if.end ]
-  %.tr.be = add i32 %.tr18, -1
+tailrecurse.backedge:                             ; preds = %if.end.l2, %if.end.l3
+  %.tr15.be = phi i32 [ %7, %if.end.l3 ], [ 1, %if.end.l2 ]
+  %.tr.be = add i32 %.tr16, -1
   %5 = icmp eq i32 %.tr.be, 0
-  br i1 %5, label %if.then, label %if.end
+  br i1 %5, label %if.then.l2, label %if.end.l2
 
-if.end2:                                          ; preds = %if.end
-  %6 = add i32 %.tr1719, -1
-  %7 = tail call fastcc i32 @_f__void__ack__int_int(i32 %.tr18, i32 %6)
+if.end.l3:                                        ; preds = %if.end.l2
+  %6 = add i32 %.tr1517, -1
+  %7 = tail call fastcc i32 @_f__void__ack__int_int(i32 %.tr16, i32 %6)
   br label %tailrecurse.backedge
 }
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #1 {
-entry:
+entry.l7:
   %0 = tail call fastcc i32 @_f__void__ack__int_int(i32 3, i32 12)
-  %1 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([36 x i8], [36 x i8]* @0, i64 0, i64 0), i32 3, i32 12, i32 %0)
+  %1 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 3, i32 12, i32 %0)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #1
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 attributes #0 = { nofree nosync nounwind readnone }
 attributes #1 = { nofree nounwind }

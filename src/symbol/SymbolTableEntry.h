@@ -39,13 +39,13 @@ public:
   [[nodiscard]] SymbolState getState() const;
   void updateState(SymbolState newState, const ErrorFactory *errorFactory, const CodeLoc &codeLoc, bool force = false);
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
-  [[nodiscard]] llvm::Type *getLLVMType() const;
-  void updateLLVMType(llvm::Type *newType);
+  [[nodiscard]] llvm::Type *getStructLLVMType() const;
+  void setStructLLVMType(llvm::Type *newStructType);
   [[nodiscard]] virtual llvm::Value *getAddress() const;
   void updateAddress(llvm::Value *address);
   void pushAddress(llvm::Value *address);
   void popAddress();
-  [[nodiscard]] unsigned int getOrderIndex() const;
+  [[nodiscard]] size_t getOrderIndex() const;
   [[nodiscard]] bool isGlobal() const;
   [[nodiscard]] bool isVolatile() const;
   void setVolatile(bool volatility = true);
@@ -66,7 +66,7 @@ private:
   // size_t refCount = 0;
   const CodeLoc &declCodeLoc;
   std::stack<llvm::Value *> memAddress;
-  unsigned int orderIndex;
+  size_t orderIndex;
   const bool global;
   bool volatility = false;
   bool used = false;

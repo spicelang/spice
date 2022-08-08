@@ -23,4 +23,5 @@ public:
   // Public methods
   [[nodiscard]] std::string toString() const;
   [[nodiscard]] std::string toPrettyString() const;
+  [[nodiscard]] std::string toPrettyLine() const;
 };

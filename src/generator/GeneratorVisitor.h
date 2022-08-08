@@ -130,6 +130,7 @@ private:
   std::string lhsVarName;
   llvm::Type *lhsType = nullptr;
   llvm::Value *structAccessAddress = nullptr;
+  llvm::Type *structAccessType = nullptr;
   llvm::Value *dynamicArraySize = nullptr;
   llvm::Value *stackState = nullptr;
   bool secondRun = false;
@@ -153,7 +154,7 @@ private:
   } debugInfo;
 
   // Private methods
-  llvm::Value *resolveValue(AstNode *node);
+  llvm::Value *resolveValue(AstNode *node, SymbolTable *accessScope = nullptr);
   llvm::Value *resolveAddress(AstNode *node, bool storeVolatile = false);
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);
@@ -166,16 +167,15 @@ private:
   llvm::Function *retrieveExitFct();
   llvm::Function *retrieveStackSaveFct();
   llvm::Function *retrieveStackRestoreFct();
-  llvm::Constant *getDefaultValueForType(llvm::Type *type, const std::string &subTypeName);
+  llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
-  bool compareLLVMTypes(llvm::Type *lhs, llvm::Type *rhs);
-  llvm::Value *doImplicitCast(llvm::Value *lhs, llvm::Type *rhs);
+  llvm::Value *doImplicitCast(llvm::Value *src, llvm::Type *dstTy, SymbolType srcType);
   void initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir);
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
   void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address);
   void generateAssignDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *value);
   void emitSourceLocation(AstNode *ctx);
-  [[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
+  //[[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

@@ -86,5 +86,5 @@ private:
   std::string fileName;
 
   // Private methods
-  void replaceEscapeChars(std::string &string) const;
+  static void replaceEscapeChars(std::string &string);
 };

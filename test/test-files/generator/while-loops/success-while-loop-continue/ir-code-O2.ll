@@ -7,32 +7,32 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
-entry:
-  br label %while
+entry.l1:
+  br label %while.l3
 
-while:                                            ; preds = %entry, %while.cond.backedge
-  %loopCounterOuter.016 = phi double [ 0.000000e+00, %entry ], [ %0, %while.cond.backedge ]
-  %0 = fadd double %loopCounterOuter.016, 1.500000e-01
+while.l3:                                         ; preds = %entry.l1, %while.cond.l3.backedge
+  %loopCounterOuter.011 = phi double [ 0.000000e+00, %entry.l1 ], [ %0, %while.cond.l3.backedge ]
+  %0 = fadd double %loopCounterOuter.011, 1.500000e-01
   %1 = fcmp olt double %0, 4.000000e+00
-  br i1 %1, label %while.cond.backedge.loopexit, label %while.cond.backedge
+  br i1 %1, label %while.cond.l3.backedge.loopexit, label %while.cond.l3.backedge
 
-while.cond.backedge.loopexit:                     ; preds = %while
-  %2 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 10)
-  %3 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 9)
-  %4 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 8)
-  %5 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 7)
-  %6 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @0, i64 0, i64 0), double %0, i32 6)
-  br label %while.cond.backedge
+while.cond.l3.backedge.loopexit:                  ; preds = %while.l3
+  %2 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 10)
+  %3 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 9)
+  %4 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 8)
+  %5 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 7)
+  %6 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, double %0, i32 6)
+  br label %while.cond.l3.backedge
 
-while.cond.backedge:                              ; preds = %while.cond.backedge.loopexit, %while
+while.cond.l3.backedge:                           ; preds = %while.cond.l3.backedge.loopexit, %while.l3
   %7 = fcmp olt double %0, 1.000000e+01
-  br i1 %7, label %while, label %while.end5
+  br i1 %7, label %while.l3, label %while.end.l3
 
-while.end5:                                       ; preds = %while.cond.backedge
+while.end.l3:                                     ; preds = %while.cond.l3.backedge
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }

@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "SymbolType.h"
+#include "analyzer/AnalyzerVisitor.h"
 
 #include <stdexcept>
 #include <tuple>
@@ -103,6 +104,8 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
 /**
  * Return the LLVM type for this symbol type
  *
+ * @param context LLVM context
+ * @param accessScope Access scope for structs
  * @return Corresponding LLVM type
  */
 llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const {
@@ -133,7 +136,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
     std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
     SymbolTableEntry *structSymbol = accessScope->lookup(structSignature);
     assert(structSymbol);
-    llvm::Type *structType = structSymbol->getLLVMType();
+    llvm::Type *structType = structSymbol->getStructLLVMType();
     assert(structType);
     return structType;
   }
@@ -148,7 +151,6 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
     return static_cast<llvm::Type *>(arrayType);
   }
 
-  assert(!is(TY_GENERIC));
   throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + getName(true));
 }
 

@@ -11,60 +11,56 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @usleep(i32) local_unnamed_addr
 
 define i32 @main() local_unnamed_addr {
-entry:
+entry.l3:
   %capturedVariable = alloca i32, align 4
   %i = alloca i32, align 4
-  %0 = alloca { i32*, i32* }, align 8
-  %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([21 x i8], [21 x i8]* @str, i64 0, i64 0))
-  store i32 0, i32* %capturedVariable, align 4
-  store i32 1, i32* %i, align 4
-  %1 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i64 0, i32 0
-  %2 = getelementptr inbounds { i32*, i32* }, { i32*, i32* }* %0, i64 0, i32 1
-  %3 = bitcast { i32*, i32* }* %0 to i8*
-  br label %for
+  %0 = alloca { ptr, ptr }, align 8
+  %puts = tail call i32 @puts(ptr nonnull @str)
+  store i32 0, ptr %capturedVariable, align 4
+  store i32 1, ptr %i, align 4
+  %1 = getelementptr inbounds { ptr, ptr }, ptr %0, i64 0, i32 1
+  br label %for.l6
 
-for:                                              ; preds = %entry, %for
-  %storemerge2 = phi i32 [ 1, %entry ], [ %8, %for ]
-  %4 = call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([24 x i8], [24 x i8]* @0, i64 0, i64 0), i32 %storemerge2)
-  store i32* %capturedVariable, i32** %1, align 8
-  store i32* %i, i32** %2, align 8
-  %5 = alloca i8*, align 8
-  %6 = call i32 @pthread_create(i8** nonnull %5, i8* null, i8* (i8*)* nonnull @_thread0, i8* nonnull %3)
-  %7 = load i32, i32* %i, align 4
-  %8 = add i32 %7, 1
-  store i32 %8, i32* %i, align 4
-  %9 = icmp slt i32 %8, 9
-  br i1 %9, label %for, label %for.end
+for.l6:                                           ; preds = %entry.l3, %for.l6
+  %storemerge2 = phi i32 [ 1, %entry.l3 ], [ %6, %for.l6 ]
+  %2 = call i32 (ptr, ...) @printf(ptr nonnull @0, i32 %storemerge2)
+  store ptr %capturedVariable, ptr %0, align 8
+  store ptr %i, ptr %1, align 8
+  %3 = alloca ptr, align 8
+  %4 = call i32 @pthread_create(ptr nonnull %3, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %5 = load i32, ptr %i, align 4
+  %6 = add i32 %5, 1
+  store i32 %6, ptr %i, align 4
+  %7 = icmp slt i32 %6, 9
+  br i1 %7, label %for.l6, label %for.end.l6
 
-for.end:                                          ; preds = %for
-  %10 = call i32 @usleep(i32 1000000)
-  %puts1 = call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([20 x i8], [20 x i8]* @str.1, i64 0, i64 0))
+for.end.l6:                                       ; preds = %for.l6
+  %8 = call i32 @usleep(i32 1000000)
+  %puts1 = call i32 @puts(ptr nonnull @str.1)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
-define internal noalias i8* @_thread0(i8* nocapture readonly %0) {
-entry:
-  %1 = bitcast i8* %0 to i32**
-  %2 = load i32*, i32** %1, align 8
-  %3 = getelementptr inbounds i8, i8* %0, i64 8
-  %4 = bitcast i8* %3 to i32**
-  %5 = load i32*, i32** %4, align 8
-  %6 = load i32, i32* %5, align 4
-  %7 = mul i32 %6, 100000
-  %8 = tail call i32 @usleep(i32 %7)
-  %9 = load i32, i32* %2, align 4
-  %10 = shl i32 %9, 1
-  store volatile i32 %10, i32* %2, align 4
-  %puts = tail call i32 @puts(i8* nonnull dereferenceable(1) getelementptr inbounds ([22 x i8], [22 x i8]* @str.2, i64 0, i64 0))
-  ret i8* null
+define internal noalias ptr @_thread0(ptr nocapture readonly %0) {
+thread.entry.l8:
+  %1 = load ptr, ptr %0, align 8
+  %2 = getelementptr inbounds { ptr, ptr }, ptr %0, i64 0, i32 1
+  %3 = load ptr, ptr %2, align 8
+  %4 = load i32, ptr %3, align 4
+  %5 = mul i32 %4, 100000
+  %6 = tail call i32 @usleep(i32 %5)
+  %7 = load i32, ptr %1, align 4
+  %8 = shl i32 %7, 1
+  store volatile i32 %8, ptr %1, align 4
+  %puts = tail call i32 @puts(ptr nonnull @str.2)
+  ret ptr null
 }
 
-declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*) local_unnamed_addr
+declare i32 @pthread_create(ptr, ptr, ptr, ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @puts(i8* nocapture noundef readonly) local_unnamed_addr #0
+declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }

@@ -21,7 +21,7 @@ public:
 
   // Destructors
   virtual ~AstNode() {
-    for (auto child : children)
+    for (const auto child : children)
       delete child;
   }
 
@@ -39,7 +39,7 @@ public:
   template <typename T> [[nodiscard]] T *getChild(size_t i = 0) const {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
     size_t j = 0;
-    for (auto &child : children) {
+    for (const auto &child : children) {
       if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr) {
         if (j++ == i)
           return typedChild;
@@ -51,17 +51,53 @@ public:
   template <typename T> [[nodiscard]] std::vector<T *> getChildren() const {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
     std::vector<T *> nodes;
-    for (auto &child : children) {
+    for (const auto &child : children) {
       if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr)
         nodes.push_back(typedChild);
     }
     return nodes;
   }
 
+  [[nodiscard]] size_t getSymbolTypeIndex() const {
+    if (symbolTypeIndex == SIZE_MAX) {
+      if (parent != nullptr)
+        return parent->getSymbolTypeIndex();
+      return 0;
+    }
+    return symbolTypeIndex;
+  }
+
+  SymbolType setEvaluatedSymbolType(const SymbolType &symbolType) {
+    size_t index = getSymbolTypeIndex();
+    // if (symbolTypes.capacity() <= index)
+    //   symbolTypes.reserve(index + 1);
+    symbolTypes.insert(symbolTypes.begin() + index, symbolType);
+    return symbolType;
+  }
+
+  SymbolType getEvaluatedSymbolType() {
+    size_t symbolTypeIndex = getSymbolTypeIndex();
+    if (!symbolTypes.empty() && !symbolTypes[symbolTypeIndex].is(TY_INVALID))
+      return symbolTypes.at(symbolTypeIndex);
+    if (children.size() != 1)
+      throw std::runtime_error("Cannot deduce evaluated symbol type");
+    return children.front()->getEvaluatedSymbolType();
+  }
+
+  void reset() {
+    // Reset all children
+    for (const auto &child : children)
+      child->reset();
+    // Reset the symbolTypeIndex counter
+    symbolTypeIndex = SIZE_MAX;
+  }
+
   // Public members
   AstNode *parent;
   std::vector<AstNode *> children;
   const CodeLoc codeLoc;
+  size_t symbolTypeIndex = SIZE_MAX;
+  std::vector<SymbolType> symbolTypes;
 };
 
 // ========================================================== EntryNode ==========================================================
@@ -882,7 +918,7 @@ public:
   [[nodiscard]] std::vector<MultiplicativeExprNode *> operands() const { return getChildren<MultiplicativeExprNode>(); }
 
   // Public members
-  std::queue<AdditiveOp> opQueue;
+  std::queue<std::pair<AdditiveOp, SymbolType>> opQueue;
 };
 
 // ================================================== MultiplicativeExprNode =====================================================
@@ -906,7 +942,7 @@ public:
   [[nodiscard]] std::vector<CastExprNode *> operands() const { return getChildren<CastExprNode>(); }
 
   // Public members
-  std::queue<MultiplicativeOp> opQueue;
+  std::queue<std::pair<MultiplicativeOp, SymbolType>> opQueue;
 };
 
 // ======================================================= CastExprNode ==========================================================
@@ -952,7 +988,7 @@ public:
   [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
 
   // Public members
-  std::stack<PrefixUnaryOp> opStack;
+  std::stack<std::pair<PrefixUnaryOp, SymbolType>> opStack;
 };
 
 // =================================================== PostfixUnaryExprNode ======================================================
@@ -974,7 +1010,7 @@ public:
   [[nodiscard]] std::vector<PostfixUnaryExprNode *> postfixUnaryExpr() const { return getChildren<PostfixUnaryExprNode>(); }
 
   // Public members
-  std::queue<PostfixUnaryOp> opQueue;
+  std::queue<std::pair<PostfixUnaryOp, SymbolType>> opQueue;
 };
 
 // ====================================================== AtomicExprNode =========================================================
@@ -1130,7 +1166,6 @@ public:
 
   // Public members
   std::queue<TypeModifier> tmQueue;
-  SymbolType symbolType = SymbolType(TY_INVALID);
 };
 
 // ==================================================== BaseDataTypeNode =========================================================

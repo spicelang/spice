@@ -305,6 +305,21 @@ std::map<std::string, SymbolTableEntry> &SymbolTable::getSymbols() { return symb
 std::map<std::string, Capture> &SymbolTable::getCaptures() { return captures; }
 
 /**
+ * Get the number of fields if this is a struct scope
+ *
+ * @return Number of fields
+ */
+size_t SymbolTable::getFieldCount() const {
+  assert(scopeType == SCOPE_STRUCT);
+  size_t fieldCount = 0;
+  for (auto &symbol : symbols) {
+    if (!symbol.second.getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT, TY_INVALID, TY_GENERIC}))
+      fieldCount++;
+  }
+  return fieldCount;
+}
+
+/**
  * Insert a function object into this symbol table scope
  *
  * @param function Function object
@@ -428,7 +443,8 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
         if ((f.isMethodFunction() || f.isMethodProcedure()) && !fctThisType.getTemplateTypes().empty()) {
           SymbolTableEntry *thisEntry = childBlock->lookup(THIS_VARIABLE_NAME);
           assert(thisEntry != nullptr);
-          thisEntry->updateType(callThisType.toPointer(err, codeLoc), true);
+          SymbolType newThisType = callThisType.toPointer(err, codeLoc);
+          thisEntry->updateType(newThisType, true);
         }
       }
 

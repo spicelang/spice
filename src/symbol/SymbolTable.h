@@ -70,6 +70,7 @@ public:
 
   std::map<std::string, SymbolTableEntry> &getSymbols();
   std::map<std::string, Capture> &getCaptures();
+  [[nodiscard]] size_t getFieldCount() const;
 
   void insertFunction(const Function &function, ErrorFactory *err);
   Function *matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,

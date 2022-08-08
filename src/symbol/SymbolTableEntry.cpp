@@ -80,18 +80,24 @@ void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err
 const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declCodeLoc; }
 
 /**
- * Retrieve the llvm type of the current symbol
+ * Retrieve the llvm type of the current struct symbol
  *
- * @return LLVM type of the current symbol
+ * @return LLVM type of the current struct symbol
  */
-llvm::Type *SymbolTableEntry::getLLVMType() const { return llvmType; }
+llvm::Type *SymbolTableEntry::getStructLLVMType() const {
+  assert(type.is(TY_STRUCT));
+  return llvmType;
+}
 
 /**
- * Update the LLVM type of a symbol
+ * Update the struct LLVM type of a symbol
  *
- * @param newType New LLVM type
+ * @param newStructType New struct LLVM type
  */
-void SymbolTableEntry::updateLLVMType(llvm::Type *newType) { llvmType = newType; }
+void SymbolTableEntry::setStructLLVMType(llvm::Type *newStructType) {
+  assert(type.is(TY_STRUCT));
+  llvmType = newStructType;
+}
 
 /**
  * Retrieve the address of the assigned value
@@ -128,7 +134,7 @@ void SymbolTableEntry::popAddress() { memAddress.pop(); }
  *
  * @return Order index
  */
-unsigned int SymbolTableEntry::getOrderIndex() const { return orderIndex; }
+size_t SymbolTableEntry::getOrderIndex() const { return orderIndex; }
 
 /**
  * Returns if the symbol is in a local scope or in the global scope

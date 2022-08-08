@@ -9,29 +9,29 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
-entry:
-  br label %for
+entry.l1:
+  br label %for.l2
 
-for:                                              ; preds = %for, %entry
-  %counter.018 = phi i32 [ 0, %entry ], [ %2, %for ]
-  %0 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([13 x i8], [13 x i8]* @0, i64 0, i64 0), i32 %counter.018)
-  %1 = icmp ugt i32 %counter.018, 9000
-  %2 = add nuw nsw i32 %counter.018, 2
-  br i1 %1, label %for1, label %for
+for.l2:                                           ; preds = %for.l2, %entry.l1
+  %counter.012 = phi i32 [ 0, %entry.l1 ], [ %2, %for.l2 ]
+  %0 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 %counter.012)
+  %1 = icmp ugt i32 %counter.012, 9000
+  %2 = add nuw nsw i32 %counter.012, 2
+  br i1 %1, label %for.l5, label %for.l2
 
-for1:                                             ; preds = %for, %for1
-  %subCounter.017 = phi i32 [ %5, %for1 ], [ 100, %for ]
-  %3 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([19 x i8], [19 x i8]* @1, i64 0, i64 0), i32 %subCounter.017)
-  %4 = icmp eq i32 %subCounter.017, 11
-  %5 = add nsw i32 %subCounter.017, -1
-  br i1 %4, label %for.end6, label %for1
+for.l5:                                           ; preds = %for.l2, %for.l5
+  %subCounter.011 = phi i32 [ %5, %for.l5 ], [ 100, %for.l2 ]
+  %3 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i32 %subCounter.011)
+  %4 = icmp eq i32 %subCounter.011, 11
+  %5 = add nsw i32 %subCounter.011, -1
+  br i1 %4, label %for.end.l2, label %for.l5
 
-for.end6:                                         ; preds = %for1
-  %6 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([5 x i8], [5 x i8]* @2, i64 0, i64 0))
+for.end.l2:                                       ; preds = %for.l5
+  %6 = tail call i32 (ptr, ...) @printf(ptr nonnull @2)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }

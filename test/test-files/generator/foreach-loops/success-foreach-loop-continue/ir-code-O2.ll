@@ -11,22 +11,22 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
-foreach.inc7.4:
-  %0 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([10 x i8], [10 x i8]* @0, i64 0, i64 0), i32 1)
-  %1 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([9 x i8], [9 x i8]* @1, i64 0, i64 0), i64 1)
-  %2 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([10 x i8], [10 x i8]* @0, i64 0, i64 0), i32 5)
-  %3 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([9 x i8], [9 x i8]* @1, i64 0, i64 0), i64 1)
-  %4 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([10 x i8], [10 x i8]* @0, i64 0, i64 0), i32 25)
-  %5 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([9 x i8], [9 x i8]* @1, i64 0, i64 0), i64 1)
-  %6 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([10 x i8], [10 x i8]* @0, i64 0, i64 0), i32 -27)
-  %7 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([9 x i8], [9 x i8]* @1, i64 0, i64 0), i64 1)
-  %8 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([10 x i8], [10 x i8]* @0, i64 0, i64 0), i32 -63)
-  %9 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([9 x i8], [9 x i8]* @1, i64 0, i64 0), i64 1)
-  %10 = tail call i32 (i8*, ...) @printf(i8* nonnull dereferenceable(1) getelementptr inbounds ([5 x i8], [5 x i8]* @2, i64 0, i64 0))
+foreach.inc.l4.4:
+  %0 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 1)
+  %1 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i64 1)
+  %2 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 5)
+  %3 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i64 1)
+  %4 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 25)
+  %5 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i64 1)
+  %6 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 -27)
+  %7 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i64 1)
+  %8 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 -63)
+  %9 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i64 1)
+  %10 = tail call i32 (ptr, ...) @printf(ptr nonnull @2)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(i8* nocapture noundef readonly, ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
 attributes #0 = { nofree nounwind }

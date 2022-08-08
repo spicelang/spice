@@ -44,15 +44,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-14-0-6-linux-x64
+          key: llvm-15.0.0-rc1-linux-x64
 
-      - name: Clone LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-14.0.6 https://github.com/llvm/llvm-project.git llvm
-
-      - name: Setup LLVM - Configure
+      - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
+          git clone --depth 1 --branch llvmorg-15.0.0-rc1 https://github.com/llvm/llvm-project.git llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
@@ -65,13 +62,8 @@ jobs:
 
       - name: Download Libs
         run: |
-          mkdir -p ./lib
-          cd ./lib
-          git clone --branch 4.10.1 --depth 1 https://github.com/antlr/antlr4.git
-          mkdir json
-          curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" --output json/json.hpp
-          mkdir cli11
-          curl -SsL "https://github.com/spicelang/CLI11/releases/download/v2.2.0-spice/CLI11.hpp" --output cli11/CLI11.hpp
+          chmod +x setup-libs.sh
+          ./setup-libs.sh
 
       - name: Configure & compile project
         env:
@@ -132,37 +124,22 @@ jobs:
         uses: actions/cache@v3
         with:
           path: D:/a/spice/spice/llvm
-          key: llvm-14-0-6-win-x64
+          key: llvm-15.0.0-rc1-win-x64
 
-      - name: Clone LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch llvmorg-14.0.6 https://github.com/llvm/llvm-project.git llvm
-
-      - name: Setup LLVM - Configure
+      - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
+          git clone --depth 1 --branch llvmorg-15.0.0-rc1 https://github.com/llvm/llvm-project.git llvm
           setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           echo "Adding MinGW to path done."
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
-
-      - name: Setup LLVM - Build
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
-          cd ./llvm/build
           cmake --build .
 
       - name: Download Libs
-        run: |
-          mkdir -p ./lib
-          cd ./lib
-          git clone --branch 4.10.1 --depth 1 https://github.com/antlr/antlr4.git
-          mkdir json
-          curl -SsL "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp" -o json/json.hpp
-          mkdir cli11
-          curl -SsL "https://github.com/spicelang/CLI11/releases/download/v2.2.0-spice/CLI11.hpp" --output cli11/CLI11.hpp
+        run: .\setup-libs.bat
 
       - name: Configure & compile project
         env:
@@ -188,7 +165,7 @@ jobs:
 
   build-artifacts:
     name: Build artifacts
-    needs: [build-compiler-linux, build-compiler-windows]
+    needs: [ build-compiler-linux, build-compiler-windows ]
     runs-on: ubuntu-latest
     env:
       DOCKER_CLI_EXPERIMENTAL: enabled
@@ -245,7 +222,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
-          version: v1.10.2
+          version: v1.10.3
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -305,9 +282,9 @@ jobs:
         run: |
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --upload-file ./spice_${{ matrix.arch }}.rpm ${{ secrets.NEXUS_URL }}/fedora/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.rpm
 
-#      - name: Deploy to Alpine repo
-#        run: |
-#          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.apk"
+#     - name: Deploy to Alpine repo
+#       run: |
+#         curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.apk" "${{ secrets.NEXUS_URL }}/alpine/spice/${{ steps.get_version.outputs.version }}/spice-${{ matrix.arch }}.apk"
 
   build-win-installers:
     name: Build Windows installers
@@ -317,9 +294,9 @@ jobs:
       matrix:
         config:
           - {
-              arch: amd64,
-              label: x64
-            }
+            arch: amd64,
+            label: x64
+          }
     steps:
       - name: Checkout
         uses: actions/checkout@v3

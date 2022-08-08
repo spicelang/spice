@@ -80,7 +80,7 @@ std::string Function::getMangledName() const {
     size_t startPos = baseSubType.find_last_of('.');
     startPos = startPos == std::string::npos ? 0 : startPos + 1;
     thisTyStr = baseSubType.substr(startPos);
-    for (auto &templateType : thisType.getTemplateTypes())
+    for (const auto &templateType : thisType.getTemplateTypes())
       thisTyStr += "_" + templateType.getName(false, true);
   }
 
