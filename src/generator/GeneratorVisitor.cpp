@@ -2149,8 +2149,10 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     while (!opQueue.empty()) {
       switch (opQueue.front().first) {
       case PostfixUnaryExprNode::OP_SUBSCRIPT: {
-        if (!lhs)
-          lhs = builder->CreateLoad(lhsPtr->getType()->getPointerElementType(), lhsPtr);
+        if (!lhs) {
+          lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
+          lhs = builder->CreateLoad(lhsTy, lhsPtr);
+        }
 
         assert(lhs->getType()->isArrayTy() || lhs->getType()->isPointerTy());
 
