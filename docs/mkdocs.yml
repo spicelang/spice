@@ -88,6 +88,7 @@ nav:
     - language/constructors-destructors.md
     - language/generics.md
     #- language/threads.md
+    - language/number-formats.md
     - language/operator-precedence.md
   - contributing.md
 
