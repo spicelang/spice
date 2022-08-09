@@ -1,24 +1,24 @@
 //import "std/os/os" as os;
 
 // File permission modes
-public const int MODE_ALL_RWX   = 511;   // Decimal for octal: 0000777
-public const int MODE_ALL_RW    = 438;   // Decimal for octal: 0000666
-public const int MODE_ALL_R     = 292;   // Decimal for octal: 0000444
+public const int MODE_ALL_RWX   = 0o0000777;
+public const int MODE_ALL_RW    = 0o0000666;
+public const int MODE_ALL_R     = 0o0000444;
 
-public const int MODE_OWNER_RWX = 448;   // Decimal for octal: 0000700
-public const int MODE_OWNER_R   = 256;   // Decimal for octal: 0000400
-public const int MODE_OWNER_W   = 128;   // Decimal for octal: 0000200
-public const int MODE_OWNER_X   = 64;    // Decimal for octal: 0000100
+public const int MODE_OWNER_RWX = 0o0000700;
+public const int MODE_OWNER_R   = 0o0000400;
+public const int MODE_OWNER_W   = 0o0000200;
+public const int MODE_OWNER_X   = 0o0000100;
 
-public const int MODE_GROUP_RWX = 56;    // Decimal for octal: 0000070
-public const int MODE_GROUP_R   = 32;    // Decimal for octal: 0000040
-public const int MODE_GROUP_W   = 16;    // Decimal for octal: 0000020
-public const int MODE_GROUP_X   = 8;     // Decimal for octal: 0000010
+public const int MODE_GROUP_RWX = 0o0000070;
+public const int MODE_GROUP_R   = 0o0000040;
+public const int MODE_GROUP_W   = 0o0000020;
+public const int MODE_GROUP_X   = 0o0000010;
 
-public const int MODE_OTHER_RWX = 7;     // Decimal for octal: 0000007
-public const int MODE_OTHER_R   = 4;     // Decimal for octal: 0000004
-public const int MODE_OTHER_W   = 2;     // Decimal for octal: 0000002
-public const int MODE_OTHER_X   = 1;     // Decimal for octal: 0000001
+public const int MODE_OTHER_RWX = 0o0000007;
+public const int MODE_OTHER_R   = 0o0000004;
+public const int MODE_OTHER_W   = 0o0000002;
+public const int MODE_OTHER_X   = 0o0000001;
 
 const int F_OK = 0; // File existence
 const int X_OK = 1; // Can execute

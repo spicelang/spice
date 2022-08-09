@@ -1,46 +1,15 @@
-type NestedStruct struct {
-    int field1
-    string field2
-}
-
-type TestStruct struct {
-    int* field1
-    NestedStruct* field2
-}
+/*import "std/data/vector" as vec;
+import "std/data/pair" as pair;
 
 f<int> main() {
-    double doubleVar;
-    printf("Double value: %f\n", doubleVar);
+    vec.Vector<pair.Pair<int, string>> pairVector = vec.Vector<pair.Pair<int, string>>();
+    pairVector.pushBack(pair.Pair<int, string>(0, "Hello"));
+    pairVector.pushBack(pair.Pair<int, string>(1, "World"));
 
-    int intVar;
-    printf("Int value: %d\n", intVar);
+    pair.Pair<int, string> p1 = pairVector.get(1);
+    printf("Hello %s!", p1.getSecond());
+}*/
 
-    short shortVar;
-    printf("Short value: %d\n", shortVar);
-
-    long longVar;
-    printf("Long value: %d\n", longVar);
-
-    string stringVar;
-    printf("String value: %s\n", stringVar);
-
-    byte byteVar;
-    printf("Byte value: %d\n", byteVar);
-
-    char charVar;
-    printf("Char value: %c\n", charVar);
-
-    bool boolVar;
-    printf("Bool value: %d\n", boolVar);
-
-    // Disabled because the output is different on GitHub actions
-    //int* intPtrVar;
-    //printf("Int pointer value: %p\n", intPtrVar);
-
-    NestedStruct[4] structArrayVar;
-    printf("Struct array value: %s\n", structArrayVar[2].field2);
-
-    // Disabled because the output is different on GitHub actions
-    //TestStruct structVar;
-    //printf("Nested struct field value: %p\n", structVar.field2);
+f<int> main() {
+    printf("Test: %d\n", 0o0000777);
 }

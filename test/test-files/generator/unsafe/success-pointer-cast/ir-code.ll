@@ -6,33 +6,27 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1
 
 define i32 @main() {
-entry:
+entry.l1:
   %result = alloca i32, align 4
   %l = alloca i64, align 8
-  %lPtr = alloca i64*, align 8
-  %0 = alloca i64*, align 8
-  %iPtr = alloca i32*, align 8
-  %1 = alloca i32*, align 8
-  store i32 0, i32* %result, align 4
-  store i64 1234, i64* %l, align 8
-  %2 = load i64, i64* %l, align 8
-  store i64* %l, i64** %0, align 8
-  store i64* %l, i64** %0, align 8
-  %3 = load i64*, i64** %0, align 8
-  store i64* %3, i64** %lPtr, align 8
-  store i32* null, i32** %iPtr, align 8
-  %4 = load i64*, i64** %lPtr, align 8
-  %5 = bitcast i64* %4 to i32*
-  store i32* %5, i32** %1, align 8
-  %6 = load i32*, i32** %1, align 8
-  store i32* %6, i32** %iPtr, align 8
-  %7 = load i32*, i32** %iPtr, align 8
-  %8 = load i32, i32* %7, align 4
-  store i32 %8, i32* %7, align 4
-  %9 = load i32, i32* %7, align 4
-  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0), i32 %9)
-  %11 = load i32, i32* %result, align 4
-  ret i32 %11
+  %0 = alloca ptr, align 8
+  %iPtr = alloca ptr, align 8
+  %1 = alloca ptr, align 8
+  store i32 0, ptr %result, align 4
+  store i64 1234, ptr %l, align 8
+  store ptr %l, ptr %0, align 8
+  store ptr null, ptr %iPtr, align 8
+  %2 = load ptr, ptr %0, align 8
+  store ptr %2, ptr %1, align 8
+  %3 = load ptr, ptr %1, align 8
+  store ptr %3, ptr %iPtr, align 8
+  %4 = load ptr, ptr %iPtr, align 8
+  %5 = load i32, ptr %4, align 4
+  store i32 %5, ptr %4, align 4
+  %6 = load i32, ptr %4, align 4
+  %7 = call i32 (ptr, ...) @printf(ptr @0, i32 %6)
+  %8 = load i32, ptr %result, align 4
+  ret i32 %8
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)

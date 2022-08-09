@@ -8,82 +8,82 @@ target triple = "x86_64-w64-windows-gnu"
 @2 = private unnamed_addr constant [5 x i8] c"End.\00", align 1
 
 define i32 @main() {
-entry:
+entry.l1:
   %result = alloca i32, align 4
   %counter = alloca i32, align 4
   %0 = alloca i1, align 1
-  %1 = alloca i1, align 1
   %subCounter = alloca i32, align 4
+  %1 = alloca i1, align 1
   %2 = alloca i1, align 1
   %3 = alloca i1, align 1
-  store i32 0, i32* %result, align 4
-  store i32 0, i32* %counter, align 4
-  br label %for.cond
+  store i32 0, ptr %result, align 4
+  store i32 0, ptr %counter, align 4
+  br label %for.cond.l2
 
-for.cond:                                         ; preds = %for.post5, %entry
-  %4 = load i32, i32* %counter, align 4
-  %5 = icmp slt i32 %4, 10
-  store i1 %5, i1* %0, align 1
-  %6 = load i1, i1* %0, align 1
-  br i1 %6, label %for, label %for.end6
+for.l2:                                           ; preds = %for.cond.l2
+  %4 = load i32, ptr %counter, align 4
+  %5 = call i32 (ptr, ...) @printf(ptr @0, i32 %4)
+  %6 = load i32, ptr %counter, align 4
+  %7 = icmp sge i32 %6, 5
+  store i1 %7, ptr %0, align 1
+  %8 = load i1, ptr %0, align 1
+  br i1 %8, label %if.then.l4, label %if.end.l4
 
-for:                                              ; preds = %for.cond
-  %7 = load i32, i32* %counter, align 4
-  %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @0, i32 0, i32 0), i32 %7)
-  %9 = load i32, i32* %counter, align 4
-  %10 = icmp sge i32 %9, 5
-  store i1 %10, i1* %1, align 1
-  %11 = load i1, i1* %1, align 1
-  br i1 %11, label %if.then, label %if.end4
+if.then.l4:                                       ; preds = %for.l2
+  store i32 100, ptr %subCounter, align 4
+  br label %for.cond.l5
 
-if.then:                                          ; preds = %for
-  store i32 100, i32* %subCounter, align 4
-  br label %for.cond1
+for.l5:                                           ; preds = %for.cond.l5
+  %9 = load i32, ptr %subCounter, align 4
+  %10 = call i32 (ptr, ...) @printf(ptr @1, i32 %9)
+  %11 = load i32, ptr %subCounter, align 4
+  %12 = icmp eq i32 %11, 11
+  store i1 %12, ptr %1, align 1
+  %13 = load i1, ptr %1, align 1
+  br i1 %13, label %if.then.l7, label %if.end.l7
 
-for.cond1:                                        ; preds = %for.post, %if.then
-  %12 = load i32, i32* %subCounter, align 4
-  %13 = icmp sge i32 %12, 10
-  store i1 %13, i1* %2, align 1
-  %14 = load i1, i1* %2, align 1
-  br i1 %14, label %for2, label %for.end
+if.then.l7:                                       ; preds = %for.l5
+  br label %for.inc.l2
 
-for2:                                             ; preds = %for.cond1
-  %15 = load i32, i32* %subCounter, align 4
-  %16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @1, i32 0, i32 0), i32 %15)
-  %17 = load i32, i32* %subCounter, align 4
-  %18 = icmp eq i32 %17, 11
-  store i1 %18, i1* %3, align 1
-  %19 = load i1, i1* %3, align 1
-  br i1 %19, label %if.then3, label %if.end
+if.end.l7:                                        ; preds = %for.l5
+  br label %for.inc.l5
 
-if.then3:                                         ; preds = %for2
-  br label %for.post5
+for.inc.l5:                                       ; preds = %if.end.l7
+  %14 = load i32, ptr %subCounter, align 4
+  %15 = sub i32 %14, 1
+  store i32 %15, ptr %subCounter, align 4
+  br label %for.cond.l5
 
-if.end:                                           ; preds = %for2
-  br label %for.post
+for.cond.l5:                                      ; preds = %for.inc.l5, %if.then.l4
+  %16 = load i32, ptr %subCounter, align 4
+  %17 = icmp sge i32 %16, 10
+  store i1 %17, ptr %2, align 1
+  %18 = load i1, ptr %2, align 1
+  br i1 %18, label %for.l5, label %for.end.l5
 
-for.post:                                         ; preds = %if.end
-  %20 = load i32, i32* %subCounter, align 4
-  %21 = sub i32 %20, 1
-  store i32 %21, i32* %subCounter, align 4
-  br label %for.cond1
+for.end.l5:                                       ; preds = %for.cond.l5
+  br label %if.end.l4
 
-for.end:                                          ; preds = %for.cond1
-  br label %if.end4
+if.end.l4:                                        ; preds = %for.end.l5, %for.l2
+  br label %for.inc.l2
 
-if.end4:                                          ; preds = %for.end, %for
-  br label %for.post5
+for.inc.l2:                                       ; preds = %if.end.l4, %if.then.l7
+  %19 = load i32, ptr %counter, align 4
+  %20 = add i32 %19, 2
+  store i32 %20, ptr %counter, align 4
+  br label %for.cond.l2
 
-for.post5:                                        ; preds = %if.end4, %if.then3
-  %22 = load i32, i32* %counter, align 4
-  %23 = add i32 %22, 2
-  store i32 %23, i32* %counter, align 4
-  br label %for.cond
+for.cond.l2:                                      ; preds = %for.inc.l2, %entry.l1
+  %21 = load i32, ptr %counter, align 4
+  %22 = icmp slt i32 %21, 10
+  store i1 %22, ptr %3, align 1
+  %23 = load i1, ptr %3, align 1
+  br i1 %23, label %for.l2, label %for.end.l2
 
-for.end6:                                         ; preds = %for.cond
-  %24 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @2, i32 0, i32 0))
-  %25 = load i32, i32* %result, align 4
+for.end.l2:                                       ; preds = %for.cond.l2
+  %24 = call i32 (ptr, ...) @printf(ptr @2)
+  %25 = load i32, ptr %result, align 4
   ret i32 %25
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)

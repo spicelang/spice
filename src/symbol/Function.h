@@ -8,17 +8,20 @@
 #include <symbol/SymbolSpecifiers.h>
 #include <symbol/SymbolType.h>
 
+// Forward declarations
+struct CodeLoc;
+
 typedef std::vector<std::pair<SymbolType, bool>> ArgList;
-typedef std::vector<std::tuple<std::string, SymbolType, bool>> NamedArgList;
+typedef std::vector<std::tuple<std::string, SymbolType, bool>> NamedParamList;
 
 class Function {
 public:
   // Constructors
   explicit Function(std::string name, SymbolSpecifiers specifiers, const SymbolType &thisType, const SymbolType &returnType,
                     std::vector<std::pair<SymbolType, bool>> argTypes, std::vector<GenericType> templateTypes,
-                    const antlr4::Token &definitionToken)
+                    const CodeLoc &declCodeLoc)
       : name(std::move(name)), specifiers(specifiers), thisType(thisType), returnType(returnType), argList(std::move(argTypes)),
-        templateTypes(std::move(templateTypes)), definitionToken(definitionToken) {}
+        templateTypes(std::move(templateTypes)), declCodeLoc(declCodeLoc) {}
 
   // Public methods
   [[nodiscard]] std::string getName() const;
@@ -42,8 +45,9 @@ public:
   [[nodiscard]] bool isFullySubstantiated() const;
   void setUsed();
   [[nodiscard]] bool isUsed() const;
-  [[nodiscard]] const antlr4::Token &getDefinitionToken() const;
-  const std::string &getDefinitionCodeLoc();
+  void setAnalyzed();
+  [[nodiscard]] bool wasAlreadyAnalyzed() const;
+  [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
 private:
   // Members
@@ -53,7 +57,7 @@ private:
   SymbolType returnType = SymbolType(TY_DYN);
   std::vector<std::pair<SymbolType, bool>> argList;
   std::vector<GenericType> templateTypes;
-  const antlr4::Token &definitionToken;
-  std::string definitionCodeLoc;
+  const CodeLoc &declCodeLoc;
   bool used = false;
+  bool alreadyAnalyzed = false;
 };

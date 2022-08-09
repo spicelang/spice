@@ -12,5 +12,4 @@ f<int> main() {
     while (!q1.isEmpty()) {
         printf("%c", q1.pop());
     }
-    q1.dtor();
 }

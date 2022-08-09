@@ -29,11 +29,17 @@ void compileProject(CliOptions &options) {
     // Create source file instance for main source file
     SourceFile mainSourceFile = SourceFile(options, nullptr, "root", options.mainSourceFile, false);
 
-    // Pre-analyze the project (collect imports, etc.)
-    mainSourceFile.preAnalyze(options);
+    // Visualize the parse tree (only runs in debug mode)
+    mainSourceFile.visualizeCST(nullptr);
 
-    // Visualize the project (only runs in debug mode)
-    mainSourceFile.visualizeAST(options, nullptr);
+    // Transform CST to an AST
+    mainSourceFile.buildAST();
+
+    // Visualize the AST (only runs in debug mode)
+    mainSourceFile.visualizeAST(nullptr);
+
+    // Pre-analyze the project (collect imports, etc.)
+    mainSourceFile.preAnalyze();
 
     // Analyze the project (semantic analysis, build symbol table, type inference, type checking, etc.)
     mainSourceFile.analyze(context, builder, threadFactory);
@@ -41,7 +47,7 @@ void compileProject(CliOptions &options) {
     // Re-analyze the project (resolve generic functions/procedures/structs, etc.)
     mainSourceFile.reAnalyze(context, builder, threadFactory);
 
-    // Generate the project (LLVM code gen, optimization, emitting object files, etc.)
+    // Generate the project (Coming up with the LLVM types of structs or other types in the root scope)
     mainSourceFile.generate(context, builder, threadFactory, linker);
 
     // Link the target executable (Link object files to executable)

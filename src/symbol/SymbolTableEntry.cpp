@@ -2,6 +2,8 @@
 
 #include "SymbolTableEntry.h"
 
+#include <util/CodeLoc.h>
+
 #include <exception/ErrorFactory.h>
 
 /**
@@ -34,7 +36,7 @@ void SymbolTableEntry::updateType(const SymbolType &newType, bool force) {
  *
  * @return Parent symbol table
  */
-const SymbolTable *SymbolTableEntry::getScope() const { return scope; }
+SymbolTable *SymbolTableEntry::getScope() const { return scope; }
 
 /**
  * Retrieve the symbol specifiers of the current symbol
@@ -56,11 +58,14 @@ SymbolState SymbolTableEntry::getState() const { return state; }
  * @throws SemanticError When trying to re-assign a constant variable
  * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
  * @param newState New state of the current symbol
+ * @param err Error factory
+ * @param codeLoc Code location where the update takes place
+ * @param force Force update. This can only be used compiler-internal
  */
-void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const antlr4::Token &token) {
+void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const CodeLoc &codeLoc, bool force) {
   // Check if this is a constant variable and is already initialized
-  if (state == INITIALIZED && specifiers.isConst())
-    throw err->get(token, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
+  if (state == INITIALIZED && specifiers.isConst() && !force)
+    throw err->get(codeLoc, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
   // Check if the type is known at time of initialization
   if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                  // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
@@ -68,25 +73,31 @@ void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err
 }
 
 /**
- * Retrieve the token where the symbol was defined
+ * Retrieve the code location where the symbol was declared
  *
- * @return Definition token
+ * @return Declaration code location
  */
-const antlr4::Token &SymbolTableEntry::getDefinitionToken() const { return definitionToken; }
+const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declCodeLoc; }
 
 /**
- * Retrieve the llvm type of the current symbol
+ * Retrieve the llvm type of the current struct symbol
  *
- * @return LLVM type of the current symbol
+ * @return LLVM type of the current struct symbol
  */
-llvm::Type *SymbolTableEntry::getLLVMType() const { return llvmType; }
+llvm::Type *SymbolTableEntry::getStructLLVMType() const {
+  assert(type.is(TY_STRUCT));
+  return llvmType;
+}
 
 /**
- * Update the LLVM type of a symbol
+ * Update the struct LLVM type of a symbol
  *
- * @param newType New LLVM type
+ * @param newStructType New struct LLVM type
  */
-void SymbolTableEntry::updateLLVMType(llvm::Type *newType) { llvmType = newType; }
+void SymbolTableEntry::setStructLLVMType(llvm::Type *newStructType) {
+  assert(type.is(TY_STRUCT));
+  llvmType = newStructType;
+}
 
 /**
  * Retrieve the address of the assigned value
@@ -123,7 +134,7 @@ void SymbolTableEntry::popAddress() { memAddress.pop(); }
  *
  * @return Order index
  */
-unsigned int SymbolTableEntry::getOrderIndex() const { return orderIndex; }
+size_t SymbolTableEntry::getOrderIndex() const { return orderIndex; }
 
 /**
  * Returns if the symbol is in a local scope or in the global scope
@@ -145,6 +156,18 @@ bool SymbolTableEntry::isVolatile() const { return volatility; }
  * @param volatility Volatile or not
  */
 void SymbolTableEntry::setVolatile(bool vol) { volatility = vol; }
+
+/**
+ * Retrieve number of references to the symbol
+ *
+ * @return Ref count
+ */
+// size_t SymbolTableEntry::getRefCount() const { return refCount; }
+
+/**
+ * Increase the number of references to the symbol
+ */
+// void SymbolTableEntry::increaseRefCount() { refCount++; }
 
 /**
  * Returns if the symbol is used somewhere

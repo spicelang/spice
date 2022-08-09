@@ -29,11 +29,11 @@ std::string CommonUtil::getLastFragment(const std::string &haystack, const std::
 }
 
 /**
- * Generate a code loc string with for a token
+ * Get scope prefix from scope name
  *
- * @param token Token
- * @return Code loc string
+ * @param haystack Scope name
+ * @return Scope prefix
  */
-std::string CommonUtil::tokenToCodeLoc(const antlr4::Token &token) {
-  return "L" + std::to_string(token.getLine()) + "C" + std::to_string(token.getCharPositionInLine());
+std::string CommonUtil::getPrefix(const std::string &haystack, const std::string &needle) {
+  return haystack.substr(0, haystack.find(needle) + needle.length());
 }

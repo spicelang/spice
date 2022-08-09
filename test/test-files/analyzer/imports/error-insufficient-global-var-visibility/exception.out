@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/imports/error-insufficient-global-var-visibility/source.spice at 4:33: Insufficient symbol visibility: Cannot access 'globalTestVar' due to its private visibility
+Semantic error in ./test-files/analyzer/imports/error-insufficient-global-var-visibility/source.spice:4:33: Insufficient symbol visibility: Cannot access 'globalTestVar' due to its private visibility

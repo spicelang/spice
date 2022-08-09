@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: nofree nounwind
 define i32 @main() local_unnamed_addr #0 {
-entry:
+entry.l3:
   %putchar = tail call i32 @putchar(i32 72)
   %putchar.1 = tail call i32 @putchar(i32 101)
   %putchar.2 = tail call i32 @putchar(i32 108)

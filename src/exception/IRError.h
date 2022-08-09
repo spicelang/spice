@@ -7,6 +7,9 @@
 
 #include <Token.h>
 
+// Forward declarations
+struct CodeLoc;
+
 enum IRErrorType {
   TARGET_NOT_AVAILABLE,
   CANT_OPEN_OUTPUT_FILE,
@@ -26,9 +29,8 @@ enum IRErrorType {
 class IRError : public std::exception {
 public:
   // Constructors
-  explicit IRError(const std::string &fileName, const antlr4::Token &token, const IRErrorType &errorType,
-                   const std::string &messageSuffix);
-  explicit IRError(const std::string &fileName, const IRErrorType &errorType, const std::string &messageSuffix);
+  explicit IRError(const CodeLoc &codeLoc, const IRErrorType &errorType, const std::string &messageSuffix);
+  explicit IRError(const IRErrorType &errorType, const std::string &messageSuffix);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

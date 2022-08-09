@@ -80,7 +80,7 @@ std::string Function::getMangledName() const {
     size_t startPos = baseSubType.find_last_of('.');
     startPos = startPos == std::string::npos ? 0 : startPos + 1;
     thisTyStr = baseSubType.substr(startPos);
-    for (auto &templateType : thisType.getTemplateTypes())
+    for (const auto &templateType : thisType.getTemplateTypes())
       thisTyStr += "_" + templateType.getName(false, true);
   }
 
@@ -200,21 +200,19 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
     if (argType.second) {         // Met optional argument
       if (!metFirstOptionalArg) { // Add substantiation without the optional argument
         definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                       definitionToken);
+                                       declCodeLoc);
         metFirstOptionalArg = true;
       }
       // Add substantiation with the optional argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
-      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                     definitionToken);
+      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declCodeLoc);
     } else { // Met mandatory argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
     }
   }
 
   if (definiteFunctions.empty())
-    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                   definitionToken);
+    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declCodeLoc);
 
   return definiteFunctions;
 }
@@ -229,7 +227,7 @@ Function Function::substantiateGenerics(const ArgList &concreteArgList, const Sy
   // Substantiate return type
   SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
 
-  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, definitionToken);
+  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, declCodeLoc);
 }
 
 /**
@@ -273,19 +271,20 @@ void Function::setUsed() { used = true; }
 bool Function::isUsed() const { return used; }
 
 /**
- * Retrieve the definition token of this function
- *
- * @return Definition token
+ * Set the function to analyzed. It will not be analyzed again
  */
-const antlr4::Token &Function::getDefinitionToken() const { return definitionToken; }
+void Function::setAnalyzed() { alreadyAnalyzed = true; }
 
 /**
- * Retrieve the definition code loc of this function
+ * Check if the function was already analyzed
  *
- * @return Definition code location
+ * @return Already analyzed or not
  */
-const std::string &Function::getDefinitionCodeLoc() {
-  if (definitionCodeLoc.empty())
-    definitionCodeLoc = CommonUtil::tokenToCodeLoc(definitionToken);
-  return definitionCodeLoc;
-}
+bool Function::wasAlreadyAnalyzed() const { return alreadyAnalyzed; }
+
+/**
+ * Retrieve the declaration code location of this function
+ *
+ * @return Declaration code location
+ */
+const CodeLoc &Function::getDeclCodeLoc() const { return declCodeLoc; }

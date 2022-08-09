@@ -21,6 +21,8 @@ class ErrorFactory;
 struct CliOptions;
 class LinkerInterface;
 class ThreadFactory;
+class EntryNode;
+struct CodeLoc;
 
 struct SourceFileAntlrCtx {
   // Create error handlers for lexer and parser
@@ -33,6 +35,7 @@ struct SourceFileAntlrCtx {
 };
 
 struct CompilerOutput {
+  std::string cstString;
   std::string astString;
   std::string symbolTableString;
   std::string irString;
@@ -45,15 +48,17 @@ public:
   explicit SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
 
   // Public methods
-  void preAnalyze(const CliOptions &options);
-  void visualizeAST(const CliOptions &options, std::string *output);
+  void visualizeCST(std::string *output);
+  void buildAST();
+  void visualizeAST(std::string *output);
+  void preAnalyze();
   void analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                const ThreadFactory &threadFactory);
   void reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                  ThreadFactory &threadFactory);
   void generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                 ThreadFactory &threadFactory, LinkerInterface &linker);
-  void addDependency(const ErrorFactory *err, const antlr4::Token &token, const std::string &name, const std::string &filePath,
+  void addDependency(const ErrorFactory *err, const CodeLoc &codeLoc, const std::string &name, const std::string &filePath,
                      bool stdFile);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
 
@@ -66,11 +71,11 @@ public:
   bool stdFile;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
-  bool needsReAnalyze = false;
   SourceFile *parent;
   CliOptions &options;
+  std::shared_ptr<EntryNode> ast;
   std::shared_ptr<SymbolTable> symbolTable;
   std::shared_ptr<AnalyzerVisitor> analyzer;
   std::shared_ptr<GeneratorVisitor> generator;
-  std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const antlr4::Token &>> dependencies;
+  std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const CodeLoc &>> dependencies;
 };

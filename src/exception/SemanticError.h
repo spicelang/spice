@@ -7,6 +7,9 @@
 
 #include <Token.h>
 
+// Forward declarations
+struct CodeLoc;
+
 enum SemanticErrorType {
   REFERENCED_UNDEFINED_FUNCTION,
   REFERENCED_UNDEFINED_VARIABLE,
@@ -20,13 +23,13 @@ enum SemanticErrorType {
   GLOBAL_OF_TYPE_DYN,
   GLOBAL_OF_INVALID_TYPE,
   FUNCTION_WITHOUT_RETURN_STMT,
-  INVALID_ARGUMENT_ORDER,
+  INVALID_PARAM_ORDER,
   OPERATOR_WRONG_DATA_TYPE,
   UNEXPECTED_DYN_TYPE_SA,
   REASSIGN_CONST_VARIABLE,
   CONDITION_MUST_BE_BOOL,
   MISSING_MAIN_FUNCTION,
-  FCT_ARG_IS_TYPE_DYN,
+  FCT_PARAM_IS_TYPE_DYN,
   INVALID_BREAK_NUMBER,
   INVALID_CONTINUE_NUMBER,
   PRINTF_TYPE_ERROR,
@@ -51,6 +54,7 @@ enum SemanticErrorType {
   TID_INVALID,
   JOIN_ARG_MUST_BE_TID,
   EXPECTED_GENERIC_TYPE,
+  EXPECTED_VALUE,
   EXPECTED_TYPE,
   UNSAFE_OPERATION_IN_SAFE_CONTEXT,
   ASSERTION_CONDITION_BOOL,
@@ -64,8 +68,7 @@ enum SemanticErrorType {
 class SemanticError : public std::exception {
 public:
   // Constructors
-  explicit SemanticError(const std::string &fileName, const antlr4::Token &token, const SemanticErrorType &type,
-                         const std::string &message);
+  explicit SemanticError(const CodeLoc &codeLoc, const SemanticErrorType &type, const std::string &message);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

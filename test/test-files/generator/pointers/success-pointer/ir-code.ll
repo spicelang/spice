@@ -10,44 +10,34 @@ target triple = "x86_64-w64-windows-gnu"
 @4 = private unnamed_addr constant [28 x i8] c"Restored value address: %p\0A\00", align 1
 
 define i32 @main() {
-entry:
+entry.l1:
   %result = alloca i32, align 4
-  %food = alloca i8*, align 8
-  %ptr = alloca i8**, align 8
-  %0 = alloca i8**, align 8
-  %restoredFood = alloca i8*, align 8
-  %1 = alloca i8**, align 8
-  store i32 0, i32* %result, align 4
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8** %food, align 8
-  %2 = load i8*, i8** %food, align 8
-  store i8** %food, i8*** %0, align 8
-  store i8** %food, i8*** %0, align 8
-  %3 = load i8**, i8*** %0, align 8
-  store i8** %3, i8*** %ptr, align 8
-  %4 = load i8**, i8*** %ptr, align 8
-  %5 = load i8**, i8*** %ptr, align 8
-  %6 = load i8*, i8** %5, align 8
-  store i8* %6, i8** %5, align 8
-  %7 = load i8*, i8** %5, align 8
-  %8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([31 x i8], [31 x i8]* @1, i32 0, i32 0), i8** %4, i8* %7)
-  %9 = load i8**, i8*** %ptr, align 8
-  %10 = load i8*, i8** %9, align 8
-  store i8* %10, i8** %9, align 8
-  store i8* getelementptr inbounds ([7 x i8], [7 x i8]* @2, i32 0, i32 0), i8** %9, align 8
-  %11 = load i8**, i8*** %ptr, align 8
-  %12 = load i8*, i8** %11, align 8
-  store i8* %12, i8** %11, align 8
-  %13 = load i8*, i8** %11, align 8
-  store i8* %13, i8** %restoredFood, align 8
-  %14 = load i8*, i8** %restoredFood, align 8
-  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @3, i32 0, i32 0), i8* %14)
-  %16 = load i8*, i8** %restoredFood, align 8
-  store i8** %restoredFood, i8*** %1, align 8
-  store i8** %restoredFood, i8*** %1, align 8
-  %17 = load i8**, i8*** %1, align 8
-  %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([28 x i8], [28 x i8]* @4, i32 0, i32 0), i8** %17)
-  %19 = load i32, i32* %result, align 4
-  ret i32 %19
+  %food = alloca ptr, align 8
+  %0 = alloca ptr, align 8
+  %1 = alloca ptr, align 8
+  store i32 0, ptr %result, align 4
+  store ptr @0, ptr %food, align 8
+  store ptr %food, ptr %0, align 8
+  %2 = load ptr, ptr %0, align 8
+  %3 = load ptr, ptr %0, align 8
+  %4 = load ptr, ptr %3, align 8
+  store ptr %4, ptr %3, align 8
+  %5 = load ptr, ptr %3, align 8
+  %6 = call i32 (ptr, ...) @printf(ptr @1, ptr %2, ptr %5)
+  %7 = load ptr, ptr %0, align 8
+  %8 = load ptr, ptr %7, align 8
+  store ptr %8, ptr %7, align 8
+  store ptr @2, ptr %7, align 8
+  %9 = load ptr, ptr %0, align 8
+  %10 = load ptr, ptr %9, align 8
+  store ptr %10, ptr %9, align 8
+  %11 = load ptr, ptr %9, align 8
+  %12 = call i32 (ptr, ...) @printf(ptr @3, ptr %11)
+  store ptr %9, ptr %1, align 8
+  %13 = load ptr, ptr %1, align 8
+  %14 = call i32 (ptr, ...) @printf(ptr @4, ptr %13)
+  %15 = load i32, ptr %result, align 4
+  ret i32 %15
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)

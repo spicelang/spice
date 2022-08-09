@@ -2,23 +2,17 @@
 
 #include "ErrorFactory.h"
 
-SemanticError ErrorFactory::get(const antlr4::Token &token, SemanticErrorType type, const std::string &message) const {
-  if (fileName.empty())
-    throw std::runtime_error("Internal compiler error: Calling get<SemanticError> without filename"); // GCOV_EXCL_LINE
-  return SemanticError(fileName, token, type, message);
+#include <util/CodeLoc.h>
+
+SemanticError ErrorFactory::get(const CodeLoc &codeLoc, SemanticErrorType type, const std::string &message) const {
+  return SemanticError(codeLoc, type, message);
 }
 
-IRError ErrorFactory::get(const antlr4::Token &token, IRErrorType type, const std::string &message) const {
-  if (fileName.empty())
-    throw std::runtime_error("Internal compiler error: Calling get<IRError> without filename");
-  return IRError(fileName, token, type, message);
+IRError ErrorFactory::get(const CodeLoc &codeLoc, IRErrorType type, const std::string &message) const {
+  return IRError(codeLoc, type, message);
 }
 
-IRError ErrorFactory::get(IRErrorType type, const std::string &message) const {
-  if (fileName.empty())
-    throw std::runtime_error("Internal compiler error: Calling get<IRError> without filename");
-  return IRError(fileName, type, message);
-}
+IRError ErrorFactory::get(IRErrorType type, const std::string &message) const { return IRError(type, message); }
 
 CliError ErrorFactory::get(CliErrorType type, const std::string &message) { return CliError(type, message); }
 

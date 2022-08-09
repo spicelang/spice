@@ -7,7 +7,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "if:2:4",
+          "name": "if:L2C5",
           "symbols": []
         }
       ],
@@ -50,7 +50,7 @@
             {
               "captures": [],
               "children": [],
-              "name": "thread:10:21",
+              "name": "thread:L10C22",
               "symbols": [
                 {
                   "isGlobal": false,
@@ -68,7 +68,7 @@
               ]
             }
           ],
-          "name": "for:9:4",
+          "name": "for:L9C5",
           "symbols": [
             {
               "isGlobal": false,

@@ -17,6 +17,10 @@ add_definitions(-DANTLR4CPP_STATIC)
 include(ExternalAntlr4Cpp)
 set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/antlr-4.10.1-complete.jar)
 
+# Find Google Test
+add_subdirectory(lib/googletest)
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
 # Find LLVM
 find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")

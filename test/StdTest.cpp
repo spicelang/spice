@@ -30,10 +30,8 @@ std::vector<TestCase> detectStdTestCases(const std::string &suitePath) {
 
   std::vector<TestCase> testCases;
   testCases.reserve(subDirs.size());
-  for (std::string &dirName : subDirs) {
-    // Save test suite
+  for (std::string &dirName : subDirs)
     testCases.push_back({dirName, suitePath + FileUtil::DIR_SEPARATOR + dirName});
-  }
 
   return testCases;
 }
@@ -97,7 +95,7 @@ void executeStdTest(const TestCase &testCase) {
     ThreadFactory threadFactory = ThreadFactory();
 
     // Create instance of cli options
-    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, false, 0, false, false, true};
+    CliOptions options = {sourceFile, "", "", "", "", ".", ".", false, false, false, false, false, false, 0, false, false, true};
     CliInterface cli(options);
     cli.validate();
     cli.enrich();
@@ -109,14 +107,30 @@ void executeStdTest(const TestCase &testCase) {
     // Create main source file
     SourceFile mainSourceFile = SourceFile(options, nullptr, "root", sourceFile, false);
 
-    // Execute pre-analyzer
-    mainSourceFile.preAnalyze(options);
+    // Check if the CST matches the expected output
+    std::string cstFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "parse-tree.dot";
+    if (FileUtil::fileExists(cstFileName)) {
+      // Execute visualizer
+      mainSourceFile.visualizeCST(nullptr);
+
+      std::string actualCST = mainSourceFile.compilerOutput.cstString;
+      if (TestUtil::isUpdateRefsEnabled()) {
+        // Update ref
+        FileUtil::writeToFile(cstFileName, actualCST);
+      } else {
+        std::string expectedCST = TestUtil::getFileContent(cstFileName);
+        EXPECT_EQ(expectedCST, mainSourceFile.compilerOutput.cstString);
+      }
+    }
+
+    // Execute AST builder
+    mainSourceFile.buildAST();
 
     // Check if the AST matches the expected output
     std::string astFileName = testCase.testPath + FileUtil::DIR_SEPARATOR + "syntax-tree.dot";
     if (FileUtil::fileExists(astFileName)) {
       // Execute visualizer
-      mainSourceFile.visualizeAST(options, nullptr);
+      mainSourceFile.visualizeAST(nullptr);
 
       std::string actualAST = mainSourceFile.compilerOutput.astString;
       if (TestUtil::isUpdateRefsEnabled()) {
@@ -127,6 +141,9 @@ void executeStdTest(const TestCase &testCase) {
         EXPECT_EQ(expectedAST, mainSourceFile.compilerOutput.astString);
       }
     }
+
+    // Execute pre-analyzer
+    mainSourceFile.preAnalyze();
 
     // Execute semantic analysis
     mainSourceFile.analyze(context, builder, threadFactory);

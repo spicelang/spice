@@ -96,8 +96,7 @@ SymbolType Struct::getSymbolType() const {
  *
  * @return Substantiated struct without template types
  */
-Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *structScope,
-                                    const antlr4::Token &token) const {
+Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *structScope) const {
   // Convert concrete template types to a list of generic types
   std::vector<GenericType> concreteTemplateTypesGeneric;
   for (const auto &concreteTemplateType : concreteTemplateTypes)
@@ -122,7 +121,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
     }
   }
 
-  return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, definitionToken);
+  return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, declCodeLoc);
 }
 
 /**
@@ -164,22 +163,11 @@ void Struct::setUsed() { used = true; }
 bool Struct::isUsed() const { return used; }
 
 /**
- * Retrieve the definition token of this function
+ * Retrieve the declaration code location of this struct
  *
- * @return Definition token
+ * @return Declaration code location
  */
-const antlr4::Token &Struct::getDefinitionToken() const { return definitionToken; }
-
-/**
- * Retrieve the definition code loc of this struct
- *
- * @return Definition code location
- */
-const std::string &Struct::getDefinitionCodeLoc() {
-  if (definitionCodeLoc.empty())
-    definitionCodeLoc = CommonUtil::tokenToCodeLoc(definitionToken);
-  return definitionCodeLoc;
-}
+const CodeLoc &Struct::getDeclCodeLoc() const { return declCodeLoc; }
 
 /**
  * Get the signature from the struct name and the concrete template types

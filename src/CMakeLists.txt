@@ -6,6 +6,8 @@ set(SOURCES
         main.cpp
         cli/CliInterface.cpp
         cli/CliInterface.h
+        parser/AstBuilderVisitor.cpp
+        parser/AstBuilderVisitor.h
         analyzer/PreAnalyzerVisitor.cpp
         analyzer/PreAnalyzerVisitor.h
         analyzer/AnalyzerVisitor.cpp
@@ -36,6 +38,11 @@ set(SOURCES
         symbol/ScopePath.h
         symbol/SymbolSpecifiers.cpp
         symbol/SymbolSpecifiers.h
+        ast/AbstractAstVisitor.cpp
+        ast/AbstractAstVisitor.h
+        ast/AstVisitor.cpp
+        ast/AstVisitor.h
+        ast/AstNodes.h
         dependency/SourceFile.cpp
         dependency/SourceFile.h
         exception/ErrorFactory.cpp
@@ -52,16 +59,18 @@ set(SOURCES
         exception/LexerParserError.h
         exception/AntlrThrowingErrorListener.cpp
         exception/AntlrThrowingErrorListener.h
-        visualizer/VisualizerVisitor.cpp
-        visualizer/VisualizerVisitor.h
+        visualizer/CSTVisualizerVisitor.cpp
+        visualizer/CSTVisualizerVisitor.h
+        visualizer/ASTVisualizerVisitor.cpp
+        visualizer/ASTVisualizerVisitor.h
         util/CommonUtil.cpp
         util/CommonUtil.h
-        util/ScopeIdUtil.cpp
-        util/ScopeIdUtil.h
         util/ThreadFactory.cpp
         util/ThreadFactory.h
         util/FileUtil.cpp
         util/FileUtil.h
+        util/CodeLoc.cpp
+        util/CodeLoc.h
         util/CompilerWarning.cpp
         util/CompilerWarning.h)
 

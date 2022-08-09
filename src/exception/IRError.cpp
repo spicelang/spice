@@ -2,16 +2,17 @@
 
 #include "IRError.h"
 
+#include <util/CodeLoc.h>
+
 /**
- * Constructor: Used in case that the exact code position where the error occurred is known
+ * Constructor: Used in case that the exact code position where the error occurred is unknown
  *
- * @param token Syntax token, where the error occurred
+ * @param codeLoc Code location where the error occurred
  * @param type Type of the error
  * @param message Error message suffix
  */
-IRError::IRError(const std::string &fileName, const antlr4::Token &token, const IRErrorType &type, const std::string &message) {
-  auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
-  errorMessage = "Internal compiler error in " + fileName + " at " + codeLoc + " - " + getMessagePrefix(type) + ": " + message;
+IRError::IRError(const CodeLoc &codeLoc, const IRErrorType &type, const std::string &message) {
+  errorMessage = "Internal compiler error in " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -20,8 +21,8 @@ IRError::IRError(const std::string &fileName, const antlr4::Token &token, const 
  * @param type Type of the error
  * @param message Error message suffix
  */
-IRError::IRError(const std::string &fileName, const IRErrorType &type, const std::string &message) {
-  errorMessage = "Internal compiler error in " + fileName + " - " + getMessagePrefix(type) + ": " + message;
+IRError::IRError(const IRErrorType &type, const std::string &message) {
+  errorMessage = "Internal compiler: " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

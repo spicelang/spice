@@ -2,8 +2,10 @@ Short 1
 Long 1
 Short 5
 Long 1
-Short 65534
-Short 65473
+Short 25
 Long 1
-Short 0
+Short -27
+Long 1
+Short -63
+Long 1
 End.

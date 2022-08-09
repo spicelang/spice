@@ -2,17 +2,17 @@
 
 #include "SemanticError.h"
 
+#include <util/CodeLoc.h>
+
 /**
  * Constructor: Used in case that the exact code position where the error occurred is known
  *
- * @param token Syntax token, where the error occurred
+ * @param codeLoc Code location where the error occurred
  * @param type Type of the error
  * @param message Error message suffix
  */
-SemanticError::SemanticError(const std::string &fileName, const antlr4::Token &token, const SemanticErrorType &type,
-                             const std::string &message) {
-  auto codeLoc = std::to_string(token.getLine()) + ":" + std::to_string(token.getCharPositionInLine() + 1);
-  errorMessage = "Semantic error in " + fileName + " at " + codeLoc + ": " + getMessagePrefix(type) + ": " + message;
+SemanticError::SemanticError(const CodeLoc &codeLoc, const SemanticErrorType &type, const std::string &message) {
+  errorMessage = "Semantic error in " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -54,7 +54,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Global of invalid type";
   case FUNCTION_WITHOUT_RETURN_STMT:
     return "Missing return statement";
-  case INVALID_ARGUMENT_ORDER:
+  case INVALID_PARAM_ORDER:
     return "Invalid argument order";
   case OPERATOR_WRONG_DATA_TYPE:
     return "Wrong data type for operator";
@@ -66,7 +66,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Condition must be bool";
   case MISSING_MAIN_FUNCTION:
     return "Spice programs must contain a main function";
-  case FCT_ARG_IS_TYPE_DYN:
+  case FCT_PARAM_IS_TYPE_DYN:
     return "Parameter type dyn not valid in function/procedure definition without default value";
   case INVALID_BREAK_NUMBER:
     return "Invalid number of break calls";
@@ -116,6 +116,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Argument of join builtin must be a tid";
   case EXPECTED_GENERIC_TYPE:
     return "Expected a generic type";
+  case EXPECTED_VALUE:
+    return "Expected value";
   case EXPECTED_TYPE:
     return "Expected type";
   case UNSAFE_OPERATION_IN_SAFE_CONTEXT:

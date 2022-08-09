@@ -1,0 +1,31 @@
+// Add generic type definitions
+type V1 dyn;
+type V2 dyn;
+type V3 dyn;
+
+/**
+ * A triple in Spice is a commonly used data structure, which saves three values of arbitrary type together in a correlation
+ */
+public type Triple<V1, V2, V3> struct {
+    V1 first
+    V2 second
+    V3 third
+}
+
+public p Triple.ctor(V1 first, V2 second, V3 third) {
+    this.first = first;
+    this.second = second;
+    this.third = third;
+}
+
+public f<V1> Triple.getFirst() {
+    return this.first;
+}
+
+public f<V2> Triple.getSecond() {
+    return this.second;
+}
+
+public f<V3> Triple.getThird() {
+    return this.third;
+}

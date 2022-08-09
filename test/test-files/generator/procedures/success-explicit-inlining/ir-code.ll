@@ -9,26 +9,26 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: alwaysinline
 define internal void @_p__void__printAValue() #0 {
-entry:
+entry.l1:
   %0 = alloca i32, align 4
-  store i32 5, i32* %0, align 4
-  %1 = load i32, i32* %0, align 4
-  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @0, i32 0, i32 0), i32 %1)
+  store i32 5, ptr %0, align 4
+  %1 = load i32, ptr %0, align 4
+  %2 = call i32 (ptr, ...) @printf(ptr @0, i32 %1)
   ret void
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)
 
 define i32 @main() {
-entry:
+entry.l5:
   %result = alloca i32, align 4
   %0 = alloca i1, align 1
-  store i32 0, i32* %result, align 4
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @1, i32 0, i32 0))
+  store i32 0, ptr %result, align 4
+  %1 = call i32 (ptr, ...) @printf(ptr @1)
   call void @_p__void__printAValue()
-  store i1 true, i1* %0, align 1
-  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @2, i32 0, i32 0))
-  %3 = load i32, i32* %result, align 4
+  store i1 true, ptr %0, align 1
+  %2 = call i32 (ptr, ...) @printf(ptr @2)
+  %3 = load i32, ptr %result, align 4
   ret i32 %3
 }
 

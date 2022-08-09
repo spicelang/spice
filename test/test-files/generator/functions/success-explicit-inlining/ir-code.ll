@@ -7,27 +7,27 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: alwaysinline
 define internal i64 @_f__void__getInlinedValue() #0 {
-entry:
+entry.l1:
   %result = alloca i64, align 8
   %0 = alloca i64, align 8
-  store i64 12, i64* %0, align 8
-  %1 = load i64, i64* %0, align 8
+  store i64 12, ptr %0, align 8
+  %1 = load i64, ptr %0, align 8
   ret i64 %1
 }
 
 define i32 @main() {
-entry:
+entry.l5:
   %result = alloca i32, align 4
   %0 = alloca i64, align 8
-  store i32 0, i32* %result, align 4
+  store i32 0, ptr %result, align 4
   %1 = call i64 @_f__void__getInlinedValue()
-  store i64 %1, i64* %0, align 8
-  %2 = load i64, i64* %0, align 8
-  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @0, i32 0, i32 0), i64 %2)
-  %4 = load i32, i32* %result, align 4
+  store i64 %1, ptr %0, align 8
+  %2 = load i64, ptr %0, align 8
+  %3 = call i32 (ptr, ...) @printf(ptr @0, i64 %2)
+  %4 = load i32, ptr %result, align 4
   ret i32 %4
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)
 
 attributes #0 = { alwaysinline }

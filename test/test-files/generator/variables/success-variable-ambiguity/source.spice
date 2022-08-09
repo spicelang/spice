@@ -2,8 +2,8 @@ f<int> main() {
     int variable = 12;
     if (true) {
         variable++;
-        int variable = 14;
-        printf("Inner variable: %d\n", variable);
+        double variable = 14.1;
+        printf("Inner variable: %f\n", variable);
     }
     printf("Outer variable: %d", variable);
 }

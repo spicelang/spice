@@ -11,15 +11,15 @@
  * Visitor for debug purposes (is only executed in the compiler debug mode)
  *
  * Jobs:
- * - Visualize AST
+ * - Visualize CST
  */
-class VisualizerVisitor : public SpiceVisitor {
+class CSTVisualizerVisitor : public SpiceVisitor {
 public:
   // Constructors
-  explicit VisualizerVisitor(const std::shared_ptr<SpiceLexer> &lexer, const std::shared_ptr<SpiceParser> &parser)
+  explicit CSTVisualizerVisitor(const std::shared_ptr<SpiceLexer> &lexer, const std::shared_ptr<SpiceParser> &parser)
       : vocabulary(lexer->getVocabulary()), ruleNames(parser->getRuleNames()){};
 
-  // Public methods
+  // Visitor methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override { return buildRule(ctx); };
   std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override { return buildRule(ctx); };
   std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override { return buildRule(ctx); };
@@ -41,14 +41,13 @@ public:
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override { return buildRule(ctx); };
   std::any visitField(SpiceParser::FieldContext *ctx) override { return buildRule(ctx); };
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override { return buildRule(ctx); };
-  std::any visitTypeLstEllipsis(SpiceParser::TypeLstEllipsisContext *ctx) override { return buildRule(ctx); };
-  std::any visitTypeAlts(SpiceParser::TypeAltsContext *ctx) override { return buildRule(ctx); };
-  std::any visitArgLstDef(SpiceParser::ArgLstDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override { return buildRule(ctx); };
+  std::any visitParamLst(SpiceParser::ParamLstContext *ctx) override { return buildRule(ctx); };
   std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override { return buildRule(ctx); };
   std::any visitStmt(SpiceParser::StmtContext *ctx) override { return buildRule(ctx); };
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override { return buildRule(ctx); };
-  std::any visitDeclSpecifiers(SpiceParser::DeclSpecifiersContext *ctx) override { return buildRule(ctx); };
-  std::any visitDeclSpecifier(SpiceParser::DeclSpecifierContext *ctx) override { return buildRule(ctx); };
+  std::any visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) override { return buildRule(ctx); };
+  std::any visitSpecifier(SpiceParser::SpecifierContext *ctx) override { return buildRule(ctx); };
   std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override { return buildRule(ctx); };
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override { return buildRule(ctx); };
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override { return buildRule(ctx); };
@@ -96,4 +95,5 @@ private:
   // Private methods
   std::string buildRule(antlr4::ParserRuleContext *ctx);
   [[nodiscard]] std::string getSpaces() const;
+  [[nodiscard]] static std::string tokenToCodeLoc(const antlr4::Token &token);
 };

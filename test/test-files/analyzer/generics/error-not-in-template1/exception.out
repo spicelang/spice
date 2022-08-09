@@ -1,1 +1,1 @@
-Semantic error in ./test-files/analyzer/generics/error-not-in-template1/source.spice at 4:16: Generic type not contained in template: Generic arg type not included in function template
+Semantic error in ./test-files/analyzer/generics/error-not-in-template1/source.spice:4:16: Generic type not contained in template: Generic arg type not included in function template

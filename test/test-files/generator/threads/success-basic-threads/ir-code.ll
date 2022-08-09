@@ -11,55 +11,51 @@ target triple = "x86_64-w64-windows-gnu"
 declare i32 @usleep(i32)
 
 define i32 @main() {
-entry:
+entry.l3:
   %result = alloca i32, align 4
   %0 = alloca {}, align 8
   %1 = alloca {}, align 8
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
-  store i32 0, i32* %result, align 4
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @0, i32 0, i32 0))
-  %5 = alloca i8*, align 8
-  %6 = bitcast {}* %0 to i8*
-  %7 = call i32 @pthread_create(i8** %5, i8* null, i8* (i8*)* @_thread0, i8* %6)
-  %8 = alloca i8*, align 8
-  %9 = bitcast {}* %1 to i8*
-  %10 = call i32 @pthread_create(i8** %8, i8* null, i8* (i8*)* @_thread1, i8* %9)
-  store i32 1000000, i32* %2, align 4
-  %11 = load i32, i32* %2, align 4
-  %12 = call i32 @usleep(i32 %11)
-  store i32 %12, i32* %3, align 4
-  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([21 x i8], [21 x i8]* @3, i32 0, i32 0))
-  %14 = load i32, i32* %result, align 4
-  ret i32 %14
+  store i32 0, ptr %result, align 4
+  %4 = call i32 (ptr, ...) @printf(ptr @0)
+  %5 = alloca ptr, align 8
+  %6 = call i32 @pthread_create(ptr %5, ptr null, ptr @_thread0, ptr %0)
+  %7 = alloca ptr, align 8
+  %8 = call i32 @pthread_create(ptr %7, ptr null, ptr @_thread1, ptr %1)
+  store i32 1000000, ptr %2, align 4
+  %9 = load i32, ptr %2, align 4
+  %10 = call i32 @usleep(i32 %9)
+  store i32 %10, ptr %3, align 4
+  %11 = call i32 (ptr, ...) @printf(ptr @3)
+  %12 = load i32, ptr %result, align 4
+  ret i32 %12
 }
 
-declare i32 @printf(i8*, ...)
+declare i32 @printf(ptr, ...)
 
-define internal i8* @_thread0(i8* %0) {
-entry:
-  %1 = bitcast i8* %0 to {}*
+define internal ptr @_thread0(ptr %0) {
+thread.entry.l5:
+  %1 = alloca i32, align 4
   %2 = alloca i32, align 4
-  %3 = alloca i32, align 4
-  store i32 500000, i32* %2, align 4
-  %4 = load i32, i32* %2, align 4
-  %5 = call i32 @usleep(i32 %4)
-  store i32 %5, i32* %3, align 4
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @1, i32 0, i32 0))
-  ret i8* null
+  store i32 500000, ptr %1, align 4
+  %3 = load i32, ptr %1, align 4
+  %4 = call i32 @usleep(i32 %3)
+  store i32 %4, ptr %2, align 4
+  %5 = call i32 (ptr, ...) @printf(ptr @1)
+  ret ptr null
 }
 
-declare i32 @pthread_create(i8**, i8*, i8* (i8*)*, i8*)
+declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 
-define internal i8* @_thread1(i8* %0) {
-entry:
-  %1 = bitcast i8* %0 to {}*
+define internal ptr @_thread1(ptr %0) {
+thread.entry.l9:
+  %1 = alloca i32, align 4
   %2 = alloca i32, align 4
-  %3 = alloca i32, align 4
-  store i32 200000, i32* %2, align 4
-  %4 = load i32, i32* %2, align 4
-  %5 = call i32 @usleep(i32 %4)
-  store i32 %5, i32* %3, align 4
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @2, i32 0, i32 0))
-  ret i8* null
+  store i32 200000, ptr %1, align 4
+  %3 = load i32, ptr %1, align 4
+  %4 = call i32 @usleep(i32 %3)
+  store i32 %4, ptr %2, align 4
+  %5 = call i32 (ptr, ...) @printf(ptr @2)
+  ret ptr null
 }

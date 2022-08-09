@@ -11,5 +11,4 @@ f<int> main() {
     printf("Stack item 3: %d\n", s1.pop());
     printf("Stack item 2: %d\n", s1.pop());
     printf("Stack item 1: %d\n", s1.pop());
-    s1.dtor();
 }

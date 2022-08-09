@@ -4,13 +4,13 @@ grammar Spice;
 
 // Control structures
 entry: (mainFunctionDef | functionDef | procedureDef | structDef | genericTypeDef | globalVarDef | importStmt | extDecl)*;
-mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-functionDef: declSpecifiers? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-procedureDef: declSpecifiers? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN argLstDef? RPAREN LBRACE stmtLst RBRACE;
-extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN typeLstEllipsis? RPAREN DLL? SEMICOLON;
-genericTypeDef: declSpecifiers? TYPE IDENTIFIER typeAlts SEMICOLON;
-structDef: declSpecifiers? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT LBRACE field* RBRACE;
-globalVarDef: declSpecifiers? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
+mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT LBRACE field* RBRACE;
+genericTypeDef: specifierLst? TYPE IDENTIFIER typeAltsLst SEMICOLON;
+globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
+extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 threadDef: THREAD LBRACE stmtLst RBRACE;
 unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;
 forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
@@ -24,24 +24,23 @@ assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Statements, declarations, definitions and lists
 stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef)*;
-field: declSpecifiers? dataType IDENTIFIER;
 typeLst: dataType (COMMA dataType)*;
-typeLstEllipsis: typeLst ELLIPSIS?;
-typeAlts: dataType (BITWISE_OR dataType)*;
-argLstDef: declStmt (COMMA declStmt)*;
+typeAltsLst: dataType (BITWISE_OR dataType)*;
+paramLst: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
+field: specifierLst? dataType IDENTIFIER;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
-declStmt: declSpecifiers? dataType IDENTIFIER (ASSIGN assignExpr)?;
-declSpecifiers: declSpecifier+;
-declSpecifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC;
-importStmt: IMPORT STRING_LITERAL AS IDENTIFIER SEMICOLON;
+declStmt: specifierLst? dataType IDENTIFIER (ASSIGN assignExpr)?;
+specifierLst: specifier+;
+specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC;
+importStmt: IMPORT STRING_LIT AS IDENTIFIER SEMICOLON;
 returnStmt: RETURN assignExpr?;
-breakStmt: BREAK INTEGER?;
-continueStmt: CONTINUE INTEGER?;
+breakStmt: BREAK INT_LIT?;
+continueStmt: CONTINUE INT_LIT?;
 
 // Builtin functions
 builtinCall: printfCall | sizeOfCall | lenCall | tidCall | joinCall;
-printfCall: PRINTF LPAREN STRING_LITERAL (COMMA assignExpr)* RPAREN;
+printfCall: PRINTF LPAREN STRING_LIT (COMMA assignExpr)* RPAREN;
 sizeOfCall: SIZEOF LPAREN (assignExpr | TYPE dataType) RPAREN;
 lenCall: LEN LPAREN assignExpr RPAREN;
 tidCall: TID LPAREN RPAREN;
@@ -57,7 +56,7 @@ bitwiseXorExpr: bitwiseAndExpr (BITWISE_XOR bitwiseAndExpr)*;
 bitwiseAndExpr: equalityExpr (BITWISE_AND equalityExpr)*;
 equalityExpr: relationalExpr ((EQUAL | NOT_EQUAL) relationalExpr)?;
 relationalExpr: shiftExpr ((LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) shiftExpr)?;
-shiftExpr: additiveExpr ((SHL | SHR) additiveExpr)?;
+shiftExpr: additiveExpr ((LESS LESS | GREATER GREATER) additiveExpr)?;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: prefixUnaryExpr | LPAREN dataType RPAREN prefixUnaryExpr;
@@ -67,12 +66,12 @@ atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
 value: primitiveValue | functionCall | arrayInitialization | structInstantiation | NIL LESS dataType GREATER;
-primitiveValue: DOUBLE | INTEGER | SHORT | LONG | CHAR_LITERAL | STRING_LITERAL | TRUE | FALSE;
+primitiveValue: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
 functionCall: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACE argLst? RBRACE;
 structInstantiation: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 
-dataType: baseDataType (MUL | LBRACKET INTEGER? RBRACKET)*;
+dataType: baseDataType (MUL | LBRACKET (INT_LIT | assignExpr)? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType;
 customDataType: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)?;
 
@@ -149,8 +148,6 @@ SHR_EQUAL: '>>=';
 AND_EQUAL: '&=';
 OR_EQUAL: '|=';
 XOR_EQUAL: '^=';
-SHL: '<<';
-SHR: '>>';
 PLUS: '+';
 MINUS: '-';
 MUL: '*';
@@ -173,18 +170,19 @@ DOT: '.';
 ELLIPSIS: '...';
 
 // Regex tokens
-CHAR_LITERAL: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
-STRING_LITERAL: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
-INTEGER: NONZERO_DIGIT DIGIT* | ZERO;
-DOUBLE: DIGIT+ DOT DIGIT+;
-SHORT: INTEGER 's';
-LONG: INTEGER 'l';
-IDENTIFIER: NONDIGIT (NONDIGIT | DIGIT)*;
+DOUBLE_LIT: [0-9]*[.][0-9]+;
+INT_LIT: NUM_LIT;
+SHORT_LIT: NUM_LIT 's';
+LONG_LIT: NUM_LIT 'l';
+CHAR_LIT: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
+STRING_LIT: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
+IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
 
-fragment ZERO: [0];
-fragment DIGIT: [0-9];
-fragment NONZERO_DIGIT: [1-9];
-fragment NONDIGIT: [a-zA-Z_];
+fragment NUM_LIT: DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT;
+fragment DEC_LIT: ([0][dD])?[0-9]+;
+fragment BIN_LIT: [0][bB][01]+;
+fragment HEX_LIT: [0][xXhH][0-9a-fA-F]+;
+fragment OCT_LIT: [0][oO][0-7]+;
 
 // Skipped tokens
 BLOCK_COMMENT: '/*' .*? '*/' -> skip;
