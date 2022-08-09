@@ -2893,11 +2893,12 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
   }
 
   // Create global variable
-  module->getOrInsertGlobal(globalVarName, constArray->getType());
+  llvm::Value *memAddress = module->getOrInsertGlobal(globalVarName, constArray->getType());
   llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
   global->setConstant(true);
   global->setInitializer(constArray);
-  return global;
+
+  return memAddress;
 }
 
 bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
