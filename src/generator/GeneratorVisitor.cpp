@@ -2633,6 +2633,10 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
   itemValues.reserve(arraySize);
   itemConstants.reserve(arraySize);
 
+  bool toggledConstantArray = false;
+  if (!withinConstantArray)
+    withinConstantArray = toggledConstantArray = true;
+
   if (node->itemLst()) { // The array is initialized with values
     // Visit all args to check if they are hardcoded or not
     allArgsHardcoded = true;
@@ -2644,6 +2648,9 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     }
   }
 
+  if (toggledConstantArray)
+    withinConstantArray = false;
+
   // Decide if the array can be defined globally
   if (allArgsHardcoded && !dynamicallySized && !itemType->isStructTy()) { // Global array is possible
     // Fill up the rest of the items with default values
@@ -2653,9 +2660,12 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
         itemConstants.push_back(constantValue);
     }
 
-    // Create global array from constant values
+    // Create hardcoded array
     assert(arrayType != nullptr);
-    return createGlobalArray(arrayType, itemConstants);
+    auto type = static_cast<llvm::ArrayType *>(arrayType);
+    currentConstValue = llvm::ConstantArray::get(type, itemConstants);
+
+    return withinConstantArray ? std::any() : createGlobalArray(currentConstValue);
   } else { // Global array is not possible => fallback to individual indexing
     // Allocate array
     llvm::Value *arrayAddress;
@@ -2679,8 +2689,9 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
       }
 
       // Store item value to item address
-      llvm::Value *itemValue =
-          node->itemLst() && valueIndex < node->itemLst()->args().size() ? itemValues[valueIndex] : itemDefaultValue;
+      llvm::Value *itemValue = itemDefaultValue;
+      if (node->itemLst() && valueIndex < node->itemLst()->args().size())
+        itemValue = itemValues[valueIndex];
       builder->CreateStore(itemValue, itemAddress);
     }
 
@@ -2870,14 +2881,10 @@ llvm::Value *GeneratorVisitor::allocateDynamicallySizedArray(llvm::Type *itemTyp
   return memAddress;
 }
 
-llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants) {
-  // Create hardcoded array
-  auto type = static_cast<llvm::ArrayType *>(arrayType);
-  llvm::Constant *constArray = llvm::ConstantArray::get(type, itemConstants);
-
+llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
   // Find an unused global name
   std::string globalVarName = lhsVarName;
-  if (globalVarName.empty()) {
+  if (globalVarName.empty() || module->getNamedGlobal(globalVarName) != nullptr) {
     unsigned int suffixNumber = 0;
     do {
       globalVarName = "anonymous." + std::to_string(suffixNumber);
@@ -2886,15 +2893,11 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const st
   }
 
   // Create global variable
-  module->getOrInsertGlobal(globalVarName, arrayType);
-  llvm::Value *arrayAddress = insertAlloca(arrayType, lhsVarName);
-  builder->CreateStore(constArray, arrayAddress);
-
-  // Set some attributes to it
+  module->getOrInsertGlobal(globalVarName, constArray->getType());
   llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
   global->setConstant(true);
   global->setInitializer(constArray);
-  return arrayAddress;
+  return global;
 }
 
 bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {

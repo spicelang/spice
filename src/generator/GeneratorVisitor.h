@@ -123,6 +123,7 @@ private:
   std::stack<llvm::BasicBlock *> breakBlocks;
   std::stack<llvm::BasicBlock *> continueBlocks;
   bool constNegate = false;
+  bool withinConstantArray = false;
   bool allArgsHardcoded = true;
   llvm::Constant *currentConstValue = nullptr;
   bool currentConstSigned = true;
@@ -161,7 +162,7 @@ private:
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
-  llvm::Value *createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants);
+  llvm::Value *createGlobalArray(llvm::Constant *constArray);
   bool insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
