@@ -275,8 +275,10 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
       }
 
       // Restore stack if necessary
-      if (stackState != nullptr)
+      if (stackState != nullptr) {
         builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+        stackState = nullptr;
+      }
 
       // Create return stmt
       llvm::Value *result = returnSymbol->getAddress();
@@ -453,8 +455,11 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         }
 
         // Restore stack if necessary
-        if (stackState != nullptr)
+        if (stackState != nullptr) {
           builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+          stackState = nullptr;
+        }
+
         // Create return stmt
         llvm::Value *result = returnSymbol->getAddress();
         builder->CreateRet(builder->CreateLoad(fct->getReturnType(), result));
@@ -629,8 +634,11 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         }
 
         // Restore stack if necessary
-        if (stackState != nullptr)
+        if (stackState != nullptr) {
           builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+          stackState = nullptr;
+        }
+
         // Create return stmt
         builder->CreateRetVoid();
       }
@@ -2587,11 +2595,12 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
       // Get the actual arg value
       SymbolType actualArgSymbolType = arg->getEvaluatedSymbolType();
       llvm::Value *actualArgPtr = resolveAddress(arg);
-      if (actualArgSymbolType != expectedArgSymbolType) {
-        argValues.push_back(doImplicitCast(actualArgPtr, expectedArgType, actualArgSymbolType));
+      if (actualArgSymbolType == expectedArgSymbolType) {
+        actualArgPtr = builder->CreateLoad(actualArgSymbolType.toLLVMType(*context, accessScope), actualArgPtr);
       } else {
-        argValues.push_back(builder->CreateLoad(actualArgSymbolType.toLLVMType(*context, accessScope), actualArgPtr));
+        actualArgPtr = doImplicitCast(actualArgPtr, expectedArgType, actualArgSymbolType);
       }
+      argValues.push_back(actualArgPtr);
       argIndex++;
     }
   }
@@ -2676,32 +2685,32 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
       arrayAddress = insertAlloca(arrayType, lhsVarName);
     }
 
-    // Insert all given values
-    llvm::Value *itemDefaultValue = getDefaultValueForSymbolType(itemSymbolType);
-    for (size_t valueIndex = 0; valueIndex < arraySize; valueIndex++) {
-      // Calculate item address
-      llvm::Value *itemAddress;
-      if (arrayType->isArrayTy()) {
-        llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
-        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
-      } else {
-        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, builder->getInt32(valueIndex));
-      }
-
-      // Store item value to item address
-      llvm::Value *itemValue = itemDefaultValue;
-      if (node->itemLst() && valueIndex < node->itemLst()->args().size())
-        itemValue = itemValues[valueIndex];
-      builder->CreateStore(itemValue, itemAddress);
-    }
-
-    // Save value to address
     if (dynamicallySized) {
+      // Save value to address
       llvm::Value *newArrayAddress = insertAlloca(arrayAddress->getType(), lhsVarName);
       builder->CreateStore(arrayAddress, newArrayAddress);
       return newArrayAddress;
+    } else {
+      // Insert all given values
+      llvm::Value *itemDefaultValue = getDefaultValueForSymbolType(itemSymbolType);
+      for (size_t valueIndex = 0; valueIndex < arraySize; valueIndex++) {
+        // Calculate item address
+        llvm::Value *itemAddress;
+        if (arrayType->isArrayTy()) {
+          llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
+          itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
+        } else {
+          itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, builder->getInt32(valueIndex));
+        }
+
+        // Store item value to item address
+        llvm::Value *itemValue = itemDefaultValue;
+        if (node->itemLst() && valueIndex < node->itemLst()->args().size())
+          itemValue = itemValues[valueIndex];
+        builder->CreateStore(itemValue, itemAddress);
+      }
+      return arrayAddress;
     }
-    return arrayAddress;
   }
 }
 
@@ -2874,7 +2883,8 @@ llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::str
 llvm::Value *GeneratorVisitor::allocateDynamicallySizedArray(llvm::Type *itemType) {
   // Call llvm.stacksave intrinsic
   llvm::Function *stackSaveFct = retrieveStackSaveFct();
-  stackState = builder->CreateCall(stackSaveFct);
+  if (stackState == nullptr)
+    stackState = builder->CreateCall(stackSaveFct);
   // Allocate array
   llvm::Value *memAddress = builder->CreateAlloca(itemType, dynamicArraySize); // Intentionally not via insertAlloca
   dynamicArraySize = nullptr;
@@ -2895,7 +2905,7 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
   // Create global variable
   llvm::Value *memAddress = module->getOrInsertGlobal(globalVarName, constArray->getType());
   llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
-  global->setConstant(true);
+  // global->setConstant(true);
   global->setInitializer(constArray);
 
   return memAddress;
