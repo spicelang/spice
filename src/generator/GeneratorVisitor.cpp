@@ -745,10 +745,13 @@ std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   global->setConstant(specifiers.isConst());
 
   if (node->value()) { // Variable is initialized here
-    visit(node->value());
     constNegate = node->negative;
-    global->setInitializer(currentConstValue);
+    visit(node->value());
     constNegate = false;
+    global->setInitializer(currentConstValue);
+  } else {
+    llvm::Constant *defaultValue = getDefaultValueForSymbolType(globalVarEntry->getType());
+    global->setInitializer(defaultValue);
   }
 
   return nullptr;

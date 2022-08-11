@@ -28,7 +28,7 @@ f<int> main() {
     printf("Test: %d, %d\n", graph[1][7], sizeof(graph));
 }*/
 
-f<int> main() {
+/*f<int> main() {
     printf("Array1:\n");
     short arraySize1 = 4s;
     int[arraySize1] array1 = {1, 2, 3};
@@ -59,5 +59,19 @@ f<int> main() {
     array4 = {1, arraySize4, arraySize4};
     foreach dyn item : array4 {
         printf("Item: %d\n", item);
+    }
+}*/
+
+int count = -5;
+
+f<int> main() {
+    int[count] items;
+    /*items[0] = 1;
+    items[1] = 2;
+    items[2] = 3;
+    items[3] = 4;
+    items[4] = 5;*/
+    foreach int i : items {
+        printf("%d\n", i);
     }
 }

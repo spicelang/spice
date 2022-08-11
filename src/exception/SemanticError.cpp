@@ -52,6 +52,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Global of type dyn";
   case GLOBAL_OF_INVALID_TYPE:
     return "Global of invalid type";
+  case GLOBAL_CONST_WITHOUT_VALUE:
+    return "Global const without value";
   case FUNCTION_WITHOUT_RETURN_STMT:
     return "Missing return statement";
   case INVALID_PARAM_ORDER:

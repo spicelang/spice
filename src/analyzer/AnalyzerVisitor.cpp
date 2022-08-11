@@ -688,6 +688,9 @@ std::any AnalyzerVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (node->specifierLst()) {
     for (const auto &specifier : node->specifierLst()->specifiers()) {
       if (specifier->type == SpecifierNode::TY_CONST) {
+        // Check if a value is attached
+        if (!node->value())
+          throw err->get(node->codeLoc, GLOBAL_CONST_WITHOUT_VALUE, "You must specify a value for constant global variables");
         symbolTypeSpecifiers.setConst(true);
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
         symbolTypeSpecifiers.setSigned(true);
