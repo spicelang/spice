@@ -44,4 +44,22 @@ f<int> main() {
 The `ctor` method can also be called manually like calling [other methods](./methods).
 
 ## Destructors
-*Feature to come ...*
+You have the option to create a destructor by providing a `dtor` method on a struct. It does not allow any arguments and has no
+return type, since it is a procedure. Destructors can be especially useful for de-allocating objects in heap memory, that were
+allocated via `malloc()`. Whenever a struct variable goes out of scope somewhere in the program, the compiler searches for a
+destructor and calls it if available.
+
+Here is an example for a custom destructor:
+
+```spice
+// Declarations of the generic type T as well as malloc() and free()
+
+type ExampleStruct<T> struct {
+	string message
+	T* messageObject
+}
+
+p ExampleStruct.dtor() {
+    free(this.messageObject);
+}
+```
