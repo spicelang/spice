@@ -128,6 +128,10 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
   }
 
   if (runNumber == 1) { // First run
+    // Check if name is dtor
+    if (node->functionName == "dtor")
+      throw err->get(node->codeLoc, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
+
     // Create a new scope
     node->fctScope = currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_FUNC_PROC_BODY);
 
@@ -364,6 +368,9 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         templateTypes.push_back(*genericType);
       }
     }
+
+    if (node->hasParams && node->procedureName == "dtor")
+      throw err->get(node->codeLoc, DTOR_WITH_PARAMS, "It is not allowed to specify parameters for destructors");
 
     // Visit arguments in new scope
     std::vector<std::string> argNames;
