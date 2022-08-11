@@ -1,0 +1,13 @@
+type TestStruct struct {
+    bool test
+}
+
+f<bool> TestStruct.dtor() {
+    printf("Dtor called");
+    return false;
+}
+
+f<int> main() {
+    TestStruct t = TestStruct();
+    printf("Test: %d\n", 0o0000777);
+}
