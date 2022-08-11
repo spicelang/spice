@@ -56,6 +56,10 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Missing return statement";
   case INVALID_PARAM_ORDER:
     return "Invalid argument order";
+  case DTOR_MUST_BE_PROCEDURE:
+    return "Destructor must be a procedure";
+  case DTOR_WITH_PARAMS:
+    return "Destructors must not have parameters";
   case OPERATOR_WRONG_DATA_TYPE:
     return "Wrong data type for operator";
   case UNEXPECTED_DYN_TYPE_SA:
