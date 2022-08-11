@@ -2688,32 +2688,34 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
       arrayAddress = insertAlloca(arrayType, lhsVarName);
     }
 
+    // Insert all given values
+    for (size_t valueIndex = 0; valueIndex < arraySize; valueIndex++) {
+      // Calculate item address
+      llvm::Value *itemAddress;
+      if (arrayType->isArrayTy()) {
+        llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
+        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
+      } else {
+        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, builder->getInt32(valueIndex));
+      }
+
+      // Store item value to item address
+      llvm::Value *itemValue;
+      if (node->itemLst() && valueIndex < node->itemLst()->args().size()) {
+        itemValue = itemValues[valueIndex];
+      } else {
+        itemValue = getDefaultValueForSymbolType(itemSymbolType);
+      }
+      builder->CreateStore(itemValue, itemAddress);
+    }
+
     if (dynamicallySized) {
       // Save value to address
       llvm::Value *newArrayAddress = insertAlloca(arrayAddress->getType(), lhsVarName);
       builder->CreateStore(arrayAddress, newArrayAddress);
       return newArrayAddress;
-    } else {
-      // Insert all given values
-      llvm::Value *itemDefaultValue = getDefaultValueForSymbolType(itemSymbolType);
-      for (size_t valueIndex = 0; valueIndex < arraySize; valueIndex++) {
-        // Calculate item address
-        llvm::Value *itemAddress;
-        if (arrayType->isArrayTy()) {
-          llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
-          itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
-        } else {
-          itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, builder->getInt32(valueIndex));
-        }
-
-        // Store item value to item address
-        llvm::Value *itemValue = itemDefaultValue;
-        if (node->itemLst() && valueIndex < node->itemLst()->args().size())
-          itemValue = itemValues[valueIndex];
-        builder->CreateStore(itemValue, itemAddress);
-      }
-      return arrayAddress;
     }
+    return arrayAddress;
   }
 }
 

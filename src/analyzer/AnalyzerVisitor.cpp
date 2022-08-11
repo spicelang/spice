@@ -1185,11 +1185,17 @@ std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
 }
 
 std::any AnalyzerVisitor::visitSizeofCall(SizeofCallNode *node) {
+  SymbolType symbolType;
   if (node->isType) { // Size of type
-    any_cast<SymbolType>(visit(node->dataType()));
+    symbolType = any_cast<SymbolType>(visit(node->dataType()));
   } else { // Size of value
-    any_cast<SymbolType>(visit(node->assignExpr()));
+    symbolType = any_cast<SymbolType>(visit(node->assignExpr()));
   }
+
+  // Check if symbol type is dynamically sized array
+  if (symbolType.is(TY_ARRAY) && symbolType.getArraySize() == -1)
+    throw err->get(node->codeLoc, SIZEOF_DYNAMIC_SIZED_ARRAY, "Cannot get sizeof dynamically sized array at compile time");
+
   return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 

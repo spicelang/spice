@@ -104,6 +104,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Array item type not matching";
   case EXPECTED_ARRAY_TYPE:
     return "Expected array type";
+  case SIZEOF_DYNAMIC_SIZED_ARRAY:
+    return "Sizeof dynamically sized array";
   case RETURN_WITHOUT_VALUE_RESULT:
     return "Return without initialization of result variable";
   case RETURN_WITH_VALUE_IN_PROCEDURE:
