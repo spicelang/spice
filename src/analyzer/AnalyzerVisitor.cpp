@@ -1951,6 +1951,10 @@ std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node
   int actualSize = 0;
   SymbolType actualItemType = SymbolType(TY_DYN);
   if (node->itemLst()) {
+    // Set the expected array type to the contained type
+    SymbolType expectedTypeBackup = expectedType;
+    expectedType = expectedType.isArray() ? expectedType.getContainedTy() : expectedType;
+
     for (const auto &arg : node->itemLst()->args()) {
       auto itemType = any_cast<SymbolType>(visit(arg));
       if (actualItemType.is(TY_DYN)) {
@@ -1962,6 +1966,9 @@ std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node
       }
       actualSize++;
     }
+
+    // Restore the expected array type
+    expectedType = expectedTypeBackup;
   }
 
   // Override actual array size if the expected type has a fixed size

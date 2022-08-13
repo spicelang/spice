@@ -2650,6 +2650,10 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     withinConstantArray = toggledConstantArray = true;
 
   if (node->itemLst()) { // The array is initialized with values
+    // Set the lhs type to the item type
+    llvm::Type *lhsTypeBackup = lhsType;
+    lhsType = itemSymbolType.toLLVMType(*context, currentScope);
+
     // Visit all args to check if they are hardcoded or not
     allArgsHardcoded = true;
     for (size_t i = 0; i < std::min(node->itemLst()->args().size(), arraySize); i++) {
@@ -2658,6 +2662,9 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
       itemValues.push_back(itemValue);
       itemConstants.push_back(currentConstValue);
     }
+
+    // Restore lhs type
+    lhsType = lhsTypeBackup;
   }
 
   if (toggledConstantArray)
