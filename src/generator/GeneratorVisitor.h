@@ -113,7 +113,7 @@ private:
   std::unique_ptr<llvm::DIBuilder> diBuilder;
   SymbolTable *currentScope;
   SymbolTable *rootScope;
-  SymbolType currentSymbolType;
+  SymbolType currentSymbolType = SymbolType(TY_INVALID);
   ScopePath scopePath;
   ThreadFactory &threadFactory;
   std::unique_ptr<ErrorFactory> err;
@@ -134,6 +134,7 @@ private:
   llvm::Type *structAccessType = nullptr;
   llvm::Value *dynamicArraySize = nullptr;
   llvm::Value *stackState = nullptr;
+  SymbolType arraySymbolType = SymbolType(TY_INVALID);
   bool secondRun = false;
   struct DebugInfo {
     llvm::DIFile *diFile;

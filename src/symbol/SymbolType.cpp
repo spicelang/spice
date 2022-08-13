@@ -109,7 +109,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
  * @return Corresponding LLVM type
  */
 llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const {
-  assert(!isOneOf({TY_DYN, TY_INVALID}));
+  assert(!typeChain.empty() && !isOneOf({TY_DYN, TY_INVALID}));
 
   if (is(TY_DOUBLE))
     return llvm::Type::getDoubleTy(context);
@@ -147,7 +147,8 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
   }
 
   if (isArray()) {
-    llvm::ArrayType *arrayType = llvm::ArrayType::get(getContainedTy().toLLVMType(context, accessScope), getArraySize());
+    llvm::Type *containedType = getContainedTy().toLLVMType(context, accessScope);
+    llvm::ArrayType *arrayType = llvm::ArrayType::get(containedType, getArraySize());
     return static_cast<llvm::Type *>(arrayType);
   }
 

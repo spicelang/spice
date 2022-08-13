@@ -2628,17 +2628,26 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
   // Get data type
   size_t actualItemCount = node->itemLst() ? node->itemLst()->args().size() : 0;
   size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
-  SymbolType arraySymbolType = node->getEvaluatedSymbolType();
+
+  bool dynamicallySized = false;
+  bool outermostArray = true;
+  if (!arraySymbolType.is(TY_INVALID)) {
+    dynamicallySized = arraySymbolType.is(TY_PTR) && arraySymbolType.getDynamicArraySize() != nullptr;
+    outermostArray = false;
+  } else if (!lhsVarName.empty()) {
+    SymbolTableEntry *arrayEntry = currentScope->lookupStrict(lhsVarName);
+    assert(arrayEntry != nullptr);
+    arraySymbolType = arrayEntry->getType();
+    dynamicallySized = arraySymbolType.isPointer() && arraySymbolType.getDynamicArraySize() != nullptr;
+    if (dynamicallySized)
+      dynamicArraySize = arraySymbolType.getDynamicArraySize();
+  } else {
+    arraySymbolType = node->getEvaluatedSymbolType();
+  }
+
   SymbolType itemSymbolType = arraySymbolType.getContainedTy();
   llvm::Type *arrayType = arraySymbolType.toLLVMType(*context, currentScope);
   llvm::Type *itemType = itemSymbolType.toLLVMType(*context, currentScope);
-
-  bool dynamicallySized = false;
-  if (!lhsVarName.empty()) {
-    SymbolTableEntry *arrayEntry = currentScope->lookupStrict(lhsVarName);
-    assert(arrayEntry != nullptr);
-    dynamicallySized = arrayEntry->getType().is(TY_PTR) && arrayEntry->getType().getDynamicArraySize() != nullptr;
-  }
 
   std::vector<llvm::Value *> itemValues;
   std::vector<llvm::Constant *> itemConstants;
@@ -2653,22 +2662,33 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     // Set the lhs type to the item type
     llvm::Type *lhsTypeBackup = lhsType;
     lhsType = itemSymbolType.toLLVMType(*context, currentScope);
+    SymbolType arraySymbolTypeBackup = arraySymbolType;
+    arraySymbolType = arraySymbolType.getContainedTy();
 
     // Visit all args to check if they are hardcoded or not
     allArgsHardcoded = true;
     for (size_t i = 0; i < std::min(node->itemLst()->args().size(), arraySize); i++) {
       currentConstValue = nullptr;
-      llvm::Value *itemValue = resolveValue(node->itemLst()->args()[i]);
+      if (arraySymbolType.isPointer())
+        dynamicArraySize = arraySymbolType.getDynamicArraySize();
+
+      AssignExprNode *arg = node->itemLst()->args()[i];
+      llvm::Value *itemValue = itemType->isPointerTy() ? resolveAddress(arg) : resolveValue(arg);
+
       itemValues.push_back(itemValue);
       itemConstants.push_back(currentConstValue);
     }
 
     // Restore lhs type
     lhsType = lhsTypeBackup;
+    arraySymbolType = arraySymbolTypeBackup;
   }
 
   if (toggledConstantArray)
     withinConstantArray = false;
+  if (outermostArray)
+    arraySymbolType = SymbolType(TY_INVALID);
+  currentConstValue = nullptr;
 
   // Decide if the array can be defined globally
   if (allArgsHardcoded && !dynamicallySized && !itemType->isStructTy()) { // Global array is possible
@@ -2681,16 +2701,18 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
 
     // Create hardcoded array
     assert(arrayType != nullptr);
-    auto type = static_cast<llvm::ArrayType *>(arrayType);
+    auto type = reinterpret_cast<llvm::ArrayType *>(arrayType);
     currentConstValue = llvm::ConstantArray::get(type, itemConstants);
 
     return withinConstantArray ? std::any() : createGlobalArray(currentConstValue);
   } else { // Global array is not possible => fallback to individual indexing
+    allArgsHardcoded = false;
+
     // Allocate array
     llvm::Value *arrayAddress;
     if (dynamicallySized) {
       arrayAddress = allocateDynamicallySizedArray(itemType);
-      arrayType = arraySymbolType.getContainedTy().toLLVMType(*context, currentScope);
+      arrayType = itemSymbolType.toLLVMType(*context, currentScope);
     } else {
       arrayAddress = insertAlloca(arrayType, lhsVarName);
     }
@@ -3065,7 +3087,7 @@ llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(const SymbolType 
     assert(structScope != nullptr);
 
     size_t fieldCount = structScope->getFieldCount();
-    auto structType = static_cast<llvm::StructType *>(structEntry->getType().toLLVMType(*context, structScope));
+    auto structType = reinterpret_cast<llvm::StructType *>(structEntry->getType().toLLVMType(*context, structScope));
 
     // Allocate space for the struct in memory
     llvm::Value *structAddress = insertAlloca(structType);
