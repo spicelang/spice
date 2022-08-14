@@ -2151,7 +2151,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Type *lhsTy = lhsSymbolType.is(TY_IMPORT) ? nullptr : lhsSymbolType.toLLVMType(*context, currentScope);
     llvm::Value *lhsPtr = resolveAddress(lhsOperand);
-    llvm::Value *lhs = lhsPtr != nullptr ? builder->CreateLoad(lhsTy, lhsPtr) : nullptr;
+    llvm::Value *lhs = nullptr;
 
     size_t subscriptCounter = 0;
     size_t memberAccessCounter = 0;
@@ -2160,12 +2160,12 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     while (!opQueue.empty()) {
       switch (opQueue.front().first) {
       case PostfixUnaryExprNode::OP_SUBSCRIPT: {
-        if (!lhs) {
+        /*if (!lhs) {
           lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
           lhs = builder->CreateLoad(lhsTy, lhsPtr);
         }
 
-        assert(lhs->getType()->isArrayTy() || lhs->getType()->isPointerTy());
+        assert(lhs->getType()->isArrayTy() || lhs->getType()->isPointerTy());*/
 
         // Save variables to restore later
         std::string currentVarNameBackup = currentVarName;
@@ -2183,16 +2183,20 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         structAccessAddress = structAccessAddressBackup;
         structAccessType = structAccessTypeBackup;
 
-        if (lhs->getType()->isArrayTy()) {
+        if (lhsSymbolType.isArray() && lhsSymbolType.getArraySize() > 0) {
           lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
           // Calculate address of array item
           llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
           lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indices);
           structAccessType = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
         } else {
-          lhsTy = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
+          lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
+          lhsPtr = builder->CreateLoad(lhsTy, lhsPtr);
+          lhsTy = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope)->getPointerTo();
           // Calculate address of pointer offset
-          lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhs, indexValue);
+          lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indexValue);
+          // llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
+          // lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indices);
           structAccessType = lhsTy;
         }
         structAccessAddress = lhsPtr;

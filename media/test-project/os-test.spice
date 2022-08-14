@@ -10,7 +10,7 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-const unsigned int vertexCount = 2;
+const unsigned int vertexCount = 5;
 
 f<int> main() {
     /*int[vertexCount][vertexCount] graph = {
@@ -27,6 +27,7 @@ f<int> main() {
 
     printf("Test: %d\n", graph[1][7]);*/
 
-    int[2][5] graph = {{ 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 }, { 9, 10 }};
-    printf("Result: %d\n", graph[4][1]);
+    int[2][vertexCount] graph = {{ 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 }, { 9, 10 }};
+    int[2] graph1 = graph[0];
+    printf("Result: %d\n", graph1[1]);
 }
