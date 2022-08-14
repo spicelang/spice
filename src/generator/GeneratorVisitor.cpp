@@ -2192,11 +2192,11 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         } else {
           lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
           lhsPtr = builder->CreateLoad(lhsTy, lhsPtr);
-          lhsTy = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope)->getPointerTo();
+          lhsTy = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
           // Calculate address of pointer offset
-          lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indexValue);
           // llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
           // lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indices);
+          lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indexValue);
           structAccessType = lhsTy;
         }
         structAccessAddress = lhsPtr;
@@ -2724,13 +2724,7 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     // Insert all given values
     for (size_t valueIndex = 0; valueIndex < arraySize; valueIndex++) {
       // Calculate item address
-      llvm::Value *itemAddress;
-      if (arrayType->isArrayTy()) {
-        llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
-        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
-      } else {
-        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, builder->getInt32(valueIndex));
-      }
+      llvm::Value *itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, builder->getInt32(valueIndex));
 
       // Store item value to item address
       llvm::Value *itemValue;
