@@ -2194,8 +2194,6 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           lhsPtr = builder->CreateLoad(lhsTy, lhsPtr);
           lhsTy = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
           // Calculate address of pointer offset
-          // llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
-          // lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indices);
           lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indexValue);
           structAccessType = lhsTy;
         }

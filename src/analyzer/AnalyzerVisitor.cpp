@@ -1577,6 +1577,8 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
 std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   auto lhs = any_cast<SymbolType>(visit(node->atomicExpr()));
+  if (lhs.is(TY_INVALID))
+    throw err->get(node->codeLoc, VARIABLE_NOT_FOUND, "The variable '" + node->atomicExpr()->identifier + "' could not be found");
 
   size_t subscriptCounter = 0;
   size_t memberAccessCounter = 0;
