@@ -12,7 +12,7 @@ f<int> main() {
 
 const unsigned int vertexCount = 2;
 
-/*f<int> main() {
+f<int> main() {
     /*int[vertexCount][vertexCount] graph = {
         { 0, 4, 0, 0, 0, 0, 0, 8, 0 },
         { 4, 0, 8, 0, 0, 0, 0, 11, 0 },
@@ -33,11 +33,10 @@ const unsigned int vertexCount = 2;
         printf("Value: %d\n", (*(&graph[2] + 0))[0]);
     }*/
     //printf("Result: %d\n", graph[2][1]);
-    /*int[vertexCount][vertexCount] graph = {{ 1, 2 }, { 3, 4 }};
-    printf("Test: %d\n", graph[1][1]);
-}*/
-
-f<int> main() {
-    unsigned int unsignedInt = -0x567; // Will wrap around
-    printf("Test: %d", unsignedInt);
+    //int[vertexCount][vertexCount] graph = {{ 1, 2 }, { 3, 4 }};
+    //printf("Test: %d\n", graph[1][1]);
+    int testInt = 12;
+    testInt = 13;
+    testInt++;
+    printf("Test: %d", testInt);
 }

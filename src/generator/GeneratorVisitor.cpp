@@ -72,8 +72,8 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
 
   // Initialize debug info generator
   if (cliOptions.generateDebugInfo) {
-    module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
     module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
+    module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
     initializeDIBuilder(sourceFile.fileName, sourceFile.fileDir);
   }
 }
@@ -287,7 +287,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
 
     // Conclude debug information
     if (cliOptions.generateDebugInfo)
-      debugInfo.lexicalBlocks.pop_back();
+      debugInfo.lexicalBlocks.pop();
 
     // Verify function
     if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
@@ -467,7 +467,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
 
       // Conclude debug information
       if (cliOptions.generateDebugInfo)
-        debugInfo.lexicalBlocks.pop_back();
+        debugInfo.lexicalBlocks.pop();
 
       // Verify function
       if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
@@ -645,7 +645,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
 
       // Conclude debug information
       if (cliOptions.generateDebugInfo)
-        debugInfo.lexicalBlocks.pop_back();
+        debugInfo.lexicalBlocks.pop();
 
       // Verify procedure
       if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
@@ -1313,27 +1313,24 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   llvm::Value *memAddress = nullptr;
   if (node->assignExpr()) { // Declaration with assignment
     memAddress = resolveAddress(node->assignExpr());
-
-    // Generate debug info for local variable
-    generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress);
   } else { // Declaration with default value
     if (entry->getType().is(TY_PTR) && entry->getType().getDynamicArraySize() != nullptr) {
       llvm::Type *itemType = entry->getType().getContainedTy().toLLVMType(*context, nullptr);
       dynamicArraySize = entry->getType().getDynamicArraySize();
-      llvm::Value *arrayValue = allocateDynamicallySizedArray(itemType);
-      memAddress = insertAlloca(arrayValue->getType(), lhsVarName);
-      builder->CreateStore(arrayValue, memAddress, entry->isVolatile());
+      llvm::Value *value = allocateDynamicallySizedArray(itemType);
+      memAddress = insertAlloca(value->getType(), lhsVarName);
+      builder->CreateStore(value, memAddress, entry->isVolatile());
     } else {
-      llvm::Value *defaultValue = getDefaultValueForSymbolType(currentSymbolType);
+      llvm::Value *value = getDefaultValueForSymbolType(currentSymbolType);
       memAddress = insertAlloca(varType, lhsVarName);
 
-      // Generate debug info for local variable
-      generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress);
-
       // Save default value to address
-      builder->CreateStore(defaultValue, memAddress, entry->isVolatile());
+      builder->CreateStore(value, memAddress, entry->isVolatile());
     }
   }
+
+  if (cliOptions.generateDebugInfo)
+    generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress);
 
   // Update address in symbol table
   entry->updateAddress(memAddress);
@@ -1652,9 +1649,6 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
       }
       builder->CreateStore(rhs, lhsPtr, variableEntry->isVolatile());
     }
-
-    // Add debug info for value change
-    generateAssignDebugInfo(node->codeLoc, lhsVarName, rhs);
 
     return lhsPtr;
   } else if (node->ternaryExpr()) {
@@ -2133,12 +2127,9 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
       opStack.pop();
     }
 
-    if (storeValue) {
-      // Store the value back again
+    // Store the value back again
+    if (storeValue)
       builder->CreateStore(lhs, lhsPtr, isVolatile);
-      // Create debug info for assignment
-      generateAssignDebugInfo(node->codeLoc, currentVarName, lhs);
-    }
 
     return lhsPtr;
   }
@@ -2248,12 +2239,9 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       opQueue.pop();
     }
 
-    if (lhs != nullptr) {
-      // Store the value back again
+    // Store the value back again
+    if (lhs != nullptr)
       builder->CreateStore(lhs, lhsPtr);
-      // Create debug info for assignment
-      generateAssignDebugInfo(node->codeLoc, currentVarName, lhs);
-    }
 
     return lhsPtr;
   }
@@ -2893,6 +2881,7 @@ void GeneratorVisitor::createCondBr(llvm::Value *condition, llvm::BasicBlock *tr
 llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) {
     llvm::AllocaInst *allocaInst = builder->CreateAlloca(llvmType, nullptr, varName);
+    allocaInst->setDebugLoc(llvm::DebugLoc());
     allocaInst->moveAfter(allocaInsertInst);
     allocaInsertInst = allocaInst;
   } else {
@@ -3151,12 +3140,13 @@ llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *src, llvm::Type *dstT
 }
 
 void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir) {
+  std::string producerString = "spice version " + std::string(SPICE_VERSION);
   // Create DIBuilder
   diBuilder = std::make_unique<llvm::DIBuilder>(*module);
   // Create compilation unit
   debugInfo.diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
   debugInfo.compileUnit =
-      diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, "Spice Compiler", cliOptions.optLevel > 0, "", 0);
+      diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, producerString, cliOptions.optLevel > 0, "", 0);
   // Initialize primitive types
   debugInfo.doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
   debugInfo.intTy = diBuilder->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
@@ -3209,9 +3199,6 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
 }
 
 void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
-  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  size_t lineNumber = spiceFunc->getDeclCodeLoc().line;
-
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
   argTypes.push_back(getDITypeForSymbolType(spiceFunc->getReturnType())); // Add result type
@@ -3219,14 +3206,17 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
     argTypes.push_back(getDITypeForSymbolType(argType));
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
 
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  size_t lineNumber = spiceFunc->getDeclCodeLoc().line;
+
   llvm::DISubprogram *subprogram =
       diBuilder->createFunction(unit, spiceFunc->getName(), spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
-                                llvm::DINode::FlagZero, llvm::DISubprogram::SPFlagDefinition);
+                                llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
 
   // Add debug info to LLVM function
   llvmFunction->setSubprogram(subprogram);
   // Add scope to lexicalBlocks
-  debugInfo.lexicalBlocks.push_back(subprogram);
+  debugInfo.lexicalBlocks.push(subprogram);
 }
 
 /*llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
@@ -3252,31 +3242,15 @@ void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::
   if (!cliOptions.generateDebugInfo)
     return;
   // Get symbol table entry
-  SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
+  SymbolTableEntry *variableEntry = currentScope->lookup(varName);
   assert(variableEntry != nullptr);
   // Build debug info
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.top();
   llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
-  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, codeLoc.line, diType);
+  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, varName, unit, codeLoc.line, diType);
   llvm::DIExpression *expr = diBuilder->createExpression();
-  diBuilder->insertDbgAddrIntrinsic(address, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
-}
-
-void GeneratorVisitor::generateAssignDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *value) {
-  if (!cliOptions.generateDebugInfo)
-    return;
-  // Get symbol table entry
-  SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
-  assert(variableEntry != nullptr);
-  // Build debug info
-  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
-  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
-  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, codeLoc.line, diType);
-  llvm::DIExpression *expr = diBuilder->createExpression();
-  // Insert intrinsic call
-  diBuilder->insertDbgValueIntrinsic(value, varInfo, expr, builder->getCurrentDebugLocation(), builder->GetInsertBlock());
+  diBuilder->insertDeclare(address, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
 }
 
 void GeneratorVisitor::emitSourceLocation(AstNode *node) {
@@ -3284,8 +3258,9 @@ void GeneratorVisitor::emitSourceLocation(AstNode *node) {
     return;
   if (debugInfo.lexicalBlocks.empty())
     return;
-  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
-  builder->SetCurrentDebugLocation(llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope));
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.top();
+  auto codeLoc = llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope);
+  builder->SetCurrentDebugLocation(codeLoc);
 }
 
 llvm::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {

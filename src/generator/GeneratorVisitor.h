@@ -139,7 +139,7 @@ private:
   struct DebugInfo {
     llvm::DIFile *diFile;
     llvm::DICompileUnit *compileUnit;
-    std::vector<llvm::DIScope *> lexicalBlocks;
+    std::stack<llvm::DIScope *> lexicalBlocks;
     llvm::DIType *doubleTy;
     llvm::DIType *intTy;
     llvm::DIType *uIntTy;
@@ -178,7 +178,6 @@ private:
   //[[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
   void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address);
-  void generateAssignDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *value);
   void emitSourceLocation(AstNode *ctx);
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };
