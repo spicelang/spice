@@ -27,10 +27,12 @@ f<int> main() {
 
     printf("Test: %d\n", graph[1][7]);*/
 
-    int[vertexCount][5] graph = {{ 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 }, { 9, 10 }};
-    unsafe {
+    //int[vertexCount][5] graph = {{ 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 }, { 9, 10 }};
+    /*unsafe {
         printf("Address: %p\n", &(*(&graph[2] + 0))[0]);
         printf("Value: %d\n", (*(&graph[2] + 0))[0]);
-    }
-    printf("Result: %d\n", graph[2][0]);
+    }*/
+    //printf("Result: %d\n", graph[2][1]);
+    int[vertexCount][vertexCount] graph = {{ 1, 2 }, { 3, 4 }};
+    printf("Test: %d\n", graph[1][1]);
 }

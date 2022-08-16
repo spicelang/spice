@@ -744,6 +744,10 @@ std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   global->setLinkage(linkage);
   global->setConstant(specifiers.isConst());
 
+  // Add debug info
+  if (cliOptions.generateDebugInfo)
+    generateGlobalVarDebugInfo(global, globalVarEntry);
+
   if (node->value()) { // Variable is initialized here
     constNegate = node->negative;
     visit(node->value());
@@ -2160,12 +2164,6 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     while (!opQueue.empty()) {
       switch (opQueue.front().first) {
       case PostfixUnaryExprNode::OP_SUBSCRIPT: {
-        /*if (!lhs) {
-          lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
-          lhs = builder->CreateLoad(lhsTy, lhsPtr);
-        }
-
-        assert(lhs->getType()->isArrayTy() || lhs->getType()->isPointerTy());*/
 
         // Save variables to restore later
         std::string currentVarNameBackup = currentVarName;
@@ -2183,13 +2181,13 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         structAccessAddress = structAccessAddressBackup;
         structAccessType = structAccessTypeBackup;
 
-        if (lhsSymbolType.isArray() && lhsSymbolType.getArraySize() > 0) {
+        if (lhsSymbolType.isArray() && lhsSymbolType.getArraySize() > 0) { // Array
           lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
           // Calculate address of array item
           llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
           lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indices);
           structAccessType = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
-        } else {
+        } else { // Pointer
           lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
           lhsPtr = builder->CreateLoad(lhsTy, lhsPtr);
           lhsTy = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
@@ -3239,6 +3237,16 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
   llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
   return diBuilder->createStructType(unit, spiceStruct->getName(), unit, lineNumber, sizeInBits, 0, flags, nullptr, elements);
 }*/
+
+void GeneratorVisitor::generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry) {
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  size_t lineNumber = globalEntry->getDeclCodeLoc().line;
+  llvm::StringRef name = global->getName();
+  llvm::DIType *type = getDITypeForSymbolType(globalEntry->getType());
+  bool isLocal = globalEntry->getSpecifiers().isPublic();
+
+  global->addDebugInfo(diBuilder->createGlobalVariableExpression(unit, name, name, unit, lineNumber, type, isLocal));
+}
 
 void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address) {
   if (!cliOptions.generateDebugInfo)
