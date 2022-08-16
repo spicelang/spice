@@ -86,3 +86,39 @@ f<int> main() {
     THIS_IS_A_CONSTANT++; // Will give a compiler error
 }
 ```
+
+## The `signed` modifier
+
+Marks a numeric variable to use signed numbers explicitly.
+
+### Applicable for
+
+- Local variables
+- Global variables
+- Struct fields
+
+### Example
+
+```spice
+f<int> main() {
+    signed int signedInt = -0x567;
+}
+```
+
+## The `unsigned` modifier
+
+Marks a numeric variable to use unsigned numbers explicitly.
+
+### Applicable for
+
+- Local variables
+- Global variables
+- Struct fields
+
+### Example
+
+```spice
+f<int> main() {
+    unsigned int unsignedInt = -0x567; // Will wrap around
+}
+```
