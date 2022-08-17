@@ -1,7 +1,11 @@
+f<int> fib(int n) {
+    if n <= 2 { return 1; }
+    return fib(n - 1) + fib(n - 2);
+}
+
 f<int> main() {
-    int testInt = 12;
-    testInt = 13;
-    return testInt;
+    int base = 46;
+    printf("Fibonacci of %d: %d", base, fib(base));
 }
 
 /*import "std/data/vector" as vec;

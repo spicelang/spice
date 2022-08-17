@@ -181,132 +181,139 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
   if (!secondRun)
     return nullptr;
 
-  if (requiresMainFct) { // Only create main function when it is required
-    // Change scope to function scope
-    currentScope = node->fctScope;
-    assert(currentScope != nullptr);
+  // Only create main function when it is required
+  if (!requiresMainFct)
+    return nullptr;
 
-    // Visit arguments
-    std::vector<std::string> argNames;
-    std::vector<llvm::Type *> argTypes;
-    if (node->paramLst()) {
-      argNames.reserve(node->paramLst()->params().size());
-      argTypes.reserve(node->paramLst()->params().size());
-      for (const auto &param : node->paramLst()->params()) {
-        currentVarName = param->varName;
-        argNames.push_back(currentVarName);
-        SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
-        assert(argSymbol != nullptr);
-        currentConstSigned = argSymbol->getSpecifiers().isSigned();
-        auto argType = any_cast<llvm::Type *>(visit(param->dataType()));
-        argTypes.push_back(argType);
-      }
-    }
+  // Change scope to function scope
+  currentScope = node->fctScope;
+  assert(currentScope != nullptr);
 
-    // Build function itself
-    llvm::Type *returnType = builder->getInt32Ty();
-    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
-    llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module.get());
-
-    // Add debug info
-    if (cliOptions.generateDebugInfo) {
-      // Get arg types
-      std::vector<std::pair<SymbolType, bool>> argTypes;
-      for (const auto &argName : argNames) {
-        SymbolTableEntry *argEntry = currentScope->lookup(argName);
-        assert(argEntry != nullptr);
-        argTypes.emplace_back(argEntry->getType(), true);
-      }
-      // Build spice function
-      SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-      Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argTypes, {}, node->codeLoc);
-      // Add debug info
-      generateFunctionDebugInfo(fct, &spiceFunc);
-    }
-
-    // Create entry block
-    std::string codeLine = node->codeLoc.toPrettyLine();
-    llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry." + codeLine);
-    fct->getBasicBlockList().push_back(bEntry);
-    moveInsertPointToBlock(bEntry);
-    allocaInsertInst = nullptr;
-
-    // Store function arguments
-    for (auto &arg : fct->args()) {
-      unsigned argNo = arg.getArgNo();
-      std::string argName = argNames[argNo];
-      llvm::Type *argType = fctType->getParamType(argNo);
-      llvm::Value *memAddress = insertAlloca(argType, argName);
-      SymbolTableEntry *argSymbol = currentScope->lookup(argName);
+  // Visit arguments
+  std::vector<std::string> argNames;
+  std::vector<llvm::Type *> argTypes;
+  if (node->paramLst()) {
+    argNames.reserve(node->paramLst()->params().size());
+    argTypes.reserve(node->paramLst()->params().size());
+    for (const auto &param : node->paramLst()->params()) {
+      currentVarName = param->varName;
+      argNames.push_back(currentVarName);
+      SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
       assert(argSymbol != nullptr);
-      argSymbol->updateAddress(memAddress);
-      builder->CreateStore(&arg, memAddress);
+      currentConstSigned = argSymbol->getSpecifiers().isSigned();
+      auto argType = any_cast<llvm::Type *>(visit(param->dataType()));
+      argTypes.push_back(argType);
     }
-
-    // Declare result variable and set it to 0 for positive return code
-    llvm::Value *memAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
-    SymbolTableEntry *returnSymbol = currentScope->lookup(RETURN_VARIABLE_NAME);
-    assert(returnSymbol != nullptr);
-    returnSymbol->updateAddress(memAddress);
-    builder->CreateStore(builder->getInt32(0), returnSymbol->getAddress());
-
-    // Reset stack state
-    stackState = nullptr;
-
-    // Generate IR for function body
-    visit(node->stmtLst());
-
-    // Generate return statement for result variable
-    if (!blockAlreadyTerminated) {
-      std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
-      if (!varsToDestruct.empty()) {
-        llvm::BasicBlock *predecessor = builder->GetInsertBlock();
-        // Generate cleanup block
-        llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup." + codeLine);
-        moveInsertPointToBlock(bCleanup);
-
-        // Generate cleanup instructions (e.g. dtor calls)
-        bool destructorCalled = false;
-        for (SymbolTableEntry *varEntry : varsToDestruct)
-          destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
-
-        if (destructorCalled) {
-          fct->getBasicBlockList().push_back(bCleanup);
-          moveInsertPointToBlock(predecessor);
-          builder->CreateBr(bCleanup);
-          moveInsertPointToBlock(bCleanup);
-        } else {
-          moveInsertPointToBlock(predecessor);
-        }
-      }
-
-      // Restore stack if necessary
-      if (stackState != nullptr) {
-        builder->CreateCall(retrieveStackRestoreFct(), {stackState});
-        stackState = nullptr;
-      }
-
-      // Create return stmt
-      llvm::Value *result = returnSymbol->getAddress();
-      builder->CreateRet(builder->CreateLoad(fct->getReturnType(), result));
-    }
-
-    // Conclude debug information
-    if (cliOptions.generateDebugInfo)
-      debugInfo.lexicalBlocks.pop();
-
-    // Verify function
-    if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
-      std::string output;
-      llvm::raw_string_ostream oss(output);
-      if (llvm::verifyFunction(*fct, &oss))
-        throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
-    }
-
-    // Change scope back
-    currentScope = currentScope->getParent();
-    assert(currentScope != nullptr);
   }
+
+  // Build function itself
+  llvm::Type *returnType = builder->getInt32Ty();
+  llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
+  llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module.get());
+
+  // Add debug info
+  if (cliOptions.generateDebugInfo) {
+    // Get arg types
+    std::vector<std::pair<SymbolType, bool>> argTypes;
+    for (const auto &argName : argNames) {
+      SymbolTableEntry *argEntry = currentScope->lookup(argName);
+      assert(argEntry != nullptr);
+      argTypes.emplace_back(argEntry->getType(), true);
+    }
+    // Build spice function
+    SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+    Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argTypes, {}, node->codeLoc);
+    // Add debug info
+    generateFunctionDebugInfo(fct, &spiceFunc);
+    setSourceLocation(node);
+  }
+
+  // Create entry block
+  std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry." + codeLine);
+  fct->getBasicBlockList().push_back(bEntry);
+  moveInsertPointToBlock(bEntry);
+  allocaInsertInst = nullptr;
+
+  // Store function arguments
+  for (auto &arg : fct->args()) {
+    unsigned argNo = arg.getArgNo();
+    std::string argName = argNames[argNo];
+    llvm::Type *argType = fctType->getParamType(argNo);
+    llvm::Value *memAddress = insertAlloca(argType, argName);
+    SymbolTableEntry *argSymbol = currentScope->lookup(argName);
+    assert(argSymbol != nullptr);
+    argSymbol->updateAddress(memAddress);
+
+    if (cliOptions.generateDebugInfo)
+      generateDeclDebugInfo(node->codeLoc, argName, memAddress);
+
+    builder->CreateStore(&arg, memAddress);
+  }
+
+  // Declare result variable and set it to 0 for positive return code
+  llvm::Value *memAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
+  SymbolTableEntry *returnSymbol = currentScope->lookup(RETURN_VARIABLE_NAME);
+  assert(returnSymbol != nullptr);
+  returnSymbol->updateAddress(memAddress);
+  builder->CreateStore(builder->getInt32(0), returnSymbol->getAddress());
+
+  // Reset stack state
+  stackState = nullptr;
+
+  // Generate IR for function body
+  visit(node->stmtLst());
+
+  // Generate return statement for result variable
+  if (!blockAlreadyTerminated) {
+    std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+    if (!varsToDestruct.empty()) {
+      llvm::BasicBlock *predecessor = builder->GetInsertBlock();
+      // Generate cleanup block
+      llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup." + codeLine);
+      moveInsertPointToBlock(bCleanup);
+
+      // Generate cleanup instructions (e.g. dtor calls)
+      bool destructorCalled = false;
+      for (SymbolTableEntry *varEntry : varsToDestruct)
+        destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
+
+      if (destructorCalled) {
+        fct->getBasicBlockList().push_back(bCleanup);
+        moveInsertPointToBlock(predecessor);
+        builder->CreateBr(bCleanup);
+        moveInsertPointToBlock(bCleanup);
+      } else {
+        moveInsertPointToBlock(predecessor);
+      }
+    }
+
+    // Restore stack if necessary
+    if (stackState != nullptr) {
+      builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+      stackState = nullptr;
+    }
+
+    // Create return stmt
+    llvm::Value *result = returnSymbol->getAddress();
+    builder->CreateRet(builder->CreateLoad(fct->getReturnType(), result));
+  }
+
+  // Conclude debug information
+  if (cliOptions.generateDebugInfo)
+    debugInfo.lexicalBlocks.pop();
+
+  // Verify function
+  if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyFunction(*fct, &oss))
+      throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
+  }
+
+  // Change scope back
+  currentScope = currentScope->getParent();
+  assert(currentScope != nullptr);
 
   return nullptr;
 }
@@ -314,6 +321,8 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
 std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
   if (!secondRun)
     return nullptr;
+
+  setSourceLocation(node);
 
   // Change to the (potentially generic) struct scope
   SymbolTable *accessScope = currentScope;
@@ -396,8 +405,10 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         fct->addFnAttr(llvm::Attribute::AlwaysInline);
 
       // Add debug info
-      if (cliOptions.generateDebugInfo)
+      if (cliOptions.generateDebugInfo) {
         generateFunctionDebugInfo(fct, &spiceFunc);
+        setSourceLocation(node);
+      }
 
       // Create entry block
       std::string codeLine = node->codeLoc.toPrettyLine();
@@ -415,6 +426,10 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         SymbolTableEntry *argEntry = currentScope->lookup(argName);
         assert(argEntry != nullptr);
         argEntry->updateAddress(memAddress);
+
+        if (cliOptions.generateDebugInfo)
+          generateDeclDebugInfo(node->codeLoc, argName, memAddress);
+
         builder->CreateStore(&arg, memAddress);
       }
 
@@ -504,6 +519,8 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
   if (!secondRun)
     return nullptr;
 
+  setSourceLocation(node);
+
   // Change to the (potentially generic) struct scope
   SymbolTable *accessScope = currentScope;
   if (node->isMethod)
@@ -581,8 +598,10 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         proc->addFnAttr(llvm::Attribute::AlwaysInline);
 
       // Add debug info
-      if (cliOptions.generateDebugInfo)
+      if (cliOptions.generateDebugInfo) {
         generateFunctionDebugInfo(proc, &spiceProc);
+        setSourceLocation(node);
+      }
 
       // Create entry block
       std::string codeLine = node->codeLoc.toPrettyLine();
@@ -600,6 +619,10 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         SymbolTableEntry *argSymbol = currentScope->lookup(argName);
         assert(argSymbol != nullptr);
         argSymbol->updateAddress(memAddress);
+
+        if (cliOptions.generateDebugInfo)
+          generateDeclDebugInfo(node->codeLoc, argName, memAddress);
+
         builder->CreateStore(&arg, memAddress);
       }
 
@@ -682,6 +705,8 @@ std::any GeneratorVisitor::visitStructDef(StructDefNode *node) {
   if (secondRun)
     return nullptr;
 
+  setSourceLocation(node);
+
   // Get all substantiated function which result from this function declaration
   std::map<std::string, Struct> *manifestations = currentScope->getStructManifestations(node->codeLoc);
   if (manifestations) {
@@ -729,6 +754,8 @@ std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (secondRun)
     return nullptr;
 
+  setSourceLocation(node);
+
   currentVarName = node->varName;
 
   // Get symbol table entry and the symbol specifiers
@@ -770,6 +797,8 @@ std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
 std::any GeneratorVisitor::visitExtDecl(ExtDeclNode *node) {
   if (secondRun)
     return nullptr;
+
+  setSourceLocation(node);
 
   // Get function name
   std::vector<SymbolType> symbolTypes;
@@ -813,7 +842,7 @@ std::any GeneratorVisitor::visitExtDecl(ExtDeclNode *node) {
 }
 
 std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Create threaded function
   std::string threadedFctName = "_thread" + std::to_string(threadFactory.getNextFunctionSuffix());
@@ -921,7 +950,7 @@ std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
 }
 
 std::any GeneratorVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Change scope
   currentScope = currentScope->getChild(node->getScopeId());
@@ -938,7 +967,7 @@ std::any GeneratorVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
 }
 
 std::any GeneratorVisitor::visitForLoop(ForLoopNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Create blocks
   std::string codeLine = node->codeLoc.toPrettyLine();
@@ -1001,7 +1030,7 @@ std::any GeneratorVisitor::visitForLoop(ForLoopNode *node) {
 }
 
 std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Create blocks
   std::string codeLine = node->codeLoc.toPrettyLine();
@@ -1132,7 +1161,7 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
 }
 
 std::any GeneratorVisitor::visitWhileLoop(WhileLoopNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
@@ -1178,8 +1207,6 @@ std::any GeneratorVisitor::visitWhileLoop(WhileLoopNode *node) {
 }
 
 std::any GeneratorVisitor::visitStmtLst(StmtLstNode *node) {
-  emitSourceLocation(node);
-
   for (const auto &child : node->children) {
     if (!blockAlreadyTerminated) {
       visit(child);
@@ -1194,7 +1221,7 @@ std::any GeneratorVisitor::visitTypeAltsLst(TypeAltsLstNode * /*node*/) {
 }
 
 std::any GeneratorVisitor::visitIfStmt(IfStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Change scope
   currentScope = currentScope->getChild(node->getScopeId());
@@ -1240,7 +1267,7 @@ std::any GeneratorVisitor::visitIfStmt(IfStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitElseStmt(ElseStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->ifStmt()) { // It is an else if branch
     visit(node->ifStmt());
@@ -1260,7 +1287,7 @@ std::any GeneratorVisitor::visitElseStmt(ElseStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Only generate assertions with -O0
   if (cliOptions.optLevel == 0) {
@@ -1299,7 +1326,7 @@ std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Get var name
   currentVarName = lhsVarName = node->varName;
@@ -1336,7 +1363,7 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   }
 
   if (cliOptions.generateDebugInfo)
-    generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress);
+    generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress, true);
 
   // Update address in symbol table
   entry->updateAddress(memAddress);
@@ -1353,7 +1380,7 @@ std::any GeneratorVisitor::visitImportStmt(ImportStmtNode * /*node*/) {
 }
 
 std::any GeneratorVisitor::visitReturnStmt(ReturnStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
 
@@ -1411,7 +1438,7 @@ std::any GeneratorVisitor::visitReturnStmt(ReturnStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitBreakStmt(BreakStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Get destination block
   for (int i = 1; i < node->breakTimes; i++)
@@ -1423,7 +1450,7 @@ std::any GeneratorVisitor::visitBreakStmt(BreakStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitContinueStmt(ContinueStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Get destination block
   for (int i = 1; i < node->continueTimes; i++)
@@ -1583,7 +1610,7 @@ std::any GeneratorVisitor::visitJoinCall(JoinCallNode *node) {
 }
 
 std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Check if there is an assign operator applied
   if (node->hasOperator) { // This is an assignment or compound assignment
@@ -1672,7 +1699,7 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitTernaryExpr(TernaryExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     auto conditionPtr = resolveAddress(node->operands()[0]);
@@ -1687,7 +1714,7 @@ std::any GeneratorVisitor::visitTernaryExpr(TernaryExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitLogicalOrExpr(LogicalOrExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     std::string codeLine = node->codeLoc.toPrettyLine();
@@ -1737,7 +1764,7 @@ std::any GeneratorVisitor::visitLogicalOrExpr(LogicalOrExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitLogicalAndExpr(LogicalAndExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     std::string codeLine = node->codeLoc.toPrettyLine();
@@ -1787,7 +1814,7 @@ std::any GeneratorVisitor::visitLogicalAndExpr(LogicalAndExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     BitwiseXorExprNode *lhsOperand = node->operands().front();
@@ -1806,7 +1833,7 @@ std::any GeneratorVisitor::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     BitwiseAndExprNode *lhsOperand = node->operands().front();
@@ -1825,7 +1852,7 @@ std::any GeneratorVisitor::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     EqualityExprNode *lhsOperand = node->operands().front();
@@ -1844,7 +1871,7 @@ std::any GeneratorVisitor::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitEqualityExpr(EqualityExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     RelationalExprNode *lhsOperand = node->operands()[0];
@@ -1874,7 +1901,7 @@ std::any GeneratorVisitor::visitEqualityExpr(EqualityExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitRelationalExpr(RelationalExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     ShiftExprNode *lhsOperand = node->operands()[0];
@@ -1910,7 +1937,7 @@ std::any GeneratorVisitor::visitRelationalExpr(RelationalExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitShiftExpr(ShiftExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Check if there is a shift operation attached
   if (node->operands().size() > 1) {
@@ -1941,7 +1968,7 @@ std::any GeneratorVisitor::visitShiftExpr(ShiftExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Check if at least one additive operator is applied
   if (!node->opQueue.empty()) {
@@ -1980,7 +2007,7 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Check if at least one multiplicative operator is applied
   if (!node->opQueue.empty()) {
@@ -2022,7 +2049,7 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
 }
 
 std::any GeneratorVisitor::visitCastExpr(CastExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->isCasted) { // Cast operator is applied
     SymbolType lhsSymbolType = node->getEvaluatedSymbolType();
@@ -2042,7 +2069,7 @@ std::any GeneratorVisitor::visitCastExpr(CastExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   currentVarName = "";           // Reset the current variable name
   scopePath.clear();             // Clear the scope path
@@ -2144,7 +2171,7 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (!node->opQueue.empty()) {
     // Retrieve the address and the value if required
@@ -2256,7 +2283,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->value())
     return visit(node->value());
@@ -2369,7 +2396,7 @@ std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitValue(ValueNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Primitive value
   if (node->primitiveValue()) {
@@ -2790,7 +2817,7 @@ std::any GeneratorVisitor::visitStructInstantiation(StructInstantiationNode *nod
 }
 
 std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   SymbolType symbolType = node->getEvaluatedSymbolType();
   if (symbolType.is(TY_DYN)) {
@@ -2886,16 +2913,16 @@ void GeneratorVisitor::createCondBr(llvm::Value *condition, llvm::BasicBlock *tr
 
 llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) {
-    llvm::AllocaInst *allocaInst = builder->CreateAlloca(llvmType, nullptr, varName);
-    allocaInst->setDebugLoc(llvm::DebugLoc());
-    allocaInst->moveAfter(allocaInsertInst);
-    allocaInsertInst = allocaInst;
+    allocaInsertInst = builder->CreateAlloca(llvmType, nullptr, varName);
+    allocaInsertInst->setDebugLoc(llvm::DebugLoc());
+    allocaInsertInst->moveAfter(allocaInsertInst);
   } else {
     // Save current basic block and move insert cursor to entry block of the current function
     llvm::BasicBlock *currentBlock = builder->GetInsertBlock();
     builder->SetInsertPoint(allocaInsertBlock);
 
     allocaInsertInst = builder->CreateAlloca(llvmType, nullptr, varName);
+    allocaInsertInst->setDebugLoc(llvm::DebugLoc());
 
     // Restore old basic block
     builder->SetInsertPoint(currentBlock);
@@ -3151,8 +3178,9 @@ void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName, co
   diBuilder = std::make_unique<llvm::DIBuilder>(*module);
   // Create compilation unit
   debugInfo.diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
-  debugInfo.compileUnit =
-      diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, producerString, cliOptions.optLevel > 0, "", 0);
+  debugInfo.compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, producerString,
+                                                       cliOptions.optLevel > 0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
+                                                       false, false, llvm::DICompileUnit::DebugNameTableKind::None);
   // Initialize primitive types
   debugInfo.doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
   debugInfo.intTy = diBuilder->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
@@ -3216,8 +3244,8 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
   size_t lineNumber = spiceFunc->getDeclCodeLoc().line;
 
   llvm::DISubprogram *subprogram =
-      diBuilder->createFunction(unit, spiceFunc->getName(), "", unit, lineNumber, functionTy, lineNumber, llvm::DINode::FlagZero,
-                                llvm::DISubprogram::SPFlagDefinition);
+      diBuilder->createFunction(unit, spiceFunc->getName(), spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
+                                llvm::DINode::FlagZero, llvm::DISubprogram::SPFlagDefinition);
 
   // Add debug info to LLVM function
   llvmFunction->setSubprogram(subprogram);
@@ -3244,7 +3272,8 @@ void GeneratorVisitor::generateGlobalVarDebugInfo(llvm::GlobalVariable *global, 
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(unit, name, name, unit, lineNumber, type, isLocal));
 }
 
-void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address) {
+void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address,
+                                             bool moveToPrev) {
   if (!cliOptions.generateDebugInfo)
     return;
   // Get symbol table entry
@@ -3256,14 +3285,20 @@ void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::
   llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
   llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, varName, unit, codeLoc.line, diType);
   llvm::DIExpression *expr = diBuilder->createExpression();
-  diBuilder->insertDeclare(address, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
+  auto inst = diBuilder->insertDeclare(address, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
+  if (moveToPrev)
+    inst->moveBefore(builder->GetInsertPoint()->getPrevNonDebugInstruction());
 }
 
-void GeneratorVisitor::emitSourceLocation(AstNode *node) {
+void GeneratorVisitor::setSourceLocation(AstNode *node) {
   if (!cliOptions.generateDebugInfo)
     return;
-  if (debugInfo.lexicalBlocks.empty())
+
+  if (debugInfo.lexicalBlocks.empty()) {
+    builder->SetCurrentDebugLocation(llvm::DebugLoc());
     return;
+  }
+
   llvm::DIScope *scope = debugInfo.lexicalBlocks.top();
   auto codeLoc = llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope);
   builder->SetCurrentDebugLocation(codeLoc);

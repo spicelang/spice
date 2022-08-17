@@ -177,7 +177,7 @@ private:
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
   //[[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
-  void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address);
-  void emitSourceLocation(AstNode *ctx);
+  void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address, bool moveToPrev = false);
+  void setSourceLocation(AstNode *node);
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };
