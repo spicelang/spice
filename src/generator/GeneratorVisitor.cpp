@@ -74,6 +74,12 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   if (cliOptions.generateDebugInfo) {
     module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
     module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
+    module->addModuleFlag(llvm::Module::Error, "PIC Level", llvm::PICLevel::BigPIC);
+
+    auto identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
+    llvm::MDNode *n = llvm::MDNode::get(*context, llvm::MDString::get(*context, "spice version " + std::string(SPICE_VERSION)));
+    identifierMetadata->addOperand(n);
+
     initializeDIBuilder(sourceFile.fileName, sourceFile.fileDir);
   }
 }
@@ -3210,8 +3216,8 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
   size_t lineNumber = spiceFunc->getDeclCodeLoc().line;
 
   llvm::DISubprogram *subprogram =
-      diBuilder->createFunction(unit, spiceFunc->getName(), spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
-                                llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+      diBuilder->createFunction(unit, spiceFunc->getName(), "", unit, lineNumber, functionTy, lineNumber, llvm::DINode::FlagZero,
+                                llvm::DISubprogram::SPFlagDefinition);
 
   // Add debug info to LLVM function
   llvmFunction->setSubprogram(subprogram);
