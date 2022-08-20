@@ -1,13 +1,3 @@
-f<int> fib(int n) {
-    if n <= 2 { return 1; }
-    return fib(n - 1) + fib(n - 2);
-}
-
-f<int> main() {
-    int base = 46;
-    printf("Fibonacci of %d: %d", base, fib(base));
-}
-
 /*import "std/data/vector" as vec;
 import "std/data/pair" as pair;
 
@@ -20,7 +10,7 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-/*const unsigned int vertexCount = 2;
+const unsigned int vertexCount = 2;
 
 f<int> main() {
     /*int[vertexCount][vertexCount] graph = {
@@ -43,10 +33,7 @@ f<int> main() {
         printf("Value: %d\n", (*(&graph[2] + 0))[0]);
     }*/
     //printf("Result: %d\n", graph[2][1]);
-    //int[vertexCount][vertexCount] graph = {{ 1, 2 }, { 3, 4 }};
-    //printf("Test: %d\n", graph[1][1]);
-    /*int testInt = 12;
-    testInt = 13;
-    testInt++;
-    printf("Test: %d", testInt);
-}*/
+    int[vertexCount][vertexCount] graph = {{ 1, 2 }, { 3, 4 }};
+    int[vertexCount] graph1 = graph[0];
+    printf("Test: %d\n", graph1[0]);
+}

@@ -2685,6 +2685,8 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     lhsType = itemSymbolType.toLLVMType(*context, currentScope);
     SymbolType arraySymbolTypeBackup = arraySymbolType;
     arraySymbolType = arraySymbolType.getContainedTy();
+    llvm::Value *dynamicArraySizeBackup = dynamicArraySize;
+    dynamicArraySize = nullptr;
 
     // Visit all args to check if they are hardcoded or not
     allArgsHardcoded = true;
@@ -2694,7 +2696,7 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
         dynamicArraySize = arraySymbolType.getDynamicArraySize();
 
       AssignExprNode *arg = node->itemLst()->args()[i];
-      llvm::Value *itemValue = itemType->isPointerTy() ? resolveAddress(arg) : resolveValue(arg);
+      llvm::Value *itemValue = resolveValue(arg);
 
       itemValues.push_back(itemValue);
       itemConstants.push_back(currentConstValue);
@@ -2703,6 +2705,7 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     // Restore lhs type
     lhsType = lhsTypeBackup;
     arraySymbolType = arraySymbolTypeBackup;
+    dynamicArraySize = dynamicArraySizeBackup;
   }
 
   if (toggledConstantArray)
