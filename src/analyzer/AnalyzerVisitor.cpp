@@ -1043,7 +1043,7 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
     // Check if there is a value attached to the return statement
     if (node->hasReturnValue) {
       // Visit the value
-      auto returnType = any_cast<SymbolType>(visit(node->assignExpr()));
+      returnType = any_cast<SymbolType>(visit(node->assignExpr()));
 
       // Check data type of return statement
       if (returnVariable->getType().is(TY_DYN)) {
@@ -1059,6 +1059,8 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
 
       // Set the return variable to initialized
       returnVariable->updateState(INITIALIZED, err.get(), node->codeLoc);
+    } else {
+      returnType = returnVariable->getType();
     }
 
     // Check if result variable is initialized
@@ -1066,8 +1068,6 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
       throw err->get(node->codeLoc, RETURN_WITHOUT_VALUE_RESULT,
                      "Return without value, but result variable is not initialized yet");
     returnVariable->setUsed();
-
-    returnType = returnVariable->getType();
   } else {
     // No return variable => procedure
     if (node->assignExpr())
@@ -1803,21 +1803,21 @@ std::any AnalyzerVisitor::visitValue(ValueNode *node) {
 
 std::any AnalyzerVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   switch (node->type) {
-  case PrimitiveValueNode::TY_DOUBLE:
+  case PrimitiveValueNode::TYPE_DOUBLE:
     return node->setEvaluatedSymbolType(SymbolType(TY_DOUBLE));
-  case PrimitiveValueNode::TY_INT:
+  case PrimitiveValueNode::TYPE_INT:
     return node->setEvaluatedSymbolType(SymbolType(TY_INT));
-  case PrimitiveValueNode::TY_SHORT:
+  case PrimitiveValueNode::TYPE_SHORT:
     return node->setEvaluatedSymbolType(SymbolType(TY_SHORT));
-  case PrimitiveValueNode::TY_LONG:
+  case PrimitiveValueNode::TYPE_LONG:
     return node->setEvaluatedSymbolType(SymbolType(TY_LONG));
-  case PrimitiveValueNode::TY_BYTE:
+  case PrimitiveValueNode::TYPE_BYTE:
     return node->setEvaluatedSymbolType(SymbolType(TY_BYTE));
-  case PrimitiveValueNode::TY_CHAR:
+  case PrimitiveValueNode::TYPE_CHAR:
     return node->setEvaluatedSymbolType(SymbolType(TY_CHAR));
-  case PrimitiveValueNode::TY_STRING:
+  case PrimitiveValueNode::TYPE_STRING:
     return node->setEvaluatedSymbolType(SymbolType(TY_STRING));
-  case PrimitiveValueNode::TY_BOOL:
+  case PrimitiveValueNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
   }
   throw std::runtime_error("Primitive value fall-through");
@@ -2063,14 +2063,15 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
       // Get expected type
       SymbolTableEntry *expectedField = structTable->lookupByIndex(i);
       assert(expectedField != nullptr);
-      SymbolType expectedType = expectedField->getType();
+      SymbolType expectedSymbolType = expectedField->getType();
       // Replace expected type with the capture name
-      if (expectedType.is(TY_STRUCT))
-        expectedType = expectedType.replaceBaseSubType(accessScopePrefix + expectedType.getBaseType().getSubType());
+      if (expectedSymbolType.is(TY_STRUCT))
+        expectedSymbolType =
+            expectedSymbolType.replaceBaseSubType(accessScopePrefix + expectedSymbolType.getBaseType().getSubType());
       // Check if type matches declaration
-      if (actualType != expectedType)
+      if (actualType != expectedSymbolType)
         throw err->get(assignExpr->codeLoc, FIELD_TYPE_NOT_MATCHING,
-                       "Expected type " + expectedType.getName(false) + " for the field '" + expectedField->getName() +
+                       "Expected type " + expectedSymbolType.getName(false) + " for the field '" + expectedField->getName() +
                            "', but got " + actualType.getName(false));
     }
   }
@@ -2087,11 +2088,11 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
   while (!tmQueue.empty()) {
     DataTypeNode::TypeModifier typeModifier = tmQueue.front();
     switch (typeModifier.modifierType) {
-    case DataTypeNode::TY_POINTER: {
+    case DataTypeNode::TYPE_PTR: {
       type = type.toPointer(err.get(), node->codeLoc);
       break;
     }
-    case DataTypeNode::TY_ARRAY: {
+    case DataTypeNode::TYPE_ARRAY: {
       if (typeModifier.hasSize) {
         if (typeModifier.isSizeHardcoded) {
           if (typeModifier.hardcodedSize <= 1)
@@ -2116,21 +2117,21 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
 
 std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {
   switch (node->type) {
-  case BaseDataTypeNode::TY_DOUBLE:
+  case BaseDataTypeNode::TYPE_DOUBLE:
     return node->setEvaluatedSymbolType(SymbolType(TY_DOUBLE));
-  case BaseDataTypeNode::TY_INT:
+  case BaseDataTypeNode::TYPE_INT:
     return node->setEvaluatedSymbolType(SymbolType(TY_INT));
-  case BaseDataTypeNode::TY_SHORT:
+  case BaseDataTypeNode::TYPE_SHORT:
     return node->setEvaluatedSymbolType(SymbolType(TY_SHORT));
-  case BaseDataTypeNode::TY_LONG:
+  case BaseDataTypeNode::TYPE_LONG:
     return node->setEvaluatedSymbolType(SymbolType(TY_LONG));
-  case BaseDataTypeNode::TY_BYTE:
+  case BaseDataTypeNode::TYPE_BYTE:
     return node->setEvaluatedSymbolType(SymbolType(TY_BYTE));
-  case BaseDataTypeNode::TY_CHAR:
+  case BaseDataTypeNode::TYPE_CHAR:
     return node->setEvaluatedSymbolType(SymbolType(TY_CHAR));
-  case BaseDataTypeNode::TY_STRING:
+  case BaseDataTypeNode::TYPE_STRING:
     return node->setEvaluatedSymbolType(SymbolType(TY_STRING));
-  case BaseDataTypeNode::TY_BOOL:
+  case BaseDataTypeNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
   case BaseDataTypeNode::TY_CUSTOM:
     return node->setEvaluatedSymbolType(any_cast<SymbolType>(visit(node->customDataType())));

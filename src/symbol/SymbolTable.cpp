@@ -177,8 +177,8 @@ SymbolTable *SymbolTable::lookupTable(const std::string &tableName) {
  * @param childBlockName Name of the child scope
  * @return Newly created child table
  */
-SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName, const ScopeType &scopeType) {
-  children.insert({childBlockName, new SymbolTable(this, scopeType, isMainSourceFile)});
+SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName, const ScopeType &type) {
+  children.insert({childBlockName, new SymbolTable(this, type, isMainSourceFile)});
   return children.at(childBlockName);
 }
 
@@ -248,8 +248,10 @@ void SymbolTable::copyChildBlock(const std::string &originalChildBlockName, cons
 
 /**
  * Set the parent table of the current one in the tree structure
+ *
+ * @param parentTable Parent table
  */
-void SymbolTable::setParent(SymbolTable *parent) { this->parent = parent; }
+void SymbolTable::setParent(SymbolTable *parentTable) { this->parent = parentTable; }
 
 /**
  * Retrieve the parent table of the current one in the tree structure
@@ -459,7 +461,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
 
   // Throw error if more than one function matches the criteria
   if (matches.size() > 1)
-    throw err->get(
+    throw ErrorFactory::get(
         codeLoc, FUNCTION_AMBIGUITY,
         "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
 
@@ -522,8 +524,8 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFac
   std::string mangledFctName = function.getMangledName();
   for (const auto &[_, manifestations] : functions) {
     if (manifestations->contains(mangledFctName))
-      throw err->get(codeLoc, FUNCTION_DECLARED_TWICE,
-                     "The function/procedure '" + function.getSignature() + "' is declared twice");
+      throw ErrorFactory::get(codeLoc, FUNCTION_DECLARED_TWICE,
+                              "The function/procedure '" + function.getSignature() + "' is declared twice");
   }
   // Add function to function list
   assert(functions.contains(codeLoc.toString()));
@@ -613,7 +615,7 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
 
   // Throw error if more than one struct matches the criteria
   if (matches.size() > 1)
-    throw err->get(
+    throw ErrorFactory::get(
         codeLoc, STRUCT_AMBIGUITY,
         "More than one struct matches your requested signature criteria. Please try to specify the return type explicitly");
 
@@ -671,7 +673,7 @@ void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, 
   // Check if the struct exists already
   for (const auto &[_, manifestations] : structs) {
     if (manifestations->contains(s.getMangledName()))
-      throw err->get(codeLoc, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
+      throw ErrorFactory::get(codeLoc, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
   }
   // Add struct to struct list
   assert(structs.at(codeLoc.toString()) != nullptr);

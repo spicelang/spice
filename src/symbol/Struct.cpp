@@ -146,9 +146,9 @@ bool Struct::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
 /**
  * Set the associated symbol table
  *
- * @param symbolTable Symbol table
+ * @param symTab Symbol table
  */
-void Struct::setSymbolTable(SymbolTable *symbolTable) { this->symbolTable = symbolTable; }
+void Struct::setSymbolTable(SymbolTable *symTab) { this->symbolTable = symTab; }
 
 /**
  * Set the struct to used. The compiler only generates IR if the struct is used

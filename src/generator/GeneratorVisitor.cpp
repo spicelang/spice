@@ -214,15 +214,15 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
   // Add debug info
   if (cliOptions.generateDebugInfo) {
     // Get arg types
-    std::vector<std::pair<SymbolType, bool>> argTypes;
+    std::vector<std::pair<SymbolType, bool>> argSymbolTypes;
     for (const auto &argName : argNames) {
       SymbolTableEntry *argEntry = currentScope->lookup(argName);
       assert(argEntry != nullptr);
-      argTypes.emplace_back(argEntry->getType(), true);
+      argSymbolTypes.emplace_back(argEntry->getType(), true);
     }
     // Build spice function
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argTypes, {}, node->codeLoc);
+    Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argSymbolTypes, {}, node->codeLoc);
     // Add debug info
     generateFunctionDebugInfo(fct, &spiceFunc);
     setSourceLocation(node);
@@ -1079,8 +1079,8 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
 
   // Do loop variable initialization
   llvm::Value *arrayValuePtr = resolveAddress(node->arrayAssign());
-  SymbolType arraySymbolType = node->arrayAssign()->getEvaluatedSymbolType();
-  llvm::Type *arrayValueType = arraySymbolType.toLLVMType(*context, currentScope);
+  SymbolType arrSymbolType = node->arrayAssign()->getEvaluatedSymbolType();
+  llvm::Type *arrayValueType = arrSymbolType.toLLVMType(*context, currentScope);
   llvm::Value *arrayValue = builder->CreateLoad(arrayValueType, arrayValuePtr);
   llvm::Value *arraySizeValue = dynamicallySized ? arrayVarEntry->getType().getDynamicArraySize()
                                                  : builder->getInt32(arrayValue->getType()->getArrayNumElements());
@@ -1096,12 +1096,12 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   llvm::Value *indices[2] = {builder->getInt32(0), index};
   if (dynamicallySized) {
     arrayValuePtr = builder->CreateLoad(arrayValueType, arrayValuePtr);
-    arrayValueType = arraySymbolType.getContainedTy().toLLVMType(*context, currentScope);
+    arrayValueType = arrSymbolType.getContainedTy().toLLVMType(*context, currentScope);
     itemPtr = builder->CreateInBoundsGEP(arrayValueType, arrayValuePtr, index);
   } else {
     itemPtr = builder->CreateInBoundsGEP(arrayValueType, arrayValuePtr, indices);
   }
-  llvm::Type *itemPtrType = arraySymbolType.getContainedTy().toLLVMType(*context, currentScope);
+  llvm::Type *itemPtrType = arrSymbolType.getContainedTy().toLLVMType(*context, currentScope);
   llvm::Value *newItemValue = builder->CreateLoad(itemPtrType, itemPtr);
   builder->CreateStore(newItemValue, itemVarPtr);
   createBr(bLoop);
@@ -2442,14 +2442,14 @@ std::any GeneratorVisitor::visitValue(ValueNode *node) {
 
 std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   // Value is a double constant
-  if (node->type == PrimitiveValueNode::TY_DOUBLE) {
+  if (node->type == PrimitiveValueNode::TYPE_DOUBLE) {
     currentSymbolType = SymbolType(TY_DOUBLE);
     double value = constNegate ? -node->data.doubleValue : node->data.doubleValue;
     return static_cast<llvm::Constant *>(llvm::ConstantFP::get(*context, llvm::APFloat(value)));
   }
 
   // Value is an integer constant
-  if (node->type == PrimitiveValueNode::TY_INT) {
+  if (node->type == PrimitiveValueNode::TYPE_INT) {
     currentSymbolType = SymbolType(TY_INT);
     int value = constNegate ? -node->data.intValue : node->data.intValue;
     llvm::Type *intTy = builder->getInt32Ty();
@@ -2459,7 +2459,7 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   }
 
   // Value is a short constant
-  if (node->type == PrimitiveValueNode::TY_SHORT) {
+  if (node->type == PrimitiveValueNode::TYPE_SHORT) {
     currentSymbolType = SymbolType(TY_SHORT);
     int value = constNegate ? -node->data.shortValue : node->data.shortValue;
     llvm::Type *shortTy = builder->getInt16Ty();
@@ -2469,7 +2469,7 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   }
 
   // Value is a long constant
-  if (node->type == PrimitiveValueNode::TY_LONG) {
+  if (node->type == PrimitiveValueNode::TYPE_LONG) {
     currentSymbolType = SymbolType(TY_LONG);
     long long value = constNegate ? -node->data.longValue : node->data.longValue;
     llvm::Type *longTy = builder->getInt64Ty();
@@ -2479,7 +2479,7 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   }
 
   // Value is a char constant
-  if (node->type == PrimitiveValueNode::TY_CHAR) {
+  if (node->type == PrimitiveValueNode::TYPE_CHAR) {
     currentSymbolType = SymbolType(TY_CHAR);
     char value = node->data.charValue;
     llvm::Type *charTy = builder->getInt8Ty();
@@ -2489,14 +2489,14 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   }
 
   // Value is a string constant
-  if (node->type == PrimitiveValueNode::TY_STRING) {
+  if (node->type == PrimitiveValueNode::TYPE_STRING) {
     currentSymbolType = SymbolType(TY_STRING);
     std::string value = node->data.stringValue;
     return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
   }
 
   // Value is a boolean constant
-  if (node->type == PrimitiveValueNode::TY_BOOL) {
+  if (node->type == PrimitiveValueNode::TYPE_BOOL) {
     currentSymbolType = SymbolType(TY_BOOL);
     return static_cast<llvm::Constant *>(node->data.boolValue ? builder->getTrue() : builder->getFalse());
   }
@@ -2837,11 +2837,11 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
     while (!tmQueue.empty()) {
       DataTypeNode::TypeModifier typeModifier = tmQueue.front();
       switch (typeModifier.modifierType) {
-      case DataTypeNode::TY_POINTER: {
+      case DataTypeNode::TYPE_PTR: {
         symbolType = symbolType.toPointer(err.get(), node->codeLoc);
         break;
       }
-      case DataTypeNode::TY_ARRAY: {
+      case DataTypeNode::TYPE_ARRAY: {
         if (!typeModifier.hasSize) {
           symbolType = symbolType.toPointer(err.get(), node->codeLoc);
         } else if (typeModifier.isSizeHardcoded) {

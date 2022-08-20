@@ -620,7 +620,7 @@ public:
   SymbolType getPrefixNotResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
   SymbolType getPrefixBitwiseNotResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
   SymbolType getPrefixMulResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
-  SymbolType getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, SymbolType lhs);
+  SymbolType getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, const SymbolType& lhs);
   SymbolType getPostfixPlusPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
   SymbolType getPostfixMinusMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
   SymbolType getCastResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &);

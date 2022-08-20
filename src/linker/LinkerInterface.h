@@ -21,7 +21,7 @@ public:
   void link();
   void addObjectFilePath(const std::string &objectFilePath);
   void addLinkerFlag(const std::string &linkerFlag);
-  void setOutputPath(const std::string &outputPath);
+  void setOutputPath(const std::string &path);
 
 private:
   // Members
