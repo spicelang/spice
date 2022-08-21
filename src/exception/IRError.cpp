@@ -52,8 +52,6 @@ std::string IRError::getMessagePrefix(IRErrorType type) {
     return "Unexpected type of dyn. Symbol table incomplete";
   case PRINTF_NULL_TYPE:
     return "Printf has null type";
-  case VARIABLE_NOT_FOUND:
-    return "Variable not found";
   case INVALID_FUNCTION:
     return "Invalid function";
   case INVALID_MODULE:
