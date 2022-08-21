@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
-target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-w64-windows-gnu"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
 
 @0 = private unnamed_addr constant [6 x i8] c"Hello\00", align 1
 @1 = private unnamed_addr constant [6 x i8] c"Spice\00", align 1
@@ -14,10 +14,10 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  %i = alloca i32, align 4
-  %word = alloca ptr, align 8
   store i32 0, ptr %result, align 4
+  %i = alloca i32, align 4
   store i32 0, ptr %i, align 4
+  %word = alloca ptr, align 8
   store ptr @4, ptr %word, align 8
   %0 = load [5 x ptr], ptr @welcomeMessage, align 8
   %1 = load i32, ptr %i, align 4

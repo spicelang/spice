@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
-target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-w64-windows-gnu"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
 
 @0 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 1
 @1 = private unnamed_addr constant [7 x i8] c"2: %d\0A\00", align 1
@@ -48,29 +48,28 @@ declare i32 @printf(ptr, ...)
 define i32 @main() {
 entry.l11:
   %result = alloca i32, align 4
-  %0 = alloca ptr, align 8
-  %1 = alloca ptr, align 8
-  %2 = alloca ptr, align 8
-  %3 = alloca ptr, align 8
-  %4 = alloca ptr, align 8
-  %5 = alloca ptr, align 8
-  %6 = alloca i1, align 1
   store i32 0, ptr %result, align 4
-  %7 = load [4 x i32], ptr @intArray, align 4
-  %8 = load i32, ptr getelementptr inbounds ([4 x i32], ptr @intArray, i32 0, i32 1), align 4
-  %9 = call i32 (ptr, ...) @printf(ptr @4, i32 %8)
-  store ptr @intArray, ptr %0, align 8
-  store ptr %0, ptr %1, align 8
-  store ptr %1, ptr %2, align 8
-  %10 = load ptr, ptr %2, align 8
-  %11 = load ptr, ptr %10, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds [4 x i32], ptr %12, i32 0, i32 0
-  store ptr %13, ptr %3, align 8
+  %0 = load i32, ptr getelementptr inbounds ([4 x i32], ptr @intArray, i32 0, i32 1), align 4
+  %1 = call i32 (ptr, ...) @printf(ptr @4, i32 %0)
+  %2 = alloca ptr, align 8
+  store ptr @intArray, ptr %2, align 8
+  %3 = alloca ptr, align 8
+  store ptr %2, ptr %3, align 8
+  %4 = alloca ptr, align 8
   store ptr %3, ptr %4, align 8
-  store ptr %4, ptr %5, align 8
-  call void @_p__void__testProc__intarrayptrptrptr(ptr %5)
-  store i1 true, ptr %6, align 1
-  %14 = load i32, ptr %result, align 4
-  ret i32 %14
+  %5 = load ptr, ptr %4, align 8
+  %6 = load ptr, ptr %5, align 8
+  %7 = load ptr, ptr %6, align 8
+  %8 = getelementptr inbounds [4 x i32], ptr %7, i32 0, i32 0
+  %9 = alloca ptr, align 8
+  store ptr %8, ptr %9, align 8
+  %10 = alloca ptr, align 8
+  store ptr %9, ptr %10, align 8
+  %11 = alloca ptr, align 8
+  store ptr %10, ptr %11, align 8
+  call void @_p__void__testProc__intarrayptrptrptr(ptr %11)
+  %12 = alloca i1, align 1
+  store i1 true, ptr %12, align 1
+  %13 = load i32, ptr %result, align 4
+  ret i32 %13
 }
