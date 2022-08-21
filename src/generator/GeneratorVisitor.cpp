@@ -2681,6 +2681,7 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
 
   if (node->itemLst()) { // The array is initialized with values
     // Set the lhs type to the item type
+    std::string lhsVarNameBackup = lhsVarName;
     llvm::Type *lhsTypeBackup = lhsType;
     lhsType = itemSymbolType.toLLVMType(*context, currentScope);
     SymbolType arraySymbolTypeBackup = arraySymbolType;
@@ -2692,6 +2693,8 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     allArgsHardcoded = true;
     for (size_t i = 0; i < std::min(node->itemLst()->args().size(), arraySize); i++) {
       currentConstValue = nullptr;
+      lhsVarName = lhsVarNameBackup + "." + std::to_string(i);
+
       if (arraySymbolType.isPointer())
         dynamicArraySize = arraySymbolType.getDynamicArraySize();
 
@@ -2703,6 +2706,7 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     }
 
     // Restore lhs type
+    lhsVarName = lhsVarNameBackup;
     lhsType = lhsTypeBackup;
     arraySymbolType = arraySymbolTypeBackup;
     dynamicArraySize = dynamicArraySizeBackup;
