@@ -7,6 +7,12 @@
 #include <ast/AstNodes.h>
 #include <util/CommonUtil.h>
 
+AstBuilderVisitor::AstBuilderVisitor(AstNode *rootNode, std::string fileName)
+    : currentNode(rootNode), fileName(std::move(fileName)) {
+  // Create error factory for this specific file
+  this->err = std::make_unique<ErrorFactory>();
+}
+
 std::any AstBuilderVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = dynamic_cast<EntryNode *>(currentNode);
   for (const auto &subTree : ctx->children) {
@@ -1197,17 +1203,17 @@ std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueConte
       primitiveValueNode->data.doubleValue = std::stod(t->toString());
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INT_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_INT;
-      primitiveValueNode->data.intValue = parseInt(t->toString());
+      primitiveValueNode->data.intValue = parseInt(t);
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t->getSymbol()->getType() == SpiceParser::SHORT_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_SHORT;
-      primitiveValueNode->data.shortValue = parseShort(t->toString());
+      primitiveValueNode->data.shortValue = parseShort(t);
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::LONG_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_LONG;
-      primitiveValueNode->data.longValue = parseLong(t->toString());
+      primitiveValueNode->data.longValue = parseLong(t);
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::CHAR_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_CHAR;
-      primitiveValueNode->data.charValue = parseChar(ctx->CHAR_LIT()->toString());
+      primitiveValueNode->data.charValue = parseChar(ctx->CHAR_LIT());
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t->getSymbol()->getType() == SpiceParser::STRING_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_STRING;
@@ -1478,27 +1484,34 @@ void AstBuilderVisitor::replaceEscapeChars(std::string &string) {
   CommonUtil::replaceAll(string, "\\?", "\?");
 }
 
-int32_t AstBuilderVisitor::parseInt(const std::string &input) {
-  std::function<int32_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
+int32_t AstBuilderVisitor::parseInt(antlr4::tree::TerminalNode *terminal) {
+  std::function<int32_t(const std::string &, int)> cb = [this](const std::string &substr, int base) {
     return std::stoi(substr, nullptr, base);
   };
-  return parseNumeric(input, cb);
+  return parseNumeric(terminal, cb);
 }
-int16_t AstBuilderVisitor::parseShort(const std::string &input) {
-  std::function<int16_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
+int16_t AstBuilderVisitor::parseShort(antlr4::tree::TerminalNode *terminal) {
+  std::function<int16_t(const std::string &, int)> cb = [this](const std::string &substr, int base) {
     return (int16_t)std::stoi(substr, nullptr, base);
   };
-  return parseNumeric(input, cb);
+  return parseNumeric(terminal, cb);
 }
 
-int64_t AstBuilderVisitor::parseLong(const std::string &input) {
-  std::function<int64_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
+int64_t AstBuilderVisitor::parseLong(antlr4::tree::TerminalNode *terminal) {
+  std::function<int64_t(const std::string &, int)> cb = [this](const std::string &substr, int base) {
     return std::stoll(substr, nullptr, base);
   };
-  return parseNumeric(input, cb);
+  return parseNumeric(terminal, cb);
 }
 
-int8_t AstBuilderVisitor::parseChar(const std::string &input) { return input[1]; }
+int8_t AstBuilderVisitor::parseChar(antlr4::tree::TerminalNode *terminal) {
+  std::string input = terminal->toString();
+  if (input.length() != 3) {
+    CodeLoc codeLoc = CodeLoc(fileName, terminal->getSymbol());
+    throw err->get(codeLoc, PARSING_FAILED, "Invalid char literal " + input);
+  }
+  return input[1];
+}
 
 std::string AstBuilderVisitor::parseString(std::string input) {
   input = input.substr(1, input.size() - 2);
@@ -1506,31 +1519,41 @@ std::string AstBuilderVisitor::parseString(std::string input) {
   return input;
 }
 
-template <typename T> T AstBuilderVisitor::parseNumeric(const std::string &input, std::function<T(const std::string &, int)> cb) {
-  if (input.length() >= 3) {
-    char c1 = input[0];
-    char c2 = input[1];
-    std::string substr = input.substr(2);
-    if (c1 == '0') {
-      switch (c2) {
-      case 'd':
-      case 'D':
-        return cb(substr, 10);
-      case 'b':
-      case 'B':
-        return cb(substr, 2);
-      case 'h':
-      case 'H':
-      case 'x':
-      case 'X':
-        return cb(substr, 16);
-      case 'o':
-      case 'O':
-        return cb(substr, 8);
-      default:
-        return cb(input, 10);
+template <typename T>
+T AstBuilderVisitor::parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb) {
+  std::string input = terminal->toString();
+  try {
+    if (input.length() >= 3) {
+      char c1 = input[0];
+      char c2 = input[1];
+      std::string substr = input.substr(2);
+      if (c1 == '0') {
+        switch (c2) {
+        case 'd':
+        case 'D':
+          return cb(substr, 10);
+        case 'b':
+        case 'B':
+          return cb(substr, 2);
+        case 'h':
+        case 'H':
+        case 'x':
+        case 'X':
+          return cb(substr, 16);
+        case 'o':
+        case 'O':
+          return cb(substr, 8);
+        default:
+          return cb(input, 10);
+        }
       }
     }
+    return cb(input, 10);
+  } catch (std::out_of_range &e) {
+    CodeLoc codeLoc = CodeLoc(fileName, terminal->getSymbol());
+    throw err->get(codeLoc, NUMBER_OUT_OF_RANGE, "The provided number is out of range");
+  } catch (std::invalid_argument &e) {
+    CodeLoc codeLoc = CodeLoc(fileName, terminal->getSymbol());
+    throw err->get(codeLoc, NUMBER_OUT_OF_RANGE, "You tried to parse '" + input + "' as an integer, but it was no integer");
   }
-  return cb(input, 10);
 }

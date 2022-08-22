@@ -4,6 +4,10 @@
 
 #include <util/CodeLoc.h>
 
+LexerParserError ErrorFactory::get(const CodeLoc &codeLoc, LexerParserErrorType type, const std::string &message) {
+  return LexerParserError(codeLoc, type, message);
+}
+
 SemanticError ErrorFactory::get(const CodeLoc &codeLoc, SemanticErrorType type, const std::string &message) {
   return SemanticError(codeLoc, type, message);
 }
