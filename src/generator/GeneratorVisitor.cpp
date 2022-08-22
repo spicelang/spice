@@ -1698,9 +1698,9 @@ std::any GeneratorVisitor::visitTernaryExpr(TernaryExprNode *node) {
   setSourceLocation(node);
 
   if (node->operands().size() > 1) {
-    auto conditionPtr = resolveAddress(node->operands()[0]);
-    auto trueValuePtr = resolveAddress(node->operands()[1]);
-    auto falseValuePtr = resolveAddress(node->operands()[2]);
+    llvm::Value *conditionPtr = resolveAddress(node->operands()[0]);
+    llvm::Value *trueValuePtr = resolveAddress(node->operands()[1]);
+    llvm::Value *falseValuePtr = resolveAddress(node->operands()[2]);
 
     llvm::Type *conditionType = node->operands().front()->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
     llvm::Value *condition = builder->CreateLoad(conditionType, conditionPtr);
@@ -2742,13 +2742,19 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
       arrayAddress = allocateDynamicallySizedArray(itemType);
       arrayType = itemSymbolType.toLLVMType(*context, currentScope);
     } else {
-      arrayAddress = insertAlloca(arrayType, lhsVarName);
+      arrayAddress = insertAlloca(arrayType);
     }
 
     // Insert all given values
     for (size_t valueIndex = 0; valueIndex < arraySize; valueIndex++) {
       // Calculate item address
-      llvm::Value *itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, builder->getInt32(valueIndex));
+      llvm::Value *itemAddress;
+      if (arrayType->isArrayTy()) {
+        llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(valueIndex)};
+        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, indices);
+      } else {
+        itemAddress = builder->CreateInBoundsGEP(arrayType, arrayAddress, builder->getInt32(valueIndex));
+      }
 
       // Store item value to item address
       llvm::Value *itemValue;
