@@ -5,7 +5,6 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <cli/CliInterface.h>
 #include <exception/ErrorFactory.h>
 #include <util/FileUtil.h>
 #include <util/ThreadFactory.h>
@@ -69,6 +68,6 @@ void LinkerInterface::addLinkerFlag(const std::string &flag) { linkerFlags.push_
 /**
  * Set executable output path
  *
- * @param outputPath Output path
+ * @param path Output path
  */
-void LinkerInterface::setOutputPath(const std::string &outputPath) { this->outputPath = outputPath; }
+void LinkerInterface::setOutputPath(const std::string &path) { this->outputPath = path; }

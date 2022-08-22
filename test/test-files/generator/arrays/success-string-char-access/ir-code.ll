@@ -9,8 +9,8 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  %test = alloca ptr, align 8
   store i32 0, ptr %result, align 4
+  %test = alloca ptr, align 8
   store ptr @0, ptr %test, align 8
   %0 = load ptr, ptr %test, align 8
   %1 = getelementptr inbounds i8, ptr %0, i32 2

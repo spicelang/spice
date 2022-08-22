@@ -34,7 +34,7 @@ public:
   [[nodiscard]] Struct substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *structScope) const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
-  void setSymbolTable(SymbolTable *symbolTable);
+  void setSymbolTable(SymbolTable *symTab);
   void setUsed();
   [[nodiscard]] bool isUsed() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;

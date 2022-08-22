@@ -15,17 +15,17 @@ entry.l3:
   %0 = alloca {}, align 8
   %t1 = alloca ptr, align 8
   %t3 = alloca ptr, align 8
-  %1 = alloca { ptr, ptr }, align 8
   store ptr null, ptr %t3, align 8
-  %2 = alloca ptr, align 8
-  %3 = call i32 @pthread_create(ptr nonnull %2, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
-  %4 = load ptr, ptr %2, align 8
-  store ptr %4, ptr %t1, align 8
-  store ptr %t1, ptr %1, align 8
-  %5 = getelementptr inbounds { ptr, ptr }, ptr %1, i64 0, i32 1
+  %1 = alloca ptr, align 8
+  %2 = call i32 @pthread_create(ptr nonnull %1, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
+  %3 = load ptr, ptr %1, align 8
+  store ptr %3, ptr %t1, align 8
+  %4 = alloca { ptr, ptr }, align 8
+  store ptr %t1, ptr %4, align 8
+  %5 = getelementptr inbounds { ptr, ptr }, ptr %4, i64 0, i32 1
   store ptr %t3, ptr %5, align 8
   %6 = alloca ptr, align 8
-  %7 = call i32 @pthread_create(ptr nonnull %6, ptr null, ptr nonnull @_thread1, ptr nonnull %1)
+  %7 = call i32 @pthread_create(ptr nonnull %6, ptr null, ptr nonnull @_thread1, ptr nonnull %4)
   %8 = load ptr, ptr %6, align 8
   %9 = alloca ptr, align 8
   %10 = call i32 @pthread_create(ptr nonnull %9, ptr null, ptr nonnull @_thread2, ptr nonnull %0)

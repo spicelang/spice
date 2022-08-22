@@ -13,17 +13,17 @@ entry.l1:
   br label %for.l2
 
 for.l2:                                           ; preds = %for.l2, %entry.l1
-  %counter.012 = phi i32 [ 0, %entry.l1 ], [ %2, %for.l2 ]
-  %0 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 %counter.012)
-  %1 = icmp ugt i32 %counter.012, 9000
-  %2 = add nuw nsw i32 %counter.012, 2
+  %counter.06 = phi i32 [ 0, %entry.l1 ], [ %2, %for.l2 ]
+  %0 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 %counter.06)
+  %1 = icmp ugt i32 %counter.06, 9000
+  %2 = add nuw nsw i32 %counter.06, 2
   br i1 %1, label %for.l5, label %for.l2
 
 for.l5:                                           ; preds = %for.l2, %for.l5
-  %subCounter.011 = phi i32 [ %5, %for.l5 ], [ 100, %for.l2 ]
-  %3 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i32 %subCounter.011)
-  %4 = icmp eq i32 %subCounter.011, 11
-  %5 = add nsw i32 %subCounter.011, -1
+  %storemerge5 = phi i32 [ %5, %for.l5 ], [ 100, %for.l2 ]
+  %3 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i32 %storemerge5)
+  %4 = icmp eq i32 %storemerge5, 11
+  %5 = add nsw i32 %storemerge5, -1
   br i1 %4, label %for.end.l2, label %for.l5
 
 for.end.l2:                                       ; preds = %for.l5

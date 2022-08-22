@@ -13,32 +13,28 @@ entry.l6:
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %1 = load ptr, ptr %this, align 8
-  %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %_s__Vector__bool_string, ptr %2, i32 0, i32 0
-  store i1 false, ptr %3, align 1
-  %4 = load ptr, ptr %this, align 8
-  %5 = load ptr, ptr %this, align 8
-  %6 = getelementptr inbounds %_s__Vector__bool_string, ptr %5, i32 0, i32 1
-  store ptr @0, ptr %6, align 8
+  %2 = getelementptr inbounds %_s__Vector__bool_string, ptr %1, i32 0, i32 0
+  store i1 false, ptr %2, align 1
+  %3 = load ptr, ptr %this, align 8
+  %4 = getelementptr inbounds %_s__Vector__bool_string, ptr %3, i32 0, i32 1
+  store ptr @0, ptr %4, align 8
   ret void
 }
 
 define i32 @main() {
 entry.l11:
   %result = alloca i32, align 4
-  %vec = alloca %_s__Vector__bool_string, align 8
   store i32 0, ptr %result, align 4
+  %vec = alloca %_s__Vector__bool_string, align 8
   call void @_mp__Vector__ctor(ptr %vec)
-  %0 = load %_s__Vector__bool_string, ptr %vec, align 8
-  %1 = getelementptr inbounds %_s__Vector__bool_string, ptr %vec, i32 0, i32 0
-  %2 = load i1, ptr %1, align 1
-  %3 = zext i1 %2 to i32
-  %4 = load %_s__Vector__bool_string, ptr %vec, align 8
-  %5 = getelementptr inbounds %_s__Vector__bool_string, ptr %vec, i32 0, i32 1
-  %6 = load ptr, ptr %5, align 8
-  %7 = call i32 (ptr, ...) @printf(ptr @1, i32 %3, ptr %6)
-  %8 = load i32, ptr %result, align 4
-  ret i32 %8
+  %0 = getelementptr inbounds %_s__Vector__bool_string, ptr %vec, i32 0, i32 0
+  %1 = load i1, ptr %0, align 1
+  %2 = zext i1 %1 to i32
+  %3 = getelementptr inbounds %_s__Vector__bool_string, ptr %vec, i32 0, i32 1
+  %4 = load ptr, ptr %3, align 8
+  %5 = call i32 (ptr, ...) @printf(ptr @1, i32 %2, ptr %4)
+  %6 = load i32, ptr %result, align 4
+  ret i32 %6
 }
 
 declare i32 @printf(ptr, ...)

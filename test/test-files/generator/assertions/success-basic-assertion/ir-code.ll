@@ -9,8 +9,8 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  %0 = alloca i1, align 1
   store i32 0, ptr %result, align 4
+  %0 = alloca i1, align 1
   store i1 false, ptr %0, align 1
   %1 = load i1, ptr %0, align 1
   br i1 %1, label %assert.end.l2, label %assert.then.l2

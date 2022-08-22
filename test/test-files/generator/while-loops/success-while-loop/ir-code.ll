@@ -8,17 +8,17 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  %i = alloca i32, align 4
-  %0 = alloca i1, align 1
   store i32 0, ptr %result, align 4
+  %i = alloca i32, align 4
   store i32 0, ptr %i, align 4
   br label %while.cond.l3
 
 while.cond.l3:                                    ; preds = %while.l3, %entry.l1
-  %1 = load i32, ptr %i, align 4
-  %2 = icmp slt i32 %1, 10
-  store i1 %2, ptr %0, align 1
-  %3 = load i1, ptr %0, align 1
+  %0 = load i32, ptr %i, align 4
+  %1 = icmp slt i32 %0, 10
+  %2 = alloca i1, align 1
+  store i1 %1, ptr %2, align 1
+  %3 = load i1, ptr %2, align 1
   br i1 %3, label %while.l3, label %while.end.l3
 
 while.l3:                                         ; preds = %while.cond.l3

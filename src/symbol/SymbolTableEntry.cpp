@@ -65,7 +65,7 @@ SymbolState SymbolTableEntry::getState() const { return state; }
 void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const CodeLoc &codeLoc, bool force) {
   // Check if this is a constant variable and is already initialized
   if (state == INITIALIZED && specifiers.isConst() && !force)
-    throw err->get(codeLoc, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
+    throw ErrorFactory::get(codeLoc, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
   // Check if the type is known at time of initialization
   if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                  // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE

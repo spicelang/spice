@@ -4,15 +4,15 @@
 
 #include <util/CodeLoc.h>
 
-SemanticError ErrorFactory::get(const CodeLoc &codeLoc, SemanticErrorType type, const std::string &message) const {
+SemanticError ErrorFactory::get(const CodeLoc &codeLoc, SemanticErrorType type, const std::string &message) {
   return SemanticError(codeLoc, type, message);
 }
 
-IRError ErrorFactory::get(const CodeLoc &codeLoc, IRErrorType type, const std::string &message) const {
+IRError ErrorFactory::get(const CodeLoc &codeLoc, IRErrorType type, const std::string &message) {
   return IRError(codeLoc, type, message);
 }
 
-IRError ErrorFactory::get(IRErrorType type, const std::string &message) const { return IRError(type, message); }
+IRError ErrorFactory::get(IRErrorType type, const std::string &message) { return IRError(type, message); }
 
 CliError ErrorFactory::get(CliErrorType type, const std::string &message) { return CliError(type, message); }
 

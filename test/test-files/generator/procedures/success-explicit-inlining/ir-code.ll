@@ -22,11 +22,11 @@ declare i32 @printf(ptr, ...)
 define i32 @main() {
 entry.l5:
   %result = alloca i32, align 4
-  %0 = alloca i1, align 1
   store i32 0, ptr %result, align 4
-  %1 = call i32 (ptr, ...) @printf(ptr @1)
+  %0 = call i32 (ptr, ...) @printf(ptr @1)
   call void @_p__void__printAValue()
-  store i1 true, ptr %0, align 1
+  %1 = alloca i1, align 1
+  store i1 true, ptr %1, align 1
   %2 = call i32 (ptr, ...) @printf(ptr @2)
   %3 = load i32, ptr %result, align 4
   ret i32 %3

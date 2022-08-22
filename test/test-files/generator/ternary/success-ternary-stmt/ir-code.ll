@@ -17,16 +17,16 @@ entry.l1:
 define i32 @main() {
 entry.l5:
   %result = alloca i32, align 4
-  %condition = alloca i1, align 1
-  %0 = alloca i32, align 4
-  %r = alloca i32, align 4
   store i32 0, ptr %result, align 4
+  %condition = alloca i1, align 1
   store i1 true, ptr %condition, align 1
-  %1 = call i32 @_f__void__get()
-  store i32 %1, ptr %0, align 4
+  %0 = call i32 @_f__void__get()
+  %1 = alloca i32, align 4
+  store i32 %0, ptr %1, align 4
+  %r = alloca i32, align 4
   store i32 24, ptr %r, align 4
   %2 = load i1, ptr %condition, align 1
-  %3 = select i1 %2, ptr %0, ptr %r
+  %3 = select i1 %2, ptr %1, ptr %r
   %4 = load i32, ptr %3, align 4
   %5 = call i32 (ptr, ...) @printf(ptr @0, i32 %4)
   %6 = load i32, ptr %result, align 4

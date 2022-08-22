@@ -55,14 +55,14 @@ public:
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
   SymbolTable *lookupTable(const std::string &tableName);
-  SymbolTable *createChildBlock(const std::string &childBlockName, const ScopeType &scopeType);
+  SymbolTable *createChildBlock(const std::string &childBlockName, const ScopeType &type);
   void insertGenericType(const std::string &typeName, const GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
   void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable, bool alterParent = true);
   void renameChildBlock(const std::string &oldName, const std::string &newName);
   void copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName);
 
-  void setParent(SymbolTable *symbolTable);
+  void setParent(SymbolTable *parentTable);
   [[nodiscard]] SymbolTable *getParent() const;
   SymbolTable *getChild(const std::string &tableName);
 

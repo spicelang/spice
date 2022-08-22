@@ -7,9 +7,6 @@
 
 #include <symbol/SymbolType.h>
 
-// Typedefs
-typedef std::pair<std::string, SymbolType> GenericTypeReplacement; // <generic-type-name, replacement-type>
-
 class GenericType : public SymbolType {
 public:
   // Constructors

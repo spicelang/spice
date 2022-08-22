@@ -18,6 +18,17 @@ else()
     message(STATUS "Spice: LTO for Spice is disabled.")
 endif()
 
+# MOLD_X86_64_ONLY and MOLD_ARM64_ONLY are developer-only options.
+# You should not use it for creating an executable for production use.
+option(SPICE_DEV_COMPILE "Developer-only option" OFF)
+if(SPICE_DEV_COMPILE)
+    message(STATUS "Spice: Dev build for Spice is enabled.")
+    SET(CMAKE_CXX_FLAGS_DEBUG "-ffunction-sections -fdata-sections ${CMAKE_CXX_FLAGS_DEBUG}")
+    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections")
+else()
+    message(STATUS "Spice: Dev build for Spice is disabled.")
+endif()
+
 # Link statically
 option(SPICE_LINK_STATIC "Link the compiler executable statically" OFF)
 if (SPICE_LINK_STATIC)
