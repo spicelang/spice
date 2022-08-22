@@ -1685,13 +1685,9 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
 
     return lhsPtr;
   } else if (node->ternaryExpr()) {
-    std::any rhs = visit(node->ternaryExpr());
-    lhsType = nullptr; // Reset lhs type
-    return rhs;
+    return visit(node->ternaryExpr());
   } else if (node->threadDef()) {
-    std::any rhs = visit(node->threadDef());
-    lhsType = nullptr; // Reset lhs type
-    return rhs;
+    return visit(node->threadDef());
   }
 
   // This is a fallthrough case -> throw an error
@@ -2210,6 +2206,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           // Calculate address of array item
           llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
           lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indices);
+          // lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indexValue);
           structAccessType = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
         } else { // Pointer
           lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
@@ -2732,7 +2729,10 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
     auto type = reinterpret_cast<llvm::ArrayType *>(arrayType);
     currentConstValue = llvm::ConstantArray::get(type, itemConstants);
 
-    return withinConstantArray ? std::any() : createGlobalArray(currentConstValue);
+    if (withinConstantArray)
+      return {};
+
+    return createGlobalArray(currentConstValue);
   } else { // Global array is not possible => fallback to individual indexing
     allArgsHardcoded = false;
 
@@ -2760,13 +2760,13 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
       builder->CreateStore(itemValue, itemAddress);
     }
 
-    if (dynamicallySized) {
-      // Save value to address
-      llvm::Value *newArrayAddress = insertAlloca(arrayAddress->getType(), lhsVarName);
-      builder->CreateStore(arrayAddress, newArrayAddress);
-      return newArrayAddress;
-    }
-    return arrayAddress;
+    if (!dynamicallySized)
+      return arrayAddress;
+
+    // Save value to address
+    llvm::Value *newArrayAddress = insertAlloca(arrayAddress->getType(), lhsVarName);
+    builder->CreateStore(arrayAddress, newArrayAddress);
+    return newArrayAddress;
   }
 }
 
@@ -2962,7 +2962,6 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
   // Create global variable
   llvm::Value *memAddress = module->getOrInsertGlobal(globalVarName, constArray->getType());
   llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
-  // global->setConstant(true);
   global->setInitializer(constArray);
 
   return memAddress;

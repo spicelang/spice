@@ -414,7 +414,9 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
   case TY_ARRAY: {
     if (mangledName)
       return "array";
-    return !withSize || chainElement.subType == "0" ? "[]" : "[" + chainElement.subType + "]";
+    if (!withSize || chainElement.subType == "0")
+      return "[]";
+    return chainElement.subType == "-1" ? "[size]" : "[" + chainElement.subType + "]";
   }
   case TY_DOUBLE:
     return "double";
