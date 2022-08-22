@@ -1046,7 +1046,7 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   continueBlocks.push(bInc);
 
   // Get array variable entry
-  visit(node->arrayAssign());
+  llvm::Value *arrayValuePtr = resolveAddress(node->arrayAssign());
   SymbolTableEntry *arrayVarEntry = currentScope->lookup(currentVarName);
   bool dynamicallySized =
       arrayVarEntry && arrayVarEntry->getType().is(TY_PTR) && arrayVarEntry->getType().getDynamicArraySize() != nullptr;
@@ -1078,7 +1078,6 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   llvm::Value *itemVarPtr = itemVarEntry->getAddress();
 
   // Do loop variable initialization
-  llvm::Value *arrayValuePtr = resolveAddress(node->arrayAssign());
   SymbolType arrSymbolType = node->arrayAssign()->getEvaluatedSymbolType();
   llvm::Type *arrayValueType = arrSymbolType.toLLVMType(*context, currentScope);
   llvm::Value *arrayValue = builder->CreateLoad(arrayValueType, arrayValuePtr);

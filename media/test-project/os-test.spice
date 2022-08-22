@@ -10,24 +10,8 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-const unsigned int vertexCount = 2;
-
 f<int> main() {
-    /*int[vertexCount][9] graph = {
-        { 0, 4, 0, 0, 0, 0, 0, 8, 0 },
-        { 4, 0, 8, 0, 0, 0, 0, 11, 0 },
-        { 0, 8, 0, 7, 0, 4, 0, 0, 2 },
-        { 0, 0, 7, 0, 9, 14, 0, 0, 0 },
-        { 0, 0, 0, 9, 0, 10, 0, 0, 0 },
-        { 0, 0, 4, 14, 10, 0, 2, 0, 0 },
-        { 0, 0, 0, 0, 0, 2, 0, 1, 6 },
-        { 8, 11, 0, 0, 0, 0, 1, 0, 7 },
-        { 0, 0, 2, 0, 0, 0, 6, 7, 0 }
-    };
-
-    printf("Test: %d\n", graph[1][7]);*/
-
-    int[vertexCount][2] graph = {{ 1, 2 }, { 3, 4 }};
-    int[vertexCount] graph1 = graph[1];
-    printf("Test: %d\n", graph1[1]);
+    foreach dyn item : { 1, 2, 3, 4, 5 } {
+        printf("Item %d: %d\n", idx, item);
+    }
 }

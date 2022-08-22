@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
-target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-unknown-linux-gnu"
+target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [10 x i8] c"Data: %d\0A\00", align 1
 @numberList1 = global [7 x i16] [i16 1, i16 2, i16 3, i16 4, i16 5, i16 6, i16 7]
@@ -158,22 +158,22 @@ entry.l17:
   store i32 %8, ptr %9, align 4
   %10 = load i32, ptr %4, align 4
   %11 = load i32, ptr %9, align 4
-  %resultList = alloca [2 x i32], align 4
-  %12 = getelementptr inbounds [2 x i32], ptr %resultList, i32 0
-  store i32 %10, ptr %12, align 4
-  %13 = getelementptr inbounds [2 x i32], ptr %resultList, i32 1
-  store i32 %11, ptr %13, align 4
-  %14 = load [2 x i32], ptr %resultList, align 4
-  %15 = alloca i32, align 4
-  store i32 2, ptr %15, align 4
-  %16 = load i32, ptr %15, align 4
-  %17 = load [2 x i32], ptr %resultList, align 4
-  call void @_p__void__printData__int_intarray(i32 %16, [2 x i32] %17)
-  %18 = alloca i1, align 1
-  store i1 true, ptr %18, align 1
-  %19 = load i32, ptr %4, align 4
-  %20 = load i32, ptr %9, align 4
-  %21 = call i32 (ptr, ...) @printf(ptr @1, i32 %19, i32 %20)
-  %22 = load i32, ptr %result, align 4
-  ret i32 %22
+  %12 = alloca [2 x i32], align 4
+  %13 = getelementptr inbounds [2 x i32], ptr %12, i32 0, i32 0
+  store i32 %10, ptr %13, align 4
+  %14 = getelementptr inbounds [2 x i32], ptr %12, i32 0, i32 1
+  store i32 %11, ptr %14, align 4
+  %15 = load [2 x i32], ptr %12, align 4
+  %16 = alloca i32, align 4
+  store i32 2, ptr %16, align 4
+  %17 = load i32, ptr %16, align 4
+  %18 = load [2 x i32], ptr %12, align 4
+  call void @_p__void__printData__int_intarray(i32 %17, [2 x i32] %18)
+  %19 = alloca i1, align 1
+  store i1 true, ptr %19, align 1
+  %20 = load i32, ptr %4, align 4
+  %21 = load i32, ptr %9, align 4
+  %22 = call i32 (ptr, ...) @printf(ptr @1, i32 %20, i32 %21)
+  %23 = load i32, ptr %result, align 4
+  ret i32 %23
 }

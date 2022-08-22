@@ -9,10 +9,10 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  %index = alloca i32, align 4
-  %item = alloca i32, align 4
   store i32 0, ptr %result, align 4
+  %index = alloca i32, align 4
   store i32 0, ptr %index, align 4
+  %item = alloca i32, align 4
   store i32 0, ptr %item, align 4
   %0 = load [7 x i32], ptr @intArray, align 4
   %1 = load i32, ptr %index, align 4

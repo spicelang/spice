@@ -13,45 +13,45 @@ declare i32 @usleep(i32)
 define i32 @main() {
 entry.l3:
   %result = alloca i32, align 4
-  %i = alloca i32, align 4
-  %0 = alloca { ptr }, align 8
-  %1 = alloca i32, align 4
-  %2 = alloca i1, align 1
-  %3 = alloca i32, align 4
-  %4 = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr @0)
+  %0 = call i32 (ptr, ...) @printf(ptr @0)
+  %i = alloca i32, align 4
   store i32 1, ptr %i, align 4
   br label %for.cond.l5
 
 for.l5:                                           ; preds = %for.cond.l5
-  %6 = load i32, ptr %i, align 4
-  %7 = call i32 (ptr, ...) @printf(ptr @1, i32 %6)
-  %8 = getelementptr inbounds { ptr }, ptr %0, i32 0, i32 0
-  store ptr %i, ptr %8, align 8
-  %9 = alloca ptr, align 8
-  %10 = call i32 @pthread_create(ptr %9, ptr null, ptr @_thread0, ptr %0)
+  %1 = load i32, ptr %i, align 4
+  %2 = call i32 (ptr, ...) @printf(ptr @1, i32 %1)
+  %3 = alloca { ptr }, align 8
+  %4 = getelementptr inbounds { ptr }, ptr %3, i32 0, i32 0
+  store ptr %i, ptr %4, align 8
+  %5 = alloca ptr, align 8
+  %6 = call i32 @pthread_create(ptr %5, ptr null, ptr @_thread0, ptr %3)
   br label %for.inc.l5
 
 for.inc.l5:                                       ; preds = %for.l5
-  %11 = load i32, ptr %i, align 4
-  %12 = add i32 %11, 1
-  store i32 %12, ptr %i, align 4
-  store i32 %11, ptr %1, align 4
+  %7 = load i32, ptr %i, align 4
+  %8 = add i32 %7, 1
+  store i32 %8, ptr %i, align 4
+  %9 = alloca i32, align 4
+  store i32 %7, ptr %9, align 4
   br label %for.cond.l5
 
 for.cond.l5:                                      ; preds = %for.inc.l5, %entry.l3
-  %13 = load i32, ptr %i, align 4
-  %14 = icmp sle i32 %13, 8
-  store i1 %14, ptr %2, align 1
-  %15 = load i1, ptr %2, align 1
-  br i1 %15, label %for.l5, label %for.end.l5
+  %10 = load i32, ptr %i, align 4
+  %11 = icmp sle i32 %10, 8
+  %12 = alloca i1, align 1
+  store i1 %11, ptr %12, align 1
+  %13 = load i1, ptr %12, align 1
+  br i1 %13, label %for.l5, label %for.end.l5
 
 for.end.l5:                                       ; preds = %for.cond.l5
-  store i32 1000000, ptr %3, align 4
-  %16 = load i32, ptr %3, align 4
-  %17 = call i32 @usleep(i32 %16)
-  store i32 %17, ptr %4, align 4
+  %14 = alloca i32, align 4
+  store i32 1000000, ptr %14, align 4
+  %15 = load i32, ptr %14, align 4
+  %16 = call i32 @usleep(i32 %15)
+  %17 = alloca i32, align 4
+  store i32 %16, ptr %17, align 4
   %18 = call i32 (ptr, ...) @printf(ptr @3)
   %19 = load i32, ptr %result, align 4
   ret i32 %19
@@ -67,11 +67,11 @@ thread.entry.l7:
   %4 = mul i32 100, %3
   %5 = mul i32 %4, 1000
   %6 = alloca i32, align 4
-  %7 = alloca i32, align 4
   store i32 %5, ptr %6, align 4
-  %8 = load i32, ptr %6, align 4
-  %9 = call i32 @usleep(i32 %8)
-  store i32 %9, ptr %7, align 4
+  %7 = load i32, ptr %6, align 4
+  %8 = call i32 @usleep(i32 %7)
+  %9 = alloca i32, align 4
+  store i32 %8, ptr %9, align 4
   %10 = call i32 (ptr, ...) @printf(ptr @2)
   ret ptr null
 }

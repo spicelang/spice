@@ -4,20 +4,19 @@ target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-w64-windows-gnu"
 
 @anonymous.0 = global [5 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5]
-@item = global [5 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5]
 @0 = private unnamed_addr constant [13 x i8] c"Item %d: %d\0A\00", align 1
 
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  %idx = alloca i32, align 4
-  %item = alloca i32, align 4
   store i32 0, ptr %result, align 4
+  %idx = alloca i32, align 4
   store i32 0, ptr %idx, align 4
+  %item = alloca i32, align 4
   store i32 0, ptr %item, align 4
-  %0 = load [5 x i32], ptr @item, align 4
+  %0 = load [5 x i32], ptr @anonymous.0, align 4
   %1 = load i32, ptr %idx, align 4
-  %2 = getelementptr inbounds [5 x i32], ptr @item, i32 0, i32 %1
+  %2 = getelementptr inbounds [5 x i32], ptr @anonymous.0, i32 0, i32 %1
   %3 = load i32, ptr %2, align 4
   store i32 %3, ptr %item, align 4
   br label %foreach.loop.l2
@@ -32,7 +31,7 @@ foreach.inc.l2:                                   ; preds = %foreach.loop.l2
   %idx1 = load i32, ptr %idx, align 4
   %idx.inc = add i32 %idx1, 1
   store i32 %idx.inc, ptr %idx, align 4
-  %7 = getelementptr inbounds [5 x i32], ptr @item, i32 0, i32 %idx.inc
+  %7 = getelementptr inbounds [5 x i32], ptr @anonymous.0, i32 0, i32 %idx.inc
   %8 = load i32, ptr %7, align 4
   store i32 %8, ptr %item, align 4
   br label %foreach.cond.l2
