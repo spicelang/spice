@@ -2618,7 +2618,12 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
       // Get the actual arg value
       SymbolType actualArgSymbolType = arg->getEvaluatedSymbolType();
       llvm::Value *actualArgPtr = resolveAddress(arg);
-      if (actualArgSymbolType == expectedArgSymbolType) {
+
+      // If the arrays are both of size -1 or 0, they are both pointers and do not need to be implicitly casted
+      bool isSameArray = actualArgSymbolType.isArray() && expectedArgSymbolType.isArray() &&
+                         actualArgSymbolType.getArraySize() <= 0 && expectedArgSymbolType.getArraySize() <= 0;
+
+      if (actualArgSymbolType == expectedArgSymbolType || isSameArray) {
         actualArgPtr = builder->CreateLoad(actualArgSymbolType.toLLVMType(*context, accessScope), actualArgPtr);
       } else {
         actualArgPtr = doImplicitCast(actualArgPtr, expectedArgType, actualArgSymbolType);
