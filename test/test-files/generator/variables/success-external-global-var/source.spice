@@ -1,5 +1,5 @@
 import "source1" as s1;
 
 f<int> main() {
-    printf("Global var: %s\n", s1.GLOBAL);
+    printf("Global var: %s\n", s1::GLOBAL);
 }

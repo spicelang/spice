@@ -1,0 +1,4 @@
+f<int> main() {
+    double doubleVar = 1.34;
+    doubleVar.test = 1;
+}
