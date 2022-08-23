@@ -52,10 +52,16 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Global of type dyn";
   case GLOBAL_OF_INVALID_TYPE:
     return "Global of invalid type";
+  case GLOBAL_CONST_WITHOUT_VALUE:
+    return "Global const without value";
   case FUNCTION_WITHOUT_RETURN_STMT:
     return "Missing return statement";
   case INVALID_PARAM_ORDER:
     return "Invalid argument order";
+  case DTOR_MUST_BE_PROCEDURE:
+    return "Destructor must be a procedure";
+  case DTOR_WITH_PARAMS:
+    return "Destructors must not have parameters";
   case OPERATOR_WRONG_DATA_TYPE:
     return "Wrong data type for operator";
   case UNEXPECTED_DYN_TYPE_SA:
@@ -78,6 +84,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Printf arg number not matching template string";
   case STD_NOT_FOUND:
     return "Std lib not found";
+  case DUPLICATE_IMPORT_NAME:
+    return "Duplicate import name";
   case IMPORTED_FILE_NOT_EXISTING:
     return "Imported source file not existing";
   case CIRCULAR_DEPENDENCY:
@@ -96,6 +104,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Array item type not matching";
   case EXPECTED_ARRAY_TYPE:
     return "Expected array type";
+  case SIZEOF_DYNAMIC_SIZED_ARRAY:
+    return "Sizeof dynamically sized array";
   case RETURN_WITHOUT_VALUE_RESULT:
     return "Return without initialization of result variable";
   case RETURN_WITH_VALUE_IN_PROCEDURE:

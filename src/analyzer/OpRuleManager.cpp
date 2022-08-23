@@ -217,7 +217,7 @@ SymbolType OpRuleManager::getPrefixMulResultType(const CodeLoc &codeLoc, const S
   return lhs.getContainedTy();
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, SymbolType lhs) {
+SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, const SymbolType& lhs) {
   return lhs.toPointer(err, codeLoc);
 }
 

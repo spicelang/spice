@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <memory>
 #include <sys/stat.h>
 
 #ifdef __unix__

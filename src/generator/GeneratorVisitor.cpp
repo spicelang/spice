@@ -72,8 +72,14 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
 
   // Initialize debug info generator
   if (cliOptions.generateDebugInfo) {
-    module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
     module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
+    module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
+    module->addModuleFlag(llvm::Module::Error, "PIC Level", llvm::PICLevel::BigPIC);
+
+    auto identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
+    llvm::MDNode *n = llvm::MDNode::get(*context, llvm::MDString::get(*context, "spice version " + std::string(SPICE_VERSION)));
+    identifierMetadata->addOperand(n);
+
     initializeDIBuilder(sourceFile.fileName, sourceFile.fileDir);
   }
 }
@@ -175,130 +181,139 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
   if (!secondRun)
     return nullptr;
 
-  if (requiresMainFct) { // Only create main function when it is required
-    // Change scope to function scope
-    currentScope = node->fctScope;
-    assert(currentScope != nullptr);
+  // Only create main function when it is required
+  if (!requiresMainFct)
+    return nullptr;
 
-    // Visit arguments
-    std::vector<std::string> argNames;
-    std::vector<llvm::Type *> argTypes;
-    if (node->paramLst()) {
-      argNames.reserve(node->paramLst()->params().size());
-      argTypes.reserve(node->paramLst()->params().size());
-      for (const auto &param : node->paramLst()->params()) {
-        currentVarName = param->varName;
-        argNames.push_back(currentVarName);
-        SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
-        assert(argSymbol != nullptr);
-        currentConstSigned = argSymbol->getSpecifiers().isSigned();
-        auto argType = any_cast<llvm::Type *>(visit(param->dataType()));
-        argTypes.push_back(argType);
-      }
-    }
+  // Change scope to function scope
+  currentScope = node->fctScope;
+  assert(currentScope != nullptr);
 
-    // Build function itself
-    llvm::Type *returnType = builder->getInt32Ty();
-    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
-    llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module.get());
-
-    // Add debug info
-    if (cliOptions.generateDebugInfo) {
-      // Get arg types
-      std::vector<std::pair<SymbolType, bool>> argTypes;
-      for (const auto &argName : argNames) {
-        SymbolTableEntry *argEntry = currentScope->lookup(argName);
-        assert(argEntry != nullptr);
-        argTypes.emplace_back(argEntry->getType(), true);
-      }
-      // Build spice function
-      SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-      Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argTypes, {}, node->codeLoc);
-      // Add debug info
-      generateFunctionDebugInfo(fct, &spiceFunc);
-    }
-
-    // Create entry block
-    std::string codeLine = node->codeLoc.toPrettyLine();
-    llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry." + codeLine);
-    fct->getBasicBlockList().push_back(bEntry);
-    moveInsertPointToBlock(bEntry);
-    allocaInsertInst = nullptr;
-
-    // Store function arguments
-    for (auto &arg : fct->args()) {
-      unsigned argNo = arg.getArgNo();
-      std::string argName = argNames[argNo];
-      llvm::Type *argType = fctType->getParamType(argNo);
-      llvm::Value *memAddress = insertAlloca(argType, argName);
-      SymbolTableEntry *argSymbol = currentScope->lookup(argName);
+  // Visit arguments
+  std::vector<std::string> argNames;
+  std::vector<llvm::Type *> argTypes;
+  if (node->paramLst()) {
+    argNames.reserve(node->paramLst()->params().size());
+    argTypes.reserve(node->paramLst()->params().size());
+    for (const auto &param : node->paramLst()->params()) {
+      currentVarName = param->varName;
+      argNames.push_back(currentVarName);
+      SymbolTableEntry *argSymbol = currentScope->lookup(currentVarName);
       assert(argSymbol != nullptr);
-      argSymbol->updateAddress(memAddress);
-      builder->CreateStore(&arg, memAddress);
+      currentConstSigned = argSymbol->getSpecifiers().isSigned();
+      auto argType = any_cast<llvm::Type *>(visit(param->dataType()));
+      argTypes.push_back(argType);
     }
-
-    // Declare result variable and set it to 0 for positive return code
-    llvm::Value *memAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
-    SymbolTableEntry *returnSymbol = currentScope->lookup(RETURN_VARIABLE_NAME);
-    assert(returnSymbol != nullptr);
-    returnSymbol->updateAddress(memAddress);
-    builder->CreateStore(builder->getInt32(0), returnSymbol->getAddress());
-
-    // Reset stack state
-    stackState = nullptr;
-
-    // Generate IR for function body
-    visit(node->stmtLst());
-
-    // Generate return statement for result variable
-    if (!blockAlreadyTerminated) {
-      std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
-      if (!varsToDestruct.empty()) {
-        llvm::BasicBlock *predecessor = builder->GetInsertBlock();
-        // Generate cleanup block
-        llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup." + codeLine);
-        moveInsertPointToBlock(bCleanup);
-
-        // Generate cleanup instructions (e.g. dtor calls)
-        bool destructorCalled = false;
-        for (SymbolTableEntry *varEntry : varsToDestruct)
-          destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
-
-        if (destructorCalled) {
-          fct->getBasicBlockList().push_back(bCleanup);
-          moveInsertPointToBlock(predecessor);
-          builder->CreateBr(bCleanup);
-          moveInsertPointToBlock(bCleanup);
-        } else {
-          moveInsertPointToBlock(predecessor);
-        }
-      }
-
-      // Restore stack if necessary
-      if (stackState != nullptr)
-        builder->CreateCall(retrieveStackRestoreFct(), {stackState});
-
-      // Create return stmt
-      llvm::Value *result = returnSymbol->getAddress();
-      builder->CreateRet(builder->CreateLoad(fct->getReturnType(), result));
-    }
-
-    // Conclude debug information
-    if (cliOptions.generateDebugInfo)
-      debugInfo.lexicalBlocks.pop_back();
-
-    // Verify function
-    if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
-      std::string output;
-      llvm::raw_string_ostream oss(output);
-      if (llvm::verifyFunction(*fct, &oss))
-        throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
-    }
-
-    // Change scope back
-    currentScope = currentScope->getParent();
-    assert(currentScope != nullptr);
   }
+
+  // Build function itself
+  llvm::Type *returnType = builder->getInt32Ty();
+  llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
+  llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module.get());
+
+  // Add debug info
+  if (cliOptions.generateDebugInfo) {
+    // Get arg types
+    std::vector<std::pair<SymbolType, bool>> argSymbolTypes;
+    for (const auto &argName : argNames) {
+      SymbolTableEntry *argEntry = currentScope->lookup(argName);
+      assert(argEntry != nullptr);
+      argSymbolTypes.emplace_back(argEntry->getType(), true);
+    }
+    // Build spice function
+    SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+    Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argSymbolTypes, {}, node->codeLoc);
+    // Add debug info
+    generateFunctionDebugInfo(fct, &spiceFunc);
+    setSourceLocation(node);
+  }
+
+  // Create entry block
+  std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bEntry = allocaInsertBlock = llvm::BasicBlock::Create(*context, "entry." + codeLine);
+  fct->getBasicBlockList().push_back(bEntry);
+  moveInsertPointToBlock(bEntry);
+  allocaInsertInst = nullptr;
+
+  // Store function arguments
+  for (auto &arg : fct->args()) {
+    unsigned argNo = arg.getArgNo();
+    std::string argName = argNames[argNo];
+    llvm::Type *argType = fctType->getParamType(argNo);
+    llvm::Value *memAddress = insertAlloca(argType, argName);
+    SymbolTableEntry *argSymbol = currentScope->lookup(argName);
+    assert(argSymbol != nullptr);
+    argSymbol->updateAddress(memAddress);
+
+    if (cliOptions.generateDebugInfo)
+      generateDeclDebugInfo(node->codeLoc, argName, memAddress);
+
+    builder->CreateStore(&arg, memAddress);
+  }
+
+  // Declare result variable and set it to 0 for positive return code
+  llvm::Value *memAddress = insertAlloca(returnType, RETURN_VARIABLE_NAME);
+  SymbolTableEntry *returnSymbol = currentScope->lookup(RETURN_VARIABLE_NAME);
+  assert(returnSymbol != nullptr);
+  returnSymbol->updateAddress(memAddress);
+  builder->CreateStore(builder->getInt32(0), returnSymbol->getAddress());
+
+  // Reset stack state
+  stackState = nullptr;
+
+  // Generate IR for function body
+  visit(node->stmtLst());
+
+  // Generate return statement for result variable
+  if (!blockAlreadyTerminated) {
+    std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+    if (!varsToDestruct.empty()) {
+      llvm::BasicBlock *predecessor = builder->GetInsertBlock();
+      // Generate cleanup block
+      llvm::BasicBlock *bCleanup = llvm::BasicBlock::Create(*context, "cleanup." + codeLine);
+      moveInsertPointToBlock(bCleanup);
+
+      // Generate cleanup instructions (e.g. dtor calls)
+      bool destructorCalled = false;
+      for (SymbolTableEntry *varEntry : varsToDestruct)
+        destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
+
+      if (destructorCalled) {
+        fct->getBasicBlockList().push_back(bCleanup);
+        moveInsertPointToBlock(predecessor);
+        builder->CreateBr(bCleanup);
+        moveInsertPointToBlock(bCleanup);
+      } else {
+        moveInsertPointToBlock(predecessor);
+      }
+    }
+
+    // Restore stack if necessary
+    if (stackState != nullptr) {
+      builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+      stackState = nullptr;
+    }
+
+    // Create return stmt
+    llvm::Value *result = returnSymbol->getAddress();
+    builder->CreateRet(builder->CreateLoad(fct->getReturnType(), result));
+  }
+
+  // Conclude debug information
+  if (cliOptions.generateDebugInfo)
+    debugInfo.lexicalBlocks.pop();
+
+  // Verify function
+  if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyFunction(*fct, &oss))
+      throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
+  }
+
+  // Change scope back
+  currentScope = currentScope->getParent();
+  assert(currentScope != nullptr);
 
   return nullptr;
 }
@@ -306,6 +321,8 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
 std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
   if (!secondRun)
     return nullptr;
+
+  setSourceLocation(node);
 
   // Change to the (potentially generic) struct scope
   SymbolTable *accessScope = currentScope;
@@ -388,8 +405,10 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         fct->addFnAttr(llvm::Attribute::AlwaysInline);
 
       // Add debug info
-      if (cliOptions.generateDebugInfo)
+      if (cliOptions.generateDebugInfo) {
         generateFunctionDebugInfo(fct, &spiceFunc);
+        setSourceLocation(node);
+      }
 
       // Create entry block
       std::string codeLine = node->codeLoc.toPrettyLine();
@@ -407,6 +426,10 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         SymbolTableEntry *argEntry = currentScope->lookup(argName);
         assert(argEntry != nullptr);
         argEntry->updateAddress(memAddress);
+
+        if (cliOptions.generateDebugInfo)
+          generateDeclDebugInfo(node->codeLoc, argName, memAddress);
+
         builder->CreateStore(&arg, memAddress);
       }
 
@@ -453,8 +476,11 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         }
 
         // Restore stack if necessary
-        if (stackState != nullptr)
+        if (stackState != nullptr) {
           builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+          stackState = nullptr;
+        }
+
         // Create return stmt
         llvm::Value *result = returnSymbol->getAddress();
         builder->CreateRet(builder->CreateLoad(fct->getReturnType(), result));
@@ -462,7 +488,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
 
       // Conclude debug information
       if (cliOptions.generateDebugInfo)
-        debugInfo.lexicalBlocks.pop_back();
+        debugInfo.lexicalBlocks.pop();
 
       // Verify function
       if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
@@ -492,6 +518,8 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
 std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
   if (!secondRun)
     return nullptr;
+
+  setSourceLocation(node);
 
   // Change to the (potentially generic) struct scope
   SymbolTable *accessScope = currentScope;
@@ -570,8 +598,10 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         proc->addFnAttr(llvm::Attribute::AlwaysInline);
 
       // Add debug info
-      if (cliOptions.generateDebugInfo)
+      if (cliOptions.generateDebugInfo) {
         generateFunctionDebugInfo(proc, &spiceProc);
+        setSourceLocation(node);
+      }
 
       // Create entry block
       std::string codeLine = node->codeLoc.toPrettyLine();
@@ -589,6 +619,10 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         SymbolTableEntry *argSymbol = currentScope->lookup(argName);
         assert(argSymbol != nullptr);
         argSymbol->updateAddress(memAddress);
+
+        if (cliOptions.generateDebugInfo)
+          generateDeclDebugInfo(node->codeLoc, argName, memAddress);
+
         builder->CreateStore(&arg, memAddress);
       }
 
@@ -629,15 +663,18 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         }
 
         // Restore stack if necessary
-        if (stackState != nullptr)
+        if (stackState != nullptr) {
           builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+          stackState = nullptr;
+        }
+
         // Create return stmt
         builder->CreateRetVoid();
       }
 
       // Conclude debug information
       if (cliOptions.generateDebugInfo)
-        debugInfo.lexicalBlocks.pop_back();
+        debugInfo.lexicalBlocks.pop();
 
       // Verify procedure
       if (!cliOptions.disableVerifier && !cliOptions.generateDebugInfo) { // Verifying while generating debug info throws errors
@@ -667,6 +704,8 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
 std::any GeneratorVisitor::visitStructDef(StructDefNode *node) {
   if (secondRun)
     return nullptr;
+
+  setSourceLocation(node);
 
   // Get all substantiated function which result from this function declaration
   std::map<std::string, Struct> *manifestations = currentScope->getStructManifestations(node->codeLoc);
@@ -715,6 +754,8 @@ std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (secondRun)
     return nullptr;
 
+  setSourceLocation(node);
+
   currentVarName = node->varName;
 
   // Get symbol table entry and the symbol specifiers
@@ -736,11 +777,18 @@ std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   global->setLinkage(linkage);
   global->setConstant(specifiers.isConst());
 
+  // Add debug info
+  if (cliOptions.generateDebugInfo)
+    generateGlobalVarDebugInfo(global, globalVarEntry);
+
   if (node->value()) { // Variable is initialized here
-    visit(node->value());
     constNegate = node->negative;
-    global->setInitializer(currentConstValue);
+    visit(node->value());
     constNegate = false;
+    global->setInitializer(currentConstValue);
+  } else {
+    llvm::Constant *defaultValue = getDefaultValueForSymbolType(globalVarEntry->getType());
+    global->setInitializer(defaultValue);
   }
 
   return nullptr;
@@ -749,6 +797,8 @@ std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
 std::any GeneratorVisitor::visitExtDecl(ExtDeclNode *node) {
   if (secondRun)
     return nullptr;
+
+  setSourceLocation(node);
 
   // Get function name
   std::vector<SymbolType> symbolTypes;
@@ -792,7 +842,7 @@ std::any GeneratorVisitor::visitExtDecl(ExtDeclNode *node) {
 }
 
 std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Create threaded function
   std::string threadedFctName = "_thread" + std::to_string(threadFactory.getNextFunctionSuffix());
@@ -900,7 +950,7 @@ std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
 }
 
 std::any GeneratorVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Change scope
   currentScope = currentScope->getChild(node->getScopeId());
@@ -917,7 +967,7 @@ std::any GeneratorVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
 }
 
 std::any GeneratorVisitor::visitForLoop(ForLoopNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Create blocks
   std::string codeLine = node->codeLoc.toPrettyLine();
@@ -980,7 +1030,7 @@ std::any GeneratorVisitor::visitForLoop(ForLoopNode *node) {
 }
 
 std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Create blocks
   std::string codeLine = node->codeLoc.toPrettyLine();
@@ -996,7 +1046,7 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   continueBlocks.push(bInc);
 
   // Get array variable entry
-  visit(node->arrayAssign());
+  llvm::Value *arrayValuePtr = resolveAddress(node->arrayAssign());
   SymbolTableEntry *arrayVarEntry = currentScope->lookup(currentVarName);
   bool dynamicallySized =
       arrayVarEntry && arrayVarEntry->getType().is(TY_PTR) && arrayVarEntry->getType().getDynamicArraySize() != nullptr;
@@ -1028,9 +1078,8 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   llvm::Value *itemVarPtr = itemVarEntry->getAddress();
 
   // Do loop variable initialization
-  llvm::Value *arrayValuePtr = resolveAddress(node->arrayAssign());
-  SymbolType arraySymbolType = node->arrayAssign()->getEvaluatedSymbolType();
-  llvm::Type *arrayValueType = arraySymbolType.toLLVMType(*context, currentScope);
+  SymbolType arrSymbolType = node->arrayAssign()->getEvaluatedSymbolType();
+  llvm::Type *arrayValueType = arrSymbolType.toLLVMType(*context, currentScope);
   llvm::Value *arrayValue = builder->CreateLoad(arrayValueType, arrayValuePtr);
   llvm::Value *arraySizeValue = dynamicallySized ? arrayVarEntry->getType().getDynamicArraySize()
                                                  : builder->getInt32(arrayValue->getType()->getArrayNumElements());
@@ -1046,12 +1095,12 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   llvm::Value *indices[2] = {builder->getInt32(0), index};
   if (dynamicallySized) {
     arrayValuePtr = builder->CreateLoad(arrayValueType, arrayValuePtr);
-    arrayValueType = arraySymbolType.getContainedTy().toLLVMType(*context, currentScope);
+    arrayValueType = arrSymbolType.getContainedTy().toLLVMType(*context, currentScope);
     itemPtr = builder->CreateInBoundsGEP(arrayValueType, arrayValuePtr, index);
   } else {
     itemPtr = builder->CreateInBoundsGEP(arrayValueType, arrayValuePtr, indices);
   }
-  llvm::Type *itemPtrType = arraySymbolType.getContainedTy().toLLVMType(*context, currentScope);
+  llvm::Type *itemPtrType = arrSymbolType.getContainedTy().toLLVMType(*context, currentScope);
   llvm::Value *newItemValue = builder->CreateLoad(itemPtrType, itemPtr);
   builder->CreateStore(newItemValue, itemVarPtr);
   createBr(bLoop);
@@ -1111,7 +1160,7 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
 }
 
 std::any GeneratorVisitor::visitWhileLoop(WhileLoopNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   llvm::Function *parentFct = builder->GetInsertBlock()->getParent();
 
@@ -1157,8 +1206,6 @@ std::any GeneratorVisitor::visitWhileLoop(WhileLoopNode *node) {
 }
 
 std::any GeneratorVisitor::visitStmtLst(StmtLstNode *node) {
-  emitSourceLocation(node);
-
   for (const auto &child : node->children) {
     if (!blockAlreadyTerminated) {
       visit(child);
@@ -1173,7 +1220,7 @@ std::any GeneratorVisitor::visitTypeAltsLst(TypeAltsLstNode * /*node*/) {
 }
 
 std::any GeneratorVisitor::visitIfStmt(IfStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Change scope
   currentScope = currentScope->getChild(node->getScopeId());
@@ -1219,7 +1266,7 @@ std::any GeneratorVisitor::visitIfStmt(IfStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitElseStmt(ElseStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->ifStmt()) { // It is an else if branch
     visit(node->ifStmt());
@@ -1239,7 +1286,7 @@ std::any GeneratorVisitor::visitElseStmt(ElseStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Only generate assertions with -O0
   if (cliOptions.optLevel == 0) {
@@ -1278,7 +1325,7 @@ std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Get var name
   currentVarName = lhsVarName = node->varName;
@@ -1298,27 +1345,24 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   llvm::Value *memAddress = nullptr;
   if (node->assignExpr()) { // Declaration with assignment
     memAddress = resolveAddress(node->assignExpr());
-
-    // Generate debug info for local variable
-    generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress);
   } else { // Declaration with default value
     if (entry->getType().is(TY_PTR) && entry->getType().getDynamicArraySize() != nullptr) {
       llvm::Type *itemType = entry->getType().getContainedTy().toLLVMType(*context, nullptr);
       dynamicArraySize = entry->getType().getDynamicArraySize();
-      llvm::Value *arrayValue = allocateDynamicallySizedArray(itemType);
-      memAddress = insertAlloca(arrayValue->getType(), lhsVarName);
-      builder->CreateStore(arrayValue, memAddress, entry->isVolatile());
+      llvm::Value *value = allocateDynamicallySizedArray(itemType);
+      memAddress = insertAlloca(value->getType(), lhsVarName);
+      builder->CreateStore(value, memAddress, entry->isVolatile());
     } else {
-      llvm::Value *defaultValue = getDefaultValueForSymbolType(currentSymbolType);
+      llvm::Value *value = getDefaultValueForSymbolType(currentSymbolType);
       memAddress = insertAlloca(varType, lhsVarName);
 
-      // Generate debug info for local variable
-      generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress);
-
       // Save default value to address
-      builder->CreateStore(defaultValue, memAddress, entry->isVolatile());
+      builder->CreateStore(value, memAddress, entry->isVolatile());
     }
   }
+
+  if (cliOptions.generateDebugInfo)
+    generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress, true);
 
   // Update address in symbol table
   entry->updateAddress(memAddress);
@@ -1335,7 +1379,7 @@ std::any GeneratorVisitor::visitImportStmt(ImportStmtNode * /*node*/) {
 }
 
 std::any GeneratorVisitor::visitReturnStmt(ReturnStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
 
@@ -1393,7 +1437,7 @@ std::any GeneratorVisitor::visitReturnStmt(ReturnStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitBreakStmt(BreakStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Get destination block
   for (int i = 1; i < node->breakTimes; i++)
@@ -1405,7 +1449,7 @@ std::any GeneratorVisitor::visitBreakStmt(BreakStmtNode *node) {
 }
 
 std::any GeneratorVisitor::visitContinueStmt(ContinueStmtNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Get destination block
   for (int i = 1; i < node->continueTimes; i++)
@@ -1565,7 +1609,7 @@ std::any GeneratorVisitor::visitJoinCall(JoinCallNode *node) {
 }
 
 std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Check if there is an assign operator applied
   if (node->hasOperator) { // This is an assignment or compound assignment
@@ -1638,18 +1682,11 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
       builder->CreateStore(rhs, lhsPtr, variableEntry->isVolatile());
     }
 
-    // Add debug info for value change
-    generateAssignDebugInfo(node->codeLoc, lhsVarName, rhs);
-
     return lhsPtr;
   } else if (node->ternaryExpr()) {
-    std::any rhs = visit(node->ternaryExpr());
-    lhsType = nullptr; // Reset lhs type
-    return rhs;
+    return visit(node->ternaryExpr());
   } else if (node->threadDef()) {
-    std::any rhs = visit(node->threadDef());
-    lhsType = nullptr; // Reset lhs type
-    return rhs;
+    return visit(node->threadDef());
   }
 
   // This is a fallthrough case -> throw an error
@@ -1657,12 +1694,12 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitTernaryExpr(TernaryExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
-    auto conditionPtr = resolveAddress(node->operands()[0]);
-    auto trueValuePtr = resolveAddress(node->operands()[1]);
-    auto falseValuePtr = resolveAddress(node->operands()[2]);
+    llvm::Value *conditionPtr = resolveAddress(node->operands()[0]);
+    llvm::Value *trueValuePtr = resolveAddress(node->operands()[1]);
+    llvm::Value *falseValuePtr = resolveAddress(node->operands()[2]);
 
     llvm::Type *conditionType = node->operands().front()->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
     llvm::Value *condition = builder->CreateLoad(conditionType, conditionPtr);
@@ -1672,7 +1709,7 @@ std::any GeneratorVisitor::visitTernaryExpr(TernaryExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitLogicalOrExpr(LogicalOrExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     std::string codeLine = node->codeLoc.toPrettyLine();
@@ -1722,7 +1759,7 @@ std::any GeneratorVisitor::visitLogicalOrExpr(LogicalOrExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitLogicalAndExpr(LogicalAndExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     std::string codeLine = node->codeLoc.toPrettyLine();
@@ -1772,7 +1809,7 @@ std::any GeneratorVisitor::visitLogicalAndExpr(LogicalAndExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     BitwiseXorExprNode *lhsOperand = node->operands().front();
@@ -1791,7 +1828,7 @@ std::any GeneratorVisitor::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     BitwiseAndExprNode *lhsOperand = node->operands().front();
@@ -1810,7 +1847,7 @@ std::any GeneratorVisitor::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     EqualityExprNode *lhsOperand = node->operands().front();
@@ -1829,7 +1866,7 @@ std::any GeneratorVisitor::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitEqualityExpr(EqualityExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     RelationalExprNode *lhsOperand = node->operands()[0];
@@ -1859,7 +1896,7 @@ std::any GeneratorVisitor::visitEqualityExpr(EqualityExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitRelationalExpr(RelationalExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->operands().size() > 1) {
     ShiftExprNode *lhsOperand = node->operands()[0];
@@ -1895,7 +1932,7 @@ std::any GeneratorVisitor::visitRelationalExpr(RelationalExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitShiftExpr(ShiftExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Check if there is a shift operation attached
   if (node->operands().size() > 1) {
@@ -1926,7 +1963,7 @@ std::any GeneratorVisitor::visitShiftExpr(ShiftExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Check if at least one additive operator is applied
   if (!node->opQueue.empty()) {
@@ -1965,7 +2002,7 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Check if at least one multiplicative operator is applied
   if (!node->opQueue.empty()) {
@@ -2007,7 +2044,7 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
 }
 
 std::any GeneratorVisitor::visitCastExpr(CastExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->isCasted) { // Cast operator is applied
     SymbolType lhsSymbolType = node->getEvaluatedSymbolType();
@@ -2027,7 +2064,7 @@ std::any GeneratorVisitor::visitCastExpr(CastExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   currentVarName = "";           // Reset the current variable name
   scopePath.clear();             // Clear the scope path
@@ -2118,12 +2155,9 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
       opStack.pop();
     }
 
-    if (storeValue) {
-      // Store the value back again
+    // Store the value back again
+    if (storeValue)
       builder->CreateStore(lhs, lhsPtr, isVolatile);
-      // Create debug info for assignment
-      generateAssignDebugInfo(node->codeLoc, currentVarName, lhs);
-    }
 
     return lhsPtr;
   }
@@ -2132,7 +2166,7 @@ std::any GeneratorVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (!node->opQueue.empty()) {
     // Retrieve the address and the value if required
@@ -2140,7 +2174,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Type *lhsTy = lhsSymbolType.is(TY_IMPORT) ? nullptr : lhsSymbolType.toLLVMType(*context, currentScope);
     llvm::Value *lhsPtr = resolveAddress(lhsOperand);
-    llvm::Value *lhs = lhsPtr != nullptr ? builder->CreateLoad(lhsTy, lhsPtr) : nullptr;
+    llvm::Value *lhs = nullptr;
 
     size_t subscriptCounter = 0;
     size_t memberAccessCounter = 0;
@@ -2149,12 +2183,6 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     while (!opQueue.empty()) {
       switch (opQueue.front().first) {
       case PostfixUnaryExprNode::OP_SUBSCRIPT: {
-        if (!lhs) {
-          lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
-          lhs = builder->CreateLoad(lhsTy, lhsPtr);
-        }
-
-        assert(lhs->getType()->isArrayTy() || lhs->getType()->isPointerTy());
 
         // Save variables to restore later
         std::string currentVarNameBackup = currentVarName;
@@ -2172,16 +2200,19 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         structAccessAddress = structAccessAddressBackup;
         structAccessType = structAccessTypeBackup;
 
-        if (lhs->getType()->isArrayTy()) {
+        if (lhsSymbolType.isArray() && lhsSymbolType.getArraySize() > 0) { // Array
           lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
           // Calculate address of array item
           llvm::Value *indices[2] = {builder->getInt32(0), indexValue};
           lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indices);
+          // lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indexValue);
           structAccessType = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
-        } else {
+        } else { // Pointer
+          lhsTy = lhsSymbolType.toLLVMType(*context, currentScope);
+          lhsPtr = builder->CreateLoad(lhsTy, lhsPtr);
           lhsTy = lhsSymbolType.getContainedTy().toLLVMType(*context, currentScope);
           // Calculate address of pointer offset
-          lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhs, indexValue);
+          lhsPtr = builder->CreateInBoundsGEP(lhsTy, lhsPtr, indexValue);
           structAccessType = lhsTy;
         }
         structAccessAddress = lhsPtr;
@@ -2237,12 +2268,9 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       opQueue.pop();
     }
 
-    if (lhs != nullptr) {
-      // Store the value back again
+    // Store the value back again
+    if (lhs != nullptr)
       builder->CreateStore(lhs, lhsPtr);
-      // Create debug info for assignment
-      generateAssignDebugInfo(node->codeLoc, currentVarName, lhs);
-    }
 
     return lhsPtr;
   }
@@ -2251,7 +2279,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   if (node->value())
     return visit(node->value());
@@ -2364,7 +2392,7 @@ std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
 }
 
 std::any GeneratorVisitor::visitValue(ValueNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   // Primitive value
   if (node->primitiveValue()) {
@@ -2410,14 +2438,14 @@ std::any GeneratorVisitor::visitValue(ValueNode *node) {
 
 std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   // Value is a double constant
-  if (node->type == PrimitiveValueNode::TY_DOUBLE) {
+  if (node->type == PrimitiveValueNode::TYPE_DOUBLE) {
     currentSymbolType = SymbolType(TY_DOUBLE);
     double value = constNegate ? -node->data.doubleValue : node->data.doubleValue;
     return static_cast<llvm::Constant *>(llvm::ConstantFP::get(*context, llvm::APFloat(value)));
   }
 
   // Value is an integer constant
-  if (node->type == PrimitiveValueNode::TY_INT) {
+  if (node->type == PrimitiveValueNode::TYPE_INT) {
     currentSymbolType = SymbolType(TY_INT);
     int value = constNegate ? -node->data.intValue : node->data.intValue;
     llvm::Type *intTy = builder->getInt32Ty();
@@ -2427,7 +2455,7 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   }
 
   // Value is a short constant
-  if (node->type == PrimitiveValueNode::TY_SHORT) {
+  if (node->type == PrimitiveValueNode::TYPE_SHORT) {
     currentSymbolType = SymbolType(TY_SHORT);
     int value = constNegate ? -node->data.shortValue : node->data.shortValue;
     llvm::Type *shortTy = builder->getInt16Ty();
@@ -2437,7 +2465,7 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   }
 
   // Value is a long constant
-  if (node->type == PrimitiveValueNode::TY_LONG) {
+  if (node->type == PrimitiveValueNode::TYPE_LONG) {
     currentSymbolType = SymbolType(TY_LONG);
     long long value = constNegate ? -node->data.longValue : node->data.longValue;
     llvm::Type *longTy = builder->getInt64Ty();
@@ -2447,7 +2475,7 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   }
 
   // Value is a char constant
-  if (node->type == PrimitiveValueNode::TY_CHAR) {
+  if (node->type == PrimitiveValueNode::TYPE_CHAR) {
     currentSymbolType = SymbolType(TY_CHAR);
     char value = node->data.charValue;
     llvm::Type *charTy = builder->getInt8Ty();
@@ -2457,14 +2485,14 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   }
 
   // Value is a string constant
-  if (node->type == PrimitiveValueNode::TY_STRING) {
+  if (node->type == PrimitiveValueNode::TYPE_STRING) {
     currentSymbolType = SymbolType(TY_STRING);
     std::string value = node->data.stringValue;
     return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
   }
 
   // Value is a boolean constant
-  if (node->type == PrimitiveValueNode::TY_BOOL) {
+  if (node->type == PrimitiveValueNode::TYPE_BOOL) {
     currentSymbolType = SymbolType(TY_BOOL);
     return static_cast<llvm::Constant *>(node->data.boolValue ? builder->getTrue() : builder->getFalse());
   }
@@ -2587,11 +2615,12 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
       // Get the actual arg value
       SymbolType actualArgSymbolType = arg->getEvaluatedSymbolType();
       llvm::Value *actualArgPtr = resolveAddress(arg);
-      if (actualArgSymbolType != expectedArgSymbolType) {
-        argValues.push_back(doImplicitCast(actualArgPtr, expectedArgType, actualArgSymbolType));
+      if (actualArgSymbolType == expectedArgSymbolType) {
+        actualArgPtr = builder->CreateLoad(actualArgSymbolType.toLLVMType(*context, accessScope), actualArgPtr);
       } else {
-        argValues.push_back(builder->CreateLoad(actualArgSymbolType.toLLVMType(*context, accessScope), actualArgPtr));
+        actualArgPtr = doImplicitCast(actualArgPtr, expectedArgType, actualArgSymbolType);
       }
+      argValues.push_back(actualArgPtr);
       argIndex++;
     }
   }
@@ -2616,33 +2645,74 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
   // Get data type
   size_t actualItemCount = node->itemLst() ? node->itemLst()->args().size() : 0;
   size_t arraySize = lhsType != nullptr && lhsType->isArrayTy() ? lhsType->getArrayNumElements() : actualItemCount;
-  SymbolType arraySymbolType = node->getEvaluatedSymbolType();
+
+  bool dynamicallySized = false;
+  bool outermostArray = true;
+  if (!arraySymbolType.is(TY_INVALID)) {
+    dynamicallySized = arraySymbolType.is(TY_PTR) && arraySymbolType.getDynamicArraySize() != nullptr;
+    outermostArray = false;
+  } else if (!lhsVarName.empty()) {
+    SymbolTableEntry *arrayEntry = currentScope->lookupStrict(lhsVarName);
+    assert(arrayEntry != nullptr);
+    arraySymbolType = arrayEntry->getType();
+    dynamicallySized = arraySymbolType.isPointer() && arraySymbolType.getDynamicArraySize() != nullptr;
+    if (dynamicallySized)
+      dynamicArraySize = arraySymbolType.getDynamicArraySize();
+  } else {
+    arraySymbolType = node->getEvaluatedSymbolType();
+  }
+
   SymbolType itemSymbolType = arraySymbolType.getContainedTy();
   llvm::Type *arrayType = arraySymbolType.toLLVMType(*context, currentScope);
   llvm::Type *itemType = itemSymbolType.toLLVMType(*context, currentScope);
-
-  bool dynamicallySized = false;
-  if (!lhsVarName.empty()) {
-    SymbolTableEntry *arrayEntry = currentScope->lookupStrict(lhsVarName);
-    assert(arrayEntry != nullptr);
-    dynamicallySized = arrayEntry->getType().is(TY_PTR) && arrayEntry->getType().getDynamicArraySize() != nullptr;
-  }
 
   std::vector<llvm::Value *> itemValues;
   std::vector<llvm::Constant *> itemConstants;
   itemValues.reserve(arraySize);
   itemConstants.reserve(arraySize);
 
+  bool toggledConstantArray = false;
+  if (!withinConstantArray)
+    withinConstantArray = toggledConstantArray = true;
+
   if (node->itemLst()) { // The array is initialized with values
+    // Set the lhs type to the item type
+    std::string lhsVarNameBackup = lhsVarName;
+    llvm::Type *lhsTypeBackup = lhsType;
+    lhsType = itemSymbolType.toLLVMType(*context, currentScope);
+    SymbolType arraySymbolTypeBackup = arraySymbolType;
+    arraySymbolType = arraySymbolType.getContainedTy();
+    llvm::Value *dynamicArraySizeBackup = dynamicArraySize;
+    dynamicArraySize = nullptr;
+
     // Visit all args to check if they are hardcoded or not
     allArgsHardcoded = true;
     for (size_t i = 0; i < std::min(node->itemLst()->args().size(), arraySize); i++) {
       currentConstValue = nullptr;
-      llvm::Value *itemValue = resolveValue(node->itemLst()->args()[i]);
+      lhsVarName = lhsVarNameBackup + "." + std::to_string(i);
+
+      if (arraySymbolType.isPointer())
+        dynamicArraySize = arraySymbolType.getDynamicArraySize();
+
+      AssignExprNode *arg = node->itemLst()->args()[i];
+      llvm::Value *itemValue = resolveValue(arg);
+
       itemValues.push_back(itemValue);
       itemConstants.push_back(currentConstValue);
     }
+
+    // Restore lhs type
+    lhsVarName = lhsVarNameBackup;
+    lhsType = lhsTypeBackup;
+    arraySymbolType = arraySymbolTypeBackup;
+    dynamicArraySize = dynamicArraySizeBackup;
   }
+
+  if (toggledConstantArray)
+    withinConstantArray = false;
+  if (outermostArray)
+    arraySymbolType = SymbolType(TY_INVALID);
+  currentConstValue = nullptr;
 
   // Decide if the array can be defined globally
   if (allArgsHardcoded && !dynamicallySized && !itemType->isStructTy()) { // Global array is possible
@@ -2653,21 +2723,28 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
         itemConstants.push_back(constantValue);
     }
 
-    // Create global array from constant values
+    // Create hardcoded array
     assert(arrayType != nullptr);
-    return createGlobalArray(arrayType, itemConstants);
+    auto type = reinterpret_cast<llvm::ArrayType *>(arrayType);
+    currentConstValue = llvm::ConstantArray::get(type, itemConstants);
+
+    if (withinConstantArray)
+      return {};
+
+    return createGlobalArray(currentConstValue);
   } else { // Global array is not possible => fallback to individual indexing
+    allArgsHardcoded = false;
+
     // Allocate array
     llvm::Value *arrayAddress;
     if (dynamicallySized) {
       arrayAddress = allocateDynamicallySizedArray(itemType);
-      arrayType = arraySymbolType.getContainedTy().toLLVMType(*context, currentScope);
+      arrayType = itemSymbolType.toLLVMType(*context, currentScope);
     } else {
-      arrayAddress = insertAlloca(arrayType, lhsVarName);
+      arrayAddress = insertAlloca(arrayType);
     }
 
     // Insert all given values
-    llvm::Value *itemDefaultValue = getDefaultValueForSymbolType(itemSymbolType);
     for (size_t valueIndex = 0; valueIndex < arraySize; valueIndex++) {
       // Calculate item address
       llvm::Value *itemAddress;
@@ -2679,18 +2756,22 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
       }
 
       // Store item value to item address
-      llvm::Value *itemValue =
-          node->itemLst() && valueIndex < node->itemLst()->args().size() ? itemValues[valueIndex] : itemDefaultValue;
+      llvm::Value *itemValue;
+      if (node->itemLst() && valueIndex < node->itemLst()->args().size()) {
+        itemValue = itemValues[valueIndex];
+      } else {
+        itemValue = getDefaultValueForSymbolType(itemSymbolType);
+      }
       builder->CreateStore(itemValue, itemAddress);
     }
 
+    if (!dynamicallySized)
+      return arrayAddress;
+
     // Save value to address
-    if (dynamicallySized) {
-      llvm::Value *newArrayAddress = insertAlloca(arrayAddress->getType(), lhsVarName);
-      builder->CreateStore(arrayAddress, newArrayAddress);
-      return newArrayAddress;
-    }
-    return arrayAddress;
+    llvm::Value *newArrayAddress = insertAlloca(arrayAddress->getType(), lhsVarName);
+    builder->CreateStore(arrayAddress, newArrayAddress);
+    return newArrayAddress;
   }
 }
 
@@ -2748,7 +2829,7 @@ std::any GeneratorVisitor::visitStructInstantiation(StructInstantiationNode *nod
 }
 
 std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
-  emitSourceLocation(node);
+  setSourceLocation(node);
 
   SymbolType symbolType = node->getEvaluatedSymbolType();
   if (symbolType.is(TY_DYN)) {
@@ -2768,11 +2849,11 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
     while (!tmQueue.empty()) {
       DataTypeNode::TypeModifier typeModifier = tmQueue.front();
       switch (typeModifier.modifierType) {
-      case DataTypeNode::TY_POINTER: {
+      case DataTypeNode::TYPE_PTR: {
         symbolType = symbolType.toPointer(err.get(), node->codeLoc);
         break;
       }
-      case DataTypeNode::TY_ARRAY: {
+      case DataTypeNode::TYPE_ARRAY: {
         if (!typeModifier.hasSize) {
           symbolType = symbolType.toPointer(err.get(), node->codeLoc);
         } else if (typeModifier.isSizeHardcoded) {
@@ -2844,15 +2925,16 @@ void GeneratorVisitor::createCondBr(llvm::Value *condition, llvm::BasicBlock *tr
 
 llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) {
-    llvm::AllocaInst *allocaInst = builder->CreateAlloca(llvmType, nullptr, varName);
-    allocaInst->moveAfter(allocaInsertInst);
-    allocaInsertInst = allocaInst;
+    allocaInsertInst = builder->CreateAlloca(llvmType, nullptr, varName);
+    allocaInsertInst->setDebugLoc(llvm::DebugLoc());
+    allocaInsertInst->moveAfter(allocaInsertInst);
   } else {
     // Save current basic block and move insert cursor to entry block of the current function
     llvm::BasicBlock *currentBlock = builder->GetInsertBlock();
     builder->SetInsertPoint(allocaInsertBlock);
 
     allocaInsertInst = builder->CreateAlloca(llvmType, nullptr, varName);
+    allocaInsertInst->setDebugLoc(llvm::DebugLoc());
 
     // Restore old basic block
     builder->SetInsertPoint(currentBlock);
@@ -2863,21 +2945,18 @@ llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::str
 llvm::Value *GeneratorVisitor::allocateDynamicallySizedArray(llvm::Type *itemType) {
   // Call llvm.stacksave intrinsic
   llvm::Function *stackSaveFct = retrieveStackSaveFct();
-  stackState = builder->CreateCall(stackSaveFct);
+  if (stackState == nullptr)
+    stackState = builder->CreateCall(stackSaveFct);
   // Allocate array
   llvm::Value *memAddress = builder->CreateAlloca(itemType, dynamicArraySize); // Intentionally not via insertAlloca
   dynamicArraySize = nullptr;
   return memAddress;
 }
 
-llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants) {
-  // Create hardcoded array
-  auto type = static_cast<llvm::ArrayType *>(arrayType);
-  llvm::Constant *constArray = llvm::ConstantArray::get(type, itemConstants);
-
+llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
   // Find an unused global name
   std::string globalVarName = lhsVarName;
-  if (globalVarName.empty()) {
+  if (globalVarName.empty() || module->getNamedGlobal(globalVarName) != nullptr) {
     unsigned int suffixNumber = 0;
     do {
       globalVarName = "anonymous." + std::to_string(suffixNumber);
@@ -2886,15 +2965,11 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Type *arrayType, const st
   }
 
   // Create global variable
-  module->getOrInsertGlobal(globalVarName, arrayType);
-  llvm::Value *arrayAddress = insertAlloca(arrayType, lhsVarName);
-  builder->CreateStore(constArray, arrayAddress);
-
-  // Set some attributes to it
+  llvm::Value *memAddress = module->getOrInsertGlobal(globalVarName, constArray->getType());
   llvm::GlobalVariable *global = module->getNamedGlobal(globalVarName);
-  global->setConstant(true);
   global->setInitializer(constArray);
-  return arrayAddress;
+
+  return memAddress;
 }
 
 bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
@@ -3039,7 +3114,7 @@ llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(const SymbolType 
     assert(structScope != nullptr);
 
     size_t fieldCount = structScope->getFieldCount();
-    auto structType = static_cast<llvm::StructType *>(structEntry->getType().toLLVMType(*context, structScope));
+    auto structType = reinterpret_cast<llvm::StructType *>(structEntry->getType().toLLVMType(*context, structScope));
 
     // Allocate space for the struct in memory
     llvm::Value *structAddress = insertAlloca(structType);
@@ -3109,12 +3184,14 @@ llvm::Value *GeneratorVisitor::doImplicitCast(llvm::Value *src, llvm::Type *dstT
 }
 
 void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir) {
+  std::string producerString = "spice version " + std::string(SPICE_VERSION);
   // Create DIBuilder
   diBuilder = std::make_unique<llvm::DIBuilder>(*module);
   // Create compilation unit
   debugInfo.diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
-  debugInfo.compileUnit =
-      diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, "Spice Compiler", cliOptions.optLevel > 0, "", 0);
+  debugInfo.compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugInfo.diFile, producerString,
+                                                       cliOptions.optLevel > 0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
+                                                       false, false, llvm::DICompileUnit::DebugNameTableKind::None);
   // Initialize primitive types
   debugInfo.doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
   debugInfo.intTy = diBuilder->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
@@ -3167,15 +3244,15 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
 }
 
 void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
-  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  size_t lineNumber = spiceFunc->getDeclCodeLoc().line;
-
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
   argTypes.push_back(getDITypeForSymbolType(spiceFunc->getReturnType())); // Add result type
   for (const auto &argType : spiceFunc->getArgTypes())                    // Add arg types
     argTypes.push_back(getDITypeForSymbolType(argType));
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
+
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  size_t lineNumber = spiceFunc->getDeclCodeLoc().line;
 
   llvm::DISubprogram *subprogram =
       diBuilder->createFunction(unit, spiceFunc->getName(), spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
@@ -3184,7 +3261,7 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
   // Add debug info to LLVM function
   llvmFunction->setSubprogram(subprogram);
   // Add scope to lexicalBlocks
-  debugInfo.lexicalBlocks.push_back(subprogram);
+  debugInfo.lexicalBlocks.push(subprogram);
 }
 
 /*llvm::DIType *GeneratorVisitor::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
@@ -3196,44 +3273,46 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
   return diBuilder->createStructType(unit, spiceStruct->getName(), unit, lineNumber, sizeInBits, 0, flags, nullptr, elements);
 }*/
 
-void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address) {
+void GeneratorVisitor::generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry) {
+  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
+  size_t lineNumber = globalEntry->getDeclCodeLoc().line;
+  llvm::StringRef name = global->getName();
+  llvm::DIType *type = getDITypeForSymbolType(globalEntry->getType());
+  bool isLocal = globalEntry->getSpecifiers().isPublic();
+
+  global->addDebugInfo(diBuilder->createGlobalVariableExpression(unit, name, name, unit, lineNumber, type, isLocal));
+}
+
+void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address,
+                                             bool moveToPrev) {
   if (!cliOptions.generateDebugInfo)
     return;
   // Get symbol table entry
-  SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
+  SymbolTableEntry *variableEntry = currentScope->lookup(varName);
   assert(variableEntry != nullptr);
   // Build debug info
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.top();
   llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
-  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, codeLoc.line, diType);
+  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, varName, unit, codeLoc.line, diType);
   llvm::DIExpression *expr = diBuilder->createExpression();
-  diBuilder->insertDbgAddrIntrinsic(address, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
+  auto inst = diBuilder->insertDeclare(address, varInfo, expr, builder->getCurrentDebugLocation(), allocaInsertBlock);
+  if (moveToPrev)
+    inst->moveBefore(builder->GetInsertPoint()->getPrevNonDebugInstruction());
 }
 
-void GeneratorVisitor::generateAssignDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *value) {
+void GeneratorVisitor::setSourceLocation(AstNode *node) {
   if (!cliOptions.generateDebugInfo)
     return;
-  // Get symbol table entry
-  SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
-  assert(variableEntry != nullptr);
-  // Build debug info
-  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
-  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
-  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, currentVarName, unit, codeLoc.line, diType);
-  llvm::DIExpression *expr = diBuilder->createExpression();
-  // Insert intrinsic call
-  diBuilder->insertDbgValueIntrinsic(value, varInfo, expr, builder->getCurrentDebugLocation(), builder->GetInsertBlock());
-}
 
-void GeneratorVisitor::emitSourceLocation(AstNode *node) {
-  if (!cliOptions.generateDebugInfo)
+  if (debugInfo.lexicalBlocks.empty()) {
+    builder->SetCurrentDebugLocation(llvm::DebugLoc());
     return;
-  if (debugInfo.lexicalBlocks.empty())
-    return;
-  llvm::DIScope *scope = debugInfo.lexicalBlocks.back();
-  builder->SetCurrentDebugLocation(llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope));
+  }
+
+  llvm::DIScope *scope = debugInfo.lexicalBlocks.top();
+  auto codeLoc = llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope);
+  builder->SetCurrentDebugLocation(codeLoc);
 }
 
 llvm::OptimizationLevel GeneratorVisitor::getLLVMOptLevelFromSpiceOptLevel() const {

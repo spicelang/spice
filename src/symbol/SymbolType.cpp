@@ -27,7 +27,7 @@ SymbolType::TypeChain SymbolType::getTypeChain() const { return typeChain; }
 SymbolType SymbolType::toPointer(const ErrorFactory *err, const CodeLoc &codeLoc, llvm::Value *dynamicSize) const {
   // Do not allow pointers of dyn
   if (typeChain.top().superType == TY_DYN)
-    throw err->get(codeLoc, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
+    throw ErrorFactory::get(codeLoc, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push({TY_PTR, "", {}, dynamicSize});
@@ -42,7 +42,7 @@ SymbolType SymbolType::toPointer(const ErrorFactory *err, const CodeLoc &codeLoc
 SymbolType SymbolType::toArray(const ErrorFactory *err, const CodeLoc &codeLoc, int size) const {
   // Do not allow arrays of dyn
   if (typeChain.top().superType == TY_DYN)
-    throw err->get(codeLoc, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
+    throw ErrorFactory::get(codeLoc, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push({TY_ARRAY, std::to_string(size), {}, nullptr});
@@ -109,7 +109,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
  * @return Corresponding LLVM type
  */
 llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const {
-  assert(!isOneOf({TY_DYN, TY_INVALID}));
+  assert(!typeChain.empty() && !isOneOf({TY_DYN, TY_INVALID}));
 
   if (is(TY_DOUBLE))
     return llvm::Type::getDoubleTy(context);
@@ -147,7 +147,8 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
   }
 
   if (isArray()) {
-    llvm::ArrayType *arrayType = llvm::ArrayType::get(getContainedTy().toLLVMType(context, accessScope), getArraySize());
+    llvm::Type *containedType = getContainedTy().toLLVMType(context, accessScope);
+    llvm::ArrayType *arrayType = llvm::ArrayType::get(containedType, getArraySize());
     return static_cast<llvm::Type *>(arrayType);
   }
 
@@ -413,7 +414,9 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
   case TY_ARRAY: {
     if (mangledName)
       return "array";
-    return !withSize || chainElement.subType == "0" ? "[]" : "[" + chainElement.subType + "]";
+    if (!withSize || chainElement.subType == "0")
+      return "[]";
+    return chainElement.subType == "-1" ? "[size]" : "[" + chainElement.subType + "]";
   }
   case TY_DOUBLE:
     return "double";

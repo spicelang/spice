@@ -11,5 +11,7 @@ f<int> main() {
 }*/
 
 f<int> main() {
-    printf("Test: %d\n", 0o0000777);
+    foreach dyn item : { 1, 2, 3, 4, 5 } {
+        printf("Item %d: %d\n", idx, item);
+    }
 }

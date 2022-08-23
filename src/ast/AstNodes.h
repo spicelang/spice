@@ -29,9 +29,9 @@ public:
   virtual std::any accept(AbstractAstVisitor *visitor) = 0;
 
   // Public methods
-  template <typename T> T *createChild(const CodeLoc &codeLoc) {
+  template <typename T> T *createChild(const CodeLoc &loc) {
     static_assert(std::is_base_of_v<AstNode, T>, "T must be derived from AstNode");
-    T *node = new T(this, codeLoc);
+    T *node = new T(this, loc);
     children.push_back(node);
     return node;
   }
@@ -76,9 +76,9 @@ public:
   }
 
   SymbolType getEvaluatedSymbolType() {
-    size_t symbolTypeIndex = getSymbolTypeIndex();
-    if (!symbolTypes.empty() && !symbolTypes[symbolTypeIndex].is(TY_INVALID))
-      return symbolTypes.at(symbolTypeIndex);
+    size_t idx = getSymbolTypeIndex();
+    if (!symbolTypes.empty() && !symbolTypes[idx].is(TY_INVALID))
+      return symbolTypes.at(idx);
     if (children.size() != 1)
       throw std::runtime_error("Cannot deduce evaluated symbol type");
     return children.front()->getEvaluatedSymbolType();
@@ -1062,7 +1062,7 @@ public:
 class PrimitiveValueNode : public AstNode {
 public:
   // Enum
-  enum PrimitiveValueType { TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL };
+  enum PrimitiveValueType { TYPE_DOUBLE, TYPE_INT, TYPE_SHORT, TYPE_LONG, TYPE_BYTE, TYPE_CHAR, TYPE_STRING, TYPE_BOOL };
 
   // Constructors
   using AstNode::AstNode;
@@ -1144,11 +1144,11 @@ public:
 class DataTypeNode : public AstNode {
 public:
   // Enums
-  enum TypeModifierType { TY_POINTER, TY_ARRAY };
+  enum TypeModifierType { TYPE_PTR, TYPE_ARRAY };
 
   // Structs
   struct TypeModifier {
-    TypeModifierType modifierType = TY_POINTER;
+    TypeModifierType modifierType = TYPE_PTR;
     bool hasSize = false;
     bool isSizeHardcoded = false;
     int hardcodedSize = 0;
@@ -1173,7 +1173,7 @@ public:
 class BaseDataTypeNode : public AstNode {
 public:
   // Enums
-  enum Type { TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL, TY_DYN, TY_CUSTOM };
+  enum Type { TYPE_DOUBLE, TYPE_INT, TYPE_SHORT, TYPE_LONG, TYPE_BYTE, TYPE_CHAR, TYPE_STRING, TYPE_BOOL, TYPE_DYN, TY_CUSTOM };
 
   // Constructors
   using AstNode::AstNode;

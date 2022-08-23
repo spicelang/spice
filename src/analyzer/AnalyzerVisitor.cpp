@@ -128,6 +128,10 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
   }
 
   if (runNumber == 1) { // First run
+    // Check if name is dtor
+    if (node->functionName == "dtor")
+      throw err->get(node->codeLoc, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
+
     // Create a new scope
     node->fctScope = currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_FUNC_PROC_BODY);
 
@@ -364,6 +368,9 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         templateTypes.push_back(*genericType);
       }
     }
+
+    if (node->hasParams && node->procedureName == "dtor")
+      throw err->get(node->codeLoc, DTOR_WITH_PARAMS, "It is not allowed to specify parameters for destructors");
 
     // Visit arguments in new scope
     std::vector<std::string> argNames;
@@ -681,6 +688,9 @@ std::any AnalyzerVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (node->specifierLst()) {
     for (const auto &specifier : node->specifierLst()->specifiers()) {
       if (specifier->type == SpecifierNode::TY_CONST) {
+        // Check if a value is attached
+        if (!node->value())
+          throw err->get(node->codeLoc, GLOBAL_CONST_WITHOUT_VALUE, "You must specify a value for constant global variables");
         symbolTypeSpecifiers.setConst(true);
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
         symbolTypeSpecifiers.setSigned(true);
@@ -1033,7 +1043,7 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
     // Check if there is a value attached to the return statement
     if (node->hasReturnValue) {
       // Visit the value
-      auto returnType = any_cast<SymbolType>(visit(node->assignExpr()));
+      returnType = any_cast<SymbolType>(visit(node->assignExpr()));
 
       // Check data type of return statement
       if (returnVariable->getType().is(TY_DYN)) {
@@ -1049,6 +1059,8 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
 
       // Set the return variable to initialized
       returnVariable->updateState(INITIALIZED, err.get(), node->codeLoc);
+    } else {
+      returnType = returnVariable->getType();
     }
 
     // Check if result variable is initialized
@@ -1056,8 +1068,6 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
       throw err->get(node->codeLoc, RETURN_WITHOUT_VALUE_RESULT,
                      "Return without value, but result variable is not initialized yet");
     returnVariable->setUsed();
-
-    returnType = returnVariable->getType();
   } else {
     // No return variable => procedure
     if (node->assignExpr())
@@ -1175,11 +1185,17 @@ std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
 }
 
 std::any AnalyzerVisitor::visitSizeofCall(SizeofCallNode *node) {
+  SymbolType symbolType;
   if (node->isType) { // Size of type
-    any_cast<SymbolType>(visit(node->dataType()));
+    symbolType = any_cast<SymbolType>(visit(node->dataType()));
   } else { // Size of value
-    any_cast<SymbolType>(visit(node->assignExpr()));
+    symbolType = any_cast<SymbolType>(visit(node->assignExpr()));
   }
+
+  // Check if symbol type is dynamically sized array
+  if (symbolType.is(TY_ARRAY) && symbolType.getArraySize() == -1)
+    throw err->get(node->codeLoc, SIZEOF_DYNAMIC_SIZED_ARRAY, "Cannot get sizeof dynamically sized array at compile time");
+
   return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 
@@ -1561,6 +1577,9 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
 std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   auto lhs = any_cast<SymbolType>(visit(node->atomicExpr()));
+  if (lhs.is(TY_INVALID))
+    throw ErrorFactory::get(node->codeLoc, REFERENCED_UNDEFINED_VARIABLE,
+                            "Variable '" + node->atomicExpr()->identifier + "' was referenced before declared");
 
   size_t subscriptCounter = 0;
   size_t memberAccessCounter = 0;
@@ -1785,21 +1804,21 @@ std::any AnalyzerVisitor::visitValue(ValueNode *node) {
 
 std::any AnalyzerVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   switch (node->type) {
-  case PrimitiveValueNode::TY_DOUBLE:
+  case PrimitiveValueNode::TYPE_DOUBLE:
     return node->setEvaluatedSymbolType(SymbolType(TY_DOUBLE));
-  case PrimitiveValueNode::TY_INT:
+  case PrimitiveValueNode::TYPE_INT:
     return node->setEvaluatedSymbolType(SymbolType(TY_INT));
-  case PrimitiveValueNode::TY_SHORT:
+  case PrimitiveValueNode::TYPE_SHORT:
     return node->setEvaluatedSymbolType(SymbolType(TY_SHORT));
-  case PrimitiveValueNode::TY_LONG:
+  case PrimitiveValueNode::TYPE_LONG:
     return node->setEvaluatedSymbolType(SymbolType(TY_LONG));
-  case PrimitiveValueNode::TY_BYTE:
+  case PrimitiveValueNode::TYPE_BYTE:
     return node->setEvaluatedSymbolType(SymbolType(TY_BYTE));
-  case PrimitiveValueNode::TY_CHAR:
+  case PrimitiveValueNode::TYPE_CHAR:
     return node->setEvaluatedSymbolType(SymbolType(TY_CHAR));
-  case PrimitiveValueNode::TY_STRING:
+  case PrimitiveValueNode::TYPE_STRING:
     return node->setEvaluatedSymbolType(SymbolType(TY_STRING));
-  case PrimitiveValueNode::TY_BOOL:
+  case PrimitiveValueNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
   }
   throw std::runtime_error("Primitive value fall-through");
@@ -1935,6 +1954,10 @@ std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node
   int actualSize = 0;
   SymbolType actualItemType = SymbolType(TY_DYN);
   if (node->itemLst()) {
+    // Set the expected array type to the contained type
+    SymbolType expectedTypeBackup = expectedType;
+    expectedType = expectedType.isArray() ? expectedType.getContainedTy() : expectedType;
+
     for (const auto &arg : node->itemLst()->args()) {
       auto itemType = any_cast<SymbolType>(visit(arg));
       if (actualItemType.is(TY_DYN)) {
@@ -1946,6 +1969,9 @@ std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node
       }
       actualSize++;
     }
+
+    // Restore the expected array type
+    expectedType = expectedTypeBackup;
   }
 
   // Override actual array size if the expected type has a fixed size
@@ -2038,14 +2064,15 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
       // Get expected type
       SymbolTableEntry *expectedField = structTable->lookupByIndex(i);
       assert(expectedField != nullptr);
-      SymbolType expectedType = expectedField->getType();
+      SymbolType expectedSymbolType = expectedField->getType();
       // Replace expected type with the capture name
-      if (expectedType.is(TY_STRUCT))
-        expectedType = expectedType.replaceBaseSubType(accessScopePrefix + expectedType.getBaseType().getSubType());
+      if (expectedSymbolType.is(TY_STRUCT))
+        expectedSymbolType =
+            expectedSymbolType.replaceBaseSubType(accessScopePrefix + expectedSymbolType.getBaseType().getSubType());
       // Check if type matches declaration
-      if (actualType != expectedType)
+      if (actualType != expectedSymbolType)
         throw err->get(assignExpr->codeLoc, FIELD_TYPE_NOT_MATCHING,
-                       "Expected type " + expectedType.getName(false) + " for the field '" + expectedField->getName() +
+                       "Expected type " + expectedSymbolType.getName(false) + " for the field '" + expectedField->getName() +
                            "', but got " + actualType.getName(false));
     }
   }
@@ -2062,11 +2089,11 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
   while (!tmQueue.empty()) {
     DataTypeNode::TypeModifier typeModifier = tmQueue.front();
     switch (typeModifier.modifierType) {
-    case DataTypeNode::TY_POINTER: {
+    case DataTypeNode::TYPE_PTR: {
       type = type.toPointer(err.get(), node->codeLoc);
       break;
     }
-    case DataTypeNode::TY_ARRAY: {
+    case DataTypeNode::TYPE_ARRAY: {
       if (typeModifier.hasSize) {
         if (typeModifier.isSizeHardcoded) {
           if (typeModifier.hardcodedSize <= 1)
@@ -2091,21 +2118,21 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
 
 std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {
   switch (node->type) {
-  case BaseDataTypeNode::TY_DOUBLE:
+  case BaseDataTypeNode::TYPE_DOUBLE:
     return node->setEvaluatedSymbolType(SymbolType(TY_DOUBLE));
-  case BaseDataTypeNode::TY_INT:
+  case BaseDataTypeNode::TYPE_INT:
     return node->setEvaluatedSymbolType(SymbolType(TY_INT));
-  case BaseDataTypeNode::TY_SHORT:
+  case BaseDataTypeNode::TYPE_SHORT:
     return node->setEvaluatedSymbolType(SymbolType(TY_SHORT));
-  case BaseDataTypeNode::TY_LONG:
+  case BaseDataTypeNode::TYPE_LONG:
     return node->setEvaluatedSymbolType(SymbolType(TY_LONG));
-  case BaseDataTypeNode::TY_BYTE:
+  case BaseDataTypeNode::TYPE_BYTE:
     return node->setEvaluatedSymbolType(SymbolType(TY_BYTE));
-  case BaseDataTypeNode::TY_CHAR:
+  case BaseDataTypeNode::TYPE_CHAR:
     return node->setEvaluatedSymbolType(SymbolType(TY_CHAR));
-  case BaseDataTypeNode::TY_STRING:
+  case BaseDataTypeNode::TYPE_STRING:
     return node->setEvaluatedSymbolType(SymbolType(TY_STRING));
-  case BaseDataTypeNode::TY_BOOL:
+  case BaseDataTypeNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
   case BaseDataTypeNode::TY_CUSTOM:
     return node->setEvaluatedSymbolType(any_cast<SymbolType>(visit(node->customDataType())));

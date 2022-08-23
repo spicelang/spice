@@ -113,7 +113,7 @@ private:
   std::unique_ptr<llvm::DIBuilder> diBuilder;
   SymbolTable *currentScope;
   SymbolTable *rootScope;
-  SymbolType currentSymbolType;
+  SymbolType currentSymbolType = SymbolType(TY_INVALID);
   ScopePath scopePath;
   ThreadFactory &threadFactory;
   std::unique_ptr<ErrorFactory> err;
@@ -123,6 +123,7 @@ private:
   std::stack<llvm::BasicBlock *> breakBlocks;
   std::stack<llvm::BasicBlock *> continueBlocks;
   bool constNegate = false;
+  bool withinConstantArray = false;
   bool allArgsHardcoded = true;
   llvm::Constant *currentConstValue = nullptr;
   bool currentConstSigned = true;
@@ -133,11 +134,12 @@ private:
   llvm::Type *structAccessType = nullptr;
   llvm::Value *dynamicArraySize = nullptr;
   llvm::Value *stackState = nullptr;
+  SymbolType arraySymbolType = SymbolType(TY_INVALID);
   bool secondRun = false;
   struct DebugInfo {
     llvm::DIFile *diFile;
     llvm::DICompileUnit *compileUnit;
-    std::vector<llvm::DIScope *> lexicalBlocks;
+    std::stack<llvm::DIScope *> lexicalBlocks;
     llvm::DIType *doubleTy;
     llvm::DIType *intTy;
     llvm::DIType *uIntTy;
@@ -161,7 +163,7 @@ private:
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
-  llvm::Value *createGlobalArray(llvm::Type *arrayType, const std::vector<llvm::Constant *> &itemConstants);
+  llvm::Value *createGlobalArray(llvm::Constant *constArray);
   bool insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
   llvm::Function *retrievePrintfFct();
   llvm::Function *retrieveExitFct();
@@ -173,9 +175,9 @@ private:
   void initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir);
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
-  void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address);
-  void generateAssignDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *value);
-  void emitSourceLocation(AstNode *ctx);
   //[[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
+  void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
+  void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address, bool moveToPrev = false);
+  void setSourceLocation(AstNode *node);
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };
