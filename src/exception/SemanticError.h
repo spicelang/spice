@@ -82,5 +82,6 @@ private:
   // Members
   std::string errorMessage;
 
+  // Private methods
   [[nodiscard]] static std::string getMessagePrefix(SemanticErrorType errorType);
 };

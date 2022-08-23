@@ -7,13 +7,15 @@
 #include <functional>
 #include <utility>
 
+#include <exception/ErrorFactory.h>
+
 // Forward declarations
 class AstNode;
 
 class AstBuilderVisitor : public SpiceVisitor {
 public:
   // Constructors
-  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName) : currentNode(rootNode), fileName(std::move(fileName)) {}
+  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName);
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -85,13 +87,14 @@ private:
   // Members
   AstNode *currentNode;
   std::string fileName;
+  std::unique_ptr<ErrorFactory> err;
 
   // Private methods
-  static int32_t parseInt(const std::string &input);
-  static int16_t parseShort(const std::string &input);
-  static int64_t parseLong(const std::string &input);
-  static int8_t parseChar(const std::string &input);
+  int32_t parseInt(antlr4::tree::TerminalNode *terminal);
+  int16_t parseShort(antlr4::tree::TerminalNode *terminal);
+  int64_t parseLong(antlr4::tree::TerminalNode *terminal);
+  int8_t parseChar(antlr4::tree::TerminalNode *terminal);
   static std::string parseString(std::string input);
-  template <typename T> T static parseNumeric(const std::string &input, std::function<T(const std::string &, int)> cb);
+  template <typename T> T parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
   static void replaceEscapeChars(std::string &string);
 };
