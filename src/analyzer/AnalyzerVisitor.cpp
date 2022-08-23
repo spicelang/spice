@@ -696,12 +696,6 @@ std::any AnalyzerVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
         symbolTypeSpecifiers.setSigned(true);
       } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
         symbolTypeSpecifiers.setSigned(false);
-
-        // Check if there is a negative value attached. If yes, print a compiler warning
-        if (node->negative)
-          CompilerWarning(node->codeLoc, NEGATIVE_VALUE_TO_UNSIGNED_VAR,
-                          "Please mind that assigning a negative value to an unsigned variable causes a wrap-around")
-              .print();
       } else if (specifier->type == SpecifierNode::TY_PUBLIC) {
         symbolTypeSpecifiers.setPublic(true);
       } else {

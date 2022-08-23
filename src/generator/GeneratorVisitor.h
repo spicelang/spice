@@ -122,7 +122,6 @@ private:
   llvm::Instruction *allocaInsertInst = nullptr;
   std::stack<llvm::BasicBlock *> breakBlocks;
   std::stack<llvm::BasicBlock *> continueBlocks;
-  bool constNegate = false;
   bool withinConstantArray = false;
   bool allArgsHardcoded = true;
   llvm::Constant *currentConstValue = nullptr;

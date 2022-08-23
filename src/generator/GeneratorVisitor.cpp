@@ -782,9 +782,7 @@ std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
     generateGlobalVarDebugInfo(global, globalVarEntry);
 
   if (node->value()) { // Variable is initialized here
-    constNegate = node->negative;
     visit(node->value());
-    constNegate = false;
     global->setInitializer(currentConstValue);
   } else {
     llvm::Constant *defaultValue = getDefaultValueForSymbolType(globalVarEntry->getType());
@@ -2448,61 +2446,58 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   // Value is a double constant
   if (node->type == PrimitiveValueNode::TYPE_DOUBLE) {
     currentSymbolType = SymbolType(TY_DOUBLE);
-    double value = constNegate ? -node->data.doubleValue : node->data.doubleValue;
-    return static_cast<llvm::Constant *>(llvm::ConstantFP::get(*context, llvm::APFloat(value)));
+    llvm::Constant *value = llvm::ConstantFP::get(*context, llvm::APFloat(node->data.doubleValue));
+    return value;
   }
 
   // Value is an integer constant
   if (node->type == PrimitiveValueNode::TYPE_INT) {
     currentSymbolType = SymbolType(TY_INT);
-    int value = constNegate ? -node->data.intValue : node->data.intValue;
     llvm::Type *intTy = builder->getInt32Ty();
-    llvm::Constant *constant =
-        currentConstSigned ? llvm::ConstantInt::getSigned(intTy, value) : llvm::ConstantInt::get(intTy, value);
-    return static_cast<llvm::Constant *>(constant);
+    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(intTy, node->data.intValue)
+                                                  : llvm::ConstantInt::get(intTy, node->data.intValue);
+    return constant;
   }
 
   // Value is a short constant
   if (node->type == PrimitiveValueNode::TYPE_SHORT) {
     currentSymbolType = SymbolType(TY_SHORT);
-    int value = constNegate ? -node->data.shortValue : node->data.shortValue;
     llvm::Type *shortTy = builder->getInt16Ty();
-    llvm::Constant *constant =
-        currentConstSigned ? llvm::ConstantInt::getSigned(shortTy, value) : llvm::ConstantInt::get(shortTy, value);
-    return static_cast<llvm::Constant *>(constant);
+    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(shortTy, node->data.shortValue)
+                                                  : llvm::ConstantInt::get(shortTy, node->data.shortValue);
+    return constant;
   }
 
   // Value is a long constant
   if (node->type == PrimitiveValueNode::TYPE_LONG) {
     currentSymbolType = SymbolType(TY_LONG);
-    long long value = constNegate ? -node->data.longValue : node->data.longValue;
     llvm::Type *longTy = builder->getInt64Ty();
-    llvm::Constant *constant =
-        currentConstSigned ? llvm::ConstantInt::getSigned(longTy, value) : llvm::ConstantInt::get(longTy, value);
-    return static_cast<llvm::Constant *>(constant);
+    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(longTy, node->data.longValue)
+                                                  : llvm::ConstantInt::get(longTy, node->data.longValue);
+    return constant;
   }
 
   // Value is a char constant
   if (node->type == PrimitiveValueNode::TYPE_CHAR) {
     currentSymbolType = SymbolType(TY_CHAR);
-    char value = node->data.charValue;
     llvm::Type *charTy = builder->getInt8Ty();
-    llvm::Constant *constant =
-        currentConstSigned ? llvm::ConstantInt::getSigned(charTy, value) : llvm::ConstantInt::get(charTy, value);
-    return static_cast<llvm::Constant *>(constant);
+    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(charTy, node->data.charValue)
+                                                  : llvm::ConstantInt::get(charTy, node->data.charValue);
+    return constant;
   }
 
   // Value is a string constant
   if (node->type == PrimitiveValueNode::TYPE_STRING) {
     currentSymbolType = SymbolType(TY_STRING);
-    std::string value = node->data.stringValue;
-    return static_cast<llvm::Constant *>(builder->CreateGlobalStringPtr(value, "", 0, module.get()));
+    llvm::Constant *value = builder->CreateGlobalStringPtr(node->data.stringValue, "", 0, module.get());
+    return value;
   }
 
   // Value is a boolean constant
   if (node->type == PrimitiveValueNode::TYPE_BOOL) {
     currentSymbolType = SymbolType(TY_BOOL);
-    return static_cast<llvm::Constant *>(node->data.boolValue ? builder->getTrue() : builder->getFalse());
+    llvm::Constant *value = node->data.boolValue ? builder->getTrue() : builder->getFalse();
+    return value;
   }
 
   throw std::runtime_error("Internal compiler error: Primitive data type generator fall-through"); // GCOV_EXCL_LINE

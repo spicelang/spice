@@ -190,9 +190,6 @@ std::any AstBuilderVisitor::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *
   // Extract function name
   globalVarDefNode->varName = ctx->IDENTIFIER()->getText();
 
-  // Extract negative
-  globalVarDefNode->negative = ctx->MINUS();
-
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers

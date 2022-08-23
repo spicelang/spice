@@ -9,7 +9,7 @@ functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER 
 procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT LBRACE field* RBRACE;
 genericTypeDef: specifierLst? TYPE IDENTIFIER typeAltsLst SEMICOLON;
-globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN MINUS? value)? SEMICOLON;
+globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN value)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 threadDef: THREAD LBRACE stmtLst RBRACE;
 unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;
@@ -179,7 +179,7 @@ CHAR_LIT: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
 STRING_LIT: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
 IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
 
-fragment NUM_LIT: DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT;
+fragment NUM_LIT: [-]?(DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT);
 fragment DEC_LIT: ([0][dD])?[0-9]+;
 fragment BIN_LIT: [0][bB][01]+;
 fragment HEX_LIT: [0][xXhH][0-9a-fA-F]+;
