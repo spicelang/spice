@@ -2316,7 +2316,17 @@ std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
       // Initialize if it is an external global var
       if (importedScope)
         entry = initExtGlobal(node->identifier, scopePath.getScopePrefix(true) + node->identifier);
-      return entry->getAddress();
+
+      // Return the address if modifiable
+      if (!entry->getSpecifiers().isConst())
+        return entry->getAddress();
+
+      // Save value of global to a new address to get it modifiable
+      llvm::Type *globalTy = entry->getType().toLLVMType(*context, accessScope);
+      llvm::Value *globalValue = builder->CreateLoad(globalTy, entry->getAddress());
+      llvm::Value *memoryAddress = insertAlloca(globalTy);
+      builder->CreateStore(globalValue, memoryAddress);
+      return memoryAddress;
     }
 
     // Struct or Struct* or Struct** or ...
