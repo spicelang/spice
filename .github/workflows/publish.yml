@@ -293,8 +293,10 @@ jobs:
     strategy:
       matrix:
         config:
-          - arch: amd64,
+          - {
+            arch: amd64,
             label: x64
+          }
     steps:
       - name: Checkout
         uses: actions/checkout@v3
