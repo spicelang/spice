@@ -61,7 +61,7 @@ additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: prefixUnaryExpr | LPAREN dataType RPAREN prefixUnaryExpr;
 prefixUnaryExpr: prefixUnaryOp* postfixUnaryExpr;
-postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | DOT postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
+postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | DOT postfixUnaryExpr | SCOPE_ACCESS postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
 atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
@@ -69,11 +69,11 @@ value: primitiveValue | functionCall | arrayInitialization | structInstantiation
 primitiveValue: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
 functionCall: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACE argLst? RBRACE;
-structInstantiation: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
+structInstantiation: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 
 dataType: baseDataType (MUL | LBRACKET (INT_LIT | assignExpr)? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType;
-customDataType: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)?;
+customDataType: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)?;
 
 // Shorthands
 assignOp: ASSIGN | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | REM_EQUAL | SHL_EQUAL | SHR_EQUAL | AND_EQUAL | OR_EQUAL | XOR_EQUAL;
@@ -167,6 +167,7 @@ SEMICOLON: ';';
 COLON: ':';
 COMMA: ',';
 DOT: '.';
+SCOPE_ACCESS: '::';
 ELLIPSIS: '...';
 
 // Regex tokens

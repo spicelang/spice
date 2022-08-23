@@ -1,7 +1,7 @@
 import "source1" as s1;
 
 f<int> main() {
-    dyn v = s1.Vector<int>{};
+    dyn v = s1::Vector<int>{};
     v.setData(12);
     printf("Data: %d\n", v.data);
     v.setData(1.5);

@@ -1,0 +1,1 @@
+Semantic error in ./test-files/analyzer/operators/error-scope-access-only-import/source.spice:8:5: Scope access is only allowed on imports: Cannot apply scope access operator on TestStruct

@@ -10,7 +10,7 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-import "std/type/int" as integer;
+/*import "std/type/int" as integer;
 
 const int vertexCount = 9;
 
@@ -78,4 +78,12 @@ f<int> main() {
     printf("Computing shortest paths with Dijkstra's algorithm ...\n");
     dijkstra(graph, 0);
     printf("Done.\n");
+}*/
+
+import "std/data/pair" as pair;
+
+f<int> main() {
+    pair::Pair<string, int> stringIntPair = pair::Pair<string, int>("Test", 1234);
+    printf("First: %s\n", stringIntPair.getFirst());
+    printf("Second: %d\n", stringIntPair.getSecond());
 }

@@ -1629,6 +1629,19 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       break;
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
+      // Check if lhs is struct
+      if (!lhs.isBaseType(TY_STRUCT))
+        throw err->get(node->codeLoc, MEMBER_ACCESS_ONLY_STRUCTS, "Cannot apply member access operator on " + lhs.getName());
+
+      PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
+      lhs = any_cast<SymbolType>(visit(rhs)); // Visit rhs
+      break;
+    }
+    case PostfixUnaryExprNode::OP_SCOPE_ACCESS: {
+      // Check if lhs is import
+      if (!lhs.is(TY_IMPORT))
+        throw err->get(node->codeLoc, SCOPE_ACCESS_ONLY_IMPORTS, "Cannot apply scope access operator on " + lhs.getName());
+
       PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
       lhs = any_cast<SymbolType>(visit(rhs)); // Visit rhs
       break;

@@ -1,7 +1,7 @@
 import "std/data/pair" as pair;
 
 f<int> main() {
-    pair.Pair<string, int> stringIntPair = pair.Pair<string, int>("Test", 1234);
+    pair::Pair<string, int> stringIntPair = pair::Pair<string, int>("Test", 1234);
     printf("First: %s\n", stringIntPair.getFirst());
     printf("Second: %d\n", stringIntPair.getSecond());
 }

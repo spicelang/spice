@@ -2236,6 +2236,14 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         lhs = nullptr;
         break;
       }
+      case PostfixUnaryExprNode::OP_SCOPE_ACCESS: {
+        // Visit identifier after the double colon
+        PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
+        lhsPtr = resolveAddress(rhs);
+
+        lhs = nullptr;
+        break;
+      }
       case PostfixUnaryExprNode::OP_PLUS_PLUS: {
         if (!lhs)
           lhs = builder->CreateLoad(lhsTy, lhsPtr);

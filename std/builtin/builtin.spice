@@ -4,7 +4,7 @@
  * @param condition Condition to check
  * @param message Message to print if the condition evaluates to false
  */
-public p assert(bool condition, string message = "<no-message>") {
+public p assertCondition(bool condition, string message = "<no-message>") {
     if (!condition) {
 
     }

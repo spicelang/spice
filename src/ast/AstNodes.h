@@ -996,7 +996,7 @@ public:
 class PostfixUnaryExprNode : public AstNode {
 public:
   // Enums
-  enum PostfixUnaryOp { OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS };
+  enum PostfixUnaryOp { OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS, OP_SCOPE_ACCESS };
 
   // Constructors
   using AstNode::AstNode;

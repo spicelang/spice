@@ -2,7 +2,7 @@ import "std/data/vector" as vec;
 import "std/data/pair" as pair;
 
 f<int> main() {
-    vec.Vector<pair.Pair<int, string>> pairVector = vec.Vector<pair.Pair<int, string>>();
-    pairVector.pushBack(pair.Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(pair.Pair<int, string>(1, "World"));
+    vec::Vector<pair::Pair<int, string>> pairVector = vec::Vector<pair::Pair<int, string>>();
+    pairVector.pushBack(pair::Pair<int, string>(0, "Hello"));
+    pairVector.pushBack(pair::Pair<int, string>(1, "World"));
 }
