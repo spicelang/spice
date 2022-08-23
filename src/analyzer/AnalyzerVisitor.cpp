@@ -696,12 +696,6 @@ std::any AnalyzerVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
         symbolTypeSpecifiers.setSigned(true);
       } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
         symbolTypeSpecifiers.setSigned(false);
-
-        // Check if there is a negative value attached. If yes, print a compiler warning
-        if (node->negative)
-          CompilerWarning(node->codeLoc, NEGATIVE_VALUE_TO_UNSIGNED_VAR,
-                          "Please mind that assigning a negative value to an unsigned variable causes a wrap-around")
-              .print();
       } else if (specifier->type == SpecifierNode::TY_PUBLIC) {
         symbolTypeSpecifiers.setPublic(true);
       } else {
@@ -1886,7 +1880,10 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
     std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + thisType.getName();
     accessScope = accessScope->lookupTable(tableName);
-    assert(accessScope != nullptr);
+
+    if (!accessScope)
+      throw err->get(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION, "Cannot call a function on '" + identifier + "'");
+
     scopePath.pushFragment(identifier, accessScope);
   }
   assert(accessScope != nullptr);
