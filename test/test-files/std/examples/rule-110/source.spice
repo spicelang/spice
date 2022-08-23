@@ -1,15 +1,3 @@
-/*import "std/data/vector" as vec;
-import "std/data/pair" as pair;
-
-f<int> main() {
-    vec.Vector<pair.Pair<int, string>> pairVector = vec.Vector<pair.Pair<int, string>>();
-    pairVector.pushBack(pair.Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(pair.Pair<int, string>(1, "World"));
-
-    pair.Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!", p1.getSecond());
-}*/
-
 // Can be adjusted, but the array size below needs to be the same number
 const int CAP = 100;
 

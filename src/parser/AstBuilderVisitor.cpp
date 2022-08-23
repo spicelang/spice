@@ -689,7 +689,8 @@ std::any AstBuilderVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
   auto breakStmtNode = dynamic_cast<BreakStmtNode *>(currentNode);
 
   // Extract number of breaks
-  breakStmtNode->breakTimes = std::stoi(ctx->INT_LIT()->toString());
+  if (ctx->INT_LIT())
+    breakStmtNode->breakTimes = std::stoi(ctx->INT_LIT()->toString());
 
   return nullptr;
 }
@@ -698,7 +699,8 @@ std::any AstBuilderVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *
   auto continueStmtNode = dynamic_cast<ContinueStmtNode *>(currentNode);
 
   // Extract number of continues
-  continueStmtNode->continueTimes = std::stoi(ctx->INT_LIT()->toString());
+  if (ctx->INT_LIT())
+    continueStmtNode->continueTimes = std::stoi(ctx->INT_LIT()->toString());
 
   return nullptr;
 }
