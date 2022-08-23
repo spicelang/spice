@@ -1880,7 +1880,10 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
     std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + thisType.getName();
     accessScope = accessScope->lookupTable(tableName);
-    assert(accessScope != nullptr);
+
+    if (!accessScope)
+      throw err->get(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION, "Cannot call a function on '" + identifier + "'");
+
     scopePath.pushFragment(identifier, accessScope);
   }
   assert(accessScope != nullptr);
