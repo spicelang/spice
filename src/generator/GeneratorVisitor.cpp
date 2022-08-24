@@ -2499,7 +2499,8 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   // Value is a string constant
   if (node->type == PrimitiveValueNode::TYPE_STRING) {
     currentSymbolType = SymbolType(TY_STRING);
-    llvm::Constant *value = builder->CreateGlobalStringPtr(node->compileTimeValue.stringValue, "", 0, module.get());
+    std::string stringValue(node->compileTimeValue.stringValue);
+    llvm::Constant *value = builder->CreateGlobalStringPtr(stringValue, "", 0, module.get());
     return value;
   }
 

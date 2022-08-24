@@ -1224,8 +1224,11 @@ std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueConte
       primitiveValueNode->hasDirectCompileTimeValue = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t->getSymbol()->getType() == SpiceParser::STRING_LIT) {
+      std::string stringValue = parseString(ctx->STRING_LIT()->toString());
+
       primitiveValueNode->type = PrimitiveValueNode::TYPE_STRING;
-      primitiveValueNode->compileTimeValue.stringValue = parseString(ctx->STRING_LIT()->toString()).c_str();
+      primitiveValueNode->compileTimeStringValue = stringValue;
+      primitiveValueNode->compileTimeValue.stringValue = primitiveValueNode->compileTimeStringValue.c_str();
       primitiveValueNode->hasDirectCompileTimeValue = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TRUE) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_BOOL;

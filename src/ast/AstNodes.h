@@ -127,6 +127,7 @@ public:
   size_t symbolTypeIndex = SIZE_MAX;
   std::vector<SymbolType> symbolTypes;
   CompileTimeValue compileTimeValue;
+  std::string compileTimeStringValue;
   bool hasDirectCompileTimeValue = false;
 };
 
