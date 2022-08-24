@@ -2316,7 +2316,17 @@ std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
       // Initialize if it is an external global var
       if (importedScope)
         entry = initExtGlobal(node->identifier, scopePath.getScopePrefix(true) + node->identifier);
-      return entry->getAddress();
+
+      // Return the address if modifiable
+      if (!entry->getSpecifiers().isConst())
+        return entry->getAddress();
+
+      // Save value of global to a new address to get it modifiable
+      llvm::Type *globalTy = entry->getType().toLLVMType(*context, accessScope);
+      llvm::Value *globalValue = builder->CreateLoad(globalTy, entry->getAddress());
+      llvm::Value *memoryAddress = insertAlloca(globalTy);
+      builder->CreateStore(globalValue, memoryAddress);
+      return memoryAddress;
     }
 
     // Struct or Struct* or Struct** or ...
@@ -2618,7 +2628,12 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
       // Get the actual arg value
       SymbolType actualArgSymbolType = arg->getEvaluatedSymbolType();
       llvm::Value *actualArgPtr = resolveAddress(arg);
-      if (actualArgSymbolType == expectedArgSymbolType) {
+
+      // If the arrays are both of size -1 or 0, they are both pointers and do not need to be implicitly casted
+      bool isSameArray = actualArgSymbolType.isArray() && expectedArgSymbolType.isArray() &&
+                         actualArgSymbolType.getArraySize() <= 0 && expectedArgSymbolType.getArraySize() <= 0;
+
+      if (actualArgSymbolType == expectedArgSymbolType || isSameArray) {
         actualArgPtr = builder->CreateLoad(actualArgSymbolType.toLLVMType(*context, accessScope), actualArgPtr);
       } else {
         actualArgPtr = doImplicitCast(actualArgPtr, expectedArgType, actualArgSymbolType);
@@ -2690,7 +2705,7 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
 
     // Visit all args to check if they are hardcoded or not
     allArgsHardcoded = true;
-    for (size_t i = 0; i < std::min(node->itemLst()->args().size(), arraySize); i++) {
+    for (size_t i = 0; i < std::min(actualItemCount, arraySize); i++) {
       currentConstValue = nullptr;
       lhsVarName = lhsVarNameBackup + "." + std::to_string(i);
 

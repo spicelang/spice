@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
-target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-w64-windows-gnu"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
 
 @str = private unnamed_addr constant [17 x i8] c"Program finished\00", align 1
 @str.1 = private unnamed_addr constant [18 x i8] c"Thread 1 finished\00", align 1
@@ -31,11 +31,7 @@ entry.l3:
   %10 = call i32 @pthread_create(ptr nonnull %9, ptr null, ptr nonnull @_thread2, ptr nonnull %0)
   %11 = load ptr, ptr %9, align 8
   store ptr %11, ptr %t3, align 8
-  %12 = load ptr, ptr %t1, align 8
-  %13 = call i32 @pthread_join(ptr %12, ptr null)
-  %14 = call i32 @pthread_join(ptr %8, ptr null)
-  %15 = load ptr, ptr %t3, align 8
-  %16 = call i32 @pthread_join(ptr %15, ptr null)
+  %12 = call i32 @pthread_join(ptr %8, ptr null)
   %puts = call i32 @puts(ptr nonnull @str)
   ret i32 0
 }

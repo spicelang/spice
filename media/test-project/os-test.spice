@@ -10,72 +10,90 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-import "std/type/int" as integer;
+import "std/math/rand" as rand;
 
-const int vertexCount = 9;
+const int row = 10;
+const int col = 10;
+const int generationsToCalculate = 5;
 
-f<int> minDistance(int[] dist, bool[] sptSet) {
-    int min = integer::MAX_VALUE;
-    int minIndex;
+p rowLineTop() {
+    printf("\n");
+    for int i = 0; i < col; i++ { printf("╭─────╮"); }
+    printf("\n");
+}
 
-    for int v = 0; v < vertexCount; v++ {
-        if !sptSet[v] && dist[v] <= min {
-            min = dist[v];
-            minIndex = v;
+p rowLineMiddle() {
+    printf("\n");
+    for int i = 0; i < col; i++ { printf("├─────┤"); }
+    printf("\n");
+}
+
+p rowLineBottom() {
+    printf("\n");
+    for int i = 0; i < col; i++ { printf("╰─────╯"); }
+    printf("\n");
+}
+
+p printGeneration(string name, int[10][10] matrix) {
+    printf("%s:\n", name);
+    rowLineTop();
+    for int i = 0; i < row; i++ {
+        if i > 0 {
+            rowLineMiddle();
+        }
+        for int j = 0; j < col; j++ {
+            printf("│  %d  │", matrix[i][j]);
         }
     }
-
-    return minIndex;
+    rowLineBottom();
 }
 
-p printSolution(int[] dist) {
-    printf("Vertex \t\t Distance from source\n");
-    for int i = 0; i < vertexCount; i++ {
-        printf("%d \t\t %d\n", i, dist[i]);
-    }
-}
-
-p dijkstra(int[vertexCount][vertexCount] graph, int src) {
-    int[vertexCount] dist;
-    bool[vertexCount] sptSet;
-
-    // Fill with default values
-    for int i = 0; i < vertexCount; i++ {
-        dist[i] = integer::MAX_VALUE;
-        sptSet[i] = false;
-    }
-
-    // Set distance to starting node to 0
-    dist[src] = 0;
-
-    for int count = 0; count < vertexCount - 1; count++ {
-        int u = minDistance(dist, sptSet);
-        sptSet[u] = true;
-        for int v = 0; v < vertexCount; v++ {
-            if (!sptSet[v] && graph[u][v] != 0 && dist[u] != integer::MAX_VALUE &&
-                dist[u] + graph[u][v] < dist[v]) {
-                dist[v] = dist[u] + graph[u][v];
+f<int> countLiveNeighborCell(int[10][10] matrix, int r, int c) {
+    int count = 0;
+    for int i = r - 1; i <= r + 1; i++ {
+        for int j = c - 1; j <= c + 1; j++ {
+            if (i == r && j == c) || (i < 0 || j < 0) || (i >= row || j >= col) {
+                continue;
+            }
+            if matrix[i][j] == 1 {
+                count++;
             }
         }
     }
-
-    // Print the solution
-    printSolution(dist);
+    return count;
 }
 
 f<int> main() {
-    int[vertexCount][vertexCount] graph = {};
-    graph[0] = { 0, 4, 0, 0, 0, 0, 0, 8, 0 };
-    graph[1] = { 4, 0, 8, 0, 0, 0, 0, 11, 0 };
-    graph[2] = { 0, 8, 0, 7, 0, 4, 0, 0, 2 };
-    graph[3] = { 0, 0, 7, 0, 9, 14, 0, 0, 0 };
-    graph[4] = { 0, 0, 0, 9, 0, 10, 0, 0, 0 };
-    graph[5] = { 0, 0, 4, 14, 10, 0, 2, 0, 0 };
-    graph[6] = { 0, 0, 0, 0, 0, 2, 0, 1, 6 };
-    graph[7] = { 8, 11, 0, 0, 0, 0, 1, 0, 7 };
-    graph[8] = { 0, 0, 2, 0, 0, 0, 6, 7, 0 };
+    int[10][10] a;
+    int[10][10] b;
 
-    printf("Computing shortest paths with Dijkstra's algorithm ...\n");
-    dijkstra(graph, 0);
-    printf("Done.\n");
+    // Generate matrix canvas with random values (live and dead cells)
+    for int i = 0; i < row; i++ {
+        for int j = 0; j < col; j++ {
+            a[i][j] = rand.randInt(0, 1);
+        }
+    }
+    printGeneration("Initial state", a);
+
+    for int generation = 1; generation < generationsToCalculate; generation++ {
+        // Calculate next generation
+        for int i = 0; i < row; i++ {
+            for int j = 0; j < col; j++ {
+                int neighbor_live_cell = countLiveNeighborCell(a, i, j);
+                if a[i][j] == 1 && (neighbor_live_cell == 2 || neighbor_live_cell == 3) {
+                    b[i][j] = 1;
+                } else if a[i][j] == 0 && neighbor_live_cell == 3 {
+                    b[i][j] = 1;
+                } else {
+                    b[i][j] = 0;
+                }
+            }
+        }
+
+        // Print next generation
+        printGeneration("\nNext generation", b);
+
+        // Set new matrix to old matrix
+        a = b;
+    }
 }

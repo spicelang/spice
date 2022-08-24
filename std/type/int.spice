@@ -44,9 +44,9 @@ public f<bool> toBool(int input) {
 }
 
 // Helper function: returns the string of a small number
-f<string> small(int i) {
+/*f<string> small(int i) {
     if i < 10 {
         return smallsString10.substring(i, i+1);
     }
     return smallsString100.substring(i*2, i*2+2);
-}
+}*/

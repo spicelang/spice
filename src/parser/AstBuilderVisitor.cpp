@@ -689,7 +689,8 @@ std::any AstBuilderVisitor::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
   auto breakStmtNode = dynamic_cast<BreakStmtNode *>(currentNode);
 
   // Extract number of breaks
-  breakStmtNode->breakTimes = std::stoi(ctx->INT_LIT()->toString());
+  if (ctx->INT_LIT())
+    breakStmtNode->breakTimes = std::stoi(ctx->INT_LIT()->toString());
 
   return nullptr;
 }
@@ -698,7 +699,8 @@ std::any AstBuilderVisitor::visitContinueStmt(SpiceParser::ContinueStmtContext *
   auto continueStmtNode = dynamic_cast<ContinueStmtNode *>(currentNode);
 
   // Extract number of continues
-  continueStmtNode->continueTimes = std::stoi(ctx->INT_LIT()->toString());
+  if (ctx->INT_LIT())
+    continueStmtNode->continueTimes = std::stoi(ctx->INT_LIT()->toString());
 
   return nullptr;
 }
@@ -1057,6 +1059,8 @@ std::any AstBuilderVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeE
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_MUL, SymbolType(TY_INVALID));
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::DIV)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_DIV, SymbolType(TY_INVALID));
+    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::REM)
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, SymbolType(TY_INVALID));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
