@@ -1960,7 +1960,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   // If the return type is an external struct, initialize it
   if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
     SymbolType symbolType = initExtStruct(scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true),
-                                          returnType.getSubType(), thisType.getTemplateTypes(), node->codeLoc);
+                                          returnType.getSubType(), returnType.getTemplateTypes(), node->codeLoc);
     return node->setEvaluatedSymbolType(symbolType);
   }
 
