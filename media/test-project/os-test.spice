@@ -1,16 +1,11 @@
-/*import "std/data/vector" as vec;
+import "std/data/vector" as vec;
 import "std/data/pair" as pair;
 
 f<int> main() {
-    vec.Vector<pair.Pair<int, string>> pairVector = vec.Vector<pair.Pair<int, string>>();
+    vec::Vector<pair::Pair<int, string>> pairVector = vec.Vector<pair::Pair<int, string>>();
     pairVector.pushBack(pair.Pair<int, string>(0, "Hello"));
     pairVector.pushBack(pair.Pair<int, string>(1, "World"));
 
-    pair.Pair<int, string> p1 = pairVector.get(1);
+    pair::Pair<int, string> p1 = pairVector.get(1);
     printf("Hello %s!", p1.getSecond());
-}*/
-
-f<int> main() {
-    int[10] testArray = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    printf("Test: %d\n", testArray[10]);
 }
