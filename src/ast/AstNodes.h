@@ -12,6 +12,20 @@
 #include <symbol/Struct.h>
 #include <util/CodeLoc.h>
 
+/**
+ * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
+ */
+union CompileTimeValue {
+  std::double_t doubleValue;
+  std::int32_t intValue;
+  std::int16_t shortValue;
+  std::int64_t longValue;
+  std::int8_t byteValue;
+  std::int8_t charValue;
+  const char *stringValue;
+  bool boolValue;
+};
+
 // =========================================================== AstNode ===========================================================
 
 class AstNode {
@@ -92,12 +106,28 @@ public:
     symbolTypeIndex = SIZE_MAX;
   }
 
+  [[nodiscard]] const CompileTimeValue &getCompileTimeValue() const {
+    if (hasDirectCompileTimeValue || children.size() != 1)
+      return compileTimeValue;
+    return children.front()->getCompileTimeValue();
+  }
+
+  [[nodiscard]] bool hasCompileTimeValue() const {
+    if (hasDirectCompileTimeValue)
+      return true;
+    if (children.size() != 1)
+      return false;
+    return children.front()->hasCompileTimeValue();
+  }
+
   // Public members
   AstNode *parent;
   std::vector<AstNode *> children;
   const CodeLoc codeLoc;
   size_t symbolTypeIndex = SIZE_MAX;
   std::vector<SymbolType> symbolTypes;
+  CompileTimeValue compileTimeValue;
+  bool hasDirectCompileTimeValue = false;
 };
 
 // ========================================================== EntryNode ==========================================================
@@ -1071,15 +1101,6 @@ public:
 
   // Public members
   PrimitiveValueType type;
-  struct {
-    double_t doubleValue;
-    int32_t intValue;
-    int16_t shortValue;
-    int64_t longValue;
-    int8_t charValue;
-    std::string stringValue;
-    bool boolValue;
-  } data;
 };
 
 // ==================================================== FunctionCallNode =========================================================

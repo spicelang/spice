@@ -1596,10 +1596,18 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         throw err->get(node->codeLoc, OPERATOR_WRONG_DATA_TYPE,
                        "Can only apply subscript operator on array type, got " + lhs.getName(true));
 
-      if (lhs.is(TY_PTR) && !allowUnsafeOperations)
+      if (lhs.is(TY_PTR) && !allowUnsafeOperations) {
         throw err->get(
             node->codeLoc, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
             "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.");
+      } else if (lhs.is(TY_ARRAY) && lhs.getArraySize() > 0 && indexExpr->hasCompileTimeValue()) {
+        std::int32_t constIndex = indexExpr->getCompileTimeValue().intValue;
+        size_t constSize = lhs.getArraySize();
+        if (constIndex >= constSize)
+          throw err->get(node->codeLoc, ARRAY_INDEX_OUT_OF_BOUNDS,
+                         "You are trying to access element with index " + std::to_string(constIndex) + " of an array with size " +
+                             std::to_string(constSize));
+      }
 
       // Get array item type
       lhs = currentThisType = lhs.getContainedTy();

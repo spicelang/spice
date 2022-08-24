@@ -138,6 +138,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Unsafe operation in safe context";
   case ASSERTION_CONDITION_BOOL:
     return "Assertion condition must be bool";
+  case ARRAY_INDEX_OUT_OF_BOUNDS:
+    return "Array index out of bounds";
   case RESERVED_KEYWORD:
     return "Reserved keyword used as identifier";
   case COMING_SOON_SA:
