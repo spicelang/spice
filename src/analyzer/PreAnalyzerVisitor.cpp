@@ -30,13 +30,13 @@ std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
     std::string stdPath;
     if (FileUtil::fileExists("/usr/lib/spice/std")) {
       stdPath = "/usr/lib/spice/std/";
-    } else if (FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
+    } else if (std::getenv("SPICE_STD_DIR") && FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
       stdPath = std::string(std::getenv("SPICE_STD_DIR"));
       if (stdPath.rfind(FileUtil::DIR_SEPARATOR) != stdPath.size() - 1)
         stdPath += FileUtil::DIR_SEPARATOR;
     } else {
-      throw err.get(node->codeLoc, STD_NOT_FOUND,
-                    "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
+      throw ErrorFactory::get(node->codeLoc, STD_NOT_FOUND,
+                              "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
     }
     // Check if source file exists
     std::string defaultPath = stdPath + sourceFileIden + ".spice";
@@ -50,8 +50,8 @@ std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
     } else if (FileUtil::fileExists(osArchPath)) {
       importPath = osArchPath;
     } else {
-      throw err.get(node->codeLoc, IMPORTED_FILE_NOT_EXISTING,
-                    "The source file '" + node->importPath + ".spice' was not found in the standard library");
+      throw ErrorFactory::get(node->codeLoc, IMPORTED_FILE_NOT_EXISTING,
+                              "The source file '" + node->importPath + ".spice' was not found in the standard library");
     }
   } else { // Include own source file
     // Check in module registry if the file can be imported
@@ -69,7 +69,8 @@ std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
     } else if (FileUtil::fileExists(osArchPath)) {
       importPath = osArchPath;
     } else {
-      throw err.get(node->codeLoc, IMPORTED_FILE_NOT_EXISTING, "The source file '" + node->importPath + ".spice' does not exist");
+      throw ErrorFactory::get(node->codeLoc, IMPORTED_FILE_NOT_EXISTING,
+                              "The source file '" + node->importPath + ".spice' does not exist");
     }
   }
   CommonUtil::replaceAll(importPath, "/", std::string(1, FileUtil::DIR_SEPARATOR));

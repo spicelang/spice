@@ -2705,7 +2705,7 @@ std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *nod
 
     // Visit all args to check if they are hardcoded or not
     allArgsHardcoded = true;
-    for (size_t i = 0; i < std::min(node->itemLst()->args().size(), arraySize); i++) {
+    for (size_t i = 0; i < std::min(actualItemCount, arraySize); i++) {
       currentConstValue = nullptr;
       lhsVarName = lhsVarNameBackup + "." + std::to_string(i);
 

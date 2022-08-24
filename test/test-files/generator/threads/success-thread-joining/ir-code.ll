@@ -1,7 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
-target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-w64-windows-gnu"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
 
 @0 = private unnamed_addr constant [19 x i8] c"Thread 1 finished\0A\00", align 1
 @1 = private unnamed_addr constant [19 x i8] c"Thread 2 finished\0A\00", align 1
@@ -39,17 +39,13 @@ entry.l3:
   %12 = call i32 @pthread_create(ptr %11, ptr null, ptr @_thread2, ptr %10)
   %13 = load ptr, ptr %11, align 8
   store ptr %13, ptr %t3, align 8
-  %14 = load ptr, ptr %t1, align 8
+  %14 = load ptr, ptr %t2, align 8
   %15 = call i32 @pthread_join(ptr %14, ptr null)
-  %16 = load ptr, ptr %t2, align 8
-  %17 = call i32 @pthread_join(ptr %16, ptr null)
-  %18 = load ptr, ptr %t3, align 8
-  %19 = call i32 @pthread_join(ptr %18, ptr null)
-  %20 = alloca i32, align 4
-  store i32 3, ptr %20, align 4
-  %21 = call i32 (ptr, ...) @printf(ptr @3)
-  %22 = load i32, ptr %result, align 4
-  ret i32 %22
+  %16 = alloca i32, align 4
+  store i32 1, ptr %16, align 4
+  %17 = call i32 (ptr, ...) @printf(ptr @3)
+  %18 = load i32, ptr %result, align 4
+  ret i32 %18
 }
 
 define internal ptr @_thread0(ptr %0) {

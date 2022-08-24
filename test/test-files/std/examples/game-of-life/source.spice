@@ -4,22 +4,36 @@ const int row = 10;
 const int col = 10;
 const int generationsToCalculate = 5;
 
-p rowLine() {
+p rowLineTop() {
     printf("\n");
-    for int i = 0; i < col; i++ { printf(" -----"); }
+    for int i = 0; i < col; i++ { printf("╭─────╮"); }
+    printf("\n");
+}
+
+p rowLineMiddle() {
+    printf("\n");
+    for int i = 0; i < col; i++ { printf("├─────┤"); }
+    printf("\n");
+}
+
+p rowLineBottom() {
+    printf("\n");
+    for int i = 0; i < col; i++ { printf("╰─────╯"); }
     printf("\n");
 }
 
 p printGeneration(string name, int[10][10] matrix) {
     printf("%s:\n", name);
-    rowLine();
+    rowLineTop();
     for int i = 0; i < row; i++ {
-        printf(":");
-        for int j = 0; j < col; j++ {
-            printf("  %d  :", matrix[i][j]);
+        if i > 0 {
+            rowLineMiddle();
         }
-        rowLine();
+        for int j = 0; j < col; j++ {
+            printf("│  %d  │", matrix[i][j]);
+        }
     }
+    rowLineBottom();
 }
 
 f<int> countLiveNeighborCell(int[10][10] matrix, int r, int c) {

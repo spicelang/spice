@@ -20,6 +20,6 @@ f<int> main() {
         printf("Thread 3 finished\n");
     };
 
-    join(t1, t2, t3);
+    join(t2);
     printf("Program finished\n");
 }
