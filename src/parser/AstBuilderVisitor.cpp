@@ -1203,30 +1203,41 @@ std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueConte
     antlr4::ParserRuleContext *rule;
     if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::DOUBLE_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_DOUBLE;
-      primitiveValueNode->data.doubleValue = std::stod(t->toString());
+      primitiveValueNode->compileTimeValue.doubleValue = std::stod(t->toString());
+      primitiveValueNode->hasDirectCompileTimeValue = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INT_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_INT;
-      primitiveValueNode->data.intValue = parseInt(t);
+      primitiveValueNode->compileTimeValue.intValue = parseInt(t);
+      primitiveValueNode->hasDirectCompileTimeValue = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t->getSymbol()->getType() == SpiceParser::SHORT_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_SHORT;
-      primitiveValueNode->data.shortValue = parseShort(t);
+      primitiveValueNode->compileTimeValue.shortValue = parseShort(t);
+      primitiveValueNode->hasDirectCompileTimeValue = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::LONG_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_LONG;
-      primitiveValueNode->data.longValue = parseLong(t);
+      primitiveValueNode->compileTimeValue.longValue = parseLong(t);
+      primitiveValueNode->hasDirectCompileTimeValue = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::CHAR_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_CHAR;
-      primitiveValueNode->data.charValue = parseChar(ctx->CHAR_LIT());
+      primitiveValueNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
+      primitiveValueNode->hasDirectCompileTimeValue = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t->getSymbol()->getType() == SpiceParser::STRING_LIT) {
+      std::string stringValue = parseString(ctx->STRING_LIT()->toString());
+
       primitiveValueNode->type = PrimitiveValueNode::TYPE_STRING;
-      primitiveValueNode->data.stringValue = parseString(ctx->STRING_LIT()->toString());
+      primitiveValueNode->compileTimeStringValue = stringValue;
+      primitiveValueNode->compileTimeValue.stringValue = primitiveValueNode->compileTimeStringValue.c_str();
+      primitiveValueNode->hasDirectCompileTimeValue = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TRUE) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_BOOL;
-      primitiveValueNode->data.boolValue = true;
+      primitiveValueNode->compileTimeValue.boolValue = true;
+      primitiveValueNode->hasDirectCompileTimeValue = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::FALSE) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_BOOL;
-      primitiveValueNode->data.boolValue = false;
+      primitiveValueNode->compileTimeValue.boolValue = false;
+      primitiveValueNode->hasDirectCompileTimeValue = true;
     } else {
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
     }

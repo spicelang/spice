@@ -2456,7 +2456,7 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   // Value is a double constant
   if (node->type == PrimitiveValueNode::TYPE_DOUBLE) {
     currentSymbolType = SymbolType(TY_DOUBLE);
-    llvm::Constant *value = llvm::ConstantFP::get(*context, llvm::APFloat(node->data.doubleValue));
+    llvm::Constant *value = llvm::ConstantFP::get(*context, llvm::APFloat(node->compileTimeValue.doubleValue));
     return value;
   }
 
@@ -2464,8 +2464,8 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   if (node->type == PrimitiveValueNode::TYPE_INT) {
     currentSymbolType = SymbolType(TY_INT);
     llvm::Type *intTy = builder->getInt32Ty();
-    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(intTy, node->data.intValue)
-                                                  : llvm::ConstantInt::get(intTy, node->data.intValue);
+    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(intTy, node->compileTimeValue.intValue)
+                                                  : llvm::ConstantInt::get(intTy, node->compileTimeValue.intValue);
     return constant;
   }
 
@@ -2473,8 +2473,8 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   if (node->type == PrimitiveValueNode::TYPE_SHORT) {
     currentSymbolType = SymbolType(TY_SHORT);
     llvm::Type *shortTy = builder->getInt16Ty();
-    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(shortTy, node->data.shortValue)
-                                                  : llvm::ConstantInt::get(shortTy, node->data.shortValue);
+    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(shortTy, node->compileTimeValue.shortValue)
+                                                  : llvm::ConstantInt::get(shortTy, node->compileTimeValue.shortValue);
     return constant;
   }
 
@@ -2482,8 +2482,8 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   if (node->type == PrimitiveValueNode::TYPE_LONG) {
     currentSymbolType = SymbolType(TY_LONG);
     llvm::Type *longTy = builder->getInt64Ty();
-    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(longTy, node->data.longValue)
-                                                  : llvm::ConstantInt::get(longTy, node->data.longValue);
+    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(longTy, node->compileTimeValue.longValue)
+                                                  : llvm::ConstantInt::get(longTy, node->compileTimeValue.longValue);
     return constant;
   }
 
@@ -2491,22 +2491,23 @@ std::any GeneratorVisitor::visitPrimitiveValue(PrimitiveValueNode *node) {
   if (node->type == PrimitiveValueNode::TYPE_CHAR) {
     currentSymbolType = SymbolType(TY_CHAR);
     llvm::Type *charTy = builder->getInt8Ty();
-    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(charTy, node->data.charValue)
-                                                  : llvm::ConstantInt::get(charTy, node->data.charValue);
+    llvm::Constant *constant = currentConstSigned ? llvm::ConstantInt::getSigned(charTy, node->compileTimeValue.charValue)
+                                                  : llvm::ConstantInt::get(charTy, node->compileTimeValue.charValue);
     return constant;
   }
 
   // Value is a string constant
   if (node->type == PrimitiveValueNode::TYPE_STRING) {
     currentSymbolType = SymbolType(TY_STRING);
-    llvm::Constant *value = builder->CreateGlobalStringPtr(node->data.stringValue, "", 0, module.get());
+    std::string stringValue(node->compileTimeValue.stringValue);
+    llvm::Constant *value = builder->CreateGlobalStringPtr(stringValue, "", 0, module.get());
     return value;
   }
 
   // Value is a boolean constant
   if (node->type == PrimitiveValueNode::TYPE_BOOL) {
     currentSymbolType = SymbolType(TY_BOOL);
-    llvm::Constant *value = node->data.boolValue ? builder->getTrue() : builder->getFalse();
+    llvm::Constant *value = node->compileTimeValue.boolValue ? builder->getTrue() : builder->getFalse();
     return value;
   }
 
