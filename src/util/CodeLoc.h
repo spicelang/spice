@@ -10,10 +10,10 @@
 struct CodeLoc {
 public:
   // Constructors
-  CodeLoc(std::string sourceFilePath, size_t line, size_t col)
-      : sourceFilePath(std::move(sourceFilePath)), line(line), col(col) {}
-  explicit CodeLoc(std::string sourceFilePath, const antlr4::Token *token)
-      : sourceFilePath(std::move(sourceFilePath)), line(token->getLine()), col(token->getCharPositionInLine() + 1) {}
+  CodeLoc(size_t line, size_t col, std::string sourceFilePath = "")
+      : line(line), col(col), sourceFilePath(std::move(sourceFilePath)) {}
+  explicit CodeLoc(const antlr4::Token *token, std::string sourceFilePath = "")
+      : line(token->getLine()), col(token->getCharPositionInLine() + 1), sourceFilePath(std::move(sourceFilePath)) {}
 
   // Public members
   std::string sourceFilePath;

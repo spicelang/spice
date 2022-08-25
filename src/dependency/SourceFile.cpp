@@ -51,7 +51,7 @@ SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name
   antlrCtx.parser->removeParseListeners();
 
   // Create AST
-  ast = std::make_shared<EntryNode>(nullptr, CodeLoc(filePath, 1, 1));
+  ast = std::make_shared<EntryNode>(nullptr, CodeLoc(1, 1, filePath));
 
   // Create symbol table
   symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
