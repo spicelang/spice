@@ -37,7 +37,7 @@ public:
   [[nodiscard]] SymbolTable *getScope() const;
   [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
   [[nodiscard]] SymbolState getState() const;
-  void updateState(SymbolState newState, const ErrorFactory *errorFactory, const CodeLoc &codeLoc, bool force = false);
+  void updateState(SymbolState newState, const CodeLoc &codeLoc, bool force = false);
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::Type *getStructLLVMType() const;
   void setStructLLVMType(llvm::Type *newStructType);

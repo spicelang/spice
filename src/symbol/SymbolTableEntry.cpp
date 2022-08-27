@@ -57,12 +57,12 @@ SymbolState SymbolTableEntry::getState() const { return state; }
  *
  * @throws SemanticError When trying to re-assign a constant variable
  * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
+ *
  * @param newState New state of the current symbol
- * @param err Error factory
  * @param codeLoc Code location where the update takes place
  * @param force Force update. This can only be used compiler-internal
  */
-void SymbolTableEntry::updateState(SymbolState newState, const ErrorFactory *err, const CodeLoc &codeLoc, bool force) {
+void SymbolTableEntry::updateState(SymbolState newState, const CodeLoc &codeLoc, bool force) {
   // Check if this is a constant variable and is already initialized
   if (state == INITIALIZED && specifiers.isConst() && !force)
     throw ErrorFactory::get(codeLoc, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
