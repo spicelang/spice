@@ -10,10 +10,23 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-//import "std/net/http" as http;
+/*import "std/net/http" as http;
 
 f<int> main() {
-    //http::HttpServer server = http::HttpServer();
-    //server.serve("/test", "Hello World!");
-    printf("Test: %d\n", false ?: false);
+    http::HttpServer server = http::HttpServer();
+    server.serve("/test", "Hello World!");
+}*/
+
+f<bool> f1() {
+    printf("F1 called.\n");
+    return false;
+}
+
+f<bool> f2() {
+    printf("F2 called.\n");
+    return false;
+}
+
+f<int> main() {
+    printf("Result: %d", f1() ?: f2());
 }
