@@ -1,0 +1,44 @@
+import "socket_linux" as sock;
+
+const string SERVER_IDENT = "Spice HTTP Server/0.0.0";
+const unsigned int CONNECTIONS_LIMIT = 50;
+
+public const string ADDR_LOCAL = "localhost";
+public const string ADDR_INET = "0.0.0.0";
+
+public const unsigned short HTTP_PORT_DEFAULT = 80s;
+public const unsigned short HTTP_PORT_FALLBACK = 8080s;
+public const unsigned short HTTPS_PORT_DEFAULT = 443s;
+
+/**
+ * Struct, representing a simple HTTP server
+ */
+public type HttpServer struct {
+    sock::Socket socket // Underlying TCP socket
+    unsigned short port // Exposed port
+    bool initialized    // true if the server was initialized
+}
+
+/**
+ * Used to initialize a HTTP server instance, listening on a specific port for incoming requests
+ */
+p HttpServer.ctor(unsigned short port = HTTP_PORT_DEFAULT) {
+    this.port = port;
+    initialized = true;
+}
+
+/**
+ *
+ */
+public f<bool> HttpServer.start() {
+    // Check if the server is initialized
+    if !this.initialized { return false; }
+
+    // Setup TCP socket
+    this.socket = sock.openServerSocket(port, CONNECTIONS_LIMIT);
+
+}
+
+public f<bool> HttpServer.serve(string path, string htmlContent) {
+
+}

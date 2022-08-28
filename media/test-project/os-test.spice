@@ -1,4 +1,4 @@
-import "std/data/vector" as vec;
+/*import "std/data/vector" as vec;
 import "std/data/pair" as pair;
 
 f<int> main() {
@@ -8,4 +8,11 @@ f<int> main() {
 
     pair::Pair<int, string> p1 = pairVector.get(1);
     printf("Hello %s!", p1.getSecond());
+}*/
+
+import "std/net/http" as http;
+
+f<int> main() {
+    http::HttpServer server = http::HttpServer();
+    server.serve("/test", "Hello World!");
 }

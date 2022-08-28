@@ -39,6 +39,10 @@ ext<short> htons(short); // Fairly simple to re-implement in Spice
 ext<int> inet_addr(string);
 ext<int> connect(int, SockAddrIn*, int);
 
+p Socket.dtor() {
+    this.close();
+}
+
 /**
  * Accept an incoming connection to the socket and save the connection file desceiptor
  * to the socket object.

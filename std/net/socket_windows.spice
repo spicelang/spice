@@ -50,6 +50,10 @@ ext<int> close(long);
 ext<int> htonl(int);     // Fairly simple to re-implement in Spice
 ext<short> htons(short); // Fairly simple to re-implement in Spice
 
+p Socket.dtor() {
+    this.close();
+}
+
 /**
  * Accept an incoming connection to the socket and save the connection file desceiptor
  * to the socket object.
