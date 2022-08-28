@@ -1299,10 +1299,17 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
 std::any AnalyzerVisitor::visitTernaryExpr(TernaryExprNode *node) {
   // Check if there is a ternary operator applied
   if (node->children.size() > 1) {
-    auto condition = node->operands()[0];
+    LogicalOrExprNode *condition = node->operands()[0];
     auto conditionType = any_cast<SymbolType>(visit(condition));
-    auto trueType = any_cast<SymbolType>(visit(node->operands()[1]));
-    auto falseType = any_cast<SymbolType>(visit(node->operands()[2]));
+    SymbolType trueType;
+    SymbolType falseType;
+    if (node->isShortened) {
+      trueType = conditionType;
+      falseType = any_cast<SymbolType>(visit(node->operands()[1]));
+    } else {
+      trueType = any_cast<SymbolType>(visit(node->operands()[1]));
+      falseType = any_cast<SymbolType>(visit(node->operands()[2]));
+    }
     // Check if the condition evaluates to boolean
     if (!conditionType.is(TY_BOOL))
       throw err->get(condition->codeLoc, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool");

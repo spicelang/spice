@@ -793,6 +793,8 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<LogicalOrExprNode *> operands() const { return getChildren<LogicalOrExprNode>(); }
+
+  bool isShortened = false;
 };
 
 // ===================================================== LogicalOrExprNode =======================================================
