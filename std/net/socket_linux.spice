@@ -39,7 +39,7 @@ ext<short> htons(short); // Fairly simple to re-implement in Spice
 ext<int> inet_addr(string);
 ext<int> connect(int, SockAddrIn*, int);
 
-p Socket.dtor() {
+public p Socket.dtor() {
     this.close();
 }
 

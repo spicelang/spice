@@ -22,7 +22,7 @@ public type HttpServer struct {
 /**
  * Used to initialize a HTTP server instance, listening on a specific port for incoming requests
  */
-p HttpServer.ctor(unsigned short port = HTTP_PORT_DEFAULT) {
+public p HttpServer.ctor(unsigned short port = HTTP_PORT_DEFAULT) {
     this.port = port;
     initialized = true;
 }
