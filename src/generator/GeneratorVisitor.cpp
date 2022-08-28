@@ -1696,8 +1696,15 @@ std::any GeneratorVisitor::visitTernaryExpr(TernaryExprNode *node) {
 
   if (node->operands().size() > 1) {
     llvm::Value *conditionPtr = resolveAddress(node->operands()[0]);
-    llvm::Value *trueValuePtr = resolveAddress(node->operands()[1]);
-    llvm::Value *falseValuePtr = resolveAddress(node->operands()[2]);
+    llvm::Value *trueValuePtr;
+    llvm::Value *falseValuePtr;
+    if (node->isShortened) {
+      trueValuePtr = conditionPtr;
+      falseValuePtr = resolveAddress(node->operands()[1]);
+    } else {
+      trueValuePtr = resolveAddress(node->operands()[1]);
+      falseValuePtr = resolveAddress(node->operands()[2]);
+    }
 
     llvm::Type *conditionType = node->operands().front()->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
     llvm::Value *condition = builder->CreateLoad(conditionType, conditionPtr);

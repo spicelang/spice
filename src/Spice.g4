@@ -48,7 +48,7 @@ joinCall: JOIN LPAREN assignExpr (COMMA assignExpr)* RPAREN;
 
 // Expression loop
 assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr | threadDef;
-ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr COLON logicalOrExpr)?;
+ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr? COLON logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
 bitwiseOrExpr: bitwiseXorExpr (BITWISE_OR bitwiseXorExpr)*;

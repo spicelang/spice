@@ -845,6 +845,9 @@ std::any AstBuilderVisitor::visitAssignExpr(SpiceParser::AssignExprContext *ctx)
 std::any AstBuilderVisitor::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   auto ternaryExprNode = dynamic_cast<TernaryExprNode *>(currentNode);
 
+  // Check if is shortened
+  ternaryExprNode->isShortened = ctx->logicalOrExpr().size() == 2;
+
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::LogicalOrExprContext *>(subTree); rule != nullptr) // LogicalOrExpr
