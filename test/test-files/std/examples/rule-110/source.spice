@@ -1,8 +1,8 @@
 // Can be adjusted, but the array size below needs to be the same number
-const int CAP = 100;
+const int CAP = 80;
 
 f<int> main() {
-    int[100] board;
+    int[CAP] board;
 
     // Initialize board
     for int i = 0; i < CAP; i++ {

@@ -336,13 +336,13 @@ void SymbolTable::insertFunction(const Function &function, ErrorFactory *err) {
 
   // Check if function is already substantiated
   if (function.hasSubstantiatedArgs()) {
-    insertSubstantiatedFunction(function, err, codeLoc);
+    insertSubstantiatedFunction(function, codeLoc);
     return;
   }
 
   // Substantiate the function and insert the substantiated instances
   for (const auto &fct : function.substantiateOptionalArgs())
-    insertSubstantiatedFunction(fct, err, codeLoc);
+    insertSubstantiatedFunction(fct, codeLoc);
 }
 
 /**
@@ -433,7 +433,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
       // Duplicate function
       Function newFunction = f.substantiateGenerics(argList, callThisType, concreteGenericTypes);
       if (!getChild(newFunction.getSignature())) { // Insert function
-        insertSubstantiatedFunction(newFunction, err, f.getDeclCodeLoc());
+        insertSubstantiatedFunction(newFunction, f.getDeclCodeLoc());
         copyChildBlock(f.getSignature(), newFunction.getSignature());
 
         // Insert symbols for generic type names with concrete types into the child block
@@ -513,10 +513,9 @@ Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc) {
  * an exception will be thrown
  *
  * @param function Substantiated function
- * @param err Error factory
  * @param codeLoc Code location
  */
-void SymbolTable::insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const CodeLoc &codeLoc) {
+void SymbolTable::insertSubstantiatedFunction(const Function &function, const CodeLoc &codeLoc) {
   if (!function.hasSubstantiatedArgs())
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 

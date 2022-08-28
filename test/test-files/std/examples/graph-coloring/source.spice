@@ -1,0 +1,78 @@
+const int VERTEX_COUNT = 4;
+
+p printSolution(int[] color) {
+    printf("Solution Exists:\nFollowing are the assigned colors:\n");
+    for int i = 0; i < VERTEX_COUNT; i++ {
+        printf(" %d ", color[i]);
+    }
+    printf("\n");
+}
+
+f<bool> isSafe(bool[VERTEX_COUNT][VERTEX_COUNT] graph, int[] color) {
+    for int i = 0; i < VERTEX_COUNT; i++ {
+        for int j = i + 1; j < VERTEX_COUNT; j++ {
+            if graph[i][j] && color[j] == color[i] {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+f<bool> graphColoring(
+    bool[VERTEX_COUNT][VERTEX_COUNT] graph,
+    int m,
+    int i,
+    int[VERTEX_COUNT] color
+) {
+    // If current index reached the end
+    if i == VERTEX_COUNT {
+        // If coloring is safe
+        if isSafe(graph, color) {
+            printSolution(color);
+            return true;
+        }
+        return false;
+    }
+
+    for int j = 1; j <= m; j++ {
+        color[i] = j;
+
+        // Recur of the rest vertices
+        if graphColoring(graph, m, i + 1, color) {
+            return true;
+        }
+
+        color[i] = 0;
+    }
+
+    return false;
+}
+
+f<int> main() {
+    /* Create following graph and
+       test whether it is 3 colorable
+      (3)---(2)
+       |   / |
+       |  /  |
+       | /   |
+      (0)---(1)
+    */
+    bool[VERTEX_COUNT][VERTEX_COUNT] graph = {
+        { false, true, true, true },
+        { true, false, true, false },
+        { true, true, false, true },
+        { true, false, true, false }
+    };
+    int m = 3; // Number of colors
+
+    // Initialize all color values as 0.
+    int[VERTEX_COUNT] color;
+    for int i = 0; i < VERTEX_COUNT; i++ {
+        color[i] = 0;
+    }
+
+    if !graphColoring(graph, m, 0, color) {
+        printf("Solution does not exist");
+    }
+}

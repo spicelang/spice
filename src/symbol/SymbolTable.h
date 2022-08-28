@@ -78,7 +78,7 @@ public:
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc) const;
   void insertFunctionAccessPointer(const CodeLoc &codeLoc, Function *spiceFunc);
   Function *getFunctionAccessPointer(const CodeLoc &codeLoc);
-  void insertSubstantiatedFunction(const Function &function, ErrorFactory *err, const CodeLoc &codeLoc);
+  void insertSubstantiatedFunction(const Function &function, const CodeLoc &codeLoc);
 
   void insertStruct(const Struct &s, ErrorFactory *err);
   Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,

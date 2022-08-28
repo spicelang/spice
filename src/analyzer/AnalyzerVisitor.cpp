@@ -839,7 +839,7 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
       std::string varName = node->idxVarDecl()->varName;
       SymbolTableEntry *entry = currentScope->lookup(varName);
       assert(entry != nullptr);
-      entry->updateState(INITIALIZED, err.get(), node->idxVarDecl()->codeLoc);
+      entry->updateState(INITIALIZED, node->idxVarDecl()->codeLoc);
     }
 
     // Check if index type is int
@@ -870,7 +870,7 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
                      "Foreach loop item type does not match array type. Expected " + arrayType.getName(false) + ", provided " +
                          itemType.getName(false));
   }
-  itemVarSymbol->updateState(INITIALIZED, err.get(), node->itemDecl()->codeLoc);
+  itemVarSymbol->updateState(INITIALIZED, node->itemDecl()->codeLoc);
 
   // Visit statement list in new scope
   nestedLoopCounter++;
@@ -1052,7 +1052,7 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
       }
 
       // Set the return variable to initialized
-      returnVariable->updateState(INITIALIZED, err.get(), node->codeLoc);
+      returnVariable->updateState(INITIALIZED, node->codeLoc);
     } else {
       returnType = returnVariable->getType();
     }
@@ -1270,7 +1270,7 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
 
       // Update state in symbol table
       if (!currentEntry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}))
-        currentEntry->updateState(INITIALIZED, err.get(), node->lhs()->codeLoc);
+        currentEntry->updateState(INITIALIZED, node->lhs()->codeLoc);
 
       // In case the lhs variable is captured, notify the capture about the write access
       Capture *lhsCapture = currentScope->lookupCapture(variableName);
@@ -1528,7 +1528,7 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err.get(), node->codeLoc);
+        currentEntry->updateState(INITIALIZED, node->codeLoc);
 
       // In case the lhs is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->lookupCapture(currentVarName); lhsCapture)
@@ -1539,7 +1539,7 @@ std::any AnalyzerVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err.get(), node->codeLoc);
+        currentEntry->updateState(INITIALIZED, node->codeLoc);
 
       // In case the lhs is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->lookupCapture(currentVarName); lhsCapture)
@@ -1653,7 +1653,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err.get(), node->codeLoc);
+        currentEntry->updateState(INITIALIZED, node->codeLoc);
 
       // In case the lhs is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->lookupCapture(currentVarName); lhsCapture)
@@ -1665,7 +1665,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
       // Update state in symbol table
       if (currentEntry != nullptr)
-        currentEntry->updateState(INITIALIZED, err.get(), node->codeLoc);
+        currentEntry->updateState(INITIALIZED, node->codeLoc);
 
       // In case the lhs is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->lookupCapture(currentVarName); lhsCapture)
@@ -1959,8 +1959,8 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // If the return type is an external struct, initialize it
   if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
-    SymbolType symbolType = initExtStruct(scopePathBackup.getCurrentScope(), scopePathBackup.getScopePrefix(true),
-                                          returnType.getSubType(), thisType.getTemplateTypes(), node->codeLoc);
+    SymbolType symbolType = initExtStruct(currentScope, scopePathBackup.getScopePrefix(true), returnType.getSubType(),
+                                          returnType.getTemplateTypes(), node->codeLoc);
     return node->setEvaluatedSymbolType(symbolType);
   }
 
