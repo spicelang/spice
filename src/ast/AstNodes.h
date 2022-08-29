@@ -260,6 +260,7 @@ public:
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
+  [[nodiscard]] EnumItemLstNode *itemLst() const { return getChild<EnumItemLstNode>(); }
 
   // Public members
   std::string enumName;

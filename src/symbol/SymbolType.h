@@ -30,6 +30,7 @@ enum SymbolSuperType {
   TY_BOOL,
   TY_GENERIC,
   TY_STRUCT,
+  TY_ENUM,
   TY_DYN,
   TY_PTR,
   TY_ARRAY,

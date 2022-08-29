@@ -611,7 +611,47 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
 }
 
 std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
-  // ToDo: Extend
+  if (runNumber > 1)
+    return nullptr;
+
+  // Check if enum already exists in this scope
+  if (currentScope->lookup(node->enumName))
+    throw err->get(node->codeLoc, ENUM_DECLARED_TWICE, "Duplicate symbol name '" + node->enumName + "'");
+
+  // Build symbol specifiers
+  auto enumSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_ENUM, node->enumName));
+  if (node->specifierLst()) {
+    for (const auto &specifier : node->specifierLst()->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        enumSymbolSpecifiers.setPublic(true);
+      else
+        throw err->get(specifier->codeLoc, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an enum definition");
+    }
+  }
+
+  // ToDo: Loop through all items with values at first, so that they get the attached values
+
+  // Enrich enum items
+  /*uint32_t nextValue = 0;
+  std::vector<std::string> names;
+  std::vector<uint32_t> values;
+  for (auto enumItem : node->itemLst()->items()) {
+    // Check if the name does exist already
+    if (std::find(names.begin(), names.end(), enumItem->itemName) != names.end())
+      throw err->get(enumItem->codeLoc, DUPLICATE_ENUM_ITEM_NAME, "Duplicate enum item name, please use another");
+
+    if (enumItem->hasValue) {
+      // Check if the value does exist already
+      if (std::find(values.begin(), values.end(), enumItem->itemValue) != values.end())
+        throw err->get(enumItem->codeLoc, DUPLICATE_ENUM_ITEM_VALUE, "Duplicate enum item value, please use another");
+      nextValue = enumItem->itemValue + 1;
+    } else {
+      // ToDo: Loop through all items with values at first, so that they get the attached values
+    }
+    names.push_back(enumItem->itemName);
+    values.push_back(enumItem->itemValue);
+  }*/
+
   return nullptr;
 }
 
