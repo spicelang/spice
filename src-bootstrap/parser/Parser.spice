@@ -1,0 +1,14 @@
+// Imports
+import "../lexer/Token" as tk;
+
+public type Parser struct {
+
+}
+
+public p Parser.ctor(const tk::Token[] tokens, unsigned long tokenCount) {
+
+}
+
+public p Parser.parse() {
+
+}

@@ -1,0 +1,155 @@
+// Imports
+import "std/text/print" as print;
+import "std/os/cmd" as cmd;
+
+/**
+ * Representation of the various cli options
+ */
+public type CliOptions struct {
+    string mainSourceFile // e.g. main.spice
+    string targetTriple   // In format: <arch><sub>-<vendor>-<sys>-<abi>
+    string targetArch
+    string targetVendor
+    string targetOs
+    string outputDir      // Where the object files go. Should always be a temp directory
+    string outputPath     // Where the output binary goes.
+    bool printDebugInfo
+    bool dumpCST
+    bool dumpAST
+    bool dumpIR
+    bool dumpAssembly
+    bool dumpSymbolTables
+    short optLevel // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
+    bool generateDebugInfo
+    bool disableVerifier
+    bool testMode
+}
+
+/**
+ * Helper class to setup the cli interface and command line parser
+ */
+public type CliInterface struct {
+    //CliApp cliApp
+    CliOptions cliOptions
+    ErrorFactory err
+    bool compile
+    bool install
+    bool run
+}
+
+public p CliInterface.ctor() {
+    // Initialize cli object
+    cliOptions = CliOptions{/* mainSourceFile */ "", /* targetTriple */ "", /* targetArch */ "", /* targetVendor */ "",
+        /* targetOs */ "", /* outputDir */ "", /* outputPath */ "", /* printDebugInfo */ false, /* dumpCST */ false,
+        /* dumpAST */ false, /* dumpIR */ false, /* dumpAssembly */ false, /* dumpSymbolTables */ false, /* optLevel */ 2,
+        /* generateDebugInfo */ false, /* disableVerifier */ false, /* testMode */ false };
+    err = ErrorFactory();
+    compile = false;
+    install = false;
+    run = false;
+}
+
+p CliInterface.createInterface() {
+    // ToDo: Extend
+}
+
+/**
+ * Validates if all necessary cli options were provided.
+ *
+ * @throws InvalidCliOptionsException if there were an invalid combination of cli options provided
+ */
+p CliInterface.validate() {
+    // ToDo: Extend
+}
+
+/**
+ * Initialize the cli options based on the input of the user
+ */
+p CliInterface.enrich() {
+    // Propagate target information
+    if (cliOptions.targetTriple.empty()) {
+        // ToDo: Extend
+    }
+
+    // Dump AST, IR and symbol table if all debug output is enabled
+    if cliOptions.printDebugInfo {
+        cliOptions.dumpAST = true;
+        cliOptions.dumpIR = true;
+        cliOptions.dumpSymbolTables = true;
+    }
+}
+
+/**
+ * Add build subcommand to cli interface
+ */
+p CliInterface.addBuildSubcommand() {
+    // Create sub-command itself
+    // ToDo: Extend
+}
+
+/**
+ * Add run subcommand to cli interface
+ */
+p CliInterface.addRunSubcommand() {
+    // Create sub-command itself
+    // ToDo: Extend
+}
+
+/**
+ * Add install subcommand to cli interface
+ */
+p CliInterface.addInstallSubcommand() {
+    // Create sub-command itself
+    // ToDo: Extend
+}
+
+/**
+ * Add uninstall subcommand to cli interface
+ */
+p CliInterface.addUninstallSubcommand() {
+    // Create sub-command itself
+    // ToDo: Extend
+}
+
+/**
+ * Checks if compiling is necessary
+ *
+ * @return Compile or not
+ */
+f<bool> CliInterface.shouldCompile() {
+    return this.compile;
+}
+
+/**
+ * Checks if running is necessary
+ *
+ * @return Run or not
+ */
+f<bool> CliInterface.shoudRun() {
+    return this.run;
+}
+
+/**
+ * Start the parsing process
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Return code
+ */
+f<int> CliInterface.parse(int argc, string[] argv) {
+    // ToDo: Extend
+    return 0;
+}
+
+/**
+ * Executes the built executable
+ */
+p CliInterface.runBinary() {
+    // Print status message
+    if cliOptions.printDebugOutput {
+        print.println("Running executable ...\n");
+    }
+
+    // Run executable
+    cmd.execCmd(cliOptions.outputPath);
+}

@@ -1,0 +1,10 @@
+// Imports
+import "std/io/file" as file;
+
+public type Reader struct {
+
+}
+
+public p Reader.ctor(const string inputFileName) {
+
+}

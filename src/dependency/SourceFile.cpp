@@ -285,11 +285,10 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   }
 }
 
-void SourceFile::addDependency(const ErrorFactory *err, const CodeLoc &codeLoc, const std::string &name,
-                               const std::string &filePath, bool stdFile) {
+void SourceFile::addDependency(const CodeLoc &codeLoc, const std::string &name, const std::string &filePath, bool stdFile) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(filePath))
-    throw err->get(codeLoc, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
+    throw ErrorFactory::get(codeLoc, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
   dependencies.insert({name, {std::make_shared<SourceFile>(options, this, name, filePath, stdFile), codeLoc}});

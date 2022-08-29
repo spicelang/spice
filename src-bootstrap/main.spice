@@ -1,0 +1,23 @@
+// Imports
+import "cli/CliInterface" as cli;
+
+/**
+ * Compile main source file. All files, that are included by the main source file will be resolved recursively.
+ *
+ * @param options Command line options
+ */
+p compileProject() {
+
+}
+
+/**
+ * Entry point to the Spice compiler
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Return code
+ */
+f<int> main(int argc, string[] argv) {
+    // Initialize command line parser
+
+}

@@ -117,7 +117,7 @@ void CliInterface::enrich() {
     cliOptions.targetVendor = triple.getVendorName();
     cliOptions.targetOs = triple.getOSName();
   }
-  // Dump IR as well as symbol table if all debug output is enabled
+  // Dump AST, IR and symbol table if all debug output is enabled
   if (cliOptions.printDebugOutput) {
     cliOptions.dumpAST = true;
     cliOptions.dumpIR = true;

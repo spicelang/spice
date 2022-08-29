@@ -1,0 +1,15 @@
+// Imports
+
+// Enums
+public enum TokenType {
+
+}
+
+public type Token struct {
+    public unsigned short tokenType
+    public CodeLoc codeLoc
+}
+
+public p Token.ctor() {
+
+}
