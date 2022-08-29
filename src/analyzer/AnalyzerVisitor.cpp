@@ -610,6 +610,11 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
   return nullptr;
 }
 
+std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
+  // ToDo: Extend
+  return nullptr;
+}
+
 std::any AnalyzerVisitor::visitGenericTypeDef(GenericTypeDefNode *node) {
   if (runNumber > 1)
     return nullptr;

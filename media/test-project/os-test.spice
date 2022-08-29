@@ -17,16 +17,15 @@ f<int> main() {
     server.serve("/test", "Hello World!");
 }*/
 
-f<bool> f1() {
-    printf("F1 called.\n");
-    return false;
-}
-
-f<bool> f2() {
-    printf("F2 called.\n");
-    return false;
+type TokenType enum {
+    IDENTIFIER,
+    DOT,
+    COMMA,
+    SIZEOF,
+    WS
 }
 
 f<int> main() {
-    printf("Result: %d", f1() ?: f2());
+    TokenType tokenType = TokenType.DOT;
+    printf("%d\n", tokenType);
 }

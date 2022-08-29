@@ -25,6 +25,7 @@ public:
   std::any visitFctDef(FctDefNode *ctx) override { return buildNode(ctx); }
   std::any visitProcDef(ProcDefNode *ctx) override { return buildNode(ctx); }
   std::any visitStructDef(StructDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitEnumDef(EnumDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGenericTypeDef(GenericTypeDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGlobalVarDef(GlobalVarDefNode *ctx) override { return buildNode(ctx); }
   std::any visitExtDecl(ExtDeclNode *ctx) override { return buildNode(ctx); }
@@ -41,6 +42,8 @@ public:
   std::any visitTypeAltsLst(TypeAltsLstNode *ctx) override { return buildNode(ctx); }
   std::any visitParamLst(ParamLstNode *ctx) override { return buildNode(ctx); }
   std::any visitArgLst(ArgLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitEnumItemLst(EnumItemLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitEnumItem(EnumItemNode *ctx) override { return buildNode(ctx); }
   std::any visitField(FieldNode *ctx) override { return buildNode(ctx); }
   std::any visitStmt(StmtNode *ctx) override { return buildNode(ctx); }
   std::any visitDeclStmt(DeclStmtNode *ctx) override { return buildNode(ctx); }
@@ -126,6 +129,8 @@ private:
       return "ProcDef";
     if (std::is_same<StructDefNode, T>())
       return "StructDef";
+    if (std::is_same<EnumDefNode, T>())
+      return "EnumDef";
     if (std::is_same<GenericTypeDefNode, T>())
       return "GenericTypeDef";
     if (std::is_same<GlobalVarDefNode, T>())
@@ -158,6 +163,10 @@ private:
       return "ParamLst";
     if (std::is_same<ArgLstNode, T>())
       return "ArgLst";
+    if (std::is_same<EnumItemLstNode, T>())
+      return "EnumItemLst";
+    if (std::is_same<EnumItemNode, T>())
+      return "EnumItem";
     if (std::is_same<FieldNode, T>())
       return "Field";
     if (std::is_same<StmtNode, T>())

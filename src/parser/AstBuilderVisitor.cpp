@@ -26,6 +26,8 @@ std::any AstBuilderVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
       currentNode = entryNode->createChild<ProcDefNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::StructDefContext *>(subTree); rule != nullptr) // StructDef
       currentNode = entryNode->createChild<StructDefNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::EnumDefContext *>(subTree); rule != nullptr) // EnumDef
+      currentNode = entryNode->createChild<EnumDefNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::GenericTypeDefContext *>(subTree); rule != nullptr) // GenericTypeDef
       currentNode = entryNode->createChild<GenericTypeDefNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::GlobalVarDefContext *>(subTree); rule != nullptr) // GlobalVarDef
@@ -158,6 +160,30 @@ std::any AstBuilderVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
       currentNode = structDefNode;
     }
   }
+  return nullptr;
+}
+
+std::any AstBuilderVisitor::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
+  auto enumDefNode = dynamic_cast<EnumDefNode *>(currentNode);
+
+  // Extract enum name
+  enumDefNode->enumName = ctx->IDENTIFIER()->getText();
+
+  for (const auto &subTree : ctx->children) {
+    antlr4::ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
+      currentNode = enumDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::EnumItemLstContext *>(subTree); rule != nullptr) // EnumItemLst
+      currentNode = enumDefNode->createChild<EnumItemLstNode>(CodeLoc(rule->start, fileName));
+    else
+      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != enumDefNode) {
+      visit(rule);
+      currentNode = enumDefNode;
+    }
+  }
+
   return nullptr;
 }
 
@@ -533,6 +559,39 @@ std::any AstBuilderVisitor::visitArgLst(SpiceParser::ArgLstContext *ctx) {
       visit(rule);
       currentNode = argLstNode;
     }
+  }
+  return nullptr;
+}
+
+std::any AstBuilderVisitor::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
+  auto enumItemLstNode = dynamic_cast<EnumItemLstNode *>(currentNode);
+
+  for (const auto &subTree : ctx->children) {
+    antlr4::ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::EnumItemContext *>(subTree); rule != nullptr) // EnumItem
+      currentNode = enumItemLstNode->createChild<EnumItemNode>(CodeLoc(rule->start, fileName));
+    else
+      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != enumItemLstNode) {
+      visit(rule);
+      currentNode = enumItemLstNode;
+    }
+  }
+  return nullptr;
+}
+
+std::any AstBuilderVisitor::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
+  auto enumItemNode = dynamic_cast<EnumItemNode *>(currentNode);
+
+  for (const auto &subTree : ctx->children) {
+    if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER)
+      enumItemNode->itemName = t->getText();
+    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INT_LIT) {
+      enumItemNode->itemValue = parseInt(t);
+      enumItemNode->hasValue = true;
+    } else
+      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
   }
   return nullptr;
 }
