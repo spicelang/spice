@@ -629,36 +629,38 @@ std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
     }
   }
 
-  std::vector<std::string> names;
-  std::vector<uint32_t> values;
+  // Add symbol table entry and child table
+  currentScope->insert(node->enumName, SymbolType(TY_ENUM, node->enumName), enumSymbolSpecifiers, INITIALIZED, node->codeLoc);
+  SymbolTable *enumTable = currentScope->createChildBlock(ENUM_SCOPE_PREFIX + node->enumName, SCOPE_ENUM);
 
   // Loop through all items with values
+  std::vector<std::string> names;
+  std::vector<uint32_t> values;
   for (auto enumItem : node->itemLst()->items()) {
     // Check if the name does exist already
     if (std::find(names.begin(), names.end(), enumItem->itemName) != names.end())
       throw err->get(enumItem->codeLoc, DUPLICATE_ENUM_ITEM_NAME, "Duplicate enum item name, please use another");
     names.push_back(enumItem->itemName);
 
-    // Skip all items with no values
-    if (!enumItem->hasValue)
-      continue;
-
-    if (std::find(values.begin(), values.end(), enumItem->itemValue) != values.end())
-      throw err->get(enumItem->codeLoc, DUPLICATE_ENUM_ITEM_VALUE, "Duplicate enum item value, please use another");
-    values.push_back(enumItem->itemValue);
+    if (enumItem->hasValue) {
+      if (std::find(values.begin(), values.end(), enumItem->itemValue) != values.end())
+        throw err->get(enumItem->codeLoc, DUPLICATE_ENUM_ITEM_VALUE, "Duplicate enum item value, please use another");
+      values.push_back(enumItem->itemValue);
+    }
   }
 
   // Loop through all items without values
   uint32_t nextValue = 0;
+  SymbolType intSymbolType = SymbolType(TY_INT);
   for (auto enumItem : node->itemLst()->items()) {
-    // Skip all items with values
-    if (enumItem->hasValue)
-      continue;
+    if (!enumItem->hasValue) {
+      while (std::find(values.begin(), values.end(), nextValue) != values.end())
+        nextValue++;
+      enumItem->itemValue = nextValue;
+      values.push_back(nextValue);
+    }
 
-    while (std::find(values.begin(), values.end(), nextValue) != values.end())
-      nextValue++;
-    enumItem->itemValue = nextValue;
-    values.push_back(nextValue);
+    enumTable->insert(enumItem->itemName, intSymbolType, SymbolSpecifiers(intSymbolType), INITIALIZED, enumItem->codeLoc);
   }
 
   return nullptr;
@@ -1693,7 +1695,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
       // Check if lhs is struct
-      if (!lhs.isBaseType(TY_STRUCT))
+      if (!lhs.isBaseType(TY_STRUCT) && !lhs.isBaseType(TY_ENUM))
         throw err->get(node->codeLoc, MEMBER_ACCESS_ONLY_STRUCTS, "Cannot apply member access operator on " + lhs.getName());
 
       PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
@@ -1818,6 +1820,9 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
                                               currentThisType.getTemplateTypes(), node->codeLoc);
         return node->setEvaluatedSymbolType(symbolType);
       }
+    } else if (entry->getType().isBaseType(TY_ENUM)) { // Enum
+      // Get enum table
+      accessScope = accessScope->lookupTable(ENUM_SCOPE_PREFIX + node->identifier);
     } else {
       // Check if we have seen a 'this.' prefix, because the generator needs that
       if (entry->getScope()->getScopeType() == SCOPE_STRUCT && currentThisType.is(TY_DYN))
@@ -2234,24 +2239,33 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Get type name in format: a.b.c and retrieve the scope in parallel
   std::string accessScopePrefix;
-  std::string structName;
+  std::string identifier;
   bool structIsImported = false;
   for (unsigned int i = 0; i < node->typeNameFragments.size(); i++) {
-    structName = node->typeNameFragments[i];
+    identifier = node->typeNameFragments[i];
     if (i < node->typeNameFragments.size() - 1)
-      accessScopePrefix += structName + ".";
-    SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
-    if (!symbolEntry)
-      throw err->get(node->codeLoc, UNKNOWN_DATATYPE, "Unknown symbol '" + structName + "'");
-    if (!symbolEntry->getType().isOneOf({TY_STRUCT, TY_IMPORT}))
-      throw err->get(node->codeLoc, EXPECTED_TYPE, "Expected type, but got " + symbolEntry->getType().getName());
+      accessScopePrefix += identifier + ".";
+    entry = accessScope->lookup(identifier);
+    if (!entry)
+      throw err->get(node->codeLoc, UNKNOWN_DATATYPE, "Unknown symbol '" + identifier + "'");
+    if (!entry->getType().isOneOf({TY_STRUCT, TY_ENUM, TY_IMPORT}))
+      throw err->get(node->codeLoc, EXPECTED_TYPE, "Expected type, but got " + entry->getType().getName());
 
-    std::string tableName = symbolEntry->getType().is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
+    std::string tableName = identifier;
+    if (entry->getType().is(TY_STRUCT)) {
+      tableName = STRUCT_SCOPE_PREFIX + identifier;
+    } else if (entry->getType().is(TY_ENUM)) {
+      tableName = ENUM_SCOPE_PREFIX + identifier;
+    }
     accessScope = accessScope->lookupTable(tableName);
     assert(accessScope != nullptr);
     if (accessScope->isImported(currentScope))
       structIsImported = true;
   }
+
+  // Enums can early-return
+  if (entry->getType().is(TY_ENUM))
+    return SymbolType(TY_INT);
 
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
@@ -2261,22 +2275,22 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   }
 
   // Set the struct instance to used
-  Struct *spiceStruct = accessScope->matchStruct(nullptr, structName, concreteTemplateTypes, err.get(), node->codeLoc);
+  Struct *spiceStruct = accessScope->matchStruct(nullptr, identifier, concreteTemplateTypes, err.get(), node->codeLoc);
   if (spiceStruct)
     spiceStruct->setUsed();
 
   if (structIsImported) { // Imported struct
-    SymbolType symbolType = initExtStruct(accessScope, accessScopePrefix, structName, concreteTemplateTypes, node->codeLoc);
+    SymbolType symbolType = initExtStruct(accessScope, accessScopePrefix, identifier, concreteTemplateTypes, node->codeLoc);
     return node->setEvaluatedSymbolType(symbolType);
   }
 
   // Check if struct was declared
-  SymbolTableEntry *structSymbol = accessScope->lookup(structName);
+  SymbolTableEntry *structSymbol = accessScope->lookup(identifier);
   if (!structSymbol)
-    throw err->get(node->codeLoc, UNKNOWN_DATATYPE, "Unknown datatype '" + structName + "'");
+    throw err->get(node->codeLoc, UNKNOWN_DATATYPE, "Unknown datatype '" + identifier + "'");
   structSymbol->setUsed();
 
-  return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, structName, concreteTemplateTypes));
+  return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, identifier, concreteTemplateTypes));
 }
 
 void AnalyzerVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {

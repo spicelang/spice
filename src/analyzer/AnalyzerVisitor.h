@@ -20,6 +20,7 @@ const std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
 const std::string CTOR_VARIABLE_NAME = "ctor";
 const std::string DTOR_VARIABLE_NAME = "dtor";
 const std::string STRUCT_SCOPE_PREFIX = "struct:";
+const std::string ENUM_SCOPE_PREFIX = "enum:";
 const std::string UNUSED_VARIABLE_NAME = "_";
 const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync"};
 

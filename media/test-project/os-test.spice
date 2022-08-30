@@ -26,6 +26,6 @@ type TokenType enum {
 }
 
 f<int> main() {
-    //TokenType tokenType = TokenType.DOT;
-    //printf("%d\n", tokenType);
+    TokenType tokenType = TokenType.DOT;
+    printf("%d\n", tokenType);
 }
