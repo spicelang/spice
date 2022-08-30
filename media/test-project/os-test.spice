@@ -19,13 +19,13 @@ f<int> main() {
 
 type TokenType enum {
     IDENTIFIER,
-    DOT,
+    DOT = 12,
     COMMA,
-    SIZEOF,
+    SIZEOF = 0,
     WS
 }
 
 f<int> main() {
-    TokenType tokenType = TokenType.DOT;
-    printf("%d\n", tokenType);
+    //TokenType tokenType = TokenType.DOT;
+    //printf("%d\n", tokenType);
 }

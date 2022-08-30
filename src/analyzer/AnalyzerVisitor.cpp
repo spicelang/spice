@@ -629,28 +629,37 @@ std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
     }
   }
 
-  // ToDo: Loop through all items with values at first, so that they get the attached values
-
-  // Enrich enum items
-  /*uint32_t nextValue = 0;
   std::vector<std::string> names;
   std::vector<uint32_t> values;
+
+  // Loop through all items with values
   for (auto enumItem : node->itemLst()->items()) {
     // Check if the name does exist already
     if (std::find(names.begin(), names.end(), enumItem->itemName) != names.end())
       throw err->get(enumItem->codeLoc, DUPLICATE_ENUM_ITEM_NAME, "Duplicate enum item name, please use another");
-
-    if (enumItem->hasValue) {
-      // Check if the value does exist already
-      if (std::find(values.begin(), values.end(), enumItem->itemValue) != values.end())
-        throw err->get(enumItem->codeLoc, DUPLICATE_ENUM_ITEM_VALUE, "Duplicate enum item value, please use another");
-      nextValue = enumItem->itemValue + 1;
-    } else {
-      // ToDo: Loop through all items with values at first, so that they get the attached values
-    }
     names.push_back(enumItem->itemName);
+
+    // Skip all items with no values
+    if (!enumItem->hasValue)
+      continue;
+
+    if (std::find(values.begin(), values.end(), enumItem->itemValue) != values.end())
+      throw err->get(enumItem->codeLoc, DUPLICATE_ENUM_ITEM_VALUE, "Duplicate enum item value, please use another");
     values.push_back(enumItem->itemValue);
-  }*/
+  }
+
+  // Loop through all items without values
+  uint32_t nextValue = 0;
+  for (auto enumItem : node->itemLst()->items()) {
+    // Skip all items with values
+    if (enumItem->hasValue)
+      continue;
+
+    while (std::find(values.begin(), values.end(), nextValue) != values.end())
+      nextValue++;
+    enumItem->itemValue = nextValue;
+    values.push_back(nextValue);
+  }
 
   return nullptr;
 }
