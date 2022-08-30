@@ -11,6 +11,10 @@ type Fruit enum {
 	MANGO,
 	ORANGE
 }
+
+f<int> main() {
+    printf("Test: %d", Fruit.MANGO);
+}
 ```
 
 They can be defined only in the global scope. Spice will assign the unsigned integer values
