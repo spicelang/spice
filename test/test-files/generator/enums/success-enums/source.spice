@@ -1,0 +1,11 @@
+type TokenType enum {
+    IDENTIFIER,
+    DOT = 12,
+    COMMA,
+    SIZEOF = 0,
+    WS
+}
+
+f<int> main() {
+    printf("%d\n", TokenType.DOT);
+}

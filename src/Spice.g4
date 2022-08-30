@@ -3,11 +3,12 @@
 grammar Spice;
 
 // Control structures
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | genericTypeDef | globalVarDef | importStmt | extDecl)*;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | enumDef | genericTypeDef | globalVarDef | importStmt | extDecl)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT LBRACE field* RBRACE;
+enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: specifierLst? TYPE IDENTIFIER typeAltsLst SEMICOLON;
 globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN value)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
@@ -28,6 +29,8 @@ typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
+enumItemLst: enumItem (COMMA enumItem)*;
+enumItem: IDENTIFIER (ASSIGN INT_LIT)?;
 field: specifierLst? dataType IDENTIFIER;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: specifierLst? dataType IDENTIFIER (ASSIGN assignExpr)?;
@@ -109,6 +112,7 @@ RETURN: 'return';
 AS: 'as';
 STRUCT: 'struct';
 TYPE: 'type';
+ENUM: 'enum';
 THREAD: 'thread';
 UNSAFE: 'unsafe';
 //NEW: 'new';

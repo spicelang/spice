@@ -15,7 +15,7 @@
 // Forward declarations
 class SymbolTable;
 class ErrorFactory;
-struct CodeLoc;
+struct AstNode;
 
 enum SymbolState { DECLARED, INITIALIZED };
 
@@ -26,8 +26,8 @@ class SymbolTableEntry {
 public:
   // Constructors
   SymbolTableEntry(std::string name, const SymbolType &type, SymbolTable *scope, SymbolSpecifiers specifiers, SymbolState state,
-                   const CodeLoc &declCodeLoc, unsigned int orderIndex, const bool global)
-      : name(std::move(name)), type(type), scope(scope), specifiers(specifiers), state(state), declCodeLoc(declCodeLoc),
+                   const AstNode *declNode, unsigned int orderIndex, const bool global)
+      : name(std::move(name)), type(type), scope(scope), specifiers(specifiers), state(state), declNode(declNode),
         orderIndex(orderIndex), global(global){};
 
   // Public methods
@@ -38,6 +38,7 @@ public:
   [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
   [[nodiscard]] SymbolState getState() const;
   void updateState(SymbolState newState, const CodeLoc &codeLoc, bool force = false);
+  [[nodiscard]] const AstNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::Type *getStructLLVMType() const;
   void setStructLLVMType(llvm::Type *newStructType);
@@ -64,7 +65,7 @@ private:
   llvm::Type *llvmType = nullptr;
   SymbolState state;
   // size_t refCount = 0;
-  const CodeLoc &declCodeLoc;
+  const AstNode *declNode;
   std::stack<llvm::Value *> memAddress;
   size_t orderIndex;
   const bool global;

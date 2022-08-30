@@ -141,6 +141,9 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
     return structType;
   }
 
+  if (is(TY_ENUM))
+    return llvm::Type::getInt32Ty(context);
+
   if (isPointer() || (isArray() && getArraySize() <= 0)) {
     llvm::PointerType *pointerType = getContainedTy().toLLVMType(context, accessScope)->getPointerTo();
     return static_cast<llvm::Type *>(pointerType);
@@ -446,6 +449,8 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     }
     return chainElement.subType + templateStr;
   }
+  case TY_ENUM:
+    return "enum";
   case TY_DYN:
     return "dyn";
   case TY_FUNCTION:

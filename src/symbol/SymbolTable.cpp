@@ -21,14 +21,14 @@
  * @param type Type of the symbol
  * @param specifiers Specifiers of the symbol
  * @param state State of the symbol (declared or initialized)
- * @param codeLoc Code location where the symbol is declared
+ * @param declNode AST node where the symbol is declared
  */
 void SymbolTable::insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
-                         const CodeLoc &declCodeLoc) {
+                         const AstNode *declNode) {
   bool isGlobal = parent == nullptr;
   unsigned int orderIndex = symbols.size();
   // Insert into symbols map
-  symbols.insert({name, SymbolTableEntry(name, type, this, specifiers, state, declCodeLoc, orderIndex, isGlobal)});
+  symbols.insert({name, SymbolTableEntry(name, type, this, specifiers, state, declNode, orderIndex, isGlobal)});
 }
 
 /**
@@ -328,21 +328,21 @@ size_t SymbolTable::getFieldCount() const {
  * @param err Error factory
  */
 void SymbolTable::insertFunction(const Function &function, ErrorFactory *err) {
-  const CodeLoc &codeLoc = function.getDeclCodeLoc();
+  const AstNode *declNode = function.getDeclNode();
 
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  std::string codeLocStr = codeLoc.toString();
+  std::string codeLocStr = declNode->codeLoc.toString();
   functions.insert({codeLocStr, std::make_shared<std::map<std::string, Function>>()});
 
   // Check if function is already substantiated
   if (function.hasSubstantiatedArgs()) {
-    insertSubstantiatedFunction(function, codeLoc);
+    insertSubstantiatedFunction(function, declNode);
     return;
   }
 
   // Substantiate the function and insert the substantiated instances
   for (const auto &fct : function.substantiateOptionalArgs())
-    insertSubstantiatedFunction(fct, codeLoc);
+    insertSubstantiatedFunction(fct, declNode);
 }
 
 /**
@@ -433,7 +433,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
       // Duplicate function
       Function newFunction = f.substantiateGenerics(argList, callThisType, concreteGenericTypes);
       if (!getChild(newFunction.getSignature())) { // Insert function
-        insertSubstantiatedFunction(newFunction, f.getDeclCodeLoc());
+        insertSubstantiatedFunction(newFunction, f.getDeclNode());
         copyChildBlock(f.getSignature(), newFunction.getSignature());
 
         // Insert symbols for generic type names with concrete types into the child block
@@ -515,7 +515,7 @@ Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc) {
  * @param function Substantiated function
  * @param codeLoc Code location
  */
-void SymbolTable::insertSubstantiatedFunction(const Function &function, const CodeLoc &codeLoc) {
+void SymbolTable::insertSubstantiatedFunction(const Function &function, const AstNode *declNode) {
   if (!function.hasSubstantiatedArgs())
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
@@ -523,14 +523,14 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, const Co
   std::string mangledFctName = function.getMangledName();
   for (const auto &[_, manifestations] : functions) {
     if (manifestations->contains(mangledFctName))
-      throw ErrorFactory::get(codeLoc, FUNCTION_DECLARED_TWICE,
+      throw ErrorFactory::get(declNode->codeLoc, FUNCTION_DECLARED_TWICE,
                               "The function/procedure '" + function.getSignature() + "' is declared twice");
   }
   // Add function to function list
-  assert(functions.contains(codeLoc.toString()));
-  functions.at(codeLoc.toString())->insert({mangledFctName, function});
+  assert(functions.contains(declNode->codeLoc.toString()));
+  functions.at(declNode->codeLoc.toString())->insert({mangledFctName, function});
   // Add symbol table entry for the function
-  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, codeLoc);
+  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, declNode);
 }
 
 /**
@@ -541,10 +541,10 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, const Co
  */
 void SymbolTable::insertStruct(const Struct &s, ErrorFactory *err) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  const CodeLoc &codeLoc = s.getDeclCodeLoc();
-  std::string codeLocStr = codeLoc.toString();
+  const AstNode *declNode = s.getDeclNode();
+  std::string codeLocStr = declNode->codeLoc.toString();
   structs.insert({codeLocStr, std::make_shared<std::map<std::string, Struct>>()});
-  insertSubstantiatedStruct(s, err, codeLoc);
+  insertSubstantiatedStruct(s, err, declNode);
 }
 
 /**
@@ -595,7 +595,7 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
         SymbolTable *structScope = getChild(STRUCT_SCOPE_PREFIX + structName);
         Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, structScope);
         if (!getChild(STRUCT_SCOPE_PREFIX + newStruct.getSignature())) { // Insert struct
-          insertSubstantiatedStruct(newStruct, err, s.getDeclCodeLoc());
+          insertSubstantiatedStruct(newStruct, err, s.getDeclNode());
           copyChildBlock(STRUCT_SCOPE_PREFIX + structName, STRUCT_SCOPE_PREFIX + newStruct.getSignature());
         }
 
@@ -668,17 +668,18 @@ Struct *SymbolTable::getStructAccessPointer(const CodeLoc &codeLoc) {
  * @param token Token, where the struct is declared
  * @param codeLoc Code location
  */
-void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const CodeLoc &codeLoc) {
+void SymbolTable::insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const AstNode *declNode) {
   // Check if the struct exists already
   for (const auto &[_, manifestations] : structs) {
     if (manifestations->contains(s.getMangledName()))
-      throw ErrorFactory::get(codeLoc, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
+      throw ErrorFactory::get(declNode->codeLoc, STRUCT_DECLARED_TWICE,
+                              "The struct '" + s.getSignature() + "' is declared twice");
   }
   // Add struct to struct list
-  assert(structs.at(codeLoc.toString()) != nullptr);
-  structs.at(codeLoc.toString())->insert({s.getMangledName(), s});
+  assert(structs.at(declNode->codeLoc.toString()) != nullptr);
+  structs.at(declNode->codeLoc.toString())->insert({s.getMangledName(), s});
   // Add symbol table entry for the struct
-  insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, codeLoc);
+  insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, declNode);
 }
 
 /**

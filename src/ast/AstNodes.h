@@ -235,17 +235,35 @@ public:
   using AstNode::AstNode;
 
   // Visitor methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitStructDef(this); }
-  [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
 
   // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
+  [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Public members
   std::string structName;
   bool isGeneric = false;
   Struct *spiceProc = nullptr;
+};
+
+// ========================================================== EnumDefNode ========================================================
+
+class EnumDefNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitEnumDef(this); }
+
+  // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
+  [[nodiscard]] EnumItemLstNode *itemLst() const { return getChild<EnumItemLstNode>(); }
+
+  // Public members
+  std::string enumName;
 };
 
 // ====================================================== GenericTypeDefNode =====================================================
@@ -529,6 +547,38 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<AssignExprNode *> args() const { return getChildren<AssignExprNode>(); }
+};
+
+// ======================================================== EnumItemLstNode ======================================================
+
+class EnumItemLstNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitEnumItemLst(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<EnumItemNode *> items() const { return getChildren<EnumItemNode>(); }
+};
+
+// ========================================================= EnumItemNode ========================================================
+
+class EnumItemNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitEnumItem(this); }
+
+  // Public get methods
+
+  // Public members
+  std::string itemName;
+  uint32_t itemValue;
+  bool hasValue = false;
 };
 
 // ========================================================== FieldNode ==========================================================

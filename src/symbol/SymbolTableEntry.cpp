@@ -2,6 +2,7 @@
 
 #include "SymbolTableEntry.h"
 
+#include <ast/AstNodes.h>
 #include <util/CodeLoc.h>
 
 #include <exception/ErrorFactory.h>
@@ -73,11 +74,18 @@ void SymbolTableEntry::updateState(SymbolState newState, const CodeLoc &codeLoc,
 }
 
 /**
+ * Retrieve the node where the symbol was declared
+ *
+ * @return Declaration node
+ */
+const AstNode *SymbolTableEntry::getDeclNode() const { return declNode; }
+
+/**
  * Retrieve the code location where the symbol was declared
  *
  * @return Declaration code location
  */
-const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declCodeLoc; }
+const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declNode->codeLoc; }
 
 /**
  * Retrieve the llvm type of the current struct symbol

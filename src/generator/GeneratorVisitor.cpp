@@ -222,7 +222,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
     }
     // Build spice function
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argSymbolTypes, {}, node->codeLoc);
+    Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argSymbolTypes, {}, node);
     // Add debug info
     generateFunctionDebugInfo(fct, &spiceFunc);
     setSourceLocation(node);
@@ -2310,9 +2310,10 @@ std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
     SymbolTableEntry *entry = accessScope->lookup(node->identifier);
     assert(entry != nullptr);
 
-    // Import
-    if (entry->getType().is(TY_IMPORT)) {
-      SymbolTable *newScope = accessScope->lookupTable(node->identifier);
+    // Import or enum
+    if (entry->getType().isOneOf({TY_IMPORT, TY_ENUM})) {
+      std::string scopeName = entry->getType().is(TY_ENUM) ? ENUM_SCOPE_PREFIX + node->identifier : node->identifier;
+      SymbolTable *newScope = accessScope->lookupTable(scopeName);
       assert(newScope != nullptr);
       scopePath.pushFragment(node->identifier, newScope);
       return static_cast<llvm::Value *>(nullptr);
@@ -2372,6 +2373,15 @@ std::any GeneratorVisitor::visitAtomicExpr(AtomicExprNode *node) {
       structAccessAddress = nullptr;
       structAccessType = nullptr;
       return fieldAddress;
+    }
+
+    // Check if enum item
+    if (accessScope->getScopeType() == SCOPE_ENUM) {
+      auto itemNode = dynamic_cast<const EnumItemNode *>(entry->getDeclNode());
+      llvm::Type *llvmType = entry->getType().toLLVMType(*context, currentScope);
+      llvm::Value *memAddress = insertAlloca(llvmType);
+      builder->CreateStore(builder->getInt32(itemNode->itemValue), memAddress);
+      return memAddress;
     }
 
     // If the address is known, return it

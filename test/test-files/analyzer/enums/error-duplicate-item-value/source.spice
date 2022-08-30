@@ -1,0 +1,9 @@
+type TestEnum enum {
+    ITEM_NAME1 = 1,
+    ITEM_NAME2 = 1,
+    ITEM_NAME3 = 3
+}
+
+f<int> main() {
+    printf("Item: %d", TestEnum.ITEM_NAME2);
+}
