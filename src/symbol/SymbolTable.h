@@ -47,7 +47,7 @@ public:
 
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
-              const CodeLoc &declCodeLoc);
+              const AstNode *declNode);
   void addCapture(const std::string &name, const Capture &capture);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
@@ -79,7 +79,7 @@ public:
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc) const;
   void insertFunctionAccessPointer(const CodeLoc &codeLoc, Function *spiceFunc);
   Function *getFunctionAccessPointer(const CodeLoc &codeLoc);
-  void insertSubstantiatedFunction(const Function &function, const CodeLoc &codeLoc);
+  void insertSubstantiatedFunction(const Function &function, const AstNode *declNode);
 
   void insertStruct(const Struct &s, ErrorFactory *err);
   Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
@@ -87,7 +87,7 @@ public:
   [[nodiscard]] std::map<std::string, Struct> *getStructManifestations(const CodeLoc &defCodeLoc) const;
   void insertStructAccessPointer(const CodeLoc &codeLoc, Struct *spiceStruct);
   Struct *getStructAccessPointer(const CodeLoc &codeLoc);
-  void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const CodeLoc &codeLoc);
+  void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const AstNode *declNode);
 
   void purgeSubstantiationRemnants();
 

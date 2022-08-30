@@ -13,15 +13,16 @@
 class SymbolTable;
 class SymbolType;
 class Function;
+struct AstNode;
 struct CodeLoc;
 
 class Struct {
 public:
   // Constructors
   explicit Struct(std::string name, SymbolSpecifiers specifiers, std::vector<SymbolType> fieldTypes,
-                  std::vector<GenericType> templateTypes, const CodeLoc &declCodeLoc)
+                  std::vector<GenericType> templateTypes, const AstNode *declNode)
       : name(std::move(name)), specifiers(specifiers), fieldTypes(std::move(fieldTypes)), templateTypes(std::move(templateTypes)),
-        declCodeLoc(declCodeLoc) {}
+        declNode(declNode) {}
 
   // Public methods
   [[nodiscard]] std::string getName() const;
@@ -37,6 +38,7 @@ public:
   void setSymbolTable(SymbolTable *symTab);
   void setUsed();
   [[nodiscard]] bool isUsed() const;
+  [[nodiscard]] const AstNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
   // Public static methods
@@ -49,6 +51,6 @@ private:
   std::vector<SymbolType> fieldTypes;
   std::vector<GenericType> templateTypes;
   SymbolTable *symbolTable = nullptr;
-  const CodeLoc &declCodeLoc;
+  const AstNode *declNode;
   bool used = false;
 };

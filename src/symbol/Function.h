@@ -9,7 +9,7 @@
 #include <symbol/SymbolType.h>
 
 // Forward declarations
-struct CodeLoc;
+struct AstNode;
 
 typedef std::vector<std::pair<SymbolType, bool>> ArgList;
 typedef std::vector<std::tuple<std::string, SymbolType, bool>> NamedParamList;
@@ -19,9 +19,9 @@ public:
   // Constructors
   explicit Function(std::string name, SymbolSpecifiers specifiers, const SymbolType &thisType, const SymbolType &returnType,
                     std::vector<std::pair<SymbolType, bool>> argTypes, std::vector<GenericType> templateTypes,
-                    const CodeLoc &declCodeLoc)
+                    const AstNode *declNode)
       : name(std::move(name)), specifiers(specifiers), thisType(thisType), returnType(returnType), argList(std::move(argTypes)),
-        templateTypes(std::move(templateTypes)), declCodeLoc(declCodeLoc) {}
+        templateTypes(std::move(templateTypes)), declNode(declNode) {}
 
   // Public methods
   [[nodiscard]] std::string getName() const;
@@ -47,6 +47,7 @@ public:
   [[nodiscard]] bool isUsed() const;
   void setAnalyzed();
   [[nodiscard]] bool wasAlreadyAnalyzed() const;
+  [[nodiscard]] const AstNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
 private:
@@ -57,7 +58,7 @@ private:
   SymbolType returnType = SymbolType(TY_DYN);
   std::vector<std::pair<SymbolType, bool>> argList;
   std::vector<GenericType> templateTypes;
-  const CodeLoc &declCodeLoc;
+  const AstNode *declNode;
   bool used = false;
   bool alreadyAnalyzed = false;
 };

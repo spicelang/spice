@@ -80,14 +80,14 @@ std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
 
     // Insert function name into the root symbol table
     SymbolType symbolType = SymbolType(TY_FUNCTION);
-    currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, node->codeLoc);
+    currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, node);
 
     // Create the function scope
     node->fctScope = currentScope = currentScope->createChildBlock(mainSignature, SCOPE_FUNC_PROC_BODY);
 
     // Declare variable for the return value in the function scope
     SymbolType returnType = SymbolType(TY_INT);
-    currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, node->codeLoc);
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), INITIALIZED, node);
     currentScope->lookup(RETURN_VARIABLE_NAME)->setUsed();
 
     // Visit arguments in new scope
@@ -186,7 +186,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     if (node->isMethod) {
       SymbolSpecifiers thisTypeSpecifiers(thisPtrType);
       thisTypeSpecifiers.setConst(true);
-      currentScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisTypeSpecifiers, INITIALIZED, node->codeLoc);
+      currentScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisTypeSpecifiers, INITIALIZED, node);
     }
 
     // Declare variable for the return value in the function scope
@@ -196,7 +196,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     if (returnType.isPointer())
       throw err->get(node->codeLoc, COMING_SOON_SA,
                      "Spice currently not supports pointer return types due to not supporting heap allocations.");
-    currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, node->codeLoc);
+    currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, node);
 
     // Return to old scope
     currentScope = currentScope->getParent();
@@ -215,7 +215,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     }
 
     // Insert function into the symbol table
-    Function spiceFunc(node->functionName, fctSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, node->codeLoc);
+    Function spiceFunc(node->functionName, fctSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, node);
     currentScope->insertFunction(spiceFunc, err.get());
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -398,7 +398,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     if (node->isMethod) {
       auto thisSymbolSpecifiers = SymbolSpecifiers(thisPtrType);
       thisSymbolSpecifiers.setConst(true);
-      currentScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisSymbolSpecifiers, INITIALIZED, node->codeLoc);
+      currentScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisSymbolSpecifiers, INITIALIZED, node);
     }
 
     // Return to old scope
@@ -418,8 +418,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     }
 
     // Insert function into the symbol table
-    Function spiceProc(node->procedureName, procSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes,
-                       node->codeLoc);
+    Function spiceProc(node->procedureName, procSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, node);
     currentScope->insertFunction(spiceProc, err.get());
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
@@ -559,7 +558,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
   }
 
   // Add the struct to the symbol table
-  currentScope->insert(node->structName, symbolType, structSymbolSpecifiers, DECLARED, node->codeLoc);
+  currentScope->insert(node->structName, symbolType, structSymbolSpecifiers, DECLARED, node);
 
   // Create scope for struct
   SymbolTable *structScope = currentScope = currentScope->createChildBlock(STRUCT_SCOPE_PREFIX + node->structName, SCOPE_STRUCT);
@@ -594,7 +593,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
     }
 
     // Add the field to the symbol table
-    currentScope->insert(field->name, fieldType, fieldSymbolSpecifiers, DECLARED, field->codeLoc);
+    currentScope->insert(field->name, fieldType, fieldSymbolSpecifiers, DECLARED, field);
 
     fieldTypes.push_back(fieldType);
   }
@@ -603,7 +602,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
   currentScope = currentScope->getParent();
 
   // Add struct
-  Struct s(node->structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, node->codeLoc);
+  Struct s(node->structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, node);
   currentScope->insertStruct(s, err.get());
   s.setSymbolTable(structScope);
 
@@ -630,7 +629,7 @@ std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
   }
 
   // Add symbol table entry and child table
-  currentScope->insert(node->enumName, SymbolType(TY_ENUM, node->enumName), enumSymbolSpecifiers, INITIALIZED, node->codeLoc);
+  currentScope->insert(node->enumName, SymbolType(TY_ENUM, node->enumName), enumSymbolSpecifiers, INITIALIZED, node);
   SymbolTable *enumTable = currentScope->createChildBlock(ENUM_SCOPE_PREFIX + node->enumName, SCOPE_ENUM);
 
   // Loop through all items with values
@@ -660,7 +659,7 @@ std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
       values.push_back(nextValue);
     }
 
-    enumTable->insert(enumItem->itemName, intSymbolType, SymbolSpecifiers(intSymbolType), INITIALIZED, enumItem->codeLoc);
+    enumTable->insert(enumItem->itemName, intSymbolType, SymbolSpecifiers(intSymbolType), INITIALIZED, enumItem);
   }
 
   return nullptr;
@@ -762,7 +761,7 @@ std::any AnalyzerVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   }
 
   // Insert into symbol table
-  currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, state, node->codeLoc);
+  currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, state, node);
 
   return nullptr;
 }
@@ -791,18 +790,17 @@ std::any AnalyzerVisitor::visitExtDecl(ExtDeclNode *node) {
 
     // Insert function into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc(node->extFunctionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, node->codeLoc);
+    Function spiceFunc(node->extFunctionName, symbolSpecifiers, SymbolType(TY_DYN), returnType, argTypes, {}, node);
     currentScope->insertFunction(spiceFunc, err.get());
 
     // Add return symbol for function
     SymbolTable *functionTable = currentScope->createChildBlock(spiceFunc.getSignature(), SCOPE_FUNC_PROC_BODY);
-    functionTable->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, node->codeLoc);
+    functionTable->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, node);
     functionTable->lookup(RETURN_VARIABLE_NAME)->setUsed();
   } else { // Procedure
     // Insert procedure into symbol table
     SymbolSpecifiers symbolSpecifiers = SymbolSpecifiers(SymbolType(TY_PROCEDURE));
-    Function spiceProc(node->extFunctionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {},
-                       node->codeLoc);
+    Function spiceProc(node->extFunctionName, symbolSpecifiers, SymbolType(TY_DYN), SymbolType(TY_DYN), argTypes, {}, node);
     currentScope->insertFunction(spiceProc, err.get());
 
     // Add empty scope for function body
@@ -907,7 +905,7 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
     SymbolType symbolType = SymbolType(TY_INT);
     auto symbolTypeSpecifiers = SymbolSpecifiers(symbolType);
     symbolTypeSpecifiers.setConst(true);
-    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, symbolType, symbolTypeSpecifiers, INITIALIZED, node->codeLoc);
+    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, symbolType, symbolTypeSpecifiers, INITIALIZED, node);
   }
 
   // Check type of the item
@@ -1074,7 +1072,7 @@ std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
   }
 
   // Insert variable into symbol table
-  currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, initialState, node->codeLoc);
+  currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, initialState, node);
 
   return symbolType;
 }
@@ -1990,7 +1988,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     for (const auto &argType : argTypes)
       errArgTypes.emplace_back(argType, false);
 
-    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, node->codeLoc);
+    Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, node);
 
     throw err->get(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION,
                    "Function/Procedure '" + f.getSignature() + "' could not be found");
