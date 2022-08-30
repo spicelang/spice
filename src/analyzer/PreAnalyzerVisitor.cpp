@@ -76,7 +76,7 @@ std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
   CommonUtil::replaceAll(importPath, "/", std::string(1, FileUtil::DIR_SEPARATOR));
 
   // Visit the imported file
-  sourceFile.addDependency(node->codeLoc, node->importName, importPath, isImportStd);
+  sourceFile.addDependency(node, node->importName, importPath, isImportStd);
 
   return nullptr;
 }

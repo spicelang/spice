@@ -2,6 +2,7 @@
 
 #include "Struct.h"
 
+#include <ast/AstNodes.h>
 #include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
 
@@ -121,7 +122,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
     }
   }
 
-  return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, declCodeLoc);
+  return Struct(name, specifiers, currentFieldTypes, concreteTemplateTypesGeneric, declNode);
 }
 
 /**
@@ -163,11 +164,18 @@ void Struct::setUsed() { used = true; }
 bool Struct::isUsed() const { return used; }
 
 /**
+ * Retrieve the declaration node of this struct
+ *
+ * @return Declaration node
+ */
+const AstNode *Struct::getDeclNode() const { return declNode; }
+
+/**
  * Retrieve the declaration code location of this struct
  *
  * @return Declaration code location
  */
-const CodeLoc &Struct::getDeclCodeLoc() const { return declCodeLoc; }
+const CodeLoc &Struct::getDeclCodeLoc() const { return declNode->codeLoc; }
 
 /**
  * Get the signature from the struct name and the concrete template types

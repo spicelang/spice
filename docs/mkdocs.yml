@@ -83,6 +83,7 @@ nav:
     - language/declaration-modifiers.md
     - language/arrays.md
     - language/pointers.md
+    - language/enums.md
     - language/structs.md
     - language/methods.md
     - language/constructors-destructors.md

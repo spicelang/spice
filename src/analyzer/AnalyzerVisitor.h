@@ -20,6 +20,7 @@ const std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
 const std::string CTOR_VARIABLE_NAME = "ctor";
 const std::string DTOR_VARIABLE_NAME = "dtor";
 const std::string STRUCT_SCOPE_PREFIX = "struct:";
+const std::string ENUM_SCOPE_PREFIX = "enum:";
 const std::string UNUSED_VARIABLE_NAME = "_";
 const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync"};
 
@@ -56,6 +57,7 @@ public:
   std::any visitFctDef(FctDefNode *node) override;
   std::any visitProcDef(ProcDefNode *node) override;
   std::any visitStructDef(StructDefNode *node) override;
+  std::any visitEnumDef(EnumDefNode *node) override;
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
   std::any visitExtDecl(ExtDeclNode *node) override;

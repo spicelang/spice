@@ -48,6 +48,12 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Multiple declarations of a generic type with the same name";
   case STRUCT_DECLARED_TWICE:
     return "Multiple declarations of a struct with the same name";
+  case ENUM_DECLARED_TWICE:
+    return "Multiple declarations of an enum with the same name";
+  case DUPLICATE_ENUM_ITEM_NAME:
+    return "Duplicate enum item name";
+  case DUPLICATE_ENUM_ITEM_VALUE:
+    return "Duplicate enum item value";
   case GLOBAL_OF_TYPE_DYN:
     return "Global of type dyn";
   case GLOBAL_OF_INVALID_TYPE:

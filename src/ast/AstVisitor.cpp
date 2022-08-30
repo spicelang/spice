@@ -14,6 +14,8 @@ std::any AstVisitor::visitProcDef(ProcDefNode *node) { return visitChildren(node
 
 std::any AstVisitor::visitStructDef(StructDefNode *node) { return visitChildren(node); }
 
+std::any AstVisitor::visitEnumDef(EnumDefNode *node) { return visitChildren(node); }
+
 std::any AstVisitor::visitGenericTypeDef(GenericTypeDefNode *node) { return visitChildren(node); }
 
 std::any AstVisitor::visitGlobalVarDef(GlobalVarDefNode *node) { return visitChildren(node); }
@@ -45,6 +47,10 @@ std::any AstVisitor::visitTypeAltsLst(TypeAltsLstNode *node) { return visitChild
 std::any AstVisitor::visitParamLst(ParamLstNode *node) { return visitChildren(node); }
 
 std::any AstVisitor::visitArgLst(ArgLstNode *node) { return visitChildren(node); }
+
+std::any AstVisitor::visitEnumItemLst(EnumItemLstNode *node) { return visitChildren(node); }
+
+std::any AstVisitor::visitEnumItem(EnumItemNode *node) { return visitChildren(node); }
 
 std::any AstVisitor::visitField(FieldNode *node) { return visitChildren(node); }
 

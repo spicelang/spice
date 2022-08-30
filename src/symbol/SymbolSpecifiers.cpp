@@ -44,6 +44,9 @@ SymbolSpecifiers::SymbolSpecifiers(const SymbolType &type) {
   case TY_STRUCT:
     specifierValue = SPECIFIER_DEFAULTS_STRUCT;
     break;
+  case TY_ENUM:
+    specifierValue = SPECIFIER_DEFAULTS_ENUM;
+    break;
   case TY_FUNCTION:
     specifierValue = SPECIFIER_DEFAULTS_FUNCTION;
     break;

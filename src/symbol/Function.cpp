@@ -4,6 +4,7 @@
 
 #include <utility>
 
+#include <ast/AstNodes.h>
 #include <util/CommonUtil.h>
 
 /**
@@ -199,20 +200,19 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
   for (const auto &argType : argList) {
     if (argType.second) {         // Met optional argument
       if (!metFirstOptionalArg) { // Add substantiation without the optional argument
-        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes,
-                                       declCodeLoc);
+        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declNode);
         metFirstOptionalArg = true;
       }
       // Add substantiation with the optional argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
-      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declCodeLoc);
+      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declNode);
     } else { // Met mandatory argument
       currentFunctionArgTypes.emplace_back(argType.first, false);
     }
   }
 
   if (definiteFunctions.empty())
-    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declCodeLoc);
+    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declNode);
 
   return definiteFunctions;
 }
@@ -227,7 +227,7 @@ Function Function::substantiateGenerics(const ArgList &concreteArgList, const Sy
   // Substantiate return type
   SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
 
-  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, declCodeLoc);
+  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, declNode);
 }
 
 /**
@@ -283,8 +283,15 @@ void Function::setAnalyzed() { alreadyAnalyzed = true; }
 bool Function::wasAlreadyAnalyzed() const { return alreadyAnalyzed; }
 
 /**
+ * Retrieve the declaration node of this function
+ *
+ * @return Declaration node
+ */
+const AstNode *Function::getDeclNode() const { return declNode; }
+
+/**
  * Retrieve the declaration code location of this function
  *
  * @return Declaration code location
  */
-const CodeLoc &Function::getDeclCodeLoc() const { return declCodeLoc; }
+const CodeLoc &Function::getDeclCodeLoc() const { return declNode->codeLoc; }
