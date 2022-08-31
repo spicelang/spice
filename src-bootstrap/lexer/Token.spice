@@ -1,15 +1,116 @@
 // Imports
 
 // Enums
-public enum TokenType {
-
+public type TokenType enum {
+    // Keyword tokens
+    TYPE_DOUBLE,
+    TYPE_INT,
+    TYPE_SHORT,
+    TYPE_LONG,
+    TYPE_BYTE,
+    TYPE_CHAR,
+    TYPE_STRING,
+    TYPE_BOOL,
+    TYPE_DYN,
+    CONST,
+    SIGNED,
+    UNSIGNED,
+    INLINE,
+    PUBLIC,
+    F,
+    P,
+    IF,
+    ELSE,
+    ASSERT,
+    FOR,
+    FOREACH,
+    WHILE,
+    IMPORT,
+    BREAK,
+    CONTINUE,
+    RETURN,
+    AS,
+    STRUCT,
+    TYPE,
+    ENUM,
+    THREAD,
+    UNSAFE,
+    NIL,
+    MAIN,
+    PRINTF,
+    SIZEOF,
+    LEN,
+    TID,
+    JOIN,
+    EXT,
+    DLL,
+    TRUE,
+    FALSE,
+    // Operator tokens
+    LBRACE,
+    RBRACE,
+    LPAREN,
+    RPAREN,
+    LBRACKET,
+    RBRACKET,
+    LOGICAL_OR,
+    LOGICAL_AND,
+    BITWISE_OR,
+    BITWISE_XOR,
+    BITWISE_AND,
+    PLUS_PLUS,
+    MINUS_MINUS,
+    PLUS_EQUAL,
+    MINUS_EQUAL,
+    MUL_EQUAL,
+    DIV_EQUAL,
+    REM_EQUAL,
+    SHL_EQUAL,
+    SHR_EQUAL,
+    AND_EQUAL,
+    OR_EQUAL,
+    XOR_EQUAL,
+    PLUS,
+    MINUS,
+    MUL,
+    DIV,
+    REM,
+    NOT,
+    BITWISE_NOT,
+    GREATER,
+    LESS,
+    GREATER_EQUAL,
+    LESS_EQUAL,
+    EQUAL,
+    NOT_EQUAL,
+    ASSIGN,
+    QUESTION_MARK,
+    SEMICOLON,
+    COLON,
+    COMMA,
+    DOT,
+    SCOPE_ACCESS,
+    ELLIPSIS,
+    // Regex tokens
+    DOUBLE_LIT,
+    INT_LIT,
+    SHORT_LIT,
+    LONG_LIT,
+    CHAR_LIT,
+    STRING_LIT,
+    IDENTIFIER,
+    // Skipped tokens
+    BLOCK_COMMENT,
+    LINE_COMMENT,
+    WS
 }
 
 public type Token struct {
-    public unsigned short tokenType
+    public TokenType tokenType
+    public string value
     public CodeLoc codeLoc
 }
 
-public p Token.ctor() {
-
+public f<string> getText() {
+    return this.value;
 }
