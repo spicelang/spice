@@ -58,7 +58,7 @@ public:
                  ThreadFactory &threadFactory);
   void generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
                 ThreadFactory &threadFactory, LinkerInterface &linker);
-  void addDependency(const ErrorFactory *err, const AstNode *declAstNode, const std::string &name, const std::string &filePath,
+  void addDependency(const AstNode *declAstNode, const std::string &name, const std::string &filePath,
                      bool stdFile);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
 

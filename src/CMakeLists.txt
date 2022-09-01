@@ -45,8 +45,6 @@ set(SOURCES
         ast/AstNodes.h
         dependency/SourceFile.cpp
         dependency/SourceFile.h
-        exception/ErrorFactory.cpp
-        exception/ErrorFactory.h
         exception/CliError.cpp
         exception/CliError.h
         exception/SemanticError.cpp

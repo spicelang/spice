@@ -1,0 +1,34 @@
+// Imports
+import "util/ThreadFactory" as tf;
+import "SourceFile" as sf;
+import "CliInterface" as cli;
+
+/**
+ * Compile main source file. All files, that are included by the main source file will be resolved recursively.
+ *
+ * @param options Command line options
+ */
+p compileProject(const CliOptions* options) {
+    // ToDo: Initialize LLVM resources
+
+    // Prepare instance of thread factory, which has to exist exactly once per executable
+    tf::ThreadFactory threadFactory = tf::ThreadFactory();
+
+    // Prepare linker interface
+    // ToDo
+
+    // Create source file instance for main source file
+    sf::SourceFile mainSourceFile = sf::SourceFile(options, nil<SourceFile*>, "root", options.mainSourceFile, false);
+}
+
+/**
+ * Entry point to the Spice compiler
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Return code
+ */
+f<int> main(int argc, string[] argv) {
+    // Initialize command line parser
+
+}

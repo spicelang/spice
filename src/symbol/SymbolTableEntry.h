@@ -14,7 +14,6 @@
 
 // Forward declarations
 class SymbolTable;
-class ErrorFactory;
 struct AstNode;
 
 enum SymbolState { DECLARED, INITIALIZED };

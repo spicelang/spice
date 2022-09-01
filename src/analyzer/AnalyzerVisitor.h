@@ -27,7 +27,6 @@ const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yi
 // Forward declarations
 class OpRuleManager;
 struct CliOptions;
-class ErrorFactory;
 class ThreadFactory;
 class LinkerInterface;
 class SymbolTable;
@@ -110,7 +109,6 @@ private:
   std::shared_ptr<llvm::LLVMContext> context;
   std::shared_ptr<llvm::IRBuilder<>> builder;
   std::unique_ptr<OpRuleManager> opRuleManager;
-  std::unique_ptr<ErrorFactory> err;
   const ThreadFactory &threadFactory;
   bool requiresMainFct = true;
   bool hasMainFunction = false;

@@ -161,7 +161,7 @@ void SourceFile::preAnalyze() {
   preAnalyzer.visit(ast.get());
   antlrCtx.parser->reset();
 
-  // Analyze the imported source files
+  // Pre-analyze the imported source files
   for (const auto &[_, sourceFile] : dependencies) {
     sourceFile.first->buildAST();
     sourceFile.first->preAnalyze();
@@ -285,12 +285,10 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
   }
 }
 
-void SourceFile::addDependency(const ErrorFactory *err, const AstNode *declAstNode, const std::string &name,
-                               const std::string &filePath, bool stdFile) {
+void SourceFile::addDependency(const AstNode *declAstNode, const std::string &name, const std::string &filePath, bool stdFile) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(filePath))
-    throw ErrorFactory::get(declAstNode->codeLoc, CIRCULAR_DEPENDENCY,
-                            "Circular import detected while importing '" + filePath + "'");
+    throw SemanticError(declAstNode->codeLoc, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
   dependencies.insert({name, {std::make_shared<SourceFile>(options, this, name, filePath, stdFile), declAstNode}});

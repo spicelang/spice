@@ -8,7 +8,6 @@
 #include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/IRError.h>
-#include <exception/SemanticError.h>
 #include <symbol/Function.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolTable.h>
@@ -41,12 +40,9 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   this->requiresMainFct = sourceFile.parent == nullptr;
   this->currentScope = this->rootScope = sourceFile.symbolTable.get();
 
-  // Create error factory for this specific file
-  this->err = std::make_unique<ErrorFactory>();
-
   // Create LLVM base components
   module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile.filePath), *context);
-  conversionsManager = std::make_unique<OpRuleConversionsManager>(context, builder, err.get());
+  conversionsManager = std::make_unique<OpRuleConversionsManager>(context, builder);
 
   // Initialize LLVM
   llvm::InitializeAllTargetInfos();
@@ -62,7 +58,7 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
   std::string error;
   const llvm::Target *target = llvm::TargetRegistry::lookupTarget(cliOptions.targetTriple, error);
   if (!target)
-    throw err->get(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
+    throw IRError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
 
   llvm::TargetOptions opt;
   llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
@@ -119,11 +115,11 @@ void GeneratorVisitor::emit() {
   std::error_code errorCode;
   llvm::raw_fd_ostream dest(objectFile, errorCode, llvm::sys::fs::OF_None);
   if (errorCode)
-    throw err->get(CANT_OPEN_OUTPUT_FILE, "File '" + objectFile + "' could not be opened"); // GCOV_EXCL_LINE
+    throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + objectFile + "' could not be opened"); // GCOV_EXCL_LINE
 
   llvm::legacy::PassManager passManager;
   if (targetMachine->addPassesToEmitFile(passManager, dest, nullptr, llvm::CGFT_ObjectFile))
-    throw err->get(WRONG_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
+    throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
 
   // Emit object file
   passManager.run(*module);
@@ -142,7 +138,7 @@ std::string GeneratorVisitor::getIRString() {
 void GeneratorVisitor::dumpAsm() {
   llvm::legacy::PassManager passManager;
   if (targetMachine->addPassesToEmitFile(passManager, llvm::outs(), nullptr, llvm::CGFT_AssemblyFile))
-    throw err->get(WRONG_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
+    throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
 
   // Emit object file
   passManager.run(*module);
@@ -171,7 +167,7 @@ std::any GeneratorVisitor::visitEntry(EntryNode *node) {
     std::string output;
     llvm::raw_string_ostream oss(output);
     if (llvm::verifyModule(*module, &oss))
-      throw err->get(node->codeLoc, INVALID_MODULE, oss.str());
+      throw IRError(node->codeLoc, INVALID_MODULE, oss.str());
   }
 
   return false;
@@ -308,7 +304,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
     std::string output;
     llvm::raw_string_ostream oss(output);
     if (llvm::verifyFunction(*fct, &oss))
-      throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
+      throw IRError(node->codeLoc, INVALID_FUNCTION, oss.str());
   }
 
   // Change scope back
@@ -495,7 +491,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         std::string output;
         llvm::raw_string_ostream oss(output);
         if (llvm::verifyFunction(*fct, &oss))
-          throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
+          throw IRError(node->codeLoc, INVALID_FUNCTION, oss.str());
       }
 
       // Change scope back
@@ -681,7 +677,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         std::string output;
         llvm::raw_string_ostream oss(output);
         if (llvm::verifyFunction(*proc, &oss))
-          throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
+          throw IRError(node->codeLoc, INVALID_FUNCTION, oss.str());
       }
 
       // Change scope back
@@ -916,7 +912,7 @@ std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
   std::string output;
   llvm::raw_string_ostream oss(output);
   if (llvm::verifyFunction(*threadFct, &oss))
-    throw err->get(node->codeLoc, INVALID_FUNCTION, oss.str());
+    throw IRError(node->codeLoc, INVALID_FUNCTION, oss.str());
 
   // Change back to the original basic block
   moveInsertPointToBlock(bOriginal);
@@ -2550,8 +2546,8 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
 
     if (i < node->functionNameFragments.size() - 1) {
       if (!symbolEntry)
-        throw err->get(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION,
-                       "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
+        throw IRError(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION_IR,
+                      "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
       thisValuePtr = symbolEntry->getAddress();
     } else if (symbolEntry != nullptr && symbolEntry->getType().getBaseType().is(TY_STRUCT)) {
       Struct *spiceStruct = currentScope->getStructAccessPointer(node->codeLoc);
@@ -2886,21 +2882,21 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
       DataTypeNode::TypeModifier typeModifier = tmQueue.front();
       switch (typeModifier.modifierType) {
       case DataTypeNode::TYPE_PTR: {
-        symbolType = symbolType.toPointer(err.get(), node->codeLoc);
+        symbolType = symbolType.toPointer(node->codeLoc);
         break;
       }
       case DataTypeNode::TYPE_ARRAY: {
         if (!typeModifier.hasSize) {
-          symbolType = symbolType.toPointer(err.get(), node->codeLoc);
+          symbolType = symbolType.toPointer(node->codeLoc);
         } else if (typeModifier.isSizeHardcoded) {
-          symbolType = symbolType.toArray(err.get(), node->codeLoc, typeModifier.hardcodedSize);
+          symbolType = symbolType.toArray(node->codeLoc, typeModifier.hardcodedSize);
         } else {
           AssignExprNode *indexExpr = arraySizeExpr[assignExprCounter++];
           assert(indexExpr != nullptr);
           auto sizeValuePtr = any_cast<llvm::Value *>(visit(indexExpr));
           llvm::Type *sizeType = indexExpr->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
           dynamicArraySize = builder->CreateLoad(sizeType, sizeValuePtr);
-          symbolType = symbolType.toPointer(err.get(), node->codeLoc, dynamicArraySize);
+          symbolType = symbolType.toPointer(node->codeLoc, dynamicArraySize);
         }
         break;
       }

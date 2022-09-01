@@ -116,7 +116,6 @@ private:
   SymbolType currentSymbolType = SymbolType(TY_INVALID);
   ScopePath scopePath;
   ThreadFactory &threadFactory;
-  std::unique_ptr<ErrorFactory> err;
   bool blockAlreadyTerminated = false;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;

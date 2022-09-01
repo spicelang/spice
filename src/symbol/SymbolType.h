@@ -14,7 +14,6 @@
 #include <llvm/IR/Value.h>
 
 // Forward declarations
-class ErrorFactory;
 class SymbolTable;
 struct CodeLoc;
 
@@ -68,8 +67,8 @@ public:
 
   // Public methods
   [[nodiscard]] TypeChain getTypeChain() const;
-  SymbolType toPointer(const ErrorFactory *err, const CodeLoc &codeLoc, llvm::Value *dynamicSize = nullptr) const;
-  SymbolType toArray(const ErrorFactory *err, const CodeLoc &codeLoc, int size = 0) const;
+  SymbolType toPointer(const CodeLoc &codeLoc, llvm::Value *dynamicSize = nullptr) const;
+  SymbolType toArray(const CodeLoc &codeLoc, int size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;

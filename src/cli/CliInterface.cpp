@@ -2,6 +2,7 @@
 
 #include "CliInterface.h"
 
+#include <exception/CliError.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 
@@ -86,13 +87,12 @@ void CliInterface::validate() const {
   // Check if all three of --target-arch, --target-vendor and --target-os are provided or none of them
   if (!((cliOptions.targetArch.empty() && cliOptions.targetVendor.empty() && cliOptions.targetOs.empty()) ||
         (!cliOptions.targetArch.empty() && !cliOptions.targetVendor.empty() && !cliOptions.targetOs.empty()))) {
-    throw ErrorFactory::get(INCOMPLETE_TARGET_TRIPLE,
-                            "You need to provide all three of --target-arch, --target-vendor and --target-os");
+    throw CliError(INCOMPLETE_TARGET_TRIPLE, "You need to provide all three of --target-arch, --target-vendor and --target-os");
   }
 
   // Error out when opt level > 0 and debug info enabled
   if (cliOptions.optLevel > 0 && cliOptions.generateDebugInfo)
-    throw ErrorFactory::get(
+    throw CliError(
         OPT_DEBUG_INFO_INCOMPATIBILITY,
         "Optimization does not work reliably when emitting debug info. The cli argument -g only works in combination with -O0.");
 }
@@ -117,7 +117,7 @@ void CliInterface::enrich() {
     cliOptions.targetVendor = triple.getVendorName();
     cliOptions.targetOs = triple.getOSName();
   }
-  // Dump IR as well as symbol table if all debug output is enabled
+  // Dump AST, IR and symbol table if all debug output is enabled
   if (cliOptions.printDebugOutput) {
     cliOptions.dumpAST = true;
     cliOptions.dumpIR = true;

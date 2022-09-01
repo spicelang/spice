@@ -15,7 +15,6 @@
 #include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/AntlrThrowingErrorListener.h>
-#include <exception/ErrorFactory.h>
 #include <exception/LexerParserError.h>
 #include <linker/LinkerInterface.h>
 #include <symbol/SymbolTable.h>
@@ -88,9 +87,6 @@ void executeStdTest(const TestCase &testCase) {
     std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
     std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
 
-    // Create instance of error factory
-    ErrorFactory err{};
-
     // Prepare instance of thread factory, which has to exist exactly once per executable
     ThreadFactory threadFactory = ThreadFactory();
 
@@ -102,7 +98,7 @@ void executeStdTest(const TestCase &testCase) {
     options = cli.getOptions();
 
     // Create linker interface
-    LinkerInterface linker = LinkerInterface(err, threadFactory, options);
+    LinkerInterface linker = LinkerInterface(threadFactory, options);
 
     // Create main source file
     SourceFile mainSourceFile = SourceFile(options, nullptr, "root", sourceFile, false);

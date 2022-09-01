@@ -4,12 +4,9 @@
 
 #include <ast/AstVisitor.h>
 
-#include <exception/ErrorFactory.h>
-
 // Forward declarations
 struct CliOptions;
 class SourceFile;
-class ErrorFactory;
 
 /**
  * Visitor for pre-analyzing all source files in hierarchical order from bottom to top.
@@ -29,6 +26,5 @@ public:
 private:
   // Members
   const CliOptions &cliOptions;
-  ErrorFactory err = ErrorFactory();
   SourceFile &sourceFile;
 };

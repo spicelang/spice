@@ -5,7 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <exception/ErrorFactory.h>
+#include <exception/LinkerError.h>
 #include <util/FileUtil.h>
 #include <util/ThreadFactory.h>
 
@@ -22,7 +22,7 @@ const char *LINKER_EXECUTABLE_NAME = "gcc";
  */
 void LinkerInterface::link() {
   if (FileUtil::isCommandAvailable(std::string(LINKER_EXECUTABLE_NAME))) // GCOV_EXCL_START
-    throw ErrorFactory::get(LINKER_NOT_FOUND, "Please check if you have installed " + std::string(LINKER_EXECUTABLE_NAME) +
+    throw LinkerError(LINKER_NOT_FOUND, "Please check if you have installed " + std::string(LINKER_EXECUTABLE_NAME) +
                                                   " and added it to the PATH variable"); // GCOV_EXCL_STOP
 
   // Check if the output path was set

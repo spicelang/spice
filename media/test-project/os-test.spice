@@ -10,21 +10,9 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-/*import "std/net/http" as http;
+import "std/net/http" as http;
 
 f<int> main() {
     http::HttpServer server = http::HttpServer();
     server.serve("/test", "Hello World!");
-}*/
-
-type TokenType enum {
-    IDENTIFIER,
-    DOT = 12,
-    COMMA,
-    SIZEOF = 0,
-    WS
-}
-
-f<int> main() {
-    printf("%d\n", TokenType.DOT);
 }

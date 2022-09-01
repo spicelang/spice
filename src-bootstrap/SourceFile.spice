@@ -1,0 +1,156 @@
+// Imports
+import "std/text/print" as print;
+import "CliInterface" as cli;
+import "ast/AstNodes" as ast;
+import "symbol/SymbolTable" as st;
+import "analyzer/Analyzer" as alzr;
+import "generator/Generator" as gen;
+
+/**
+ * Collects the output of the compiler for debugging
+ */
+type CompilerOutput struct {
+    string cstString
+    string astString
+    string symbolTableString
+    string irString
+    string irOptString
+}
+
+/**
+ * Represents a single source file
+ */
+public type SourceFile struct {
+    string name
+    string fileName
+    string filePath
+    string fileDir
+    string objectFilePath
+    bool stdFile
+    CompilerOutput compilerOutput
+    SourceFile* parent
+    cli::CliOptions* cliOptions
+    ast::EntryNode* ast
+    st::SymbolTable* symbolTable
+    alzr::Analyzer* analyzer
+    gen::Generator* generator
+    map::Map<string, pair::Pair<SourceFile*, CodeLoc*>> dependencies
+}
+
+public p SourceFile.ctor(CliOptions* cliOptions, SourceFile* parent, string name, string filePath, bool stdFile) {
+    // Copy data
+    this.cliOptions = cliOptions;
+    this.parent = parent;
+    this.name = name;
+    this.filePath = filePath;
+    this.stdFile = stdFile;
+
+    // Deduce fileName and fileDir
+    /*this.fileName = ;
+    this.fileDir = ;*/
+}
+
+p SourceFile.runLexer() {
+    // Lex this source file
+}
+
+p SourceFile.runParser() {
+    // Parse this source file
+}
+
+p SourceFile.visualizeCST(string* output) {
+    // Only execute if enabled
+    if !cliOptions.dumpCST && !cliOptions.testMode { return; }
+
+    // ToDo: Extend
+}
+
+p SourceFile.buildAST() {
+    // Transform the imported source files
+    // ToDo: Extend
+}
+
+p SourceFile.visualizeAST(string* output) {
+    // Only execute if enabled
+    if !cliOptions.dumpAST && !cliOptions.testMode { return; }
+
+    // ToDo: Extend
+}
+
+p SourceFile.preAnalyze() {
+    // Pre-analyze this source file
+    // ToDo: Extend
+
+    // Pre-analyze this source file
+    foreach dyn dependencyPair : this.dependencies {
+        SourceFile dependencyFile = dependencyPair.getSecond();
+        dependencyFile.runLexer();
+        dependencyFile.runParser();
+        dependencyFile.buildAST();
+        dependencyFile.preAnalyze();
+    }
+}
+
+p SourceFile.analyze() {
+    // Analyze the imported source files first
+    // ToDo: Extend
+
+    // Analyze this source file
+}
+
+p SourceFile.reAnalyze() {
+    // Re-Analyze this source file
+
+    // Analyze the imported source files first
+    // ToDo: Extend
+
+    // Save the JSON version in the compiler output
+
+    // Dump symbolTable
+    if cliOptions.dumpSymbolTable {
+        printf("\nSymbol table of file %s:\n\n", filePath);
+        printf("%s\n", compilerOutput.symbolTableString);
+    }
+}
+
+p SourceFile.generate() {
+    // Generate the imported source files
+
+    // Generate this source file
+
+    // Save the JSON version in the compiler output
+
+    // Dump unoptimized IR code
+
+    // Optimize IR code
+
+    // Dump assembly code
+
+    // Emit object file
+
+    // Add object file to the linker interface
+
+    // Print warning if verifier is disabled
+    if parent == nil<SymbolTable*> && cliOptions.disableVerifier {
+        print.emptyLine();
+        // ToDo
+        print.emptyLine();
+    }
+}
+
+p SourceFile.addDependency(const CodeLoc codeLoc, const string name, const string stringFilePath, bool stdFile) {
+    // Check if this would cause a circular dependency
+    if isAlreadyImported(filePath) {
+        // ToDo: Error out
+    }
+
+    // Add the dependency
+    // ToDo
+}
+
+f<bool> SourceFile.isAlreadyImported(const string filePathSearch) {
+    // Check if the current source file corresponds to the path to search
+    if filePath == filePathSearch { return true; }
+    // Check parent recursively
+    return parent != nil<SourceFile*> && parent.isAlreadyImported(filePathSearch);
+}

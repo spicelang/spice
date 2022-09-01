@@ -18,7 +18,6 @@ class Function;
 class Struct;
 class SymbolSpecifiers;
 class SymbolType;
-class ErrorFactory;
 struct CodeLoc;
 
 enum ScopeType {
@@ -73,21 +72,21 @@ public:
   std::map<std::string, Capture> &getCaptures();
   [[nodiscard]] size_t getFieldCount() const;
 
-  void insertFunction(const Function &function, ErrorFactory *err);
+  void insertFunction(const Function &function);
   Function *matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,
-                          const std::vector<SymbolType> &callArgTypes, ErrorFactory *errorFactory, const CodeLoc &codeLoc);
+                          const std::vector<SymbolType> &callArgTypes, const CodeLoc &codeLoc);
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc) const;
   void insertFunctionAccessPointer(const CodeLoc &codeLoc, Function *spiceFunc);
   Function *getFunctionAccessPointer(const CodeLoc &codeLoc);
   void insertSubstantiatedFunction(const Function &function, const AstNode *declNode);
 
-  void insertStruct(const Struct &s, ErrorFactory *err);
+  void insertStruct(const Struct &s);
   Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
-                      ErrorFactory *errorFactory, const CodeLoc &codeLoc);
+                      const CodeLoc &codeLoc);
   [[nodiscard]] std::map<std::string, Struct> *getStructManifestations(const CodeLoc &defCodeLoc) const;
   void insertStructAccessPointer(const CodeLoc &codeLoc, Struct *spiceStruct);
   Struct *getStructAccessPointer(const CodeLoc &codeLoc);
-  void insertSubstantiatedStruct(const Struct &s, ErrorFactory *err, const AstNode *declNode);
+  void insertSubstantiatedStruct(const Struct &s, const AstNode *declNode);
 
   void purgeSubstantiationRemnants();
 

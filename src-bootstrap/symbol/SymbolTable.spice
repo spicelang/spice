@@ -1,0 +1,51 @@
+// Imports
+import "std/data/map" as map;
+
+import "SymbolTableEntry" as ste;
+import "Capture" as cpt;
+import "GenericType" as gt;
+
+public type ScopeType enum {
+    SCOPE_GLOBAL,
+    SCOPE_FUNC_PROC_BODY,
+    SCOPE_STRUCT,
+    SCOPE_ENUM,
+    SCOPE_IF_BODY,
+    SCOPE_WHILE_BODY,
+    SCOPE_FOR_BODY,
+    SCOPE_FOREACH_BODY,
+    SCOPE_THREAD_BODY,
+    SCOPE_UNSAFE_BODY
+}
+
+/**
+ * Class for storing information about symbols of the AST. Symbol tables are meant to be arranged in a tree structure,
+ * so that you can navigate with the getParent() and getChild() methods up and down the tree.
+ */
+public type SymbolTable struct {
+    SymbolTable* parent
+    ScopeType scopeType
+    map::Map<string, SymbolTable *> children
+    map::Map<string, ste::SymbolTableEntry> symbols
+    map::Map<string, cpt::Capture> captures
+    map::Map<string, gt::GenericType> genericTypes
+
+    bool inMainSourceFile
+    bool isSourceFileRootScope
+    bool compilerWarningsEnabled
+    bool requiresCapturing
+}
+
+p SymbolTable.ctor(SymbolTable* parent, ScopeType scopeType, bool inMainSourceFile = false, bool isSourceFileRoot = false) {
+    this.parent = parent;
+    this.scopeType = scopeType;
+
+    this.inMainSourceFile = inMainSourceFile;
+    this.isSourceFileRootScope = isSourceFileRoot;
+    this.compilerWarningsEnabled = true;
+    this.requiresCapturing = false;
+}
+
+p SymbolTable.insert() {
+    // ToDo
+}

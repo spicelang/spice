@@ -1,0 +1,9 @@
+// Imports
+
+public type SymbolTableEntry struct {
+
+}
+
+public p SymbolTableEntry.ctor() {
+
+}
