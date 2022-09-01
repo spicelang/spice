@@ -1,0 +1,15 @@
+public type ThreadFactory struct {
+    unsigned int nextSuffix
+}
+
+public p ThreadFactory.ctor() {
+    this.nextSuffix = 0;
+}
+
+public f<int> ThreadFactory.getNextFunctionSuffix() {
+    return this.nextSuffix++;
+}
+
+public f<bool> ThreadFactory.isUsingThreads() {
+    return this.nextSuffix > 0;
+}

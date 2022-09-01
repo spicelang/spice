@@ -38,13 +38,13 @@ public type CliInterface struct {
 
 public p CliInterface.ctor() {
     // Initialize cli object
-    cliOptions = CliOptions{/* mainSourceFile */ "", /* targetTriple */ "", /* targetArch */ "", /* targetVendor */ "",
+    this.cliOptions = CliOptions{/* mainSourceFile */ "", /* targetTriple */ "", /* targetArch */ "", /* targetVendor */ "",
         /* targetOs */ "", /* outputDir */ "", /* outputPath */ "", /* printDebugInfo */ false, /* dumpCST */ false,
         /* dumpAST */ false, /* dumpIR */ false, /* dumpAssembly */ false, /* dumpSymbolTables */ false, /* optLevel */ 2s,
         /* generateDebugInfo */ false, /* disableVerifier */ false, /* testMode */ false };
-    compile = false;
-    install = false;
-    run = false;
+    this.compile = false;
+    this.install = false;
+    this.run = false;
 }
 
 p CliInterface.createInterface() {
@@ -65,15 +65,15 @@ p CliInterface.validate() {
  */
 p CliInterface.enrich() {
     // Propagate target information
-    if (cliOptions.targetTriple.empty()) {
+    if this.cliOptions.targetTriple.empty() {
         // ToDo: Extend
     }
 
     // Dump AST, IR and symbol table if all debug output is enabled
-    if cliOptions.printDebugInfo {
-        cliOptions.dumpAST = true;
-        cliOptions.dumpIR = true;
-        cliOptions.dumpSymbolTables = true;
+    if this.cliOptions.printDebugInfo {
+        this.cliOptions.dumpAST = true;
+        this.cliOptions.dumpIR = true;
+        this.cliOptions.dumpSymbolTables = true;
     }
 }
 
@@ -144,10 +144,10 @@ f<int> CliInterface.parse(int argc, string[] argv) {
  */
 p CliInterface.runBinary() {
     // Print status message
-    if cliOptions.printDebugOutput {
+    if this.cliOptions.printDebugOutput {
         print.println("Running executable ...\n");
     }
 
     // Run executable
-    cmd.execCmd(cliOptions.outputPath);
+    cmd.execCmd(this.cliOptions.outputPath);
 }

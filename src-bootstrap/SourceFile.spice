@@ -1,5 +1,10 @@
 // Imports
 import "std/text/print" as print;
+import "CliInterface" as cli;
+import "ast/AstNodes" as ast;
+import "symbol/SymbolTable" as st;
+import "analyzer/Analyzer" as alzr;
+import "generator/Generator" as gen;
 
 /**
  * Collects the output of the compiler for debugging
@@ -24,11 +29,11 @@ public type SourceFile struct {
     bool stdFile
     CompilerOutput compilerOutput
     SourceFile* parent
-    CliOptions* cliOptions
+    cli::CliOptions* cliOptions
     ast::EntryNode* ast
-    symTab::SymbolTable* symbolTable
-    analyzer::Analyzer* analyzer
-    generator::Generator* generator
+    st::SymbolTable* symbolTable
+    alzr::Analyzer* analyzer
+    gen::Generator* generator
     map::Map<string, pair::Pair<SourceFile*, CodeLoc*>> dependencies
 }
 

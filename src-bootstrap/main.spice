@@ -1,4 +1,6 @@
 // Imports
+import "util/ThreadFactory" as tf;
+import "SourceFile" as sf;
 import "CliInterface" as cli;
 
 /**
@@ -6,8 +8,17 @@ import "CliInterface" as cli;
  *
  * @param options Command line options
  */
-p compileProject() {
+p compileProject(const CliOptions* options) {
+    // ToDo: Initialize LLVM resources
 
+    // Prepare instance of thread factory, which has to exist exactly once per executable
+    tf::ThreadFactory threadFactory = tf::ThreadFactory();
+
+    // Prepare linker interface
+    // ToDo
+
+    // Create source file instance for main source file
+    sf::SourceFile mainSourceFile = sf::SourceFile(options, nil<SourceFile*>, "root", options.mainSourceFile, false);
 }
 
 /**

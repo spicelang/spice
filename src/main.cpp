@@ -19,7 +19,7 @@ void compileProject(CliOptions &options) {
     std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
     std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
 
-    // Prepare instance of thread factory and error factory, which have to exist exactly once per executable
+    // Prepare instance of thread factory, which has to exist exactly once per executable
     ThreadFactory threadFactory = ThreadFactory();
 
     // Prepare linker interface
