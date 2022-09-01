@@ -21,10 +21,9 @@ void compileProject(CliOptions &options) {
 
     // Prepare instance of thread factory and error factory, which have to exist exactly once per executable
     ThreadFactory threadFactory = ThreadFactory();
-    ErrorFactory err{};
 
     // Prepare linker interface
-    LinkerInterface linker = LinkerInterface(err, threadFactory, options);
+    LinkerInterface linker = LinkerInterface(threadFactory, options);
 
     // Create source file instance for main source file
     SourceFile mainSourceFile = SourceFile(options, nullptr, "root", options.mainSourceFile, false);

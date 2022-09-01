@@ -2,8 +2,6 @@
 
 #include "OpRuleManager.h"
 
-#include <exception/ErrorFactory.h>
-
 SymbolType OpRuleManager::getAssignResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhs.is(TY_DYN))
@@ -213,12 +211,12 @@ SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const CodeLoc &codeLoc, 
 
 SymbolType OpRuleManager::getPrefixMulResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
   if (!lhs.isPointer())
-    throw err->get(codeLoc, OPERATOR_WRONG_DATA_TYPE, "Cannot apply de-referencing operator on type " + lhs.getName(true));
+    throw SemanticError(codeLoc, OPERATOR_WRONG_DATA_TYPE, "Cannot apply de-referencing operator on type " + lhs.getName(true));
   return lhs.getContainedTy();
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, const SymbolType& lhs) {
-  return lhs.toPointer(err, codeLoc);
+SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
+  return lhs.toPointer(codeLoc);
 }
 
 SymbolType OpRuleManager::getPostfixPlusPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
@@ -268,18 +266,21 @@ SymbolType OpRuleManager::validateUnaryOperation(const CodeLoc &codeLoc, const s
 
 SemanticError OpRuleManager::printErrorMessageBinary(const CodeLoc &codeLoc, const std::string &operatorName,
                                                      const SymbolType &lhs, const SymbolType &rhs) {
-  return err->get(codeLoc, OPERATOR_WRONG_DATA_TYPE,
-                  "Cannot apply '" + operatorName + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true));
+  return SemanticError(codeLoc, OPERATOR_WRONG_DATA_TYPE,
+                       "Cannot apply '" + operatorName + "' operator on types " + lhs.getName(true) + " and " +
+                           rhs.getName(true));
 }
 
 SemanticError OpRuleManager::printErrorMessageUnary(const CodeLoc &codeLoc, const std::string &operatorName,
                                                     const SymbolType &lhs) {
-  return err->get(codeLoc, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + operatorName + "' operator on type " + lhs.getName(true));
+  return SemanticError(codeLoc, OPERATOR_WRONG_DATA_TYPE,
+                       "Cannot apply '" + operatorName + "' operator on type " + lhs.getName(true));
 }
 
 SemanticError OpRuleManager::printErrorMessageUnsafe(const CodeLoc &codeLoc, const std::string &operatorName,
                                                      const SymbolType &lhs, const SymbolType &rhs) {
-  return err->get(codeLoc, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
-                  "Cannot apply '" + operatorName + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
-                      " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing.");
+  return SemanticError(codeLoc, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
+                       "Cannot apply '" + operatorName + "' operator on types " + lhs.getName(true) + " and " +
+                           rhs.getName(true) +
+                           " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing.");
 }

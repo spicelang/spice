@@ -1,5 +1,5 @@
 // Imports
-import "cli/CliInterface" as cli;
+import "CliInterface" as cli;
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.

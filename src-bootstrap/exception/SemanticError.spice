@@ -1,0 +1,12 @@
+// Imports
+import "../util/CodeLoc" as cl;
+
+public type ErrorType enum {
+
+}
+
+public type SemanticError struct {
+    cl::CodeLoc codeLoc
+    ErrorType errorType
+    string message
+}

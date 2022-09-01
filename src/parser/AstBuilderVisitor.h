@@ -7,15 +7,13 @@
 #include <functional>
 #include <utility>
 
-#include <exception/ErrorFactory.h>
-
 // Forward declarations
 class AstNode;
 
 class AstBuilderVisitor : public SpiceVisitor {
 public:
   // Constructors
-  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName);
+  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName) : currentNode(rootNode), fileName(fileName) {}
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -90,7 +88,6 @@ private:
   // Members
   AstNode *currentNode;
   std::string fileName;
-  std::unique_ptr<ErrorFactory> err;
 
   // Private methods
   int32_t parseInt(antlr4::tree::TerminalNode *terminal);

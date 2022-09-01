@@ -581,8 +581,7 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
 class OpRuleManager {
 public:
   // Constructors
-  explicit OpRuleManager(const ErrorFactory *errorFactory, const bool &isUnsafe)
-      : err(errorFactory), withinUnsafeBlock(isUnsafe) {}
+  explicit OpRuleManager(const bool &isUnsafe) : withinUnsafeBlock(isUnsafe) {}
 
   // Public methods
   SymbolType getAssignResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
@@ -620,14 +619,13 @@ public:
   SymbolType getPrefixNotResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
   SymbolType getPrefixBitwiseNotResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
   SymbolType getPrefixMulResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
-  SymbolType getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, const SymbolType& lhs);
+  SymbolType getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
   SymbolType getPostfixPlusPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
   SymbolType getPostfixMinusMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
   SymbolType getCastResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &);
 
 private:
   // Members
-  const ErrorFactory *err;
   const bool &withinUnsafeBlock;
 
   // Private methods

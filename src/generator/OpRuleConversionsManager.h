@@ -16,9 +16,8 @@ struct CodeLoc;
 
 class OpRuleConversionsManager {
 public:
-  explicit OpRuleConversionsManager(const std::shared_ptr<llvm::LLVMContext> &context, std::shared_ptr<llvm::IRBuilder<>> builder,
-                                    const ErrorFactory *errorFactory)
-      : context(context), builder(std::move(builder)), err(errorFactory) {}
+  explicit OpRuleConversionsManager(const std::shared_ptr<llvm::LLVMContext> &context, std::shared_ptr<llvm::IRBuilder<>> builder)
+      : context(context), builder(std::move(builder)) {}
 
   // Public methods
   llvm::Value *getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
@@ -67,5 +66,4 @@ private:
   // Members
   const std::shared_ptr<llvm::LLVMContext> &context;
   std::shared_ptr<llvm::IRBuilder<>> builder;
-  const ErrorFactory *err;
 };

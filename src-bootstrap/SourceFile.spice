@@ -43,10 +43,14 @@ public p SourceFile.ctor(CliOptions* cliOptions, SourceFile* parent, string name
     // Deduce fileName and fileDir
     /*this.fileName = ;
     this.fileDir = ;*/
+}
 
-    // Read from file
-    // ToDo: Extend
+p SourceFile.runLexer() {
+    // Lex this source file
+}
 
+p SourceFile.runParser() {
+    // Parse this source file
 }
 
 p SourceFile.visualizeCST(string* output) {
@@ -71,6 +75,15 @@ p SourceFile.visualizeAST(string* output) {
 p SourceFile.preAnalyze() {
     // Pre-analyze this source file
     // ToDo: Extend
+
+    // Pre-analyze this source file
+    foreach dyn dependencyPair : this.dependencies {
+        SourceFile dependencyFile = dependencyPair.getSecond();
+        dependencyFile.runLexer();
+        dependencyFile.runParser();
+        dependencyFile.buildAST();
+        dependencyFile.preAnalyze();
+    }
 }
 
 p SourceFile.analyze() {

@@ -8,14 +8,13 @@
 #include <cli/CliInterface.h>
 
 // Forward declarations
-class ErrorFactory;
 class ThreadFactory;
 
 class LinkerInterface {
 public:
   // Constructors
-  explicit LinkerInterface(const ErrorFactory &errorFactory, const ThreadFactory &threadFactory, CliOptions &cliOptions)
-      : err(errorFactory), threadFactory(threadFactory), cliOptions(cliOptions), outputPath(cliOptions.outputPath){};
+  explicit LinkerInterface(const ThreadFactory &threadFactory, CliOptions &cliOptions)
+      : threadFactory(threadFactory), cliOptions(cliOptions), outputPath(cliOptions.outputPath){};
 
   // Public methods
   void link();
@@ -25,7 +24,6 @@ public:
 
 private:
   // Members
-  const ErrorFactory &err;
   const ThreadFactory &threadFactory;
   const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;

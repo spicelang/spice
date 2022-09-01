@@ -5,9 +5,7 @@
 
 #include <stdexcept>
 #include <tuple>
-#include <utility>
 
-#include <exception/ErrorFactory.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolTable.h>
 #include <symbol/SymbolTableEntry.h>
@@ -24,10 +22,10 @@ SymbolType::TypeChain SymbolType::getTypeChain() const { return typeChain; }
  *
  * @return Pointer type of the current type
  */
-SymbolType SymbolType::toPointer(const ErrorFactory *err, const CodeLoc &codeLoc, llvm::Value *dynamicSize) const {
+SymbolType SymbolType::toPointer(const CodeLoc &codeLoc, llvm::Value *dynamicSize) const {
   // Do not allow pointers of dyn
   if (typeChain.top().superType == TY_DYN)
-    throw ErrorFactory::get(codeLoc, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
+    throw SemanticError(codeLoc, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push({TY_PTR, "", {}, dynamicSize});
@@ -39,10 +37,10 @@ SymbolType SymbolType::toPointer(const ErrorFactory *err, const CodeLoc &codeLoc
  *
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const ErrorFactory *err, const CodeLoc &codeLoc, int size) const {
+SymbolType SymbolType::toArray(const CodeLoc &codeLoc, int size) const {
   // Do not allow arrays of dyn
   if (typeChain.top().superType == TY_DYN)
-    throw ErrorFactory::get(codeLoc, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
+    throw SemanticError(codeLoc, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push({TY_ARRAY, std::to_string(size), {}, nullptr});

@@ -4,8 +4,6 @@
 
 #include <utility>
 
-#include <exception/ErrorFactory.h>
-
 #include "../../lib/cli11/CLI11.hpp"
 
 #ifdef __unix__
@@ -66,7 +64,6 @@ private:
   // Members
   CLI::App app = CLI::App{"Spice Programming Language", "Spice"};
   CliOptions cliOptions{};
-  const ErrorFactory err = ErrorFactory();
   bool compile = false;
   bool install = false;
   bool run = false;

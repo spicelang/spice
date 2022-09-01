@@ -31,7 +31,6 @@ public type CliOptions struct {
 public type CliInterface struct {
     //CliApp cliApp
     CliOptions cliOptions
-    ErrorFactory err
     bool compile
     bool install
     bool run
@@ -41,9 +40,8 @@ public p CliInterface.ctor() {
     // Initialize cli object
     cliOptions = CliOptions{/* mainSourceFile */ "", /* targetTriple */ "", /* targetArch */ "", /* targetVendor */ "",
         /* targetOs */ "", /* outputDir */ "", /* outputPath */ "", /* printDebugInfo */ false, /* dumpCST */ false,
-        /* dumpAST */ false, /* dumpIR */ false, /* dumpAssembly */ false, /* dumpSymbolTables */ false, /* optLevel */ 2,
+        /* dumpAST */ false, /* dumpIR */ false, /* dumpAssembly */ false, /* dumpSymbolTables */ false, /* optLevel */ 2s,
         /* generateDebugInfo */ false, /* disableVerifier */ false, /* testMode */ false };
-    err = ErrorFactory();
     compile = false;
     install = false;
     run = false;
