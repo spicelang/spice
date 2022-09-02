@@ -68,13 +68,9 @@ public f<bool> toBool(string input) {
 }
 
 // Returns the length of a string
-public f<int> len(string input) {
-    //for result = 0; input[result] != '\0'; result++ {}
-    return 0;
-}
-
-// Returns true if the input string contains the input substring
-public f<bool> contains(string input, string substring) {
-    // ToDo: implement
-    return false;
+public f<long> getRawLength(string input) {
+    result = 0l;
+    while input[result] != '\0' {
+        result++;
+    }
 }

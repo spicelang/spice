@@ -10,9 +10,15 @@ f<int> main() {
     printf("Hello %s!", p1.getSecond());
 }*/
 
-import "std/net/http" as http;
+/*import "std/net/http" as http;
 
 f<int> main() {
     http::HttpServer server = http::HttpServer();
     server.serve("/test", "Hello World!");
+}*/
+
+import "std/runtime/string_rt" as _rt_str;
+
+f<int> main() {
+    _rt_str::String s = _rt_str::String("Test");
 }

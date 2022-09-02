@@ -15,17 +15,17 @@ ext<byte*> memcpy(byte*, byte*, int);
  */
 public type String struct {
     char* contents   // Pointer to the first char
-    int capacity     // Allocated number of chars
-    int length       // Current number of chars
+    unsigned long capacity     // Allocated number of chars
+    unsigned long length       // Current number of chars
 }
 
 public p String.ctor(string value = "") {
     // Allocate space for the initial number of elements
     int itemSize = sizeof(type char);
     unsafe {
-        this.contents = (char*) malloc(itemSize * initAllocItems);
+        this.contents = (char*) malloc(itemSize * INITIAL_ALLOC_COUNT);
     }
-    this.length = len(value);
+    this.length = str.getRawLength(value);
     this.capacity = INITIAL_ALLOC_COUNT;
 }
 
@@ -64,7 +64,7 @@ public p String.appendChar(char c) {
 
     // Insert the char at the right position
     unsafe {
-        this.value[length++] = c;
+        this.contents[this.length++] = c;
     }
 }
 
@@ -73,8 +73,8 @@ public p String.appendChar(char c) {
  *
  * @return Raw immutable string
  */
-public f<char*> String.getRaw() {
-    return this.contents;
+public f<string> String.getRaw() {
+    return (string) this.contents;
 }
 
 /**
@@ -82,7 +82,7 @@ public f<char*> String.getRaw() {
  *
  * @return Current length of the string
  */
-public f<int> String.getLength() {
+public f<long> String.getLength() {
     return this.length;
 }
 
@@ -91,7 +91,7 @@ public f<int> String.getLength() {
  *
  * @return Current capacity of the string
  */
- public f<int> String.getCapacity() {
+ public f<long> String.getCapacity() {
      return this.capacity;
  }
 
@@ -108,16 +108,13 @@ public f<bool> String.isFull() {
  * Replaces the current contents of the string with an empty string
  */
 public p String.clear() {
-    unsafe {
-        this.contents = 0;
-    }
-    this.length = 0;
+    this.length = 0l;
 }
 
 /**
  * Reserves `charCount` items
  */
-public p Queue.reserve(unsigned int charCount) {
+public p String.reserve(unsigned long charCount) {
     if charCount > this.capacity {
         this.resize(charCount);
     }

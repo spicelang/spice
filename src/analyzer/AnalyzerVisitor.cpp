@@ -901,7 +901,7 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
 
     // Check if index type is int
     if (!indexType.is(TY_INT))
-      throw SemanticError(node->idxVarDecl()->codeLoc, ARRAY_INDEX_NO_INTEGER,
+      throw SemanticError(node->idxVarDecl()->codeLoc, ARRAY_INDEX_NOT_INT_OR_LONG,
                           "Index in foreach loop must be of type int. You provided " + indexType.getName(false));
   } else {
     // Declare the variable with the default index variable name
@@ -1657,8 +1657,8 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       AssignExprNode *indexExpr = node->assignExpr()[subscriptCounter++];
       auto indexType = any_cast<SymbolType>(visit(indexExpr));
 
-      if (!indexType.is(TY_INT))
-        throw SemanticError(node->codeLoc, ARRAY_INDEX_NO_INTEGER, "Array index must be of type int");
+      if (!indexType.isOneOf({TY_INT, TY_LONG}))
+        throw SemanticError(node->codeLoc, ARRAY_INDEX_NOT_INT_OR_LONG, "Array index must be of type int or long");
       if (!lhs.isOneOf({TY_ARRAY, TY_STRING, TY_PTR}))
         throw SemanticError(node->codeLoc, OPERATOR_WRONG_DATA_TYPE,
                             "Can only apply subscript operator on array type, got " + lhs.getName(true));
