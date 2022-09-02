@@ -173,6 +173,28 @@ public f<bool> String.opEquals(const string operand) {
 }
 
 /**
+ * Implements the equals operator for 'string != string'
+ *
+ * @param operand String to comare the current string to
+ *
+ * @return Equal or not
+ */
+public inline f<bool> String.opNotEquals(const String operand) {
+    return !this.opEquals(operand.getRaw());
+}
+
+/**
+ * Implements the equals operator for 'string != string'
+ *
+ * @param operand String to comare the current string to
+ *
+ * @return Equal or not
+ */
+public inline f<bool> String.opNotEquals(const string operand) {
+    return !this.opEquals(operand);
+}
+
+/**
  * Get the raw and immutable string from this container instance
  *
  * @return Raw immutable string
