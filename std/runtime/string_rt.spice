@@ -1,3 +1,4 @@
+// Imports
 import "std/type/string" as str;
 
 // Constants
@@ -9,6 +10,9 @@ ext<byte*> malloc(long);
 ext<byte*> realloc(byte*, int);
 ext free(byte*);
 ext<byte*> memcpy(byte*, byte*, int);
+
+// Generic types
+type NumType int|long|short;
 
 /**
  * String wrapper for enriching raw strings with information and make them mutable
@@ -66,15 +70,6 @@ public p String.append(string appendix) {
 }
 
 /**
- * Appends the given string wrapper to the current one
- *
- * @param appendix String wrapper to be appended
- */
-public p String.append(String appendix) {
-    this.append(appendix.getRaw());
-}
-
-/**
  * Appends the given char to the string and resize it if needed
  *
  * @param c Char to append
@@ -90,6 +85,40 @@ public p String.appendChar(char c) {
         this.contents[this.length++] = c;
         this.contents[this.length] = '\0';
     }
+}
+
+/**
+ * Implements the add operator for string + string
+ *
+ * @param operand String to be concatenated to the current one
+ */
+public p String.opAdd(String operand) {
+    this.append(operand.getRaw());
+}
+
+/**
+ * Implements the multily operator for string * int/long/short or int/long/short * int
+ *
+ * @param operand Number of repetitions
+ */
+public p String.opMul<NumType>(NumType operand) {
+    // Cancel if operand is less than 2
+    if operand < 2 { return; }
+
+    unsigned long newLength = ((long) operand) * this.length;
+    // Check if we need to re-allocate memory
+    while this.capacity <= newLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Save the value
+    unsafe {
+        for int i = 0; i < newLength; i++ {
+            this.contents[i] = this.contents[i % this.length];
+        }
+        this.contents[newLength + 1] = '\0';
+    }
+    this.length = newLength;
 }
 
 /**
@@ -140,6 +169,8 @@ public p String.clear() {
 
 /**
  * Reserves `charCount` items
+ *
+ * @param charCount Number of chars to reserve for the string
  */
 public p String.reserve(unsigned long charCount) {
     if charCount > this.capacity {

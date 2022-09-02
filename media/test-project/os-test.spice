@@ -18,30 +18,15 @@ f<int> main() {
 }*/
 
 import "std/runtime/string_rt" as _rt_str;
+import "std/time/time" as timer;
 
 f<int> main() {
-    _rt_str::String s = _rt_str::String("Hello ");
-    printf("Content: %s\n", s.getRaw());
+    _rt_str::String s = _rt_str::String("Hello");
+    printf("Value: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
     printf("Capacity: %d\n\n", s.getCapacity());
-    s.append("World!");
-    printf("Content: %s\n", s.getRaw());
+    s.opMul(3);
+    printf("Value: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.appendChar('?');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.appendChar('!');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.clear();
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.reserve(100l);
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d", s.getCapacity());
+    printf("Capacity: %d\n", s.getCapacity());
 }

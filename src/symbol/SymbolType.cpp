@@ -53,10 +53,10 @@ SymbolType SymbolType::toArray(const CodeLoc &codeLoc, int size) const {
  * @return Base type
  */
 SymbolType SymbolType::getContainedTy() const {
-  if (typeChain.empty())                                                                          // GCOV_EXCL_LINE
-    throw std::runtime_error("Internal compiler error: Cannot get contained type of empty type"); // GCOV_EXCL_LINE
   if (typeChain.top().superType == TY_STRING)
     return SymbolType(TY_CHAR);
+  if (typeChain.size() < 2)                                                                                     // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: Cannot get contained type of type with type chain < 2"); // GCOV_EXCL_LINE
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop();
   return SymbolType(newTypeChain);
