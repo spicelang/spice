@@ -43,7 +43,7 @@ llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::
     // ToDo(@marcauberer): Insert call to appendChar in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
   case COMB(TY_STRING, TY_STRING):
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to append in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
@@ -466,7 +466,7 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Valu
   case COMB(TY_CHAR, TY_CHAR):
     return builder->CreateICmpEQ(lhs, rhs);
   case COMB(TY_STRING, TY_STRING):
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opEquals in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '==' operator for lhs=string and rhs=string yet");
   case COMB(TY_BOOL, TY_BOOL):
     return builder->CreateICmpEQ(lhs, rhs);
@@ -571,7 +571,7 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::V
   case COMB(TY_CHAR, TY_CHAR):
     return builder->CreateICmpNE(lhs, rhs);
   case COMB(TY_STRING, TY_STRING):
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opNotEquals in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '!=' operator for lhs=string and rhs=string yet");
   case COMB(TY_BOOL, TY_BOOL):
     return builder->CreateICmpNE(lhs, rhs);
@@ -944,7 +944,7 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
   case COMB(TY_CHAR, TY_CHAR):
     return builder->CreateAdd(lhs, rhs);
   case COMB(TY_STRING, TY_STRING):
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to append in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
@@ -1054,11 +1054,11 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
     return builder->CreateMul(lhsLong, rhs);
   }
   case COMB(TY_INT, TY_CHAR): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=char yet");
   }
   case COMB(TY_INT, TY_STRING): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
@@ -1076,11 +1076,11 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
     return builder->CreateMul(lhsLong, rhs);
   }
   case COMB(TY_SHORT, TY_CHAR): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=char yet");
   }
   case COMB(TY_SHORT, TY_STRING): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=string yet");
   }
   case COMB(TY_LONG, TY_DOUBLE): {
@@ -1095,37 +1095,37 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
   case COMB(TY_LONG, TY_LONG):
     return builder->CreateMul(lhs, rhs);
   case COMB(TY_LONG, TY_CHAR): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=char yet");
   }
   case COMB(TY_LONG, TY_STRING): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=string yet");
   }
   case COMB(TY_BYTE, TY_BYTE):
     return builder->CreateMul(lhs, rhs);
   case COMB(TY_CHAR, TY_INT): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=int yet");
   }
   case COMB(TY_CHAR, TY_SHORT): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=short yet");
   }
   case COMB(TY_CHAR, TY_LONG): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=long yet");
   }
   case COMB(TY_STRING, TY_INT): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
   }
   case COMB(TY_STRING, TY_SHORT): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=short yet");
   }
   case COMB(TY_STRING, TY_LONG): {
-    // ToDo(@marcauberer): Insert call to concatStrings in the runtime lib
+    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
     throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=long yet");
   }
   }

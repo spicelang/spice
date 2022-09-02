@@ -23,14 +23,13 @@ public type String struct {
     unsigned long length       // Current number of chars
 }
 
-public p String.ctor(string value = "") {
+public p String.ctor(const string value = "") {
     this.length = str.getRawLength(value);
-    this.capacity = this.length != 0 ? this.length + 1 : INITIAL_ALLOC_COUNT; // +1 because of null terminator
+    this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT; // +1 because of null terminator
 
     // Allocate space for the initial number of elements
-    int itemSize = sizeof(type char);
     unsafe {
-        this.contents = (char*) malloc(itemSize * this.capacity);
+        this.contents = (char*) malloc(sizeof(type char) * this.capacity);
     }
 
     // Save initial value
@@ -38,6 +37,22 @@ public p String.ctor(string value = "") {
         for unsigned long i; i < this.length + 1; i++ { // +1 because of null terminator
             this.contents[i] = value[i];
         }
+    }
+}
+
+public p String.ctor(const char value) {
+    this.length = 1l;
+    this.capacity = INITIAL_ALLOC_COUNT;
+
+    // Allocate space for the initial number of elements
+    unsafe {
+        this.contents = (char*) malloc(sizeof(type char) * this.capacity);
+    }
+
+    // Save initial value
+    unsafe {
+        this.contents[0] = value;
+        this.contents[1] = '\0';
     }
 }
 
@@ -53,7 +68,7 @@ public p String.dtor() {
  *
  * @param appendix string to be appended
  */
-public p String.append(string appendix) {
+public p String.append(const string appendix) {
     unsigned long appendixLength = str.getRawLength(appendix);
     // Check if we need to re-allocate memory
     while this.capacity <= this.length + appendixLength {
@@ -74,7 +89,7 @@ public p String.append(string appendix) {
  *
  * @param c Char to append
  */
-public p String.appendChar(char c) {
+public p String.appendChar(const char c) {
     // Check if we need to re-allocate memory
     if this.capacity <= this.length + 1 {
         this.resize(this.capacity * RESIZE_FACTOR);
@@ -88,20 +103,20 @@ public p String.appendChar(char c) {
 }
 
 /**
- * Implements the add operator for string + string
+ * Implements the add operator for 'string + string'
  *
  * @param operand String to be concatenated to the current one
  */
-public p String.opAdd(String operand) {
+public inline p String.opAdd(const String operand) {
     this.append(operand.getRaw());
 }
 
 /**
- * Implements the multily operator for string * int/long/short or int/long/short * int
+ * Implements the multily operator for 'string * int/long/short' or 'int/long/short * int'
  *
  * @param operand Number of repetitions
  */
-public p String.opMul<NumType>(NumType operand) {
+public p String.opMul<NumType>(const NumType operand) {
     // Cancel if operand is less than 2
     if operand < 2 { return; }
 
@@ -119,6 +134,42 @@ public p String.opMul<NumType>(NumType operand) {
         this.contents[newLength + 1] = '\0';
     }
     this.length = newLength;
+}
+
+/**
+ * Implements the equals operator for 'string == string'
+ *
+ * @param operand String to comare the current string to
+ *
+ * @return Equal or not
+ */
+public inline f<bool> String.opEquals(const String operand) {
+    return this.opEquals(operand.getRaw());
+}
+
+/**
+ * Implements the equals operator for 'string == string'
+ *
+ * @param operand String to comare the current string to
+ *
+ * @return Equal or not
+ */
+public f<bool> String.opEquals(const string operand) {
+    // Compare sizes
+    if str.getRawLength(operand) != this.length {
+        return false;
+    }
+
+    // Compare contents
+    unsafe {
+        for int i = 0; i < this.length; i++ {
+            if this.contents[i] != operand[i] {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 /**

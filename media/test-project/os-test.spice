@@ -18,15 +18,10 @@ f<int> main() {
 }*/
 
 import "std/runtime/string_rt" as _rt_str;
-import "std/time/time" as timer;
 
 f<int> main() {
-    _rt_str::String s = _rt_str::String("Hello");
-    printf("Value: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.opMul(3);
-    printf("Value: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n", s.getCapacity());
+    _rt_str::String s1 = _rt_str::String('H');
+    s1.append("ello");
+
+    printf("Equals: %d", s1.opEquals("Hell2"));
 }
