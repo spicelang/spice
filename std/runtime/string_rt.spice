@@ -1,3 +1,4 @@
+// Imports
 import "std/type/string" as str;
 
 // Constants
@@ -10,23 +11,49 @@ ext<byte*> realloc(byte*, int);
 ext free(byte*);
 ext<byte*> memcpy(byte*, byte*, int);
 
+// Generic types
+type NumType int|long|short;
+
 /**
  * String wrapper for enriching raw strings with information and make them mutable
  */
 public type String struct {
     char* contents   // Pointer to the first char
-    int capacity     // Allocated number of chars
-    int length       // Current number of chars
+    unsigned long capacity     // Allocated number of chars
+    unsigned long length       // Current number of chars
 }
 
-public p String.ctor(string value = "") {
+public p String.ctor(const string value = "") {
+    this.length = str.getRawLength(value);
+    this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT; // +1 because of null terminator
+
     // Allocate space for the initial number of elements
-    int itemSize = sizeof(type char);
     unsafe {
-        this.contents = (char*) malloc(itemSize * initAllocItems);
+        this.contents = (char*) malloc(sizeof(type char) * this.capacity);
     }
-    this.length = len(value);
+
+    // Save initial value
+    unsafe {
+        for unsigned long i; i < this.length + 1; i++ { // +1 because of null terminator
+            this.contents[i] = value[i];
+        }
+    }
+}
+
+public p String.ctor(const char value) {
+    this.length = 1l;
     this.capacity = INITIAL_ALLOC_COUNT;
+
+    // Allocate space for the initial number of elements
+    unsafe {
+        this.contents = (char*) malloc(sizeof(type char) * this.capacity);
+    }
+
+    // Save initial value
+    unsafe {
+        this.contents[0] = value;
+        this.contents[1] = '\0';
+    }
 }
 
 public p String.dtor() {
@@ -39,16 +66,22 @@ public p String.dtor() {
 /**
  * Appends the given string wrapper to the current one
  *
- * @param appendix String wrapper to be appended
+ * @param appendix string to be appended
  */
-public p String.append(String appendix) {
-    for int i = 0; i < appendix.length; i++ {
-        char charToAppend;
-        unsafe {
-            charToAppend = appendix.contents[i];
-        }
-        this.appendChar(charToAppend);
+public p String.append(const string appendix) {
+    unsigned long appendixLength = str.getRawLength(appendix);
+    // Check if we need to re-allocate memory
+    while this.capacity <= this.length + appendixLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
     }
+
+    // Save data
+    unsafe {
+        for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
+            this.contents[this.length++] = appendix[i];
+        }
+    }
+    this.length--; // Remove null terminator
 }
 
 /**
@@ -56,16 +89,109 @@ public p String.append(String appendix) {
  *
  * @param c Char to append
  */
-public p String.appendChar(char c) {
+public p String.appendChar(const char c) {
     // Check if we need to re-allocate memory
-    if this.length == this.capacity {
+    if this.capacity <= this.length + 1 {
         this.resize(this.capacity * RESIZE_FACTOR);
     }
 
     // Insert the char at the right position
     unsafe {
-        this.value[length++] = c;
+        this.contents[this.length++] = c;
+        this.contents[this.length] = '\0';
     }
+}
+
+/**
+ * Implements the add operator for 'string + string'
+ *
+ * @param operand String to be concatenated to the current one
+ */
+public inline p String.opAdd(const String operand) {
+    this.append(operand.getRaw());
+}
+
+/**
+ * Implements the multily operator for 'string * int/long/short' or 'int/long/short * int'
+ *
+ * @param operand Number of repetitions
+ */
+public p String.opMul<NumType>(const NumType operand) {
+    // Cancel if operand is less than 2
+    if operand < 2 { return; }
+
+    unsigned long newLength = ((long) operand) * this.length;
+    // Check if we need to re-allocate memory
+    while this.capacity <= newLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Save the value
+    unsafe {
+        for int i = 0; i < newLength; i++ {
+            this.contents[i] = this.contents[i % this.length];
+        }
+        this.contents[newLength + 1] = '\0';
+    }
+    this.length = newLength;
+}
+
+/**
+ * Implements the equals operator for 'string == string'
+ *
+ * @param operand String to comare the current string to
+ *
+ * @return Equal or not
+ */
+public inline f<bool> String.opEquals(const String operand) {
+    return this.opEquals(operand.getRaw());
+}
+
+/**
+ * Implements the equals operator for 'string == string'
+ *
+ * @param operand String to comare the current string to
+ *
+ * @return Equal or not
+ */
+public f<bool> String.opEquals(const string operand) {
+    // Compare sizes
+    if str.getRawLength(operand) != this.length {
+        return false;
+    }
+
+    // Compare contents
+    unsafe {
+        for int i = 0; i < this.length; i++ {
+            if this.contents[i] != operand[i] {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Implements the equals operator for 'string != string'
+ *
+ * @param operand String to comare the current string to
+ *
+ * @return Equal or not
+ */
+public inline f<bool> String.opNotEquals(const String operand) {
+    return !this.opEquals(operand.getRaw());
+}
+
+/**
+ * Implements the equals operator for 'string != string'
+ *
+ * @param operand String to comare the current string to
+ *
+ * @return Equal or not
+ */
+public inline f<bool> String.opNotEquals(const string operand) {
+    return !this.opEquals(operand);
 }
 
 /**
@@ -73,8 +199,8 @@ public p String.appendChar(char c) {
  *
  * @return Raw immutable string
  */
-public f<char*> String.getRaw() {
-    return this.contents;
+public inline f<string> String.getRaw() {
+    return (string) this.contents;
 }
 
 /**
@@ -82,7 +208,7 @@ public f<char*> String.getRaw() {
  *
  * @return Current length of the string
  */
-public f<int> String.getLength() {
+public inline f<long> String.getLength() {
     return this.length;
 }
 
@@ -91,8 +217,8 @@ public f<int> String.getLength() {
  *
  * @return Current capacity of the string
  */
- public f<int> String.getCapacity() {
-     return this.capacity;
+ public inline f<long> String.getCapacity() {
+     return this.capacity - 1; // -1 because of null terminator
  }
 
 /**
@@ -100,7 +226,7 @@ public f<int> String.getLength() {
  *
  * @return Full or not full
  */
-public f<bool> String.isFull() {
+public inline f<bool> String.isFull() {
     return this.length == this.capacity;
 }
 
@@ -108,16 +234,18 @@ public f<bool> String.isFull() {
  * Replaces the current contents of the string with an empty string
  */
 public p String.clear() {
+    this.length = 0l;
     unsafe {
-        this.contents = 0;
+        this.contents[0] = '\0';
     }
-    this.length = 0;
 }
 
 /**
  * Reserves `charCount` items
+ *
+ * @param charCount Number of chars to reserve for the string
  */
-public p Queue.reserve(unsigned int charCount) {
+public p String.reserve(unsigned long charCount) {
     if charCount > this.capacity {
         this.resize(charCount);
     }

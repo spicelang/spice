@@ -1577,11 +1577,38 @@ int64_t AstBuilderVisitor::parseLong(antlr4::tree::TerminalNode *terminal) {
 
 int8_t AstBuilderVisitor::parseChar(antlr4::tree::TerminalNode *terminal) {
   std::string input = terminal->toString();
-  if (input.length() != 3) {
+  if (input.length() == 3) { // Normal char literals
+    return input[1];
+  } else if (input.length() == 4 && input[1] == '\\') { // Char literals with escape sequence
+    switch (input[2]) {
+    case '\'':
+      return '\'';
+    case '"':
+      return '\"';
+    case '\\':
+      return '\\';
+    case 'n':
+      return '\n';
+    case 'r':
+      return '\r';
+    case 't':
+      return '\t';
+    case 'b':
+      return '\b';
+    case 'f':
+      return '\f';
+    case 'v':
+      return '\v';
+    case '0':
+      return '\0';
+    default:
+      CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), fileName);
+      throw LexerParserError(codeLoc, PARSING_FAILED, "Invalid escape sequence " + input);
+    }
+  } else {
     CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), fileName);
     throw LexerParserError(codeLoc, PARSING_FAILED, "Invalid char literal " + input);
   }
-  return input[1];
 }
 
 std::string AstBuilderVisitor::parseString(std::string input) {
