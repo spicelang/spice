@@ -1,22 +1,3 @@
-/*import "std/data/vector" as vec;
-import "std/data/pair" as pair;
-
-f<int> main() {
-    vec::Vector<pair::Pair<int, string>> pairVector = vec.Vector<pair::Pair<int, string>>();
-    pairVector.pushBack(pair.Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(pair.Pair<int, string>(1, "World"));
-
-    pair::Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!", p1.getSecond());
-}*/
-
-/*import "std/net/http" as http;
-
-f<int> main() {
-    http::HttpServer server = http::HttpServer();
-    server.serve("/test", "Hello World!");
-}*/
-
 import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {

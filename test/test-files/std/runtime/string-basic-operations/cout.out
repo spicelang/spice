@@ -1,0 +1,23 @@
+Content: Hello 
+Length: 6
+Capacity: 6
+
+Content: Hello World!
+Length: 12
+Capacity: 13
+
+Content: Hello World!?
+Length: 13
+Capacity: 13
+
+Content: Hello World!?!
+Length: 14
+Capacity: 27
+
+Content: 
+Length: 0
+Capacity: 27
+
+Content: 
+Length: 0
+Capacity: 99

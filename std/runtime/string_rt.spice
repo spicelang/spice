@@ -20,13 +20,21 @@ public type String struct {
 }
 
 public p String.ctor(string value = "") {
+    this.length = str.getRawLength(value);
+    this.capacity = this.length != 0 ? this.length + 1 : INITIAL_ALLOC_COUNT; // +1 because of null terminator
+
     // Allocate space for the initial number of elements
     int itemSize = sizeof(type char);
     unsafe {
-        this.contents = (char*) malloc(itemSize * INITIAL_ALLOC_COUNT);
+        this.contents = (char*) malloc(itemSize * this.capacity);
     }
-    this.length = str.getRawLength(value);
-    this.capacity = INITIAL_ALLOC_COUNT;
+
+    // Save initial value
+    unsafe {
+        for unsigned long i; i < this.length + 1; i++ { // +1 because of null terminator
+            this.contents[i] = value[i];
+        }
+    }
 }
 
 public p String.dtor() {
@@ -39,16 +47,31 @@ public p String.dtor() {
 /**
  * Appends the given string wrapper to the current one
  *
+ * @param appendix string to be appended
+ */
+public p String.append(string appendix) {
+    unsigned long appendixLength = str.getRawLength(appendix);
+    // Check if we need to re-allocate memory
+    while this.capacity <= this.length + appendixLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Save data
+    unsafe {
+        for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
+            this.contents[this.length++] = appendix[i];
+        }
+    }
+    this.length--; // Remove null terminator
+}
+
+/**
+ * Appends the given string wrapper to the current one
+ *
  * @param appendix String wrapper to be appended
  */
 public p String.append(String appendix) {
-    for int i = 0; i < appendix.length; i++ {
-        char charToAppend;
-        unsafe {
-            charToAppend = appendix.contents[i];
-        }
-        this.appendChar(charToAppend);
-    }
+    this.append(appendix.getRaw());
 }
 
 /**
@@ -58,13 +81,14 @@ public p String.append(String appendix) {
  */
 public p String.appendChar(char c) {
     // Check if we need to re-allocate memory
-    if this.length == this.capacity {
+    if this.capacity <= this.length + 1 {
         this.resize(this.capacity * RESIZE_FACTOR);
     }
 
     // Insert the char at the right position
     unsafe {
         this.contents[this.length++] = c;
+        this.contents[this.length] = '\0';
     }
 }
 
@@ -73,7 +97,7 @@ public p String.appendChar(char c) {
  *
  * @return Raw immutable string
  */
-public f<string> String.getRaw() {
+public inline f<string> String.getRaw() {
     return (string) this.contents;
 }
 
@@ -82,7 +106,7 @@ public f<string> String.getRaw() {
  *
  * @return Current length of the string
  */
-public f<long> String.getLength() {
+public inline f<long> String.getLength() {
     return this.length;
 }
 
@@ -91,8 +115,8 @@ public f<long> String.getLength() {
  *
  * @return Current capacity of the string
  */
- public f<long> String.getCapacity() {
-     return this.capacity;
+ public inline f<long> String.getCapacity() {
+     return this.capacity - 1; // -1 because of null terminator
  }
 
 /**
@@ -100,7 +124,7 @@ public f<long> String.getLength() {
  *
  * @return Full or not full
  */
-public f<bool> String.isFull() {
+public inline f<bool> String.isFull() {
     return this.length == this.capacity;
 }
 
@@ -109,6 +133,9 @@ public f<bool> String.isFull() {
  */
 public p String.clear() {
     this.length = 0l;
+    unsafe {
+        this.contents[0] = '\0';
+    }
 }
 
 /**

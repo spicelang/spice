@@ -27,6 +27,6 @@ private:
   const ThreadFactory &threadFactory;
   const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;
-  std::vector<std::string> linkerFlags = {"-no-pie"};
+  std::vector<std::string> linkerFlags = {"-no-pie", "-flto"};
   std::string outputPath;
 };
