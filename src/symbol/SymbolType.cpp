@@ -260,6 +260,16 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
 }
 
 /**
+ * Check if the current type is a string object type
+ *
+ * @return String struct or not
+ */
+bool SymbolType::isStringStruct() const {
+  SymbolSuperType superType = getSuperType();
+  return superType == TY_STRING && typeChain.top().data.isStringStruct;
+}
+
+/**
  * Retrieve the super type of the current type
  *
  * @return Super type

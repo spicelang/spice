@@ -1470,6 +1470,9 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
     if (argSymbolType.isArray()) { // Convert array type to pointer type
       llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(0)};
       argVal = builder->CreateInBoundsGEP(targetType, argValPtr, indices);
+    } else if (argSymbolType.isStringStruct()) {
+      argValPtr = materializeString(argValPtr);
+      argVal = builder->CreateLoad(targetType, argValPtr);
     } else {
       argVal = builder->CreateLoad(targetType, argValPtr);
     }
@@ -3084,6 +3087,40 @@ llvm::Function *GeneratorVisitor::retrieveStackRestoreFct() {
   llvm::FunctionType *stackRestoreFctTy = llvm::FunctionType::get(builder->getVoidTy(), builder->getInt8PtrTy(), false);
   module->getOrInsertFunction(stackRestoreFctName, stackRestoreFctTy);
   return module->getFunction(stackRestoreFctName);
+}
+
+llvm::StructType *GeneratorVisitor::ensureStringStruct() {
+  std::string structName = "_s__String__charptr_long_long";
+  llvm::Type *ptrTy = builder->getPtrTy();
+  llvm::Type *int64Ty = builder->getInt64Ty();
+  return llvm::StructType::create(*context, {ptrTy, int64Ty, int64Ty}, structName);
+}
+
+llvm::Function *GeneratorVisitor::ensureStringCtorStringLitStringLit() {
+  std::string functionName = "_mp__String__ctor__string_string";
+  llvm::Function *opFct = module->getFunction(functionName);
+  if (opFct != nullptr)
+    return opFct;
+  llvm::Type *ptrTy = builder->getPtrTy();
+  llvm::FunctionType *opFctTy = llvm::FunctionType::get(builder->getVoidTy(), {ptrTy, ptrTy, ptrTy}, false);
+  module->getOrInsertFunction(functionName, opFctTy);
+  return module->getFunction(functionName);
+}
+
+
+llvm::Value *GeneratorVisitor::materializeString(llvm::Value *stringStructPtr) {
+  assert(stringStructPtr->getType()->isPointerTy());
+  std::string functionName = "_mf__String__getRaw";
+  llvm::Function *opFct = module->getFunction(functionName);
+  if (opFct == nullptr) {
+    llvm::Type *structTyPtr = ensureStringStruct()->getPointerTo();
+    llvm::Type *stringTy = builder->getInt8PtrTy();
+    llvm::FunctionType *opFctTy = llvm::FunctionType::get(stringTy, structTyPtr, false);
+    module->getOrInsertFunction(functionName, opFctTy);
+    opFct = module->getFunction(functionName);
+  }
+  llvm::Value *rawStringValue = builder->CreateCall(opFct, stringStructPtr);
+  return rawStringValue;
 }
 
 llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(const SymbolType &symbolType) {

@@ -67,8 +67,4 @@ private:
   llvm::LLVMContext *context;
   llvm::IRBuilder<> *builder;
   llvm::Module *module;
-
-  // Private methods
-  llvm::StructType *ensureStringStruct();
-  llvm::Function *ensureStringCtorStringLitStringLit();
 };

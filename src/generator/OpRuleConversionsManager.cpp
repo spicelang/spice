@@ -952,8 +952,8 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     return builder->CreateAdd(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the constructor ctor(string, string) of the String struct
-    llvm::Function *opFct = ensureStringCtorStringLitStringLit();
-    llvm::StructType *stringStructTy = ensureStringStruct();
+    llvm::Function *opFct = generator->ensureStringCtorStringLitStringLit();
+    llvm::StructType *stringStructTy = generator->ensureStringStruct();
     llvm::Value *thisPtr = generator->insertAlloca(stringStructTy);
     builder->CreateCall(opFct, {thisPtr, lhs, rhs});
     return thisPtr;
@@ -1375,23 +1375,4 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhs, const Symbo
     return builder->CreatePointerCast(rhs, lhsTy);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
-}
-
-llvm::StructType *OpRuleConversionsManager::ensureStringStruct() {
-  std::string structName = "_s__String__charptr_long_long";
-  llvm::Type *ptrTy = builder->getPtrTy();
-  llvm::Type *int64Ty = builder->getInt64Ty();
-  return llvm::StructType::create(*context, {ptrTy, int64Ty, int64Ty}, structName);
-}
-
-llvm::Function *OpRuleConversionsManager::ensureStringCtorStringLitStringLit() {
-  std::string functionName = "_mp__String__ctor__string_string";
-  llvm::Function *opFct = module->getFunction(functionName);
-  if (opFct != nullptr)
-    return opFct;
-  llvm::Type *ptrTy = builder->getPtrTy();
-  llvm::FunctionType *opFctTy = llvm::FunctionType::get(builder->getVoidTy(), {ptrTy, ptrTy, ptrTy}, false);
-  module->getOrInsertFunction(functionName, opFctTy);
-  return module->getFunction(functionName);
-  ;
 }

@@ -170,6 +170,9 @@ private:
   llvm::Function *retrieveExitFct();
   llvm::Function *retrieveStackSaveFct();
   llvm::Function *retrieveStackRestoreFct();
+  llvm::StructType *ensureStringStruct();
+  llvm::Function *ensureStringCtorStringLitStringLit();
+  llvm::Value *materializeString(llvm::Value *stringStruct);
   llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   llvm::Value *doImplicitCast(llvm::Value *src, llvm::Type *dstTy, SymbolType srcType);

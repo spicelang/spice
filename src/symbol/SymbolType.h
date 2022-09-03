@@ -105,6 +105,7 @@ public:
   [[nodiscard]] bool isPrimitive() const;
   [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
   [[nodiscard]] bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const;
+  [[nodiscard]] bool isStringStruct() const;
   [[nodiscard]] SymbolSuperType getSuperType() const;
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;
