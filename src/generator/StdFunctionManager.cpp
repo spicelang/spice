@@ -39,7 +39,7 @@ llvm::Function *StdFunctionManager::getExitFct() const {
   return module->getFunction(exitFctName);
 }
 
-llvm::Function *StdFunctionManager::getStackSaveFct() const {
+llvm::Function *StdFunctionManager::getStackSaveIntrinsic() const {
   std::string stackSaveFctName = "llvm.stacksave";
   llvm::Function *stackSaveFct = module->getFunction(stackSaveFctName);
   if (stackSaveFct)
@@ -50,7 +50,7 @@ llvm::Function *StdFunctionManager::getStackSaveFct() const {
   return module->getFunction(stackSaveFctName);
 }
 
-llvm::Function *StdFunctionManager::getStackRestoreFct() const {
+llvm::Function *StdFunctionManager::getStackRestoreIntrinsic() const {
   std::string stackRestoreFctName = "llvm.stackrestore";
   llvm::Function *stackRestoreFct = module->getFunction(stackRestoreFctName);
   if (stackRestoreFct)
@@ -61,7 +61,7 @@ llvm::Function *StdFunctionManager::getStackRestoreFct() const {
   return module->getFunction(stackRestoreFctName);
 }
 
-llvm::Function *StdFunctionManager::getStringRawFct() const {
+llvm::Function *StdFunctionManager::getStringGetRawFct() const {
   std::string functionName = "_mf__String__getRaw";
   llvm::Function *opFct = module->getFunction(functionName);
   if (opFct)
@@ -73,7 +73,18 @@ llvm::Function *StdFunctionManager::getStringRawFct() const {
   return module->getFunction(functionName);
 }
 
-llvm::Function *StdFunctionManager::getStringLitPlusOpStringLitFct() const {
+llvm::Function *StdFunctionManager::getStringCtorStringFct() const {
+  std::string functionName = "_mp__String__ctor__string";
+  llvm::Function *opFct = module->getFunction(functionName);
+  if (opFct != nullptr)
+    return opFct;
+  llvm::Type *ptrTy = builder->getPtrTy();
+  llvm::FunctionType *opFctTy = llvm::FunctionType::get(builder->getVoidTy(), {ptrTy, ptrTy}, false);
+  module->getOrInsertFunction(functionName, opFctTy);
+  return module->getFunction(functionName);
+}
+
+llvm::Function *StdFunctionManager::getStringCtorStringStringFct() const {
   std::string functionName = "_mp__String__ctor__string_string";
   llvm::Function *opFct = module->getFunction(functionName);
   if (opFct != nullptr)
@@ -84,13 +95,36 @@ llvm::Function *StdFunctionManager::getStringLitPlusOpStringLitFct() const {
   return module->getFunction(functionName);
 }
 
-llvm::Function *StdFunctionManager::getStringLitEqualsOpStringLitFct() const {
+llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   std::string functionName = "_mf__isRawEqual__string_string";
   llvm::Function *opFct = module->getFunction(functionName);
   if (opFct != nullptr)
     return opFct;
   llvm::Type *ptrTy = builder->getPtrTy();
   llvm::FunctionType *opFctTy = llvm::FunctionType::get(builder->getInt1Ty(), {ptrTy, ptrTy}, false);
+  module->getOrInsertFunction(functionName, opFctTy);
+  return module->getFunction(functionName);
+}
+
+llvm::Function *StdFunctionManager::getStringAppendStringFct() const {
+  std::string functionName = "_mp__String__append__string";
+  llvm::Function *opFct = module->getFunction(functionName);
+  if (opFct != nullptr)
+    return opFct;
+  llvm::Type *ptrTy = builder->getPtrTy();
+  llvm::FunctionType *opFctTy = llvm::FunctionType::get(builder->getVoidTy(), {ptrTy, ptrTy}, false);
+  module->getOrInsertFunction(functionName, opFctTy);
+  return module->getFunction(functionName);
+}
+
+llvm::Function *StdFunctionManager::getStringAppendCharFct() const {
+  std::string functionName = "_mp__String__append__char";
+  llvm::Function *opFct = module->getFunction(functionName);
+  if (opFct != nullptr)
+    return opFct;
+  llvm::Type *ptrTy = builder->getPtrTy();
+  llvm::Type *charTy = builder->getInt8Ty();
+  llvm::FunctionType *opFctTy = llvm::FunctionType::get(builder->getVoidTy(), {ptrTy, charTy}, false);
   module->getOrInsertFunction(functionName, opFctTy);
   return module->getFunction(functionName);
 }

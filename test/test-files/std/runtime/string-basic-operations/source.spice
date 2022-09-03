@@ -9,11 +9,11 @@ f<int> main() {
     printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
     printf("Capacity: %d\n\n", s.getCapacity());
-    s.appendChar('?');
+    s.append('?');
     printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
     printf("Capacity: %d\n\n", s.getCapacity());
-    s.appendChar('!');
+    s.append('!');
     printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
     printf("Capacity: %d\n\n", s.getCapacity());

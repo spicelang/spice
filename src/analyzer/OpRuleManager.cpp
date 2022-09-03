@@ -30,6 +30,13 @@ SymbolType OpRuleManager::getPlusEqualResultType(const CodeLoc &codeLoc, const S
       throw printErrorMessageUnsafe(codeLoc, "+=", lhs, rhs);
   }
 
+  // Allow string += char
+  if (lhs.is(TY_STRING) && rhs.is(TY_CHAR))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+  // Allow string += string
+  if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+
   return validateBinaryOperation(codeLoc, PLUS_EQUAL_OP_RULES, "+=", lhs, rhs);
 }
 

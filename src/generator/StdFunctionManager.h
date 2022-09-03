@@ -19,11 +19,14 @@ public:
   // Public methods for function retrieval
   llvm::Function *getPrintfFct() const;
   llvm::Function *getExitFct() const;
-  llvm::Function *getStackSaveFct() const;
-  llvm::Function *getStackRestoreFct() const;
-  llvm::Function *getStringRawFct() const;
-  llvm::Function *getStringLitPlusOpStringLitFct() const;
-  llvm::Function *getStringLitEqualsOpStringLitFct() const;
+  llvm::Function *getStackSaveIntrinsic() const;
+  llvm::Function *getStackRestoreIntrinsic() const;
+  llvm::Function *getStringGetRawFct() const;
+  llvm::Function *getStringCtorStringFct() const;
+  llvm::Function *getStringCtorStringStringFct() const;
+  llvm::Function *getStringIsRawEqualStringStringFct() const;
+  llvm::Function *getStringAppendStringFct() const;
+  llvm::Function *getStringAppendCharFct() const;
 
 private:
   // Members

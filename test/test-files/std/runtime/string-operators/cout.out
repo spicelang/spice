@@ -1,6 +1,10 @@
-String: Hello World!
-String: Hello World!
-String: 0
-String: 0
-String: 1
-String: 1
+Result: Hello World!
+Result: Hello World!
+Equal: 0
+Equal: 0
+Equal: 1
+Non-equal: 1
+Non-equal: 1
+Non-equal: 0
+Result: Hellol
+Result: Hi World!

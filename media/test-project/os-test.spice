@@ -21,13 +21,22 @@ import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
     // Plus
-    printf("String: %s\n", "Hello " + "World!");
-    string s = "Hello " + "World!";
-    printf("String: %s\n", s);
+    printf("Result: %s\n", "Hello " + "World!");
+    string s1 = "Hello " + "World!";
+    printf("Result: %s\n", s1);
     // Equals
-    printf("String: %d\n", "Hello World!" == "Hello Programmers!");
-    printf("String: %d\n", "Hello" == "Hell2");
+    printf("Equal: %d\n", "Hello World!" == "Hello Programmers!");
+    printf("Equal: %d\n", "Hello" == "Hell2");
+    printf("Equal: %d\n", "Hello" == "Hello");
     // Not equals
-    printf("String: %d\n", "Hello World!" != "Hello Programmers!");
-    printf("String: %d\n", "Hello" != "Hell2");
+    printf("Non-equal: %d\n", "Hello World!" != "Hello Programmers!");
+    printf("Non-equal: %d\n", "Hello" != "Hell2");
+    printf("Non-equal: %d\n", "Hello" != "Hello");
+    // PlusEquals
+    string s2 = "Hello";
+    s2 += 'l';
+    printf("Result: %s\n", s2);
+    string s3 = "Hi";
+    s3 += " World!";
+    printf("Result: %s\n", s3);
 }

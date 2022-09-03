@@ -47,12 +47,32 @@ llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return builder->CreateAdd(lhs, rhs);
-  case COMB(TY_STRING, TY_CHAR):
-    // ToDo(@marcauberer): Insert call to appendChar in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
-  case COMB(TY_STRING, TY_STRING):
-    // ToDo(@marcauberer): Insert call to append in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");
+  case COMB(TY_STRING, TY_CHAR): {
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = lhs;
+    if (!lhsSTy.isStringStruct()) {
+      llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
+      thisPtr = generator->insertAlloca(stdFunctionManager->getStringStructType());
+      builder->CreateCall(opFct, {thisPtr, lhs});
+    }
+    // Generate call to the method append(char) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringAppendCharFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
+  }
+  case COMB(TY_STRING, TY_STRING): {
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = lhs;
+    if (!lhsSTy.isStringStruct()) {
+      llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
+      thisPtr = generator->insertAlloca(stdFunctionManager->getStringStructType());
+      builder->CreateCall(opFct, {thisPtr, lhs});
+    }
+    // Generate call to the method append(string) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringAppendStringFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
+  }
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
@@ -475,7 +495,7 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Valu
     return builder->CreateICmpEQ(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the function isRawEqual(string, string) of the string std
-    llvm::Function *opFct = stdFunctionManager->getStringLitEqualsOpStringLitFct();
+    llvm::Function *opFct = stdFunctionManager->getStringIsRawEqualStringStringFct();
     llvm::Value *result = builder->CreateCall(opFct, {lhs, rhs});
     return result;
   }
@@ -583,7 +603,7 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::V
     return builder->CreateICmpNE(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the function isRawEqual(string, string) of the string std
-    llvm::Function *opFct = stdFunctionManager->getStringLitEqualsOpStringLitFct();
+    llvm::Function *opFct = stdFunctionManager->getStringIsRawEqualStringStringFct();
     llvm::Value *result = builder->CreateCall(opFct, {lhs, rhs});
     // Negate the result
     return builder->CreateNot(result);
@@ -960,7 +980,7 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     return builder->CreateAdd(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the constructor ctor(string, string) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringLitPlusOpStringLitFct();
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStringStringFct();
     llvm::Value *thisPtr = generator->insertAlloca(stdFunctionManager->getStringStructType());
     builder->CreateCall(opFct, {thisPtr, lhs, rhs});
     return thisPtr;

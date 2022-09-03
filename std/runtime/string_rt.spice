@@ -111,7 +111,7 @@ public p String.append(const string appendix) {
  *
  * @param c Char to append
  */
-public p String.appendChar(const char c) {
+public p String.append(const char c) {
     // Check if we need to re-allocate memory
     if this.capacity <= this.length + 1 {
         this.resize(this.capacity * RESIZE_FACTOR);
@@ -122,15 +122,6 @@ public p String.appendChar(const char c) {
         this.contents[this.length++] = c;
         this.contents[this.length] = '\0';
     }
-}
-
-/**
- * Implements the add operator for 'string + string'
- *
- * @param operand String to be concatenated to the current one
- */
-public inline p String.opAdd(const String operand) {
-    this.append(operand.getRaw());
 }
 
 /**
