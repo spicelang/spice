@@ -5,7 +5,13 @@
 #include <stdexcept>
 
 #include <exception/IRError.h>
+#include <generator/GeneratorVisitor.h>
 #include <util/CodeLoc.h>
+
+OpRuleConversionsManager::OpRuleConversionsManager(const GeneratorVisitor *generator) : generator(generator) {
+  builder = generator->builder;
+  context = generator->context;
+}
 
 llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
                                                         const SymbolType &rhsSTy, SymbolTable *accessScope,
@@ -943,9 +949,11 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return builder->CreateAdd(lhs, rhs);
-  case COMB(TY_STRING, TY_STRING):
-    // ToDo(@marcauberer): Insert call to append in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '+' operator for lhs=string and rhs=string yet");
+  case COMB(TY_STRING, TY_STRING): {
+    // Generate call to the constructor ctor(string, string) of the String struct
+    llvm::Function *opCtor = generator->module->getFunction("");
+    return builder->CreateCall(opCtor, {lhs, rhs});
+  }
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):

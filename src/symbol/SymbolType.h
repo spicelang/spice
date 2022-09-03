@@ -39,7 +39,7 @@ enum SymbolSuperType {
 };
 
 union TypeChainElementData {
-  bool isStringObject; // TY_STRING
+  bool isStringStruct; // TY_STRING
   int arraySize;       // TY_ARRAY
 };
 
@@ -60,7 +60,7 @@ public:
       // Check data
       switch (lhs.superType) {
       case TY_STRING:
-        return lhs.data.isStringObject == rhs.data.isStringObject;
+        return lhs.data.isStringStruct == rhs.data.isStringStruct;
       case TY_ARRAY:
         return lhs.data.arraySize == rhs.data.arraySize;
       default:

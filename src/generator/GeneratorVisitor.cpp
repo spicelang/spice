@@ -11,7 +11,6 @@
 #include <symbol/Function.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolTable.h>
-#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 #include <util/ThreadFactory.h>
 
@@ -42,7 +41,7 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
 
   // Create LLVM base components
   module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile.filePath), *context);
-  conversionsManager = std::make_unique<OpRuleConversionsManager>(context, builder);
+  conversionsManager = std::make_unique<OpRuleConversionsManager>(this);
 
   // Initialize LLVM
   llvm::InitializeAllTargetInfos();

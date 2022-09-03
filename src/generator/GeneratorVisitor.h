@@ -43,6 +43,9 @@ public:
                             ThreadFactory &threadFactory, const LinkerInterface &linker, const CliOptions &cliOptions,
                             const SourceFile &sourceFile, const std::string &objectFile);
 
+  // Friend classes
+  friend class OpRuleConversionsManager;
+
   // Public methods
   void optimize();
   void emit();
