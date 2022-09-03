@@ -74,3 +74,18 @@ public f<long> getRawLength(string input) {
         result++;
     }
 }
+
+// Returns the equality of two strings
+public f<bool> isRawEqual(string lhs, string rhs) {
+    unsigned long lhsLength = getRawLength(lhs);
+    unsigned long rhsLength = getRawLength(rhs);
+    // Return false immediately if length does not match
+    if lhsLength != rhsLength { return false; }
+    // Compare chars
+    for int i = 0; i < lhsLength; i++ {
+        if lhs[i] != rhs[i] {
+            return false;
+        }
+    }
+    return true;
+}

@@ -7,6 +7,7 @@
 #include <ast/AstNodes.h>
 #include <ast/AstVisitor.h>
 
+#include <generator/StdFunctionManager.h>
 #include <generator/OpRuleConversionsManager.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
@@ -22,7 +23,6 @@ class ThreadFactory;
 class LinkerInterface;
 struct CliOptions;
 class LinkerInterface;
-class OpRuleConversionsManager;
 class SymbolTable;
 class SymbolTableEntry;
 class Function;
@@ -44,6 +44,7 @@ public:
                             const SourceFile &sourceFile, const std::string &objectFile);
 
   // Friend classes
+  friend class StdFunctionManager;
   friend class OpRuleConversionsManager;
 
   // Public methods
@@ -104,6 +105,7 @@ public:
 
 private:
   // Members
+  std::unique_ptr<StdFunctionManager> stdFunctionManager;
   std::unique_ptr<OpRuleConversionsManager> conversionsManager;
   const std::string &objectFile;
   llvm::TargetMachine *targetMachine{};
@@ -166,12 +168,7 @@ private:
   llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
   llvm::Value *createGlobalArray(llvm::Constant *constArray);
   bool insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
-  llvm::Function *retrievePrintfFct();
-  llvm::Function *retrieveExitFct();
-  llvm::Function *retrieveStackSaveFct();
-  llvm::Function *retrieveStackRestoreFct();
-  llvm::StructType *ensureStringStruct();
-  llvm::Function *ensureStringCtorStringLitStringLit();
+
   llvm::Value *materializeString(llvm::Value *stringStruct);
   llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);

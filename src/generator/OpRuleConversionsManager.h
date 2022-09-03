@@ -10,12 +10,14 @@
 
 // Forward declarations
 class GeneratorVisitor;
+class StdFunctionManager;
 struct CodeLoc;
 
 #define COMB(en1, en2) ((en1) | ((en2) << 16))
 
 class OpRuleConversionsManager {
 public:
+  // Constructors
   explicit OpRuleConversionsManager(GeneratorVisitor *generator);
 
   // Public methods
@@ -66,5 +68,5 @@ private:
   GeneratorVisitor *generator;
   llvm::LLVMContext *context;
   llvm::IRBuilder<> *builder;
-  llvm::Module *module;
+  const StdFunctionManager *stdFunctionManager;
 };

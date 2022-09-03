@@ -6,12 +6,12 @@
 
 #include <exception/IRError.h>
 #include <generator/GeneratorVisitor.h>
+#include <generator/StdFunctionManager.h>
 #include <util/CodeLoc.h>
 
 OpRuleConversionsManager::OpRuleConversionsManager(GeneratorVisitor *generator) : generator(generator) {
   builder = generator->builder.get();
   context = generator->context.get();
-  module = generator->module.get();
 }
 
 llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
@@ -472,9 +472,12 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Valu
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return builder->CreateICmpEQ(lhs, rhs);
-  case COMB(TY_STRING, TY_STRING):
-    // ToDo(@marcauberer): Insert call to opEquals in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '==' operator for lhs=string and rhs=string yet");
+  case COMB(TY_STRING, TY_STRING): {
+    // Generate call to the function isRawEqual(string, string) of the string std
+    llvm::Function *opFct = stdFunctionManager->getStringLitEqualsOpStringLitFct();
+    llvm::Value *result = builder->CreateCall(opFct, {lhs, rhs});
+    return result;
+  }
   case COMB(TY_BOOL, TY_BOOL):
     return builder->CreateICmpEQ(lhs, rhs);
   }
@@ -577,9 +580,13 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::V
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return builder->CreateICmpNE(lhs, rhs);
-  case COMB(TY_STRING, TY_STRING):
-    // ToDo(@marcauberer): Insert call to opNotEquals in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '!=' operator for lhs=string and rhs=string yet");
+  case COMB(TY_STRING, TY_STRING): {
+    // Generate call to the function isRawEqual(string, string) of the string std
+    llvm::Function *opFct = stdFunctionManager->getStringLitEqualsOpStringLitFct();
+    llvm::Value *result = builder->CreateCall(opFct, {lhs, rhs});
+    // Negate the result
+    return builder->CreateNot(result);
+  }
   case COMB(TY_BOOL, TY_BOOL):
     return builder->CreateICmpNE(lhs, rhs);
   }
@@ -952,9 +959,8 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     return builder->CreateAdd(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the constructor ctor(string, string) of the String struct
-    llvm::Function *opFct = generator->ensureStringCtorStringLitStringLit();
-    llvm::StructType *stringStructTy = generator->ensureStringStruct();
-    llvm::Value *thisPtr = generator->insertAlloca(stringStructTy);
+    llvm::Function *opFct = stdFunctionManager->getStringLitPlusOpStringLitFct();
+    llvm::Value *thisPtr = generator->insertAlloca(stdFunctionManager->getStringStructType());
     builder->CreateCall(opFct, {thisPtr, lhs, rhs});
     return thisPtr;
   }

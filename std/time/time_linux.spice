@@ -1,0 +1,42 @@
+// Constants
+public const int TIMEZONE_UTC = 0;
+
+// Structs
+type TimeVal struct {
+    unsigned long tvSec
+    unsigned long tvUsec
+}
+type TimeZone struct {
+    int tzMinutewest
+    int tzDsttime
+}
+
+// Link external functions
+ext<int> gettimeofday(TimeVal*, TimeZone*);
+
+/**
+ * Retrieve seconds since epoch
+ */
+public f<long> getCurrentSecs() {
+    TimeVal time = TimeVal{};
+    gettimeofday(&time, nil<TimeZone*>);
+    return time.tvSec * 1000l;
+}
+
+/**
+ * Retrieve milliseconds since epoch
+ */
+public f<long> getCurrentMillis() {
+    TimeVal time = TimeVal{};
+    gettimeofday(&time, nil<TimeZone*>);
+    return time.tvSec * 1000l + time.tvUsec / 1000l;
+}
+
+/**
+ * Retrieve microseconds since epoch
+ */
+public f<long> getCurrentMicros() {
+    TimeVal time = TimeVal{};
+    gettimeofday(&time, nil<TimeZone*>);
+    return 1000000l * time.tvSec + time.tvUsec;
+}
