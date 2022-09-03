@@ -19,11 +19,6 @@ f<int> main() {
 
 import "std/runtime/string_rt" as _rt_str;
 
-/*f<int> main() {
-    string s = "H";
-    printf("Content: %s", s + "ello");
-}*/
-
 f<int> main() {
     string s = "Hello " + "World!";
     //printf("String: %s", s);
