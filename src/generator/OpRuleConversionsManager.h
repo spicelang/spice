@@ -16,7 +16,7 @@ struct CodeLoc;
 
 class OpRuleConversionsManager {
 public:
-  explicit OpRuleConversionsManager(const GeneratorVisitor *generator);
+  explicit OpRuleConversionsManager(GeneratorVisitor *generator);
 
   // Public methods
   llvm::Value *getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
@@ -63,7 +63,12 @@ public:
 
 private:
   // Members
-  const GeneratorVisitor *generator;
-  std::shared_ptr<llvm::LLVMContext> context;
-  std::shared_ptr<llvm::IRBuilder<>> builder;
+  GeneratorVisitor *generator;
+  llvm::LLVMContext *context;
+  llvm::IRBuilder<> *builder;
+  llvm::Module *module;
+
+  // Private methods
+  llvm::StructType *ensureStringStruct();
+  llvm::Function *ensureStringCtorStringLitStringLit();
 };

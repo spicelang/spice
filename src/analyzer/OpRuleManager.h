@@ -24,7 +24,6 @@ const std::vector<BinaryOpRule> ASSIGN_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long = long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte = byte -> byte
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // char = char -> char
-    BinaryOpRule(TY_STRING, TY_STRING, TY_STRING, false), // string = string -> string
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),       // bool = bool -> bool
 };
 
@@ -412,7 +411,6 @@ const std::vector<BinaryOpRule> PLUS_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long + short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long + long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte + byte -> byte
-    BinaryOpRule(TY_STRING, TY_STRING, TY_STRING, false), // string + string -> string
 };
 
 // Minus op rules

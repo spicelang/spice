@@ -15,6 +15,9 @@ SymbolType OpRuleManager::getAssignResultType(const CodeLoc &codeLoc, const Symb
   // Allow char* = string
   if (lhs.isPointerOf(TY_CHAR) && rhs.is(TY_STRING))
     return lhs;
+  // Allow string = string_object
+  if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
+    return rhs;
   // Check primitive type combinations
   return validateBinaryOperation(codeLoc, ASSIGN_OP_RULES, "=", lhs, rhs);
 }
@@ -154,6 +157,10 @@ SymbolType OpRuleManager::getPlusResultType(const CodeLoc &codeLoc, const Symbol
     else
       throw printErrorMessageUnsafe(codeLoc, "+", lhs, rhs);
   }
+
+  // Allow string + string
+  if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
+    return SymbolType(TY_STRING, "", { .isStringStruct = true }, {});
 
   return validateBinaryOperation(codeLoc, PLUS_OP_RULES, "+", lhs, rhs);
 }

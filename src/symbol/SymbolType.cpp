@@ -124,8 +124,16 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
   if (isOneOf({TY_CHAR, TY_BYTE}))
     return llvm::Type::getInt8Ty(context);
 
-  if (is(TY_STRING))
-    return llvm::Type::getInt8PtrTy(context);
+  if (is(TY_STRING)) {
+    if (typeChain.top().data.isStringStruct) {
+      std::string structName = "_s__String__charptr_long_long";
+      llvm::Type *ptrTy = llvm::PointerType::get(context, 0);
+      llvm::Type *int64Ty = llvm::Type::getInt64Ty(context);
+      return llvm::StructType::create(context, {ptrTy, int64Ty, int64Ty}, structName);
+    } else {
+      return llvm::Type::getInt8PtrTy(context);
+    }
+  }
 
   if (is(TY_BOOL))
     return llvm::Type::getInt1Ty(context);

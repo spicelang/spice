@@ -1324,7 +1324,7 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
                             "The variable '" + variableName + "' was referenced before defined");
 
       // Perform type inference
-      if (lhsTy.is(TY_DYN))
+      if (lhsTy.is(TY_DYN) || (lhsTy.is(TY_STRING) && rhsTy.is(TY_STRING)))
         currentEntry->updateType(rhsTy, false);
 
       // Update state in symbol table

@@ -8,9 +8,10 @@
 #include <generator/GeneratorVisitor.h>
 #include <util/CodeLoc.h>
 
-OpRuleConversionsManager::OpRuleConversionsManager(const GeneratorVisitor *generator) : generator(generator) {
-  builder = generator->builder;
-  context = generator->context;
+OpRuleConversionsManager::OpRuleConversionsManager(GeneratorVisitor *generator) : generator(generator) {
+  builder = generator->builder.get();
+  context = generator->context.get();
+  module = generator->module.get();
 }
 
 llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
@@ -951,8 +952,11 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     return builder->CreateAdd(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the constructor ctor(string, string) of the String struct
-    llvm::Function *opCtor = generator->module->getFunction("");
-    return builder->CreateCall(opCtor, {lhs, rhs});
+    llvm::Function *opFct = ensureStringCtorStringLitStringLit();
+    llvm::StructType *stringStructTy = ensureStringStruct();
+    llvm::Value *thisPtr = generator->insertAlloca(stringStructTy);
+    builder->CreateCall(opFct, {thisPtr, lhs, rhs});
+    return thisPtr;
   }
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
@@ -1371,4 +1375,23 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhs, const Symbo
     return builder->CreatePointerCast(rhs, lhsTy);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
+}
+
+llvm::StructType *OpRuleConversionsManager::ensureStringStruct() {
+  std::string structName = "_s__String__charptr_long_long";
+  llvm::Type *ptrTy = builder->getPtrTy();
+  llvm::Type *int64Ty = builder->getInt64Ty();
+  return llvm::StructType::create(*context, {ptrTy, int64Ty, int64Ty}, structName);
+}
+
+llvm::Function *OpRuleConversionsManager::ensureStringCtorStringLitStringLit() {
+  std::string functionName = "_mp__String__ctor__string_string";
+  llvm::Function *opFct = module->getFunction(functionName);
+  if (opFct != nullptr)
+    return opFct;
+  llvm::Type *ptrTy = builder->getPtrTy();
+  llvm::FunctionType *opFctTy = llvm::FunctionType::get(builder->getVoidTy(), {ptrTy, ptrTy, ptrTy}, false);
+  module->getOrInsertFunction(functionName, opFctTy);
+  return module->getFunction(functionName);
+  ;
 }
