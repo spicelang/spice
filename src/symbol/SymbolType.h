@@ -38,18 +38,38 @@ enum SymbolSuperType {
   TY_IMPORT
 };
 
+union TypeChainElementData {
+  bool isStringObject; // TY_STRING
+  int arraySize;       // TY_ARRAY
+};
+
 class SymbolType {
 public:
   // Structs
   struct TypeChainElement {
     SymbolSuperType superType;
     std::string subType;
+    TypeChainElementData data;
     std::vector<SymbolType> templateTypes;
     llvm::Value *dynamicArraySize;
 
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
-      return lhs.superType == rhs.superType && lhs.subType == rhs.subType && lhs.templateTypes == rhs.templateTypes &&
-             lhs.dynamicArraySize == rhs.dynamicArraySize;
+      // Check super type, subtype and template types
+      if (!equalsIgnoreArraySize(lhs, rhs))
+        return false;
+      // Check data
+      switch (lhs.superType) {
+      case TY_STRING:
+        return lhs.data.isStringObject == rhs.data.isStringObject;
+      case TY_ARRAY:
+        return lhs.data.arraySize == rhs.data.arraySize;
+      default:
+        return true;
+      }
+    }
+    friend bool equalsIgnoreArraySize(const TypeChainElement &lhs, const TypeChainElement &rhs) {
+      // Check super type, subtype and template types
+      return lhs.superType == rhs.superType && lhs.subType == rhs.subType && lhs.templateTypes == rhs.templateTypes;
     }
   };
 
@@ -57,10 +77,12 @@ public:
   typedef std::stack<TypeChainElement> TypeChain;
 
   // Constructors
-  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}, nullptr}}) {}
-  explicit SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}, nullptr}}) {}
-  explicit SymbolType(SymbolSuperType superType, const std::string &subType, const std::vector<SymbolType> &templateTypes)
-      : typeChain({{superType, subType, templateTypes, nullptr}}) {}
+  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {.arraySize = 0}, {}, nullptr}}) {}
+  explicit SymbolType(SymbolSuperType superType, const std::string &subType)
+      : typeChain({{superType, subType, {.arraySize = 0}, {}, nullptr}}) {}
+  explicit SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
+                      const std::vector<SymbolType> &templateTypes)
+      : typeChain({{superType, subType, data, templateTypes, nullptr}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
   SymbolType() = default;
   virtual ~SymbolType() = default;
@@ -92,7 +114,6 @@ public:
   [[nodiscard]] bool isSigned() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] int getArraySize() const;
-  [[nodiscard]] SymbolType setDynamicArraySize(llvm::Value *dynamicArraySize) const;
   [[nodiscard]] llvm::Value *getDynamicArraySize() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);

@@ -28,7 +28,7 @@ SymbolType SymbolType::toPointer(const CodeLoc &codeLoc, llvm::Value *dynamicSiz
     throw SemanticError(codeLoc, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_PTR, "", {}, dynamicSize});
+  newTypeChain.push({TY_PTR, "", 0, {}, dynamicSize});
   return SymbolType(newTypeChain);
 }
 
@@ -43,7 +43,7 @@ SymbolType SymbolType::toArray(const CodeLoc &codeLoc, int size) const {
     throw SemanticError(codeLoc, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_ARRAY, std::to_string(size), {}, nullptr});
+  newTypeChain.push({TY_ARRAY, "", {.arraySize = size}, {}, nullptr});
   return SymbolType(newTypeChain);
 }
 
@@ -337,20 +337,7 @@ int SymbolType::getArraySize() const {
   if (typeChain.top().superType != TY_ARRAY)                                                // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
 
-  return std::stoi(typeChain.top().subType);
-}
-
-/**
- * Set the dynamic array size of the current type
- */
-SymbolType SymbolType::setDynamicArraySize(llvm::Value *dynamicArraySize) const {
-  if (typeChain.top().superType != TY_PTR)                                                  // GCOV_EXCL_LINE
-    throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
-
-  TypeChain newTypeChain = typeChain;
-  newTypeChain.pop();
-  newTypeChain.push({typeChain.top().superType, typeChain.top().subType, typeChain.top().templateTypes, dynamicArraySize});
-  return SymbolType(newTypeChain);
+  return typeChain.top().data.arraySize;
 }
 
 /**
@@ -361,9 +348,15 @@ SymbolType SymbolType::setDynamicArraySize(llvm::Value *dynamicArraySize) const 
 llvm::Value *SymbolType::getDynamicArraySize() const {
   if (typeChain.top().superType != TY_PTR)                                                           // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get dynamic sized of non-array type"); // GCOV_EXCL_LINE
+  if (typeChain.top().data.arraySize > 0)                                                            // GCOV_EXCL_LINE
+    throw std::runtime_error("Cannot retrieve dynamic size of non-dynamically-sized array");         // GCOV_EXCL_LINE
 
   return typeChain.top().dynamicArraySize;
 }
+
+bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
+
+bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain != rhs.typeChain; }
 
 /**
  * Compares the type chains of two symbol types without taking array sizes into account
@@ -379,20 +372,14 @@ bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs) {
 
   // Compare stack elements
   for (int i = 0; i < lhs.typeChain.size(); i++) {
-    if ((lhs.typeChain.top().superType != TY_ARRAY || rhs.typeChain.top().superType != TY_ARRAY) &&
-        lhs.typeChain.top() != rhs.typeChain.top()) {
+    if (!equalsIgnoreArraySize(lhs.typeChain.top(), rhs.typeChain.top()))
       return false;
-    }
     lhs.typeChain.pop();
     rhs.typeChain.pop();
   }
 
   return true;
 }
-
-bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
-
-bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain != rhs.typeChain; }
 
 /**
  * Set the sub type of the top element
@@ -417,7 +404,7 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
       return "array";
     if (!withSize || chainElement.subType == "0")
       return "[]";
-    return chainElement.subType == "-1" ? "[size]" : "[" + chainElement.subType + "]";
+    return chainElement.subType == "-1" ? "[size]" : "[" + std::to_string(chainElement.data.arraySize) + "]";
   }
   case TY_DOUBLE:
     return "double";

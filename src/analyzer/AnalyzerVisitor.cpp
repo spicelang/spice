@@ -545,7 +545,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
   }
 
   // Build struct specifiers
-  SymbolType symbolType = SymbolType(TY_STRUCT, node->structName, templateTypes);
+  SymbolType symbolType = SymbolType(TY_STRUCT, node->structName, {}, templateTypes);
   auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const auto &specifier : specifierLst->specifiers()) {
@@ -2296,7 +2296,7 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
     throw SemanticError(node->codeLoc, UNKNOWN_DATATYPE, "Unknown datatype '" + identifier + "'");
   structSymbol->setUsed();
 
-  return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, identifier, concreteTemplateTypes));
+  return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, identifier, {.arraySize = 0}, concreteTemplateTypes));
 }
 
 void AnalyzerVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {

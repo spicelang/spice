@@ -17,11 +17,19 @@ f<int> main() {
     server.serve("/test", "Hello World!");
 }*/
 
-import "std/runtime/string_rt" as _rt_str;
+/*import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
     _rt_str::String s1 = _rt_str::String('H');
     s1.append("ello");
 
     printf("Equals: %d", s1.opEquals("Hell2"));
+}*/
+
+import "std/data/pair" as pair;
+
+f<int> main() {
+    pair::Pair<string, int> stringIntPair = pair::Pair<string, int>("Test", 1234);
+    printf("First: %s\n", stringIntPair.getFirst());
+    printf("Second: %d\n", stringIntPair.getSecond());
 }
