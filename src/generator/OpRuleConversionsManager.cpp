@@ -12,6 +12,7 @@
 OpRuleConversionsManager::OpRuleConversionsManager(GeneratorVisitor *generator) : generator(generator) {
   builder = generator->builder.get();
   context = generator->context.get();
+  stdFunctionManager = generator->stdFunctionManager.get();
 }
 
 llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
