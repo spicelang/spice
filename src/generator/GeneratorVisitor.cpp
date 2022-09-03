@@ -11,7 +11,6 @@
 #include <symbol/Function.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolTable.h>
-#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 #include <util/ThreadFactory.h>
 
@@ -42,7 +41,10 @@ GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &con
 
   // Create LLVM base components
   module = std::make_unique<llvm::Module>(FileUtil::getFileName(sourceFile.filePath), *context);
-  conversionsManager = std::make_unique<OpRuleConversionsManager>(context, builder);
+
+  // Initialize generator helper objects
+  stdFunctionManager = std::make_unique<StdFunctionManager>(this);
+  conversionsManager = std::make_unique<OpRuleConversionsManager>(this);
 
   // Initialize LLVM
   llvm::InitializeAllTargetInfos();
@@ -286,7 +288,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
 
     // Restore stack if necessary
     if (stackState != nullptr) {
-      builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+      builder->CreateCall(stdFunctionManager->getStackRestoreFct(), {stackState});
       stackState = nullptr;
     }
 
@@ -473,7 +475,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
 
         // Restore stack if necessary
         if (stackState != nullptr) {
-          builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+          builder->CreateCall(stdFunctionManager->getStackRestoreFct(), {stackState});
           stackState = nullptr;
         }
 
@@ -660,7 +662,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
 
         // Restore stack if necessary
         if (stackState != nullptr) {
-          builder->CreateCall(retrieveStackRestoreFct(), {stackState});
+          builder->CreateCall(stdFunctionManager->getStackRestoreFct(), {stackState});
           stackState = nullptr;
         }
 
@@ -1300,12 +1302,12 @@ std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
     parentFct->getBasicBlockList().push_back(bThen);
     moveInsertPointToBlock(bThen);
     // Generate IR for assertion error
-    llvm::Function *printfFct = retrievePrintfFct();
+    llvm::Function *printfFct = stdFunctionManager->getPrintfFct();
     std::string errorMsg = "Assertion failed: Condition '" + node->expressionString + "' evaluated to false.";
     llvm::Value *templateString = builder->CreateGlobalStringPtr(errorMsg);
     builder->CreateCall(printfFct, templateString);
     // Generate call to exit
-    llvm::Function *exitFct = retrieveExitFct();
+    llvm::Function *exitFct = stdFunctionManager->getExitFct();
     builder->CreateCall(exitFct, builder->getInt32(1));
     // Create unreachable instruction
     builder->CreateUnreachable();
@@ -1456,7 +1458,7 @@ std::any GeneratorVisitor::visitContinueStmt(ContinueStmtNode *node) {
 
 std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
   // Declare if not declared already
-  llvm::Function *printfFct = retrievePrintfFct();
+  llvm::Function *printfFct = stdFunctionManager->getPrintfFct();
 
   std::vector<llvm::Value *> printfArgs;
   printfArgs.push_back(builder->CreateGlobalStringPtr(node->templatedString));
@@ -1471,6 +1473,9 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
     if (argSymbolType.isArray()) { // Convert array type to pointer type
       llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(0)};
       argVal = builder->CreateInBoundsGEP(targetType, argValPtr, indices);
+    } else if (argSymbolType.isStringStruct()) {
+      argValPtr = materializeString(argValPtr);
+      argVal = builder->CreateLoad(targetType, argValPtr);
     } else {
       argVal = builder->CreateLoad(targetType, argValPtr);
     }
@@ -1982,6 +1987,10 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
 
       switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
+        /*if (lhsSymbolType.isStringStruct())
+          lhs = materializeString(lhsPtr);
+        if (rhsSymbolType.isStringStruct())
+          rhs = materializeString(rhsPtr);*/
         lhs = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, node->codeLoc);
         break;
       case AdditiveExprNode::OP_MINUS:
@@ -2976,7 +2985,7 @@ llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::str
 
 llvm::Value *GeneratorVisitor::allocateDynamicallySizedArray(llvm::Type *itemType) {
   // Call llvm.stacksave intrinsic
-  llvm::Function *stackSaveFct = retrieveStackSaveFct();
+  llvm::Function *stackSaveFct = stdFunctionManager->getStackSaveFct();
   if (stackState == nullptr)
     stackState = builder->CreateCall(stackSaveFct);
   // Allocate array
@@ -3043,48 +3052,10 @@ bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableE
   return true;
 }
 
-llvm::Function *GeneratorVisitor::retrievePrintfFct() {
-  std::string printfFctName = "printf";
-  llvm::Function *printfFct = module->getFunction(printfFctName);
-  if (printfFct)
-    return printfFct;
-  // Not found -> declare it for linkage
-  llvm::FunctionType *printfFctTy = llvm::FunctionType::get(builder->getInt32Ty(), builder->getInt8PtrTy(), true);
-  module->getOrInsertFunction(printfFctName, printfFctTy);
-  return module->getFunction(printfFctName);
-}
-
-llvm::Function *GeneratorVisitor::retrieveExitFct() {
-  std::string exitFctName = "exit";
-  llvm::Function *exitFct = module->getFunction(exitFctName);
-  if (exitFct)
-    return exitFct;
-  // Not found -> declare it for linkage
-  llvm::FunctionType *exitFctTy = llvm::FunctionType::get(builder->getVoidTy(), builder->getInt32Ty(), false);
-  module->getOrInsertFunction(exitFctName, exitFctTy);
-  return module->getFunction(exitFctName);
-}
-
-llvm::Function *GeneratorVisitor::retrieveStackSaveFct() {
-  std::string stackSaveFctName = "llvm.stacksave";
-  llvm::Function *stackSaveFct = module->getFunction(stackSaveFctName);
-  if (stackSaveFct)
-    return stackSaveFct;
-  // Not found -> declare it for linkage
-  llvm::FunctionType *stackSaveFctTy = llvm::FunctionType::get(builder->getInt8PtrTy(), {}, false);
-  module->getOrInsertFunction(stackSaveFctName, stackSaveFctTy);
-  return module->getFunction(stackSaveFctName);
-}
-
-llvm::Function *GeneratorVisitor::retrieveStackRestoreFct() {
-  std::string stackRestoreFctName = "llvm.stackrestore";
-  llvm::Function *stackRestoreFct = module->getFunction(stackRestoreFctName);
-  if (stackRestoreFct)
-    return stackRestoreFct;
-  // Not found -> declare it for linkage
-  llvm::FunctionType *stackRestoreFctTy = llvm::FunctionType::get(builder->getVoidTy(), builder->getInt8PtrTy(), false);
-  module->getOrInsertFunction(stackRestoreFctName, stackRestoreFctTy);
-  return module->getFunction(stackRestoreFctName);
+llvm::Value *GeneratorVisitor::materializeString(llvm::Value *stringStructPtr) {
+  assert(stringStructPtr->getType()->isPointerTy());
+  llvm::Value *rawStringValue = builder->CreateCall(stdFunctionManager->getStringRawFct(), stringStructPtr);
+  return rawStringValue;
 }
 
 llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(const SymbolType &symbolType) {

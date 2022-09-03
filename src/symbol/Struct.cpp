@@ -89,7 +89,7 @@ SymbolType Struct::getSymbolType() const {
     for (const auto &templateType : templateTypes)
       concreteTemplateTypes.push_back(templateType);
   }
-  return SymbolType(TY_STRUCT, name, concreteTemplateTypes);
+  return SymbolType(TY_STRUCT, name, { .arraySize = 0 }, concreteTemplateTypes);
 }
 
 /**

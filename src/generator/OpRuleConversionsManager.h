@@ -9,15 +9,16 @@
 #include <llvm/IR/Value.h>
 
 // Forward declarations
-class ErrorFactory;
+class GeneratorVisitor;
+class StdFunctionManager;
 struct CodeLoc;
 
 #define COMB(en1, en2) ((en1) | ((en2) << 16))
 
 class OpRuleConversionsManager {
 public:
-  explicit OpRuleConversionsManager(const std::shared_ptr<llvm::LLVMContext> &context, std::shared_ptr<llvm::IRBuilder<>> builder)
-      : context(context), builder(std::move(builder)) {}
+  // Constructors
+  explicit OpRuleConversionsManager(GeneratorVisitor *generator);
 
   // Public methods
   llvm::Value *getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
@@ -64,6 +65,8 @@ public:
 
 private:
   // Members
-  const std::shared_ptr<llvm::LLVMContext> &context;
-  std::shared_ptr<llvm::IRBuilder<>> builder;
+  GeneratorVisitor *generator;
+  llvm::LLVMContext *context;
+  llvm::IRBuilder<> *builder;
+  const StdFunctionManager *stdFunctionManager;
 };

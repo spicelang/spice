@@ -40,6 +40,28 @@ public p String.ctor(const string value = "") {
     }
 }
 
+public p String.ctor(const string value1, const string value2) {
+    unsigned long value1Length = str.getRawLength(value1);
+    unsigned long value2Length = str.getRawLength(value2);
+    this.length = value1Length + value2Length;
+    this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT; // +1 because of null terminator
+
+    // Allocate space for the initial number of elements
+    unsafe {
+        this.contents = (char*) malloc(sizeof(type char) * this.capacity);
+    }
+
+    // Save initial value
+    unsafe {
+        for unsigned long i; i < value1Length; i++ {
+            this.contents[i] = value1[i];
+        }
+        for unsigned long i; i < value2Length + 1; i++ { // +1 because of null terminator
+            this.contents[value1Length + i] = value2[i];
+        }
+    }
+}
+
 public p String.ctor(const char value) {
     this.length = 1l;
     this.capacity = INITIAL_ALLOC_COUNT;
@@ -170,17 +192,6 @@ public f<bool> String.opEquals(const string operand) {
     }
 
     return true;
-}
-
-/**
- * Implements the equals operator for 'string != string'
- *
- * @param operand String to comare the current string to
- *
- * @return Equal or not
- */
-public inline f<bool> String.opNotEquals(const String operand) {
-    return !this.opEquals(operand.getRaw());
 }
 
 /**

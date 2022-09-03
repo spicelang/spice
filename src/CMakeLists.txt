@@ -16,6 +16,8 @@ set(SOURCES
         analyzer/OpRuleManager.h
         generator/GeneratorVisitor.cpp
         generator/GeneratorVisitor.h
+        generator/StdFunctionManager.cpp
+        generator/StdFunctionManager.h
         generator/OpRuleConversionsManager.cpp
         generator/OpRuleConversionsManager.h
         linker/LinkerInterface.cpp

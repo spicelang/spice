@@ -2,12 +2,12 @@ f<int> main() {
     string food = "Pizza";
     string* ptr = &food;
 
-    printf("Pointer address: %p, value: %s", ptr, *ptr);
+    printf("Pointer address: %p, value: %s\n", ptr, *ptr);
 
     *ptr = "Burger";
 
     dyn restoredFood = *ptr;
-    printf("Restored value: %s", restoredFood);
+    printf("Restored value: %s\n", restoredFood);
 
-    printf("Restored value address: %p\n", &restoredFood);
+    printf("Restored value address: %p", &restoredFood);
 }

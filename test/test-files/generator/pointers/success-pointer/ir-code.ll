@@ -4,10 +4,10 @@ target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [6 x i8] c"Pizza\00", align 1
-@1 = private unnamed_addr constant [31 x i8] c"Pointer address: %p, value: %s\00", align 1
+@1 = private unnamed_addr constant [32 x i8] c"Pointer address: %p, value: %s\0A\00", align 1
 @2 = private unnamed_addr constant [7 x i8] c"Burger\00", align 1
-@3 = private unnamed_addr constant [19 x i8] c"Restored value: %s\00", align 1
-@4 = private unnamed_addr constant [28 x i8] c"Restored value address: %p\0A\00", align 1
+@3 = private unnamed_addr constant [20 x i8] c"Restored value: %s\0A\00", align 1
+@4 = private unnamed_addr constant [27 x i8] c"Restored value address: %p\00", align 1
 
 define i32 @main() {
 entry.l1:

@@ -354,6 +354,7 @@ void SymbolTable::insertFunction(const Function &function) {
  * @param callArgTypes Argument types requirement
  * @param err Error Factory
  * @param codeLoc Declaration code location for the error message
+ *
  * @return Matched function or nullptr
  */
 Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::string &callFunctionName,
