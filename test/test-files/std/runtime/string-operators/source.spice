@@ -27,4 +27,8 @@ f<int> main() {
     string s5 = "Hi";
     s5 += " World!";
     printf("Result: %s\n", s5);
+    // MulEquals
+    string s6 = "Hi";
+    s6 *= 3;
+    printf("Result: %s\n", s6);
 }
