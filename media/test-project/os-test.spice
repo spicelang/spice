@@ -20,7 +20,7 @@ f<int> main() {
 import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
-    string s = "Test";
-    s *= 3;
-    printf("%s", s);
+    string s1 = "Hello " + "World!";
+    string s2 = "Foo " + ", Bar";
+    //printf("%s", s1 + s2);
 }

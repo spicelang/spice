@@ -993,6 +993,9 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
   case COMB(TY_CHAR, TY_CHAR):
     return builder->CreateAdd(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
+    // Materialize string object to raw string if required
+    if (rhsSTy.isStringStruct())
+      rhs = generator->materializeString(rhs);
     // Generate call to the constructor ctor(string, string) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringCtorStringStringFct();
     llvm::Value *thisPtr = generator->insertAlloca(stdFunctionManager->getStringStructType());
