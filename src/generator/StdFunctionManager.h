@@ -11,7 +11,7 @@ class GeneratorVisitor;
 class StdFunctionManager {
 public:
   // Constructors
-  explicit StdFunctionManager(GeneratorVisitor* generator);
+  explicit StdFunctionManager(GeneratorVisitor *generator);
 
   // Public methods for type retrieval
   llvm::StructType *getStringStructType() const;
@@ -27,11 +27,18 @@ public:
   llvm::Function *getStringIsRawEqualStringStringFct() const;
   llvm::Function *getStringAppendStringFct() const;
   llvm::Function *getStringAppendCharFct() const;
+  llvm::Function *getStringMulOpIntFct() const;
+  llvm::Function *getStringMulOpLongFct() const;
+  llvm::Function *getStringMulOpShortFct() const;
 
 private:
   // Members
-  GeneratorVisitor *generator;
   llvm::LLVMContext *context;
   llvm::IRBuilder<> *builder;
   llvm::Module *module;
+
+  // Private methods
+  llvm::Function *getFunction(const std::string functionName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
+                              bool varArg = false) const;
+  llvm::Function *getProcedure(const std::string procedureName, llvm::ArrayRef<llvm::Type *> args, bool varArg = false) const;
 };

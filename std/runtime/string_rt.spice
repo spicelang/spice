@@ -11,14 +11,11 @@ ext<byte*> realloc(byte*, int);
 ext free(byte*);
 ext<byte*> memcpy(byte*, byte*, int);
 
-// Generic types
-type NumType int|long|short;
-
 /**
  * String wrapper for enriching raw strings with information and make them mutable
  */
 public type String struct {
-    char* contents   // Pointer to the first char
+    char* contents             // Pointer to the first char
     unsigned long capacity     // Allocated number of chars
     unsigned long length       // Current number of chars
 }
@@ -125,15 +122,24 @@ public p String.append(const char c) {
 }
 
 /**
- * Implements the multily operator for 'string * int/long/short' or 'int/long/short * int'
+ * Implements the multily operator for 'string * int' or 'int * string'
  *
  * @param operand Number of repetitions
  */
-public p String.opMul<NumType>(const NumType operand) {
-    // Cancel if operand is less than 2
-    if operand < 2 { return; }
+public inline p String.opMul(const int operand) {
+    this.opMul((long) operand);
+}
 
-    unsigned long newLength = ((long) operand) * this.length;
+/**
+ * Implements the multily operator for 'string * long' or 'long * string'
+ *
+ * @param operand Number of repetitions
+ */
+public p String.opMul(const long operand) {
+    // Cancel if operand is less than 2
+    if operand < 2l { return; }
+
+    unsigned long newLength = operand * this.length;
     // Check if we need to re-allocate memory
     while this.capacity <= newLength {
         this.resize(this.capacity * RESIZE_FACTOR);
@@ -141,12 +147,21 @@ public p String.opMul<NumType>(const NumType operand) {
 
     // Save the value
     unsafe {
-        for int i = 0; i < newLength; i++ {
+        for unsigned long i = 0l; i < newLength; i++ {
             this.contents[i] = this.contents[i % this.length];
         }
-        this.contents[newLength + 1] = '\0';
+        this.contents[newLength] = '\0';
     }
     this.length = newLength;
+}
+
+/**
+ * Implements the multily operator for 'string * short' or 'short * string'
+ *
+ * @param operand Number of repetitions
+ */
+public inline p String.opMul(const short operand) {
+    this.opMul((long) operand);
 }
 
 /**

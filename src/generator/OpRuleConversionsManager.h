@@ -69,4 +69,7 @@ private:
   llvm::LLVMContext *context;
   llvm::IRBuilder<> *builder;
   const StdFunctionManager *stdFunctionManager;
+
+  // Private methods
+  llvm::Value *propagateStringToStringObject(const SymbolType &symbolType, llvm::Value *operandValue);
 };

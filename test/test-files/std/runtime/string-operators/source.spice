@@ -5,6 +5,10 @@ f<int> main() {
     printf("Result: %s\n", "Hello " + "World!");
     string s1 = "Hello " + "World!";
     printf("Result: %s\n", s1);
+    // Mul
+    printf("Result: %s\n", 4s * "Hi");
+    string s2 = "Hello " * 5;
+    printf("Result: %s\n", s2);
     // Equals
     printf("Equal: %d\n", "Hello World!" == "Hello Programmers!");
     printf("Equal: %d\n", "Hello" == "Hell2");
@@ -14,10 +18,10 @@ f<int> main() {
     printf("Non-equal: %d\n", "Hello" != "Hell2");
     printf("Non-equal: %d\n", "Hello" != "Hello");
     // PlusEquals
-    string s2 = "Hello";
-    s2 += 'l';
-    printf("Result: %s\n", s2);
-    string s3 = "Hi";
-    s3 += " World!";
+    string s3 = "Hello";
+    s3 += 'l';
     printf("Result: %s\n", s3);
+    string s4 = "Hi";
+    s4 += " World!";
+    printf("Result: %s\n", s4);
 }

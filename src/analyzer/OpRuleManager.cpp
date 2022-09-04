@@ -167,7 +167,7 @@ SymbolType OpRuleManager::getPlusResultType(const CodeLoc &codeLoc, const Symbol
 
   // Allow string + string
   if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
-    return SymbolType(TY_STRING, "", { .isStringStruct = true }, {});
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
 
   return validateBinaryOperation(codeLoc, PLUS_OP_RULES, "+", lhs, rhs);
 }
@@ -192,6 +192,18 @@ SymbolType OpRuleManager::getMinusResultType(const CodeLoc &codeLoc, const Symbo
 }
 
 SymbolType OpRuleManager::getMulResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+  // Allow string * int and int * string
+  if ((lhs.is(TY_STRING) && rhs.is(TY_INT)) || (lhs.is(TY_INT) && rhs.is(TY_STRING)))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+
+  // Allow string * short and short * string
+  if ((lhs.is(TY_STRING) && rhs.is(TY_SHORT)) || (lhs.is(TY_SHORT) && rhs.is(TY_STRING)))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+
+  // Allow string * long and long * string
+  if ((lhs.is(TY_STRING) && rhs.is(TY_LONG)) || (lhs.is(TY_LONG) && rhs.is(TY_STRING)))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+
   return validateBinaryOperation(codeLoc, MUL_OP_RULES, "*", lhs, rhs);
 }
 
