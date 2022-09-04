@@ -33,14 +33,14 @@ entry.l3:
   %9 = call i32 (ptr, ...) @printf(ptr nonnull @8, i64 %8)
   %10 = call i64 @_mf__String__getCapacity(ptr nonnull %s)
   %11 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %10)
-  call void @_mp__String__appendChar__char(ptr nonnull %s, i8 63)
+  call void @_mp__String__append__char(ptr nonnull %s, i8 63)
   %12 = call ptr @_mf__String__getRaw(ptr nonnull %s)
   %13 = call i32 (ptr, ...) @printf(ptr nonnull @7, ptr %12)
   %14 = call i64 @_mf__String__getLength(ptr nonnull %s)
   %15 = call i32 (ptr, ...) @printf(ptr nonnull @8, i64 %14)
   %16 = call i64 @_mf__String__getCapacity(ptr nonnull %s)
   %17 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %16)
-  call void @_mp__String__appendChar__char(ptr nonnull %s, i8 33)
+  call void @_mp__String__append__char(ptr nonnull %s, i8 33)
   %18 = call ptr @_mf__String__getRaw(ptr nonnull %s)
   %19 = call i32 (ptr, ...) @printf(ptr nonnull @7, ptr %18)
   %20 = call i64 @_mf__String__getLength(ptr nonnull %s)
@@ -89,7 +89,7 @@ declare i64 @_mf__String__getCapacity(ptr) local_unnamed_addr
 
 declare void @_mp__String__append__string(ptr, ptr) local_unnamed_addr
 
-declare void @_mp__String__appendChar__char(ptr, i8) local_unnamed_addr
+declare void @_mp__String__append__char(ptr, i8) local_unnamed_addr
 
 declare i1 @_mf__String__opEquals__string(ptr, ptr) local_unnamed_addr
 

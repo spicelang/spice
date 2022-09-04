@@ -20,14 +20,7 @@ f<int> main() {
 import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
-    // Plus
-    printf("String: %s\n", "Hello " + "World!");
-    string s = "Hello " + "World!";
-    printf("String: %s\n", s);
-    // Equals
-    printf("String: %d\n", "Hello World!" == "Hello Programmers!");
-    printf("String: %d\n", "Hello" == "Hell2");
-    // Not equals
-    printf("String: %d\n", "Hello World!" != "Hello Programmers!");
-    printf("String: %d\n", "Hello" != "Hell2");
+    string s = "Test";
+    s *= 3;
+    printf("%s", s);
 }

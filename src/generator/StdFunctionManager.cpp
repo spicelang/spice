@@ -4,93 +4,83 @@
 
 #include <generator/GeneratorVisitor.h>
 
-StdFunctionManager::StdFunctionManager(GeneratorVisitor *generator) : generator(generator) {
+StdFunctionManager::StdFunctionManager(GeneratorVisitor *generator) {
   context = generator->context.get();
   builder = generator->builder.get();
   module = generator->module.get();
 }
 
 llvm::StructType *StdFunctionManager::getStringStructType() const {
-  std::string structName = "_s__String__charptr_long_long";
   llvm::Type *ptrTy = builder->getPtrTy();
   llvm::Type *int64Ty = builder->getInt64Ty();
-  return llvm::StructType::create(*context, {ptrTy, int64Ty, int64Ty}, structName);
+  return llvm::StructType::create(*context, {ptrTy, int64Ty, int64Ty}, "_s__String__charptr_long_long");
 }
 
 llvm::Function *StdFunctionManager::getPrintfFct() const {
-  std::string printfFctName = "printf";
-  llvm::Function *printfFct = module->getFunction(printfFctName);
-  if (printfFct)
-    return printfFct;
-  // Not found -> declare it for linkage
-  llvm::FunctionType *printfFctTy = llvm::FunctionType::get(builder->getInt32Ty(), builder->getInt8PtrTy(), true);
-  module->getOrInsertFunction(printfFctName, printfFctTy);
-  return module->getFunction(printfFctName);
+  return getFunction("printf", builder->getInt32Ty(), builder->getInt8PtrTy(), true);
 }
 
-llvm::Function *StdFunctionManager::getExitFct() const {
-  std::string exitFctName = "exit";
-  llvm::Function *exitFct = module->getFunction(exitFctName);
-  if (exitFct)
-    return exitFct;
-  // Not found -> declare it for linkage
-  llvm::FunctionType *exitFctTy = llvm::FunctionType::get(builder->getVoidTy(), builder->getInt32Ty(), false);
-  module->getOrInsertFunction(exitFctName, exitFctTy);
-  return module->getFunction(exitFctName);
+llvm::Function *StdFunctionManager::getExitFct() const { return getProcedure("exit", builder->getInt32Ty()); }
+
+llvm::Function *StdFunctionManager::getStackSaveIntrinsic() const {
+  return getFunction("llvm.stacksave", builder->getPtrTy(), {});
 }
 
-llvm::Function *StdFunctionManager::getStackSaveFct() const {
-  std::string stackSaveFctName = "llvm.stacksave";
-  llvm::Function *stackSaveFct = module->getFunction(stackSaveFctName);
-  if (stackSaveFct)
-    return stackSaveFct;
-  // Not found -> declare it for linkage
-  llvm::FunctionType *stackSaveFctTy = llvm::FunctionType::get(builder->getInt8PtrTy(), {}, false);
-  module->getOrInsertFunction(stackSaveFctName, stackSaveFctTy);
-  return module->getFunction(stackSaveFctName);
+llvm::Function *StdFunctionManager::getStackRestoreIntrinsic() const {
+  return getProcedure("llvm.stackrestore", builder->getInt8PtrTy());
 }
 
-llvm::Function *StdFunctionManager::getStackRestoreFct() const {
-  std::string stackRestoreFctName = "llvm.stackrestore";
-  llvm::Function *stackRestoreFct = module->getFunction(stackRestoreFctName);
-  if (stackRestoreFct)
-    return stackRestoreFct;
-  // Not found -> declare it for linkage
-  llvm::FunctionType *stackRestoreFctTy = llvm::FunctionType::get(builder->getVoidTy(), builder->getInt8PtrTy(), false);
-  module->getOrInsertFunction(stackRestoreFctName, stackRestoreFctTy);
-  return module->getFunction(stackRestoreFctName);
+llvm::Function *StdFunctionManager::getStringGetRawFct() const {
+  return getFunction("_mf__String__getRaw", builder->getPtrTy(), getStringStructType()->getPointerTo());
 }
 
-llvm::Function *StdFunctionManager::getStringRawFct() const {
-  std::string functionName = "_mf__String__getRaw";
-  llvm::Function *opFct = module->getFunction(functionName);
-  if (opFct)
-    return opFct;
-  llvm::Type *structTyPtr = getStringStructType()->getPointerTo();
-  llvm::Type *stringTy = builder->getPtrTy();
-  llvm::FunctionType *opFctTy = llvm::FunctionType::get(stringTy, structTyPtr, false);
-  module->getOrInsertFunction(functionName, opFctTy);
-  return module->getFunction(functionName);
+llvm::Function *StdFunctionManager::getStringCtorCharFct() const {
+  return getProcedure("_mp__String__ctor__char", {builder->getPtrTy(), builder->getInt8Ty()});
 }
 
-llvm::Function *StdFunctionManager::getStringLitPlusOpStringLitFct() const {
-  std::string functionName = "_mp__String__ctor__string_string";
+llvm::Function *StdFunctionManager::getStringCtorStringFct() const {
+  return getProcedure("_mp__String__ctor__string", {builder->getPtrTy(), builder->getPtrTy()});
+}
+
+llvm::Function *StdFunctionManager::getStringCtorStringStringFct() const {
+  return getProcedure("_mp__String__ctor__string_string", {builder->getPtrTy(), builder->getPtrTy(), builder->getPtrTy()});
+}
+
+llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
+  return getFunction("_mf__isRawEqual__string_string", builder->getInt1Ty(), {builder->getPtrTy(), builder->getPtrTy()});
+}
+
+llvm::Function *StdFunctionManager::getStringAppendStringFct() const {
+  return getProcedure("_mp__String__append__string", {builder->getPtrTy(), builder->getPtrTy()});
+}
+
+llvm::Function *StdFunctionManager::getStringAppendCharFct() const {
+  return getProcedure("_mp__String__append__char", {builder->getPtrTy(), builder->getInt8Ty()});
+}
+
+llvm::Function *StdFunctionManager::getStringMulOpIntFct() const {
+  return getProcedure("_mp__String__opMul__int", {builder->getPtrTy(), builder->getInt32Ty()});
+}
+
+llvm::Function *StdFunctionManager::getStringMulOpLongFct() const {
+  return getProcedure("_mp__String__opMul__long", {builder->getPtrTy(), builder->getInt64Ty()});
+}
+
+llvm::Function *StdFunctionManager::getStringMulOpShortFct() const {
+  return getProcedure("_mp__String__opMul__short", {builder->getPtrTy(), builder->getInt16Ty()});
+}
+
+llvm::Function *StdFunctionManager::getFunction(const std::string functionName, llvm::Type *returnType,
+                                                llvm::ArrayRef<llvm::Type *> args, bool varArg) const {
   llvm::Function *opFct = module->getFunction(functionName);
   if (opFct != nullptr)
     return opFct;
-  llvm::Type *ptrTy = builder->getPtrTy();
-  llvm::FunctionType *opFctTy = llvm::FunctionType::get(builder->getVoidTy(), {ptrTy, ptrTy, ptrTy}, false);
+  llvm::FunctionType *opFctTy = llvm::FunctionType::get(returnType, args, varArg);
   module->getOrInsertFunction(functionName, opFctTy);
   return module->getFunction(functionName);
 }
 
-llvm::Function *StdFunctionManager::getStringLitEqualsOpStringLitFct() const {
-  std::string functionName = "_mf__isRawEqual__string_string";
-  llvm::Function *opFct = module->getFunction(functionName);
-  if (opFct != nullptr)
-    return opFct;
-  llvm::Type *ptrTy = builder->getPtrTy();
-  llvm::FunctionType *opFctTy = llvm::FunctionType::get(builder->getInt1Ty(), {ptrTy, ptrTy}, false);
-  module->getOrInsertFunction(functionName, opFctTy);
-  return module->getFunction(functionName);
+llvm::Function *StdFunctionManager::getProcedure(const std::string procedureName, llvm::ArrayRef<llvm::Type *> args,
+                                                 bool varArg) const {
+  return getFunction(procedureName, builder->getVoidTy(), args, varArg);
 }

@@ -47,12 +47,22 @@ llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return builder->CreateAdd(lhs, rhs);
-  case COMB(TY_STRING, TY_CHAR):
-    // ToDo(@marcauberer): Insert call to appendChar in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=char yet");
-  case COMB(TY_STRING, TY_STRING):
-    // ToDo(@marcauberer): Insert call to append in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '+=' operator for lhs=string and rhs=string yet");
+  case COMB(TY_STRING, TY_CHAR): {
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method append(char) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringAppendCharFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
+  }
+  case COMB(TY_STRING, TY_STRING): {
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method append(string) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringAppendStringFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
+  }
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
@@ -131,6 +141,30 @@ llvm::Value *OpRuleConversionsManager::getMulEqualInst(llvm::Value *lhs, llvm::V
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return builder->CreateMul(lhs, rhs);
+  case COMB(TY_STRING, TY_INT): {
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method append(char) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
+  }
+  case COMB(TY_STRING, TY_LONG): {
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method append(char) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
+  }
+  case COMB(TY_STRING, TY_SHORT): {
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method append(char) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
+  }
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
@@ -475,7 +509,7 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Valu
     return builder->CreateICmpEQ(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the function isRawEqual(string, string) of the string std
-    llvm::Function *opFct = stdFunctionManager->getStringLitEqualsOpStringLitFct();
+    llvm::Function *opFct = stdFunctionManager->getStringIsRawEqualStringStringFct();
     llvm::Value *result = builder->CreateCall(opFct, {lhs, rhs});
     return result;
   }
@@ -583,7 +617,7 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::V
     return builder->CreateICmpNE(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the function isRawEqual(string, string) of the string std
-    llvm::Function *opFct = stdFunctionManager->getStringLitEqualsOpStringLitFct();
+    llvm::Function *opFct = stdFunctionManager->getStringIsRawEqualStringStringFct();
     llvm::Value *result = builder->CreateCall(opFct, {lhs, rhs});
     // Negate the result
     return builder->CreateNot(result);
@@ -960,7 +994,7 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
     return builder->CreateAdd(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the constructor ctor(string, string) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringLitPlusOpStringLitFct();
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStringStringFct();
     llvm::Value *thisPtr = generator->insertAlloca(stdFunctionManager->getStringStructType());
     builder->CreateCall(opFct, {thisPtr, lhs, rhs});
     return thisPtr;
@@ -1072,13 +1106,14 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateMul(lhsLong, rhs);
   }
-  case COMB(TY_INT, TY_CHAR): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=char yet");
-  }
+  case COMB(TY_INT, TY_CHAR): // fallthrough
   case COMB(TY_INT, TY_STRING): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=int and rhs=string yet");
+    // Convert rhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(rhsSTy, rhs);
+    // Generate call to the method opMul(int) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
+    builder->CreateCall(opFct, {thisPtr, lhs});
+    return thisPtr;
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
@@ -1094,13 +1129,14 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
     llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
     return builder->CreateMul(lhsLong, rhs);
   }
-  case COMB(TY_SHORT, TY_CHAR): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=char yet");
-  }
+  case COMB(TY_SHORT, TY_CHAR): // fallthrough
   case COMB(TY_SHORT, TY_STRING): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=short and rhs=string yet");
+    // Convert rhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(rhsSTy, rhs);
+    // Generate call to the method opMul(int) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
+    builder->CreateCall(opFct, {thisPtr, lhs});
+    return thisPtr;
   }
   case COMB(TY_LONG, TY_DOUBLE): {
     llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
@@ -1113,39 +1149,64 @@ llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value 
   }
   case COMB(TY_LONG, TY_LONG):
     return builder->CreateMul(lhs, rhs);
-  case COMB(TY_LONG, TY_CHAR): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=char yet");
-  }
+  case COMB(TY_LONG, TY_CHAR): // fallthrough
   case COMB(TY_LONG, TY_STRING): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=long and rhs=string yet");
+    // Convert rhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(rhsSTy, rhs);
+    // Generate call to the method opMul(int) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
+    builder->CreateCall(opFct, {thisPtr, lhs});
+    return thisPtr;
   }
   case COMB(TY_BYTE, TY_BYTE):
     return builder->CreateMul(lhs, rhs);
   case COMB(TY_CHAR, TY_INT): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=int yet");
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method opMul(int) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
   }
   case COMB(TY_CHAR, TY_SHORT): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=short yet");
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method opMul(int) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
   }
   case COMB(TY_CHAR, TY_LONG): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=char and rhs=long yet");
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method opMul(int) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
   }
   case COMB(TY_STRING, TY_INT): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=int yet");
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method opMul(int) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
   }
   case COMB(TY_STRING, TY_SHORT): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=short yet");
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method opMul(int) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
   }
   case COMB(TY_STRING, TY_LONG): {
-    // ToDo(@marcauberer): Insert call to opMul in the runtime lib
-    throw IRError(codeLoc, COMING_SOON_IR, "The compiler does not support the '*' operator for lhs=string and rhs=long yet");
+    // Convert lhs literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    // Generate call to the method opMul(int) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
+    builder->CreateCall(opFct, {thisPtr, rhs});
+    return thisPtr;
   }
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *"); // GCOV_EXCL_LINE
@@ -1382,4 +1443,16 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhs, const Symbo
     return builder->CreatePointerCast(rhs, lhsTy);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
+}
+
+llvm::Value *OpRuleConversionsManager::propagateValueToStringObject(const SymbolType &symbolType, llvm::Value *operandValue) {
+  if (symbolType.isStringStruct())
+    return operandValue;
+  assert(symbolType.isOneOf({TY_CHAR, TY_STRING}));
+  // Convert rhs literal to string object
+  llvm::Function *opFct =
+      symbolType.is(TY_CHAR) ? stdFunctionManager->getStringCtorCharFct() : stdFunctionManager->getStringCtorStringFct();
+  llvm::Value *thisPtr = generator->insertAlloca(stdFunctionManager->getStringStructType());
+  builder->CreateCall(opFct, {thisPtr, operandValue});
+  return thisPtr;
 }

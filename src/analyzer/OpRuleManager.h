@@ -41,8 +41,6 @@ const std::vector<BinaryOpRule> PLUS_EQUAL_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long += long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte += byte -> byte
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // char += char -> char
-    BinaryOpRule(TY_STRING, TY_CHAR, TY_STRING, false),   // string += char -> string
-    BinaryOpRule(TY_STRING, TY_STRING, TY_STRING, false), // string += string -> string
 };
 
 // Minus equal op rules
@@ -444,27 +442,15 @@ const std::vector<BinaryOpRule> MUL_OP_RULES = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int * int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int * short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),        // int * long -> long
-    BinaryOpRule(TY_INT, TY_CHAR, TY_STRING, false),      // int * char -> string
-    BinaryOpRule(TY_INT, TY_STRING, TY_STRING, false),    // int * string -> string
     BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_DOUBLE, false),  // short * double -> double
     BinaryOpRule(TY_SHORT, TY_INT, TY_INT, false),        // short * int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // short * short -> short
     BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG, false),      // short * long -> long
-    BinaryOpRule(TY_SHORT, TY_CHAR, TY_STRING, false),    // short * char -> string
-    BinaryOpRule(TY_SHORT, TY_STRING, TY_STRING, false),  // short * string -> string
     BinaryOpRule(TY_LONG, TY_DOUBLE, TY_DOUBLE, false),   // long * double -> double
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long * int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long * short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long * long -> long
-    BinaryOpRule(TY_LONG, TY_CHAR, TY_STRING, false),     // long * char -> string
-    BinaryOpRule(TY_LONG, TY_STRING, TY_STRING, false),   // long * string -> string
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte * byte -> byte
-    BinaryOpRule(TY_CHAR, TY_INT, TY_STRING, false),      // char * int -> string
-    BinaryOpRule(TY_CHAR, TY_SHORT, TY_STRING, false),    // char * short -> string
-    BinaryOpRule(TY_CHAR, TY_LONG, TY_STRING, false),     // char * long -> string
-    BinaryOpRule(TY_STRING, TY_INT, TY_STRING, false),    // string * int -> string
-    BinaryOpRule(TY_STRING, TY_SHORT, TY_STRING, false),  // string * short -> string
-    BinaryOpRule(TY_STRING, TY_LONG, TY_STRING, false),   // string * long -> string
 };
 
 // Div op rules

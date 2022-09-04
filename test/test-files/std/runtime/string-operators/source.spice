@@ -2,13 +2,33 @@ import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
     // Plus
-    printf("String: %s\n", "Hello " + "World!");
-    string s = "Hello " + "World!";
-    printf("String: %s\n", s);
+    printf("Result: %s\n", "Hello " + "World!");
+    string s1 = "Hello " + "World!";
+    printf("Result: %s\n", s1);
+    // Mul
+    printf("Result: %s\n", 4s * "Hi");
+    string s2 = "Hello " * 5;
+    printf("Result: %s\n", s2);
+    printf("Result: %s\n", 20 * 'a');
+    string s3 = 2 * 'c' * 7;
+    printf("Result: %s\n", s3);
     // Equals
-    printf("String: %d\n", "Hello World!" == "Hello Programmers!");
-    printf("String: %d\n", "Hello" == "Hell2");
+    printf("Equal: %d\n", "Hello World!" == "Hello Programmers!");
+    printf("Equal: %d\n", "Hello" == "Hell2");
+    printf("Equal: %d\n", "Hello" == "Hello");
     // Not equals
-    printf("String: %d\n", "Hello World!" != "Hello Programmers!");
-    printf("String: %d\n", "Hello" != "Hell2");
+    printf("Non-equal: %d\n", "Hello World!" != "Hello Programmers!");
+    printf("Non-equal: %d\n", "Hello" != "Hell2");
+    printf("Non-equal: %d\n", "Hello" != "Hello");
+    // PlusEquals
+    string s4 = "Hello";
+    s4 += 'l';
+    printf("Result: %s\n", s4);
+    string s5 = "Hi";
+    s5 += " World!";
+    printf("Result: %s\n", s5);
+    // MulEquals
+    string s6 = "Hi";
+    s6 *= 3;
+    printf("Result: %s\n", s6);
 }

@@ -288,7 +288,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
 
     // Restore stack if necessary
     if (stackState != nullptr) {
-      builder->CreateCall(stdFunctionManager->getStackRestoreFct(), {stackState});
+      builder->CreateCall(stdFunctionManager->getStackRestoreIntrinsic(), {stackState});
       stackState = nullptr;
     }
 
@@ -475,7 +475,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
 
         // Restore stack if necessary
         if (stackState != nullptr) {
-          builder->CreateCall(stdFunctionManager->getStackRestoreFct(), {stackState});
+          builder->CreateCall(stdFunctionManager->getStackRestoreIntrinsic(), {stackState});
           stackState = nullptr;
         }
 
@@ -662,7 +662,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
 
         // Restore stack if necessary
         if (stackState != nullptr) {
-          builder->CreateCall(stdFunctionManager->getStackRestoreFct(), {stackState});
+          builder->CreateCall(stdFunctionManager->getStackRestoreIntrinsic(), {stackState});
           stackState = nullptr;
         }
 
@@ -2985,7 +2985,7 @@ llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::str
 
 llvm::Value *GeneratorVisitor::allocateDynamicallySizedArray(llvm::Type *itemType) {
   // Call llvm.stacksave intrinsic
-  llvm::Function *stackSaveFct = stdFunctionManager->getStackSaveFct();
+  llvm::Function *stackSaveFct = stdFunctionManager->getStackSaveIntrinsic();
   if (stackState == nullptr)
     stackState = builder->CreateCall(stackSaveFct);
   // Allocate array
@@ -3054,7 +3054,7 @@ bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableE
 
 llvm::Value *GeneratorVisitor::materializeString(llvm::Value *stringStructPtr) {
   assert(stringStructPtr->getType()->isPointerTy());
-  llvm::Value *rawStringValue = builder->CreateCall(stdFunctionManager->getStringRawFct(), stringStructPtr);
+  llvm::Value *rawStringValue = builder->CreateCall(stdFunctionManager->getStringGetRawFct(), stringStructPtr);
   return rawStringValue;
 }
 
