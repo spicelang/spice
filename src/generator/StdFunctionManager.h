@@ -22,6 +22,7 @@ public:
   llvm::Function *getStackSaveIntrinsic() const;
   llvm::Function *getStackRestoreIntrinsic() const;
   llvm::Function *getStringGetRawFct() const;
+  llvm::Function *getStringCtorCharFct() const;
   llvm::Function *getStringCtorStringFct() const;
   llvm::Function *getStringCtorStringStringFct() const;
   llvm::Function *getStringIsRawEqualStringStringFct() const;

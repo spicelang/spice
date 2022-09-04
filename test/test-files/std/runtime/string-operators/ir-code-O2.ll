@@ -13,8 +13,12 @@ target triple = "x86_64-w64-windows-gnu"
 %_s__String__charptr_long_long.12 = type { ptr, i64, i64 }
 %_s__String__charptr_long_long.14 = type { ptr, i64, i64 }
 %_s__String__charptr_long_long.15 = type { ptr, i64, i64 }
-%_s__String__charptr_long_long.17 = type { ptr, i64, i64 }
 %_s__String__charptr_long_long.18 = type { ptr, i64, i64 }
+%_s__String__charptr_long_long.19 = type { ptr, i64, i64 }
+%_s__String__charptr_long_long.21 = type { ptr, i64, i64 }
+%_s__String__charptr_long_long.22 = type { ptr, i64, i64 }
+%_s__String__charptr_long_long.24 = type { ptr, i64, i64 }
+%_s__String__charptr_long_long.25 = type { ptr, i64, i64 }
 
 @0 = private unnamed_addr constant [7 x i8] c"World!\00", align 1
 @1 = private unnamed_addr constant [7 x i8] c"Hello \00", align 1
@@ -88,42 +92,73 @@ entry.l3:
   %.unpack24 = load i64, ptr %.elt23, align 8
   %26 = insertvalue %_s__String__charptr_long_long.12 %25, i64 %.unpack24, 2
   %27 = call i32 (ptr, ...) @printf(ptr nonnull @10, %_s__String__charptr_long_long.12 %26)
-  %28 = call i32 (ptr, ...) @printf(ptr nonnull @2, i32 zext (i1 icmp eq (ptr @3, ptr @4) to i32))
-  %29 = call i32 (ptr, ...) @printf(ptr nonnull @2, i32 zext (i1 icmp eq (ptr @7, ptr @5) to i32))
-  %30 = call i32 (ptr, ...) @printf(ptr nonnull @2, i32 1)
-  %31 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 zext (i1 icmp ne (ptr @3, ptr @4) to i32))
-  %32 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 zext (i1 icmp ne (ptr @7, ptr @5) to i32))
-  %33 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 0)
-  %s3 = alloca ptr, align 8
-  %34 = alloca %_s__String__charptr_long_long.14, align 8
-  call void @_mp__String__ctor__string(ptr nonnull %34, ptr nonnull @7)
-  call void @_mp__String__append__char(ptr nonnull %34, i8 108)
-  store ptr %34, ptr %s3, align 8
-  %35 = call ptr @_mf__String__getRaw(ptr nonnull %s3)
-  %.unpack25 = load ptr, ptr %35, align 8
-  %36 = insertvalue %_s__String__charptr_long_long.15 undef, ptr %.unpack25, 0
-  %.elt26 = getelementptr inbounds %_s__String__charptr_long_long.15, ptr %35, i64 0, i32 1
+  %28 = alloca %_s__String__charptr_long_long.14, align 8
+  call void @_mp__String__ctor__char(ptr nonnull %28, i8 97)
+  call void @_mp__String__opMul__int(ptr nonnull %28, i32 20)
+  %29 = alloca ptr, align 8
+  store ptr %28, ptr %29, align 8
+  %30 = call ptr @_mf__String__getRaw(ptr nonnull %29)
+  %.unpack25 = load ptr, ptr %30, align 8
+  %31 = insertvalue %_s__String__charptr_long_long.15 undef, ptr %.unpack25, 0
+  %.elt26 = getelementptr inbounds %_s__String__charptr_long_long.15, ptr %30, i64 0, i32 1
   %.unpack27 = load i64, ptr %.elt26, align 8
-  %37 = insertvalue %_s__String__charptr_long_long.15 %36, i64 %.unpack27, 1
-  %.elt28 = getelementptr inbounds %_s__String__charptr_long_long.15, ptr %35, i64 0, i32 2
+  %32 = insertvalue %_s__String__charptr_long_long.15 %31, i64 %.unpack27, 1
+  %.elt28 = getelementptr inbounds %_s__String__charptr_long_long.15, ptr %30, i64 0, i32 2
   %.unpack29 = load i64, ptr %.elt28, align 8
-  %38 = insertvalue %_s__String__charptr_long_long.15 %37, i64 %.unpack29, 2
-  %39 = call i32 (ptr, ...) @printf(ptr nonnull @10, %_s__String__charptr_long_long.15 %38)
-  %s4 = alloca ptr, align 8
-  %40 = alloca %_s__String__charptr_long_long.17, align 8
-  call void @_mp__String__ctor__string(ptr nonnull %40, ptr nonnull @8)
-  call void @_mp__String__append__string(ptr nonnull %40, ptr nonnull @9)
-  store ptr %40, ptr %s4, align 8
-  %41 = call ptr @_mf__String__getRaw(ptr nonnull %s4)
-  %.unpack30 = load ptr, ptr %41, align 8
-  %42 = insertvalue %_s__String__charptr_long_long.18 undef, ptr %.unpack30, 0
-  %.elt31 = getelementptr inbounds %_s__String__charptr_long_long.18, ptr %41, i64 0, i32 1
+  %33 = insertvalue %_s__String__charptr_long_long.15 %32, i64 %.unpack29, 2
+  %34 = call i32 (ptr, ...) @printf(ptr nonnull @10, %_s__String__charptr_long_long.15 %33)
+  %35 = alloca %_s__String__charptr_long_long.18, align 8
+  call void @_mp__String__ctor__char(ptr nonnull %35, i8 99)
+  call void @_mp__String__opMul__int(ptr nonnull %35, i32 2)
+  call void @_mp__String__opMul__int(ptr nonnull %35, i32 7)
+  %36 = alloca ptr, align 8
+  store ptr %35, ptr %36, align 8
+  %37 = call ptr @_mf__String__getRaw(ptr nonnull %36)
+  %.unpack30 = load ptr, ptr %37, align 8
+  %38 = insertvalue %_s__String__charptr_long_long.19 undef, ptr %.unpack30, 0
+  %.elt31 = getelementptr inbounds %_s__String__charptr_long_long.19, ptr %37, i64 0, i32 1
   %.unpack32 = load i64, ptr %.elt31, align 8
-  %43 = insertvalue %_s__String__charptr_long_long.18 %42, i64 %.unpack32, 1
-  %.elt33 = getelementptr inbounds %_s__String__charptr_long_long.18, ptr %41, i64 0, i32 2
+  %39 = insertvalue %_s__String__charptr_long_long.19 %38, i64 %.unpack32, 1
+  %.elt33 = getelementptr inbounds %_s__String__charptr_long_long.19, ptr %37, i64 0, i32 2
   %.unpack34 = load i64, ptr %.elt33, align 8
-  %44 = insertvalue %_s__String__charptr_long_long.18 %43, i64 %.unpack34, 2
-  %45 = call i32 (ptr, ...) @printf(ptr nonnull @10, %_s__String__charptr_long_long.18 %44)
+  %40 = insertvalue %_s__String__charptr_long_long.19 %39, i64 %.unpack34, 2
+  %41 = call i32 (ptr, ...) @printf(ptr nonnull @10, %_s__String__charptr_long_long.19 %40)
+  %42 = call i32 (ptr, ...) @printf(ptr nonnull @2, i32 zext (i1 icmp eq (ptr @3, ptr @4) to i32))
+  %43 = call i32 (ptr, ...) @printf(ptr nonnull @2, i32 zext (i1 icmp eq (ptr @7, ptr @5) to i32))
+  %44 = call i32 (ptr, ...) @printf(ptr nonnull @2, i32 1)
+  %45 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 zext (i1 icmp ne (ptr @3, ptr @4) to i32))
+  %46 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 zext (i1 icmp ne (ptr @7, ptr @5) to i32))
+  %47 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 0)
+  %s4 = alloca ptr, align 8
+  %48 = alloca %_s__String__charptr_long_long.21, align 8
+  call void @_mp__String__ctor__string(ptr nonnull %48, ptr nonnull @7)
+  call void @_mp__String__append__char(ptr nonnull %48, i8 108)
+  store ptr %48, ptr %s4, align 8
+  %49 = call ptr @_mf__String__getRaw(ptr nonnull %s4)
+  %.unpack35 = load ptr, ptr %49, align 8
+  %50 = insertvalue %_s__String__charptr_long_long.22 undef, ptr %.unpack35, 0
+  %.elt36 = getelementptr inbounds %_s__String__charptr_long_long.22, ptr %49, i64 0, i32 1
+  %.unpack37 = load i64, ptr %.elt36, align 8
+  %51 = insertvalue %_s__String__charptr_long_long.22 %50, i64 %.unpack37, 1
+  %.elt38 = getelementptr inbounds %_s__String__charptr_long_long.22, ptr %49, i64 0, i32 2
+  %.unpack39 = load i64, ptr %.elt38, align 8
+  %52 = insertvalue %_s__String__charptr_long_long.22 %51, i64 %.unpack39, 2
+  %53 = call i32 (ptr, ...) @printf(ptr nonnull @10, %_s__String__charptr_long_long.22 %52)
+  %s5 = alloca ptr, align 8
+  %54 = alloca %_s__String__charptr_long_long.24, align 8
+  call void @_mp__String__ctor__string(ptr nonnull %54, ptr nonnull @8)
+  call void @_mp__String__append__string(ptr nonnull %54, ptr nonnull @9)
+  store ptr %54, ptr %s5, align 8
+  %55 = call ptr @_mf__String__getRaw(ptr nonnull %s5)
+  %.unpack40 = load ptr, ptr %55, align 8
+  %56 = insertvalue %_s__String__charptr_long_long.25 undef, ptr %.unpack40, 0
+  %.elt41 = getelementptr inbounds %_s__String__charptr_long_long.25, ptr %55, i64 0, i32 1
+  %.unpack42 = load i64, ptr %.elt41, align 8
+  %57 = insertvalue %_s__String__charptr_long_long.25 %56, i64 %.unpack42, 1
+  %.elt43 = getelementptr inbounds %_s__String__charptr_long_long.25, ptr %55, i64 0, i32 2
+  %.unpack44 = load i64, ptr %.elt43, align 8
+  %58 = insertvalue %_s__String__charptr_long_long.25 %57, i64 %.unpack44, 2
+  %59 = call i32 (ptr, ...) @printf(ptr nonnull @10, %_s__String__charptr_long_long.25 %58)
   ret i32 0
 }
 
@@ -139,6 +174,8 @@ declare void @_mp__String__ctor__string(ptr, ptr) local_unnamed_addr
 declare void @_mp__String__opMul__short(ptr, i16) local_unnamed_addr
 
 declare void @_mp__String__opMul__int(ptr, i32) local_unnamed_addr
+
+declare void @_mp__String__ctor__char(ptr, i8) local_unnamed_addr
 
 declare void @_mp__String__append__char(ptr, i8) local_unnamed_addr
 

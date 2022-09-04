@@ -52,6 +52,16 @@ SymbolType OpRuleManager::getMinusEqualResultType(const CodeLoc &codeLoc, const 
 }
 
 SymbolType OpRuleManager::getMulEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+  // Allow string *= int
+  if (lhs.is(TY_STRING) && rhs.is(TY_INT))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+  // Allow string *= long
+  if (lhs.is(TY_STRING) && rhs.is(TY_LONG))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+  // Allow string *= short
+  if (lhs.is(TY_STRING) && rhs.is(TY_SHORT))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+
   return validateBinaryOperation(codeLoc, MUL_EQUAL_OP_RULES, "*=", lhs, rhs);
 }
 
@@ -202,6 +212,18 @@ SymbolType OpRuleManager::getMulResultType(const CodeLoc &codeLoc, const SymbolT
 
   // Allow string * long and long * string
   if ((lhs.is(TY_STRING) && rhs.is(TY_LONG)) || (lhs.is(TY_LONG) && rhs.is(TY_STRING)))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+
+  // Allow char * int and int * char
+  if ((lhs.is(TY_CHAR) && rhs.is(TY_INT)) || (lhs.is(TY_INT) && rhs.is(TY_CHAR)))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+
+  // Allow char * short and short * char
+  if ((lhs.is(TY_CHAR) && rhs.is(TY_SHORT)) || (lhs.is(TY_SHORT) && rhs.is(TY_CHAR)))
+    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+
+  // Allow char * long and long * char
+  if ((lhs.is(TY_CHAR) && rhs.is(TY_LONG)) || (lhs.is(TY_LONG) && rhs.is(TY_CHAR)))
     return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
 
   return validateBinaryOperation(codeLoc, MUL_OP_RULES, "*", lhs, rhs);

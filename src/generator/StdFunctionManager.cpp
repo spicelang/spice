@@ -34,6 +34,10 @@ llvm::Function *StdFunctionManager::getStringGetRawFct() const {
   return getFunction("_mf__String__getRaw", builder->getPtrTy(), getStringStructType()->getPointerTo());
 }
 
+llvm::Function *StdFunctionManager::getStringCtorCharFct() const {
+  return getProcedure("_mp__String__ctor__char", {builder->getPtrTy(), builder->getInt8Ty()});
+}
+
 llvm::Function *StdFunctionManager::getStringCtorStringFct() const {
   return getProcedure("_mp__String__ctor__string", {builder->getPtrTy(), builder->getPtrTy()});
 }

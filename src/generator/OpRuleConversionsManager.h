@@ -71,5 +71,5 @@ private:
   const StdFunctionManager *stdFunctionManager;
 
   // Private methods
-  llvm::Value *propagateStringToStringObject(const SymbolType &symbolType, llvm::Value *operandValue);
+  llvm::Value *propagateValueToStringObject(const SymbolType &symbolType, llvm::Value *operandValue);
 };
