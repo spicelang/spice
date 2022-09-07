@@ -370,5 +370,7 @@ void CliInterface::runBinary() const {
     std::cout << "Running executable ...\n\n";
 
   // Run executable
-  std::system(cliOptions.outputPath.c_str());
+  ExecResult result = FileUtil::exec(cliOptions.outputPath.c_str());
+  if (result.exitCode != 0)
+    throw CliError(NON_ZERO_EXIT_CODE, "Your Spice executable exited with non-zero exit code " + std::to_string(result.exitCode));
 }

@@ -274,6 +274,8 @@ SymbolTable *SymbolTable::getChild(const std::string &scopeId) {
 /**
  * Retrieve all variables that can be freed, because the ref count went down to 0.
  *
+ * @param Get only struct variables
+ *
  * @return Variables that can be de-allocated
  */
 std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForStructs) {
@@ -285,7 +287,7 @@ std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterF
   for (auto [name, entry] : symbols) {
     if (name == THIS_VARIABLE_NAME)
       continue;
-    if (!filterForStructs || entry.getType().is(TY_STRUCT))
+    if (!filterForStructs || entry.getType().is(TY_STRUCT) || entry.getType().isStringStruct())
       varsGoingOutOfScope.push_back(&symbols.at(name));
   }
   return varsGoingOutOfScope;

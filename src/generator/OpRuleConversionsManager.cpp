@@ -993,12 +993,9 @@ llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value
   case COMB(TY_CHAR, TY_CHAR):
     return builder->CreateAdd(lhs, rhs);
   case COMB(TY_STRING, TY_STRING): {
-    // Materialize string object to raw string if required
-    if (rhsSTy.isStringStruct())
-      rhs = generator->materializeString(rhs);
     // Generate call to the constructor ctor(string, string) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringCtorStringStringFct();
-    llvm::Value *thisPtr = generator->insertAlloca(stdFunctionManager->getStringStructType());
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStringStructType(*context));
     builder->CreateCall(opFct, {thisPtr, lhs, rhs});
     return thisPtr;
   }
@@ -1455,7 +1452,7 @@ llvm::Value *OpRuleConversionsManager::propagateValueToStringObject(const Symbol
   // Convert rhs literal to string object
   llvm::Function *opFct =
       symbolType.is(TY_CHAR) ? stdFunctionManager->getStringCtorCharFct() : stdFunctionManager->getStringCtorStringFct();
-  llvm::Value *thisPtr = generator->insertAlloca(stdFunctionManager->getStringStructType());
+  llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStringStructType(*context));
   builder->CreateCall(opFct, {thisPtr, operandValue});
   return thisPtr;
 }

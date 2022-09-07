@@ -6,6 +6,7 @@
 
 enum LinkerErrorType {
   LINKER_NOT_FOUND,
+  LINKER_ERROR,
 };
 
 /**

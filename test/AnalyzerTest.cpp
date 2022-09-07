@@ -181,10 +181,9 @@ void executeAnalyzerTest(const TestCase &testCase) {
     CommonUtil::replaceAll(errorWhat, "\\", "/");
     std::string exceptionFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "exception.out";
     if (FileUtil::fileExists(exceptionFile)) {
-      if (TestUtil::isUpdateRefsEnabled()) {
-        // Update ref
+      if (TestUtil::isUpdateRefsEnabled()) { // Update ref
         FileUtil::writeToFile(exceptionFile, errorWhat);
-      } else {
+      } else { // Check ref
         std::string expectedException = TestUtil::getFileContent(exceptionFile);
         EXPECT_EQ(std::string(errorWhat), expectedException);
       }

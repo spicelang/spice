@@ -10,10 +10,14 @@ StdFunctionManager::StdFunctionManager(GeneratorVisitor *generator) {
   module = generator->module.get();
 }
 
-llvm::StructType *StdFunctionManager::getStringStructType() const {
-  llvm::Type *ptrTy = builder->getPtrTy();
-  llvm::Type *int64Ty = builder->getInt64Ty();
-  return llvm::StructType::create(*context, {ptrTy, int64Ty, int64Ty}, "_s__String__charptr_long_long");
+llvm::StructType *StdFunctionManager::getStringStructType(llvm::LLVMContext &context) {
+  std::string structTypeName = "_s__String__charptr_long_long";
+  llvm::StructType *structType = llvm::StructType::getTypeByName(context, structTypeName);
+  if (structType != nullptr)
+    return structType;
+  llvm::Type *ptrTy = llvm::PointerType::get(context, 0);
+  llvm::Type *int64Ty = llvm::IntegerType::getInt64Ty(context);
+  return llvm::StructType::create(context, {ptrTy, int64Ty, int64Ty}, structTypeName);
 }
 
 llvm::Function *StdFunctionManager::getPrintfFct() const {
@@ -31,7 +35,7 @@ llvm::Function *StdFunctionManager::getStackRestoreIntrinsic() const {
 }
 
 llvm::Function *StdFunctionManager::getStringGetRawFct() const {
-  return getFunction("_mf__String__getRaw", builder->getPtrTy(), getStringStructType()->getPointerTo());
+  return getFunction("_mf__String__getRaw", builder->getPtrTy(), getStringStructType(*context)->getPointerTo());
 }
 
 llvm::Function *StdFunctionManager::getStringCtorCharFct() const {
@@ -45,6 +49,8 @@ llvm::Function *StdFunctionManager::getStringCtorStringFct() const {
 llvm::Function *StdFunctionManager::getStringCtorStringStringFct() const {
   return getProcedure("_mp__String__ctor__string_string", {builder->getPtrTy(), builder->getPtrTy(), builder->getPtrTy()});
 }
+
+llvm::Function *StdFunctionManager::getStringDtorFct() const { return getProcedure("_mp__String__dtor", builder->getPtrTy()); }
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   return getFunction("_mf__isRawEqual__string_string", builder->getInt1Ty(), {builder->getPtrTy(), builder->getPtrTy()});

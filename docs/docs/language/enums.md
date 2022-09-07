@@ -2,7 +2,7 @@
 title: Enumerations
 ---
 
-Enumerations in spice work like this:
+Enumerations in Spice work like this:
 
 ```spice
 type Fruit enum {

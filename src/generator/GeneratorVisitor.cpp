@@ -1983,17 +1983,20 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
       MultiplicativeExprNode *rhsOperand = node->operands()[operandIndex++];
       assert(rhsOperand != nullptr);
       SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
-      llvm::Value *rhs = resolveValue(rhsOperand);
+      llvm::Value *rhs;
 
       switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
-        /*if (lhsSymbolType.isStringStruct())
-          lhs = materializeString(lhsPtr);
-        if (rhsSymbolType.isStringStruct())
-          rhs = materializeString(rhsPtr);*/
+        if (rhsSymbolType.isStringStruct()) {
+          rhs = resolveAddress(rhsOperand);
+          rhs = materializeString(rhs);
+        } else {
+          rhs = resolveValue(rhsOperand);
+        }
         lhs = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, node->codeLoc);
         break;
       case AdditiveExprNode::OP_MINUS:
+        rhs = resolveValue(rhsOperand);
         lhs = conversionsManager->getMinusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope);
         break;
       default:
@@ -3014,41 +3017,52 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
 }
 
 bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
-  Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc);
+  if (varEntry->getType().isStringStruct()) {
+    // Get dtor function
+    llvm::Function *fct = stdFunctionManager->getStringDtorFct();
 
-  // Cancel if no destructor was found
-  if (spiceDtor == nullptr)
-    return false;
+    // Get this value pointer
+    llvm::Value *thisValuePtr = varEntry->getAddress();
 
-  // Get this value pointer
-  llvm::Value *thisValuePtr = varEntry->getAddress();
+    // Insert call
+    builder->CreateCall(fct, thisValuePtr);
+  } else {
+    Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc);
 
-  // Check if function exists in the current module
-  bool functionFound = false;
-  std::string fctIdentifier = spiceDtor->getMangledName();
-  for (const auto &function : module->getFunctionList()) { // Search for function definition
-    if (function.getName() == fctIdentifier) {
-      functionFound = true;
-      break;
-    } else if (function.getName() == spiceDtor->getName()) {
-      functionFound = true;
-      fctIdentifier = spiceDtor->getName();
-      break;
+    // Cancel if no destructor was found
+    if (spiceDtor == nullptr)
+      return false;
+
+    // Get this value pointer
+    llvm::Value *thisValuePtr = varEntry->getAddress();
+
+    // Check if function exists in the current module
+    bool functionFound = false;
+    std::string mangledName = spiceDtor->getMangledName();
+    for (const auto &function : module->getFunctionList()) { // Search for function definition
+      llvm::StringRef functionName = function.getName();
+      if (functionName == mangledName) {
+        functionFound = true;
+        break;
+      } else if (functionName == spiceDtor->getName()) {
+        functionFound = true;
+        mangledName = spiceDtor->getName();
+        break;
+      }
     }
+
+    if (!functionFound) { // Not found => Declare function, which will be linked in
+      llvm::FunctionType *fctType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), thisValuePtr->getType(), false);
+      module->getOrInsertFunction(mangledName, fctType);
+    }
+
+    // Get the declared function and its type
+    llvm::Function *fct = module->getFunction(mangledName);
+    assert(fct != nullptr);
+
+    // Create the function call
+    builder->CreateCall(fct, thisValuePtr);
   }
-
-  if (!functionFound) { // Not found => Declare function, which will be linked in
-    llvm::FunctionType *fctType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), thisValuePtr->getType(), false);
-    module->getOrInsertFunction(fctIdentifier, fctType);
-  }
-
-  // Get the declared function and its type
-  llvm::Function *fct = module->getFunction(fctIdentifier);
-  assert(fct != nullptr);
-
-  // Create the function call
-  builder->CreateCall(fct, thisValuePtr);
-
   return true;
 }
 

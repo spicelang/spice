@@ -247,16 +247,14 @@ void executeGeneratorTest(const TestCase &testCase) {
       linker.link();
 
       // Execute the program and get the output
-      std::string actualOutput = FileUtil::exec(TestUtil::getDefaultExecutableName());
+      ExecResult result = FileUtil::exec(TestUtil::getDefaultExecutableName());
+      EXPECT_EQ(0, result.exitCode);
 
-      if (TestUtil::isUpdateRefsEnabled()) {
-        // Update ref
-        FileUtil::writeToFile(outputFileName, actualOutput);
-      } else {
+      if (TestUtil::isUpdateRefsEnabled()) { // Update ref
+        FileUtil::writeToFile(outputFileName, result.output);
+      } else { // Check ref
         std::string expectedOutput = TestUtil::getFileContent(outputFileName);
-
-        // Check if the outputs are matching
-        EXPECT_EQ(expectedOutput, actualOutput);
+        EXPECT_EQ(expectedOutput, result.output);
       }
     }
 

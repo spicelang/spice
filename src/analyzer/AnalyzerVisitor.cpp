@@ -2300,7 +2300,11 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
 }
 
 void AnalyzerVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
-  assert(varEntry != nullptr && varEntry->getType().is(TY_STRUCT));
+  assert(varEntry != nullptr);
+  SymbolType varEntryType = varEntry->getType();
+  if (varEntryType.isStringStruct())
+    return;
+  assert(varEntryType.is(TY_STRUCT));
 
   // Create Spice function for destructor
   SymbolTableEntry *structEntry = currentScope->lookup(varEntry->getType().getName());
@@ -2309,7 +2313,9 @@ void AnalyzerVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEn
   accessScope = accessScope->getChild(STRUCT_SCOPE_PREFIX + structEntry->getName());
   assert(accessScope != nullptr);
   SymbolType thisType = varEntry->getType();
-  accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, codeLoc);
+  Function *spiceFunc = accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, codeLoc);
+  if (spiceFunc)
+    spiceFunc->setUsed();
 }
 
 SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix,

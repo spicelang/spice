@@ -171,17 +171,6 @@ public inline p String.opMul(const short operand) {
  *
  * @return Equal or not
  */
-public inline f<bool> String.opEquals(const String operand) {
-    return this.opEquals(operand.getRaw());
-}
-
-/**
- * Implements the equals operator for 'string == string'
- *
- * @param operand String to comare the current string to
- *
- * @return Equal or not
- */
 public f<bool> String.opEquals(const string operand) {
     // Compare sizes
     if str.getRawLength(operand) != this.length {

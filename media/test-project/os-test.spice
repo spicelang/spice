@@ -1,3 +1,38 @@
+import "std/runtime/string_rt" as _rt_str;
+
+f<int> main() {
+    // Plus
+    printf("Result: %s\n", "Hello " + "World!");
+    string s1 = "Hello " + "World!";
+    printf("Result: %s\n", s1);
+    // Mul
+    printf("Result: %s\n", 4s * "Hi");
+    string s2 = "Hello " * 5;
+    printf("Result: %s\n", s2);
+    printf("Result: %s\n", 20 * 'a');
+    string s3 = 2 * 'c' * 7;
+    printf("Result: %s\n", s3);
+    // Equals
+    printf("Equal: %d\n", "Hello World!" == "Hello Programmers!");
+    printf("Equal: %d\n", "Hello" == "Hell2");
+    printf("Equal: %d\n", "Hello" == "Hello");
+    // Not equals
+    printf("Non-equal: %d\n", "Hello World!" != "Hello Programmers!");
+    printf("Non-equal: %d\n", "Hello" != "Hell2");
+    printf("Non-equal: %d\n", "Hello" != "Hello");
+    // PlusEquals
+    string s4 = "Hello";
+    s4 += 'l';
+    printf("Result: %s\n", s4);
+    string s5 = "Hi";
+    s5 += " World!";
+    printf("Result: %s\n", s5);
+    // MulEquals
+    string s6 = "Hi";
+    s6 *= 3;
+    printf("Result: %s\n", s6);
+}
+
 /*import "std/data/vector" as vec;
 import "std/data/pair" as pair;
 
@@ -17,10 +52,34 @@ f<int> main() {
     server.serve("/test", "Hello World!");
 }*/
 
-import "std/runtime/string_rt" as _rt_str;
+/*import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
+    //_rt_str::String s = _rt_str::String("Test");
+    //printf("%s", s.getRaw());
+     // Plus
+    printf("Result: %s\n", "Hello " + "World!");
     string s1 = "Hello " + "World!";
-    string s2 = "Foo " + ", Bar";
+    printf("Result: %s\n", s1);
+    // Mul
+    printf("Result: %s\n", 4s * "Hi");
+    string s2 = "Hello " * 5;
+    printf("Result: %s\n", s2);
+    printf("Result: %s\n", 20 * 'a');
+    string s3 = 2 * 'c' * 7;
+    printf("Result: %s\n", s3);
     //printf("%s", s1 + s2);
+}*/
+
+/*public f<int> src(int x, int y) {
+    return x + (x | -x);
 }
+
+public f<int> tgt(int x) {
+    return x & (x - 1);
+}
+
+f<int> main() {
+    printf("Src: %d\n", src(21, 10));
+    printf("Tgt: %d\n", tgt(21));
+}*/

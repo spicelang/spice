@@ -4,6 +4,11 @@
 
 #include <string>
 
+struct ExecResult {
+  std::string output;
+  int exitCode;
+};
+
 /**
  * Util class for file-related work
  */
@@ -22,7 +27,7 @@ public:
   static void writeToFile(const std::string &fileName, const std::string &fileContent);
   static std::string getFileName(const std::string &filePath);
   static std::string getFileDir(const std::string &filePath);
-  static std::string exec(const std::string &cmd);
+  static ExecResult exec(const std::string &cmd);
   static bool isCommandAvailable(const std::string &cmd);
   static std::string getSpiceBinDir();
 };

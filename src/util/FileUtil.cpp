@@ -84,19 +84,20 @@ std::string FileUtil::getFileDir(const std::string &filePath) { return filePath.
  * Execute external command. Used to execute compiled binaries
  *
  * @param cmd Command to execute
- * @return Output of the command as a string
+ * @return Result struct
  */
-std::string FileUtil::exec(const std::string &cmd) {
-  std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+ExecResult FileUtil::exec(const std::string &cmd) {
+  FILE *pipe = popen(cmd.c_str(), "r");
   if (!pipe)
     throw std::runtime_error("Failed to execute command: " + cmd);
   char buffer[128];
   std::string result;
-  while (!feof(pipe.get())) {
-    if (fgets(buffer, 128, pipe.get()) != nullptr)
+  while (!feof(pipe)) {
+    if (fgets(buffer, 128, pipe) != nullptr)
       result += buffer;
   }
-  return result;
+  int exitCode = pclose(pipe) / 256;
+  return { result, exitCode };
 }
 
 /**

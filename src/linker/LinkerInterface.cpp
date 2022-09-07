@@ -44,11 +44,15 @@ void LinkerInterface::link() {
     std::cout << "\nEmitting executable to path: " << outputPath << "\n"; // GCOV_EXCL_LINE
 
   // Call the linker
-  std::string result = FileUtil::exec(linkerCommand);
+  ExecResult result = FileUtil::exec(linkerCommand);
+
+  // Check for linker error
+  if (result.exitCode != 0)
+    throw LinkerError(LINKER_ERROR, "Linker exited with non-zero exit code");
 
   // Print linker result if appropriate
-  if (cliOptions.printDebugOutput && !result.empty())
-    std::cout << "Linking result: " << result << "\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && !result.output.empty())
+    std::cout << "Linking result: " << result.output << "\n"; // GCOV_EXCL_LINE
 }
 
 /**

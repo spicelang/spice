@@ -14,7 +14,7 @@ public:
   explicit StdFunctionManager(GeneratorVisitor *generator);
 
   // Public methods for type retrieval
-  llvm::StructType *getStringStructType() const;
+  static llvm::StructType *getStringStructType(llvm::LLVMContext &context);
 
   // Public methods for function retrieval
   llvm::Function *getPrintfFct() const;
@@ -25,6 +25,7 @@ public:
   llvm::Function *getStringCtorCharFct() const;
   llvm::Function *getStringCtorStringFct() const;
   llvm::Function *getStringCtorStringStringFct() const;
+  llvm::Function *getStringDtorFct() const;
   llvm::Function *getStringIsRawEqualStringStringFct() const;
   llvm::Function *getStringAppendStringFct() const;
   llvm::Function *getStringAppendCharFct() const;
