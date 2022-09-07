@@ -8,8 +8,8 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l9:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %0 = alloca i32, align 4
+  store i32 0, ptr %result, align 4
   store i32 12, ptr %0, align 4
   %1 = load i32, ptr %0, align 4
   %2 = call i32 (ptr, ...) @printf(ptr @0, i32 %1)

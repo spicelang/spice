@@ -19,25 +19,25 @@ declare void @free(ptr)
 define i32 @main() {
 entry.l7:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
-  %0 = call i32 (ptr, ...) @printf(ptr @0)
-  %1 = alloca ptr, align 8
-  store ptr @1, ptr %1, align 8
-  %2 = load ptr, ptr %1, align 8
-  %3 = load i32, ptr @MODE_ALL_RWX, align 4
+  %0 = alloca ptr, align 8
+  %1 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  %3 = alloca ptr, align 8
   %4 = alloca i32, align 4
-  store i32 %3, ptr %4, align 4
-  %5 = load i32, ptr %4, align 4
-  %6 = call i32 @mkdir(ptr %2, i32 %5)
-  %7 = alloca i32, align 4
-  store i32 %6, ptr %7, align 4
-  %8 = call i32 (ptr, ...) @printf(ptr @2)
-  %9 = alloca ptr, align 8
-  store ptr @3, ptr %9, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = call i32 @rmdir(ptr %10)
-  %12 = alloca i32, align 4
-  store i32 %11, ptr %12, align 4
+  store i32 0, ptr %result, align 4
+  %5 = call i32 (ptr, ...) @printf(ptr @0)
+  store ptr @1, ptr %0, align 8
+  %6 = load ptr, ptr %0, align 8
+  %7 = load i32, ptr @MODE_ALL_RWX, align 4
+  store i32 %7, ptr %1, align 4
+  %8 = load i32, ptr %1, align 4
+  %9 = call i32 @mkdir(ptr %6, i32 %8)
+  store i32 %9, ptr %2, align 4
+  %10 = call i32 (ptr, ...) @printf(ptr @2)
+  store ptr @3, ptr %3, align 8
+  %11 = load ptr, ptr %3, align 8
+  %12 = call i32 @rmdir(ptr %11)
+  store i32 %12, ptr %4, align 4
   %13 = call i32 (ptr, ...) @printf(ptr @4)
   %14 = load i32, ptr %result, align 4
   ret i32 %14

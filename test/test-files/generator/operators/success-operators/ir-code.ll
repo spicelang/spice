@@ -8,30 +8,30 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %val = alloca i32, align 4
-  store i32 1, ptr %val, align 4
   %val1 = alloca i32, align 4
-  store i32 1, ptr %val1, align 4
-  %0 = load i32, ptr %val1, align 4
-  %1 = add i32 %0, 1
-  store i32 %1, ptr %val1, align 4
+  %0 = alloca i32, align 4
+  %1 = alloca i32, align 4
   %2 = alloca i32, align 4
-  store i32 %0, ptr %2, align 4
-  %3 = load i32, ptr %2, align 4
-  %4 = sub i32 %3, 1
-  store i32 %4, ptr %2, align 4
-  %5 = alloca i32, align 4
-  store i32 %3, ptr %5, align 4
-  %6 = load i32, ptr %5, align 4
-  %7 = mul i32 %6, 2
-  %8 = alloca i32, align 4
-  store i32 %7, ptr %8, align 4
-  %9 = load i32, ptr %8, align 4
-  %10 = shl i32 %9, 2
-  %11 = alloca i32, align 4
-  store i32 %10, ptr %11, align 4
-  %12 = load i32, ptr %11, align 4
+  %3 = alloca i32, align 4
+  store i32 0, ptr %result, align 4
+  store i32 1, ptr %val, align 4
+  store i32 1, ptr %val1, align 4
+  %4 = load i32, ptr %val1, align 4
+  %5 = add i32 %4, 1
+  store i32 %5, ptr %val1, align 4
+  store i32 %4, ptr %0, align 4
+  %6 = load i32, ptr %0, align 4
+  %7 = sub i32 %6, 1
+  store i32 %7, ptr %0, align 4
+  store i32 %6, ptr %1, align 4
+  %8 = load i32, ptr %1, align 4
+  %9 = mul i32 %8, 2
+  store i32 %9, ptr %2, align 4
+  %10 = load i32, ptr %2, align 4
+  %11 = shl i32 %10, 2
+  store i32 %11, ptr %3, align 4
+  %12 = load i32, ptr %3, align 4
   %13 = load i32, ptr %val, align 4
   %14 = add i32 %13, %12
   store i32 %14, ptr %val, align 4

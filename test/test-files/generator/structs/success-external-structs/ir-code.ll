@@ -8,15 +8,15 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l3:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %0 = alloca %_s__Vec__int_bool, align 8
-  %1 = getelementptr inbounds %_s__Vec__int_bool, ptr %0, i32 0, i32 0
-  store i32 11, ptr %1, align 4
-  %2 = getelementptr inbounds %_s__Vec__int_bool, ptr %0, i32 0, i32 1
-  store i1 false, ptr %2, align 1
+  %1 = alloca i1, align 1
+  store i32 0, ptr %result, align 4
+  %2 = getelementptr inbounds %_s__Vec__int_bool, ptr %0, i32 0, i32 0
+  store i32 11, ptr %2, align 4
+  %3 = getelementptr inbounds %_s__Vec__int_bool, ptr %0, i32 0, i32 1
+  store i1 false, ptr %3, align 1
   call void @_mp__Vec__print(ptr %0)
-  %3 = alloca i1, align 1
-  store i1 true, ptr %3, align 1
+  store i1 true, ptr %1, align 1
   %4 = load i32, ptr %result, align 4
   ret i32 %4
 }

@@ -17,10 +17,10 @@ for.l5.preheader.3:
   br label %for.l5.3
 
 for.l5.3:                                         ; preds = %for.l5.3, %for.l5.preheader.3
-  %storemerge4.3 = phi i32 [ %5, %for.l5.3 ], [ 100, %for.l5.preheader.3 ]
-  %4 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i32 %storemerge4.3)
-  %5 = add nsw i32 %storemerge4.3, -1
-  %6 = add nsw i32 %storemerge4.3, -12
+  %subCounter.010.3 = phi i32 [ %5, %for.l5.3 ], [ 100, %for.l5.preheader.3 ]
+  %4 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i32 %subCounter.010.3)
+  %5 = add nsw i32 %subCounter.010.3, -1
+  %6 = add nsw i32 %subCounter.010.3, -12
   %7 = icmp ult i32 %6, -11
   br i1 %7, label %for.l5.3, label %for.l5.preheader.4
 
@@ -29,10 +29,10 @@ for.l5.preheader.4:                               ; preds = %for.l5.3
   br label %for.l5.4
 
 for.l5.4:                                         ; preds = %for.l5.4, %for.l5.preheader.4
-  %storemerge4.4 = phi i32 [ %10, %for.l5.4 ], [ 100, %for.l5.preheader.4 ]
-  %9 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i32 %storemerge4.4)
-  %10 = add nsw i32 %storemerge4.4, -1
-  %11 = add nsw i32 %storemerge4.4, -12
+  %subCounter.010.4 = phi i32 [ %10, %for.l5.4 ], [ 100, %for.l5.preheader.4 ]
+  %9 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i32 %subCounter.010.4)
+  %10 = add nsw i32 %subCounter.010.4, -1
+  %11 = add nsw i32 %subCounter.010.4, -12
   %12 = icmp ult i32 %11, -11
   br i1 %12, label %for.l5.4, label %for.inc.l2.4
 

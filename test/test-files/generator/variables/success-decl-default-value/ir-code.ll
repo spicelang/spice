@@ -20,49 +20,49 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l11:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %doubleVar = alloca double, align 8
-  store double 0.000000e+00, ptr %doubleVar, align 8
-  %0 = load double, ptr %doubleVar, align 8
-  %1 = call i32 (ptr, ...) @printf(ptr @0, double %0)
   %intVar = alloca i32, align 4
-  store i32 0, ptr %intVar, align 4
-  %2 = load i32, ptr %intVar, align 4
-  %3 = call i32 (ptr, ...) @printf(ptr @1, i32 %2)
   %shortVar = alloca i16, align 2
-  store i16 0, ptr %shortVar, align 2
-  %4 = load i16, ptr %shortVar, align 2
-  %5 = sext i16 %4 to i32
-  %6 = call i32 (ptr, ...) @printf(ptr @2, i32 %5)
   %longVar = alloca i64, align 8
-  store i64 0, ptr %longVar, align 8
-  %7 = load i64, ptr %longVar, align 8
-  %8 = call i32 (ptr, ...) @printf(ptr @3, i64 %7)
   %stringVar = alloca ptr, align 8
-  store ptr @4, ptr %stringVar, align 8
-  %9 = load ptr, ptr %stringVar, align 8
-  %10 = call i32 (ptr, ...) @printf(ptr @5, ptr %9)
   %byteVar = alloca i8, align 1
-  store i8 0, ptr %byteVar, align 1
-  %11 = load i8, ptr %byteVar, align 1
-  %12 = sext i8 %11 to i32
-  %13 = call i32 (ptr, ...) @printf(ptr @6, i32 %12)
   %charVar = alloca i8, align 1
-  store i8 0, ptr %charVar, align 1
-  %14 = load i8, ptr %charVar, align 1
-  %15 = sext i8 %14 to i32
-  %16 = call i32 (ptr, ...) @printf(ptr @7, i32 %15)
   %boolVar = alloca i1, align 1
-  store i1 false, ptr %boolVar, align 1
-  %17 = load i1, ptr %boolVar, align 1
-  %18 = zext i1 %17 to i32
-  %19 = call i32 (ptr, ...) @printf(ptr @8, i32 %18)
-  %20 = alloca %_s__NestedStruct__int_string, align 8
-  %21 = getelementptr inbounds %_s__NestedStruct__int_string, ptr %20, i32 0, i32 0
-  store i32 0, ptr %21, align 4
-  %22 = getelementptr inbounds %_s__NestedStruct__int_string, ptr %20, i32 0, i32 1
-  store ptr @9, ptr %22, align 8
+  %0 = alloca %_s__NestedStruct__int_string, align 8
   %structArrayVar = alloca [4 x %_s__NestedStruct__int_string], align 8
+  store i32 0, ptr %result, align 4
+  store double 0.000000e+00, ptr %doubleVar, align 8
+  %1 = load double, ptr %doubleVar, align 8
+  %2 = call i32 (ptr, ...) @printf(ptr @0, double %1)
+  store i32 0, ptr %intVar, align 4
+  %3 = load i32, ptr %intVar, align 4
+  %4 = call i32 (ptr, ...) @printf(ptr @1, i32 %3)
+  store i16 0, ptr %shortVar, align 2
+  %5 = load i16, ptr %shortVar, align 2
+  %6 = sext i16 %5 to i32
+  %7 = call i32 (ptr, ...) @printf(ptr @2, i32 %6)
+  store i64 0, ptr %longVar, align 8
+  %8 = load i64, ptr %longVar, align 8
+  %9 = call i32 (ptr, ...) @printf(ptr @3, i64 %8)
+  store ptr @4, ptr %stringVar, align 8
+  %10 = load ptr, ptr %stringVar, align 8
+  %11 = call i32 (ptr, ...) @printf(ptr @5, ptr %10)
+  store i8 0, ptr %byteVar, align 1
+  %12 = load i8, ptr %byteVar, align 1
+  %13 = sext i8 %12 to i32
+  %14 = call i32 (ptr, ...) @printf(ptr @6, i32 %13)
+  store i8 0, ptr %charVar, align 1
+  %15 = load i8, ptr %charVar, align 1
+  %16 = sext i8 %15 to i32
+  %17 = call i32 (ptr, ...) @printf(ptr @7, i32 %16)
+  store i1 false, ptr %boolVar, align 1
+  %18 = load i1, ptr %boolVar, align 1
+  %19 = zext i1 %18 to i32
+  %20 = call i32 (ptr, ...) @printf(ptr @8, i32 %19)
+  %21 = getelementptr inbounds %_s__NestedStruct__int_string, ptr %0, i32 0, i32 0
+  store i32 0, ptr %21, align 4
+  %22 = getelementptr inbounds %_s__NestedStruct__int_string, ptr %0, i32 0, i32 1
+  store ptr @9, ptr %22, align 8
   store [4 x %_s__NestedStruct__int_string] [%_s__NestedStruct__int_string { i32 0, ptr @9 }, %_s__NestedStruct__int_string { i32 0, ptr @9 }, %_s__NestedStruct__int_string { i32 0, ptr @9 }, %_s__NestedStruct__int_string { i32 0, ptr @9 }], ptr %structArrayVar, align 8
   %23 = getelementptr inbounds [4 x %_s__NestedStruct__int_string], ptr %structArrayVar, i32 0, i32 2
   %24 = getelementptr inbounds %_s__NestedStruct__int_string, ptr %23, i32 0, i32 1

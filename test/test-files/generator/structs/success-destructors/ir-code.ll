@@ -22,8 +22,8 @@ declare i32 @printf(ptr, ...)
 define i32 @main() {
 entry.l10:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %0 = alloca %_s__Vector__bool_string, align 8
+  store i32 0, ptr %result, align 4
   %1 = getelementptr inbounds %_s__Vector__bool_string, ptr %0, i32 0, i32 0
   store i1 true, ptr %1, align 1
   %2 = getelementptr inbounds %_s__Vector__bool_string, ptr %0, i32 0, i32 1

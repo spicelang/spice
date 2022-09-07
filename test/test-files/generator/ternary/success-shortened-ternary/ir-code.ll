@@ -10,10 +10,10 @@ target triple = "x86_64-w64-windows-gnu"
 define internal i1 @_f__void__f1() {
 entry.l1:
   %result = alloca i1, align 1
-  %0 = call i32 (ptr, ...) @printf(ptr @0)
-  %1 = alloca i1, align 1
-  store i1 false, ptr %1, align 1
-  %2 = load i1, ptr %1, align 1
+  %0 = alloca i1, align 1
+  %1 = call i32 (ptr, ...) @printf(ptr @0)
+  store i1 false, ptr %0, align 1
+  %2 = load i1, ptr %0, align 1
   ret i1 %2
 }
 
@@ -22,25 +22,25 @@ declare i32 @printf(ptr, ...)
 define internal i1 @_f__void__f2() {
 entry.l6:
   %result = alloca i1, align 1
-  %0 = call i32 (ptr, ...) @printf(ptr @1)
-  %1 = alloca i1, align 1
-  store i1 true, ptr %1, align 1
-  %2 = load i1, ptr %1, align 1
+  %0 = alloca i1, align 1
+  %1 = call i32 (ptr, ...) @printf(ptr @1)
+  store i1 true, ptr %0, align 1
+  %2 = load i1, ptr %0, align 1
   ret i1 %2
 }
 
 define i32 @main() {
 entry.l11:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
-  %0 = call i1 @_f__void__f1()
+  %0 = alloca i1, align 1
   %1 = alloca i1, align 1
-  store i1 %0, ptr %1, align 1
-  %2 = call i1 @_f__void__f2()
-  %3 = alloca i1, align 1
-  store i1 %2, ptr %3, align 1
-  %4 = load i1, ptr %1, align 1
-  %5 = select i1 %4, ptr %1, ptr %3
+  store i32 0, ptr %result, align 4
+  %2 = call i1 @_f__void__f1()
+  store i1 %2, ptr %0, align 1
+  %3 = call i1 @_f__void__f2()
+  store i1 %3, ptr %1, align 1
+  %4 = load i1, ptr %0, align 1
+  %5 = select i1 %4, ptr %0, ptr %1
   %6 = load i1, ptr %5, align 1
   %7 = zext i1 %6 to i32
   %8 = call i32 (ptr, ...) @printf(ptr @2, i32 %7)

@@ -9,15 +9,15 @@ target triple = "x86_64-w64-windows-gnu"
 define internal ptr @_f__void__getTestString__int_double_bool(i32 %0, double %1, i1 %2) {
 entry.l1:
   %arg0 = alloca i32, align 4
-  store i32 %0, ptr %arg0, align 4
   %arg1 = alloca double, align 8
-  store double %1, ptr %arg1, align 8
   %arg2 = alloca i1, align 1
-  store i1 %2, ptr %arg2, align 1
   %arg3 = alloca double, align 8
-  store double 1.340000e+00, ptr %arg3, align 8
   %result = alloca ptr, align 8
   %arg31 = alloca ptr, align 8
+  store i32 %0, ptr %arg0, align 4
+  store double %1, ptr %arg1, align 8
+  store i1 %2, ptr %arg2, align 1
+  store double 1.340000e+00, ptr %arg3, align 8
   store ptr @0, ptr %arg31, align 8
   %3 = load ptr, ptr %arg31, align 8
   ret ptr %3
@@ -26,20 +26,20 @@ entry.l1:
 define i32 @main() {
 entry.l5:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %0 = alloca i32, align 4
+  %1 = alloca double, align 8
+  %2 = alloca i1, align 1
+  %3 = alloca ptr, align 8
+  store i32 0, ptr %result, align 4
   store i32 1, ptr %0, align 4
-  %1 = load i32, ptr %0, align 4
-  %2 = alloca double, align 8
-  store double 3.400000e+00, ptr %2, align 8
-  %3 = load double, ptr %2, align 8
-  %4 = alloca i1, align 1
-  store i1 true, ptr %4, align 1
-  %5 = load i1, ptr %4, align 1
-  %6 = call ptr @_f__void__getTestString__int_double_bool(i32 %1, double %3, i1 %5)
-  %7 = alloca ptr, align 8
-  store ptr %6, ptr %7, align 8
-  %8 = load ptr, ptr %7, align 8
+  %4 = load i32, ptr %0, align 4
+  store double 3.400000e+00, ptr %1, align 8
+  %5 = load double, ptr %1, align 8
+  store i1 true, ptr %2, align 1
+  %6 = load i1, ptr %2, align 1
+  %7 = call ptr @_f__void__getTestString__int_double_bool(i32 %4, double %5, i1 %6)
+  store ptr %7, ptr %3, align 8
+  %8 = load ptr, ptr %3, align 8
   %9 = call i32 (ptr, ...) @printf(ptr @1, ptr %8)
   %10 = load i32, ptr %result, align 4
   ret i32 %10

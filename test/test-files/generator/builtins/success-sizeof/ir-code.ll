@@ -20,62 +20,62 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l7:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %0 = alloca i32, align 4
-  store i32 64, ptr %0, align 4
-  %1 = load i32, ptr %0, align 4
-  %2 = call i32 (ptr, ...) @printf(ptr @0, i32 %1)
+  %1 = alloca i32, align 4
+  %2 = alloca i32, align 4
   %3 = alloca i32, align 4
-  store i32 32, ptr %3, align 4
-  %4 = load i32, ptr %3, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr @1, i32 %4)
-  %6 = alloca i32, align 4
-  store i32 16, ptr %6, align 4
-  %7 = load i32, ptr %6, align 4
-  %8 = call i32 (ptr, ...) @printf(ptr @2, i32 %7)
+  %4 = alloca i8, align 1
+  %5 = alloca i32, align 4
+  %6 = alloca i8, align 1
+  %7 = alloca i32, align 4
+  %8 = alloca i32, align 4
   %9 = alloca i32, align 4
-  store i32 64, ptr %9, align 4
-  %10 = load i32, ptr %9, align 4
-  %11 = call i32 (ptr, ...) @printf(ptr @3, i32 %10)
-  %12 = alloca i8, align 1
-  store i8 13, ptr %12, align 1
-  %13 = load i8, ptr %12, align 1
-  %14 = alloca i32, align 4
-  store i32 8, ptr %14, align 4
-  %15 = load i32, ptr %14, align 4
-  %16 = call i32 (ptr, ...) @printf(ptr @4, i32 %15)
-  %17 = alloca i8, align 1
-  store i8 65, ptr %17, align 1
-  %18 = load i8, ptr %17, align 1
-  %19 = alloca i32, align 4
-  store i32 8, ptr %19, align 4
-  %20 = load i32, ptr %19, align 4
-  %21 = call i32 (ptr, ...) @printf(ptr @5, i32 %20)
-  %22 = alloca i32, align 4
-  store i32 64, ptr %22, align 4
-  %23 = load i32, ptr %22, align 4
-  %24 = call i32 (ptr, ...) @printf(ptr @6, i32 %23)
-  %25 = alloca i32, align 4
-  store i32 1, ptr %25, align 4
-  %26 = load i32, ptr %25, align 4
-  %27 = call i32 (ptr, ...) @printf(ptr @8, i32 %26)
-  %28 = load [7 x i32], ptr @anonymous.0, align 4
-  %29 = alloca i32, align 4
-  store i32 224, ptr %29, align 4
-  %30 = load i32, ptr %29, align 4
-  %31 = call i32 (ptr, ...) @printf(ptr @9, i32 %30)
+  %10 = alloca i32, align 4
   %intVariable = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i32, align 4
+  %13 = alloca i32, align 4
+  store i32 0, ptr %result, align 4
+  store i32 64, ptr %0, align 4
+  %14 = load i32, ptr %0, align 4
+  %15 = call i32 (ptr, ...) @printf(ptr @0, i32 %14)
+  store i32 32, ptr %1, align 4
+  %16 = load i32, ptr %1, align 4
+  %17 = call i32 (ptr, ...) @printf(ptr @1, i32 %16)
+  store i32 16, ptr %2, align 4
+  %18 = load i32, ptr %2, align 4
+  %19 = call i32 (ptr, ...) @printf(ptr @2, i32 %18)
+  store i32 64, ptr %3, align 4
+  %20 = load i32, ptr %3, align 4
+  %21 = call i32 (ptr, ...) @printf(ptr @3, i32 %20)
+  store i8 13, ptr %4, align 1
+  %22 = load i8, ptr %4, align 1
+  store i32 8, ptr %5, align 4
+  %23 = load i32, ptr %5, align 4
+  %24 = call i32 (ptr, ...) @printf(ptr @4, i32 %23)
+  store i8 65, ptr %6, align 1
+  %25 = load i8, ptr %6, align 1
+  store i32 8, ptr %7, align 4
+  %26 = load i32, ptr %7, align 4
+  %27 = call i32 (ptr, ...) @printf(ptr @5, i32 %26)
+  store i32 64, ptr %8, align 4
+  %28 = load i32, ptr %8, align 4
+  %29 = call i32 (ptr, ...) @printf(ptr @6, i32 %28)
+  store i32 1, ptr %9, align 4
+  %30 = load i32, ptr %9, align 4
+  %31 = call i32 (ptr, ...) @printf(ptr @8, i32 %30)
+  %32 = load [7 x i32], ptr @anonymous.0, align 4
+  store i32 224, ptr %10, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = call i32 (ptr, ...) @printf(ptr @9, i32 %33)
   store i32 123, ptr %intVariable, align 4
-  %32 = alloca ptr, align 8
-  store ptr %intVariable, ptr %32, align 8
-  %33 = load ptr, ptr %32, align 8
-  %34 = alloca i32, align 4
-  store i32 64, ptr %34, align 4
-  %35 = load i32, ptr %34, align 4
-  %36 = call i32 (ptr, ...) @printf(ptr @10, i32 %35)
-  %37 = alloca i32, align 4
-  store i32 128, ptr %37, align 4
-  %38 = load i32, ptr %37, align 4
+  store ptr %intVariable, ptr %11, align 8
+  %35 = load ptr, ptr %11, align 8
+  store i32 64, ptr %12, align 4
+  %36 = load i32, ptr %12, align 4
+  %37 = call i32 (ptr, ...) @printf(ptr @10, i32 %36)
+  store i32 128, ptr %13, align 4
+  %38 = load i32, ptr %13, align 4
   %39 = call i32 (ptr, ...) @printf(ptr @11, i32 %38)
   %40 = load i32, ptr %result, align 4
   ret i32 %40

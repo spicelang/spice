@@ -18,9 +18,25 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
+  %arraySize1 = alloca i16, align 2
+  %array1 = alloca ptr, align 8
+  %idx = alloca i32, align 4
+  %item = alloca i32, align 4
+  %arraySize2 = alloca i64, align 8
+  %array2 = alloca ptr, align 8
+  %idx2 = alloca i32, align 4
+  %item3 = alloca ptr, align 8
+  %arraySize3 = alloca i32, align 4
+  %array3 = alloca ptr, align 8
+  %idx6 = alloca i32, align 4
+  %item7 = alloca i32, align 4
+  %arraySize4 = alloca i32, align 4
+  %array4 = alloca ptr, align 8
+  %array410 = alloca ptr, align 8
+  %idx11 = alloca i32, align 4
+  %item12 = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %0 = call i32 (ptr, ...) @printf(ptr @0)
-  %arraySize1 = alloca i16, align 2
   store i16 4, ptr %arraySize1, align 2
   %1 = load i16, ptr %arraySize1, align 2
   %2 = call ptr @llvm.stacksave()
@@ -31,14 +47,11 @@ entry.l1:
   store i32 2, ptr %5, align 4
   %6 = getelementptr inbounds i32, ptr %3, i32 2
   store i32 3, ptr %6, align 4
-  %array1 = alloca ptr, align 8
   store ptr %3, ptr %array1, align 8
   %7 = load ptr, ptr %array1, align 8
   %8 = getelementptr inbounds i32, ptr %7, i32 3
   store i32 0, ptr %8, align 4
-  %idx = alloca i32, align 4
   store i32 0, ptr %idx, align 4
-  %item = alloca i32, align 4
   store i32 0, ptr %item, align 4
   %9 = load ptr, ptr %array1, align 8
   %10 = sext i16 %1 to i32
@@ -70,11 +83,9 @@ foreach.cond.l6:                                  ; preds = %foreach.inc.l6
 
 foreach.end.l6:                                   ; preds = %foreach.cond.l6
   %21 = call i32 (ptr, ...) @printf(ptr @2)
-  %arraySize2 = alloca i64, align 8
   store i64 2, ptr %arraySize2, align 8
   %22 = load i64, ptr %arraySize2, align 8
   %23 = alloca ptr, i64 %22, align 8
-  %array2 = alloca ptr, align 8
   store ptr %23, ptr %array2, align 8
   %24 = load ptr, ptr %array2, align 8
   %25 = getelementptr inbounds ptr, ptr %24, i32 0
@@ -82,9 +93,7 @@ foreach.end.l6:                                   ; preds = %foreach.cond.l6
   %26 = load ptr, ptr %array2, align 8
   %27 = getelementptr inbounds ptr, ptr %26, i32 1
   store ptr @4, ptr %27, align 8
-  %idx2 = alloca i32, align 4
   store i32 0, ptr %idx2, align 4
-  %item3 = alloca ptr, align 8
   store ptr @5, ptr %item3, align 8
   %28 = load ptr, ptr %array2, align 8
   %29 = trunc i64 %22 to i32
@@ -116,7 +125,6 @@ foreach.cond.l15:                                 ; preds = %foreach.inc.l15
 
 foreach.end.l15:                                  ; preds = %foreach.cond.l15
   %40 = call i32 (ptr, ...) @printf(ptr @7)
-  %arraySize3 = alloca i32, align 4
   store i32 3, ptr %arraySize3, align 4
   %41 = load i32, ptr %arraySize3, align 4
   %42 = load i32, ptr %arraySize3, align 4
@@ -128,11 +136,8 @@ foreach.end.l15:                                  ; preds = %foreach.cond.l15
   store i32 %42, ptr %46, align 4
   %47 = getelementptr inbounds i32, ptr %44, i32 2
   store i32 %43, ptr %47, align 4
-  %array3 = alloca ptr, align 8
   store ptr %44, ptr %array3, align 8
-  %idx6 = alloca i32, align 4
   store i32 0, ptr %idx6, align 4
-  %item7 = alloca i32, align 4
   store i32 0, ptr %item7, align 4
   %48 = load ptr, ptr %array3, align 8
   %49 = load i32, ptr %idx6, align 4
@@ -163,11 +168,9 @@ foreach.cond.l22:                                 ; preds = %foreach.inc.l22
 
 foreach.end.l22:                                  ; preds = %foreach.cond.l22
   %59 = call i32 (ptr, ...) @printf(ptr @9)
-  %arraySize4 = alloca i32, align 4
   store i32 3, ptr %arraySize4, align 4
   %60 = load i32, ptr %arraySize4, align 4
   %61 = alloca i32, i32 %60, align 4
-  %array4 = alloca ptr, align 8
   store ptr %61, ptr %array4, align 8
   %62 = load i32, ptr %arraySize4, align 4
   %63 = load i32, ptr %arraySize4, align 4
@@ -178,13 +181,10 @@ foreach.end.l22:                                  ; preds = %foreach.cond.l22
   store i32 %62, ptr %66, align 4
   %67 = getelementptr inbounds i32, ptr %64, i32 2
   store i32 %63, ptr %67, align 4
-  %array410 = alloca ptr, align 8
   store ptr %64, ptr %array410, align 8
   %68 = load ptr, ptr %array410, align 8
   store ptr %68, ptr %array4, align 8
-  %idx11 = alloca i32, align 4
   store i32 0, ptr %idx11, align 4
-  %item12 = alloca i32, align 4
   store i32 0, ptr %item12, align 4
   %69 = load ptr, ptr %array4, align 8
   %70 = load i32, ptr %idx11, align 4

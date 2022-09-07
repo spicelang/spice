@@ -14,10 +14,10 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %i = alloca i32, align 4
-  store i32 0, ptr %i, align 4
   %word = alloca ptr, align 8
+  store i32 0, ptr %result, align 4
+  store i32 0, ptr %i, align 4
   store ptr @4, ptr %word, align 8
   %0 = load [5 x ptr], ptr @welcomeMessage, align 8
   %1 = load i32, ptr %i, align 4

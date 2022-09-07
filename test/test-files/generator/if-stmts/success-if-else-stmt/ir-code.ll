@@ -11,30 +11,30 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %0 = alloca i1, align 1
+  %1 = alloca i1, align 1
+  %2 = alloca i1, align 1
+  store i32 0, ptr %result, align 4
   store i1 false, ptr %0, align 1
-  %1 = load i1, ptr %0, align 1
-  br i1 %1, label %if.then.l2, label %if.else.l2
+  %3 = load i1, ptr %0, align 1
+  br i1 %3, label %if.then.l2, label %if.else.l2
 
 if.then.l2:                                       ; preds = %entry.l1
-  %2 = call i32 (ptr, ...) @printf(ptr @0)
+  %4 = call i32 (ptr, ...) @printf(ptr @0)
   br label %if.end.l2
 
 if.else.l2:                                       ; preds = %entry.l1
-  %3 = alloca i1, align 1
-  store i1 false, ptr %3, align 1
-  %4 = load i1, ptr %3, align 1
-  br i1 %4, label %if.then.l4, label %if.else.l4
+  store i1 false, ptr %1, align 1
+  %5 = load i1, ptr %1, align 1
+  br i1 %5, label %if.then.l4, label %if.else.l4
 
 if.then.l4:                                       ; preds = %if.else.l2
-  %5 = call i32 (ptr, ...) @printf(ptr @1)
+  %6 = call i32 (ptr, ...) @printf(ptr @1)
   br label %if.end.l4
 
 if.else.l4:                                       ; preds = %if.else.l2
-  %6 = alloca i1, align 1
-  store i1 false, ptr %6, align 1
-  %7 = load i1, ptr %6, align 1
+  store i1 false, ptr %2, align 1
+  %7 = load i1, ptr %2, align 1
   br i1 %7, label %if.then.l6, label %if.else.l6
 
 if.then.l6:                                       ; preds = %if.else.l4

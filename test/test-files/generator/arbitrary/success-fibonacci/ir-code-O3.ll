@@ -20,13 +20,13 @@ common.ret:                                       ; preds = %common.ret.loopexit
   ret i32 %accumulator.tr.lcssa
 
 if.end.l2:                                        ; preds = %entry.l1, %if.end.l2
-  %.tr4 = phi i32 [ %4, %if.end.l2 ], [ %0, %entry.l1 ]
-  %accumulator.tr3 = phi i32 [ %5, %if.end.l2 ], [ 0, %entry.l1 ]
-  %2 = add nsw i32 %.tr4, -1
+  %.tr9 = phi i32 [ %4, %if.end.l2 ], [ %0, %entry.l1 ]
+  %accumulator.tr8 = phi i32 [ %5, %if.end.l2 ], [ 0, %entry.l1 ]
+  %2 = add nsw i32 %.tr9, -1
   %3 = tail call fastcc i32 @_f__void__fib__int(i32 %2)
-  %4 = add nsw i32 %.tr4, -2
-  %5 = add i32 %3, %accumulator.tr3
-  %6 = icmp ult i32 %.tr4, 5
+  %4 = add nsw i32 %.tr9, -2
+  %5 = add i32 %3, %accumulator.tr8
+  %6 = icmp ult i32 %.tr9, 5
   br i1 %6, label %common.ret.loopexit, label %if.end.l2
 }
 

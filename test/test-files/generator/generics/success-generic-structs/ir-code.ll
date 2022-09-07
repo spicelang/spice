@@ -10,11 +10,11 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l8:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %dbl = alloca double, align 8
-  store double 3.467000e+00, ptr %dbl, align 8
   %0 = alloca %_s__double__Vector__doubleptr_int, align 8
   %1 = alloca ptr, align 8
+  store i32 0, ptr %result, align 4
+  store double 3.467000e+00, ptr %dbl, align 8
   store ptr %dbl, ptr %1, align 8
   %2 = load ptr, ptr %1, align 8
   %3 = getelementptr inbounds %_s__double__Vector__doubleptr_int, ptr %0, i32 0, i32 0

@@ -14,42 +14,42 @@ target triple = "x86_64-w64-windows-gnu"
 define internal void @_p__void__birthday__Personptr(ptr %0) {
 entry.l7:
   %person = alloca ptr, align 8
+  %1 = alloca i32, align 4
   store ptr %0, ptr %person, align 8
-  %1 = load ptr, ptr %person, align 8
-  %2 = getelementptr inbounds %_s__Person__string_string_int, ptr %1, i32 0, i32 2
-  %3 = load i32, ptr %2, align 4
-  %4 = add i32 %3, 1
-  store i32 %4, ptr %2, align 4
-  %5 = alloca i32, align 4
-  store i32 %3, ptr %5, align 4
+  %2 = load ptr, ptr %person, align 8
+  %3 = getelementptr inbounds %_s__Person__string_string_int, ptr %2, i32 0, i32 2
+  %4 = load i32, ptr %3, align 4
+  %5 = add i32 %4, 1
+  store i32 %5, ptr %3, align 4
+  store i32 %4, ptr %1, align 4
   ret void
 }
 
 define i32 @main() {
 entry.l11:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %0 = alloca %_s__Person__string_string_int, align 8
-  %1 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 0
-  store ptr @0, ptr %1, align 8
-  %2 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 1
-  store ptr @1, ptr %2, align 8
-  %3 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 2
-  store i32 32, ptr %3, align 4
+  %1 = alloca ptr, align 8
+  %2 = alloca i1, align 1
+  store i32 0, ptr %result, align 4
+  %3 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 0
+  store ptr @0, ptr %3, align 8
   %4 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 1
-  %5 = load ptr, ptr %4, align 8
-  %6 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 0
+  store ptr @1, ptr %4, align 8
+  %5 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 2
+  store i32 32, ptr %5, align 4
+  %6 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 1
   %7 = load ptr, ptr %6, align 8
-  %8 = call i32 (ptr, ...) @printf(ptr @2, ptr %5, ptr %7)
-  %9 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 2
-  %10 = load i32, ptr %9, align 4
-  %11 = call i32 (ptr, ...) @printf(ptr @3, i32 %10)
-  %12 = alloca ptr, align 8
-  store ptr %0, ptr %12, align 8
-  %13 = load ptr, ptr %12, align 8
-  call void @_p__void__birthday__Personptr(ptr %13)
-  %14 = alloca i1, align 1
-  store i1 true, ptr %14, align 1
+  %8 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 0
+  %9 = load ptr, ptr %8, align 8
+  %10 = call i32 (ptr, ...) @printf(ptr @2, ptr %7, ptr %9)
+  %11 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 2
+  %12 = load i32, ptr %11, align 4
+  %13 = call i32 (ptr, ...) @printf(ptr @3, i32 %12)
+  store ptr %0, ptr %1, align 8
+  %14 = load ptr, ptr %1, align 8
+  call void @_p__void__birthday__Personptr(ptr %14)
+  store i1 true, ptr %2, align 1
   %15 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 2
   %16 = load i32, ptr %15, align 4
   %17 = call i32 (ptr, ...) @printf(ptr @4, i32 %16)

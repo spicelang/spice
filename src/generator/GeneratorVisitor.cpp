@@ -2969,9 +2969,10 @@ void GeneratorVisitor::createCondBr(llvm::Value *condition, llvm::BasicBlock *tr
 
 llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) {
-    allocaInsertInst = builder->CreateAlloca(llvmType, nullptr, varName);
-    allocaInsertInst->setDebugLoc(llvm::DebugLoc());
-    allocaInsertInst->moveAfter(allocaInsertInst);
+    llvm::AllocaInst *allocaInst = builder->CreateAlloca(llvmType, nullptr, varName);
+    allocaInst->setDebugLoc(llvm::DebugLoc());
+    allocaInst->moveAfter(allocaInsertInst);
+    allocaInsertInst = allocaInst;
   } else {
     // Save current basic block and move insert cursor to entry block of the current function
     llvm::BasicBlock *currentBlock = builder->GetInsertBlock();
