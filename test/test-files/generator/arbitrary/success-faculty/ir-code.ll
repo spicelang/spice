@@ -14,33 +14,41 @@ entry.l1:
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
+  %6 = alloca i32, align 4
+  %7 = alloca i32, align 4
   store i32 %0, ptr %input, align 4
-  %6 = load i32, ptr %input, align 4
-  %7 = icmp slt i32 %6, 2
-  store i1 %7, ptr %1, align 1
-  %8 = load i1, ptr %1, align 1
-  br i1 %8, label %if.then.l2, label %if.end.l2
+  %8 = load i32, ptr %input, align 4
+  %9 = icmp slt i32 %8, 2
+  store i1 %9, ptr %1, align 1
+  %10 = load i1, ptr %1, align 1
+  br i1 %10, label %if.then.l2, label %if.end.l2
 
 if.then.l2:                                       ; preds = %entry.l1
   store i32 1, ptr %2, align 4
-  %9 = load i32, ptr %2, align 4
-  ret i32 %9
+  %11 = load i32, ptr %2, align 4
+  ret i32 %11
 
 if.end.l2:                                        ; preds = %entry.l1
-  %10 = load i32, ptr %input, align 4
-  %11 = load i32, ptr %input, align 4
-  %12 = sub i32 %11, 1
-  store i32 %12, ptr %3, align 4
-  %13 = load i32, ptr %3, align 4
-  %14 = call i32 @_f__void__faculty__int(i32 %13)
-  store i32 %14, ptr %4, align 4
-  %15 = load i32, ptr %4, align 4
-  %16 = mul i32 %10, %15
-  store i32 %16, ptr %5, align 4
-  %17 = load i32, ptr %5, align 4
-  store i32 %17, ptr %result, align 4
-  %18 = load i32, ptr %result, align 4
-  ret i32 %18
+  %12 = load i32, ptr %input, align 4
+  %13 = load i32, ptr %input, align 4
+  %14 = sub i32 %13, 1
+  store i32 %14, ptr %3, align 4
+  %15 = load i32, ptr %3, align 4
+  %16 = call i32 @_f__void__faculty__int(i32 %15)
+  store i32 %16, ptr %4, align 4
+  %17 = load i32, ptr %4, align 4
+  %18 = load i32, ptr %input, align 4
+  %19 = sub i32 %18, 1
+  store i32 %19, ptr %5, align 4
+  %20 = load i32, ptr %5, align 4
+  %21 = call i32 @_f__void__faculty__int(i32 %20)
+  store i32 %21, ptr %6, align 4
+  %22 = mul i32 %12, %17
+  store i32 %22, ptr %7, align 4
+  %23 = load i32, ptr %7, align 4
+  store i32 %23, ptr %result, align 4
+  %24 = load i32, ptr %result, align 4
+  ret i32 %24
 }
 
 define i32 @main() {

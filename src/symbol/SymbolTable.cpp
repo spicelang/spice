@@ -31,6 +31,18 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, Symbol
 }
 
 /**
+ * Insert a new anonymous symbol into the current symbol table.
+ * The anonymous symbol will be identified via the definition code location
+ *
+ * @param type Type of the symbol
+ * @param declNode AST node where the symbol is declared
+ */
+void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNode) {
+  std::string name = "anon." + declNode->codeLoc.toString();
+  insert(name, type, SymbolSpecifiers(type), DECLARED, declNode);
+}
+
+/**
  * Add a capture to the capture list manually
  *
  * @param capture
@@ -121,6 +133,14 @@ SymbolTableEntry *SymbolTable::lookupGlobal(const std::string &globalName, bool 
   }
   return nullptr;
 }
+
+/**
+ * Check if an anonymous symbol exists in the current scope and return it if possible
+ *
+ * @param codeLoc Definition code loc
+ * @return Anonymous symbol
+ */
+SymbolTableEntry *SymbolTable::lookupAnonymous(const CodeLoc &codeLoc) { return lookup("anon." + codeLoc.toString()); }
 
 /**
  * Check if a capture exists in the current or any parent scope scope and return it if possible
@@ -272,41 +292,40 @@ SymbolTable *SymbolTable::getChild(const std::string &scopeId) {
 }
 
 /**
- * Create an anonymous symbol to signalize the dtor calling mechanism to call the dtor on this object
- *
- * @param symbolType Type of the anonymous symbol
- * @param memAddress Address of the anonymous symbol
- * @param codeLoc Code location of the definition
- */
-void SymbolTable::registerForDtorCall(const SymbolType &symbolType, llvm::Value *memAddress, const CodeLoc &codeLoc) {
-  // Insert anonymous symbol
-  std::string name = ".anon." + codeLoc.toString();
-  insert(name, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, nullptr);
-  // Set the mem address
-  SymbolTableEntry *entry = lookupStrict(name);
-  assert(entry != nullptr);
-  entry->updateAddress(memAddress);
-}
-
-/**
  * Retrieve all variables that can be freed, because the ref count went down to 0.
  *
  * @param Get only struct variables
  *
  * @return Variables that can be de-allocated
  */
-std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForStructs) {
+std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForDtorStructs) {
   assert(parent != nullptr); // Should not be called in root scope
 
-  // Collect all variables
+  // Collect all variables in this scope
   std::vector<SymbolTableEntry *> varsGoingOutOfScope;
   varsGoingOutOfScope.reserve(symbols.size());
   for (auto [name, entry] : symbols) {
     if (name == THIS_VARIABLE_NAME)
       continue;
-    if (!filterForStructs || entry.getType().is(TY_STRUCT) || entry.getType().isStringStruct())
+    if (!filterForDtorStructs) {
+      varsGoingOutOfScope.push_back(&symbols.at(name));
+      continue;
+    }
+    // For dtor calls, only anonymous structs are relevant
+    if ((entry.getType().is(TY_STRUCT) || entry.getType().isStringStruct()) && entry.getName().starts_with("anon."))
       varsGoingOutOfScope.push_back(&symbols.at(name));
   }
+
+  // Collect all variables in the child scopes
+  for (auto &[_, child] : children) {
+    ScopeType type = child->scopeType;
+    // Exclude enum, global, struct and thread body (is a LLVM function) scopes
+    if (type != SCOPE_ENUM && type != SCOPE_GLOBAL && type != SCOPE_STRUCT && type != SCOPE_THREAD_BODY) {
+      std::vector childVars = child->getVarsGoingOutOfScope(filterForDtorStructs);
+      varsGoingOutOfScope.insert(varsGoingOutOfScope.end(), childVars.begin(), childVars.end());
+    }
+  }
+
   return varsGoingOutOfScope;
 }
 

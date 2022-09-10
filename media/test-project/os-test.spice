@@ -1,39 +1,7 @@
-import "std/runtime/string_rt" as _rt_str;
-
 f<int> main() {
-    _rt_str::String s;
-    s = _rt_str::String("Test");
-
-    // Plus
-    printf("Result: %s\n", "Hello " + "World!");
-    string s1 = "Hello " + "World!";
-    printf("Result: %s\n", s1);
-    // Mul
-    printf("Result: %s\n", 4s * "Hi");
-    string s2 = "Hello " * 5;
-    printf("Result: %s\n", s2);
-    printf("Result: %s\n", 20 * 'a');
-    string s3 = 2 * 'c' * 7;
-    printf("Result: %s\n", s3);
-    // Equals
-    printf("Equal: %d\n", "Hello World!" == "Hello Programmers!");
-    printf("Equal: %d\n", "Hello" == "Hell2");
-    printf("Equal: %d\n", "Hello" == "Hello");
-    // Not equals
-    printf("Non-equal: %d\n", "Hello World!" != "Hello Programmers!");
-    printf("Non-equal: %d\n", "Hello" != "Hell2");
-    printf("Non-equal: %d\n", "Hello" != "Hello");
-    // PlusEquals
-    string s4 = "Hello";
-    s4 += 'l';
-    printf("Result: %s\n", s4);
-    string s5 = "Hi";
-    s5 += " World!";
-    printf("Result: %s\n", s5);
-    // MulEquals
-    string s6 = "Hi";
-    s6 *= 3;
-    printf("Result: %s\n", s6);
+    for dyn i = 0; i < 10; i+=2 {
+        printf("Step %d\n", i);
+    }
 }
 
 /*import "std/data/vector" as vec;

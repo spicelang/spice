@@ -10,10 +10,7 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: alwaysinline
 define internal void @_p__void__printAValue() #0 {
 entry.l1:
-  %0 = alloca i32, align 4
-  store i32 5, ptr %0, align 4
-  %1 = load i32, ptr %0, align 4
-  %2 = call i32 (ptr, ...) @printf(ptr @0, i32 %1)
+  %0 = call i32 (ptr, ...) @printf(ptr @0, i32 5)
   ret void
 }
 

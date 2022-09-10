@@ -50,6 +50,9 @@ public:
                            const ThreadFactory &threadFactory, const SourceFile &sourceFile, CliOptions &options,
                            bool requiresMainFct, bool stdFile);
 
+  // Friend classes
+  friend class OpRuleManager;
+
   // Public methods
   std::any visitEntry(EntryNode *node) override;
   std::any visitMainFctDef(MainFctDefNode *node) override;
@@ -126,6 +129,7 @@ private:
   bool allowUnsafeOperations = false;
 
   // Private methods
+  SymbolType insertAnonStringStructSymbol(const AstNode *declNode);
   void insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
   SymbolType initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix, const std::string &structName,
                            const std::vector<SymbolType> &templateTypes, const CodeLoc &codeLoc);

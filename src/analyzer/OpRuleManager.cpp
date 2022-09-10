@@ -2,6 +2,9 @@
 
 #include "OpRuleManager.h"
 
+#include <analyzer/AnalyzerVisitor.h>
+#include <ast/AstNodes.h>
+
 SymbolType OpRuleManager::getAssignResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhs.is(TY_DYN))
@@ -22,27 +25,27 @@ SymbolType OpRuleManager::getAssignResultType(const CodeLoc &codeLoc, const Symb
   return validateBinaryOperation(codeLoc, ASSIGN_OP_RULES, "=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPlusEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getPlusEqualResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs) {
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (withinUnsafeBlock)
+    if (analyzer->allowUnsafeOperations)
       return lhs;
     else
-      throw printErrorMessageUnsafe(codeLoc, "+=", lhs, rhs);
+      throw printErrorMessageUnsafe(declNode->codeLoc, "+=", lhs, rhs);
   }
 
   // Allow string += char
   if (lhs.is(TY_STRING) && rhs.is(TY_CHAR))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+    return analyzer->insertAnonStringStructSymbol(declNode);
   // Allow string += string
   if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+    return analyzer->insertAnonStringStructSymbol(declNode);
 
-  return validateBinaryOperation(codeLoc, PLUS_EQUAL_OP_RULES, "+=", lhs, rhs);
+  return validateBinaryOperation(declNode->codeLoc, PLUS_EQUAL_OP_RULES, "+=", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getMinusEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (withinUnsafeBlock)
+    if (analyzer->allowUnsafeOperations)
       return lhs;
     else
       throw printErrorMessageUnsafe(codeLoc, "-=", lhs, rhs);
@@ -51,18 +54,18 @@ SymbolType OpRuleManager::getMinusEqualResultType(const CodeLoc &codeLoc, const 
   return validateBinaryOperation(codeLoc, MINUS_EQUAL_OP_RULES, "-=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMulEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getMulEqualResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow string *= int
   if (lhs.is(TY_STRING) && rhs.is(TY_INT))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+    return analyzer->insertAnonStringStructSymbol(declNode);
   // Allow string *= long
   if (lhs.is(TY_STRING) && rhs.is(TY_LONG))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+    return analyzer->insertAnonStringStructSymbol(declNode);
   // Allow string *= short
   if (lhs.is(TY_STRING) && rhs.is(TY_SHORT))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+    return analyzer->insertAnonStringStructSymbol(declNode);
 
-  return validateBinaryOperation(codeLoc, MUL_EQUAL_OP_RULES, "*=", lhs, rhs);
+  return validateBinaryOperation(declNode->codeLoc, MUL_EQUAL_OP_RULES, "*=", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getDivEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
@@ -159,40 +162,45 @@ SymbolType OpRuleManager::getShiftRightResultType(const CodeLoc &codeLoc, const 
   return validateBinaryOperation(codeLoc, SHIFT_RIGHT_OP_RULES, ">>", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getPlusResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow any* + <int/long/short>
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (withinUnsafeBlock)
+    if (analyzer->allowUnsafeOperations)
       return lhs;
     else
-      throw printErrorMessageUnsafe(codeLoc, "+", lhs, rhs);
+      throw printErrorMessageUnsafe(declNode->codeLoc, "+", lhs, rhs);
   }
   // Allow <int/long/short> + any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
-    if (withinUnsafeBlock)
+    if (analyzer->allowUnsafeOperations)
       return rhs;
     else
-      throw printErrorMessageUnsafe(codeLoc, "+", lhs, rhs);
+      throw printErrorMessageUnsafe(declNode->codeLoc, "+", lhs, rhs);
   }
 
   // Allow string + string
-  if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+  if (lhs.is(TY_STRING) && rhs.is(TY_STRING)) {
+    if (!lhs.isStringStruct() && !rhs.isStringStruct()) { // If lhs and rhs are raw strings -> insert anon symbol
+      return analyzer->insertAnonStringStructSymbol(declNode);
+    } else { // Otherwise just return the type
+      return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+    }
+  }
 
-  return validateBinaryOperation(codeLoc, PLUS_OP_RULES, "+", lhs, rhs);
+  return validateBinaryOperation(declNode->codeLoc, PLUS_OP_RULES, "+", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow any* - <int/long/short>
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (withinUnsafeBlock)
+    if (analyzer->allowUnsafeOperations)
       return lhs;
     else
       throw printErrorMessageUnsafe(codeLoc, "-", lhs, rhs);
   }
   // Allow <int/long/short> - any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
-    if (withinUnsafeBlock)
+    if (analyzer->allowUnsafeOperations)
       return rhs;
     else
       throw printErrorMessageUnsafe(codeLoc, "-", lhs, rhs);
@@ -201,32 +209,26 @@ SymbolType OpRuleManager::getMinusResultType(const CodeLoc &codeLoc, const Symbo
   return validateBinaryOperation(codeLoc, MINUS_OP_RULES, "-", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMulResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  // Allow string * int and int * string
-  if ((lhs.is(TY_STRING) && rhs.is(TY_INT)) || (lhs.is(TY_INT) && rhs.is(TY_STRING)))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+SymbolType OpRuleManager::getMulResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs) {
+  // Allow <string|char> * <int|short|long>
+  if (lhs.isOneOf({TY_STRING, TY_CHAR}) && rhs.isOneOf({TY_INT, TY_SHORT, TY_LONG})) {
+    if (!lhs.isStringStruct()) { // If lhs is a raw string -> insert anon symbol
+      return analyzer->insertAnonStringStructSymbol(declNode);
+    } else { // Otherwise just return the type
+      return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+    }
+  }
 
-  // Allow string * short and short * string
-  if ((lhs.is(TY_STRING) && rhs.is(TY_SHORT)) || (lhs.is(TY_SHORT) && rhs.is(TY_STRING)))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+  // Allow <int|short|long> * <string|char>
+  if (lhs.isOneOf({TY_INT, TY_SHORT, TY_LONG}) && rhs.isOneOf({TY_STRING, TY_CHAR})) {
+    if (!rhs.isStringStruct()) { // If rhs is a raw string -> insert anon symbol
+      return analyzer->insertAnonStringStructSymbol(declNode);
+    } else { // Otherwise just return the type
+      return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+    }
+  }
 
-  // Allow string * long and long * string
-  if ((lhs.is(TY_STRING) && rhs.is(TY_LONG)) || (lhs.is(TY_LONG) && rhs.is(TY_STRING)))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
-
-  // Allow char * int and int * char
-  if ((lhs.is(TY_CHAR) && rhs.is(TY_INT)) || (lhs.is(TY_INT) && rhs.is(TY_CHAR)))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
-
-  // Allow char * short and short * char
-  if ((lhs.is(TY_CHAR) && rhs.is(TY_SHORT)) || (lhs.is(TY_SHORT) && rhs.is(TY_CHAR)))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
-
-  // Allow char * long and long * char
-  if ((lhs.is(TY_CHAR) && rhs.is(TY_LONG)) || (lhs.is(TY_LONG) && rhs.is(TY_CHAR)))
-    return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
-
-  return validateBinaryOperation(codeLoc, MUL_OP_RULES, "*", lhs, rhs);
+  return validateBinaryOperation(declNode->codeLoc, MUL_OP_RULES, "*", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getDivResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
@@ -285,7 +287,7 @@ SymbolType OpRuleManager::getCastResultType(const CodeLoc &codeLoc, const Symbol
     return lhs;
   // Allow casts any* -> any*
   if (lhs.isPointer() && rhs.isPointer()) {
-    if (withinUnsafeBlock)
+    if (analyzer->allowUnsafeOperations)
       return lhs;
     else
       throw printErrorMessageUnsafe(codeLoc, "(cast)", lhs, rhs);

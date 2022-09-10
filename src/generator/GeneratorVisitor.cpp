@@ -1681,6 +1681,8 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
         variableEntry->updateAddress(result.ptr);
         return result.ptr;
       }
+      if (result.value)
+        rhs = result.value;
 
       builder->CreateStore(rhs, lhsPtr, variableEntry->isVolatile());
     }
@@ -1997,7 +1999,7 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
         } else {
           rhs = resolveValue(rhsOperand);
         }
-        result = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, node->codeLoc);
+        result = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, rhsOperand->codeLoc);
         break;
       case AdditiveExprNode::OP_MINUS:
         rhs = resolveValue(rhsOperand);
@@ -2050,7 +2052,7 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
         llvm::Value *lhsPtr = resultPtr ?: resolveAddress(lhsOperand);
         llvm::Value *rhsPtr = resolveAddress(rhsOperand);
         result = conversionsManager->getMulInst({lhsPtr, lhs}, {rhsPtr, rhs}, lhsSymbolType, rhsSymbolType, currentScope,
-                                                node->codeLoc);
+                                                rhsOperand->codeLoc);
         break;
       }
       case MultiplicativeExprNode::OP_DIV:
@@ -2700,6 +2702,12 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // Consider constructor calls
   if (constructorCall) {
+    // Update mem-address of anonymous symbol
+    SymbolTableEntry *anonEntry = currentScope->lookupAnonymous(node->codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisValuePtr);
+
+    // Return pointer to this value
     return thisValuePtr;
   } else if (!resultValue->getType()->isSized()) {
     // Set return type bool for procedures
@@ -2895,6 +2903,11 @@ std::any GeneratorVisitor::visitStructInstantiation(StructInstantiationNode *nod
     }
   }
 
+  // Update the address of the anonymous symbol
+  SymbolTableEntry *anonSymbol = currentScope->lookupAnonymous(node->codeLoc);
+  assert(anonSymbol != nullptr);
+  anonSymbol->updateAddress(structAddress);
+
   return structAddress;
 }
 
@@ -3050,6 +3063,7 @@ bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableE
 
     // Get this value pointer
     llvm::Value *thisValuePtr = varEntry->getAddress();
+    assert(thisValuePtr != nullptr);
 
     // Insert call
     builder->CreateCall(fct, thisValuePtr);

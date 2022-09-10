@@ -12,33 +12,47 @@ entry.l1:
   %val1 = alloca i32, align 4
   %0 = alloca i32, align 4
   %1 = alloca i32, align 4
+  %val2 = alloca i32, align 4
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
+  %val3 = alloca i32, align 4
+  %4 = alloca i32, align 4
+  %5 = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store i32 1, ptr %val, align 4
   store i32 1, ptr %val1, align 4
-  %4 = load i32, ptr %val1, align 4
-  %5 = add i32 %4, 1
-  store i32 %5, ptr %val1, align 4
-  store i32 %4, ptr %0, align 4
-  %6 = load i32, ptr %0, align 4
-  %7 = sub i32 %6, 1
-  store i32 %7, ptr %0, align 4
-  store i32 %6, ptr %1, align 4
-  %8 = load i32, ptr %1, align 4
-  %9 = mul i32 %8, 2
-  store i32 %9, ptr %2, align 4
-  %10 = load i32, ptr %2, align 4
-  %11 = shl i32 %10, 2
-  store i32 %11, ptr %3, align 4
-  %12 = load i32, ptr %3, align 4
-  %13 = load i32, ptr %val, align 4
-  %14 = add i32 %13, %12
-  store i32 %14, ptr %val, align 4
-  %15 = load i32, ptr %val, align 4
-  %16 = call i32 (ptr, ...) @printf(ptr @0, i32 %15)
-  %17 = load i32, ptr %result, align 4
-  ret i32 %17
+  %6 = load i32, ptr %val1, align 4
+  %7 = add i32 %6, 1
+  store i32 %7, ptr %val1, align 4
+  store i32 %6, ptr %0, align 4
+  %8 = load i32, ptr %0, align 4
+  %9 = sub i32 %8, 1
+  store i32 %9, ptr %0, align 4
+  store i32 %8, ptr %1, align 4
+  %10 = load i32, ptr %1, align 4
+  store i32 1, ptr %val2, align 4
+  %11 = load i32, ptr %val2, align 4
+  %12 = add i32 %11, 1
+  store i32 %12, ptr %val2, align 4
+  store i32 %11, ptr %2, align 4
+  %13 = load i32, ptr %2, align 4
+  %14 = sub i32 %13, 1
+  store i32 %14, ptr %2, align 4
+  store i32 %13, ptr %3, align 4
+  store i32 2, ptr %val3, align 4
+  %15 = mul i32 %10, 2
+  store i32 %15, ptr %4, align 4
+  %16 = load i32, ptr %4, align 4
+  %17 = shl i32 %16, 2
+  store i32 %17, ptr %5, align 4
+  %18 = load i32, ptr %5, align 4
+  %19 = load i32, ptr %val, align 4
+  %20 = add i32 %19, %18
+  store i32 %20, ptr %val, align 4
+  %21 = load i32, ptr %val, align 4
+  %22 = call i32 (ptr, ...) @printf(ptr @0, i32 %21)
+  %23 = load i32, ptr %result, align 4
+  ret i32 %23
 }
 
 declare i32 @printf(ptr, ...)

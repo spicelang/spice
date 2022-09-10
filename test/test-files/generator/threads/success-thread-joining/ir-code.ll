@@ -50,8 +50,12 @@ entry.l3:
 
 define internal ptr @_thread0(ptr %0) {
 thread.entry.l8:
+  %t1 = alloca i32, align 4
+  %t11 = alloca i32, align 4
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
+  store i32 300, ptr %t1, align 4
+  store i32 1000, ptr %t11, align 4
   store i32 300000, ptr %1, align 4
   %3 = load i32, ptr %1, align 4
   %4 = call i32 @usleep(i32 %3)
@@ -84,8 +88,12 @@ declare i32 @pthread_join(ptr, ptr)
 
 define internal ptr @_thread2(ptr %0) {
 thread.entry.l18:
+  %t3 = alloca i32, align 4
+  %t31 = alloca i32, align 4
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
+  store i32 200, ptr %t3, align 4
+  store i32 1000, ptr %t31, align 4
   store i32 200000, ptr %1, align 4
   %3 = load i32, ptr %1, align 4
   %4 = call i32 @usleep(i32 %3)

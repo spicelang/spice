@@ -1049,9 +1049,10 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
     llvm::Function *opFct = stdFunctionManager->getStringCtorStringStringFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStringStructType(*context));
     builder->CreateCall(opFct, {thisPtr, lhsV, rhsV});
-    // Add symbol to symbol table to notify the dtor calling mechanism about the heap allocation
-    SymbolType stringStructSymbolType = SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
-    accessScope->registerForDtorCall(stringStructSymbolType, thisPtr, codeLoc);
+    // Update mem address of anonymous symbol
+    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
   }
   case COMB(TY_PTR, TY_INT):   // fallthrough
@@ -1529,8 +1530,9 @@ llvm::Value *OpRuleConversionsManager::propagateValueToStringObject(SymbolTable 
       symbolType.is(TY_CHAR) ? stdFunctionManager->getStringCtorCharFct() : stdFunctionManager->getStringCtorStringFct();
   llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStringStructType(*context));
   builder->CreateCall(opFct, {thisPtr, operandValue});
-  // Add symbol to symbol table to notify the dtor calling mechanism about the heap allocation
-  SymbolType stringStructSymbolType = SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
-  accessScope->registerForDtorCall(stringStructSymbolType, thisPtr, codeLoc);
+  // Update mem address of anonymous symbol
+  SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+  assert(anonEntry != nullptr);
+  anonEntry->updateAddress(thisPtr);
   return thisPtr;
 }

@@ -9,6 +9,10 @@
 #include <exception/SemanticError.h>
 #include <symbol/SymbolType.h>
 
+// Forward declarations
+struct AstNode;
+class AnalyzerVisitor;
+
 // Types: double, int, short, long, byte, char, string, bool
 
 // Unary operator rule pair: lhs type, result type, unsafe
@@ -565,13 +569,13 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
 class OpRuleManager {
 public:
   // Constructors
-  explicit OpRuleManager(const bool &isUnsafe) : withinUnsafeBlock(isUnsafe) {}
+  explicit OpRuleManager(AnalyzerVisitor *analyzer) : analyzer(analyzer) {}
 
   // Public methods
   SymbolType getAssignResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getPlusEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getPlusEqualResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getMinusEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getMulEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getMulEqualResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getDivEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getRemEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getSHLEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
@@ -592,9 +596,9 @@ public:
   SymbolType getGreaterEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getShiftLeftResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getShiftRightResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getPlusResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getMulResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getMulResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getDivResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getRemResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getPrefixMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs);
@@ -610,7 +614,7 @@ public:
 
 private:
   // Members
-  const bool &withinUnsafeBlock;
+  AnalyzerVisitor *analyzer;
 
   // Private methods
   SymbolType validateBinaryOperation(const CodeLoc &codeLoc, const std::vector<BinaryOpRule> &opRules, const std::string &opName,

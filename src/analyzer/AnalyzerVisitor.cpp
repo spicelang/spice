@@ -32,7 +32,7 @@ AnalyzerVisitor::AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std
   }
 
   // Create OpRuleManager
-  opRuleManager = std::make_unique<OpRuleManager>(allowUnsafeOperations);
+  opRuleManager = std::make_unique<OpRuleManager>(this);
 }
 
 std::any AnalyzerVisitor::visitEntry(EntryNode *node) {
@@ -1296,11 +1296,11 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
     if (node->op == AssignExprNode::OP_ASSIGN) {
       rhsTy = opRuleManager->getAssignResultType(node->codeLoc, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_PLUS_EQUAL) {
-      rhsTy = opRuleManager->getPlusEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      rhsTy = opRuleManager->getPlusEqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_MINUS_EQUAL) {
       rhsTy = opRuleManager->getMinusEqualResultType(node->codeLoc, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_MUL_EQUAL) {
-      rhsTy = opRuleManager->getMulEqualResultType(node->codeLoc, lhsTy, rhsTy);
+      rhsTy = opRuleManager->getMulEqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_DIV_EQUAL) {
       rhsTy = opRuleManager->getDivEqualResultType(node->codeLoc, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_REM_EQUAL) {
@@ -1507,7 +1507,7 @@ std::any AnalyzerVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
 
       switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
-        currentType = opRuleManager->getPlusResultType(operand->codeLoc, currentType, operandType);
+        currentType = opRuleManager->getPlusResultType(operand, currentType, operandType);
         break;
       case AdditiveExprNode::OP_MINUS:
         currentType = opRuleManager->getMinusResultType(operand->codeLoc, currentType, operandType);
@@ -1541,7 +1541,7 @@ std::any AnalyzerVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) 
 
       switch (opQueue.front().first) {
       case MultiplicativeExprNode::OP_MUL:
-        currentType = opRuleManager->getMulResultType(operand->codeLoc, currentType, operandType);
+        currentType = opRuleManager->getMulResultType(operand, currentType, operandType);
         break;
       case MultiplicativeExprNode::OP_DIV:
         currentType = opRuleManager->getDivResultType(operand->codeLoc, currentType, operandType);
@@ -2017,9 +2017,12 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   if (!accessScope->isImported(currentScope) && spiceFunc->getDeclCodeLoc().line < node->codeLoc.line)
     reAnalyzeRequired = true;
 
-  // Return struct type on constructor call
-  if (constructorCall)
+  if (constructorCall) {
+    // Add anonymous symbol to keep track of de-allocation
+    currentScope->insertAnonymous(thisType, node);
+    // Return struct type on constructor call
     return node->setEvaluatedSymbolType(thisType);
+  }
 
   // If the callee is a procedure, return type bool
   if (spiceFunc->isProcedure() || spiceFunc->getReturnType().is(TY_DYN))
@@ -2167,6 +2170,9 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
     }
   }
 
+  // Insert anonymous symbol to keep track of dtor calls for de-allocation
+  currentScope->insertAnonymous(structType, node);
+
   return node->setEvaluatedSymbolType(structType);
 }
 
@@ -2297,6 +2303,12 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   structSymbol->setUsed();
 
   return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, identifier, {.arraySize = 0}, concreteTemplateTypes));
+}
+
+SymbolType AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {
+  SymbolType stringStructType(TY_STRING, "", {.isStringStruct = true}, {});
+  currentScope->insertAnonymous(stringStructType, declNode);
+  return stringStructType;
 }
 
 void AnalyzerVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
