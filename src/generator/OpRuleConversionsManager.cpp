@@ -7,6 +7,7 @@
 #include <exception/IRError.h>
 #include <generator/GeneratorVisitor.h>
 #include <generator/StdFunctionManager.h>
+#include <symbol/SymbolTable.h>
 #include <util/CodeLoc.h>
 
 OpRuleConversionsManager::OpRuleConversionsManager(GeneratorVisitor *generator) : generator(generator) {
@@ -15,1444 +16,1521 @@ OpRuleConversionsManager::OpRuleConversionsManager(GeneratorVisitor *generator) 
   stdFunctionManager = generator->stdFunctionManager.get();
 }
 
-llvm::Value *OpRuleConversionsManager::getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
-                                                        const SymbolType &rhsSTy, SymbolTable *accessScope,
-                                                        const CodeLoc &codeLoc) {
-  llvm::Type *lhsTy = lhs->getType();
+PtrAndValue OpRuleConversionsManager::getPlusEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
+                                                       const SymbolType &rhsSTy, SymbolTable *accessScope,
+                                                       const CodeLoc &codeLoc) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhsData.value;
+  llvm::Value *lhsP = lhsData.ptr;
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFAdd(lhs, rhs);
+    return {.value = builder->CreateFAdd(lhsV, rhsV)};
   case COMB(TY_INT, TY_INT):
-    return builder->CreateAdd(lhs, rhs);
+    return {.value = builder->CreateAdd(lhsV, rhsV)};
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateAdd(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateAdd(lhsV, rhsInt)};
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateAdd(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateAdd(lhsV, rhsShort)};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateAdd(lhs, rhs);
+    return {.value = builder->CreateAdd(lhsV, rhsV)};
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateAdd(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateAdd(lhsV, rhsShort)};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateAdd(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateAdd(lhsV, rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateAdd(lhs, rhs);
+    return {.value = builder->CreateAdd(lhsV, rhsV)};
   case COMB(TY_STRING, TY_CHAR): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method append(char) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringAppendCharFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_STRING, TY_STRING): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method append(string) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringAppendStringFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
-    return builder->CreateGEP(lhsSTy.getContainedTy().toLLVMType(*context, accessScope), lhs, rhs);
+    llvm::Type *elementTy = lhsSTy.getContainedTy().toLLVMType(*context, accessScope);
+    return {.value = builder->CreateGEP(elementTy, lhsV, rhsV)};
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                          const SymbolType &rhsSTy, SymbolTable *accessScope) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFSub(lhs, rhs);
+    return builder->CreateFSub(lhsV, rhsV);
   case COMB(TY_INT, TY_INT):
-    return builder->CreateSub(lhs, rhs);
+    return builder->CreateSub(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSub(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSub(lhsV, rhsShort);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateSub(lhs, rhs);
+    return builder->CreateSub(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSub(lhsV, rhsShort);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSub(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateSub(lhs, rhs);
+    return builder->CreateSub(lhsV, rhsV);
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
-    return builder->CreateGEP(lhsSTy.getContainedTy().toLLVMType(*context, accessScope), lhs, rhs);
+    llvm::Type *elementType = lhsSTy.getContainedTy().toLLVMType(*context, accessScope);
+    return builder->CreateGEP(elementType, lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getMulEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
-                                                       const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+PtrAndValue OpRuleConversionsManager::getMulEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
+                                                      const SymbolType &rhsSTy, SymbolTable *accessScope,
+                                                      const CodeLoc &codeLoc) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhsData.value;
+  llvm::Value *lhsP = lhsData.ptr;
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFMul(lhs, rhs);
+    return {.value = builder->CreateFMul(lhsV, rhsV)};
   case COMB(TY_INT, TY_INT):
-    return builder->CreateMul(lhs, rhs);
+    return {.value = builder->CreateMul(lhsV, rhsV)};
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateMul(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateMul(lhsV, rhsInt)};
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateMul(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateMul(lhsV, rhsShort)};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateMul(lhs, rhs);
+    return {.value = builder->CreateMul(lhsV, rhsV)};
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateMul(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateMul(lhsV, rhsShort)};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateMul(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateMul(lhsV, rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateMul(lhs, rhs);
+    return {.value = builder->CreateMul(lhsV, rhsV)};
   case COMB(TY_STRING, TY_INT): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method append(char) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_STRING, TY_LONG): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method append(char) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_STRING, TY_SHORT): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method append(char) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getDivEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getDivEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFDiv(lhs, rhs);
+    return builder->CreateFDiv(lhsV, rhsV);
   case COMB(TY_INT, TY_INT):
-    return builder->CreateSDiv(lhs, rhs);
+    return builder->CreateSDiv(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSDiv(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSDiv(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSDiv(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSDiv(lhsV, rhsShort);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateSDiv(lhs, rhs);
+    return builder->CreateSDiv(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSDiv(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSDiv(lhsV, rhsShort);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSDiv(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSDiv(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateSDiv(lhs, rhs);
+    return builder->CreateSDiv(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getRemEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getRemEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhsV
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFRem(lhs, rhs);
+    return builder->CreateFRem(lhsV, rhsV);
   case COMB(TY_INT, TY_INT):
-    return builder->CreateSRem(lhs, rhs);
+    return builder->CreateSRem(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSRem(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSRem(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSRem(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSRem(lhsV, rhsShort);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateSRem(lhs, rhs);
+    return builder->CreateSRem(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSRem(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSRem(lhsV, rhsShort);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSRem(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSRem(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateSRem(lhs, rhs);
+    return builder->CreateSRem(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getSHLEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getSHLEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):
-    return builder->CreateShl(lhs, rhs);
+    return builder->CreateShl(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateShl(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateShl(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateShl(lhs, rhs);
+    return builder->CreateShl(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): // fallthrough
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateShl(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateShl(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateShl(lhs, rhs);
+    return builder->CreateShl(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getSHREqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getSHREqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhsV
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):
-    return builder->CreateLShr(lhs, rhs);
+    return builder->CreateLShr(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateLShr(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateLShr(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateLShr(lhs, rhs);
+    return builder->CreateLShr(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): // fallthrough
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateLShr(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateLShr(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateLShr(lhs, rhs);
+    return builder->CreateLShr(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getAndEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getAndEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):
-    return builder->CreateAnd(lhs, rhs);
+    return builder->CreateAnd(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateAnd(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateAnd(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateAnd(lhs, rhs);
+    return builder->CreateAnd(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): // fallthrough
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateAnd(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateAnd(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateAnd(lhs, rhs);
+    return builder->CreateAnd(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getOrEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getOrEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                       const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):
-    return builder->CreateOr(lhs, rhs);
+    return builder->CreateOr(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateOr(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateOr(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateOr(lhs, rhs);
+    return builder->CreateOr(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): // fallthrough
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateOr(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateOr(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateOr(lhs, rhs);
+    return builder->CreateOr(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):
-    return builder->CreateXor(lhs, rhs);
+    return builder->CreateXor(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateXor(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateXor(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateXor(lhs, rhs);
+    return builder->CreateXor(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): // fallthrough
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateXor(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateXor(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateXor(lhs, rhs);
+    return builder->CreateXor(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getBitwiseAndInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getBitwiseAndInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                          const SymbolType &rhsSTy) {
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
   case COMB(TY_LONG, TY_LONG):   // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateAnd(lhs, rhs);
+    return builder->CreateAnd(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getBitwiseOrInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getBitwiseOrInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                         const SymbolType &rhsSTy) {
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
   case COMB(TY_LONG, TY_LONG):   // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateOr(lhs, rhs);
+    return builder->CreateOr(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: |"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getBitwiseXorInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getBitwiseXorInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                          const SymbolType &rhsSTy) {
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
   case COMB(TY_LONG, TY_LONG):   // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateXor(lhs, rhs);
+    return builder->CreateXor(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                     const SymbolType &rhsSTy, const CodeLoc &codeLoc) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Type *rhsVTy = rhsV->getType();
 
   // Check if both values are of type pointer
-  if (lhsTy->isPointerTy() && rhsTy->isPointerTy())
-    return builder->CreateICmpEQ(lhs, rhs);
+  if (lhsVTy->isPointerTy() && rhsVTy->isPointerTy())
+    return builder->CreateICmpEQ(lhsV, rhsV);
 
   // Check if one value is of type pointer and one is of type byte
-  if (lhsTy->isPointerTy() && rhsTy->isIntegerTy(32)) {
-    llvm::Value *lhsInt = builder->CreatePtrToInt(lhs, rhsTy);
-    return builder->CreateICmpEQ(lhsInt, rhs);
+  if (lhsVTy->isPointerTy() && rhsVTy->isIntegerTy(32)) {
+    llvm::Value *lhsInt = builder->CreatePtrToInt(lhsV, rhsVTy);
+    return builder->CreateICmpEQ(lhsInt, rhsV);
   }
 
   // Check for primitive type combinations
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFCmpOEQ(lhs, rhs);
+    return builder->CreateFCmpOEQ(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFCmpOEQ(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsVTy);
+    return builder->CreateFCmpOEQ(lhsV, rhsFP);
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOEQ(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOEQ(lhsFP, rhsV);
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateICmpEQ(lhs, rhs);
+    return builder->CreateICmpEQ(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpEQ(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpEQ(lhsV, rhsInt);
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpEQ(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpEQ(lhsLong, rhsV);
   }
   case COMB(TY_INT, TY_BYTE): // fallthrough
   case COMB(TY_INT, TY_CHAR): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpEQ(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpEQ(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOEQ(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOEQ(lhsFP, rhsV);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpEQ(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpEQ(lhsInt, rhsV);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateICmpEQ(lhs, rhs);
+    return builder->CreateICmpEQ(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpEQ(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpEQ(lhsLong, rhsV);
   }
   case COMB(TY_SHORT, TY_BYTE): // fallthrough
   case COMB(TY_SHORT, TY_CHAR): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpEQ(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpEQ(lhsV, rhsShort);
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOEQ(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOEQ(lhsFP, rhsV);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpEQ(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpEQ(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG):
-    return builder->CreateICmpEQ(lhs, rhs);
+    return builder->CreateICmpEQ(lhsV, rhsV);
   case COMB(TY_LONG, TY_BYTE): // fallthrough
   case COMB(TY_LONG, TY_CHAR): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpEQ(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpEQ(lhsV, rhsLong);
   }
   case COMB(TY_BYTE, TY_INT): // fallthrough
   case COMB(TY_CHAR, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpEQ(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpEQ(lhsInt, rhsV);
   }
   case COMB(TY_BYTE, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_SHORT): {
-    llvm::Value *lhsShort = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpEQ(lhsShort, rhs);
+    llvm::Value *lhsShort = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpEQ(lhsShort, rhsV);
   }
   case COMB(TY_BYTE, TY_LONG): // fallthrough
   case COMB(TY_CHAR, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpEQ(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpEQ(lhsLong, rhsV);
   }
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return builder->CreateICmpEQ(lhs, rhs);
+    return builder->CreateICmpEQ(lhsV, rhsV);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the function isRawEqual(string, string) of the string std
     llvm::Function *opFct = stdFunctionManager->getStringIsRawEqualStringStringFct();
-    llvm::Value *result = builder->CreateCall(opFct, {lhs, rhs});
+    llvm::Value *result = builder->CreateCall(opFct, {lhsV, rhsV});
     return result;
   }
   case COMB(TY_BOOL, TY_BOOL):
-    return builder->CreateICmpEQ(lhs, rhs);
+    return builder->CreateICmpEQ(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy, const CodeLoc &codeLoc) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Type *rhsVTy = rhsV->getType();
 
   // Check if both values are of type pointer
-  if (lhsTy->isPointerTy() && rhsTy->isPointerTy())
-    return builder->CreateICmpNE(lhs, rhs);
+  if (lhsVTy->isPointerTy() && rhsVTy->isPointerTy())
+    return builder->CreateICmpNE(lhsV, rhsV);
 
   // Check if one value is of type pointer and one is of type byte
-  if (lhsTy->isPointerTy() && rhsTy->isIntegerTy(32)) {
-    llvm::Value *lhsInt = builder->CreatePtrToInt(lhs, rhsTy);
-    return builder->CreateICmpNE(lhsInt, rhs);
+  if (lhsVTy->isPointerTy() && rhsVTy->isIntegerTy(32)) {
+    llvm::Value *lhsInt = builder->CreatePtrToInt(lhsV, rhsVTy);
+    return builder->CreateICmpNE(lhsInt, rhsV);
   }
 
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFCmpONE(lhs, rhs);
+    return builder->CreateFCmpONE(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFCmpONE(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsVTy);
+    return builder->CreateFCmpONE(lhsV, rhsFP);
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpONE(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpONE(lhsFP, rhsV);
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateICmpNE(lhs, rhs);
+    return builder->CreateICmpNE(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpNE(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpNE(lhsV, rhsInt);
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpNE(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpNE(lhsLong, rhsV);
   }
   case COMB(TY_INT, TY_BYTE): // fallthrough
   case COMB(TY_INT, TY_CHAR): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpNE(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpNE(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpONE(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpONE(lhsFP, rhsV);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpNE(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpNE(lhsInt, rhsV);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateICmpNE(lhs, rhs);
+    return builder->CreateICmpNE(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpNE(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpNE(lhsLong, rhsV);
   }
   case COMB(TY_SHORT, TY_BYTE): // fallthrough
   case COMB(TY_SHORT, TY_CHAR): {
-    llvm::Value *rhsShort = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpNE(lhs, rhsShort);
+    llvm::Value *rhsShort = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpNE(lhsV, rhsShort);
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpONE(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpONE(lhsFP, rhsV);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpNE(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpNE(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG):
-    return builder->CreateICmpNE(lhs, rhs);
+    return builder->CreateICmpNE(lhsV, rhsV);
   case COMB(TY_LONG, TY_BYTE): // fallthrough
   case COMB(TY_LONG, TY_CHAR): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpNE(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpNE(lhsV, rhsLong);
   }
   case COMB(TY_BYTE, TY_INT):
   case COMB(TY_CHAR, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpNE(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpNE(lhsInt, rhsV);
   }
   case COMB(TY_BYTE, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_SHORT): {
-    llvm::Value *lhsShort = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpNE(lhsShort, rhs);
+    llvm::Value *lhsShort = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpNE(lhsShort, rhsV);
   }
   case COMB(TY_BYTE, TY_LONG): // fallthrough
   case COMB(TY_CHAR, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpNE(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpNE(lhsLong, rhsV);
   }
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return builder->CreateICmpNE(lhs, rhs);
+    return builder->CreateICmpNE(lhsV, rhsV);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the function isRawEqual(string, string) of the string std
     llvm::Function *opFct = stdFunctionManager->getStringIsRawEqualStringStringFct();
-    llvm::Value *result = builder->CreateCall(opFct, {lhs, rhs});
+    llvm::Value *result = builder->CreateCall(opFct, {lhsV, rhsV});
     // Negate the result
     return builder->CreateNot(result);
   }
   case COMB(TY_BOOL, TY_BOOL):
-    return builder->CreateICmpNE(lhs, rhs);
+    return builder->CreateICmpNE(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: !="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getLessInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getLessInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                    const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+  // Unpack lhsV
+  llvm::Type *lhsVTy = lhsV->getType();
+
+  // Unpack rhsV
+  llvm::Type *rhsVTy = rhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFCmpOLT(lhs, rhs);
+    return builder->CreateFCmpOLT(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFCmpOLT(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsVTy);
+    return builder->CreateFCmpOLT(lhsV, rhsFP);
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOLT(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOLT(lhsFP, rhsV);
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateICmpSLT(lhs, rhs);
+    return builder->CreateICmpSLT(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpSLT(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpSLT(lhsV, rhsInt);
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSLT(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSLT(lhsLong, rhsV);
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOLT(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOLT(lhsFP, rhsV);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSLT(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSLT(lhsInt, rhsV);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateICmpSLT(lhs, rhs);
+    return builder->CreateICmpSLT(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSLT(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSLT(lhsLong, rhsV);
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOLT(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOLT(lhsFP, rhsV);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpSLT(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpSLT(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return builder->CreateICmpSLT(lhs, rhs);
+    return builder->CreateICmpSLT(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getGreaterInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getGreaterInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                       const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Type *rhsVTy = rhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFCmpOGT(lhs, rhs);
+    return builder->CreateFCmpOGT(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFCmpOGT(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsVTy);
+    return builder->CreateFCmpOGT(lhsV, rhsFP);
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOGT(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOGT(lhsFP, rhsV);
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateICmpSGT(lhs, rhs);
+    return builder->CreateICmpSGT(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpSGT(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpSGT(lhsV, rhsInt);
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSGT(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSGT(lhsLong, rhsV);
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOGT(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOGT(lhsFP, rhsV);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSGT(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSGT(lhsInt, rhsV);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateICmpSGT(lhs, rhs);
+    return builder->CreateICmpSGT(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSGT(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSGT(lhsLong, rhsV);
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOGT(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOGT(lhsFP, rhsV);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpSGT(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpSGT(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return builder->CreateICmpSGT(lhs, rhs);
+    return builder->CreateICmpSGT(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getLessEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getLessEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                         const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Type *rhsVTy = rhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFCmpOLE(lhs, rhs);
+    return builder->CreateFCmpOLE(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFCmpOLE(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsVTy);
+    return builder->CreateFCmpOLE(lhsV, rhsFP);
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOLE(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOLE(lhsFP, rhsV);
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateICmpSLE(lhs, rhs);
+    return builder->CreateICmpSLE(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpSLE(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpSLE(lhsV, rhsInt);
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSLE(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSLE(lhsLong, rhsV);
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOLE(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOLE(lhsFP, rhsV);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSLE(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSLE(lhsInt, rhsV);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateICmpSLE(lhs, rhs);
+    return builder->CreateICmpSLE(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSLE(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSLE(lhsLong, rhsV);
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOLE(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOLE(lhsFP, rhsV);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpSLE(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpSLE(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return builder->CreateICmpSLE(lhs, rhs);
+    return builder->CreateICmpSLE(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getGreaterEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getGreaterEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                            const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+  // Unpack lhsV
+  llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhsV
+  llvm::Type *rhsVTy = rhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFCmpOGE(lhs, rhs);
+    return builder->CreateFCmpOGE(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFCmpOGE(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsVTy);
+    return builder->CreateFCmpOGE(lhsV, rhsFP);
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOGE(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOGE(lhsFP, rhsV);
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateICmpSGE(lhs, rhs);
+    return builder->CreateICmpSGE(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpSGE(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpSGE(lhsV, rhsInt);
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSGE(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSGE(lhsLong, rhsV);
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOGE(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOGE(lhsFP, rhsV);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSGE(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSGE(lhsInt, rhsV);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateICmpSGE(lhs, rhs);
+    return builder->CreateICmpSGE(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateICmpSGE(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateICmpSGE(lhsLong, rhsV);
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFCmpOGE(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFCmpOGE(lhsFP, rhsV);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateICmpSGE(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateICmpSGE(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return builder->CreateICmpSGE(lhs, rhs);
+    return builder->CreateICmpSGE(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getShiftLeftInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getShiftLeftInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                         const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhsV
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):
-    return builder->CreateShl(lhs, rhs);
+    return builder->CreateShl(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateShl(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateShl(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateShl(lhs, rhs);
+    return builder->CreateShl(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): // fallthrough
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateShl(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateShl(lhsV, rhsInt);
   }
   case COMB(TY_LONG, TY_LONG):
-    return builder->CreateShl(lhs, rhs);
+    return builder->CreateShl(lhsV, rhsV);
   case COMB(TY_BYTE, TY_INT):   // fallthrough
   case COMB(TY_BYTE, TY_SHORT): // fallthrough
   case COMB(TY_BYTE, TY_LONG): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateShl(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateShl(lhsV, rhsInt);
   }
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateShl(lhs, rhs);
+    return builder->CreateShl(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <<"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getShiftRightInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getShiftRightInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                          const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_INT, TY_INT):
-    return builder->CreateLShr(lhs, rhs);
+    return builder->CreateLShr(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateLShr(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateLShr(lhsV, rhsInt);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateLShr(lhs, rhs);
+    return builder->CreateLShr(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): // fallthrough
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateLShr(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateLShr(lhsV, rhsInt);
   }
   case COMB(TY_LONG, TY_LONG):
-    return builder->CreateLShr(lhs, rhs);
+    return builder->CreateLShr(lhsV, rhsV);
   case COMB(TY_BYTE, TY_INT):   // fallthrough
   case COMB(TY_BYTE, TY_SHORT): // fallthrough
   case COMB(TY_BYTE, TY_LONG): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateLShr(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateLShr(lhsV, rhsInt);
   }
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateLShr(lhs, rhs);
+    return builder->CreateLShr(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >>"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPlusInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
-                                                   const SymbolType &rhsSTy, SymbolTable *accessScope, const CodeLoc &codeLoc) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+                                                  const SymbolType &rhsSTy, SymbolTable *accessScope, const CodeLoc &codeLoc) {
+  // Unpack lhs
+  llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Type *rhsVTy = rhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFAdd(lhs, rhs);
+    return {.value = builder->CreateFAdd(lhsV, rhsV)};
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFAdd(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsVTy);
+    return {.value = builder->CreateFAdd(lhsV, rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFAdd(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return {.value = builder->CreateFAdd(lhsFP, rhsV)};
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateAdd(lhs, rhs);
+    return {.value = builder->CreateAdd(lhsV, rhsV)};
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateAdd(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateAdd(lhsV, rhsInt)};
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateAdd(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return {.value = builder->CreateAdd(lhsLong, rhsV)};
   }
   case COMB(TY_INT, TY_PTR):
-    return builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhs, lhs);
+    return {.value = builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhsV, lhsV)};
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFAdd(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return {.value = builder->CreateFAdd(lhsFP, rhsV)};
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateAdd(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return {.value = builder->CreateAdd(lhsInt, rhsV)};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateAdd(lhs, rhs);
+    return {.value = builder->CreateAdd(lhsV, rhsV)};
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateAdd(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return {.value = builder->CreateAdd(lhsLong, rhsV)};
   }
   case COMB(TY_SHORT, TY_PTR):
-    return builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhs, lhs);
+    return {.value = builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhsV, lhsV)};
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFAdd(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return {.value = builder->CreateFAdd(lhsFP, rhsV)};
   }
   case COMB(TY_LONG, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateAdd(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return {.value = builder->CreateAdd(lhsInt, rhsV)};
   }
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateAdd(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return {.value = builder->CreateAdd(lhsV, rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG):
-    return builder->CreateAdd(lhs, rhs);
+    return {.value = builder->CreateAdd(lhsV, rhsV)};
   case COMB(TY_LONG, TY_PTR):
-    return builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhs, lhs);
+    return {.value = builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhsV, lhsV)};
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return builder->CreateAdd(lhs, rhs);
+    return {.value = builder->CreateAdd(lhsV, rhsV)};
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the constructor ctor(string, string) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringCtorStringStringFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStringStructType(*context));
-    builder->CreateCall(opFct, {thisPtr, lhs, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, lhsV, rhsV});
+    // Add symbol to symbol table to notify the dtor calling mechanism about the heap allocation
+    SymbolType stringStructSymbolType = SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+    accessScope->registerForDtorCall(stringStructSymbolType, thisPtr, codeLoc);
+    return {.ptr = thisPtr};
   }
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
-    return builder->CreateGEP(lhsSTy.getContainedTy().toLLVMType(*context, accessScope), lhs, rhs);
+    return {.value = builder->CreateGEP(lhsSTy.getContainedTy().toLLVMType(*context, accessScope), lhsV, rhsV)};
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                     const SymbolType &rhsSTy, SymbolTable *accessScope) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+  // Unpack lhsV
+  llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhsV
+  llvm::Type *rhsVTy = rhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFSub(lhs, rhs);
+    return builder->CreateFSub(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFSub(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsVTy);
+    return builder->CreateFSub(lhsV, rhsFP);
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFSub(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFSub(lhsFP, rhsV);
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateSub(lhs, rhs);
+    return builder->CreateSub(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSub(lhsV, rhsInt);
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSub(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateSub(lhsLong, rhsV);
   }
   case COMB(TY_INT, TY_PTR):
-    return builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhs, lhs);
+    return builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhsV, lhsV);
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFSub(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFSub(lhsFP, rhsV);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSub(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateSub(lhsInt, rhsV);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateSub(lhs, rhs);
+    return builder->CreateSub(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSub(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateSub(lhsLong, rhsV);
   }
   case COMB(TY_SHORT, TY_PTR):
-    return builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhs, lhs);
+    return builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhsV, lhsV);
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFSub(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsVTy);
+    return builder->CreateFSub(lhsFP, rhsV);
   }
   case COMB(TY_LONG, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSub(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsVTy, true);
+    return builder->CreateSub(lhsInt, rhsV);
   }
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSub(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsVTy, true);
+    return builder->CreateSub(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG):
-    return builder->CreateSub(lhs, rhs);
+    return builder->CreateSub(lhsV, rhsV);
   case COMB(TY_LONG, TY_PTR):
-    return builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhs, lhs);
+    return builder->CreateGEP(rhsSTy.getContainedTy().toLLVMType(*context, accessScope), rhsV, lhsV);
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return builder->CreateSub(lhs, rhs);
+    return builder->CreateSub(lhsV, rhsV);
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
-    return builder->CreateGEP(lhsSTy.getContainedTy().toLLVMType(*context, accessScope), lhs, rhs);
+    return builder->CreateGEP(lhsSTy.getContainedTy().toLLVMType(*context, accessScope), lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getMulInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
-                                                  const SymbolType &rhsSTy, const CodeLoc &codeLoc) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, const PtrAndValue &rhsData, const SymbolType &lhsSTy,
+                                                 const SymbolType &rhsSTy, SymbolTable *accessScope, const CodeLoc &codeLoc) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhsData.value;
+  llvm::Value *lhsP = lhsData.ptr;
+  llvm::Type *lhsTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhsData.value;
+  llvm::Value *rhsP = rhsData.ptr;
+  llvm::Type *rhsTy = rhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFMul(lhs, rhs);
+    return {.value = builder->CreateFMul(lhsV, rhsV)};
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFMul(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsTy);
+    return {.value = builder->CreateFMul(lhsV, rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFMul(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsTy);
+    return {.value = builder->CreateFMul(lhsFP, rhsV)};
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateMul(lhs, rhs);
+    return {.value = builder->CreateMul(lhsV, rhsV)};
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateMul(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsTy, true);
+    return {.value = builder->CreateMul(lhsV, rhsInt)};
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateMul(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsTy, true);
+    return {.value = builder->CreateMul(lhsLong, rhsV)};
   }
   case COMB(TY_INT, TY_CHAR): // fallthrough
   case COMB(TY_INT, TY_STRING): {
-    // Convert rhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(rhsSTy, rhs);
+    // Convert rhsV literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, rhsSTy, rhsV, rhsV, codeLoc);
     // Generate call to the method opMul(int) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
-    builder->CreateCall(opFct, {thisPtr, lhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, lhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFMul(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsTy);
+    return {.value = builder->CreateFMul(lhsFP, rhsV)};
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateMul(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsTy, true);
+    return {.value = builder->CreateMul(lhsInt, rhsV)};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateMul(lhs, rhs);
+    return {.value = builder->CreateMul(lhsV, rhsV)};
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateMul(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsTy, true);
+    return {.value = builder->CreateMul(lhsLong, rhsV)};
   }
   case COMB(TY_SHORT, TY_CHAR): // fallthrough
   case COMB(TY_SHORT, TY_STRING): {
-    // Convert rhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(rhsSTy, rhs);
+    // Convert rhsV literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, rhsSTy, rhsP, rhsV, codeLoc);
     // Generate call to the method opMul(int) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
-    builder->CreateCall(opFct, {thisPtr, lhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, lhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFMul(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsTy);
+    return {.value = builder->CreateFMul(lhsFP, rhsV)};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateMul(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsTy, true);
+    return {.value = builder->CreateMul(lhsV, rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG):
-    return builder->CreateMul(lhs, rhs);
+    return {.value = builder->CreateMul(lhsV, rhsV)};
   case COMB(TY_LONG, TY_CHAR): // fallthrough
   case COMB(TY_LONG, TY_STRING): {
-    // Convert rhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(rhsSTy, rhs);
+    // Convert rhsV literal to string object if required
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, rhsSTy, rhsP, rhsV, codeLoc);
     // Generate call to the method opMul(int) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
-    builder->CreateCall(opFct, {thisPtr, lhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, lhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_BYTE, TY_BYTE):
-    return builder->CreateMul(lhs, rhs);
+    return {.value = builder->CreateMul(lhsV, rhsV)};
   case COMB(TY_CHAR, TY_INT): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method opMul(int) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_CHAR, TY_SHORT): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method opMul(int) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_CHAR, TY_LONG): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method opMul(int) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_STRING, TY_INT): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method opMul(int) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_STRING, TY_SHORT): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method opMul(int) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   case COMB(TY_STRING, TY_LONG): {
     // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(lhsSTy, lhs);
+    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
     // Generate call to the method opMul(int) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
-    builder->CreateCall(opFct, {thisPtr, rhs});
-    return thisPtr;
+    builder->CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
   }
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getDivInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getDivInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                   const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Type *rhsTy = rhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFDiv(lhs, rhs);
+    return builder->CreateFDiv(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder->CreateSIToFP(rhs, lhsTy);
-    return builder->CreateFDiv(lhs, rhsFP);
+    llvm::Value *rhsFP = builder->CreateSIToFP(rhsV, lhsTy);
+    return builder->CreateFDiv(lhsV, rhsFP);
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFDiv(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsTy);
+    return builder->CreateFDiv(lhsFP, rhsV);
   }
   case COMB(TY_INT, TY_INT):
-    return builder->CreateSDiv(lhs, rhs);
+    return builder->CreateSDiv(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSDiv(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsTy, true);
+    return builder->CreateSDiv(lhsV, rhsInt);
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSDiv(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsTy, true);
+    return builder->CreateSDiv(lhsLong, rhsV);
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFDiv(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsTy);
+    return builder->CreateFDiv(lhsFP, rhsV);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSDiv(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsTy, true);
+    return builder->CreateSDiv(lhsInt, rhsV);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateSDiv(lhs, rhs);
+    return builder->CreateSDiv(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSDiv(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsTy, true);
+    return builder->CreateSDiv(lhsLong, rhsV);
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder->CreateSIToFP(lhs, rhsTy);
-    return builder->CreateFDiv(lhsFP, rhs);
+    llvm::Value *lhsFP = builder->CreateSIToFP(lhsV, rhsTy);
+    return builder->CreateFDiv(lhsFP, rhsV);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSDiv(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsTy, true);
+    return builder->CreateSDiv(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return builder->CreateSDiv(lhs, rhs);
+    return builder->CreateSDiv(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: /"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getRemInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getRemInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                   const SymbolType &rhsSTy) {
-  llvm::Type *lhsTy = lhs->getType();
-  llvm::Type *rhsTy = rhs->getType();
+  // Unpack lhs
+  llvm::Type *lhsTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Type *rhsTy = rhsV->getType();
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
-    return builder->CreateFRem(lhs, rhs);
+    return builder->CreateFRem(lhsV, rhsV);
   case COMB(TY_INT, TY_INT):
-    return builder->CreateSRem(lhs, rhs);
+    return builder->CreateSRem(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): {
-    llvm::Value *rhsInt = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSRem(lhs, rhsInt);
+    llvm::Value *rhsInt = builder->CreateIntCast(rhsV, lhsTy, true);
+    return builder->CreateSRem(lhsV, rhsInt);
   }
   case COMB(TY_INT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSRem(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsTy, true);
+    return builder->CreateSRem(lhsLong, rhsV);
   }
   case COMB(TY_SHORT, TY_INT): {
-    llvm::Value *lhsInt = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSRem(lhsInt, rhs);
+    llvm::Value *lhsInt = builder->CreateIntCast(lhsV, rhsTy, true);
+    return builder->CreateSRem(lhsInt, rhsV);
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return builder->CreateSRem(lhs, rhs);
+    return builder->CreateSRem(lhsV, rhsV);
   case COMB(TY_SHORT, TY_LONG): {
-    llvm::Value *lhsLong = builder->CreateIntCast(lhs, rhsTy, true);
-    return builder->CreateSRem(lhsLong, rhs);
+    llvm::Value *lhsLong = builder->CreateIntCast(lhsV, rhsTy, true);
+    return builder->CreateSRem(lhsLong, rhsV);
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
-    llvm::Value *rhsLong = builder->CreateIntCast(rhs, lhsTy, true);
-    return builder->CreateSRem(lhs, rhsLong);
+    llvm::Value *rhsLong = builder->CreateIntCast(rhsV, lhsTy, true);
+    return builder->CreateSRem(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG):
-    return builder->CreateSRem(lhs, rhs);
+    return builder->CreateSRem(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: %"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixMinusInst(llvm::Value *lhs, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixMinusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
   switch (lhsSTy.getSuperType()) {
   case TY_DOUBLE:
-    return builder->CreateFMul(lhs, llvm::ConstantFP::get(builder->getContext(), llvm::APFloat(double(-1))));
+    return builder->CreateFMul(lhsV, llvm::ConstantFP::get(builder->getContext(), llvm::APFloat(double(-1))));
   case TY_INT:   // fallthrough
   case TY_SHORT: // fallthrough
   case TY_LONG:
-    return builder->CreateNeg(lhs);
+    return builder->CreateNeg(lhsV);
   default:
     break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value *lhs, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
-    return builder->CreateAdd(lhs, builder->getInt32(1));
+    return builder->CreateAdd(lhsV, builder->getInt32(1));
   case TY_SHORT:
-    return builder->CreateAdd(lhs, builder->getInt16(1));
+    return builder->CreateAdd(lhsV, builder->getInt16(1));
   case TY_LONG:
-    return builder->CreateAdd(lhs, builder->getInt64(1));
+    return builder->CreateAdd(lhsV, builder->getInt64(1));
   default:
     break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value *lhs, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
-    return builder->CreateSub(lhs, builder->getInt32(1));
+    return builder->CreateSub(lhsV, builder->getInt32(1));
   case TY_SHORT:
-    return builder->CreateSub(lhs, builder->getInt16(1));
+    return builder->CreateSub(lhsV, builder->getInt16(1));
   case TY_LONG:
-    return builder->CreateSub(lhs, builder->getInt64(1));
+    return builder->CreateSub(lhsV, builder->getInt64(1));
   default:
     break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixNotInst(llvm::Value *lhs, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixNotInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
   switch (lhsSTy.getSuperType()) {
   case TY_BOOL:
-    return builder->CreateNot(lhs);
+    return builder->CreateNot(lhsV);
   default:
     break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixBitwiseNotInst(llvm::Value *lhs, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixBitwiseNotInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
   switch (lhsSTy.getSuperType()) {
   case TY_INT:   // fallthrough
   case TY_SHORT: // fallthrough
   case TY_LONG:
-    return builder->CreateNeg(lhs);
+    return builder->CreateNeg(lhsV);
   default:
     break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ~"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value *lhs, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
-    return builder->CreateAdd(lhs, builder->getInt32(1));
+    return builder->CreateAdd(lhsV, builder->getInt32(1));
   case TY_SHORT:
-    return builder->CreateAdd(lhs, builder->getInt16(1));
+    return builder->CreateAdd(lhsV, builder->getInt16(1));
   case TY_LONG:
-    return builder->CreateAdd(lhs, builder->getInt64(1));
+    return builder->CreateAdd(lhsV, builder->getInt64(1));
   default:
     break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value *lhs, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
-    return builder->CreateSub(lhs, builder->getInt32(1));
+    return builder->CreateSub(lhsV, builder->getInt32(1));
   case TY_SHORT:
-    return builder->CreateSub(lhs, builder->getInt16(1));
+    return builder->CreateSub(lhsV, builder->getInt16(1));
   case TY_LONG:
-    return builder->CreateSub(lhs, builder->getInt64(1));
+    return builder->CreateSub(lhsV, builder->getInt64(1));
   default:
     break;
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhs, const SymbolType &lhsSTy, const SymbolType &rhsSTy,
+llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhsV, const SymbolType &lhsSTy, const SymbolType &rhsSTy,
                                                    SymbolTable *accessScope) {
+  // Unpack lhs
   llvm::Type *lhsTy = lhsSTy.toLLVMType(*context, accessScope);
+
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
   case COMB(TY_DOUBLE, TY_DOUBLE): // fallthrough
   case COMB(TY_INT, TY_INT):
-    return rhs;
+    return rhsV;
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_INT, TY_BYTE):  // fallthrough
   case COMB(TY_INT, TY_CHAR):  // fallthrough
   case COMB(TY_SHORT, TY_INT):
-    return builder->CreateIntCast(rhs, lhsTy, true);
+    return builder->CreateIntCast(rhsV, lhsTy, true);
   case COMB(TY_SHORT, TY_SHORT):
-    return rhs;
+    return rhsV;
   case COMB(TY_SHORT, TY_LONG): // fallthrough
   case COMB(TY_LONG, TY_INT):   // fallthrough
   case COMB(TY_LONG, TY_SHORT):
-    return builder->CreateIntCast(rhs, lhsTy, true);
+    return builder->CreateIntCast(rhsV, lhsTy, true);
   case COMB(TY_LONG, TY_LONG):
-    return rhs;
+    return rhsV;
   case COMB(TY_BYTE, TY_INT):   // fallthrough
   case COMB(TY_BYTE, TY_SHORT): // fallthrough
   case COMB(TY_BYTE, TY_LONG):
-    return builder->CreateIntCast(rhs, lhsTy, false);
+    return builder->CreateIntCast(rhsV, lhsTy, false);
   case COMB(TY_BYTE, TY_BYTE):
-    return rhs;
+    return rhsV;
   case COMB(TY_CHAR, TY_INT):   // fallthrough
   case COMB(TY_CHAR, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_LONG):
-    return builder->CreateIntCast(rhs, lhsTy, false);
+    return builder->CreateIntCast(rhsV, lhsTy, false);
   case COMB(TY_CHAR, TY_CHAR): // fallthrough
   case COMB(TY_STRING, TY_STRING):
-    return rhs;
+    return rhsV;
   case COMB(TY_STRING, TY_PTR):
-    return builder->CreatePointerCast(rhs, lhsTy);
+    return builder->CreatePointerCast(rhsV, lhsTy);
   case COMB(TY_BOOL, TY_BOOL):
-    return rhs;
+    return rhsV;
   case COMB(TY_PTR, TY_STRING): // fallthrough (string corresponds to byte* or char*)
   case COMB(TY_PTR, TY_PTR):
-    return builder->CreatePointerCast(rhs, lhsTy);
+    return builder->CreatePointerCast(rhsV, lhsTy);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::propagateValueToStringObject(const SymbolType &symbolType, llvm::Value *operandValue) {
+llvm::Value *OpRuleConversionsManager::propagateValueToStringObject(SymbolTable *accessScope, const SymbolType &symbolType,
+                                                                    llvm::Value *operandPtr, llvm::Value *operandValue,
+                                                                    const CodeLoc &codeLoc) {
   if (symbolType.isStringStruct())
-    return operandValue;
+    return operandPtr;
   assert(symbolType.isOneOf({TY_CHAR, TY_STRING}));
   // Convert rhs literal to string object
   llvm::Function *opFct =
       symbolType.is(TY_CHAR) ? stdFunctionManager->getStringCtorCharFct() : stdFunctionManager->getStringCtorStringFct();
   llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStringStructType(*context));
   builder->CreateCall(opFct, {thisPtr, operandValue});
+  // Add symbol to symbol table to notify the dtor calling mechanism about the heap allocation
+  SymbolType stringStructSymbolType = SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
+  accessScope->registerForDtorCall(stringStructSymbolType, thisPtr, codeLoc);
   return thisPtr;
 }

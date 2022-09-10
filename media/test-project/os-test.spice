@@ -1,6 +1,9 @@
 import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
+    _rt_str::String s;
+    s = _rt_str::String("Test");
+
     // Plus
     printf("Result: %s\n", "Hello " + "World!");
     string s1 = "Hello " + "World!";

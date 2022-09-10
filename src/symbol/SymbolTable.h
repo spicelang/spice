@@ -66,6 +66,7 @@ public:
   [[nodiscard]] SymbolTable *getParent() const;
   SymbolTable *getChild(const std::string &tableName);
 
+  void registerForDtorCall(const SymbolType &symbolType, llvm::Value *memAddress, const CodeLoc &codeLoc);
   std::vector<SymbolTableEntry *> getVarsGoingOutOfScope(bool filterForStructs = false);
 
   std::map<std::string, SymbolTableEntry> &getSymbols();

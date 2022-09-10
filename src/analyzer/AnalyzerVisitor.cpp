@@ -192,7 +192,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
       throw SemanticError(node->codeLoc, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
     if (returnType.isPointer())
       throw SemanticError(node->codeLoc, COMING_SOON_SA,
-                          "Spice currently not supports pointer return types due to not supporting heap allocations.");
+                          "Spice currently not supports pointer return types due to not handling pointer escaping.");
     currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, node);
 
     // Return to old scope
@@ -273,7 +273,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
           SymbolType returnType = spiceFunc.getReturnType();
           if (returnType.isPointer())
             throw SemanticError(node->codeLoc, COMING_SOON_SA,
-                                "Spice currently not supports pointer return types due to not supporting heap allocations.");
+                                "Spice currently not supports pointer return types due to not handling pointer escaping.");
           returnVarEntry->updateType(returnType, true);
         }
 

@@ -272,6 +272,23 @@ SymbolTable *SymbolTable::getChild(const std::string &scopeId) {
 }
 
 /**
+ * Create an anonymous symbol to signalize the dtor calling mechanism to call the dtor on this object
+ *
+ * @param symbolType Type of the anonymous symbol
+ * @param memAddress Address of the anonymous symbol
+ * @param codeLoc Code location of the definition
+ */
+void SymbolTable::registerForDtorCall(const SymbolType &symbolType, llvm::Value *memAddress, const CodeLoc &codeLoc) {
+  // Insert anonymous symbol
+  std::string name = ".anon." + codeLoc.toString();
+  insert(name, symbolType, SymbolSpecifiers(symbolType), INITIALIZED, nullptr);
+  // Set the mem address
+  SymbolTableEntry *entry = lookupStrict(name);
+  assert(entry != nullptr);
+  entry->updateAddress(memAddress);
+}
+
+/**
  * Retrieve all variables that can be freed, because the ref count went down to 0.
  *
  * @param Get only struct variables

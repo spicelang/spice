@@ -1464,20 +1464,17 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
   printfArgs.push_back(builder->CreateGlobalStringPtr(node->templatedString));
   for (const auto &arg : node->assignExpr()) {
     SymbolType argSymbolType = arg->getEvaluatedSymbolType();
-
-    // Visit argument
-    llvm::Value *argValPtr = resolveAddress(arg);
     llvm::Type *targetType = argSymbolType.toLLVMType(*context, currentScope);
 
     llvm::Value *argVal;
     if (argSymbolType.isArray()) { // Convert array type to pointer type
+      llvm::Value *argValPtr = resolveAddress(arg);
       llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(0)};
       argVal = builder->CreateInBoundsGEP(targetType, argValPtr, indices);
     } else if (argSymbolType.isStringStruct()) {
-      argValPtr = materializeString(argValPtr);
-      argVal = builder->CreateLoad(targetType, argValPtr);
+      argVal = materializeString(resolveAddress(arg));
     } else {
-      argVal = builder->CreateLoad(targetType, argValPtr);
+      argVal = resolveValue(arg);
     }
 
     // Cast all integer types to 32 bit
@@ -1644,15 +1641,16 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
       }
 
       // Decide what to do, based on the operator
+      PtrAndValue result = {nullptr, nullptr};
       switch (node->op) {
       case AssignExprNode::OP_PLUS_EQUAL:
-        rhs = conversionsManager->getPlusEqualInst(lhs, rhs, lhsTy, rhsTy, currentScope, node->codeLoc);
+        result = conversionsManager->getPlusEqualInst({lhsPtr, lhs}, rhs, lhsTy, rhsTy, currentScope, node->codeLoc);
         break;
       case AssignExprNode::OP_MINUS_EQUAL:
         rhs = conversionsManager->getMinusEqualInst(lhs, rhs, lhsTy, rhsTy, currentScope);
         break;
       case AssignExprNode::OP_MUL_EQUAL:
-        rhs = conversionsManager->getMulEqualInst(lhs, rhs, lhsTy, rhsTy);
+        result = conversionsManager->getMulEqualInst({lhsPtr, lhs}, rhs, lhsTy, rhsTy, currentScope, node->codeLoc);
         break;
       case AssignExprNode::OP_DIV_EQUAL:
         rhs = conversionsManager->getDivEqualInst(lhs, rhs, lhsTy, rhsTy);
@@ -1678,6 +1676,12 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
       default:
         throw std::runtime_error("Assign op fall-through");
       }
+
+      if (result.ptr) {
+        variableEntry->updateAddress(result.ptr);
+        return result.ptr;
+      }
+
       builder->CreateStore(rhs, lhsPtr, variableEntry->isVolatile());
     }
 
@@ -1983,17 +1987,17 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
       MultiplicativeExprNode *rhsOperand = node->operands()[operandIndex++];
       assert(rhsOperand != nullptr);
       SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
-      llvm::Value *rhs;
 
+      llvm::Value *rhs;
+      PtrAndValue result = {nullptr, nullptr};
       switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
         if (rhsSymbolType.isStringStruct()) {
-          rhs = resolveAddress(rhsOperand);
-          rhs = materializeString(rhs);
+          rhs = materializeString(resolveAddress(rhsOperand));
         } else {
           rhs = resolveValue(rhsOperand);
         }
-        lhs = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, node->codeLoc);
+        result = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, node->codeLoc);
         break;
       case AdditiveExprNode::OP_MINUS:
         rhs = resolveValue(rhsOperand);
@@ -2004,6 +2008,13 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
       }
 
       lhsSymbolType = opQueue.front().second;
+
+      if (result.ptr) {
+        lhs = builder->CreateLoad(lhsSymbolType.toLLVMType(*context, currentScope), result.ptr);
+      } else if (result.value) {
+        lhs = result.value;
+      }
+
       opQueue.pop();
     }
 
@@ -2023,6 +2034,8 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
     SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Value *lhs = resolveValue(lhsOperand);
 
+    llvm::Value *resultPtr = nullptr;
+
     auto opQueue = node->opQueue;
     size_t operandIndex = 1;
     while (!opQueue.empty()) {
@@ -2031,10 +2044,15 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
       SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
       llvm::Value *rhs = resolveValue(rhsOperand);
 
+      PtrAndValue result = {nullptr, nullptr};
       switch (opQueue.front().first) {
-      case MultiplicativeExprNode::OP_MUL:
-        lhs = conversionsManager->getMulInst(lhs, rhs, lhsSymbolType, rhsSymbolType, node->codeLoc);
+      case MultiplicativeExprNode::OP_MUL: {
+        llvm::Value *lhsPtr = resultPtr ?: resolveAddress(lhsOperand);
+        llvm::Value *rhsPtr = resolveAddress(rhsOperand);
+        result = conversionsManager->getMulInst({lhsPtr, lhs}, {rhsPtr, rhs}, lhsSymbolType, rhsSymbolType, currentScope,
+                                                node->codeLoc);
         break;
+      }
       case MultiplicativeExprNode::OP_DIV:
         lhs = conversionsManager->getDivInst(lhs, rhs, lhsSymbolType, rhsSymbolType);
         break;
@@ -2046,10 +2064,18 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
       }
 
       lhsSymbolType = opQueue.front().second;
+
+      if (result.ptr) {
+        resultPtr = result.ptr;
+        lhs = builder->CreateLoad(lhsSymbolType.toLLVMType(*context, currentScope), resultPtr);
+      } else if (result.value) {
+        lhs = result.value;
+      }
+
       opQueue.pop();
     }
 
-    llvm::Value *resultPtr = insertAlloca(lhs->getType());
+    resultPtr = resultPtr ?: insertAlloca(lhs->getType());
     builder->CreateStore(lhs, resultPtr);
     return resultPtr;
   }
@@ -2655,7 +2681,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
       SymbolType actualArgSymbolType = arg->getEvaluatedSymbolType();
       llvm::Value *actualArgPtr = resolveAddress(arg);
 
-      // If the arrays are both of size -1 or 0, they are both pointers and do not need to be implicitly casted
+      // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
       bool isSameArray = actualArgSymbolType.isArray() && expectedArgSymbolType.isArray() &&
                          actualArgSymbolType.getArraySize() <= 0 && expectedArgSymbolType.getArraySize() <= 0;
 
@@ -3068,7 +3094,7 @@ bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableE
 }
 
 llvm::Value *GeneratorVisitor::materializeString(llvm::Value *stringStructPtr) {
-  assert(stringStructPtr->getType()->isPointerTy());
+  // assert(stringStructPtr->getType()->isPointerTy());
   llvm::Value *rawStringValue = builder->CreateCall(stdFunctionManager->getStringGetRawFct(), stringStructPtr);
   return rawStringValue;
 }
