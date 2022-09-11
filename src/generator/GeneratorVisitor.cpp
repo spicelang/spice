@@ -1308,7 +1308,7 @@ std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
     builder->CreateCall(printfFct, templateString);
     // Generate call to exit
     llvm::Function *exitFct = stdFunctionManager->getExitFct();
-    builder->CreateCall(exitFct, builder->getInt32(1));
+    builder->CreateCall(exitFct, builder->getInt32(0));
     // Create unreachable instruction
     builder->CreateUnreachable();
 

@@ -1,7 +1,6 @@
 f<int> main() {
-    for dyn i = 0; i < 10; i+=2 {
-        printf("Step %d\n", i);
-    }
+    assert 1 != 1;
+    printf("Unreachable");
 }
 
 /*import "std/data/vector" as vec;
