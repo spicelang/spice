@@ -1308,7 +1308,7 @@ std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
     builder->CreateCall(printfFct, templateString);
     // Generate call to exit
     llvm::Function *exitFct = stdFunctionManager->getExitFct();
-    builder->CreateCall(exitFct, builder->getInt32(1));
+    builder->CreateCall(exitFct, builder->getInt32(0));
     // Create unreachable instruction
     builder->CreateUnreachable();
 
@@ -1464,20 +1464,17 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
   printfArgs.push_back(builder->CreateGlobalStringPtr(node->templatedString));
   for (const auto &arg : node->assignExpr()) {
     SymbolType argSymbolType = arg->getEvaluatedSymbolType();
-
-    // Visit argument
-    llvm::Value *argValPtr = resolveAddress(arg);
     llvm::Type *targetType = argSymbolType.toLLVMType(*context, currentScope);
 
     llvm::Value *argVal;
     if (argSymbolType.isArray()) { // Convert array type to pointer type
+      llvm::Value *argValPtr = resolveAddress(arg);
       llvm::Value *indices[2] = {builder->getInt32(0), builder->getInt32(0)};
       argVal = builder->CreateInBoundsGEP(targetType, argValPtr, indices);
     } else if (argSymbolType.isStringStruct()) {
-      argValPtr = materializeString(argValPtr);
-      argVal = builder->CreateLoad(targetType, argValPtr);
+      argVal = materializeString(resolveAddress(arg));
     } else {
-      argVal = builder->CreateLoad(targetType, argValPtr);
+      argVal = resolveValue(arg);
     }
 
     // Cast all integer types to 32 bit
@@ -1644,15 +1641,16 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
       }
 
       // Decide what to do, based on the operator
+      PtrAndValue result = {nullptr, nullptr};
       switch (node->op) {
       case AssignExprNode::OP_PLUS_EQUAL:
-        rhs = conversionsManager->getPlusEqualInst(lhs, rhs, lhsTy, rhsTy, currentScope, node->codeLoc);
+        result = conversionsManager->getPlusEqualInst({lhsPtr, lhs}, rhs, lhsTy, rhsTy, currentScope, node->codeLoc);
         break;
       case AssignExprNode::OP_MINUS_EQUAL:
         rhs = conversionsManager->getMinusEqualInst(lhs, rhs, lhsTy, rhsTy, currentScope);
         break;
       case AssignExprNode::OP_MUL_EQUAL:
-        rhs = conversionsManager->getMulEqualInst(lhs, rhs, lhsTy, rhsTy);
+        result = conversionsManager->getMulEqualInst({lhsPtr, lhs}, rhs, lhsTy, rhsTy, currentScope, node->codeLoc);
         break;
       case AssignExprNode::OP_DIV_EQUAL:
         rhs = conversionsManager->getDivEqualInst(lhs, rhs, lhsTy, rhsTy);
@@ -1678,6 +1676,14 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
       default:
         throw std::runtime_error("Assign op fall-through");
       }
+
+      if (result.ptr) {
+        variableEntry->updateAddress(result.ptr);
+        return result.ptr;
+      }
+      if (result.value)
+        rhs = result.value;
+
       builder->CreateStore(rhs, lhsPtr, variableEntry->isVolatile());
     }
 
@@ -1983,17 +1989,20 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
       MultiplicativeExprNode *rhsOperand = node->operands()[operandIndex++];
       assert(rhsOperand != nullptr);
       SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
-      llvm::Value *rhs = resolveValue(rhsOperand);
 
+      llvm::Value *rhs;
+      PtrAndValue result = {nullptr, nullptr};
       switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
-        /*if (lhsSymbolType.isStringStruct())
-          lhs = materializeString(lhsPtr);
-        if (rhsSymbolType.isStringStruct())
-          rhs = materializeString(rhsPtr);*/
-        lhs = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, node->codeLoc);
+        if (rhsSymbolType.isStringStruct()) {
+          rhs = materializeString(resolveAddress(rhsOperand));
+        } else {
+          rhs = resolveValue(rhsOperand);
+        }
+        result = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, rhsOperand->codeLoc);
         break;
       case AdditiveExprNode::OP_MINUS:
+        rhs = resolveValue(rhsOperand);
         lhs = conversionsManager->getMinusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope);
         break;
       default:
@@ -2001,6 +2010,13 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
       }
 
       lhsSymbolType = opQueue.front().second;
+
+      if (result.ptr) {
+        lhs = builder->CreateLoad(lhsSymbolType.toLLVMType(*context, currentScope), result.ptr);
+      } else if (result.value) {
+        lhs = result.value;
+      }
+
       opQueue.pop();
     }
 
@@ -2020,6 +2036,8 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
     SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
     llvm::Value *lhs = resolveValue(lhsOperand);
 
+    llvm::Value *resultPtr = nullptr;
+
     auto opQueue = node->opQueue;
     size_t operandIndex = 1;
     while (!opQueue.empty()) {
@@ -2028,10 +2046,15 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
       SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
       llvm::Value *rhs = resolveValue(rhsOperand);
 
+      PtrAndValue result = {nullptr, nullptr};
       switch (opQueue.front().first) {
-      case MultiplicativeExprNode::OP_MUL:
-        lhs = conversionsManager->getMulInst(lhs, rhs, lhsSymbolType, rhsSymbolType, node->codeLoc);
+      case MultiplicativeExprNode::OP_MUL: {
+        llvm::Value *lhsPtr = resultPtr ?: resolveAddress(lhsOperand);
+        llvm::Value *rhsPtr = resolveAddress(rhsOperand);
+        result = conversionsManager->getMulInst({lhsPtr, lhs}, {rhsPtr, rhs}, lhsSymbolType, rhsSymbolType, currentScope,
+                                                rhsOperand->codeLoc);
         break;
+      }
       case MultiplicativeExprNode::OP_DIV:
         lhs = conversionsManager->getDivInst(lhs, rhs, lhsSymbolType, rhsSymbolType);
         break;
@@ -2043,10 +2066,18 @@ std::any GeneratorVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node)
       }
 
       lhsSymbolType = opQueue.front().second;
+
+      if (result.ptr) {
+        resultPtr = result.ptr;
+        lhs = builder->CreateLoad(lhsSymbolType.toLLVMType(*context, currentScope), resultPtr);
+      } else if (result.value) {
+        lhs = result.value;
+      }
+
       opQueue.pop();
     }
 
-    llvm::Value *resultPtr = insertAlloca(lhs->getType());
+    resultPtr = resultPtr ?: insertAlloca(lhs->getType());
     builder->CreateStore(lhs, resultPtr);
     return resultPtr;
   }
@@ -2652,7 +2683,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
       SymbolType actualArgSymbolType = arg->getEvaluatedSymbolType();
       llvm::Value *actualArgPtr = resolveAddress(arg);
 
-      // If the arrays are both of size -1 or 0, they are both pointers and do not need to be implicitly casted
+      // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
       bool isSameArray = actualArgSymbolType.isArray() && expectedArgSymbolType.isArray() &&
                          actualArgSymbolType.getArraySize() <= 0 && expectedArgSymbolType.getArraySize() <= 0;
 
@@ -2671,6 +2702,12 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // Consider constructor calls
   if (constructorCall) {
+    // Update mem-address of anonymous symbol
+    SymbolTableEntry *anonEntry = currentScope->lookupAnonymous(node->codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisValuePtr);
+
+    // Return pointer to this value
     return thisValuePtr;
   } else if (!resultValue->getType()->isSized()) {
     // Set return type bool for procedures
@@ -2866,6 +2903,11 @@ std::any GeneratorVisitor::visitStructInstantiation(StructInstantiationNode *nod
     }
   }
 
+  // Update the address of the anonymous symbol
+  SymbolTableEntry *anonSymbol = currentScope->lookupAnonymous(node->codeLoc);
+  assert(anonSymbol != nullptr);
+  anonSymbol->updateAddress(structAddress);
+
   return structAddress;
 }
 
@@ -2966,9 +3008,10 @@ void GeneratorVisitor::createCondBr(llvm::Value *condition, llvm::BasicBlock *tr
 
 llvm::Value *GeneratorVisitor::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) {
-    allocaInsertInst = builder->CreateAlloca(llvmType, nullptr, varName);
-    allocaInsertInst->setDebugLoc(llvm::DebugLoc());
-    allocaInsertInst->moveAfter(allocaInsertInst);
+    llvm::AllocaInst *allocaInst = builder->CreateAlloca(llvmType, nullptr, varName);
+    allocaInst->setDebugLoc(llvm::DebugLoc());
+    allocaInst->moveAfter(allocaInsertInst);
+    allocaInsertInst = allocaInst;
   } else {
     // Save current basic block and move insert cursor to entry block of the current function
     llvm::BasicBlock *currentBlock = builder->GetInsertBlock();
@@ -3014,46 +3057,58 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
 }
 
 bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
-  Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc);
+  if (varEntry->getType().isStringStruct()) {
+    // Get dtor function
+    llvm::Function *fct = stdFunctionManager->getStringDtorFct();
 
-  // Cancel if no destructor was found
-  if (spiceDtor == nullptr)
-    return false;
+    // Get this value pointer
+    llvm::Value *thisValuePtr = varEntry->getAddress();
+    assert(thisValuePtr != nullptr);
 
-  // Get this value pointer
-  llvm::Value *thisValuePtr = varEntry->getAddress();
+    // Insert call
+    builder->CreateCall(fct, thisValuePtr);
+  } else {
+    Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc);
 
-  // Check if function exists in the current module
-  bool functionFound = false;
-  std::string fctIdentifier = spiceDtor->getMangledName();
-  for (const auto &function : module->getFunctionList()) { // Search for function definition
-    if (function.getName() == fctIdentifier) {
-      functionFound = true;
-      break;
-    } else if (function.getName() == spiceDtor->getName()) {
-      functionFound = true;
-      fctIdentifier = spiceDtor->getName();
-      break;
+    // Cancel if no destructor was found
+    if (spiceDtor == nullptr)
+      return false;
+
+    // Get this value pointer
+    llvm::Value *thisValuePtr = varEntry->getAddress();
+
+    // Check if function exists in the current module
+    bool functionFound = false;
+    std::string mangledName = spiceDtor->getMangledName();
+    for (const auto &function : module->getFunctionList()) { // Search for function definition
+      llvm::StringRef functionName = function.getName();
+      if (functionName == mangledName) {
+        functionFound = true;
+        break;
+      } else if (functionName == spiceDtor->getName()) {
+        functionFound = true;
+        mangledName = spiceDtor->getName();
+        break;
+      }
     }
+
+    if (!functionFound) { // Not found => Declare function, which will be linked in
+      llvm::FunctionType *fctType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), thisValuePtr->getType(), false);
+      module->getOrInsertFunction(mangledName, fctType);
+    }
+
+    // Get the declared function and its type
+    llvm::Function *fct = module->getFunction(mangledName);
+    assert(fct != nullptr);
+
+    // Create the function call
+    builder->CreateCall(fct, thisValuePtr);
   }
-
-  if (!functionFound) { // Not found => Declare function, which will be linked in
-    llvm::FunctionType *fctType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), thisValuePtr->getType(), false);
-    module->getOrInsertFunction(fctIdentifier, fctType);
-  }
-
-  // Get the declared function and its type
-  llvm::Function *fct = module->getFunction(fctIdentifier);
-  assert(fct != nullptr);
-
-  // Create the function call
-  builder->CreateCall(fct, thisValuePtr);
-
   return true;
 }
 
 llvm::Value *GeneratorVisitor::materializeString(llvm::Value *stringStructPtr) {
-  assert(stringStructPtr->getType()->isPointerTy());
+  // assert(stringStructPtr->getType()->isPointerTy());
   llvm::Value *rawStringValue = builder->CreateCall(stdFunctionManager->getStringGetRawFct(), stringStructPtr);
   return rawStringValue;
 }

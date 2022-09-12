@@ -10,13 +10,12 @@ colored_echo() {
 colored_echo "[Step 1] Installing dependencies via Linux packages (Could take a while) ... "
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo apt update -y
-sudo apt-get install -y cmake make ninja-build uuid-dev openjdk-11-jre-headless gcc-11 g++-11
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-11 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
+sudo apt-get install -y cmake make ninja-build uuid-dev openjdk-11-jre-headless
 colored_echo "done."
 
 # Clone LLVM
 colored_echo "[Step 2] Cloning LLVM (Could take a while) ... "
-git clone --depth 1 --branch llvmorg-15.0.0-rc3 https://github.com/llvm/llvm-project llvm
+git clone --depth 1 --branch llvmorg-15.0.0 https://github.com/llvm/llvm-project llvm
 colored_echo "done."
 
 # Build LLVM

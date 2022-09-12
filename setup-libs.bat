@@ -3,7 +3,7 @@
 mkdir lib
 pushd lib
 
-git clone --depth 1 --branch 4.10.1 https://github.com/antlr/antlr4.git
+git clone --depth 1 --branch 4.11.1 https://github.com/antlr/antlr4.git
 
 git clone --depth 1 --branch release-1.12.1 https://github.com/google/googletest.git
 

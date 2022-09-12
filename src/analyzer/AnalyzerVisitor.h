@@ -22,7 +22,7 @@ const std::string DTOR_VARIABLE_NAME = "dtor";
 const std::string STRUCT_SCOPE_PREFIX = "struct:";
 const std::string ENUM_SCOPE_PREFIX = "enum:";
 const std::string UNUSED_VARIABLE_NAME = "_";
-const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync"};
+const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
 
 // Forward declarations
 class OpRuleManager;
@@ -49,6 +49,9 @@ public:
   explicit AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std::shared_ptr<llvm::IRBuilder<>> builder,
                            const ThreadFactory &threadFactory, const SourceFile &sourceFile, CliOptions &options,
                            bool requiresMainFct, bool stdFile);
+
+  // Friend classes
+  friend class OpRuleManager;
 
   // Public methods
   std::any visitEntry(EntryNode *node) override;
@@ -126,6 +129,7 @@ private:
   bool allowUnsafeOperations = false;
 
   // Private methods
+  SymbolType insertAnonStringStructSymbol(const AstNode *declNode);
   void insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
   SymbolType initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix, const std::string &structName,
                            const std::vector<SymbolType> &templateTypes, const CodeLoc &codeLoc);

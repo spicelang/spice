@@ -13,23 +13,27 @@ declare i32 @usleep(i32)
 define i32 @main() {
 entry.l3:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
-  %0 = call i32 (ptr, ...) @printf(ptr @0)
+  %0 = alloca {}, align 8
   %1 = alloca {}, align 8
-  %2 = alloca ptr, align 8
-  %3 = call i32 @pthread_create(ptr %2, ptr null, ptr @_thread0, ptr %1)
-  %4 = alloca {}, align 8
-  %5 = alloca ptr, align 8
-  %6 = call i32 @pthread_create(ptr %5, ptr null, ptr @_thread1, ptr %4)
-  %7 = alloca i32, align 4
-  store i32 1000000, ptr %7, align 4
-  %8 = load i32, ptr %7, align 4
-  %9 = call i32 @usleep(i32 %8)
-  %10 = alloca i32, align 4
-  store i32 %9, ptr %10, align 4
-  %11 = call i32 (ptr, ...) @printf(ptr @3)
-  %12 = load i32, ptr %result, align 4
-  ret i32 %12
+  %2 = alloca i32, align 4
+  %3 = alloca i32, align 4
+  %4 = alloca i32, align 4
+  %5 = alloca i32, align 4
+  store i32 0, ptr %result, align 4
+  %6 = call i32 (ptr, ...) @printf(ptr @0)
+  %7 = alloca ptr, align 8
+  %8 = call i32 @pthread_create(ptr %7, ptr null, ptr @_thread0, ptr %0)
+  %9 = alloca ptr, align 8
+  %10 = call i32 @pthread_create(ptr %9, ptr null, ptr @_thread1, ptr %1)
+  store i32 1000, ptr %2, align 4
+  store i32 1000, ptr %3, align 4
+  store i32 1000000, ptr %4, align 4
+  %11 = load i32, ptr %4, align 4
+  %12 = call i32 @usleep(i32 %11)
+  store i32 %12, ptr %5, align 4
+  %13 = call i32 (ptr, ...) @printf(ptr @3)
+  %14 = load i32, ptr %result, align 4
+  ret i32 %14
 }
 
 declare i32 @printf(ptr, ...)
@@ -37,12 +41,16 @@ declare i32 @printf(ptr, ...)
 define internal ptr @_thread0(ptr %0) {
 thread.entry.l5:
   %1 = alloca i32, align 4
-  store i32 500000, ptr %1, align 4
-  %2 = load i32, ptr %1, align 4
-  %3 = call i32 @usleep(i32 %2)
+  %2 = alloca i32, align 4
+  %3 = alloca i32, align 4
   %4 = alloca i32, align 4
-  store i32 %3, ptr %4, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr @1)
+  store i32 500, ptr %1, align 4
+  store i32 1000, ptr %2, align 4
+  store i32 500000, ptr %3, align 4
+  %5 = load i32, ptr %3, align 4
+  %6 = call i32 @usleep(i32 %5)
+  store i32 %6, ptr %4, align 4
+  %7 = call i32 (ptr, ...) @printf(ptr @1)
   ret ptr null
 }
 
@@ -51,11 +59,15 @@ declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 define internal ptr @_thread1(ptr %0) {
 thread.entry.l9:
   %1 = alloca i32, align 4
-  store i32 200000, ptr %1, align 4
-  %2 = load i32, ptr %1, align 4
-  %3 = call i32 @usleep(i32 %2)
+  %2 = alloca i32, align 4
+  %3 = alloca i32, align 4
   %4 = alloca i32, align 4
-  store i32 %3, ptr %4, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr @2)
+  store i32 200, ptr %1, align 4
+  store i32 1000, ptr %2, align 4
+  store i32 200000, ptr %3, align 4
+  %5 = load i32, ptr %3, align 4
+  %6 = call i32 @usleep(i32 %5)
+  store i32 %6, ptr %4, align 4
+  %7 = call i32 (ptr, ...) @printf(ptr @2)
   ret ptr null
 }

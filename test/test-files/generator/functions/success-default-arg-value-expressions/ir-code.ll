@@ -18,24 +18,24 @@ define internal double @_f__void__test() {
 entry.l5:
   %0 = call double @_f__void__getArg()
   %1 = alloca double, align 8
-  store double %0, ptr %1, align 8
-  %2 = load double, ptr %1, align 8
-  %3 = fadd double %2, 1.200000e+00
-  %4 = alloca double, align 8
-  store double %3, ptr %4, align 8
+  %2 = alloca double, align 8
   %result = alloca double, align 8
-  %5 = load double, ptr %4, align 8
+  store double %0, ptr %1, align 8
+  %3 = load double, ptr %1, align 8
+  %4 = fadd double %3, 1.200000e+00
+  store double %4, ptr %2, align 8
+  %5 = load double, ptr %2, align 8
   ret double %5
 }
 
 define i32 @main() {
 entry.l9:
   %result = alloca i32, align 4
+  %0 = alloca double, align 8
   store i32 0, ptr %result, align 4
-  %0 = call double @_f__void__test()
-  %1 = alloca double, align 8
-  store double %0, ptr %1, align 8
-  %2 = load double, ptr %1, align 8
+  %1 = call double @_f__void__test()
+  store double %1, ptr %0, align 8
+  %2 = load double, ptr %0, align 8
   %3 = call i32 (ptr, ...) @printf(ptr @0, double %2)
   %4 = load i32, ptr %result, align 4
   ret i32 %4

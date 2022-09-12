@@ -95,7 +95,7 @@ void SourceFile::visualizeCST(std::string *output) {
       std::cout << "\nGenerating SVG file ... ";
       std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "cst";
       FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
-      std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
+      FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
       std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
     }
   }
@@ -149,7 +149,7 @@ void SourceFile::visualizeAST(std::string *output) {
       std::cout << "\nGenerating SVG file ... ";
       std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "ast";
       FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
-      std::string cmdResult = FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
+      FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
       std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
     }
   }

@@ -11,8 +11,8 @@ entry.l1:
   br label %while.l3
 
 while.l3:                                         ; preds = %entry.l1, %while.cond.l3.backedge
-  %loopCounterOuter.04 = phi double [ 0.000000e+00, %entry.l1 ], [ %0, %while.cond.l3.backedge ]
-  %0 = fadd double %loopCounterOuter.04, 1.500000e-01
+  %loopCounterOuter.011 = phi double [ 0.000000e+00, %entry.l1 ], [ %0, %while.cond.l3.backedge ]
+  %0 = fadd double %loopCounterOuter.011, 1.500000e-01
   %1 = fcmp olt double %0, 4.000000e+00
   br i1 %1, label %while.cond.l3.backedge.loopexit, label %while.cond.l3.backedge
 

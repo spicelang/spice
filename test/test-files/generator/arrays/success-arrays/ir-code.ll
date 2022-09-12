@@ -8,30 +8,30 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %value0 = alloca i32, align 4
+  %0 = alloca [5 x i32], align 4
+  store i32 0, ptr %result, align 4
   store i32 2, ptr %value0, align 4
-  %0 = load i32, ptr %value0, align 4
-  %1 = alloca [5 x i32], align 4
-  %2 = getelementptr inbounds [5 x i32], ptr %1, i32 0, i32 0
-  store i32 %0, ptr %2, align 4
-  %3 = getelementptr inbounds [5 x i32], ptr %1, i32 0, i32 1
+  %1 = load i32, ptr %value0, align 4
+  %2 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 0
+  store i32 %1, ptr %2, align 4
+  %3 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 1
   store i32 7, ptr %3, align 4
-  %4 = getelementptr inbounds [5 x i32], ptr %1, i32 0, i32 2
+  %4 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 2
   store i32 4, ptr %4, align 4
-  %5 = getelementptr inbounds [5 x i32], ptr %1, i32 0, i32 3
+  %5 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 3
   store i32 0, ptr %5, align 4
-  %6 = getelementptr inbounds [5 x i32], ptr %1, i32 0, i32 4
+  %6 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 4
   store i32 0, ptr %6, align 4
-  %7 = getelementptr inbounds [5 x i32], ptr %1, i32 0, i32 2
+  %7 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 2
   %8 = load i32, ptr %7, align 4
   %9 = mul i32 %8, 11
   store i32 %9, ptr %7, align 4
-  %10 = getelementptr inbounds [5 x i32], ptr %1, i32 0, i32 0
+  %10 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 0
   store i32 3, ptr %10, align 4
-  %11 = getelementptr inbounds [5 x i32], ptr %1, i32 0, i32 0
+  %11 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 0
   %12 = load i32, ptr %11, align 4
-  %13 = getelementptr inbounds [5 x i32], ptr %1, i32 0, i32 2
+  %13 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 2
   %14 = load i32, ptr %13, align 4
   %15 = call i32 (ptr, ...) @printf(ptr @0, i32 %12, i32 %14)
   %16 = load i32, ptr %result, align 4

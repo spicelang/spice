@@ -34,6 +34,8 @@ std::string CliError::getMessagePrefix(CliErrorType type) {
     return "Source file missing";
   case OPT_DEBUG_INFO_INCOMPATIBILITY:
     return "Cannot emit debug info with optimization enabled";
+  case NON_ZERO_EXIT_CODE:
+    return "Non-zero exit code";
   case COMING_SOON_CLI:
     return "Coming soon";
   }

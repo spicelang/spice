@@ -1,3 +1,7 @@
+f<int> main() {
+    printf("Test: %s", "Hi " + "World!");
+}
+
 /*import "std/data/vector" as vec;
 import "std/data/pair" as pair;
 
@@ -17,10 +21,34 @@ f<int> main() {
     server.serve("/test", "Hello World!");
 }*/
 
-import "std/runtime/string_rt" as _rt_str;
+/*import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
-    string s = "Test";
-    s *= 3;
-    printf("%s", s);
+    //_rt_str::String s = _rt_str::String("Test");
+    //printf("%s", s.getRaw());
+     // Plus
+    printf("Result: %s\n", "Hello " + "World!");
+    string s1 = "Hello " + "World!";
+    printf("Result: %s\n", s1);
+    // Mul
+    printf("Result: %s\n", 4s * "Hi");
+    string s2 = "Hello " * 5;
+    printf("Result: %s\n", s2);
+    printf("Result: %s\n", 20 * 'a');
+    string s3 = 2 * 'c' * 7;
+    printf("Result: %s\n", s3);
+    //printf("%s", s1 + s2);
+}*/
+
+/*public f<int> src(int x, int y) {
+    return x + (x | -x);
 }
+
+public f<int> tgt(int x) {
+    return x & (x - 1);
+}
+
+f<int> main() {
+    printf("Src: %d\n", src(21, 10));
+    printf("Tgt: %d\n", tgt(21));
+}*/

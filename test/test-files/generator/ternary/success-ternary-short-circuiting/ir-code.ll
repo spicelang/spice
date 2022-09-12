@@ -26,30 +26,30 @@ entry.l5:
 define i32 @main() {
 entry.l9:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
-  %0 = call i1 @_f__void__condition1()
+  %0 = alloca i1, align 1
   %1 = alloca i1, align 1
-  store i1 %0, ptr %1, align 1
-  %2 = load i1, ptr %1, align 1
-  br i1 %2, label %land.1.l10, label %land.end.l10
+  %2 = alloca i1, align 1
+  %3 = alloca i32, align 4
+  %4 = alloca i32, align 4
+  store i32 0, ptr %result, align 4
+  %5 = call i1 @_f__void__condition1()
+  store i1 %5, ptr %0, align 1
+  %6 = load i1, ptr %0, align 1
+  br i1 %6, label %land.1.l10, label %land.end.l10
 
 land.1.l10:                                       ; preds = %entry.l9
-  %3 = call i1 @_f__void__condition2()
-  %4 = alloca i1, align 1
-  store i1 %3, ptr %4, align 1
-  %5 = load i1, ptr %4, align 1
+  %7 = call i1 @_f__void__condition2()
+  store i1 %7, ptr %1, align 1
+  %8 = load i1, ptr %1, align 1
   br label %land.end.l10
 
 land.end.l10:                                     ; preds = %land.1.l10, %entry.l9
-  %land_phi = phi i1 [ %2, %entry.l9 ], [ %5, %land.1.l10 ]
-  %6 = alloca i1, align 1
-  store i1 %land_phi, ptr %6, align 1
-  %7 = alloca i32, align 4
-  store i32 2, ptr %7, align 4
-  %8 = alloca i32, align 4
-  store i32 3, ptr %8, align 4
-  %9 = load i1, ptr %6, align 1
-  %10 = select i1 %9, ptr %7, ptr %8
+  %land_phi = phi i1 [ %6, %entry.l9 ], [ %8, %land.1.l10 ]
+  store i1 %land_phi, ptr %2, align 1
+  store i32 2, ptr %3, align 4
+  store i32 3, ptr %4, align 4
+  %9 = load i1, ptr %2, align 1
+  %10 = select i1 %9, ptr %3, ptr %4
   %11 = load i32, ptr %10, align 4
   %12 = call i32 (ptr, ...) @printf(ptr @0, i32 %11)
   %13 = load i32, ptr %result, align 4

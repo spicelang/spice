@@ -48,28 +48,28 @@ declare i32 @printf(ptr, ...)
 define i32 @main() {
 entry.l11:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
-  %0 = load i32, ptr getelementptr inbounds ([4 x i32], ptr @intArray, i32 0, i32 1), align 4
-  %1 = call i32 (ptr, ...) @printf(ptr @4, i32 %0)
+  %0 = alloca ptr, align 8
+  %1 = alloca ptr, align 8
   %2 = alloca ptr, align 8
-  store ptr @intArray, ptr %2, align 8
   %3 = alloca ptr, align 8
-  store ptr %2, ptr %3, align 8
   %4 = alloca ptr, align 8
+  %5 = alloca ptr, align 8
+  %6 = alloca i1, align 1
+  store i32 0, ptr %result, align 4
+  %7 = load i32, ptr getelementptr inbounds ([4 x i32], ptr @intArray, i32 0, i32 1), align 4
+  %8 = call i32 (ptr, ...) @printf(ptr @4, i32 %7)
+  store ptr @intArray, ptr %0, align 8
+  store ptr %0, ptr %1, align 8
+  store ptr %1, ptr %2, align 8
+  %9 = load ptr, ptr %2, align 8
+  %10 = load ptr, ptr %9, align 8
+  %11 = load ptr, ptr %10, align 8
+  %12 = getelementptr inbounds [4 x i32], ptr %11, i32 0, i32 0
+  store ptr %12, ptr %3, align 8
   store ptr %3, ptr %4, align 8
-  %5 = load ptr, ptr %4, align 8
-  %6 = load ptr, ptr %5, align 8
-  %7 = load ptr, ptr %6, align 8
-  %8 = getelementptr inbounds [4 x i32], ptr %7, i32 0, i32 0
-  %9 = alloca ptr, align 8
-  store ptr %8, ptr %9, align 8
-  %10 = alloca ptr, align 8
-  store ptr %9, ptr %10, align 8
-  %11 = alloca ptr, align 8
-  store ptr %10, ptr %11, align 8
-  call void @_p__void__testProc__intarrayptrptrptr(ptr %11)
-  %12 = alloca i1, align 1
-  store i1 true, ptr %12, align 1
+  store ptr %4, ptr %5, align 8
+  call void @_p__void__testProc__intarrayptrptrptr(ptr %5)
+  store i1 true, ptr %6, align 1
   %13 = load i32, ptr %result, align 4
   ret i32 %13
 }

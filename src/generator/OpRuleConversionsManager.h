@@ -11,9 +11,18 @@
 // Forward declarations
 class GeneratorVisitor;
 class StdFunctionManager;
+class SymbolTable;
 struct CodeLoc;
 
 #define COMB(en1, en2) ((en1) | ((en2) << 16))
+
+// Helper struct for passing the pointer to the value and the value itself in parallel.
+// The caller always has to provide both. If the PtrAndValue struct gets passed back, it either contains both data or only one
+// and the other one is nullptr.
+struct PtrAndValue {
+  llvm::Value *ptr = nullptr;
+  llvm::Value *value = nullptr;
+};
 
 class OpRuleConversionsManager {
 public:
@@ -21,47 +30,48 @@ public:
   explicit OpRuleConversionsManager(GeneratorVisitor *generator);
 
   // Public methods
-  llvm::Value *getPlusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
-                                SymbolTable *accessScope, const CodeLoc &codeLoc);
+  PtrAndValue getPlusEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
+                               SymbolTable *accessScope, const CodeLoc &codeLoc);
   llvm::Value *getMinusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
                                  SymbolTable *accessScope);
-  llvm::Value *getMulEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getDivEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getRemEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getSHLEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getSHREqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getAndEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getOrEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getXorEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getBitwiseAndInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getBitwiseOrInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  PtrAndValue getMulEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
+                              SymbolTable *accessScope, const CodeLoc &codeLoc);
+  llvm::Value *getDivEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getRemEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getSHLEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getSHREqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getAndEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getOrEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getXorEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getBitwiseAndInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getBitwiseOrInst(llvm::Value *lhsV, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
   llvm::Value *getBitwiseXorInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
+  llvm::Value *getEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
                             const CodeLoc &codeLoc);
-  llvm::Value *getNotEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
+  llvm::Value *getNotEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
                                const CodeLoc &codeLoc);
-  llvm::Value *getLessInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getGreaterInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getLessEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getGreaterEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getShiftLeftInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getShiftRightInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getPlusInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
-                           SymbolTable *accessScope, const CodeLoc &codeLoc);
-  llvm::Value *getMinusInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
+  llvm::Value *getLessInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getGreaterInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getLessEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getGreaterEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getShiftLeftInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getShiftRightInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  PtrAndValue getPlusInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
+                          SymbolTable *accessScope, const CodeLoc &codeLoc);
+  llvm::Value *getMinusInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
                             SymbolTable *accessScope);
-  llvm::Value *getMulInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
-                          const CodeLoc &codeLoc);
-  llvm::Value *getDivInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getRemInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getPrefixMinusInst(llvm::Value *lhs, const SymbolType &lhsTy);
-  llvm::Value *getPrefixPlusPlusInst(llvm::Value *lhs, const SymbolType &lhsTy);
-  llvm::Value *getPrefixMinusMinusInst(llvm::Value *lhs, const SymbolType &lhsTy);
-  llvm::Value *getPrefixNotInst(llvm::Value *lhs, const SymbolType &lhsTy);
-  llvm::Value *getPrefixBitwiseNotInst(llvm::Value *lhs, const SymbolType &lhsTy);
-  llvm::Value *getPostfixPlusPlusInst(llvm::Value *lhs, const SymbolType &lhsTy);
-  llvm::Value *getPostfixMinusMinusInst(llvm::Value *lhs, const SymbolType &lhsTy);
-  llvm::Value *getCastInst(llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy, SymbolTable *accessScope);
+  PtrAndValue getMulInst(const PtrAndValue &lhsData, const PtrAndValue &rhsData, const SymbolType &lhsTy, const SymbolType &rhsTy,
+                         SymbolTable *accessScope, const CodeLoc &codeLoc);
+  llvm::Value *getDivInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getRemInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
+  llvm::Value *getPrefixMinusInst(llvm::Value *lhsV, const SymbolType &lhsTy);
+  llvm::Value *getPrefixPlusPlusInst(llvm::Value *lhsV, const SymbolType &lhsTy);
+  llvm::Value *getPrefixMinusMinusInst(llvm::Value *lhsV, const SymbolType &lhsTy);
+  llvm::Value *getPrefixNotInst(llvm::Value *lhsV, const SymbolType &lhsTy);
+  llvm::Value *getPrefixBitwiseNotInst(llvm::Value *lhsV, const SymbolType &lhsTy);
+  llvm::Value *getPostfixPlusPlusInst(llvm::Value *lhsV, const SymbolType &lhsTy);
+  llvm::Value *getPostfixMinusMinusInst(llvm::Value *lhsV, const SymbolType &lhsTy);
+  llvm::Value *getCastInst(llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy, SymbolTable *accessScope);
 
 private:
   // Members
@@ -71,5 +81,6 @@ private:
   const StdFunctionManager *stdFunctionManager;
 
   // Private methods
-  llvm::Value *propagateValueToStringObject(const SymbolType &symbolType, llvm::Value *operandValue);
+  llvm::Value *propagateValueToStringObject(SymbolTable *accessScope, const SymbolType &symbolType, llvm::Value *operandPtr,
+                                            llvm::Value *operandValue, const CodeLoc &codeLoc);
 };

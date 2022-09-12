@@ -15,9 +15,9 @@ ext<byte*> memcpy(byte*, byte*, int);
  * String wrapper for enriching raw strings with information and make them mutable
  */
 public type String struct {
-    char* contents             // Pointer to the first char
-    unsigned long capacity     // Allocated number of chars
-    unsigned long length       // Current number of chars
+    char* contents         // Pointer to the first char
+    unsigned long capacity // Allocated number of chars
+    unsigned long length   // Current number of chars
 }
 
 public p String.ctor(const string value = "") {
@@ -162,17 +162,6 @@ public p String.opMul(const long operand) {
  */
 public inline p String.opMul(const short operand) {
     this.opMul((long) operand);
-}
-
-/**
- * Implements the equals operator for 'string == string'
- *
- * @param operand String to comare the current string to
- *
- * @return Equal or not
- */
-public inline f<bool> String.opEquals(const String operand) {
-    return this.opEquals(operand.getRaw());
 }
 
 /**

@@ -24,8 +24,8 @@ entry.l6:
 define i32 @main() {
 entry.l11:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %vec = alloca %_s__Vector__bool_string, align 8
+  store i32 0, ptr %result, align 4
   call void @_mp__Vector__ctor(ptr %vec)
   %0 = getelementptr inbounds %_s__Vector__bool_string, ptr %vec, i32 0, i32 0
   %1 = load i1, ptr %0, align 1

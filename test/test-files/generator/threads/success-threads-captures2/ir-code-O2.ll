@@ -12,22 +12,22 @@ declare i32 @usleep(i32) local_unnamed_addr
 
 define i32 @main() local_unnamed_addr {
 entry.l3:
-  %puts = tail call i32 @puts(ptr nonnull @str)
   %capturedVariable = alloca i32, align 4
-  store i32 0, ptr %capturedVariable, align 4
   %i = alloca i32, align 4
+  %0 = alloca { ptr, ptr }, align 8
+  %puts = tail call i32 @puts(ptr nonnull @str)
+  store i32 0, ptr %capturedVariable, align 4
   store i32 1, ptr %i, align 4
+  %1 = getelementptr inbounds { ptr, ptr }, ptr %0, i64 0, i32 1
   br label %for.l6
 
 for.l6:                                           ; preds = %entry.l3, %for.l6
   %storemerge2 = phi i32 [ 1, %entry.l3 ], [ %6, %for.l6 ]
-  %0 = call i32 (ptr, ...) @printf(ptr nonnull @0, i32 %storemerge2)
-  %1 = alloca { ptr, ptr }, align 8
-  store ptr %capturedVariable, ptr %1, align 8
-  %2 = getelementptr inbounds { ptr, ptr }, ptr %1, i64 0, i32 1
-  store ptr %i, ptr %2, align 8
+  %2 = call i32 (ptr, ...) @printf(ptr nonnull @0, i32 %storemerge2)
+  store ptr %capturedVariable, ptr %0, align 8
+  store ptr %i, ptr %1, align 8
   %3 = alloca ptr, align 8
-  %4 = call i32 @pthread_create(ptr nonnull %3, ptr null, ptr nonnull @_thread0, ptr nonnull %1)
+  %4 = call i32 @pthread_create(ptr nonnull %3, ptr null, ptr nonnull @_thread0, ptr nonnull %0)
   %5 = load i32, ptr %i, align 4
   %6 = add i32 %5, 1
   store i32 %6, ptr %i, align 4

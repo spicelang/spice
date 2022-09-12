@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <tuple>
 
+#include <generator/StdFunctionManager.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolTable.h>
 #include <symbol/SymbolTableEntry.h>
@@ -126,10 +127,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
 
   if (is(TY_STRING)) {
     if (typeChain.top().data.isStringStruct) {
-      std::string structName = "_s__String__charptr_long_long";
-      llvm::Type *ptrTy = llvm::PointerType::get(context, 0);
-      llvm::Type *int64Ty = llvm::Type::getInt64Ty(context);
-      return llvm::StructType::create(context, {ptrTy, int64Ty, int64Ty}, structName);
+      return StdFunctionManager::getStringStructType(context);
     } else {
       return llvm::Type::getInt8PtrTy(context);
     }
@@ -264,10 +262,7 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
  *
  * @return String struct or not
  */
-bool SymbolType::isStringStruct() const {
-  SymbolSuperType superType = getSuperType();
-  return superType == TY_STRING && typeChain.top().data.isStringStruct;
-}
+bool SymbolType::isStringStruct() const { return getSuperType() == TY_STRING && typeChain.top().data.isStringStruct; }
 
 /**
  * Retrieve the super type of the current type

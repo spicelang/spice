@@ -47,11 +47,13 @@ public:
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
               const AstNode *declNode);
+  void insertAnonymous(const SymbolType &type, const AstNode *declNode);
   void addCapture(const std::string &name, const Capture &capture);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
   SymbolTableEntry *lookupByIndex(unsigned int orderIndex);
   SymbolTableEntry *lookupGlobal(const std::string &globalName, bool skipThisScope = false);
+  SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc);
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
   SymbolTable *lookupTable(const std::string &tableName);
@@ -66,7 +68,7 @@ public:
   [[nodiscard]] SymbolTable *getParent() const;
   SymbolTable *getChild(const std::string &tableName);
 
-  std::vector<SymbolTableEntry *> getVarsGoingOutOfScope(bool filterForStructs = false);
+  std::vector<SymbolTableEntry *> getVarsGoingOutOfScope(bool filterForDtorStructs = false);
 
   std::map<std::string, SymbolTableEntry> &getSymbols();
   std::map<std::string, Capture> &getCaptures();

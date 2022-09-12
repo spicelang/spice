@@ -9,7 +9,7 @@ on:
 jobs:
   build-compiler-linux:
     name: Build compiler binaries - Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
@@ -30,8 +30,8 @@ jobs:
 
       - name: Setup latest GCC and build dependencies
         run: |
-          sudo apt install gcc-11 g++-11
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-11 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-11
+          sudo apt install gcc-12 g++-12
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 110 --slave /usr/bin/g++ g++ /usr/bin/g++-12 --slave /usr/bin/gcov gcov /usr/bin/gcov-12 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-12 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-12
 
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
@@ -44,12 +44,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-15.0.0-rc3-linux-x64
+          key: llvm-15.0.0-linux-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          git clone --depth 1 --branch llvmorg-15.0.0-rc3 https://github.com/llvm/llvm-project.git llvm
+          git clone --depth 1 --branch llvmorg-15.0.0 https://github.com/llvm/llvm-project.git llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
@@ -109,9 +109,9 @@ jobs:
           choco uninstall llvm --all-versions
           Remove-Item -Recurse -Force C:/Strawberry
           echo "Uninstalling done."
-          Invoke-WebRequest https://chillibits.com/files/gh/mingw64_12_1_0.zip -OutFile mingw64.zip
+          Invoke-WebRequest https://chillibits.com/files/gh/mingw64_12_2_0.7z -OutFile mingw64.7z
           echo "Downloading done."
-          7z x mingw64.zip -oC:\mingw64
+          7z x mingw64.7z -oC:\mingw64
           echo "Unpacking done."
           Copy-Item -Path C:\mingw64\mingw64\bin\mingw32-make.exe -Destination C:\mingw64\mingw64\bin\make.exe
           echo "All done."
@@ -124,12 +124,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: D:/a/spice/spice/llvm
-          key: llvm-15.0.0-rc3-win-x64
+          key: llvm-15.0.0-win-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          git clone --depth 1 --branch llvmorg-15.0.0-rc3 https://github.com/llvm/llvm-project.git llvm
+          git clone --depth 1 --branch llvmorg-15.0.0 https://github.com/llvm/llvm-project.git llvm
           setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           echo "Adding MinGW to path done."
@@ -259,6 +259,7 @@ jobs:
 
       - name: Deploy to Debian / Raspbian repo
         run: |
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-bookworm/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-bullseye/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-buster/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/debian-stretch/"
@@ -273,6 +274,7 @@ jobs:
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-bionic/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-xenial/"
           curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-trusty/"
+          curl -sSf -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -H "Content-Type: multipart/form-data" --data-binary "@./spice_${{ matrix.arch }}.deb" "${{ secrets.NEXUS_URL }}/ubuntu-jammy/"
 
       - name: Deploy to CentOS repo
         run: |

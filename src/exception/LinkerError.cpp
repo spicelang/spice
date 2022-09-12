@@ -28,6 +28,8 @@ std::string LinkerError::getMessagePrefix(LinkerErrorType type) {
   switch (type) {
   case LINKER_NOT_FOUND:
     return "Linker not found";
+  case LINKER_ERROR:
+    return "Linker error occurred";
   }
   return "Unknown error"; // GCOV_EXCL_LINE
 }

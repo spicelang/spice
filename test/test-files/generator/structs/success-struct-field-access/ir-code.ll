@@ -12,8 +12,8 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l7:
   %result = alloca i32, align 4
-  store i32 0, ptr %result, align 4
   %0 = alloca %_s__Person__string_string_int, align 8
+  store i32 0, ptr %result, align 4
   %1 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 0
   store ptr @0, ptr %1, align 8
   %2 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 1
