@@ -1,6 +1,5 @@
 f<int> main() {
-    assert 1 != 1;
-    printf("Unreachable");
+    printf("Test: %s", "Hi " + "World!");
 }
 
 /*import "std/data/vector" as vec;
