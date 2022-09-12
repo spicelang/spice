@@ -15,11 +15,10 @@
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 
-AnalyzerVisitor::AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std::shared_ptr<llvm::IRBuilder<>> builder,
+AnalyzerVisitor::AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder,
                                  const ThreadFactory &threadFactory, const SourceFile &sourceFile, CliOptions &options,
                                  bool requiresMainFct, bool isStdFile)
-    : context(std::move(context)), builder(std::move(builder)), threadFactory(threadFactory), requiresMainFct(requiresMainFct),
-      isStdFile(isStdFile) {
+    : context(context), builder(builder), threadFactory(threadFactory), requiresMainFct(requiresMainFct), isStdFile(isStdFile) {
   // Retrieve symbol table
   this->currentScope = this->rootScope = sourceFile.symbolTable.get();
 

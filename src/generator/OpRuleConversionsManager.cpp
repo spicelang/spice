@@ -11,8 +11,8 @@
 #include <util/CodeLoc.h>
 
 OpRuleConversionsManager::OpRuleConversionsManager(GeneratorVisitor *generator) : generator(generator) {
-  builder = generator->builder.get();
-  context = generator->context.get();
+  builder = generator->builder;
+  context = generator->context;
   stdFunctionManager = generator->stdFunctionManager.get();
 }
 

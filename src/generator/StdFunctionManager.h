@@ -17,21 +17,21 @@ public:
   static llvm::StructType *getStringStructType(llvm::LLVMContext &context);
 
   // Public methods for function retrieval
-  llvm::Function *getPrintfFct() const;
-  llvm::Function *getExitFct() const;
-  llvm::Function *getStackSaveIntrinsic() const;
-  llvm::Function *getStackRestoreIntrinsic() const;
-  llvm::Function *getStringGetRawFct() const;
-  llvm::Function *getStringCtorCharFct() const;
-  llvm::Function *getStringCtorStringFct() const;
-  llvm::Function *getStringCtorStringStringFct() const;
-  llvm::Function *getStringDtorFct() const;
-  llvm::Function *getStringIsRawEqualStringStringFct() const;
-  llvm::Function *getStringAppendStringFct() const;
-  llvm::Function *getStringAppendCharFct() const;
-  llvm::Function *getStringMulOpIntFct() const;
-  llvm::Function *getStringMulOpLongFct() const;
-  llvm::Function *getStringMulOpShortFct() const;
+  [[nodiscard]] llvm::Function *getPrintfFct() const;
+  [[nodiscard]] llvm::Function *getExitFct() const;
+  [[nodiscard]] llvm::Function *getStackSaveIntrinsic() const;
+  [[nodiscard]] llvm::Function *getStackRestoreIntrinsic() const;
+  [[nodiscard]] llvm::Function *getStringGetRawFct() const;
+  [[nodiscard]] llvm::Function *getStringCtorCharFct() const;
+  [[nodiscard]] llvm::Function *getStringCtorStringFct() const;
+  [[nodiscard]] llvm::Function *getStringCtorStringStringFct() const;
+  [[nodiscard]] llvm::Function *getStringDtorFct() const;
+  [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
+  [[nodiscard]] llvm::Function *getStringAppendStringFct() const;
+  [[nodiscard]] llvm::Function *getStringAppendCharFct() const;
+  [[nodiscard]] llvm::Function *getStringMulOpIntFct() const;
+  [[nodiscard]] llvm::Function *getStringMulOpLongFct() const;
+  [[nodiscard]] llvm::Function *getStringMulOpShortFct() const;
 
 private:
   // Members
@@ -40,7 +40,8 @@ private:
   llvm::Module *module;
 
   // Private methods
-  llvm::Function *getFunction(const std::string functionName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
+  llvm::Function *getFunction(std::string functionName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
                               bool varArg = false) const;
-  llvm::Function *getProcedure(const std::string procedureName, llvm::ArrayRef<llvm::Type *> args, bool varArg = false) const;
+  [[nodiscard]] llvm::Function *getProcedure(std::string procedureName, llvm::ArrayRef<llvm::Type *> args,
+                                             bool varArg = false) const;
 };

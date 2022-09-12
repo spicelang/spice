@@ -46,9 +46,8 @@ class SourceFile;
 class AnalyzerVisitor : public AstVisitor {
 public:
   // Constructors
-  explicit AnalyzerVisitor(std::shared_ptr<llvm::LLVMContext> context, std::shared_ptr<llvm::IRBuilder<>> builder,
-                           const ThreadFactory &threadFactory, const SourceFile &sourceFile, CliOptions &options,
-                           bool requiresMainFct, bool stdFile);
+  explicit AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, const ThreadFactory &threadFactory,
+                           const SourceFile &sourceFile, CliOptions &options, bool requiresMainFct, bool stdFile);
 
   // Friend classes
   friend class OpRuleManager;
@@ -109,8 +108,8 @@ public:
 
 private:
   // Members
-  std::shared_ptr<llvm::LLVMContext> context;
-  std::shared_ptr<llvm::IRBuilder<>> builder;
+  const llvm::LLVMContext *context;
+  const llvm::IRBuilder<> *builder;
   std::unique_ptr<OpRuleManager> opRuleManager;
   const ThreadFactory &threadFactory;
   bool requiresMainFct = true;

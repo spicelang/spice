@@ -20,8 +20,11 @@
 #include <visualizer/ASTVisualizerVisitor.h>
 #include <visualizer/CSTVisualizerVisitor.h>
 
-SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
-    : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
+SourceFile::SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
+                       LinkerInterface &linker, CliOptions &options, SourceFile *parent, std::string name,
+                       const std::string &filePath, bool stdFile)
+    : context(context), builder(builder), threadFactory(threadFactory), linker(linker), name(std::move(name)), filePath(filePath),
+      stdFile(stdFile), parent(parent), options(options) {
   this->objectFilePath = options.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
 
   // Deduce fileName and fileDir
@@ -168,12 +171,11 @@ void SourceFile::preAnalyze() {
   }
 }
 
-void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                         const ThreadFactory &threadFactory) {
+void SourceFile::analyze() {
   // Analyze the imported source files
   for (const auto &[importName, sourceFile] : dependencies) {
     // Analyze the imported source file
-    sourceFile.first->analyze(context, builder, threadFactory);
+    sourceFile.first->analyze();
 
     // Mount symbol table to the current one
     sourceFile.first->symbolTable->setParent(symbolTable.get());
@@ -191,8 +193,7 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
   antlrCtx.parser->reset();
 }
 
-void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                           ThreadFactory &threadFactory) {
+void SourceFile::reAnalyze() {
   // Re-Analyze this source file
   bool repetitionRequired;
   unsigned int analyzeCount = 0;
@@ -207,7 +208,7 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
 
   // Re-analyze the imported source files
   for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->reAnalyze(context, builder, threadFactory);
+    sourceFile.first->reAnalyze();
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
@@ -219,11 +220,10 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
   } // GCOV_EXCL_STOP
 }
 
-void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                          ThreadFactory &threadFactory, LinkerInterface &linker) {
+void SourceFile::generate() {
   // Generate the imported source files
   for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->generate(context, builder, threadFactory, linker);
+    sourceFile.first->generate();
 
   // Generate this source file
   generator = std::make_shared<GeneratorVisitor>(context, builder, threadFactory, linker, options, *this, objectFilePath);
@@ -291,7 +291,10 @@ void SourceFile::addDependency(const AstNode *declAstNode, const std::string &na
     throw SemanticError(declAstNode->codeLoc, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
-  dependencies.insert({name, {std::make_shared<SourceFile>(options, this, name, filePath, stdFile), declAstNode}});
+  dependencies.insert(
+      {name,
+       {std::make_shared<SourceFile>(context, builder, threadFactory, linker, options, this, name, filePath, stdFile),
+        declAstNode}});
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {

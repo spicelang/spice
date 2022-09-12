@@ -24,7 +24,8 @@ const unsigned int IR_FILE_SKIP_LINES = 4; // Skip the first couple of lines, be
 extern bool updateRefs;
 
 const char *const REF_NAME_SOURCE = "source.spice";
-const char *const REF_NAME_SYNTAX_TREE = "syntax-tree.ast";
+const char *const REF_NAME_PARSE_TREE = "parse-tree.dot";
+const char *const REF_NAME_SYNTAX_TREE = "syntax-tree.dot";
 const char *const REF_NAME_SYMBOL_TABLE = "symbol-table.json";
 const char *const REF_NAME_IR = "ir-code.ll";
 const char *const REF_NAME_IR_O1 = "ir-code-O1.ll";

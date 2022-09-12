@@ -16,8 +16,8 @@
 void compileProject(CliOptions &options) {
   try {
     // Prepare global LLVM assets
-    std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
-    std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
+    llvm::LLVMContext context;
+    llvm::IRBuilder<> builder(context);
 
     // Prepare instance of thread factory, which has to exist exactly once per executable
     ThreadFactory threadFactory = ThreadFactory();
@@ -26,7 +26,8 @@ void compileProject(CliOptions &options) {
     LinkerInterface linker = LinkerInterface(threadFactory, options);
 
     // Create source file instance for main source file
-    SourceFile mainSourceFile = SourceFile(options, nullptr, "root", options.mainSourceFile, false);
+    SourceFile mainSourceFile =
+        SourceFile(&context, &builder, threadFactory, linker, options, nullptr, "root", options.mainSourceFile, false);
 
     // Visualize the parse tree (only runs in debug mode)
     mainSourceFile.visualizeCST(nullptr);
@@ -41,13 +42,13 @@ void compileProject(CliOptions &options) {
     mainSourceFile.preAnalyze();
 
     // Analyze the project (semantic analysis, build symbol table, type inference, type checking, etc.)
-    mainSourceFile.analyze(context, builder, threadFactory);
+    mainSourceFile.analyze();
 
     // Re-analyze the project (resolve generic functions/procedures/structs, etc.)
-    mainSourceFile.reAnalyze(context, builder, threadFactory);
+    mainSourceFile.reAnalyze();
 
     // Generate the project (Coming up with the LLVM types of structs or other types in the root scope)
-    mainSourceFile.generate(context, builder, threadFactory, linker);
+    mainSourceFile.generate();
 
     // Link the target executable (Link object files to executable)
     linker.link();
