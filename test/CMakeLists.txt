@@ -4,9 +4,7 @@ antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/../src/Spice.g4 VISITOR)
 
 set(SOURCES
         main.cpp
-        AnalyzerTest.cpp
-        GeneratorTest.cpp
-        StdTest.cpp
+        TestRunner.cpp
         TestUtil.cpp
         TestUtil.h)
 

@@ -26,7 +26,7 @@ f<int> main() {
 f<int> main() {
     //_rt_str::String s = _rt_str::String("Test");
     //printf("%s", s.getRaw());
-     // Plus
+    // Plus
     printf("Result: %s\n", "Hello " + "World!");
     string s1 = "Hello " + "World!";
     printf("Result: %s\n", s1);
