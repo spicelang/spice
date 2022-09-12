@@ -17,7 +17,7 @@ entry.l1:
 
 assert.then.l2:                                   ; preds = %entry.l1
   %2 = call i32 (ptr, ...) @printf(ptr @0)
-  call void @exit(i32 1)
+  call void @exit(i32 0)
   unreachable
 
 assert.end.l2:                                    ; preds = %entry.l1
