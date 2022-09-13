@@ -116,6 +116,32 @@ void execTestCase(const TestCase &testCase) {
             }
           });
     }
+
+    // Check if the execution output matches the expected output
+    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_EXECUTION_OUTPUT, [&]() {
+      // Prepare linker
+      linker.setOutputPath(TestUtil::getDefaultExecutableName());
+
+      // Parse linker flags
+      std::string linkerFlags;
+      std::string linkerFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_NAME_LINKER_FLAGS;
+      if (FileUtil::fileExists(linkerFlagsFile)) {
+        for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
+          linker.addLinkerFlag(linkerFlag);
+      }
+
+      // Emit object file
+      mainSourceFile.emitObjectFile();
+
+      // Run linker
+      linker.link();
+
+      // Execute binary
+      ExecResult result = FileUtil::exec(TestUtil::getDefaultExecutableName());
+
+      EXPECT_EQ(0, result.exitCode);
+      return result.output;
+    });
   } catch (LexerParserError &error) {
     std::string errorWhat = error.what();
     CommonUtil::replaceAll(errorWhat, "\\", "/");

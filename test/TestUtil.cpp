@@ -157,11 +157,11 @@ bool TestUtil::isUpdateRefsEnabled() { return updateRefs; }
 
 bool TestUtil::isDisabled(const TestCase &testCase) {
   // Check if disabled
-  std::string disabledFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "disabled";
+  std::string disabledFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_SKIP_DISABLED;
   if (FileUtil::fileExists(disabledFile))
     return true;
 #ifdef SPICE_IS_GH_ACTIONS
-  std::string disabledGHFile = testCase.testPath + "/disabled-gh-actions";
+  std::string disabledGHFile = testCase.testPath + CTL_SKIP_GH;
   if (FileUtil::fileExists(disabledGHFile))
     return true;
 #endif
