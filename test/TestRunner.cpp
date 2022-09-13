@@ -123,7 +123,6 @@ void execTestCase(const TestCase &testCase) {
       linker.setOutputPath(TestUtil::getDefaultExecutableName());
 
       // Parse linker flags
-      std::string linkerFlags;
       std::string linkerFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_NAME_LINKER_FLAGS;
       if (FileUtil::fileExists(linkerFlagsFile)) {
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
