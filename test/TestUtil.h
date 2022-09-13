@@ -57,13 +57,15 @@ public:
   struct NameResolver {
     template <class T> std::string operator()(const testing::TestParamInfo<T> &info) const {
       T testCase = static_cast<T>(info.param);
-      return TestUtil::toCamelCase(testCase.testSuite) + TestUtil::toCamelCase(testCase.testName);
+      return TestUtil::toCamelCase(testCase.testSuite) + "_" + TestUtil::toCamelCase(testCase.testName);
     }
   };
 
   // Public static methods
   static std::vector<TestCase> collectTestCases(const std::string &suiteName);
-  static void checkRefMatch(const std::string &refPath, GetOutputFct getActualOutput, ModifyOutputFct modifyOutput = {});
+  static void checkRefMatch(
+      const std::string &refPath, GetOutputFct getActualOutput,
+      ModifyOutputFct modifyOutput = [](std::string &, std::string &) {});
   static std::vector<std::string> getSubdirs(const std::string &basePath);
   static std::string getFileContent(const std::string &filePath);
   static std::vector<std::string> getFileContentLinesVector(const std::string &filePath);

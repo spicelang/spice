@@ -60,7 +60,7 @@ SourceFile::SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, T
   symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
 }
 
-void SourceFile::visualizeCST(std::string *output) {
+void SourceFile::visualizeCST() {
   // Only execute if enabled
   if (!options.dumpCST && !options.testMode)
     return;
@@ -72,7 +72,7 @@ void SourceFile::visualizeCST(std::string *output) {
 
   // Visualize the imported source files
   for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->visualizeCST(output);
+    sourceFile.first->visualizeCST();
 
   // Generate dot code for this source file
   CSTVisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
@@ -115,7 +115,7 @@ void SourceFile::buildAST() {
   antlrCtx.parser->reset();
 }
 
-void SourceFile::visualizeAST(std::string *output) {
+void SourceFile::visualizeAST() {
   // Only execute if enabled
   if (!options.dumpAST && !options.testMode)
     return;
@@ -127,7 +127,7 @@ void SourceFile::visualizeAST(std::string *output) {
 
   // Visualize the imported source files
   for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->visualizeAST(output);
+    sourceFile.first->visualizeAST();
 
   // Generate dot code for this source file
   ASTVisualizerVisitor visualizerVisitor(ast.get());
@@ -248,20 +248,35 @@ void SourceFile::generate() {
     std::cout << "\n";
   } // GCOV_EXCL_STOP
 
-  // Optimize IR code
-  if (options.optLevel >= 1 && options.optLevel <= 5) {
-    generator->optimize();
+  antlrCtx.parser->reset();
+}
 
-    // Save the JSON version in the compiler output
-    compilerOutput.irOptString = generator->getIRString();
+void SourceFile::optimize() {
+  // Skip this stage if optimization is disabled
+  if (options.optLevel >= 1 && options.optLevel <= 5)
+    return;
 
-    // Dump optimized IR code
-    if (options.dumpIR) { // GCOV_EXCL_START
-      std::cout << "\nOptimized IR code:\n";
-      generator->dumpIR();
-      std::cout << "\n";
-    } // GCOV_EXCL_STOP
-  }
+  // Optimize the imported source files
+  for (const auto &[_, sourceFile] : dependencies)
+    sourceFile.first->optimize();
+
+  generator->optimize();
+
+  // Save the JSON version in the compiler output
+  compilerOutput.irOptString = generator->getIRString();
+
+  // Dump optimized IR code
+  if (options.dumpIR) { // GCOV_EXCL_START
+    std::cout << "\nOptimized IR code:\n";
+    generator->dumpIR();
+    std::cout << "\n";
+  } // GCOV_EXCL_STOP
+}
+
+void SourceFile::emitObjectFile() {
+  // Optimize the imported source files
+  for (const auto &[_, sourceFile] : dependencies)
+    sourceFile.first->emitObjectFile();
 
   // Dump assembly code
   if (options.dumpAssembly) { // GCOV_EXCL_START
@@ -269,12 +284,8 @@ void SourceFile::generate() {
     generator->dumpAsm();
   } // GCOV_EXCL_STOP
 
-  // Emit object file
+  // Emit object file and add object file to the linker interface
   generator->emit();
-
-  antlrCtx.parser->reset();
-
-  // Add object file to the linker interface
   linker.addObjectFilePath(objectFilePath);
 
   // Print warning if verifier is disabled

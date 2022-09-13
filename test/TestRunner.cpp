@@ -59,9 +59,8 @@ void execTestCase(const TestCase &testCase) {
 
     // Check CST
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_PARSE_TREE, [&]() {
-      std::string actualOutput;
-      mainSourceFile.visualizeCST(&actualOutput);
-      return actualOutput;
+      mainSourceFile.visualizeCST();
+      return mainSourceFile.compilerOutput.cstString;
     });
 
     // Build AST
@@ -69,9 +68,8 @@ void execTestCase(const TestCase &testCase) {
 
     // Check AST
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYNTAX_TREE, [&]() {
-      std::string actualOutput;
-      mainSourceFile.visualizeAST(&actualOutput);
-      return actualOutput;
+      mainSourceFile.visualizeAST();
+      return mainSourceFile.compilerOutput.astString;
     });
 
     // Execute pre-analyzer and semantic analysis
@@ -86,24 +84,18 @@ void execTestCase(const TestCase &testCase) {
     // Check SymbolTable
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYMBOL_TABLE,
                             [&]() { return mainSourceFile.symbolTable->toJSON().dump(2); });
-
-    SUCCEED();
   } catch (LexerParserError &error) {
     std::string errorWhat = error.what();
     CommonUtil::replaceAll(errorWhat, "\\", "/");
-    FAIL() << "Hit lexer/parser error: " << errorWhat;
+    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT, [&]() { return errorWhat; });
   } catch (SemanticError &error) {
     // Check if the exception message matches the expected output
     std::string errorWhat = error.what();
     CommonUtil::replaceAll(errorWhat, "\\", "/");
-    std::string exceptionFile = testCase.testPath + FileUtil::DIR_SEPARATOR + "exception.out";
-    if (FileUtil::fileExists(exceptionFile)) {
-      std::string expectedException = TestUtil::getFileContent(exceptionFile);
-      EXPECT_EQ(std::string(errorWhat), expectedException);
-    } else {
-      FAIL() << "Expected no error, but got '" << errorWhat << "'";
-    }
+    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT, [&]() { return errorWhat; });
   }
+
+  SUCCEED();
 }
 
 class AnalyzerTests : public testing::TestWithParam<TestCase> {};

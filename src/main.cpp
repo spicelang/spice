@@ -2,6 +2,7 @@
 
 #include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
+#include <exception/CliError.h>
 #include <exception/IRError.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
@@ -12,8 +13,9 @@
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
  * @param options Command line options
+ * @return Successful or not
  */
-void compileProject(CliOptions &options) {
+bool compileProject(CliOptions &options) {
   try {
     // Prepare global LLVM assets
     llvm::LLVMContext context;
@@ -30,13 +32,13 @@ void compileProject(CliOptions &options) {
         SourceFile(&context, &builder, threadFactory, linker, options, nullptr, "root", options.mainSourceFile, false);
 
     // Visualize the parse tree (only runs in debug mode)
-    mainSourceFile.visualizeCST(nullptr);
+    mainSourceFile.visualizeCST();
 
     // Transform CST to an AST
     mainSourceFile.buildAST();
 
     // Visualize the AST (only runs in debug mode)
-    mainSourceFile.visualizeAST(nullptr);
+    mainSourceFile.visualizeAST();
 
     // Pre-analyze the project (collect imports, etc.)
     mainSourceFile.preAnalyze();
@@ -50,18 +52,24 @@ void compileProject(CliOptions &options) {
     // Generate the project (Coming up with the LLVM types of structs or other types in the root scope)
     mainSourceFile.generate();
 
+    // Optimize the project
+    mainSourceFile.optimize();
+
+    // Emit the object files for every particular source file
+    mainSourceFile.emitObjectFile();
+
     // Link the target executable (Link object files to executable)
     linker.link();
+
+    return true;
   } catch (LexerParserError &e) {
     std::cout << e.what() << "\n";
-    std::exit(1); // Exit with result code other than 0
   } catch (SemanticError &e) {
     std::cout << e.what() << "\n";
-    std::exit(1); // Exit with result code other than 0
   } catch (IRError &e) {
     std::cout << e.what() << "\n";
-    std::exit(1); // Exit with result code other than 0
   }
+  return false;
 }
 
 /**
@@ -75,13 +83,21 @@ int main(int argc, char **argv) {
   // Initialize command line parser
   CliInterface cli{};
   cli.createInterface();
-  cli.parse(argc, argv);
-  if (cli.shouldCompile()) {
-    cli.validate();                   // Check if all required fields are present
-    cli.enrich();                     // Prepare the cli options
-    compileProject(cli.getOptions()); // Kick off the compiling process
-    if (cli.shouldRun())
-      cli.runBinary(); // Run executable if appropriate
+  try {
+    cli.parse(argc, argv);
+    if (cli.shouldCompile()) {
+      cli.validate(); // Check if all required fields are present
+      cli.enrich();   // Prepare the cli options
+
+      if (!compileProject(cli.getOptions())) // Kick off the compiling process
+        return EXIT_FAILURE;
+
+      if (cli.shouldRun())
+        cli.runBinary(); // Run executable if required
+    }
+  } catch (CliError &e) {
+    std::cout << e.what() << "\n";
+    return EXIT_FAILURE;
   }
 
   return EXIT_SUCCESS;

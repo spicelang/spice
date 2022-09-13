@@ -35,10 +35,9 @@ std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName) {
   // Convert them to test cases
   std::vector<TestCase> testCases;
   testCases.reserve(EXPECTED_NUMBER_OF_TESTS);
-  for (std::string &groupDirName : testGroupDirs) {
+  for (const std::string &groupDirName : testGroupDirs) {
     std::string groupPath = suitePath + FileUtil::DIR_SEPARATOR + groupDirName;
-    std::vector<std::string> testCaseDirs = TestUtil::getSubdirs(groupPath);
-    for (std::string &caseDirName : testCaseDirs) {
+    for (const std::string &caseDirName : TestUtil::getSubdirs(groupPath)) {
       TestCase tc = {toCamelCase(groupDirName), toCamelCase(caseDirName), groupPath + FileUtil::DIR_SEPARATOR + caseDirName};
       testCases.push_back(tc);
     }

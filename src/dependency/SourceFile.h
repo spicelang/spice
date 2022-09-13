@@ -50,14 +50,15 @@ public:
                       const std::string &filePath, bool stdFile);
 
   // Public methods
-  void visualizeCST(std::string *output);
+  void visualizeCST();
   void buildAST();
-  void visualizeAST(std::string *output);
+  void visualizeAST();
   void preAnalyze();
   void analyze();
   void reAnalyze();
   void generate();
   void optimize();
+  void emitObjectFile();
   void addDependency(const AstNode *declAstNode, const std::string &name, const std::string &filePath, bool stdFile);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
 
