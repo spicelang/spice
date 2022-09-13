@@ -5,8 +5,8 @@
 #include <generator/GeneratorVisitor.h>
 
 StdFunctionManager::StdFunctionManager(GeneratorVisitor *generator) {
-  context = generator->context.get();
-  builder = generator->builder.get();
+  context = generator->context;
+  builder = generator->builder;
   module = generator->module.get();
 }
 

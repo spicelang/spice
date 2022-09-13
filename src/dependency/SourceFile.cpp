@@ -20,8 +20,11 @@
 #include <visualizer/ASTVisualizerVisitor.h>
 #include <visualizer/CSTVisualizerVisitor.h>
 
-SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
-    : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
+SourceFile::SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
+                       LinkerInterface &linker, CliOptions &options, SourceFile *parent, std::string name,
+                       const std::string &filePath, bool stdFile)
+    : context(context), builder(builder), threadFactory(threadFactory), linker(linker), name(std::move(name)), filePath(filePath),
+      stdFile(stdFile), parent(parent), options(options) {
   this->objectFilePath = options.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
 
   // Deduce fileName and fileDir
@@ -57,7 +60,7 @@ SourceFile::SourceFile(CliOptions &options, SourceFile *parent, std::string name
   symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
 }
 
-void SourceFile::visualizeCST(std::string *output) {
+void SourceFile::visualizeCST() {
   // Only execute if enabled
   if (!options.dumpCST && !options.testMode)
     return;
@@ -69,7 +72,7 @@ void SourceFile::visualizeCST(std::string *output) {
 
   // Visualize the imported source files
   for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->visualizeCST(output);
+    sourceFile.first->visualizeCST();
 
   // Generate dot code for this source file
   CSTVisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
@@ -112,7 +115,7 @@ void SourceFile::buildAST() {
   antlrCtx.parser->reset();
 }
 
-void SourceFile::visualizeAST(std::string *output) {
+void SourceFile::visualizeAST() {
   // Only execute if enabled
   if (!options.dumpAST && !options.testMode)
     return;
@@ -124,7 +127,7 @@ void SourceFile::visualizeAST(std::string *output) {
 
   // Visualize the imported source files
   for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->visualizeAST(output);
+    sourceFile.first->visualizeAST();
 
   // Generate dot code for this source file
   ASTVisualizerVisitor visualizerVisitor(ast.get());
@@ -168,12 +171,11 @@ void SourceFile::preAnalyze() {
   }
 }
 
-void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                         const ThreadFactory &threadFactory) {
+void SourceFile::analyze() {
   // Analyze the imported source files
   for (const auto &[importName, sourceFile] : dependencies) {
     // Analyze the imported source file
-    sourceFile.first->analyze(context, builder, threadFactory);
+    sourceFile.first->analyze();
 
     // Mount symbol table to the current one
     sourceFile.first->symbolTable->setParent(symbolTable.get());
@@ -191,8 +193,7 @@ void SourceFile::analyze(const std::shared_ptr<llvm::LLVMContext> &context, cons
   antlrCtx.parser->reset();
 }
 
-void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                           ThreadFactory &threadFactory) {
+void SourceFile::reAnalyze() {
   // Re-Analyze this source file
   bool repetitionRequired;
   unsigned int analyzeCount = 0;
@@ -207,7 +208,7 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
 
   // Re-analyze the imported source files
   for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->reAnalyze(context, builder, threadFactory);
+    sourceFile.first->reAnalyze();
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
@@ -219,11 +220,10 @@ void SourceFile::reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, co
   } // GCOV_EXCL_STOP
 }
 
-void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                          ThreadFactory &threadFactory, LinkerInterface &linker) {
+void SourceFile::generate() {
   // Generate the imported source files
   for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->generate(context, builder, threadFactory, linker);
+    sourceFile.first->generate();
 
   // Generate this source file
   generator = std::make_shared<GeneratorVisitor>(context, builder, threadFactory, linker, options, *this, objectFilePath);
@@ -238,6 +238,8 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
                                "this as a bug on GitHub.");
   } while (repetitionRequired);
 
+  antlrCtx.parser->reset();
+
   // Save the JSON version in the compiler output
   compilerOutput.irString = generator->getIRString();
 
@@ -247,21 +249,34 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
     generator->dumpIR();
     std::cout << "\n";
   } // GCOV_EXCL_STOP
+}
 
-  // Optimize IR code
-  if (options.optLevel >= 1 && options.optLevel <= 5) {
-    generator->optimize();
+void SourceFile::optimize() {
+  // Skip this stage if optimization is disabled
+  if (options.optLevel < 1 || options.optLevel > 5)
+    return;
 
-    // Save the JSON version in the compiler output
-    compilerOutput.irOptString = generator->getIRString();
+  // Optimize the imported source files
+  for (const auto &[_, sourceFile] : dependencies)
+    sourceFile.first->optimize();
 
-    // Dump optimized IR code
-    if (options.dumpIR) { // GCOV_EXCL_START
-      std::cout << "\nOptimized IR code:\n";
-      generator->dumpIR();
-      std::cout << "\n";
-    } // GCOV_EXCL_STOP
-  }
+  generator->optimize();
+
+  // Save the JSON version in the compiler output
+  compilerOutput.irOptString = generator->getIRString();
+
+  // Dump optimized IR code
+  if (options.dumpIR) { // GCOV_EXCL_START
+    std::cout << "\nOptimized IR code:\n";
+    generator->dumpIR();
+    std::cout << "\n";
+  } // GCOV_EXCL_STOP
+}
+
+void SourceFile::emitObjectFile() {
+  // Optimize the imported source files
+  for (const auto &[_, sourceFile] : dependencies)
+    sourceFile.first->emitObjectFile();
 
   // Dump assembly code
   if (options.dumpAssembly) { // GCOV_EXCL_START
@@ -269,12 +284,8 @@ void SourceFile::generate(const std::shared_ptr<llvm::LLVMContext> &context, con
     generator->dumpAsm();
   } // GCOV_EXCL_STOP
 
-  // Emit object file
+  // Emit object file and add object file to the linker interface
   generator->emit();
-
-  antlrCtx.parser->reset();
-
-  // Add object file to the linker interface
   linker.addObjectFilePath(objectFilePath);
 
   // Print warning if verifier is disabled
@@ -291,7 +302,10 @@ void SourceFile::addDependency(const AstNode *declAstNode, const std::string &na
     throw SemanticError(declAstNode->codeLoc, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
-  dependencies.insert({name, {std::make_shared<SourceFile>(options, this, name, filePath, stdFile), declAstNode}});
+  dependencies.insert(
+      {name,
+       {std::make_shared<SourceFile>(context, builder, threadFactory, linker, options, this, name, filePath, stdFile),
+        declAstNode}});
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {

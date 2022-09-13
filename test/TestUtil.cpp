@@ -12,11 +12,61 @@
 
 #include <dirent.h>
 #include <fstream>
-#include <sstream>
-#include <stdexcept>
 #ifdef OS_UNIX
 #include <cstring> // Required by builds on Linux
 #endif
+
+#include <gtest/gtest.h>
+
+#include <util/FileUtil.h>
+
+/**
+ * Collect the test cases in a particular test suite
+ *
+ * @param suitePath Path to the test suite
+ * @return Vector of tests cases
+ */
+std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName) {
+  std::string suitePath = std::string(PATH_TEST_FILES) + suiteName;
+
+  // Collect subdirectories of the given suite
+  std::vector<std::string> testGroupDirs = TestUtil::getSubdirs(suitePath);
+
+  // Convert them to test cases
+  std::vector<TestCase> testCases;
+  testCases.reserve(EXPECTED_NUMBER_OF_TESTS);
+  for (const std::string &groupDirName : testGroupDirs) {
+    std::string groupPath = suitePath + FileUtil::DIR_SEPARATOR + groupDirName;
+    for (const std::string &caseDirName : TestUtil::getSubdirs(groupPath)) {
+      TestCase tc = {toCamelCase(groupDirName), toCamelCase(caseDirName), groupPath + FileUtil::DIR_SEPARATOR + caseDirName};
+      testCases.push_back(tc);
+    }
+  }
+
+  return testCases;
+}
+
+/**
+ * Check if the expected output matches the actual output
+ *
+ * @param refPath Path to the reference file
+ * @param callback Callback to execute the required steps to get the actual test output
+ */
+void TestUtil::checkRefMatch(const std::string &refPath, GetOutputFct getActualOutput, ModifyOutputFct modifyOutputFct) {
+  // Cancel if the ref file does not exist
+  if (!FileUtil::fileExists(refPath))
+    return;
+
+  // Get actual output
+  std::string actualOutput = getActualOutput();
+  if (updateRefs) { // Update refs
+    FileUtil::writeToFile(refPath, actualOutput);
+  } else { // Check refs
+    std::string expectedOutput = getFileContent(refPath);
+    modifyOutputFct(expectedOutput, actualOutput);
+    EXPECT_EQ(expectedOutput, actualOutput);
+  }
+}
 
 /**
  * Get subdirectories of the given path
@@ -104,5 +154,18 @@ std::string TestUtil::getDefaultExecutableName() {
  * @return Enabled or not
  */
 bool TestUtil::isUpdateRefsEnabled() { return updateRefs; }
+
+bool TestUtil::isDisabled(const TestCase &testCase) {
+  // Check if disabled
+  std::string disabledFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_SKIP_DISABLED;
+  if (FileUtil::fileExists(disabledFile))
+    return true;
+#ifdef SPICE_IS_GH_ACTIONS
+  std::string disabledGHFile = testCase.testPath + CTL_SKIP_GH;
+  if (FileUtil::fileExists(disabledGHFile))
+    return true;
+#endif
+  return false;
+}
 
 // GCOV_EXCL_STOP

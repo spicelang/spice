@@ -45,24 +45,24 @@ struct CompilerOutput {
 class SourceFile {
 public:
   // Constructors
-  explicit SourceFile(CliOptions &options, SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
+  explicit SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
+                      LinkerInterface &linker, CliOptions &options, SourceFile *parent, std::string name,
+                      const std::string &filePath, bool stdFile);
 
   // Public methods
-  void visualizeCST(std::string *output);
+  void visualizeCST();
   void buildAST();
-  void visualizeAST(std::string *output);
+  void visualizeAST();
   void preAnalyze();
-  void analyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-               const ThreadFactory &threadFactory);
-  void reAnalyze(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                 ThreadFactory &threadFactory);
-  void generate(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                ThreadFactory &threadFactory, LinkerInterface &linker);
-  void addDependency(const AstNode *declAstNode, const std::string &name, const std::string &filePath,
-                     bool stdFile);
+  void analyze();
+  void reAnalyze();
+  void generate();
+  void optimize();
+  void emitObjectFile();
+  void addDependency(const AstNode *declAstNode, const std::string &name, const std::string &filePath, bool stdFile);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
 
-  // Fields
+  // Public fields
   std::string name;
   std::string fileName;
   std::string filePath;
@@ -78,4 +78,11 @@ public:
   std::shared_ptr<AnalyzerVisitor> analyzer;
   std::shared_ptr<GeneratorVisitor> generator;
   std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const AstNode *>> dependencies;
+
+private:
+  // Private fields
+  llvm::LLVMContext *context;
+  llvm::IRBuilder<> *builder;
+  ThreadFactory &threadFactory;
+  LinkerInterface &linker;
 };

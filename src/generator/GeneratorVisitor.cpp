@@ -29,8 +29,7 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
-GeneratorVisitor::GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context,
-                                   const std::shared_ptr<llvm::IRBuilder<>> &builder, ThreadFactory &threadFactory,
+GeneratorVisitor::GeneratorVisitor(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
                                    const LinkerInterface &linker, const CliOptions &cliOptions, const SourceFile &sourceFile,
                                    const std::string &objectFile)
     : objectFile(objectFile), cliOptions(cliOptions), linker(linker), context(context), builder(builder),

@@ -26,7 +26,7 @@ jobs:
           java-version: 11
 
       - name: Uninstall potential other versions of LLVM
-        run: sudo apt-get purge llvm-12 clang-12 llvm-11 clang-11 llvm-10 clang-10
+        run: sudo apt-get purge llvm-14 clang-14 llvm-13 clang-13 llvm-12 clang-12
 
       - name: Setup latest GCC and build dependencies
         run: |

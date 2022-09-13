@@ -7,8 +7,8 @@
 #include <ast/AstNodes.h>
 #include <ast/AstVisitor.h>
 
-#include <generator/StdFunctionManager.h>
 #include <generator/OpRuleConversionsManager.h>
+#include <generator/StdFunctionManager.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
 
@@ -39,9 +39,9 @@ class Struct;
 class GeneratorVisitor : public AstVisitor {
 public:
   // Constructors
-  explicit GeneratorVisitor(const std::shared_ptr<llvm::LLVMContext> &context, const std::shared_ptr<llvm::IRBuilder<>> &builder,
-                            ThreadFactory &threadFactory, const LinkerInterface &linker, const CliOptions &cliOptions,
-                            const SourceFile &sourceFile, const std::string &objectFile);
+  explicit GeneratorVisitor(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
+                            const LinkerInterface &linker, const CliOptions &cliOptions, const SourceFile &sourceFile,
+                            const std::string &objectFile);
 
   // Friend classes
   friend class StdFunctionManager;
@@ -112,8 +112,8 @@ private:
   const CliOptions &cliOptions;
   const LinkerInterface &linker;
   bool requiresMainFct = true;
-  std::shared_ptr<llvm::LLVMContext> context;
-  std::shared_ptr<llvm::IRBuilder<>> builder;
+  llvm::LLVMContext *context;
+  llvm::IRBuilder<> *builder;
   std::unique_ptr<llvm::Module> module;
   std::unique_ptr<llvm::DIBuilder> diBuilder;
   SymbolTable *currentScope;
