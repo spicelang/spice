@@ -238,6 +238,8 @@ void SourceFile::generate() {
                                "this as a bug on GitHub.");
   } while (repetitionRequired);
 
+  antlrCtx.parser->reset();
+
   // Save the JSON version in the compiler output
   compilerOutput.irString = generator->getIRString();
 
@@ -247,13 +249,11 @@ void SourceFile::generate() {
     generator->dumpIR();
     std::cout << "\n";
   } // GCOV_EXCL_STOP
-
-  antlrCtx.parser->reset();
 }
 
 void SourceFile::optimize() {
   // Skip this stage if optimization is disabled
-  if (options.optLevel >= 1 && options.optLevel <= 5)
+  if (options.optLevel < 1 || options.optLevel > 5)
     return;
 
   // Optimize the imported source files
