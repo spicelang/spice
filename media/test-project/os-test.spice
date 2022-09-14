@@ -17,7 +17,7 @@ f<int> main() {
     server.serve("/test", "Hello World!");
 }*/
 
-import "std/runtime/string_rt" as _rt_str;
+/*import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
     //_rt_str::String s = _rt_str::String("Test");
@@ -34,4 +34,22 @@ f<int> main() {
     string s3 = 2 * 'c' * 7;
     printf("Result: %s\n", s3);
     //printf("%s", s1 + s2);
+}*/
+
+//import "std/data/linked-list" as ll;
+
+public f<bool> src(bool x, bool y) {
+    return 0 == ((x ? 1 : 8) & (y ? 1 : 8));
+}
+
+public f<int> tgt(int x, int y) {
+    return x ^ y;
+}
+
+f<int> main() {
+    printf("Result: %d, %d", src(false, true), tgt(0, 1));
+
+    /*ll::LinkedList<short> linkedList = ll::LinkedList<short>();
+    linkedList.insert(12s);
+    linkedList.insert(5s);*/
 }

@@ -1,0 +1,51 @@
+// Link external functions
+ext<byte*> malloc(long);
+ext free(byte*);
+
+// Add generic type definitions
+type T dyn;
+
+/**
+ * Node of a BinaryTree
+ */
+public type Node<T> struct {
+    Node<T>* childLeft
+    Node<T>* childRight
+    T value
+}
+
+/**
+ * A binary tree is a data structure to fasten up search speeds. Binary trees (when balanced) can be searched in O(log n).
+ * Insert operations, on the other hand, are rather slow, because the tree might get re-balanced.
+ */
+public type BinaryTree<T> struct {
+    Node<T>* rootNode
+    bool isBalanced
+}
+
+public p BinaryTree.ctor() {
+    this.rootNode = nil<Node<T>*>;
+    this.isBalanced = false;
+}
+
+public p BinaryTree.dtor() {
+    if this.rootNode != nil<Node<T>*> {
+        this.rootNode.dtor();
+        free((byte*) this.rootNode);
+    }
+}
+
+public p Node.dtor() {
+    if this.childLeft != nil<Node<T>*> {
+        this.childLeft.dtor();
+        free((byte*) this.childLeft);
+    }
+    if this.childRight != nil<Node<T>*> {
+        this.childRight.dtor();
+        free((byte*) this.childRight);
+    }
+}
+
+public p BinaryTree.insert<T>(T newValue, Node<T>* baseNode = nil<Node<T>*>) {
+    // Search position where to insert
+}
