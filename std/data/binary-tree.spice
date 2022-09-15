@@ -48,4 +48,5 @@ public p Node.dtor() {
 
 public p BinaryTree.insert<T>(T newValue, Node<T>* baseNode = nil<Node<T>*>) {
     // Search position where to insert
+    // ToDo
 }

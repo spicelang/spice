@@ -7,12 +7,6 @@
 #include <iostream>
 #include <sys/stat.h>
 
-#ifdef __unix__
-#define OS_UNIX
-#elif defined(_WIN32) || defined(WIN32)
-#define OS_WINDOWS
-#endif
-
 /**
  * Checks if a certain file exists on the file system
  *
@@ -97,7 +91,7 @@ ExecResult FileUtil::exec(const std::string &cmd) {
       result += buffer;
   }
   int exitCode = pclose(pipe) / 256;
-  return { result, exitCode };
+  return {result, exitCode};
 }
 
 /**
@@ -115,12 +109,32 @@ bool FileUtil::isCommandAvailable(const std::string &cmd) {
 }
 
 /**
+ * Retrieve the dir, where the standard library lives.
+ * Returns an empty string if the std was not found.
+ *
+ * @return Std directory
+ */
+std::string FileUtil::getStdDir() {
+#ifndef OS_WINDOWS
+  if (FileUtil::fileExists("/usr/lib/spice/std"))
+    return "/usr/lib/spice/std/";
+#endif
+  if (std::getenv("SPICE_STD_DIR") && FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
+    std::string stdPath = std::string(std::getenv("SPICE_STD_DIR"));
+    if (stdPath.rfind(FileUtil::DIR_SEPARATOR) != stdPath.size() - 1)
+      stdPath += FileUtil::DIR_SEPARATOR;
+    return stdPath;
+  }
+  return "";
+}
+
+/**
  * Retrieve the dir, where output binaries should go when installing them
  *
  * @return Installation directory
  */
 std::string FileUtil::getSpiceBinDir() {
-#ifdef _WIN32
+#ifdef OS_WINDOWS
   return std::string(std::getenv("USERPROFILE")) + R"(\spice\bin\)";
 #else
   return "/usr/local/bin/";

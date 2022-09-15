@@ -12,12 +12,10 @@
 
 #include <util/FileUtil.h>
 
-#ifdef __unix__
-#define OS_UNIX
-const char *const PATH_TEST_FILES = "./test-files/";
-#elif defined(_WIN32) || defined(WIN32)
-#define OS_WINDOWS
+#ifdef OS_WINDOWS
 const char *const PATH_TEST_FILES = ".\\test-files\\";
+#else
+const char *const PATH_TEST_FILES = "./test-files/";
 #endif
 const unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
 const unsigned int IR_FILE_SKIP_LINES = 4; // Skip the first couple of lines, because they contain target dependent information

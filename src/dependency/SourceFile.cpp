@@ -21,10 +21,10 @@
 #include <visualizer/CSTVisualizerVisitor.h>
 
 SourceFile::SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                       LinkerInterface &linker, CliOptions &options, SourceFile *parent, std::string name,
-                       const std::string &filePath, bool stdFile)
-    : context(context), builder(builder), threadFactory(threadFactory), linker(linker), name(std::move(name)), filePath(filePath),
-      stdFile(stdFile), parent(parent), options(options) {
+                       RuntimeModules &runtimeModules, LinkerInterface &linker, CliOptions &options, SourceFile *parent,
+                       std::string name, const std::string &filePath, bool stdFile)
+    : context(context), builder(builder), threadFactory(threadFactory), runtimeModules(runtimeModules), linker(linker),
+      name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
   this->objectFilePath = options.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
 
   // Deduce fileName and fileDir
@@ -71,8 +71,8 @@ void SourceFile::visualizeCST() {
   dotCode += " label=\"" + replacedFilePath + "\";\n ";
 
   // Visualize the imported source files
-  for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->visualizeCST();
+  for (const auto &sourceFile : dependencies)
+    sourceFile.second.first->visualizeCST();
 
   // Generate dot code for this source file
   CSTVisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
@@ -106,8 +106,8 @@ void SourceFile::visualizeCST() {
 
 void SourceFile::buildAST() {
   // Transform the imported source files
-  for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->buildAST();
+  for (const auto &sourceFile : dependencies)
+    sourceFile.second.first->buildAST();
 
   // Transform this source file
   AstBuilderVisitor astBuilder(ast.get(), filePath);
@@ -126,8 +126,8 @@ void SourceFile::visualizeAST() {
   dotCode += " label=\"" + replacedFilePath + "\";\n ";
 
   // Visualize the imported source files
-  for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->visualizeAST();
+  for (const auto &sourceFile : dependencies)
+    sourceFile.second.first->visualizeAST();
 
   // Generate dot code for this source file
   ASTVisualizerVisitor visualizerVisitor(ast.get());
@@ -165,9 +165,9 @@ void SourceFile::preAnalyze() {
   antlrCtx.parser->reset();
 
   // Pre-analyze the imported source files
-  for (const auto &[_, sourceFile] : dependencies) {
-    sourceFile.first->buildAST();
-    sourceFile.first->preAnalyze();
+  for (const auto &sourceFile : dependencies) {
+    sourceFile.second.first->buildAST();
+    sourceFile.second.first->preAnalyze();
   }
 }
 
@@ -188,9 +188,28 @@ void SourceFile::analyze() {
   }
 
   // Analyze this source file
-  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, threadFactory, *this, options, parent == nullptr, stdFile);
+  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, *this, options, runtimeModules, parent == nullptr, stdFile);
   analyzer->visit(ast.get());
   antlrCtx.parser->reset();
+
+  // If this is the main source file, import the required runtime modules
+  if (parent != nullptr) {
+    std::string runtimePath = FileUtil::getStdDir() + FileUtil::DIR_SEPARATOR + "runtime" + FileUtil::DIR_SEPARATOR;
+    if (runtimeModules.stringRuntime) {
+      SourceFile stringRuntimeFile(context, builder, threadFactory, runtimeModules, linker, options, this, "__rt_string",
+                                   filePath, true);
+      stringRuntimeFile.preAnalyze();
+      stringRuntimeFile.analyze();
+      addDependency(ast.get(), "__rt_string", runtimePath + "string_rt.spice", true);
+    }
+    if (runtimeModules.threadRuntime) {
+      SourceFile stringRuntimeFile(context, builder, threadFactory, runtimeModules, linker, options, this, "__rt_thread",
+                                   filePath, true);
+      stringRuntimeFile.preAnalyze();
+      stringRuntimeFile.analyze();
+      addDependency(ast.get(), "__rt_thread", runtimePath + "thread_rt.spice", true);
+    }
+  }
 }
 
 void SourceFile::reAnalyze() {
@@ -207,8 +226,8 @@ void SourceFile::reAnalyze() {
   } while (repetitionRequired);
 
   // Re-analyze the imported source files
-  for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->reAnalyze();
+  for (const auto &sourceFile : dependencies)
+    sourceFile.second.first->reAnalyze();
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
@@ -257,8 +276,8 @@ void SourceFile::optimize() {
     return;
 
   // Optimize the imported source files
-  for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->optimize();
+  for (const auto &sourceFile : dependencies)
+    sourceFile.second.first->optimize();
 
   generator->optimize();
 
@@ -275,8 +294,8 @@ void SourceFile::optimize() {
 
 void SourceFile::emitObjectFile() {
   // Optimize the imported source files
-  for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->emitObjectFile();
+  for (const auto &sourceFile : dependencies)
+    sourceFile.second.first->emitObjectFile();
 
   // Dump assembly code
   if (options.dumpAssembly) { // GCOV_EXCL_START
@@ -302,10 +321,9 @@ void SourceFile::addDependency(const AstNode *declAstNode, const std::string &na
     throw SemanticError(declAstNode->codeLoc, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
-  dependencies.insert(
-      {name,
-       {std::make_shared<SourceFile>(context, builder, threadFactory, linker, options, this, name, filePath, stdFile),
-        declAstNode}});
+  auto sourceFile = std::make_shared<SourceFile>(context, builder, threadFactory, runtimeModules, linker, options, this, name,
+                                                 filePath, stdFile);
+  dependencies.insert({name, {sourceFile, declAstNode}});
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {

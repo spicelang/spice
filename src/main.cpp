@@ -1,5 +1,11 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
+#ifdef __unix__
+#define OS_UNIX
+#elif defined(_WIN32) || defined(WIN32)
+#define OS_WINDOWS
+#endif
+
 #include <cli/CliInterface.h>
 #include <dependency/SourceFile.h>
 #include <exception/CliError.h>
@@ -21,15 +27,14 @@ bool compileProject(CliOptions &options) {
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder(context);
 
-    // Prepare instance of thread factory, which has to exist exactly once per executable
+    // Prepare global Spice assets
     ThreadFactory threadFactory = ThreadFactory();
-
-    // Prepare linker interface
     LinkerInterface linker = LinkerInterface(threadFactory, options);
+    RuntimeModules runtimeModules = {false, false};
 
     // Create source file instance for main source file
-    SourceFile mainSourceFile =
-        SourceFile(&context, &builder, threadFactory, linker, options, nullptr, "root", options.mainSourceFile, false);
+    SourceFile mainSourceFile(&context, &builder, threadFactory, runtimeModules, linker, options, nullptr, "root",
+                              options.mainSourceFile, false);
 
     // Visualize the parse tree (only runs in debug mode)
     mainSourceFile.visualizeCST();

@@ -9,12 +9,6 @@
 #include <util/FileUtil.h>
 #include <util/ThreadFactory.h>
 
-#ifdef __unix__
-#define OS_UNIX
-#elif defined(_WIN32) || defined(WIN32)
-#define OS_WINDOWS
-#endif
-
 const char *LINKER_EXECUTABLE_NAME = "gcc";
 
 /**
@@ -23,7 +17,7 @@ const char *LINKER_EXECUTABLE_NAME = "gcc";
 void LinkerInterface::link() {
   if (FileUtil::isCommandAvailable(std::string(LINKER_EXECUTABLE_NAME))) // GCOV_EXCL_START
     throw LinkerError(LINKER_NOT_FOUND, "Please check if you have installed " + std::string(LINKER_EXECUTABLE_NAME) +
-                                                  " and added it to the PATH variable"); // GCOV_EXCL_STOP
+                                            " and added it to the PATH variable"); // GCOV_EXCL_STOP
 
   // Check if the output path was set
   if (outputPath.empty())

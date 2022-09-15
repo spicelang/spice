@@ -15,10 +15,9 @@
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 
-AnalyzerVisitor::AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder,
-                                 const ThreadFactory &threadFactory, const SourceFile &sourceFile, CliOptions &options,
-                                 bool requiresMainFct, bool isStdFile)
-    : context(context), builder(builder), threadFactory(threadFactory), requiresMainFct(requiresMainFct), isStdFile(isStdFile) {
+AnalyzerVisitor::AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, const SourceFile &sourceFile,
+                                 CliOptions &options, RuntimeModules &runtimeModules, bool requiresMainFct, bool isStdFile)
+    : context(context), builder(builder), runtimeModules(runtimeModules), requiresMainFct(requiresMainFct), isStdFile(isStdFile) {
   // Retrieve symbol table
   this->currentScope = this->rootScope = sourceFile.symbolTable.get();
 
@@ -67,7 +66,7 @@ std::any AnalyzerVisitor::visitEntry(EntryNode *node) {
 }
 
 std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
-  std::string mainSignature = MAIN_FUNCTION_NAME + "()";
+  std::string mainSignature = std::string(MAIN_FUNCTION_NAME) + "()";
 
   if (runNumber == 1) { // First run
     // Check if the function is already defined

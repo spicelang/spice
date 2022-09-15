@@ -2,23 +2,18 @@
 
 // GCOV_EXCL_START
 
-#ifdef __unix__
-#define OS_UNIX
-#elif defined(_WIN32) || defined(WIN32)
-#define OS_WINDOWS
-#endif
-
 #include "TestUtil.h"
 
 #include <dirent.h>
 #include <fstream>
-#ifdef OS_UNIX
-#include <cstring> // Required by builds on Linux
-#endif
 
 #include <gtest/gtest.h>
 
 #include <util/FileUtil.h>
+
+#ifdef OS_UNIX
+#include <cstring> // Required by builds on Linux
+#endif
 
 /**
  * Collect the test cases in a particular test suite

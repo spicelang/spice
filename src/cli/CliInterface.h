@@ -6,12 +6,6 @@
 
 #include "../../lib/cli11/CLI11.hpp"
 
-#ifdef __unix__
-#define OS_UNIX
-#elif defined(_WIN32) || defined(WIN32)
-#define OS_WINDOWS
-#endif
-
 /**
  * Representation of the various cli options
  */
@@ -42,7 +36,6 @@ class CliInterface {
 public:
   // Constructors
   explicit CliInterface() = default;
-  explicit CliInterface(CliOptions options) : cliOptions(std::move(options)) {}
 
   // Public methods
   void createInterface();
