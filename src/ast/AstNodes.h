@@ -83,8 +83,6 @@ public:
 
   SymbolType setEvaluatedSymbolType(const SymbolType &symbolType) {
     size_t index = getSymbolTypeIndex();
-    // if (symbolTypes.capacity() <= index)
-    //   symbolTypes.reserve(index + 1);
     symbolTypes.insert(symbolTypes.begin() + index, symbolType);
     return symbolType;
   }
@@ -126,7 +124,7 @@ public:
   const CodeLoc codeLoc;
   size_t symbolTypeIndex = SIZE_MAX;
   std::vector<SymbolType> symbolTypes;
-  CompileTimeValue compileTimeValue;
+  CompileTimeValue compileTimeValue = {};
   std::string compileTimeStringValue;
   bool hasDirectCompileTimeValue = false;
 };

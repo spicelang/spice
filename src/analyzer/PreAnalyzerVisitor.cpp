@@ -28,17 +28,10 @@ std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
   if (node->importPath.rfind("std/", 0) == 0) { // Include source file from standard library
     std::string sourceFileIden = node->importPath.substr(node->importPath.find("std/") + 4);
     // Find std library
-    std::string stdPath;
-    if (FileUtil::fileExists("/usr/lib/spice/std")) {
-      stdPath = "/usr/lib/spice/std/";
-    } else if (std::getenv("SPICE_STD_DIR") && FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
-      stdPath = std::string(std::getenv("SPICE_STD_DIR"));
-      if (stdPath.rfind(FileUtil::DIR_SEPARATOR) != stdPath.size() - 1)
-        stdPath += FileUtil::DIR_SEPARATOR;
-    } else {
+    std::string stdPath = FileUtil::getStdDir();
+    if (stdPath.empty())
       throw SemanticError(node->codeLoc, STD_NOT_FOUND,
                           "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
-    }
     // Check if source file exists
     std::string defaultPath = stdPath + sourceFileIden + ".spice";
     std::string osPath = stdPath + sourceFileIden + "_" + cliOptions.targetOs + ".spice";

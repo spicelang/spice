@@ -29,5 +29,6 @@ public:
   static std::string getFileDir(const std::string &filePath);
   static ExecResult exec(const std::string &cmd);
   static bool isCommandAvailable(const std::string &cmd);
+  static std::string getStdDir();
   static std::string getSpiceBinDir();
 };

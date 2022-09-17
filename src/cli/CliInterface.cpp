@@ -37,7 +37,7 @@ void CliInterface::createInterface() {
       std::string installPath = FileUtil::getSpiceBinDir();
       FileUtil::createDirs(installPath);
       installPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
-#ifdef OS_WINDOWS
+#if OS_WINDOWS
       installPath += ".exe";
 #endif
       cliOptions.outputPath = installPath;
@@ -48,7 +48,7 @@ void CliInterface::createInterface() {
       cliOptions.outputPath = ".";
     if (cliOptions.outputPath == "." || cliOptions.outputPath == "..") {
       cliOptions.outputPath = FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
-#ifdef OS_WINDOWS
+#if OS_WINDOWS
       cliOptions.outputPath += ".exe";
 #endif
     }
@@ -307,7 +307,7 @@ void CliInterface::addUninstallSubcommand() {
   subCmd->callback([&]() {
     std::string installPath = FileUtil::getSpiceBinDir();
     installPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
-#ifdef OS_WINDOWS
+#if OS_WINDOWS
     installPath += ".exe";
 #endif
     if (!FileUtil::fileExists(installPath)) {

@@ -1,0 +1,81 @@
+// Link external functions
+ext<byte*> malloc(long);
+ext free(byte*);
+
+// Add generic type definitions
+type T dyn;
+
+/**
+ * Node of a DoublyLinkedList
+ */
+public type Node<T> struct {
+    Node<T>* prev
+    T value
+    Node<T>* next
+}
+
+/**
+ * A doubly linked list is a common, dynamically resizable data structure to store uniform data in order.
+ * It is characterized by the pointer for every item, pointing to the next one and the pointer, pointing
+ * to the previous one.
+ */
+public type DoublyLinkedList<T> struct {
+    Node<T>* head
+    Node<T>* tail
+}
+
+public p Node.dtor() {
+    if this.next != nil<Node<T>*> {
+        this.next.dtor();
+        free((byte*) this.next);
+    }
+}
+
+public p DoublyLinkedList.insert<T>(T newValue, Node<T>* prevNode = nil<Node<T>*>) {
+    // Create new node
+    Node<T>* newNode;
+    unsafe {
+        newNode = (Node<T>*) malloc(sizeof(type Node<T>));
+    }
+    newNode.value = newValue;
+
+    if prevNode != nil<Node<T>*> { // Previous node was passed -> insert after this node
+        // Link the previous to this one
+        newNode.prev = prevNode;
+        // Link the next node to this one
+        newNode.next = prevNode.next;
+        // Link this node to the next node
+        prevNode.next.prev = newNode;
+        // Link this node to the previous node
+        prevNode.next = newNode;
+
+        // Check if the previous node was the last node
+        if prevNode == tail {
+            this.tail = newNode;
+        }
+    } else { // No previous node was passed -> insert at head
+        newNode.next = this.head;
+        this.head = newNode;
+    }
+}
+
+public p DoublyLinkedList.insertHead<T>(T newValue) {
+    this.insert(newValue);
+}
+
+public inline p DoublyLinkedList.insertTail<T>(T newValue) {
+    this.insert(newValue, this.tail);
+}
+
+/*public f<Node<T>*> DoublyLinkedList.find(T value) {
+    Node<T>* currentNode = this.head;
+    while currentNode != nil<Node<T>*> {
+        // Check condition
+        if currentNode.value == value {
+            return currentNode;
+        }
+        // Move to next node
+        currentNode = currentNode.next;
+    }
+    return nil<Node<T>*>;
+}*/

@@ -17,7 +17,6 @@ class AnalyzerVisitor;
 class GeneratorVisitor;
 class AntlrThrowingErrorListener;
 class SymbolTable;
-class ErrorFactory;
 struct CliOptions;
 class LinkerInterface;
 class ThreadFactory;
@@ -42,12 +41,18 @@ struct CompilerOutput {
   std::string irOptString;
 };
 
+// Structs
+struct RuntimeModules {
+  bool stringRuntime = false;
+  bool threadRuntime = false;
+};
+
 class SourceFile {
 public:
   // Constructors
   explicit SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                      LinkerInterface &linker, CliOptions &options, SourceFile *parent, std::string name,
-                      const std::string &filePath, bool stdFile);
+                      RuntimeModules &runtimeModules, LinkerInterface &linker, CliOptions &options, SourceFile *parent,
+                      std::string name, const std::string &filePath, bool stdFile);
 
   // Public methods
   void visualizeCST();
@@ -85,4 +90,5 @@ private:
   llvm::IRBuilder<> *builder;
   ThreadFactory &threadFactory;
   LinkerInterface &linker;
+  RuntimeModules &runtimeModules;
 };

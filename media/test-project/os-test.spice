@@ -1,4 +1,4 @@
-/*import "std/data/vector" as vec;
+import "std/data/vector" as vec;
 import "std/data/pair" as pair;
 
 f<int> main() {
@@ -8,7 +8,7 @@ f<int> main() {
 
     pair::Pair<int, string> p1 = pairVector.get(1);
     printf("Hello %s!", p1.getSecond());
-}*/
+}
 
 /*import "std/net/http" as http;
 
@@ -17,21 +17,14 @@ f<int> main() {
     server.serve("/test", "Hello World!");
 }*/
 
-import "std/runtime/string_rt" as _rt_str;
+/*public f<bool> src(bool x, bool y) {
+    return ((x ? 1 : 4) & (y ? 1 : 4)) == 0;
+}
+
+public f<int> tgt(int x, int y) {
+    return x ^ y;
+}
 
 f<int> main() {
-    //_rt_str::String s = _rt_str::String("Test");
-    //printf("%s", s.getRaw());
-    // Plus
-    printf("Result: %s\n", "Hello " + "World!");
-    string s1 = "Hello " + "World!";
-    printf("Result: %s\n", s1);
-    // Mul
-    printf("Result: %s\n", 4s * "Hi");
-    string s2 = "Hello " * 5;
-    printf("Result: %s\n", s2);
-    printf("Result: %s\n", 20 * 'a');
-    string s3 = 2 * 'c' * 7;
-    printf("Result: %s\n", s3);
-    //printf("%s", s1 + s2);
-}
+    printf("Result: %d, %d", src(false, true), tgt(0, 1));
+}*/

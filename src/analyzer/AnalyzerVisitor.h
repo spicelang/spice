@@ -13,15 +13,15 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/Host.h>
 
-const std::string MAIN_FUNCTION_NAME = "main";
-const std::string RETURN_VARIABLE_NAME = "result";
-const std::string THIS_VARIABLE_NAME = "this";
-const std::string FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
-const std::string CTOR_VARIABLE_NAME = "ctor";
-const std::string DTOR_VARIABLE_NAME = "dtor";
-const std::string STRUCT_SCOPE_PREFIX = "struct:";
-const std::string ENUM_SCOPE_PREFIX = "enum:";
-const std::string UNUSED_VARIABLE_NAME = "_";
+const char *const MAIN_FUNCTION_NAME = "main";
+const char *const RETURN_VARIABLE_NAME = "result";
+const char *const THIS_VARIABLE_NAME = "this";
+const char *const FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
+const char *const CTOR_VARIABLE_NAME = "ctor";
+const char *const DTOR_VARIABLE_NAME = "dtor";
+const char *const STRUCT_SCOPE_PREFIX = "struct:";
+const char *const ENUM_SCOPE_PREFIX = "enum:";
+const char *const UNUSED_VARIABLE_NAME = "_";
 const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
 
 // Forward declarations
@@ -32,6 +32,7 @@ class LinkerInterface;
 class SymbolTable;
 class SymbolTableEntry;
 class SourceFile;
+struct RuntimeModules;
 
 /**
  * Visitor for analyzing a source file.
@@ -42,12 +43,13 @@ class SourceFile;
  * - Type inference
  * - Type checking
  * - Resolve generic functions/procedure/structs
+ * - Detect usages of runtime modules
  */
 class AnalyzerVisitor : public AstVisitor {
 public:
   // Constructors
-  explicit AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, const ThreadFactory &threadFactory,
-                           const SourceFile &sourceFile, CliOptions &options, bool requiresMainFct, bool stdFile);
+  explicit AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, const SourceFile &sourceFile,
+                           CliOptions &options, RuntimeModules &runtimeModules, bool requiresMainFct, bool stdFile);
 
   // Friend classes
   friend class OpRuleManager;
@@ -111,7 +113,7 @@ private:
   const llvm::LLVMContext *context;
   const llvm::IRBuilder<> *builder;
   std::unique_ptr<OpRuleManager> opRuleManager;
-  const ThreadFactory &threadFactory;
+  RuntimeModules &runtimeModules;
   bool requiresMainFct = true;
   bool hasMainFunction = false;
   bool isStdFile = false;

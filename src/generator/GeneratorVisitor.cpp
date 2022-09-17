@@ -351,7 +351,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
                                                            spiceFunc.getThisType().getBaseType().getTemplateTypes());
         // Get the LLVM type of the struct symbol
         SymbolType thisSymbolType = spiceFunc.getThisType();
-        argNames.push_back(THIS_VARIABLE_NAME);
+        argNames.emplace_back(THIS_VARIABLE_NAME);
         llvm::Type *thisType = thisSymbolType.toLLVMType(*context, accessScope)->getPointerTo();
         argTypes.push_back(thisType);
         // Change scope to struct
@@ -547,7 +547,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         std::string structSignature = Struct::getSignature(spiceProc.getThisType().getBaseType().getSubType(),
                                                            spiceProc.getThisType().getBaseType().getTemplateTypes());
         // Get the LLVM type of the struct symbol
-        argNames.push_back(THIS_VARIABLE_NAME);
+        argNames.emplace_back(THIS_VARIABLE_NAME);
         llvm::Type *thisType = spiceProc.getThisType().toLLVMType(*context, accessScope)->getPointerTo();
         argTypes.push_back(thisType);
         // Change scope to struct

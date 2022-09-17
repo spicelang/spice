@@ -1,5 +1,3 @@
-import "std/runtime/string_rt" as _rt_str;
-
 f<int> main() {
     _rt_str::String s = _rt_str::String("Hello ");
     printf("Content: %s\n", s.getRaw());
