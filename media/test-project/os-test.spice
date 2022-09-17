@@ -19,7 +19,7 @@ f<int> main() {
 
 //import "std/runtime/string_rt" as _rt_str;
 
-f<int> main() {
+/*f<int> main() {
     //_rt_str::String s = _rt_str::String("Test");
     //printf("%s", s.getRaw());
     // Plus
@@ -34,10 +34,10 @@ f<int> main() {
     string s3 = 2 * 'c' * 7;
     printf("Result: %s\n", s3);
     //printf("%s", s1 + s2);
-}
+}*/
 
-/*public f<bool> src(bool x, bool y) {
-    return 0 == ((x ? 1 : 7) & (y ? 1 : 6));
+public f<bool> src(bool x, bool y) {
+    return ((x ? 1 : 4) & (y ? 1 : 4)) == 0;
 }
 
 public f<int> tgt(int x, int y) {
@@ -46,4 +46,4 @@ public f<int> tgt(int x, int y) {
 
 f<int> main() {
     printf("Result: %d, %d", src(false, true), tgt(0, 1));
-}*/
+}

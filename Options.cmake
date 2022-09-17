@@ -56,3 +56,10 @@ if (SPICE_IS_GH_ACTIONS)
 else()
     message(STATUS "Spice: Running all the tests.")
 endif()
+
+# Add additional definitions
+IF (WIN32)
+    ADD_DEFINITIONS(-DOS_WINDOWS)
+ELSE()
+    ADD_DEFINITIONS(-DOS_UNIX)
+ENDIF()

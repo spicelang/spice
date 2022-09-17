@@ -12,7 +12,7 @@
 
 #include <util/FileUtil.h>
 
-#ifdef OS_WINDOWS
+#if OS_WINDOWS
 const char *const PATH_TEST_FILES = ".\\test-files\\";
 #else
 const char *const PATH_TEST_FILES = "./test-files/";

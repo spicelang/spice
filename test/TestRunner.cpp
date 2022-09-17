@@ -51,11 +51,12 @@ void execTestCase(const TestCase &testCase) {
   llvm::IRBuilder<> builder(context);
   ThreadFactory threadFactory = ThreadFactory();
   LinkerInterface linker = LinkerInterface(threadFactory, options);
+  RuntimeModules runtimeModules = {false, false};
 
   try {
     // Create source file instance for main source file
-    SourceFile mainSourceFile =
-        SourceFile(&context, &builder, threadFactory, linker, options, nullptr, "root", options.mainSourceFile, false);
+    SourceFile mainSourceFile = SourceFile(&context, &builder, threadFactory, runtimeModules, linker, options, nullptr, "root",
+                                           options.mainSourceFile, false);
 
     // Check CST
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_PARSE_TREE, [&]() {
