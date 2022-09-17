@@ -123,7 +123,9 @@ std::string FileUtil::getStdDir() {
 #endif
   if (std::getenv("SPICE_STD_DIR") && FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
     std::string stdPath = std::string(std::getenv("SPICE_STD_DIR"));
+#ifdef OS_WINDOWS
     CommonUtil::replaceAll(stdPath, "/", "\\");
+#endif
     if (stdPath.rfind(FileUtil::DIR_SEPARATOR) != stdPath.size() - 1)
       stdPath += FileUtil::DIR_SEPARATOR;
     return stdPath;
