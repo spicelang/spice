@@ -2304,8 +2304,13 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
 }
 
 SymbolType AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {
+  // Insert anonymous string symbol
   SymbolType stringStructType(TY_STRING, "", {.isStringStruct = true}, {});
   currentScope->insertAnonymous(stringStructType, declNode);
+
+  // Enable string runtime
+  runtimeModules.stringRuntime = true;
+
   return stringStructType;
 }
 

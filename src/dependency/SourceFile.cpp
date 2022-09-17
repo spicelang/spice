@@ -191,25 +191,6 @@ void SourceFile::analyze() {
   analyzer = std::make_shared<AnalyzerVisitor>(context, builder, *this, options, runtimeModules, parent == nullptr, stdFile);
   analyzer->visit(ast.get());
   antlrCtx.parser->reset();
-
-  // If this is the main source file, import the required runtime modules
-  if (parent != nullptr) {
-    std::string runtimePath = FileUtil::getStdDir() + FileUtil::DIR_SEPARATOR + "runtime" + FileUtil::DIR_SEPARATOR;
-    if (runtimeModules.stringRuntime) {
-      SourceFile stringRuntimeFile(context, builder, threadFactory, runtimeModules, linker, options, this, "__rt_string",
-                                   filePath, true);
-      stringRuntimeFile.preAnalyze();
-      stringRuntimeFile.analyze();
-      addDependency(ast.get(), "__rt_string", runtimePath + "string_rt.spice", true);
-    }
-    if (runtimeModules.threadRuntime) {
-      SourceFile stringRuntimeFile(context, builder, threadFactory, runtimeModules, linker, options, this, "__rt_thread",
-                                   filePath, true);
-      stringRuntimeFile.preAnalyze();
-      stringRuntimeFile.analyze();
-      addDependency(ast.get(), "__rt_thread", runtimePath + "thread_rt.spice", true);
-    }
-  }
 }
 
 void SourceFile::reAnalyze() {
@@ -229,6 +210,25 @@ void SourceFile::reAnalyze() {
   for (const auto &sourceFile : dependencies)
     sourceFile.second.first->reAnalyze();
 
+  // If this is the main source file, import the required runtime modules
+  if (parent == nullptr) {
+    std::vector<std::pair<std::string, std::string>> runtimeFiles;
+    if (runtimeModules.stringRuntime)
+      runtimeFiles.emplace_back("__rt_string", "string_rt");
+    if (runtimeModules.threadRuntime)
+      runtimeFiles.emplace_back("__rt_thread", "thread_rt");
+
+    std::string runtimePath = FileUtil::getStdDir() + "runtime" + FileUtil::DIR_SEPARATOR;
+    for (const auto &[importName, fileName] : runtimeFiles) {
+      addDependency(ast.get(), importName, runtimePath + fileName + ".spice", true);
+      auto &[stringRuntimeFile, _] = dependencies.at(importName);
+      stringRuntimeFile->buildAST();
+      stringRuntimeFile->preAnalyze();
+      stringRuntimeFile->analyze();
+      stringRuntimeFile->reAnalyze();
+    }
+  }
+
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
 
@@ -241,8 +241,8 @@ void SourceFile::reAnalyze() {
 
 void SourceFile::generate() {
   // Generate the imported source files
-  for (const auto &[_, sourceFile] : dependencies)
-    sourceFile.first->generate();
+  for (const auto &sourceFile : dependencies)
+    sourceFile.second.first->generate();
 
   // Generate this source file
   generator = std::make_shared<GeneratorVisitor>(context, builder, threadFactory, linker, options, *this, objectFilePath);

@@ -18,7 +18,7 @@ target triple = "x86_64-w64-windows-gnu"
 @10 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 1
 
 define i32 @main() local_unnamed_addr {
-entry.l3:
+entry.l1:
   %0 = alloca %_s__String__charptr_long_long, align 8
   %1 = alloca %_s__String__charptr_long_long, align 8
   %2 = alloca %_s__String__charptr_long_long, align 8
@@ -91,7 +91,6 @@ entry.l3:
   call void @_mp__String__opMul__int(ptr nonnull %10, i32 3)
   %33 = call ptr @_mf__String__getRaw(ptr nonnull %10)
   %34 = call i32 (ptr, ...) @printf(ptr nonnull @10, ptr %33)
-  call void @_mp__String__dtor(ptr nonnull %5)
   call void @_mp__String__dtor(ptr nonnull %6)
   call void @_mp__String__dtor(ptr nonnull %7)
   call void @_mp__String__dtor(ptr nonnull %8)
@@ -100,6 +99,7 @@ entry.l3:
   call void @_mp__String__dtor(ptr nonnull %0)
   call void @_mp__String__dtor(ptr nonnull %2)
   call void @_mp__String__dtor(ptr nonnull %4)
+  call void @_mp__String__dtor(ptr nonnull %5)
   ret i32 0
 }
 

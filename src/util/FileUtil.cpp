@@ -3,9 +3,10 @@
 #include "FileUtil.h"
 
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <sys/stat.h>
+
+#include <util/CommonUtil.h>
 
 /**
  * Checks if a certain file exists on the file system
@@ -122,6 +123,7 @@ std::string FileUtil::getStdDir() {
 #endif
   if (std::getenv("SPICE_STD_DIR") && FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
     std::string stdPath = std::string(std::getenv("SPICE_STD_DIR"));
+    CommonUtil::replaceAll(stdPath, "/", "\\");
     if (stdPath.rfind(FileUtil::DIR_SEPARATOR) != stdPath.size() - 1)
       stdPath += FileUtil::DIR_SEPARATOR;
     return stdPath;

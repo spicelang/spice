@@ -9,7 +9,7 @@
 #include <util/FileUtil.h>
 #include <util/ThreadFactory.h>
 
-const char *LINKER_EXECUTABLE_NAME = "gcc";
+const char *const LINKER_EXECUTABLE_NAME = "gcc";
 
 /**
  * Start the linking process
