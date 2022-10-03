@@ -2,7 +2,7 @@
 title: Builtin Functions
 ---
 
-Spice offers two builtin functions out of the box. Those can be used anywhere without having to be imported manually and can be used to establish a minimal setup for testing or the like.
+Spice offers five builtin functions out of the box. Those can be used anywhere without having to be imported manually and can be used to establish a minimal setup for testing or the like.
 
 ## The `printf` builtin
 Printf works the same as the `printf` function in C and is designed for printing a string to the standard text output (cout).
@@ -77,4 +77,37 @@ len({1, 2, 3, 4}); // 4
 
 string[5] stringArray = {"string1", "string2", "string3"};
 len(stringArray); // 5
+```
+
+## The `tid` builtin
+Tid returns the thread id of the current thread.
+
+### Signature
+`int tid()`
+
+### Usage example
+```spice
+int threadId = tid();
+```
+
+## The `join` builtin
+Join waits for the termination of the one or more given threads.
+It returns the number of joined threads as an `int`.
+
+### Signature
+`int join(byte* ...threadIds)`
+
+### Usage example
+```spice
+byte* t1 = thread {
+    usleep(300 * 1000);
+    printf("Thread 1 finished\n");
+};
+
+byte* t2 = thread {
+    usleep(100 * 1000);
+    printf("Thread 2 finished\n");
+};
+
+int threadsJoined = join(t1, t2);
 ```
