@@ -45,7 +45,7 @@ The `inline` modifier can be used for functions and procedures to mark them as i
 
 ### Applicable for
 
-- Function
+- Functions
 - Procedures
 
 ### Example
