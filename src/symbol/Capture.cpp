@@ -7,14 +7,7 @@
  *
  * @return Capture name or symbol name if no capture name was set
  */
-std::string Capture::getName() const { return name.empty() ? capturedEntry->getName() : name; }
-
-/**
- * Retrieve the captured symbol table entry
- *
- * @return Captured entry
- */
-SymbolTableEntry *Capture::getEntry() const { return capturedEntry; }
+std::string Capture::getName() const { return name.empty() ? capturedEntry->name : name; }
 
 /**
  * Retrieve the state of the capture
@@ -32,7 +25,7 @@ SymbolState Capture::getState() const { return state; }
 void Capture::setCaptureMode(CaptureMode captureMode) {
   mode = captureMode;
   // Set the captured symbol table entry to volatile if appropriate
-  capturedEntry->setVolatile(captureMode == READ_WRITE);
+  capturedEntry->isVolatile = captureMode == READ_WRITE;
 }
 
 /**

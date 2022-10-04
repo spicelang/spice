@@ -89,7 +89,7 @@ SymbolType Struct::getSymbolType() const {
     for (const auto &templateType : templateTypes)
       concreteTemplateTypes.push_back(templateType);
   }
-  return SymbolType(TY_STRUCT, name, { .arraySize = 0 }, concreteTemplateTypes);
+  return SymbolType(TY_STRUCT, name, {.arraySize = 0}, concreteTemplateTypes);
 }
 
 /**
@@ -118,7 +118,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
         }
       }
     } else {
-      currentFieldTypes.push_back(fieldEntry->getType());
+      currentFieldTypes.push_back(fieldEntry->type);
     }
   }
 
@@ -150,18 +150,6 @@ bool Struct::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
  * @param symTab Symbol table
  */
 void Struct::setSymbolTable(SymbolTable *symTab) { this->symbolTable = symTab; }
-
-/**
- * Set the struct to used. The compiler only generates IR if the struct is used
- */
-void Struct::setUsed() { used = true; }
-
-/**
- * Check if the struct is used and the compiler needs to generate IR for it
- *
- * @return Used or not
- */
-bool Struct::isUsed() const { return used; }
 
 /**
  * Retrieve the declaration node of this struct

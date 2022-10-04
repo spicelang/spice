@@ -17,7 +17,7 @@ Within the template string you can use the `\n` control character to achieve a l
 
 ### Placeholders
 | Placeholder | Type                        | Output                                        | Example      |
-| ----------- | --------------------------- | --------------------------------------------- | ------------ |
+|-------------|-----------------------------|-----------------------------------------------|--------------|
 | `%c`        | `char`                      | Character                                     | a            |
 | `%d`/`%i`   | `int`, `short`, `long`      | Signed decimal integer                        | 392          |
 | `%u`        | `int`, `short`, `long`      | Unsigned decimal integer                      | 7235         |

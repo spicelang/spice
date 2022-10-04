@@ -100,7 +100,7 @@ variable2 = false;
 ## The `dyn` data type
 The `dyn` data type is a more unconventional data type. Dyn stands for dynamic and means that the `dyn` data type can hold any value of one of the eight types `double`, `int`, `short`, `long`, `byte`, `char`, `string` or `bool`. The concrete type of a `dyn` variable gets inferred at compile time so that the language stays type-safe. This also means, that as soon as you assign a value to a `dyn` variable, the type gets set fixed and is not mutable anymore.
 
-Dyn variables can defined like this:
+Dyn variables can be defined like this:
 
 ```spice
 dyn variable1 = 1.24;

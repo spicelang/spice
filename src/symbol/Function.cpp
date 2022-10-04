@@ -259,30 +259,6 @@ bool Function::hasSubstantiatedGenerics() const {
 bool Function::isFullySubstantiated() const { return hasSubstantiatedArgs() && hasSubstantiatedGenerics(); }
 
 /**
- * Set the function to used. The compiler only generates IR if the function is used
- */
-void Function::setUsed() { used = true; }
-
-/**
- * Check if the function is used and the compiler needs to generate IR for it
- *
- * @return Used or not
- */
-bool Function::isUsed() const { return used; }
-
-/**
- * Set the function to analyzed. It will not be analyzed again
- */
-void Function::setAnalyzed() { alreadyAnalyzed = true; }
-
-/**
- * Check if the function was already analyzed
- *
- * @return Already analyzed or not
- */
-bool Function::wasAlreadyAnalyzed() const { return alreadyAnalyzed; }
-
-/**
  * Retrieve the declaration node of this function
  *
  * @return Declaration node

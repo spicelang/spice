@@ -36,13 +36,14 @@ public:
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   void setSymbolTable(SymbolTable *symTab);
-  void setUsed();
-  [[nodiscard]] bool isUsed() const;
   [[nodiscard]] const AstNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
   // Public static methods
   static std::string getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes);
+
+  // Public members
+  bool isUsed = false;
 
 private:
   // Members
@@ -52,5 +53,4 @@ private:
   std::vector<GenericType> templateTypes;
   SymbolTable *symbolTable = nullptr;
   const AstNode *declNode;
-  bool used = false;
 };

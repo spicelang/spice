@@ -178,7 +178,7 @@ void SourceFile::analyze() {
     sourceFile.first->analyze();
 
     // Mount symbol table to the current one
-    sourceFile.first->symbolTable->setParent(symbolTable.get());
+    sourceFile.first->symbolTable->parent = symbolTable.get();
     symbolTable->mountChildBlock(importName, sourceFile.first->symbolTable.get());
 
     // Insert import symbol

@@ -4,7 +4,7 @@ title: Hello World
 
 In this example, we will code a simple "Hello World" program in Spice. What it does is to simply print "Hello World!" to the console when it gets started. The guide assumes, that you already have Spice installed on your development system and are ready to go.
 
-The first thing you need is a new file to hold the Spice code for your progam. Please create a new file in an arbitrary directory and call it `hello-world.spice`. Open up the file in a text editor of your choice and paste following code in it:
+The first thing you need is a new file to hold the Spice code for your program. Please create a new file in an arbitrary directory and call it `hello-world.spice`. Open up the file in a text editor of your choice and paste following code in it:
 
 ```spice
 f<int> main() {

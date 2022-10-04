@@ -7,7 +7,7 @@ Spice supports the linkage of several source files to one executable. To do so, 
 ## Importing own source files
 Here is an example for importing an own source file into the main source file. You have a source file, containing some util functions, which you want to use in your main source file
 
-**Util functios file `utils.spice`:**
+**Util functions file `utils.spice`:**
 ```spice
 // Simple recursive fibonacci algorithm
 f<int> fib(int n) {

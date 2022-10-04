@@ -18,8 +18,8 @@ This is the home repo of the Spice programming language. Spice is a compiled lan
 
 If you like Spice, please consider a GitHub star! ⭐
 
-|:warning: | The compiler of the Spice language is still in alpha stages and under development. Please note that code may behave differently in the future or even break due to the volatility of the compiler.  |
-|----------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| :warning: | The compiler of the Spice language is still in alpha stages and under development. Please note that code may behave differently in the future or even break due to the volatility of the compiler. |
+|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
 ## Documentation
 Please visit the documentation at [spicelang.com](https://www.spicelang.com). <br>

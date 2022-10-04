@@ -10,10 +10,10 @@ string[5] myStringArray = { "First item", "Second Item", "Third item" };
 ```
 
 The `5` in the brackets is the size of the array. The initial values can be provided in curly braces after the assign operator and must be of the same data type. <br>
-As you can see, there are less values (3) than the array size is (5). The rest of the values are set to the default data type value. The default data type values are:
+As you can see, there are fewer values (3) than the array size is (5). The rest of the values are set to the default data type value. The default data type values are:
 
 | Type     | Default value                 |
-| -------- | ----------------------------- |
+|----------|-------------------------------|
 | `int`    | `0`                           |
 | `double` | `0.0`                         |
 | `string` | `""`                          |

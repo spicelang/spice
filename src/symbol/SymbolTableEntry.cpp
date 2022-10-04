@@ -7,20 +7,6 @@
 #include <util/CodeLoc.h>
 
 /**
- * Retrieve the name of the current symbol
- *
- * @return Name of the curren symbol
- */
-std::string SymbolTableEntry::getName() const { return name; }
-
-/**
- * Retrieve the type of the current symbol
- *
- * @return Type of the current symbol
- */
-const SymbolType &SymbolTableEntry::getType() const { return type; }
-
-/**
  * Update the type of a symbol. This is used for substantiateOptionalArgs types in the process of type inference
  *
  * @param newType New type of the current symbol
@@ -34,27 +20,6 @@ void SymbolTableEntry::updateType(const SymbolType &newType, bool force) {
     throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn"); // GCOV_EXCL_LINE
   }
 }
-
-/**
- * Get the parent symbol table
- *
- * @return Parent symbol table
- */
-SymbolTable *SymbolTableEntry::getScope() const { return scope; }
-
-/**
- * Retrieve the symbol specifiers of the current symbol
- *
- * @return Symbol Specifiers of the current symbol
- */
-SymbolSpecifiers SymbolTableEntry::getSpecifiers() const { return specifiers; }
-
-/**
- * Retrieve the state of the current symbol
- *
- * @return State of the current symbol
- */
-SymbolState SymbolTableEntry::getState() const { return state; }
 
 /**
  * Update the state of the current symbol
@@ -75,13 +40,6 @@ void SymbolTableEntry::updateState(SymbolState newState, const CodeLoc &codeLoc,
     throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
   state = newState;
 }
-
-/**
- * Retrieve the node where the symbol was declared
- *
- * @return Declaration node
- */
-const AstNode *SymbolTableEntry::getDeclNode() const { return declNode; }
 
 /**
  * Retrieve the code location where the symbol was declared
@@ -123,6 +81,7 @@ llvm::Value *SymbolTableEntry::getAddress() const { return memAddress.empty() ? 
  * @param address Address of the symbol in memory
  */
 void SymbolTableEntry::updateAddress(llvm::Value *address) {
+  assert(address != nullptr);
   if (!memAddress.empty())
     memAddress.pop();
   memAddress.push(address);
@@ -133,40 +92,15 @@ void SymbolTableEntry::updateAddress(llvm::Value *address) {
  *
  * @param address Address of the symbol in memory
  */
-void SymbolTableEntry::pushAddress(llvm::Value *address) { memAddress.push(address); }
+void SymbolTableEntry::pushAddress(llvm::Value *address) {
+  assert(address != nullptr);
+  memAddress.push(address);
+}
 
 /**
  * Pop an address from the stack. Can be called when leaving a nested function
  */
 void SymbolTableEntry::popAddress() { memAddress.pop(); }
-
-/**
- * Retrieve the order index of the symbol table entry
- *
- * @return Order index
- */
-size_t SymbolTableEntry::getOrderIndex() const { return orderIndex; }
-
-/**
- * Returns if the symbol is in a local scope or in the global scope
- *
- * @return Global or not
- */
-bool SymbolTableEntry::isGlobal() const { return global; }
-
-/**
- * Returns if the symbol needs to be volatile
- *
- * @return Volatile or not
- */
-bool SymbolTableEntry::isVolatile() const { return volatility; }
-
-/**
- * Set the volatility of the symbol
- *
- * @param volatility Volatile or not
- */
-void SymbolTableEntry::setVolatile(bool vol) { volatility = vol; }
 
 /**
  * Retrieve number of references to the symbol
@@ -179,18 +113,6 @@ void SymbolTableEntry::setVolatile(bool vol) { volatility = vol; }
  * Increase the number of references to the symbol
  */
 // void SymbolTableEntry::increaseRefCount() { refCount++; }
-
-/**
- * Returns if the symbol is used somewhere
- *
- * @return isUsed
- */
-bool SymbolTableEntry::isUsed() const { return used; }
-
-/**
- * Sets the state of the symbol to used
- */
-void SymbolTableEntry::setUsed() { used = true; }
 
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.
@@ -218,7 +140,7 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   result["orderIndex"] = orderIndex;
   result["state"] = state == INITIALIZED ? "initialized" : "declared";
   result["specifiers"] = specifiers.toJSON();
-  result["isGlobal"] = global;
-  result["isVolatile"] = volatility;
+  result["isGlobal"] = isGlobal;
+  result["isVolatile"] = isVolatile;
   return result;
 }

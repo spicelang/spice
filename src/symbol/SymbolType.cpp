@@ -308,20 +308,6 @@ void SymbolType::setTemplateTypes(std::vector<SymbolType> templateTypes) {
 std::vector<SymbolType> SymbolType::getTemplateTypes() const { return typeChain.top().templateTypes; }
 
 /**
- * Set the type to signed
- *
- * @param isSigned Signed or unsigned
- */
-void SymbolType::setSigned(bool isSigned) { isBaseTypeSigned = isSigned; }
-
-/**
- * Check if the current type is signed
- *
- * @return Signed or unsigned
- */
-bool SymbolType::isSigned() const { return isBaseTypeSigned; }
-
-/**
  * Get the name of the symbol type as a string
  *
  * @param withSize Include the array size for sized types

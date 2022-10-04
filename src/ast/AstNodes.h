@@ -190,8 +190,8 @@ public:
   bool isMethod = false;
   bool isGeneric = false;
   bool hasParams = false;
+  SymbolTable *structScope = nullptr;
   SymbolTable *fctScope = nullptr;
-  Function *spiceFunc = nullptr;
 };
 
 // ========================================================== ProcDefNode ========================================================
@@ -221,8 +221,8 @@ public:
   bool isMethod = false;
   bool isGeneric = false;
   bool hasParams = false;
+  SymbolTable *structScope = nullptr;
   SymbolTable *procScope = nullptr;
-  Function *spiceProc = nullptr;
 };
 
 // ========================================================= StructDefNode =======================================================
@@ -262,6 +262,7 @@ public:
 
   // Public members
   std::string enumName;
+  SymbolTable *enumScope;
 };
 
 // ====================================================== GenericTypeDefNode =====================================================
@@ -320,6 +321,7 @@ public:
   bool hasArgs = false;
   bool isVarArg = false;
   bool isDll = false;
+  SymbolTable *fctScope = nullptr;
 };
 
 // ========================================================= ThreadDefNode =======================================================
@@ -337,6 +339,9 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "thread:" + codeLoc.toString(); }
+
+  // Public members
+  SymbolTable *threadScope = nullptr;
 };
 
 // ====================================================== UnsafeBlockDefNode =====================================================
@@ -354,6 +359,9 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "unsafe:" + codeLoc.toString(); }
+
+  // Public members
+  SymbolTable *unsafeBlockScope = nullptr;
 };
 
 // ========================================================== ForLoopNode ========================================================
