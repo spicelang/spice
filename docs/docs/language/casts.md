@@ -9,15 +9,15 @@ Casting an int to the short data type:
 short shortVar = (short) 12;
 ```
 
-Example for casting for a function fall:
+Example for casting for a function call:
 ```spice
-p testFunc(char c, long l) {
+p testProc(char c, long l) {
     printf("Char was: %c, long was: %d", c, l);
 }
 
 f<int> main() {
     int i = 1234567;
     short s = 65s;
-    testFunc((char) s, (long) i);
+    testProc((char) s, (long) i);
 }
 ```
