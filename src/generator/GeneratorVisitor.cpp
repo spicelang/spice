@@ -842,16 +842,16 @@ std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
   llvm::Function *threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage, threadedFctName, module.get());
 
   // Change scope
-  currentScope = node->threadScope;
+  currentScope = currentScope->getChild(node->getScopeId());
   assert(currentScope != nullptr);
 
   // Collect arg names, types and addresses from captures of the nested scope
   std::vector<std::string> argStructFieldNames;
   std::vector<llvm::Type *> argStructFieldTypes;
   std::vector<llvm::Value *> argStructFieldPointers;
-  for (const auto &capture : node->threadScope->getCaptures()) {
+  for (const auto &capture : currentScope->getCaptures()) {
     argStructFieldNames.push_back(capture.first);
-    argStructFieldTypes.push_back(capture.second.capturedEntry->type.toLLVMType(*context, node->threadScope)->getPointerTo());
+    argStructFieldTypes.push_back(capture.second.capturedEntry->type.toLLVMType(*context, currentScope)->getPointerTo());
     argStructFieldPointers.push_back(capture.second.capturedEntry->getAddress());
   }
 
@@ -880,10 +880,10 @@ std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
   // Store function args
   llvm::Value *recArgStructPtr = builder->CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
   unsigned int i = 0;
-  for (const auto &[name, capture] : node->threadScope->getCaptures()) {
+  for (const auto &[name, capture] : currentScope->getCaptures()) {
     std::string argName = argStructFieldNames[i];
     llvm::Value *memAddress = builder->CreateStructGEP(argStructTy, recArgStructPtr, i);
-    llvm::Type *loadType = capture.capturedEntry->type.toLLVMType(*context, node->threadScope)->getPointerTo();
+    llvm::Type *loadType = capture.capturedEntry->type.toLLVMType(*context, currentScope)->getPointerTo();
     memAddress = builder->CreateLoad(loadType, memAddress);
     // Push address to each capture to ensure that the address is valid and known to the inner function
     capture.capturedEntry->pushAddress(memAddress);
@@ -894,11 +894,11 @@ std::any GeneratorVisitor::visitThreadDef(ThreadDefNode *node) {
   visit(node->stmtLst());
 
   // Pop address from each capture to ensure that the address is valid and known to the outer function
-  for (const auto &capture : node->threadScope->getCaptures())
+  for (const auto &capture : currentScope->getCaptures())
     capture.second.capturedEntry->popAddress();
 
   // Change scope back
-  currentScope = node->threadScope->parent;
+  currentScope = currentScope->parent;
   assert(currentScope != nullptr);
 
   // Insert return statement and verify function
@@ -944,14 +944,14 @@ std::any GeneratorVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   setSourceLocation(node);
 
   // Change scope
-  currentScope = node->unsafeBlockScope;
+  currentScope = currentScope->getChild(node->getScopeId());
   assert(currentScope != nullptr);
 
   // Visit instructions in the block
   visit(node->stmtLst());
 
   // Change scope back
-  currentScope = node->unsafeBlockScope->parent;
+  currentScope = currentScope->parent;
   assert(currentScope != nullptr);
 
   return nullptr;

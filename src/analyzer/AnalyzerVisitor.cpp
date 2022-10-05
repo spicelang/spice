@@ -135,7 +135,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     SymbolType thisType = SymbolType(TY_DYN);
     SymbolType thisPtrType = thisType;
     if (node->isMethod) {
-      SymbolTableEntry *structEntry = node->fctScope->lookup(node->structName);
+      SymbolTableEntry *structEntry = node->structScope->lookup(node->structName);
       assert(structEntry != nullptr);
       thisType = structEntry->type;
       thisPtrType = thisType.toPointer(node->codeLoc);
@@ -340,7 +340,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     SymbolType thisType = SymbolType(TY_DYN);
     SymbolType thisPtrType = thisType;
     if (node->isMethod) {
-      SymbolTableEntry *structEntry = currentScope->lookup(node->structName);
+      SymbolTableEntry *structEntry = node->structScope->lookup(node->structName);
       thisType = structEntry->type;
       thisPtrType = thisType.toPointer(node->codeLoc);
       for (const auto &templateType : thisType.getTemplateTypes())
@@ -353,7 +353,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         auto templateType = any_cast<SymbolType>(visit(dataType));
         if (!templateType.is(TY_GENERIC))
           throw SemanticError(dataType->codeLoc, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
-        GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
+        GenericType *genericType = node->procScope->lookupGenericType(templateType.getSubType());
         assert(genericType != nullptr);
         templateTypes.push_back(*genericType);
       }
@@ -388,7 +388,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     if (node->isMethod) {
       auto thisSymbolSpecifiers = SymbolSpecifiers(thisPtrType);
       thisSymbolSpecifiers.setConst(true);
-      currentScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisSymbolSpecifiers, INITIALIZED, node);
+      node->procScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisSymbolSpecifiers, INITIALIZED, node);
     }
 
     // Return to old scope
@@ -801,21 +801,21 @@ std::any AnalyzerVisitor::visitExtDecl(ExtDeclNode *node) {
 
 std::any AnalyzerVisitor::visitThreadDef(ThreadDefNode *node) {
   // Create a new scope
-  node->threadScope = currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_THREAD_BODY);
-  node->threadScope->isCapturingRequired = true; // Requires capturing because the LLVM IR will end up in a separate function
+  currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_THREAD_BODY);
+  currentScope->isCapturingRequired = true; // Requires capturing because the LLVM IR will end up in a separate function
 
   // Visit statement list in new scope
   visit(node->stmtLst());
 
   // Return to old scope
-  currentScope = node->threadScope->parent;
+  currentScope = currentScope->parent;
 
   return node->setEvaluatedSymbolType(SymbolType(TY_BYTE).toPointer(node->codeLoc));
 }
 
 std::any AnalyzerVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Create a new scope
-  node->unsafeBlockScope = currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_UNSAFE_BODY);
+  currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_UNSAFE_BODY);
 
   // Enable unsafe operations
   allowUnsafeOperations = true;
@@ -827,7 +827,7 @@ std::any AnalyzerVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   allowUnsafeOperations = false;
 
   // Return to old scope
-  currentScope = node->unsafeBlockScope->parent;
+  currentScope = currentScope->parent;
 
   return nullptr;
 }

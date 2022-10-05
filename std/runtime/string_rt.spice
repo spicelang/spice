@@ -26,7 +26,6 @@ public p String.ctor(const string value = "") {
 
     // Allocate space for the initial number of elements
     unsafe {
-        this.capacity = 1l;
         this.contents = (char*) malloc(sizeof(type char) * this.capacity);
     }
 

@@ -339,9 +339,6 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "thread:" + codeLoc.toString(); }
-
-  // Public members
-  SymbolTable *threadScope = nullptr;
 };
 
 // ====================================================== UnsafeBlockDefNode =====================================================
@@ -359,9 +356,6 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "unsafe:" + codeLoc.toString(); }
-
-  // Public members
-  SymbolTable *unsafeBlockScope = nullptr;
 };
 
 // ========================================================== ForLoopNode ========================================================
