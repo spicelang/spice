@@ -1,9 +1,9 @@
 const int size = 9;
 
 p print(int[size][size] grid) {
-    for int i = 0; i < size; i++ {
-        for int j = 0; j < size; j++ {
-             printf("%d ", grid[i][j]);
+    foreach int[size] row : grid {
+        foreach int cell : row {
+            printf("%d ", cell);
         }
         printf("\n");
     }

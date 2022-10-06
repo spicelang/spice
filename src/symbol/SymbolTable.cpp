@@ -358,13 +358,13 @@ void SymbolTable::insertFunction(const Function &function) {
   functions.insert({codeLocStr, std::make_shared<std::map<std::string, Function>>()});
 
   // Check if function is already substantiated
-  if (function.hasSubstantiatedArgs()) {
+  if (function.hasSubstantiatedParams()) {
     insertSubstantiatedFunction(function, declNode);
     return;
   }
 
   // Substantiate the function and insert the substantiated instances
-  for (const auto &fct : function.substantiateOptionalArgs())
+  for (const auto &fct : function.substantiateOptionalParams())
     insertSubstantiatedFunction(fct, declNode);
 }
 
@@ -412,7 +412,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
       }
 
       // Check arg types requirement
-      auto argList = f.getArgList();
+      auto argList = f.getParamList();
       if (argList.size() != callArgTypes.size())
         continue;
       bool differentArgTypes = false; // Note: This is a workaround for a break from an inner loop
@@ -542,7 +542,7 @@ Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc, const st
  * @param codeLoc Code location
  */
 void SymbolTable::insertSubstantiatedFunction(const Function &function, const AstNode *declNode) {
-  if (!function.hasSubstantiatedArgs())
+  if (!function.hasSubstantiatedParams())
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
   // Check if the function exists already

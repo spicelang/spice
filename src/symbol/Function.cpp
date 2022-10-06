@@ -36,23 +36,23 @@ SymbolType Function::getThisType() const { return thisType; }
 SymbolType Function::getReturnType() const { return returnType; }
 
 /**
- * Retrieve the argument types of the current function
+ * Retrieve the parameter types of the current function
  *
- * @return Vector of argument types
+ * @return Vector of parameter types
  */
-std::vector<SymbolType> Function::getArgTypes() const {
-  std::vector<SymbolType> newArgTypes;
-  for (const auto &argType : argList)
-    newArgTypes.push_back(argType.first);
-  return newArgTypes;
+std::vector<SymbolType> Function::getParamTypes() const {
+  std::vector<SymbolType> newParamTypes;
+  for (const auto &paramType : paramList)
+    newParamTypes.push_back(paramType.first);
+  return newParamTypes;
 }
 
 /**
- * Retrieve the argument list of the current function
+ * Retrieve the parameter list of the current function
  *
- * @return Argument list
+ * @return Parameter list
  */
-ArgList Function::getArgList() const { return argList; }
+ParamList Function::getParamList() const { return paramList; }
 
 /**
  * Mange the function and return the mangled string
@@ -85,14 +85,14 @@ std::string Function::getMangledName() const {
       thisTyStr += "_" + templateType.getName(false, true);
   }
 
-  // Arg type string
-  std::string argTyStr;
-  for (const auto &argType : argList) {
-    if (!argTyStr.empty())
-      argTyStr += "_";
-    argTyStr += argType.first.getName(false, true);
-    if (argType.second)
-      argTyStr += "?";
+  // Param type string
+  std::string paramTyStr;
+  for (const auto &paramType : paramList) {
+    if (!paramTyStr.empty())
+      paramTyStr += "_";
+    paramTyStr += paramType.first.getName(false, true);
+    if (paramType.second)
+      paramTyStr += "?";
   }
 
   // Template type string
@@ -108,8 +108,8 @@ std::string Function::getMangledName() const {
   if (!templateTyStr.empty())
     mangledName += "__" + templateTyStr;
   mangledName += "__" + name;
-  if (!argTyStr.empty())
-    mangledName += "__" + argTyStr;
+  if (!paramTyStr.empty())
+    mangledName += "__" + paramTyStr;
   return mangledName;
 }
 
@@ -128,14 +128,14 @@ std::string Function::getSignature() const {
   if (!returnType.is(TY_DYN))
     returnTyStr = ": " + returnType.getName();
 
-  // Argument type string
-  std::string argTyStr;
-  for (const auto &argType : argList) {
-    if (!argTyStr.empty())
-      argTyStr += ",";
-    argTyStr += argType.first.getName();
-    if (argType.second)
-      argTyStr += "?";
+  // Parameter type string
+  std::string paramTyStr;
+  for (const auto &paramType : paramList) {
+    if (!paramTyStr.empty())
+      paramTyStr += ",";
+    paramTyStr += paramType.first.getName();
+    if (paramType.second)
+      paramTyStr += "?";
   }
 
   // Template type string
@@ -148,7 +148,7 @@ std::string Function::getSignature() const {
   if (!templateTyStr.empty())
     templateTyStr = "<" + templateTyStr + ">";
 
-  return thisTyStr + name + templateTyStr + "(" + argTyStr + ")" + returnTyStr;
+  return thisTyStr + name + templateTyStr + "(" + paramTyStr + ")" + returnTyStr;
 }
 
 /**
@@ -187,32 +187,33 @@ bool Function::isMethodProcedure() const { return returnType.is(TY_DYN) && !this
 SymbolType Function::getSymbolType() const { return SymbolType(isFunction() || isMethodFunction() ? TY_FUNCTION : TY_PROCEDURE); }
 
 /**
- * Convert the current ambiguous function with potential optional arguments to a vector of
- * definite functions without optional arguments
+ * Convert the current ambiguous function with potential optional parameters to a vector of
+ * definite functions without optional parameters
  *
  * @return List of definite functions
  */
-std::vector<Function> Function::substantiateOptionalArgs() const {
+std::vector<Function> Function::substantiateOptionalParams() const {
   std::vector<Function> definiteFunctions;
-  std::vector<std::pair<SymbolType, bool>> currentFunctionArgTypes;
-  bool metFirstOptionalArg = false;
+  std::vector<std::pair<SymbolType, bool>> currentFunctionParamTypes;
+  bool metFirstOptionalParam = false;
 
-  for (const auto &argType : argList) {
-    if (argType.second) {         // Met optional argument
-      if (!metFirstOptionalArg) { // Add substantiation without the optional argument
-        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declNode);
-        metFirstOptionalArg = true;
+  for (const auto &paramType : paramList) {
+    if (paramType.second) {         // Met optional parameter
+      if (!metFirstOptionalParam) { // Add substantiation without the optional parameter
+        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionParamTypes, templateTypes,
+                                       declNode);
+        metFirstOptionalParam = true;
       }
-      // Add substantiation with the optional argument
-      currentFunctionArgTypes.emplace_back(argType.first, false);
-      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declNode);
-    } else { // Met mandatory argument
-      currentFunctionArgTypes.emplace_back(argType.first, false);
+      // Add substantiation with the optional parameter
+      currentFunctionParamTypes.emplace_back(paramType.first, false);
+      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
+    } else { // Met mandatory parameter
+      currentFunctionParamTypes.emplace_back(paramType.first, false);
     }
   }
 
   if (definiteFunctions.empty())
-    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionArgTypes, templateTypes, declNode);
+    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
 
   return definiteFunctions;
 }
@@ -220,24 +221,24 @@ std::vector<Function> Function::substantiateOptionalArgs() const {
 /**
  * Convert the current ambiguous function with potential generic types to a definite function without generic types
  *
- * @return Substantiated function with concrete arg types and without template types
+ * @return Substantiated function with concrete param types and without template types
  */
-Function Function::substantiateGenerics(const ArgList &concreteArgList, const SymbolType &concreteThisType,
+Function Function::substantiateGenerics(const ParamList &concreteParamList, const SymbolType &concreteThisType,
                                         const std::map<std::string, SymbolType> &concreteGenericTypes) const {
   // Substantiate return type
   SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
 
-  return Function(name, specifiers, concreteThisType, newReturnType, concreteArgList, {}, declNode);
+  return Function(name, specifiers, concreteThisType, newReturnType, concreteParamList, {}, declNode);
 }
 
 /**
- * Checks if a function contains optional arguments.
- * This would imply that the function is not substantiated by its optional arguments yet.
+ * Checks if a function contains optional parameters.
+ * This would imply that the function is not substantiated by its optional parameters yet.
  *
- * @return Substantiated args or not
+ * @return Substantiated params or not
  */
-bool Function::hasSubstantiatedArgs() const {
-  return std::none_of(argList.begin(), argList.end(), [](auto t) { return t.second; });
+bool Function::hasSubstantiatedParams() const {
+  return std::none_of(paramList.begin(), paramList.end(), [](auto t) { return t.second; });
 }
 
 /**
@@ -251,12 +252,12 @@ bool Function::hasSubstantiatedGenerics() const {
 }
 
 /**
- * Checks if a function contains optional arguments or has generic types present.
+ * Checks if a function contains optional parameters or has generic types present.
  * This would imply that the function is not fully substantiated yet.
  *
  * @return Fully substantiated or not
  */
-bool Function::isFullySubstantiated() const { return hasSubstantiatedArgs() && hasSubstantiatedGenerics(); }
+bool Function::isFullySubstantiated() const { return hasSubstantiatedParams() && hasSubstantiatedGenerics(); }
 
 /**
  * Retrieve the declaration node of this function

@@ -1,13 +1,28 @@
-import "std/data/vector" as vec;
-import "std/data/pair" as pair;
+const int SIZE = 9;
+
+p print(int[SIZE][SIZE] grid) {
+    foreach int[SIZE] row : grid {
+        foreach int cell : row {
+            printf("%d ", cell);
+        }
+        printf("\n");
+    }
+}
 
 f<int> main() {
-    vec::Vector<pair::Pair<int, string>> pairVector = vec.Vector<pair::Pair<int, string>>();
-    pairVector.pushBack(pair.Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(pair.Pair<int, string>(1, "World"));
+    int[SIZE][SIZE] grid = {
+        { 3, 0, 6, 5, 0, 8, 4, 0, 0 },
+        { 5, 2, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 8, 7, 0, 0, 0, 0, 3, 1 },
+        { 0, 0, 3, 0, 1, 0, 0, 8, 0 },
+        { 9, 0, 0, 8, 6, 3, 0, 0, 5 },
+        { 0, 5, 0, 0, 9, 0, 6, 0, 0 },
+        { 1, 3, 0, 0, 0, 0, 2, 5, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 7, 4 },
+        { 0, 0, 5, 2, 0, 6, 3, 0, 0 }
+    };
 
-    pair::Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!\n", p1.getSecond());
+    print(grid);
 }
 
 /*import "std/net/http" as http;
