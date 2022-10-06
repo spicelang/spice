@@ -64,8 +64,6 @@ public:
   void renameChildBlock(const std::string &oldName, const std::string &newName);
   void copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName);
 
-  void setParent(SymbolTable *parentTable);
-  [[nodiscard]] SymbolTable *getParent() const;
   SymbolTable *getChild(const std::string &tableName);
 
   std::vector<SymbolTableEntry *> getVarsGoingOutOfScope(bool filterForDtorStructs = false);
@@ -78,8 +76,8 @@ public:
   Function *matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,
                           const std::vector<SymbolType> &callArgTypes, const CodeLoc &codeLoc);
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc) const;
-  void insertFunctionAccessPointer(const CodeLoc &codeLoc, Function *spiceFunc);
-  Function *getFunctionAccessPointer(const CodeLoc &codeLoc);
+  void insertFunctionAccessPointer(Function *spiceFunc, const CodeLoc &codeLoc, const std::string &suffix);
+  Function *getFunctionAccessPointer(const CodeLoc &codeLoc, const std::string &suffix = "");
   void insertSubstantiatedFunction(const Function &function, const AstNode *declNode);
 
   void insertStruct(const Struct &s);
@@ -93,20 +91,20 @@ public:
   void purgeSubstantiationRemnants();
 
   void printCompilerWarnings();
-  void disableCompilerWarnings();
 
   [[nodiscard]] bool isImported(const SymbolTable *askingScope) const;
 
-  [[nodiscard]] ScopeType getScopeType() const;
-
-  void setCapturingRequired();
-
   [[nodiscard]] nlohmann::json toJSON() const;
+
+  // Public members
+  SymbolTable *parent;
+  const ScopeType scopeType;
+  bool isSourceFileRootScope = false;
+  bool areCompilerWarningsEnabled = true;
+  bool isCapturingRequired = false;
 
 private:
   // Members
-  SymbolTable *parent;
-  const ScopeType scopeType;
   std::map<std::string, SymbolTable *> children;
   std::map<std::string, SymbolTableEntry> symbols;
   std::map<std::string, Capture> captures;
@@ -116,7 +114,4 @@ private:
   std::map<std::string, std::shared_ptr<std::map<std::string, Struct>>> structs; // <code-loc, vector-of-representations>
   std::map<std::string, Struct *> structAccessPointers;
   bool isMainSourceFile;
-  bool isSourceFileRootScope = false;
-  bool compilerWarningsEnabled = true;
-  bool requiresCapturing = false;
 };

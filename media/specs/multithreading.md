@@ -134,7 +134,7 @@ import "std/data/queue" as queue;
 type ThreadPool struct {
 	unsigned int threadCount // Number of threads in the thread pool
 	unsigned long taskCount // Counter, which gets incremented when a task comes in
-	queue.Queue<void*> taskQueue // Queue of tasks to execute. Whenever a thread has no work to do it pops an item from the queue and executes that.
+	queue::Queue<void*> taskQueue // Queue of tasks to execute. Whenever a thread has no work to do it pops an item from the queue and executes that.
 }
 
 f<int> setThreadCount(); // Add or remove threads from the thread pool

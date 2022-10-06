@@ -59,12 +59,13 @@ void CliInterface::createInterface() {
 
     // Set outputDir to <system-tmp-dir>/spice-output
     uint64_t millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    cliOptions.outputDir = std::filesystem::temp_directory_path().string();
-    if (cliOptions.outputDir.back() != '/' && cliOptions.outputDir.back() != '\\')
-      cliOptions.outputDir += FileUtil::DIR_SEPARATOR;
-    cliOptions.outputDir += "spice-output";
-    cliOptions.outputDir += FileUtil::DIR_SEPARATOR;
-    cliOptions.outputDir += std::to_string(millis);
+    std::string outputDir = std::filesystem::temp_directory_path().string();
+    if (outputDir.back() != '/' && outputDir.back() != '\\')
+      outputDir += FileUtil::DIR_SEPARATOR;
+    outputDir += "spice-output";
+    outputDir += FileUtil::DIR_SEPARATOR;
+    outputDir += std::to_string(millis);
+    cliOptions.outputDir = outputDir;
 
     // Set output path to output dir if running is enabled
     if (run) {

@@ -43,12 +43,12 @@ public:
   [[nodiscard]] bool hasSubstantiatedArgs() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
-  void setUsed();
-  [[nodiscard]] bool isUsed() const;
-  void setAnalyzed();
-  [[nodiscard]] bool wasAlreadyAnalyzed() const;
   [[nodiscard]] const AstNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
+
+  // Public members
+  bool isAlreadyAnalyzed = false;
+  bool isUsed = false;
 
 private:
   // Members
@@ -59,6 +59,4 @@ private:
   std::vector<std::pair<SymbolType, bool>> argList;
   std::vector<GenericType> templateTypes;
   const AstNode *declNode;
-  bool used = false;
-  bool alreadyAnalyzed = false;
 };

@@ -13,7 +13,7 @@ class AstNode;
 class AstBuilderVisitor : public SpiceVisitor {
 public:
   // Constructors
-  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName) : currentNode(rootNode), fileName(fileName) {}
+  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName) : currentNode(rootNode), fileName(std::move(fileName)) {}
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;

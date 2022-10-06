@@ -90,7 +90,7 @@ public:
   // Public methods
   [[nodiscard]] TypeChain getTypeChain() const;
   SymbolType toPointer(const CodeLoc &codeLoc, llvm::Value *dynamicSize = nullptr) const;
-  SymbolType toArray(const CodeLoc &codeLoc, int size = 0) const;
+  [[nodiscard]] SymbolType toArray(const CodeLoc &codeLoc, int size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
@@ -111,8 +111,6 @@ public:
   [[nodiscard]] SymbolType getBaseType() const;
   void setTemplateTypes(std::vector<SymbolType> templateTypes);
   [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
-  void setSigned(bool isSigned);
-  [[nodiscard]] bool isSigned() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] int getArraySize() const;
   [[nodiscard]] llvm::Value *getDynamicArraySize() const;
@@ -120,10 +118,12 @@ public:
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
 
+  // Public members
+  bool isBaseTypeSigned = true;
+
 protected:
   // Members
   TypeChain typeChain;
-  bool isBaseTypeSigned = true;
 
   // Protected methods
   void setSubType(const std::string &newSubType);

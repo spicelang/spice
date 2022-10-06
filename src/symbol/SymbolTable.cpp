@@ -69,7 +69,7 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) {
       return nullptr;
 
     // Check if this scope requires capturing and capture the variable if appropriate
-    if (requiresCapturing && !captures.contains(name) && !entry->getType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
+    if (isCapturingRequired && !captures.contains(name) && !entry->type.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
       captures.insert({name, Capture(entry)});
   }
 
@@ -90,7 +90,7 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
     return &symbols.at(name);
   // Check if a capture with this name exists in this scope
   if (captures.contains(name))
-    return captures.at(name).getEntry();
+    return captures.at(name).capturedEntry;
   // Otherwise, return a nullptr
   return nullptr;
 }
@@ -104,7 +104,7 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
  */
 SymbolTableEntry *SymbolTable::lookupByIndex(unsigned int orderIndex) {
   for (auto &[key, val] : symbols) {
-    if (val.getOrderIndex() == orderIndex)
+    if (val.orderIndex == orderIndex)
       return &val;
   }
   return nullptr;
@@ -266,20 +266,6 @@ void SymbolTable::copyChildBlock(const std::string &originalChildBlockName, cons
 }
 
 /**
- * Set the parent table of the current one in the tree structure
- *
- * @param parentTable Parent table
- */
-void SymbolTable::setParent(SymbolTable *parentTable) { this->parent = parentTable; }
-
-/**
- * Retrieve the parent table of the current one in the tree structure
- *
- * @return Pointer to the parent symbol table
- */
-SymbolTable *SymbolTable::getParent() const { return parent; }
-
-/**
  * Navigate to a child table of the current one in the tree structure
  *
  * @param scopeId Name of the child scope
@@ -312,7 +298,7 @@ std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterF
       continue;
     }
     // For dtor calls, only anonymous structs are relevant
-    if ((entry.getType().is(TY_STRUCT) || entry.getType().isStringStruct()) && entry.getName().starts_with("anon."))
+    if ((entry.type.is(TY_STRUCT) || entry.type.isStringStruct()) && entry.name.starts_with("anon."))
       varsGoingOutOfScope.push_back(&symbols.at(name));
   }
 
@@ -352,7 +338,7 @@ size_t SymbolTable::getFieldCount() const {
   assert(scopeType == SCOPE_STRUCT);
   size_t fieldCount = 0;
   for (auto &symbol : symbols) {
-    if (!symbol.second.getType().isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT, TY_INVALID, TY_GENERIC}))
+    if (!symbol.second.type.isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_IMPORT, TY_INVALID, TY_GENERIC}))
       fieldCount++;
   }
   return fieldCount;
@@ -504,8 +490,10 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
         "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
-  if (currentScope != nullptr)
-    currentScope->insertFunctionAccessPointer(codeLoc, matches.front());
+  if (currentScope != nullptr) {
+    std::string suffix = callFunctionName == DTOR_VARIABLE_NAME ? callFunctionName : "";
+    currentScope->insertFunctionAccessPointer(matches.front(), codeLoc, suffix);
+  }
 
   return matches.front();
 }
@@ -525,25 +513,25 @@ std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const Co
 /**
  * Add function access pointer to the current scope
  *
- * @param codeLoc Call code location
  * @param spiceFunc Function
+ * @param codeLoc Call code location
+ * @param suffix Key suffix
  */
-void SymbolTable::insertFunctionAccessPointer(const CodeLoc &codeLoc, Function *spiceFunc) {
-  functionAccessPointers.insert({codeLoc.toString(), spiceFunc});
+void SymbolTable::insertFunctionAccessPointer(Function *spiceFunc, const CodeLoc &codeLoc, const std::string &suffix) {
+  functionAccessPointers.insert({codeLoc.toString() + ":" + suffix, spiceFunc});
 }
 
 /**
  * Get the function access pointer by code location
  *
  * @param codeLoc Code location
+ * @param suffix Key suffix
  *
  * @return Function pointer for the function access
  */
-Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc) {
-  std::string codeLocStr = codeLoc.toString();
-  if (!functionAccessPointers.contains(codeLocStr))
-    return nullptr;
-  return functionAccessPointers.at(codeLocStr);
+Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc, const std::string &suffix) {
+  std::string mapKey = codeLoc.toString() + ":" + suffix;
+  return functionAccessPointers.contains(mapKey) ? functionAccessPointers.at(mapKey) : nullptr;
 }
 
 /**
@@ -756,37 +744,28 @@ void SymbolTable::purgeSubstantiationRemnants() {
  */
 void SymbolTable::printCompilerWarnings() {
   // Omit this table if it is an imported sub-table
-  if (compilerWarningsEnabled)
+  if (areCompilerWarningsEnabled)
     return;
   // Visit own symbols
   for (const auto &[key, entry] : symbols) {
-    if (!entry.isUsed()) {
-      if (entry.getType().is(TY_FUNCTION)) {
-        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_FUNCTION, "The function '" + entry.getName() + "' is unused").print();
-      } else if (entry.getType().is(TY_PROCEDURE)) {
-        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.getName() + "' is unused").print();
-      } else if (entry.getType().is(TY_STRUCT) || entry.getType().isPointerOf(TY_STRUCT)) {
-        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.getName() + "' is unused").print();
-      } else if (entry.getType().isOneOf({TY_IMPORT})) {
-        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.getName() + "' is unused").print();
+    if (!entry.isUsed) {
+      if (entry.type.is(TY_FUNCTION)) {
+        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_FUNCTION, "The function '" + entry.name + "' is unused").print();
+      } else if (entry.type.is(TY_PROCEDURE)) {
+        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.name + "' is unused").print();
+      } else if (entry.type.is(TY_STRUCT) || entry.type.isPointerOf(TY_STRUCT)) {
+        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.name + "' is unused").print();
+      } else if (entry.type.isOneOf({TY_IMPORT})) {
+        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.name + "' is unused").print();
       } else {
-        if (entry.getName() != UNUSED_VARIABLE_NAME && entry.getName() != FOREACH_DEFAULT_IDX_VARIABLE_NAME)
-          CompilerWarning(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.getName() + "' is unused").print();
+        if (entry.name != UNUSED_VARIABLE_NAME && entry.name != FOREACH_DEFAULT_IDX_VARIABLE_NAME)
+          CompilerWarning(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.name + "' is unused").print();
       }
     }
   }
   // Visit children
   for (const auto &[key, child] : children)
     child->printCompilerWarnings();
-}
-
-/**
- * Disable compiler warnings for this table and all sub-tables
- */
-void SymbolTable::disableCompilerWarnings() {
-  for (auto &child : children)
-    child.second->disableCompilerWarnings();
-  compilerWarningsEnabled = false;
 }
 
 /**
@@ -799,28 +778,16 @@ void SymbolTable::disableCompilerWarnings() {
 bool SymbolTable::isImported(const SymbolTable *askingScope) const {
   // Get root scope of the source file where askingScope scope lives
   const SymbolTable *askingRootScope = askingScope;
-  while (!askingRootScope->isSourceFileRootScope && askingRootScope->getParent())
-    askingRootScope = askingRootScope->getParent();
+  while (!askingRootScope->isSourceFileRootScope && askingRootScope->parent)
+    askingRootScope = askingRootScope->parent;
 
   // Get root scope of the source file where the current scope lives
   const SymbolTable *thisRootScope = this;
-  while (!thisRootScope->isSourceFileRootScope && thisRootScope->getParent())
-    thisRootScope = thisRootScope->getParent();
+  while (!thisRootScope->isSourceFileRootScope && thisRootScope->parent)
+    thisRootScope = thisRootScope->parent;
 
   return askingRootScope != thisRootScope;
 }
-
-/**
- * Retrieves the scope type of the current scope
- *
- * @return Scope type
- */
-ScopeType SymbolTable::getScopeType() const { return scopeType; }
-
-/**
- * Mark this scope so that the compiler knows that accessing variables from outside within the scope requires capturing
- */
-void SymbolTable::setCapturingRequired() { requiresCapturing = true; }
 
 /**
  * Stringify a symbol table to a human-readable form. This is used to realize dumps of symbol tables

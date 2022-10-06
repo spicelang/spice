@@ -18,14 +18,15 @@ public:
 
   // Public methods
   [[nodiscard]] std::string getName() const;
-  [[nodiscard]] SymbolTableEntry *getEntry() const;
   [[nodiscard]] SymbolState getState() const;
   void setCaptureMode(CaptureMode captureMode);
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
+  // Public members
+  SymbolTableEntry *capturedEntry;
+
 private:
   // Members
-  SymbolTableEntry *capturedEntry;
   CaptureMode mode = READ_ONLY;
   std::string name;
   SymbolState state;

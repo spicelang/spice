@@ -16,14 +16,19 @@ struct CodeLoc;
 
 #define COMB(en1, en2) ((en1) | ((en2) << 16))
 
-// Helper struct for passing the pointer to the value and the value itself in parallel.
-// The caller always has to provide both. If the PtrAndValue struct gets passed back, it either contains both data or only one
-// and the other one is nullptr.
+/**
+ * Helper struct for passing the pointer to the value and the value itself in parallel.
+ * The caller always has to provide both. If the PtrAndValue struct gets passed back, it either contains both data or only one
+ * and the other one is nullptr.
+ */
 struct PtrAndValue {
   llvm::Value *ptr = nullptr;
   llvm::Value *value = nullptr;
 };
 
+/**
+ * Helper class for the AnalyzerVisitor to check if type combinations for operators are valid and to retrieve the resulting type
+ */
 class OpRuleConversionsManager {
 public:
   // Constructors
