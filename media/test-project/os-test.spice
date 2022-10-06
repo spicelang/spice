@@ -1,17 +1,4 @@
-import "std/runtime/string_rt" as _rt_str;
-
-f<int> main() {
-    _rt_str::String s = _rt_str::String('H');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append("ello");
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-}
-
-/*import "std/data/vector" as vec;
+import "std/data/vector" as vec;
 import "std/data/pair" as pair;
 
 f<int> main() {
@@ -20,8 +7,8 @@ f<int> main() {
     pairVector.pushBack(pair.Pair<int, string>(1, "World"));
 
     pair::Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!", p1.getSecond());
-}*/
+    printf("Hello %s!\n", p1.getSecond());
+}
 
 /*import "std/net/http" as http;
 

@@ -273,7 +273,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
       // Generate cleanup instructions (e.g. dtor calls)
       bool destructorCalled = false;
       for (SymbolTableEntry *varEntry : varsToDestruct)
-        destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
+        destructorCalled |= insertDestructorCall(varEntry->getDeclCodeLoc(), varEntry);
 
       if (destructorCalled) {
         fct->getBasicBlockList().push_back(bCleanup);
@@ -458,7 +458,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
           // Generate cleanup instructions (e.g. dtor calls)
           bool destructorCalled = false;
           for (SymbolTableEntry *varEntry : varsToDestruct)
-            destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
+            destructorCalled |= insertDestructorCall(varEntry->getDeclCodeLoc(), varEntry);
 
           if (destructorCalled) {
             fct->getBasicBlockList().push_back(bCleanup);
@@ -643,7 +643,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
           // Generate cleanup instructions (e.g. dtor calls)
           bool destructorCalled = false;
           for (SymbolTableEntry *varEntry : varsToDestruct)
-            destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
+            destructorCalled |= insertDestructorCall(varEntry->getDeclCodeLoc(), varEntry);
 
           if (destructorCalled) {
             proc->getBasicBlockList().push_back(bCleanup);
@@ -1399,7 +1399,7 @@ std::any GeneratorVisitor::visitReturnStmt(ReturnStmtNode *node) {
     // Generate cleanup instructions (e.g. dtor calls)
     bool destructorCalled = false;
     for (SymbolTableEntry *varEntry : varsToDestruct)
-      destructorCalled |= insertDestructorCall(node->codeLoc, varEntry);
+      destructorCalled |= insertDestructorCall(varEntry->getDeclCodeLoc(), varEntry);
 
     if (destructorCalled) {
       predecessor->getParent()->getBasicBlockList().push_back(bCleanup);
@@ -3062,7 +3062,7 @@ bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableE
     // Insert call
     builder->CreateCall(fct, thisValuePtr);
   } else {
-    Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc);
+    Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc, DTOR_VARIABLE_NAME);
 
     // Cancel if no destructor was found
     if (spiceDtor == nullptr)

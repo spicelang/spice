@@ -105,7 +105,7 @@ std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
     // Call destructors for variables, that are going out of scope
     std::vector<SymbolTableEntry *> varsToDestruct = node->fctScope->getVarsGoingOutOfScope(true);
     for (SymbolTableEntry *varEntry : varsToDestruct)
-      insertDestructorCall(node->codeLoc, varEntry);
+      insertDestructorCall(varEntry->getDeclCodeLoc(), varEntry);
 
     // Return to root scope
     currentScope = node->fctScope->parent;
@@ -292,7 +292,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         // Call destructors for variables, that are going out of scope
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
         for (SymbolTableEntry *varEntry : varsToDestruct)
-          insertDestructorCall(node->codeLoc, varEntry);
+          insertDestructorCall(varEntry->getDeclCodeLoc(), varEntry);
 
         // Reset generic types
         for (const auto &arg : args) {
@@ -480,7 +480,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         // Call destructors for variables, that are going out of scope
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
         for (SymbolTableEntry *varEntry : varsToDestruct)
-          insertDestructorCall(node->codeLoc, varEntry);
+          insertDestructorCall(varEntry->getDeclCodeLoc(), varEntry);
 
         // Reset generic types
         for (const auto &arg : params) {
@@ -1117,7 +1117,7 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
   // Call destructors for variables, that are going out of scope
   std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
   for (SymbolTableEntry *varEntry : varsToDestruct)
-    insertDestructorCall(node->codeLoc, varEntry);
+    insertDestructorCall(varEntry->getDeclCodeLoc(), varEntry);
 
   return nullptr;
 }
@@ -2018,7 +2018,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // If the return type is an external struct, initialize it
   if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
-    SymbolType symbolType = initExtStruct(currentScope, scopePathBackup.getScopePrefix(true), returnType.getSubType(),
+    SymbolType symbolType = initExtStruct(currentScope, scopePathBackup.getScopePrefix(false), returnType.getSubType(),
                                           returnType.getTemplateTypes(), node->codeLoc);
     return node->setEvaluatedSymbolType(symbolType);
   }

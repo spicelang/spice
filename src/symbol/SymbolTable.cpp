@@ -490,8 +490,10 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
         "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
-  if (currentScope != nullptr)
-    currentScope->insertFunctionAccessPointer(codeLoc, matches.front());
+  if (currentScope != nullptr) {
+    std::string suffix = callFunctionName == DTOR_VARIABLE_NAME ? callFunctionName : "";
+    currentScope->insertFunctionAccessPointer(matches.front(), codeLoc, suffix);
+  }
 
   return matches.front();
 }
@@ -511,25 +513,25 @@ std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const Co
 /**
  * Add function access pointer to the current scope
  *
- * @param codeLoc Call code location
  * @param spiceFunc Function
+ * @param codeLoc Call code location
+ * @param suffix Key suffix
  */
-void SymbolTable::insertFunctionAccessPointer(const CodeLoc &codeLoc, Function *spiceFunc) {
-  functionAccessPointers.insert({codeLoc.toString(), spiceFunc});
+void SymbolTable::insertFunctionAccessPointer(Function *spiceFunc, const CodeLoc &codeLoc, const std::string &suffix) {
+  functionAccessPointers.insert({codeLoc.toString() + ":" + suffix, spiceFunc});
 }
 
 /**
  * Get the function access pointer by code location
  *
  * @param codeLoc Code location
+ * @param suffix Key suffix
  *
  * @return Function pointer for the function access
  */
-Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc) {
-  std::string codeLocStr = codeLoc.toString();
-  if (!functionAccessPointers.contains(codeLocStr))
-    return nullptr;
-  return functionAccessPointers.at(codeLocStr);
+Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc, const std::string &suffix) {
+  std::string mapKey = codeLoc.toString() + ":" + suffix;
+  return functionAccessPointers.contains(mapKey) ? functionAccessPointers.at(mapKey) : nullptr;
 }
 
 /**
