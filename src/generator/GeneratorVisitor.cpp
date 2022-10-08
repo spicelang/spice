@@ -1988,11 +1988,12 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
       PtrAndValue result = {nullptr, nullptr};
       switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
-        if (rhsSymbolType.isStringStruct()) {
-          rhs = materializeString(resolveAddress(rhsOperand));
-        } else {
-          rhs = resolveValue(rhsOperand);
+        if (lhsSymbolType.isStringStruct()) {
+          llvm::Value *lhsPtr = insertAlloca(lhs->getType());
+          builder->CreateStore(lhs, lhsPtr);
+          lhs = materializeString(lhsPtr);
         }
+        rhs = rhsSymbolType.isStringStruct() ? materializeString(resolveAddress(rhsOperand)) : resolveValue(rhsOperand);
         result = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, rhsOperand->codeLoc);
         break;
       case AdditiveExprNode::OP_MINUS:
@@ -3102,7 +3103,6 @@ bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableE
 }
 
 llvm::Value *GeneratorVisitor::materializeString(llvm::Value *stringStructPtr) {
-  // assert(stringStructPtr->getType()->isPointerTy());
   llvm::Value *rawStringValue = builder->CreateCall(stdFunctionManager->getStringGetRawFct(), stringStructPtr);
   return rawStringValue;
 }

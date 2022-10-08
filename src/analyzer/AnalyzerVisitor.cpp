@@ -1961,6 +1961,8 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       argTypes.push_back(any_cast<SymbolType>(visit(arg)));
   }
 
+  scopePath = scopePathBackup;
+
   // Set to root scope if it did not change
   if (accessScope == currentScope)
     accessScope = rootScope;
@@ -2018,8 +2020,9 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // If the return type is an external struct, initialize it
   if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
-    SymbolType symbolType = initExtStruct(currentScope, scopePathBackup.getScopePrefix(!constructorCall), returnType.getSubType(),
-                                          returnType.getTemplateTypes(), node->codeLoc);
+    std::string scopePrefix = scopePathBackup.getScopePrefix(!spiceFunc->isGenericSubstantiation);
+    SymbolType symbolType =
+        initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node->codeLoc);
     return node->setEvaluatedSymbolType(symbolType);
   }
 

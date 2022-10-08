@@ -228,7 +228,9 @@ Function Function::substantiateGenerics(const ParamList &concreteParamList, cons
   // Substantiate return type
   SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
 
-  return Function(name, specifiers, concreteThisType, newReturnType, concreteParamList, {}, declNode);
+  Function substantiatedFunction(name, specifiers, concreteThisType, newReturnType, concreteParamList, {}, declNode);
+  substantiatedFunction.isGenericSubstantiation = true;
+  return substantiatedFunction;
 }
 
 /**

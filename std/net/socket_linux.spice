@@ -60,9 +60,8 @@ public f<int> Socket.acceptConnection() {
 }
 
 public f<long> Socket.write(string message) {
-    if message.isEmpty() { return 0; } // ToDo: Comment out when the empty method on string type is implemented
-    //return write(this.connFd, content, message.length() * 8); // ToDo: Comment out when the length method on string type is implemented
-    return 0l;
+    if message.isEmpty() { return 0; }
+    return write(this.connFd, content, message.getLength() * 8);
 }
 
 public f<long> Socket.write(byte[] content) {

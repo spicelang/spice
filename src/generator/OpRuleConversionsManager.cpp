@@ -1045,6 +1045,12 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder->CreateAdd(lhsV, rhsV)};
   case COMB(TY_STRING, TY_STRING): {
+    /*llvm::Function *getRawFct = stdFunctionManager->getStringGetRawFct();
+    if (lhsSTy.isStringStruct())
+      lhsV = builder->CreateCall(getRawFct, lhsV);
+    if (rhsSTy.isStringStruct())
+      rhsV = builder->CreateCall(getRawFct, rhsV);*/
+
     // Generate call to the constructor ctor(string, string) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringCtorStringStringFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStringStructType(*context));

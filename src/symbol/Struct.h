@@ -43,6 +43,7 @@ public:
   static std::string getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes);
 
   // Public members
+  bool isGenericSubstantiation = false;
   bool isUsed = false;
 
 private:

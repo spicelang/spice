@@ -76,7 +76,7 @@ llvm::Function *StdFunctionManager::getStringMulOpShortFct() const {
   return getProcedure("_mp__String__opMul__short", {builder->getPtrTy(), builder->getInt16Ty()});
 }
 
-llvm::Function *StdFunctionManager::getFunction(const std::string functionName, llvm::Type *returnType,
+llvm::Function *StdFunctionManager::getFunction(const std::string &functionName, llvm::Type *returnType,
                                                 llvm::ArrayRef<llvm::Type *> args, bool varArg) const {
   llvm::Function *opFct = module->getFunction(functionName);
   if (opFct != nullptr)
@@ -86,7 +86,7 @@ llvm::Function *StdFunctionManager::getFunction(const std::string functionName, 
   return module->getFunction(functionName);
 }
 
-llvm::Function *StdFunctionManager::getProcedure(const std::string procedureName, llvm::ArrayRef<llvm::Type *> args,
+llvm::Function *StdFunctionManager::getProcedure(const std::string &procedureName, llvm::ArrayRef<llvm::Type *> args,
                                                  bool varArg) const {
   return getFunction(procedureName, builder->getVoidTy(), args, varArg);
 }

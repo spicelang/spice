@@ -179,13 +179,8 @@ SymbolType OpRuleManager::getPlusResultType(const AstNode *declNode, const Symbo
   }
 
   // Allow string + string
-  if (lhs.is(TY_STRING) && rhs.is(TY_STRING)) {
-    if (!lhs.isStringStruct() && !rhs.isStringStruct()) { // If lhs and rhs are raw strings -> insert anon symbol
-      return analyzer->insertAnonStringStructSymbol(declNode);
-    } else { // Otherwise just return the type
-      return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
-    }
-  }
+  if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
+    return analyzer->insertAnonStringStructSymbol(declNode);
 
   return validateBinaryOperation(declNode->codeLoc, PLUS_OP_RULES, "+", lhs, rhs);
 }
