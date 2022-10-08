@@ -155,25 +155,25 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
       }
     }
 
-    // Visit arguments in new scope
-    std::vector<std::string> argNames;
-    ArgList argTypes;
+    // Visit parameters in new scope
+    std::vector<std::string> paramNames;
+    ParamList paramTypes;
     if (node->hasParams) {
-      auto namedArgList = any_cast<NamedParamList>(visit(node->paramLst()));
-      for (const auto &namedArg : namedArgList) {
-        std::string argName = std::get<0>(namedArg);
-        SymbolType argType = std::get<1>(namedArg);
-        bool argOptional = std::get<2>(namedArg);
+      auto namedParamList = any_cast<NamedParamList>(visit(node->paramLst()));
+      for (const auto &namedParam : namedParamList) {
+        const std::string paramName = std::get<0>(namedParam);
+        const SymbolType paramType = std::get<1>(namedParam);
+        bool isOptional = std::get<2>(namedParam);
 
         // Check if the type is present in the template for generic types
-        if (argType.is(TY_GENERIC)) {
-          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == argType; }))
+        if (paramType.is(TY_GENERIC)) {
+          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == paramType; }))
             throw SemanticError(node->paramLst()->codeLoc, GENERIC_TYPE_NOT_IN_TEMPLATE,
                                 "Generic arg type not included in function template");
         }
 
-        argNames.push_back(argName);
-        argTypes.push_back({argType, argOptional});
+        paramNames.push_back(paramName);
+        paramTypes.push_back({paramType, isOptional});
       }
     }
 
@@ -211,11 +211,11 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     }
 
     // Insert function into the symbol table
-    Function spiceFunc(node->functionName, fctSymbolSpecifiers, thisType, returnType, argTypes, templateTypes, node);
+    Function spiceFunc(node->functionName, fctSymbolSpecifiers, thisType, returnType, paramTypes, templateTypes, node);
     currentScope->insertFunction(spiceFunc);
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
-    std::vector<Function> substantiatedFunctions = spiceFunc.substantiateOptionalArgs();
+    std::vector<Function> substantiatedFunctions = spiceFunc.substantiateOptionalParams();
     currentScope->renameChildBlock(node->getScopeId(), substantiatedFunctions.front().getSignature());
     for (int i = 1; i < substantiatedFunctions.size(); i++)
       currentScope->copyChildBlock(substantiatedFunctions.front().getSignature(), substantiatedFunctions[i].getSignature());
@@ -280,7 +280,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         }
 
         // Morph the generic types to the replacements
-        std::vector<SymbolType> newArgTypes = spiceFunc.getArgTypes();
+        std::vector<SymbolType> newArgTypes = spiceFunc.getParamTypes();
         for (int i = 0; i < newArgTypes.size(); i++) {
           SymbolTableEntry *argEntry = currentScope->lookup(args[i].first);
           argEntry->updateType(newArgTypes[i], true);
@@ -362,25 +362,25 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     if (node->hasParams && node->procedureName == "dtor")
       throw SemanticError(node->codeLoc, DTOR_WITH_PARAMS, "It is not allowed to specify parameters for destructors");
 
-    // Visit arguments in new scope
-    std::vector<std::string> argNames;
-    ArgList argTypes;
+    // Visit parameters in new scope
+    std::vector<std::string> paramNames;
+    ParamList paramTypes;
     if (node->hasParams) {
-      auto namedArgList = any_cast<NamedParamList>(visit(node->paramLst()));
-      for (const auto &namedArg : namedArgList) {
-        std::string argName = std::get<0>(namedArg);
-        SymbolType argType = std::get<1>(namedArg);
-        bool argOptional = std::get<2>(namedArg);
+      auto namedParamList = any_cast<NamedParamList>(visit(node->paramLst()));
+      for (const auto &namedParam : namedParamList) {
+        const std::string paramName = std::get<0>(namedParam);
+        const SymbolType paramType = std::get<1>(namedParam);
+        bool isOptional = std::get<2>(namedParam);
 
         // Check if the type is present in the template for generic types
-        if (argType.is(TY_GENERIC)) {
-          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == argType; }))
+        if (paramType.is(TY_GENERIC)) {
+          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == paramType; }))
             throw SemanticError(node->paramLst()->codeLoc, GENERIC_TYPE_NOT_IN_TEMPLATE,
                                 "Generic arg type not included in procedure template");
         }
 
-        argNames.push_back(argName);
-        argTypes.push_back({argType, argOptional});
+        paramNames.push_back(paramName);
+        paramTypes.push_back({paramType, isOptional});
       }
     }
 
@@ -409,11 +409,11 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     }
 
     // Insert function into the symbol table
-    Function spiceProc(node->procedureName, procSymbolSpecifiers, thisType, SymbolType(TY_DYN), argTypes, templateTypes, node);
+    Function spiceProc(node->procedureName, procSymbolSpecifiers, thisType, SymbolType(TY_DYN), paramTypes, templateTypes, node);
     currentScope->insertFunction(spiceProc);
 
     // Rename / duplicate the original child block to reflect the substantiated versions of the function
-    std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalArgs();
+    std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalParams();
     currentScope->renameChildBlock(node->getScopeId(), substantiatedProcedures.front().getSignature());
     for (int i = 1; i < substantiatedProcedures.size(); i++)
       currentScope->copyChildBlock(substantiatedProcedures.front().getSignature(), substantiatedProcedures[i].getSignature());
@@ -468,7 +468,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         }
 
         // Morph the generic types to the replacements
-        std::vector<SymbolType> newArgTypes = spiceProc.getArgTypes();
+        std::vector<SymbolType> newArgTypes = spiceProc.getParamTypes();
         for (int i = 0; i < newArgTypes.size(); i++) {
           SymbolTableEntry *argEntry = currentScope->lookup(params[i].first);
           argEntry->updateType(newArgTypes[i], true);
@@ -758,7 +758,7 @@ std::any AnalyzerVisitor::visitExtDecl(ExtDeclNode *node) {
   if (runNumber > 1)
     return nullptr;
 
-  ArgList argTypes;
+  ParamList argTypes;
   if (node->hasArgs) {
     // Check if an argument is dyn
     for (const auto &arg : node->argTypeLst()->dataTypes()) {
@@ -1976,7 +1976,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     // Build dummy function to get a better error message
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
 
-    ArgList errArgTypes;
+    ParamList errArgTypes;
     for (const auto &argType : argTypes)
       errArgTypes.emplace_back(argType, false);
 
@@ -2180,6 +2180,10 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
           if (typeModifier.hardcodedSize <= 1)
             throw SemanticError(node->codeLoc, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated");
         } else {
+          // Do not allow dynamic sized types in parameter lists
+          if (node->isParamType())
+            throw SemanticError(node->codeLoc, ARRAY_SIZE_INVALID, "Types in parameter lists may not be dynamically sized");
+
           auto sizeType = any_cast<SymbolType>(visit(arraySizeExpr[assignExprCounter++]));
           if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))
             throw SemanticError(node->codeLoc, ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");

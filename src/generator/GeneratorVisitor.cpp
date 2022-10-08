@@ -367,7 +367,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
       // Arguments
       unsigned int currentArgIndex = 0;
       if (node->hasParams) {
-        std::vector<SymbolType> argSymbolTypes = spiceFunc.getArgTypes();
+        std::vector<SymbolType> argSymbolTypes = spiceFunc.getParamTypes();
         for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
           currentVarName = node->paramLst()->params()[currentArgIndex]->varName;
           argNames.push_back(currentVarName);
@@ -558,7 +558,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
       // Arguments
       unsigned int currentArgIndex = 0;
       if (node->paramLst()) {
-        std::vector<SymbolType> argSymbolTypes = spiceProc.getArgTypes();
+        std::vector<SymbolType> argSymbolTypes = spiceProc.getParamTypes();
         for (; currentArgIndex < argSymbolTypes.size(); currentArgIndex++) {
           currentVarName = node->paramLst()->params()[currentArgIndex]->varName;
           argNames.push_back(currentVarName);
@@ -820,7 +820,7 @@ std::any GeneratorVisitor::visitExtDecl(ExtDeclNode *node) {
       argTypes.push_back(argType);
     }
   }
-  std::vector<SymbolType> argSymbolTypes = spiceFunc.getArgTypes();
+  std::vector<SymbolType> argSymbolTypes = spiceFunc.getParamTypes();
   symbolTypes.insert(std::end(symbolTypes), std::begin(argSymbolTypes), std::end(argSymbolTypes));
 
   // Declare function
@@ -2641,7 +2641,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   if (!functionFound) { // Not found => Declare function, which will be linked in
     SymbolType returnSymbolType = spiceFunc->getReturnType();
-    std::vector<SymbolType> argSymbolTypes = spiceFunc->getArgTypes();
+    std::vector<SymbolType> argSymbolTypes = spiceFunc->getParamTypes();
 
     llvm::Type *returnType =
         returnSymbolType.is(TY_DYN) ? llvm::Type::getVoidTy(*context) : returnSymbolType.toLLVMType(*context, accessScope);
@@ -2671,7 +2671,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
   if (node->argLst()) {
     for (const auto &arg : node->argLst()->args()) {
       // Get expected arg type
-      SymbolType expectedArgSymbolType = spiceFunc->getArgTypes()[isMethod ? argIndex - 1 : argIndex];
+      SymbolType expectedArgSymbolType = spiceFunc->getParamTypes()[isMethod ? argIndex - 1 : argIndex];
       llvm::Type *expectedArgType = fctType->getParamType(argIndex);
       // Get the actual arg value
       SymbolType actualArgSymbolType = arg->getEvaluatedSymbolType();
@@ -3299,7 +3299,7 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
   argTypes.push_back(getDITypeForSymbolType(spiceFunc->getReturnType())); // Add result type
-  for (const auto &argType : spiceFunc->getArgTypes())                    // Add arg types
+  for (const auto &argType : spiceFunc->getParamTypes())                  // Add arg types
     argTypes.push_back(getDITypeForSymbolType(argType));
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
 

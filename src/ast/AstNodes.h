@@ -625,6 +625,9 @@ public:
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
+  // Util methods
+  [[nodiscard]] bool isParam() const { return dynamic_cast<ParamLstNode *>(parent); }
+
   // Public members
   std::string varName;
   bool hasAssignment = false;
@@ -1236,6 +1239,12 @@ public:
   // Public get methods
   [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
   [[nodiscard]] std::vector<AssignExprNode *> arraySizeExpr() const { return getChildren<AssignExprNode>(); }
+
+  // Util methods
+  [[nodiscard]] bool isParamType() const {
+    auto declStmt = dynamic_cast<DeclStmtNode *>(parent);
+    return declStmt && declStmt->isParam();
+  }
 
   // Public members
   std::queue<TypeModifier> tmQueue;
