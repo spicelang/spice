@@ -1,13 +1,38 @@
-import "std/data/vector" as vec;
-import "std/data/pair" as pair;
+import "std/runtime/string_rt" as _rt_str;
 
 f<int> main() {
-    vec::Vector<pair::Pair<int, string>> pairVector = vec::Vector<pair::Pair<int, string>>();
-    pairVector.pushBack(pair::Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(pair::Pair<int, string>(1, "World"));
-
-    pair::Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!\n", p1.getSecond());
+    _rt_str::String s = _rt_str::String("Hello ");
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s.append("World!");
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s.append('?');
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s.append('!');
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    printf("Equals: %d\n", s.opEquals("Hello World!?!"));
+    printf("Equals: %d\n", s.opEquals("Hello World!!"));
+    printf("Not Equals: %d\n", s.opNotEquals("Hello World!?!"));
+    printf("Not Equals: %d\n", s.opNotEquals("Hello World!!"));
+    s.clear();
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s.reserve(100l);
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s = _rt_str::String("");
+    printf("Empty: %d\n", s.isEmpty());
+    s.append('a');
+    printf("Empty: %d", s.isEmpty());
 }
 
 /*import "std/net/http" as http;
