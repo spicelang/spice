@@ -2180,6 +2180,10 @@ std::any AnalyzerVisitor::visitDataType(DataTypeNode *node) {
           if (typeModifier.hardcodedSize <= 1)
             throw SemanticError(node->codeLoc, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated");
         } else {
+          // Do not allow dynamic sized types in parameter lists
+          if (node->isParamType())
+            throw SemanticError(node->codeLoc, ARRAY_SIZE_INVALID, "Types in parameter lists may not be dynamically sized");
+
           auto sizeType = any_cast<SymbolType>(visit(arraySizeExpr[assignExprCounter++]));
           if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))
             throw SemanticError(node->codeLoc, ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");

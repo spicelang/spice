@@ -1,0 +1,1 @@
+Semantic error in ./test-files/analyzer/functions/errror-function-param-dyn-sized/source.spice:3:9: Array size invalid: Types in parameter lists may not be dynamically sized
