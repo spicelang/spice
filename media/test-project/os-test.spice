@@ -1,46 +1,9 @@
-import "std/runtime/string_rt" as _rt_str;
+import "std/net/http" as http;
 
 f<int> main() {
-    _rt_str::String s = _rt_str::String("Hello ");
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append("World!");
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append('?');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append('!');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    printf("Equals: %d\n", s.opEquals("Hello World!?!"));
-    printf("Equals: %d\n", s.opEquals("Hello World!!"));
-    printf("Not Equals: %d\n", s.opNotEquals("Hello World!?!"));
-    printf("Not Equals: %d\n", s.opNotEquals("Hello World!!"));
-    s.clear();
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.reserve(100l);
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s = _rt_str::String("");
-    printf("Empty: %d\n", s.isEmpty());
-    s.append('a');
-    printf("Empty: %d", s.isEmpty());
+    //http::HttpServer server = http::HttpServer();
+    //server.serve("/test", "Hello World!");
 }
-
-/*import "std/net/http" as http;
-
-f<int> main() {
-    http::HttpServer server = http::HttpServer();
-    server.serve("/test", "Hello World!");
-}*/
 
 /*public f<bool> src(bool x, bool y) {
     return ((x ? 1 : 4) & (y ? 1 : 4)) == 0;

@@ -221,7 +221,7 @@ public inline f<long> String.getLength() {
 /**
  * Check if the string is empty
  */
-public inline f<bool> String.isEmpty() {
+public inline f<long> String.isEmpty() {
     return this.length == 0;
 }
 
