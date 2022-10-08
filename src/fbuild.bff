@@ -1,0 +1,26 @@
+; Compiler configuration
+#include "config.bff"
+
+; Compile all .cpp files in the src dir
+ObjectList('Spice')
+{
+    .CompilerInputPath  = '/'
+    .CompilerOutputPath = '../build/'
+}
+
+Library('antlr')
+{
+    .CompilerInputPath  = '../lib/antlr4/runtime/Cpp/runtime/src'
+    .CompilerOutputPath = '../build/antlr/'
+    .LibrarianOutput    = '../build/antlr.lib'
+}
+
+; Link the executable
+Executable('spice-run')
+{
+    .Libraries          = { 'Spice' }
+    .LinkerOutput       = '../bin/spice.exe'
+}
+
+; Create a default target
+Alias('all') { .Targets = { 'spice-run' } }

@@ -22,3 +22,6 @@ media/test-project/*.exe
 
 # LLVM
 /llvm
+
+# FASTBuild
+*.fdb
