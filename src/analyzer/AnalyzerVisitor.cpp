@@ -1911,7 +1911,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
         throw SemanticError(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION,
                             "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
       thisType = symbolEntry->type.getBaseType();
-    } else if (symbolEntry != nullptr && symbolEntry->type.getBaseType().is(TY_STRUCT)) {
+    } else if (symbolEntry != nullptr && symbolEntry->type.getBaseType().is(TY_STRUCT)) { // last fragment is a struct
       // Get the concrete template types
       std::vector<SymbolType> concreteTemplateTypes;
       if (node->isGeneric) {
@@ -1937,7 +1937,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
       functionName = CTOR_VARIABLE_NAME;
       constructorCall = true;
-    } else {
+    } else { // last fragment is no struct
       functionName = identifier;
       continue;
     }
@@ -1960,6 +1960,8 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     for (const auto &arg : node->argLst()->args())
       argTypes.push_back(any_cast<SymbolType>(visit(arg)));
   }
+
+  scopePath = scopePathBackup;
 
   // Set to root scope if it did not change
   if (accessScope == currentScope)
@@ -2018,8 +2020,9 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // If the return type is an external struct, initialize it
   if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
-    SymbolType symbolType = initExtStruct(currentScope, scopePathBackup.getScopePrefix(false), returnType.getSubType(),
-                                          returnType.getTemplateTypes(), node->codeLoc);
+    std::string scopePrefix = scopePathBackup.getScopePrefix(!spiceFunc->isGenericSubstantiation);
+    SymbolType symbolType =
+        initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node->codeLoc);
     return node->setEvaluatedSymbolType(symbolType);
   }
 

@@ -143,14 +143,9 @@ void execTestCase(const TestCase &testCase) {
       return result.output;
     });
   } catch (LexerParserError &error) {
-    std::string errorWhat = error.what();
-    CommonUtil::replaceAll(errorWhat, "\\", "/");
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT, [&]() { return errorWhat; });
+    TestUtil::handleError(testCase, error);
   } catch (SemanticError &error) {
-    // Check if the exception message matches the expected output
-    std::string errorWhat = error.what();
-    CommonUtil::replaceAll(errorWhat, "\\", "/");
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT, [&]() { return errorWhat; });
+    TestUtil::handleError(testCase, error);
   }
 
   SUCCEED();

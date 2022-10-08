@@ -60,12 +60,12 @@ public:
   static void checkRefMatch(
       const std::string &refPath, GetOutputFct getActualOutput,
       ModifyOutputFct modifyOutput = [](std::string &, std::string &) {});
+  static void handleError(const TestCase &testCase, const std::exception &error);
   static std::vector<std::string> getSubdirs(const std::string &basePath);
   static std::string getFileContent(const std::string &filePath);
   static std::vector<std::string> getFileContentLinesVector(const std::string &filePath);
   static std::string toCamelCase(std::string input);
   static std::string getDefaultExecutableName();
-  static bool isUpdateRefsEnabled();
   static bool isDisabled(const TestCase &testCase);
 };
 

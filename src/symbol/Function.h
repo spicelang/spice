@@ -47,6 +47,7 @@ public:
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
   // Public members
+  bool isGenericSubstantiation = false;
   bool isAlreadyAnalyzed = false;
   bool isUsed = false;
 

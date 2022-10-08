@@ -31,6 +31,9 @@ jobs:
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
+      - name: Setup CCache
+        uses: hendrikmuhs/ccache-action@v1
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
@@ -46,12 +49,13 @@ jobs:
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
+          echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
           cd ..
           git clone --depth 1 --branch llvmorg-15.0.2 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
-          cmake --build .
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
+          cmake --build . -j$(nproc)
 
       - name: Download Libs
         run: |
@@ -62,10 +66,11 @@ jobs:
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
         run: |
+          echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
           mkdir ./bin
           cd ./bin
-          cmake -DCMAKE_BUILD_TYPE=Release -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_DEV_COMPILE=ON -GNinja -Wattributes ..
-          cmake --build . --target Spice_test
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_DEV_COMPILE=ON -GNinja -Wattributes ..
+          cmake --build . --target Spice_test -j$(nproc)
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2

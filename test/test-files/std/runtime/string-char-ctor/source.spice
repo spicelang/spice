@@ -8,5 +8,5 @@ f<int> main() {
     s.append("ello");
     printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
+    printf("Capacity: %d", s.getCapacity());
 }

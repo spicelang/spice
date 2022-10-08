@@ -219,6 +219,13 @@ public inline f<long> String.getLength() {
 }
 
 /**
+ * Check if the string is empty
+ */
+public inline f<bool> String.isEmpty() {
+    return this.length == 0;
+}
+
+/**
  * Retrieve the current capacity of the string
  *
  * @return Current capacity of the string

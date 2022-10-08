@@ -8,7 +8,7 @@ p printSolution(int[] color) {
     printf("\n");
 }
 
-f<bool> isSafe(bool[VERTEX_COUNT][VERTEX_COUNT] graph, int[] color) {
+f<bool> isSafe(bool[][] graph, int[] color) {
     for int i = 0; i < VERTEX_COUNT; i++ {
         for int j = i + 1; j < VERTEX_COUNT; j++ {
             if graph[i][j] && color[j] == color[i] {
@@ -20,10 +20,10 @@ f<bool> isSafe(bool[VERTEX_COUNT][VERTEX_COUNT] graph, int[] color) {
 }
 
 f<bool> graphColoring(
-    bool[VERTEX_COUNT][VERTEX_COUNT] graph,
+    bool[][] graph,
     int m,
     int i,
-    int[VERTEX_COUNT] color
+    int[] color
 ) {
     // If current index reached the end
     if i == VERTEX_COUNT {
