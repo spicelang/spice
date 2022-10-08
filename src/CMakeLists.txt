@@ -74,11 +74,11 @@ set(SOURCES
         util/CompilerWarning.cpp
         util/CompilerWarning.h)
 
-add_executable(${CMAKE_PROJECT_NAME}_run ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Include Antlr components
 include_directories(${ANTLR_Spice_OUTPUT_DIR})
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
 
-target_link_libraries(${CMAKE_PROJECT_NAME}_run antlr4_static ${LLVM_LIBS})
-add_library(${CMAKE_PROJECT_NAME}_lib STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+target_link_libraries(spice antlr4_static ${LLVM_LIBS})
+add_library(spicelib STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
