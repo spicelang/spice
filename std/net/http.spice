@@ -24,7 +24,7 @@ public type HttpServer struct {
  */
 public p HttpServer.ctor(unsigned short port = HTTP_PORT_DEFAULT) {
     this.port = port;
-    initialized = true;
+    this.initialized = true;
 }
 
 /**
@@ -35,10 +35,11 @@ public f<bool> HttpServer.start() {
     if !this.initialized { return false; }
 
     // Setup TCP socket
-    this.socket = sock.openServerSocket(port, CONNECTIONS_LIMIT);
+    this.socket = sock.openServerSocket(this.port, CONNECTIONS_LIMIT);
 
 }
 
 public f<bool> HttpServer.serve(string path, string htmlContent) {
 
+    return false;
 }

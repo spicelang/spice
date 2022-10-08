@@ -1911,7 +1911,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
         throw SemanticError(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION,
                             "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
       thisType = symbolEntry->type.getBaseType();
-    } else if (symbolEntry != nullptr && symbolEntry->type.getBaseType().is(TY_STRUCT)) {
+    } else if (symbolEntry != nullptr && symbolEntry->type.getBaseType().is(TY_STRUCT)) { // last fragment is a struct
       // Get the concrete template types
       std::vector<SymbolType> concreteTemplateTypes;
       if (node->isGeneric) {
@@ -1937,7 +1937,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
       functionName = CTOR_VARIABLE_NAME;
       constructorCall = true;
-    } else {
+    } else { // last fragment is no struct
       functionName = identifier;
       continue;
     }
@@ -2018,7 +2018,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // If the return type is an external struct, initialize it
   if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
-    SymbolType symbolType = initExtStruct(currentScope, scopePathBackup.getScopePrefix(false), returnType.getSubType(),
+    SymbolType symbolType = initExtStruct(currentScope, scopePathBackup.getScopePrefix(!constructorCall), returnType.getSubType(),
                                           returnType.getTemplateTypes(), node->codeLoc);
     return node->setEvaluatedSymbolType(symbolType);
   }

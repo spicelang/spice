@@ -16,12 +16,12 @@ type SockAddrIn struct {
 }
 
 public type Socket struct {
-    unsigned long sockFd // Actual socket
-    unsigned long connFd // Current connection
+    unsigned int sockFd // Actual socket
+    unsigned int connFd // Current connection
     public short errorCode
 }
 
-public const short ERROR_SOCKET = -1s;
+public const short ERROR_OPEN = -1s;
 public const short ERROR_BIND = -2s;
 public const short ERROR_LISTEN = -3s;
 public const short ERROR_ACCEPT = -4s;
@@ -49,10 +49,10 @@ public p Socket.dtor() {
  *
  * @return Connection file descriptor
  */
-public f<long> Socket.acceptConnection() {
+public f<int> Socket.acceptConnection() {
     SockAddrIn cliAddr = SockAddrIn {};
-    this.connFd = (long) accept((int) this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
-    if this.connFd == -1l {
+    this.connFd = accept(this.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
+    if this.connFd == -1 {
         //result.errorCode = ERROR_ACCEPT;
         return -1;
     }
@@ -60,7 +60,7 @@ public f<long> Socket.acceptConnection() {
 }
 
 public f<long> Socket.write(string message) {
-    //if message.empty() { return 0; } ToDo: Comment out when the empty method on string type is implemented
+    if message.isEmpty() { return 0; } // ToDo: Comment out when the empty method on string type is implemented
     //return write(this.connFd, content, message.length() * 8); // ToDo: Comment out when the length method on string type is implemented
     return 0l;
 }
@@ -93,11 +93,11 @@ public f<int> Socket.close() {
  * @return Socket file descriptor
  */
 public f<Socket> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
-    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0l, 0s };
+    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
 
     // Cancel on failure
-    if s.sockFd == -1l {
-        s.errorCode = ERROR_SOCKET;
+    if s.sockFd == -1 {
+        s.errorCode = ERROR_OPEN;
         return s;
     }
 
@@ -128,13 +128,13 @@ public f<Socket> openServerSocket(unsigned short port, int maxWaitingConnections
  *
  * @return Socket file descriptor
  */
-public f<long> openClientSocket(string host, unsigned short port) {
-    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0l, 0s };
+public f<int> openClientSocket(string host, unsigned short port) {
+    Socket s = Socket { socket(AF_INET, SOCK_STREAM, IPPROTO_IP), 0, 0s };
 
     // Cancel on failure
-    if s.sockFd == -1l {
-        s.errorCode = ERROR_SOCKET;
-        return -1l;
+    if s.sockFd == -1 {
+        s.errorCode = ERROR_OPEN;
+        return -1;
     }
 
     InAddr inAddr = InAddr { inet_addr(host) };
@@ -143,7 +143,7 @@ public f<long> openClientSocket(string host, unsigned short port) {
     int connectResult = connect((int) s.sockFd, &cliAddr, 16 /* hardcoded sizeof(cliAddr) */);
     if connectResult != 0 {
         s.errorCode = ERROR_CONNECT;
-        return -1l;
+        return -1;
     }
 
     return s.sockFd;
