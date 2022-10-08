@@ -1,6 +1,6 @@
 const int size = 9;
 
-p print(int[size][size] grid) {
+p print(int[][] grid) {
     for int i = 0; i < size; i++ {
         for int j = 0; j < size; j++ {
              printf("%d ", grid[i][j]);
@@ -9,7 +9,7 @@ p print(int[size][size] grid) {
     }
 }
 
-f<bool> isSafe(int[size][size] grid, int row, int col, int num) {
+f<bool> isSafe(int[][] grid, int row, int col, int num) {
     // Check if we find the same num in the similar row -> return false
     for int x = 0; x <= size - 1; x++ {
         if grid[row][x] == num {
@@ -39,7 +39,7 @@ f<bool> isSafe(int[size][size] grid, int row, int col, int num) {
     return true;
 }
 
-f<bool> solveSudoku(int[size][size] grid, int row, int col) {
+f<bool> solveSudoku(int[][] grid, int row, int col) {
     // Check if we have reached the second last row and the last column.
     // We return true to avoid further backtracking
     if row == size - 1 && col == size { return true; }

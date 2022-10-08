@@ -36,7 +36,7 @@ jobs:
         uses: rui314/setup-mold@v1
 
       - name: Setup CCache
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@v1
 
       - name: Setup Gcovr
         run: sudo pip install gcovr
@@ -57,7 +57,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
-          cmake --build .
+          cmake --build . -j$(nproc)
 
       - name: Download Libs
         run: |
@@ -72,7 +72,7 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_IS_GH_ACTIONS=ON -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_DEV_COMPILE=ON -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
-          cmake --build . --target Spice_test
+          cmake --build . --target Spice_test -j$(nproc)
 
       - name: Run Test target
         env:

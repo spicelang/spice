@@ -53,12 +53,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
-
-      - name: Setup LLVM - Build
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
-          cd ./llvm/build
-          cmake --build .
+          cmake --build . -j$(nproc)
 
       - name: Download Libs
         run: |
@@ -72,7 +67,7 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${{ steps.get_version.outputs.version }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
-          cmake --build . --target Spice_run
+          cmake --build . --target Spice_run -j$(nproc)
 
       - name: Process build output
         working-directory: bin
@@ -136,7 +131,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
-          cmake --build .
+          cmake --build . -j$(nproc)
 
       - name: Download Libs
         run: .\setup-libs.bat
@@ -151,7 +146,7 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${{ steps.get_version.outputs.version }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
-          cmake --build . --target Spice_run
+          cmake --build . --target Spice_run -j$(nproc)
 
       - name: Process build output
         working-directory: bin

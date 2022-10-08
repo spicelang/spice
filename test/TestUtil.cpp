@@ -5,10 +5,10 @@
 #include "TestUtil.h"
 
 #include <dirent.h>
-#include <fstream>
 
 #include <gtest/gtest.h>
 
+#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
 #ifdef OS_UNIX
@@ -61,6 +61,25 @@ void TestUtil::checkRefMatch(const std::string &refPath, GetOutputFct getActualO
     modifyOutputFct(expectedOutput, actualOutput);
     EXPECT_EQ(expectedOutput, actualOutput);
   }
+}
+
+/**
+ * Handle an test error
+ *
+ * @param testCase Testcase which has produced the error
+ * @param error Exception with error message
+ */
+void TestUtil::handleError(const TestCase &testCase, const std::exception &error) {
+  std::string errorWhat = error.what();
+  CommonUtil::replaceAll(errorWhat, "\\", "/");
+
+  // Fail if no ref file exists
+  std::string refPath = testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT;
+  if (!FileUtil::fileExists(refPath))
+    FAIL() << "Expected no error, but got: " + errorWhat;
+
+  // Check if the exception message matches the expected output
+  TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT, [&]() { return errorWhat; });
 }
 
 /**
@@ -142,13 +161,6 @@ std::string TestUtil::getDefaultExecutableName() {
 #endif
   return executableName;
 }
-
-/**
- * Check if the update refs mode is enabled
- *
- * @return Enabled or not
- */
-bool TestUtil::isUpdateRefsEnabled() { return updateRefs; }
 
 bool TestUtil::isDisabled(const TestCase &testCase) {
   // Check if disabled
