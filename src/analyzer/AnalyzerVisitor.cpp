@@ -2004,13 +2004,11 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   if (!accessScope->isImported(currentScope) && spiceFunc->getDeclCodeLoc().line < node->codeLoc.line)
     reAnalyzeRequired = true;
 
-  currentThisType = thisType;
-
   if (constructorCall) {
     // Add anonymous symbol to keep track of de-allocation
     currentScope->insertAnonymous(thisType, node);
     // Return struct type on constructor call
-    return node->setEvaluatedSymbolType(thisType);
+    return currentThisType = node->setEvaluatedSymbolType(thisType);
   }
 
   // If the callee is a procedure, return type bool
@@ -2031,11 +2029,11 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       std::string scopePrefix = scopePathBackup.getScopePrefix(!spiceFunc->isGenericSubstantiation);
       SymbolType symbolType =
           initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node->codeLoc);
-      return node->setEvaluatedSymbolType(symbolType);
+      return currentThisType = node->setEvaluatedSymbolType(symbolType);
     }
   }
 
-  return node->setEvaluatedSymbolType(returnType);
+  return currentThisType = node->setEvaluatedSymbolType(returnType);
 }
 
 std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node) {

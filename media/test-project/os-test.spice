@@ -31,7 +31,7 @@ p Letter.setStamp(Stamp stamp) {
 f<int> main() {
     dyn letter = Letter{ "", Stamp{ 3.4, false } };
     printf("Stamp glued: %f\n", letter.getStamp().value);
-    //printf("Stamp info: %d\n", letter.getStamp().print());
+    letter.getStamp().print();
 }
 
 /*import "std/runtime/string_rt" as _rt_str;
