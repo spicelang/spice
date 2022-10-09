@@ -2573,8 +2573,8 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
   bool constructorCall = false;
 
   // Load the 'this' value if it is a pointer
-  llvm::Value *thisValuePtr = nullptr;
-  SymbolType thisSymbolType;
+  llvm::Value *thisValuePtr = currentThisValuePtr;
+  SymbolType thisSymbolType = currentSymbolType;
   for (unsigned int i = 0; i < node->functionNameFragments.size(); i++) {
     std::string identifier = node->functionNameFragments[i];
     SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
@@ -2695,6 +2695,14 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
   // Create the function call
   llvm::Value *resultValue = builder->CreateCall(fct, argValues);
 
+  SymbolType returnSymbolType = spiceFunc->getReturnType();
+  if (returnSymbolType.isBaseType(TY_STRUCT)) {
+    // Add struct scope to scope path
+    std::string structSignature = Struct::getSignature(returnSymbolType.getSubType(), returnSymbolType.getTemplateTypes());
+    SymbolTable *newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
+    scopePath.pushFragment(returnSymbolType.getSubType(), newAccessScope);
+  }
+
   // Consider constructor calls
   if (constructorCall) {
     // Update mem-address of anonymous symbol
@@ -2703,7 +2711,9 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     anonEntry->updateAddress(thisValuePtr);
 
     // Return pointer to this value
-    return thisValuePtr;
+    currentSymbolType = anonEntry->type;
+    structAccessType = currentSymbolType.toLLVMType(*context, accessScope);
+    return currentThisValuePtr = structAccessAddress = thisValuePtr;
   } else if (!resultValue->getType()->isSized()) {
     // Set return type bool for procedures
     resultValue = builder->getTrue();
@@ -2711,7 +2721,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   llvm::Value *resultPtr = insertAlloca(resultValue->getType());
   builder->CreateStore(resultValue, resultPtr);
-  return resultPtr;
+  return currentThisValuePtr = structAccessAddress = resultPtr;
 }
 
 std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *node) {

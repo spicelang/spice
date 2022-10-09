@@ -108,7 +108,7 @@ private:
   std::unique_ptr<StdFunctionManager> stdFunctionManager;
   std::unique_ptr<OpRuleConversionsManager> conversionsManager;
   const std::string &objectFile;
-  llvm::TargetMachine *targetMachine{};
+  llvm::TargetMachine *targetMachine;
   const CliOptions &cliOptions;
   const LinkerInterface &linker;
   bool requiresMainFct = true;
@@ -119,6 +119,7 @@ private:
   SymbolTable *currentScope;
   SymbolTable *rootScope;
   SymbolType currentSymbolType = SymbolType(TY_INVALID);
+  llvm::Value *currentThisValuePtr = nullptr;
   ScopePath scopePath;
   ThreadFactory &threadFactory;
   bool blockAlreadyTerminated = false;

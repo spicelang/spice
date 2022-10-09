@@ -72,14 +72,14 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_IS_GH_ACTIONS=ON -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_DEV_COMPILE=ON -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
-          cmake --build . --target Spice_test -j$(nproc)
+          cmake --build . --target spicetest -j$(nproc)
 
       - name: Run Test target
         env:
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
           cd ./bin/test
-          ./Spice_test false
+          ./spicetest false
 
       - name: Generate coverage report
         run: |
@@ -109,6 +109,6 @@ jobs:
 #          SPICE_STD_DIR: /home/runner/work/spice/spice/std
 #        run: |
 #          cd ./bin/test
-#          ./Spice_test true
+#          ./spicetest true
 #          git status --porcelain
 #          git diff --exit-code

@@ -1,39 +1,44 @@
-import "std/runtime/string_rt" as _rt_str;
+type Stamp struct {
+    double value
+    bool glued
+}
+
+p Stamp.print() {
+    printf("Value: %f, glued: %d", this.value, this.glued);
+}
+
+type Letter struct {
+    string content
+    Stamp stamp
+}
+
+f<string> Letter.getContent() {
+    return this.content;
+}
+
+p Letter.setContent(string text) {
+    this.content = text;
+}
+
+f<Stamp> Letter.getStamp() {
+    return this.stamp;
+}
+
+p Letter.setStamp(Stamp stamp) {
+    this.stamp = stamp;
+}
 
 f<int> main() {
-    _rt_str::String s = _rt_str::String("Hello ");
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append("World!");
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append('?');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append('!');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    printf("Equals: %d\n", s.opEquals("Hello World!?!"));
-    printf("Equals: %d\n", s.opEquals("Hello World!!"));
-    printf("Not Equals: %d\n", s.opNotEquals("Hello World!?!"));
-    printf("Not Equals: %d\n", s.opNotEquals("Hello World!!"));
-    s.clear();
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.reserve(100l);
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s = _rt_str::String("");
-    printf("Empty: %d\n", s.isEmpty());
-    s.append('a');
-    printf("Empty: %d", s.isEmpty());
+    dyn letter = Letter{ "", Stamp{ 3.4, false } };
+    printf("Stamp glued: %f\n", letter.getStamp().value);
+    letter.getStamp().print();
 }
+
+/*import "std/runtime/string_rt" as _rt_str;
+
+f<int> main() {
+    printf("%d", _rt_str::String("Test").isEmpty());
+}*/
 
 /*import "std/net/http" as http;
 

@@ -70,7 +70,7 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_DEV_COMPILE=ON -GNinja -Wattributes ..
-          cmake --build . --target Spice_test -j$(nproc)
+          cmake --build . --target spicetest -j$(nproc)
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2

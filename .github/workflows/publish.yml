@@ -67,12 +67,12 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${{ steps.get_version.outputs.version }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
-          cmake --build . --target Spice_run -j$(nproc)
+          cmake --build . --target spice -j$(nproc)
 
       - name: Process build output
         working-directory: bin
         run: |
-          mv ./src/Spice_run spice
+          mv ./src/spice spice
           chmod +x spice
 
       - name: Upload artifact
@@ -146,11 +146,11 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${{ steps.get_version.outputs.version }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
-          cmake --build . --target Spice_run -j$(nproc)
+          cmake --build . --target spice -j$(nproc)
 
       - name: Process build output
         working-directory: bin
-        run: mv ./src/Spice_run.exe spice.exe
+        run: mv ./src/spice.exe spice.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3

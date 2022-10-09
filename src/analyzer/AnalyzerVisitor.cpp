@@ -1685,7 +1685,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
       // Check if lhs is struct
-      if (!lhs.isBaseType(TY_STRUCT) && !lhs.isBaseType(TY_ENUM))
+      if (!lhs.isBaseType(TY_STRUCT) && !lhs.isOneOf({TY_ENUM, TY_STRING}))
         throw SemanticError(node->codeLoc, MEMBER_ACCESS_ONLY_STRUCTS, "Cannot apply member access operator on " + lhs.getName());
 
       PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
@@ -1900,7 +1900,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
   std::string functionName;
-  SymbolType thisType = SymbolType(TY_DYN);
+  SymbolType thisType = currentThisType;
   bool constructorCall = false;
   for (unsigned int i = 0; i < node->functionNameFragments.size(); i++) {
     std::string identifier = node->functionNameFragments[i];
@@ -2008,7 +2008,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     // Add anonymous symbol to keep track of de-allocation
     currentScope->insertAnonymous(thisType, node);
     // Return struct type on constructor call
-    return node->setEvaluatedSymbolType(thisType);
+    return currentThisType = node->setEvaluatedSymbolType(thisType);
   }
 
   // If the callee is a procedure, return type bool
@@ -2018,15 +2018,22 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   // Retrieve the return type of the function
   SymbolType returnType = spiceFunc->getReturnType();
 
-  // If the return type is an external struct, initialize it
-  if (!scopePathBackup.isEmpty() && returnType.is(TY_STRUCT) && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
-    std::string scopePrefix = scopePathBackup.getScopePrefix(!spiceFunc->isGenericSubstantiation);
-    SymbolType symbolType =
-        initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node->codeLoc);
-    return node->setEvaluatedSymbolType(symbolType);
+  if (returnType.is(TY_STRUCT)) {
+    // Add struct scope to scope path
+    std::string structSignature = Struct::getSignature(returnType.getSubType(), returnType.getTemplateTypes());
+    SymbolTable *newAccessScope = accessScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
+    scopePath.pushFragment(returnType.getSubType(), newAccessScope);
+
+    // If the return type is an external struct, initialize it
+    if (!scopePathBackup.isEmpty() && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
+      std::string scopePrefix = scopePathBackup.getScopePrefix(!spiceFunc->isGenericSubstantiation);
+      SymbolType symbolType =
+          initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node->codeLoc);
+      return currentThisType = node->setEvaluatedSymbolType(symbolType);
+    }
   }
 
-  return node->setEvaluatedSymbolType(returnType);
+  return currentThisType = node->setEvaluatedSymbolType(returnType);
 }
 
 std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node) {

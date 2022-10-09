@@ -1,0 +1,8 @@
+#once
+
+.Compiler         = 'D:\mingw64\bin\g++.exe'
+.CompilerOptions  = '%1 -c -o %2'
+.Linker           = 'D:\mingw64\bin\ld.exe'
+.LinkerOptions    = '-o %2 %1'
+.Librarian        = 'D:\mingw64\bin\ld.exe'
+.LibrarianOptions = '-o %2 %1'
