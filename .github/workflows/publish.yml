@@ -131,7 +131,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
-          cmake --build . -j$(nproc)
+          cmake --build . -j4
 
       - name: Download Libs
         run: .\setup-libs.bat
