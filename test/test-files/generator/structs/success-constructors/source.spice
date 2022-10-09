@@ -3,12 +3,20 @@ type Vector struct {
     string field2
 }
 
-p Vector.ctor() {
+p Vector.ctor(string msg = "Test string") {
     this.field1 = false;
-    this.field2 = "Test string";
+    this.field2 = msg;
+}
+
+f<string> Vector.test() {
+    return "Hello World!";
 }
 
 f<int> main() {
     dyn vec = Vector();
-    printf("Fields: %d, %s", vec.field1, vec.field2);
+    printf("Fields: %d, %s\n", vec.field1, vec.field2);
+    vec = Vector("Another message");
+    printf("Fields: %d, %s\n", vec.field1, vec.field2);
+
+    printf("Message: %s\n", Vector().test());
 }

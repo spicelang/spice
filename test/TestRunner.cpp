@@ -16,7 +16,6 @@
 #include <exception/SemanticError.h>
 #include <linker/LinkerInterface.h>
 #include <symbol/SymbolTable.h>
-#include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 #include <util/ThreadFactory.h>
 
