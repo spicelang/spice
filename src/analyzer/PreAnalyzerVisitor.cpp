@@ -69,8 +69,9 @@ std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
   }
   CommonUtil::replaceAll(importPath, "/", std::string(1, FileUtil::DIR_SEPARATOR));
 
-  // Visit the imported file
-  sourceFile.addDependency(node, node->importName, importPath, isImportStd);
+  // Create the imported source file
+  const auto moduleSourceFile = sourceFile.createSourceFile(node->importName, importPath, isImportStd);
+  sourceFile.addDependency(moduleSourceFile, node, node->importName, importPath);
 
   return nullptr;
 }

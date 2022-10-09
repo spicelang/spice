@@ -10,6 +10,8 @@
 #include <SpiceParser.h>
 #include <Token.h>
 
+#include <dependency/RuntimeModuleManager.h>
+
 #include <llvm/IR/IRBuilder.h>
 
 // Forward declarations
@@ -41,18 +43,15 @@ struct CompilerOutput {
   std::string irOptString;
 };
 
-// Structs
-struct RuntimeModules {
-  bool stringRuntime = false;
-  bool threadRuntime = false;
-};
-
 class SourceFile {
 public:
   // Constructors
   explicit SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                      RuntimeModules &runtimeModules, LinkerInterface &linker, CliOptions &options, SourceFile *parent,
-                      std::string name, const std::string &filePath, bool stdFile);
+                      RuntimeModuleManager &runtimeModuleManager, LinkerInterface &linker, CliOptions &options,
+                      SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
+
+  // Friend classes
+  friend class RuntimeModuleManager;
 
   // Public methods
   void visualizeCST();
@@ -64,8 +63,12 @@ public:
   void generate();
   void optimize();
   void emitObjectFile();
-  void addDependency(const AstNode *declAstNode, const std::string &name, const std::string &filePath, bool stdFile);
+  [[nodiscard]] std::shared_ptr<SourceFile> createSourceFile(const std::string &name, const std::string &filePath, bool stdFile);
+  void addDependency(const std::shared_ptr<SourceFile> &sourceFile, const AstNode *declAstNode, const std::string &name,
+                     const std::string &filePath);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
+  void requestRuntimeModule(const RuntimeModuleName &moduleName);
+  [[nodiscard]] SymbolTable *getRuntimeModuleScope(const RuntimeModuleName &moduleName) const;
 
   // Public fields
   std::string name;
@@ -90,5 +93,5 @@ private:
   llvm::IRBuilder<> *builder;
   ThreadFactory &threadFactory;
   LinkerInterface &linker;
-  RuntimeModules &runtimeModules;
+  RuntimeModuleManager &runtimeModuleManager;
 };

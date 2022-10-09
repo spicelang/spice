@@ -6,6 +6,7 @@
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <cli/CliInterface.h>
+#include <dependency/RuntimeModuleManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/IRError.h>
 #include <symbol/Function.h>
@@ -30,9 +31,9 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 GeneratorVisitor::GeneratorVisitor(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                                   const LinkerInterface &linker, const CliOptions &cliOptions, const SourceFile &sourceFile,
+                                   const LinkerInterface &linker, const CliOptions &cliOptions, SourceFile &sourceFile,
                                    const std::string &objectFile)
-    : objectFile(objectFile), cliOptions(cliOptions), linker(linker), context(context), builder(builder),
+    : objectFile(objectFile), sourceFile(sourceFile), cliOptions(cliOptions), linker(linker), context(context), builder(builder),
       threadFactory(threadFactory) {
   // Enrich options
   this->requiresMainFct = sourceFile.parent == nullptr;
@@ -2265,10 +2266,21 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           structAccessType = lhsSymbolType.toLLVMType(*context, currentScope);
         }
 
+        PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
+
+        // Propagate strings to string objects
+        if (lhsSymbolType.is(TY_STRING)) {
+          lhs = builder->CreateLoad(lhsTy, lhsPtr);
+          lhsPtr = conversionsManager->propagateValueToStringObject(currentScope, lhsSymbolType, lhsPtr, lhs, rhs->codeLoc);
+          currentSymbolType = SymbolType(TY_STRUCT, std::string("String"));
+          SymbolTable *stringRuntimeScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+          assert(stringRuntimeScope != nullptr);
+          scopePath.clear();
+          scopePath.pushFragment(STRING_RT_IMPORT_NAME, stringRuntimeScope);
+        }
         currentThisValuePtr = structAccessAddress = lhsPtr;
 
         // Visit identifier after the dot
-        PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
         lhsPtr = resolveAddress(rhs);
 
         lhs = nullptr;
@@ -2581,18 +2593,38 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     std::string identifier = node->functionNameFragments[i];
     SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
 
+    SymbolType symbolBaseType;
+    if (symbolEntry != nullptr) {
+      if (symbolEntry->type.getBaseType().is(TY_STRING)) {
+        // Load string value
+        llvm::Value *stringPtr = symbolEntry->getAddress();
+        llvm::Value *string = builder->CreateLoad(symbolEntry->type.toLLVMType(*context, currentScope), stringPtr);
+        // Propagate the string to a string object
+        conversionsManager->propagateValueToStringObject(currentScope, symbolEntry->type, stringPtr, string, node->codeLoc);
+        // Replace symbolEntry with anonymous entry
+        symbolEntry = currentScope->lookupAnonymous(node->codeLoc);
+        assert(symbolEntry != nullptr);
+        symbolBaseType = SymbolType(TY_STRUCT, std::string("String"));
+        accessScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+        assert(accessScope != nullptr);
+      } else {
+        symbolBaseType = symbolEntry->type.getBaseType();
+      }
+    }
+
     if (i < node->functionNameFragments.size() - 1) {
       if (!symbolEntry)
         throw IRError(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION_IR,
                       "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
       thisValuePtr = symbolEntry->getAddress();
-    } else if (symbolEntry != nullptr && symbolEntry->type.getBaseType().is(TY_STRUCT)) {
+    } else if (symbolEntry != nullptr && symbolBaseType.is(TY_STRUCT)) {
       Struct *spiceStruct = currentScope->getStructAccessPointer(node->codeLoc);
       assert(spiceStruct != nullptr);
 
       // Check if the struct is defined
       symbolEntry = accessScope->lookup(spiceStruct->getSignature());
       assert(symbolEntry != nullptr);
+      symbolBaseType = symbolEntry->type.getBaseType();
 
       // Get address of variable in memory
       if (lhsVarName.empty()) {
@@ -2615,8 +2647,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     }
     thisSymbolType = symbolEntry->type;
 
-    std::string tableName =
-        symbolEntry->type.is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + symbolEntry->type.getBaseType().getName();
+    std::string tableName = symbolEntry->type.is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + symbolBaseType.getName();
     accessScope = accessScope->lookupTable(tableName);
     assert(accessScope != nullptr);
     scopePath.pushFragment(identifier, accessScope);

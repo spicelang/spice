@@ -1,5 +1,5 @@
 f<int> main() {
-    printf("%d", "Test".getLength());
+    printf("%d\n", "".isEmpty());
 }
 
 /*import "std/runtime/string_rt" as _rt_str;

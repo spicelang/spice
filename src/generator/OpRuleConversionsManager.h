@@ -78,14 +78,14 @@ public:
   llvm::Value *getPostfixMinusMinusInst(llvm::Value *lhsV, const SymbolType &lhsTy);
   llvm::Value *getCastInst(llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy, SymbolTable *accessScope);
 
+  // Util methods
+  llvm::Value *propagateValueToStringObject(SymbolTable *accessScope, const SymbolType &symbolType, llvm::Value *operandPtr,
+                                            llvm::Value *operandValue, const CodeLoc &codeLoc);
+
 private:
   // Members
   GeneratorVisitor *generator;
   llvm::LLVMContext *context;
   llvm::IRBuilder<> *builder;
   const StdFunctionManager *stdFunctionManager;
-
-  // Private methods
-  llvm::Value *propagateValueToStringObject(SymbolTable *accessScope, const SymbolType &symbolType, llvm::Value *operandPtr,
-                                            llvm::Value *operandValue, const CodeLoc &codeLoc);
 };

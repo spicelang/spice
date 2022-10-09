@@ -32,7 +32,7 @@ class LinkerInterface;
 class SymbolTable;
 class SymbolTableEntry;
 class SourceFile;
-struct RuntimeModules;
+struct RuntimeModuleManager;
 
 /**
  * Visitor for analyzing a source file.
@@ -48,8 +48,8 @@ struct RuntimeModules;
 class AnalyzerVisitor : public AstVisitor {
 public:
   // Constructors
-  explicit AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, const SourceFile &sourceFile,
-                           CliOptions &options, RuntimeModules &runtimeModules, bool requiresMainFct, bool stdFile);
+  explicit AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, SourceFile &sourceFile,
+                           CliOptions &options, bool requiresMainFct, bool stdFile);
 
   // Friend classes
   friend class OpRuleManager;
@@ -113,7 +113,7 @@ private:
   const llvm::LLVMContext *context;
   const llvm::IRBuilder<> *builder;
   std::unique_ptr<OpRuleManager> opRuleManager;
-  RuntimeModules &runtimeModules;
+  SourceFile &sourceFile;
   bool requiresMainFct = true;
   bool hasMainFunction = false;
   bool isStdFile = false;

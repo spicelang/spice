@@ -40,7 +40,7 @@ class GeneratorVisitor : public AstVisitor {
 public:
   // Constructors
   explicit GeneratorVisitor(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                            const LinkerInterface &linker, const CliOptions &cliOptions, const SourceFile &sourceFile,
+                            const LinkerInterface &linker, const CliOptions &cliOptions, SourceFile &sourceFile,
                             const std::string &objectFile);
 
   // Friend classes
@@ -109,6 +109,7 @@ private:
   std::unique_ptr<OpRuleConversionsManager> conversionsManager;
   const std::string &objectFile;
   llvm::TargetMachine *targetMachine;
+  SourceFile &sourceFile;
   const CliOptions &cliOptions;
   const LinkerInterface &linker;
   bool requiresMainFct = true;
@@ -169,7 +170,6 @@ private:
   llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
   llvm::Value *createGlobalArray(llvm::Constant *constArray);
   bool insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
-
   llvm::Value *materializeString(llvm::Value *stringStruct);
   llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
