@@ -2265,6 +2265,8 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           structAccessType = lhsSymbolType.toLLVMType(*context, currentScope);
         }
 
+        currentThisValuePtr = structAccessAddress = lhsPtr;
+
         // Visit identifier after the dot
         PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
         lhsPtr = resolveAddress(rhs);
@@ -2713,7 +2715,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     // Return pointer to this value
     currentSymbolType = anonEntry->type;
     structAccessType = currentSymbolType.toLLVMType(*context, accessScope);
-    return currentThisValuePtr = structAccessAddress = thisValuePtr;
+    return thisValuePtr;
   } else if (!resultValue->getType()->isSized()) {
     // Set return type bool for procedures
     resultValue = builder->getTrue();
@@ -2721,7 +2723,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   llvm::Value *resultPtr = insertAlloca(resultValue->getType());
   builder->CreateStore(resultValue, resultPtr);
-  return currentThisValuePtr = structAccessAddress = resultPtr;
+  return resultPtr;
 }
 
 std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *node) {

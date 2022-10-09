@@ -1688,6 +1688,9 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       if (!lhs.isBaseType(TY_STRUCT) && !lhs.isOneOf({TY_ENUM, TY_STRING}))
         throw SemanticError(node->codeLoc, MEMBER_ACCESS_ONLY_STRUCTS, "Cannot apply member access operator on " + lhs.getName());
 
+      // Set this type
+      currentThisType = lhs;
+
       PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
       lhs = any_cast<SymbolType>(visit(rhs)); // Visit rhs
       break;
@@ -2008,7 +2011,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     // Add anonymous symbol to keep track of de-allocation
     currentScope->insertAnonymous(thisType, node);
     // Return struct type on constructor call
-    return currentThisType = node->setEvaluatedSymbolType(thisType);
+    return node->setEvaluatedSymbolType(thisType);
   }
 
   // If the callee is a procedure, return type bool
@@ -2029,11 +2032,11 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       std::string scopePrefix = scopePathBackup.getScopePrefix(!spiceFunc->isGenericSubstantiation);
       SymbolType symbolType =
           initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node->codeLoc);
-      return currentThisType = node->setEvaluatedSymbolType(symbolType);
+      return node->setEvaluatedSymbolType(symbolType);
     }
   }
 
-  return currentThisType = node->setEvaluatedSymbolType(returnType);
+  return node->setEvaluatedSymbolType(returnType);
 }
 
 std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node) {

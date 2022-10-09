@@ -1,37 +1,5 @@
-type Stamp struct {
-    double value
-    bool glued
-}
-
-p Stamp.print() {
-    printf("Value: %f, glued: %d", this.value, this.glued);
-}
-
-type Letter struct {
-    string content
-    Stamp stamp
-}
-
-f<string> Letter.getContent() {
-    return this.content;
-}
-
-p Letter.setContent(string text) {
-    this.content = text;
-}
-
-f<Stamp> Letter.getStamp() {
-    return this.stamp;
-}
-
-p Letter.setStamp(Stamp stamp) {
-    this.stamp = stamp;
-}
-
 f<int> main() {
-    dyn letter = Letter{ "", Stamp{ 3.4, false } };
-    printf("Stamp glued: %f\n", letter.getStamp().value);
-    letter.getStamp().print();
+    printf("%d", "Test".getLength());
 }
 
 /*import "std/runtime/string_rt" as _rt_str;
