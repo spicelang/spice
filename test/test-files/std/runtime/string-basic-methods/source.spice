@@ -8,6 +8,12 @@ f<int> main() {
     printf("%d\n", "Hello World!".getCapacity());
     printf("%d\n", "Hello".isFull());
     printf("%d\n", "Hello World!".isFull());
+    printf("%d\n", "Hello World!".contains("abc"));
+    printf("%d\n", "Hello World!".contains("Hello"));
+    printf("%d\n", "Hello World!".contains("World!"));
+    printf("%d\n", "Hello World!".contains("o W"));
+
+    printf("\n");
 
     // Via variable
     string var = "";
@@ -22,4 +28,8 @@ f<int> main() {
     printf("%d\n", var.getCapacity());
     var = "Hello World!";
     printf("%d\n", var.getCapacity());
+    printf("%d\n", var.contains("abc"));
+    printf("%d\n", var.contains("Hello"));
+    printf("%d\n", var.contains("World!"));
+    printf("%d\n", var.contains("o W"));
 }

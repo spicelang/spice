@@ -254,6 +254,29 @@ public p String.clear() {
 }
 
 /**
+ * Checks if the string contains a substring
+ */
+public f<bool> String.contains(string needle) {
+    unsigned long needleLength = str.getRawLength(needle);
+    // Return false if the needle is longer than the haystack
+    if this.length < needleLength { return false; }
+    // Search needle in haystack
+    for unsigned long startIdx = 0l; startIdx <= this.length - needleLength; startIdx++ {
+        // Start matching at startIdx
+        for unsigned long charIdx = 0l; charIdx < needleLength; charIdx++ {
+            unsafe {
+                if this.contents[startIdx + charIdx] != needle[charIdx] {
+                    continue 2;
+                }
+            }
+        }
+        // Whole string was matched
+        return true;
+    }
+    return false;
+}
+
+/**
  * Reserves `charCount` items
  *
  * @param charCount Number of chars to reserve for the string
