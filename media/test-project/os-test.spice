@@ -1,37 +1,6 @@
 f<int> main() {
-    // Directly
-    printf("%d\n", "".isEmpty());
-    printf("%d\n", "Hello".isEmpty());
-    printf("%d\n", "Hello!".getLength());
-    printf("%d\n", "Hello World!".getLength());
-    printf("%d\n", "Hello!".getCapacity());
-    printf("%d\n", "Hello World!".getCapacity());
-    printf("%d\n", "Hello".isFull());
-    printf("%d\n", "Hello World!".isFull());
-    printf("%d\n", "Hello World!".contains("abc"));
-    printf("%d\n", "Hello World!".contains("Hello"));
-    printf("%d\n", "Hello World!".contains("World!"));
-    printf("%d\n", "Hello World!".contains("o W"));
-
-    printf("\n");
-
-    // Via variable
-    string var = "";
-    printf("%d\n", var.isEmpty());
-    var = "Hello";
-    printf("%d\n", var.isEmpty());
-    var = "Hello!";
-    printf("%d\n", var.getLength());
-    var = "Hello World!";
-    printf("%d\n", var.getLength());
-    var = "Hello!";
-    printf("%d\n", var.getCapacity());
-    var = "Hello World!";
-    printf("%d\n", var.getCapacity());
-    printf("%d\n", var.contains("abc"));
-    printf("%d\n", var.contains("Hello"));
-    printf("%d\n", var.contains("World!"));
-    printf("%d\n", var.contains("o W"));
+    string testString = "Hello World!";
+    printf("Substr: %s\n", testString.substring(6));
 }
 
 /*import "std/runtime/string_rt" as _rt_str;

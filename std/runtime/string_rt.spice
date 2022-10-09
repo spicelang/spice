@@ -255,6 +255,9 @@ public p String.clear() {
 
 /**
  * Checks if the string contains a substring
+ *
+ * @param needle Substring to search for
+ * @return Found or not
  */
 public f<bool> String.contains(string needle) {
     unsigned long needleLength = str.getRawLength(needle);
@@ -277,11 +280,63 @@ public f<bool> String.contains(string needle) {
 }
 
 /**
+ * Returns the substring of the current string, starting at position `startIndex` with
+ * the length of `length`.
+ *
+ * @param startIndex Substring start index
+ * @param length Length of substring
+ * @return Substring
+ */
+public f<string> String.substring(unsigned long startIndex, long length = -1l) {
+    String substring = String("");
+
+    // Return empty string if the length is 0
+    if length == 0l { return (string) substring.contents; }
+
+    // Get everything after startIndex when length is -1
+    if length == -1l {
+        length = this.length - startIndex;
+    }
+
+    // Get substring
+    substring.reserve(length);
+    for unsigned long charIndex = startIndex; charIndex < this.length; charIndex++ {
+        unsafe {
+            printf("%c\n", this.contents[charIndex]);
+            printf("%d, %d\n", charIndex, startIndex);
+            printf("%d\n", charIndex - startIndex);
+            substring.contents[charIndex - startIndex] = this.contents[charIndex];
+        }
+    }
+
+    // Terminate string
+    unsafe {
+        substring.contents[length] = '\0';
+    }
+
+    // Return raw string
+    return (string) substring.contents;
+}
+
+/**
+ * Returns the substring of the current string, starting at position `startIndex` with
+ * the length of `length`.
+ *
+ * @param startIndex Substring start index
+ * @param length Length of substring
+ * @return Substring
+ */
+public inline f<string> String.substring(unsigned int startIndex, int length = -1) {
+    return this.substring((long) startIndex, (long) length);
+}
+
+/**
  * Reserves `charCount` items
  *
  * @param charCount Number of chars to reserve for the string
  */
 public p String.reserve(unsigned long charCount) {
+    charCount++; // Because of null terminator
     if charCount > this.capacity {
         this.resize(charCount);
     }
