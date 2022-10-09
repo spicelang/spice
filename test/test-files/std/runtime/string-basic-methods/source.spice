@@ -23,28 +23,3 @@ f<int> main() {
     var = "Hello World!";
     printf("%d\n", var.getCapacity());
 }
-
-/*import "std/runtime/string_rt" as _rt_str;
-
-f<int> main() {
-    printf("%d", _rt_str::String("Test").isEmpty());
-}*/
-
-/*import "std/net/http" as http;
-
-f<int> main() {
-    http::HttpServer server = http::HttpServer();
-    server.serve("/test", "Hello World!");
-}*/
-
-/*public f<bool> src(bool x, bool y) {
-    return ((x ? 1 : 4) & (y ? 1 : 4)) == 0;
-}
-
-public f<int> tgt(int x, int y) {
-    return x ^ y;
-}
-
-f<int> main() {
-    printf("Result: %d, %d", src(false, true), tgt(0, 1));
-}*/
