@@ -1,6 +1,5 @@
 f<int> main() {
-    string testString = "Hello World!";
-    printf("Substr: %s\n", testString.substring(6));
+    printf("%s\n", "Hello World!".substring(0, 5));
 }
 
 /*import "std/runtime/string_rt" as _rt_str;
