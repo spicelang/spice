@@ -189,9 +189,9 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     auto returnType = any_cast<SymbolType>(visit(node->returnType()));
     if (returnType.is(TY_DYN))
       throw SemanticError(node->codeLoc, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
-    if (returnType.isPointer())
+    /*if (returnType.isPointer())
       throw SemanticError(node->codeLoc, COMING_SOON_SA,
-                          "Spice currently not supports pointer return types due to not handling pointer escaping.");
+                          "Spice currently not supports pointer return types due to not handling pointer escaping.");*/
     node->fctScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, node);
 
     // Return to old scope
@@ -264,9 +264,9 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
         if (returnVarEntry->type.is(TY_GENERIC)) {
           SymbolType returnType = spiceFunc.getReturnType();
-          if (returnType.isPointer())
+          /*if (returnType.isPointer())
             throw SemanticError(node->codeLoc, COMING_SOON_SA,
-                                "Spice currently not supports pointer return types due to not handling pointer escaping.");
+                                "Spice currently not supports pointer return types due to not handling pointer escaping.");*/
           returnVarEntry->updateType(returnType, true);
         }
 
@@ -1180,7 +1180,7 @@ std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
     case 'X': {
       if (!assignmentType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_BOOL}))
         throw SemanticError(assignment->codeLoc, PRINTF_TYPE_ERROR,
-                            "Template string expects int, byte or bool, but got " + assignmentType.getName(false));
+                            "Template string expects int, short, long, byte or bool, but got " + assignmentType.getName(false));
       placeholderCount++;
       break;
     }
@@ -1201,14 +1201,14 @@ std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
     case 's': {
       if (!assignmentType.is(TY_STRING) && !assignmentType.isPointerOf(TY_CHAR) && !assignmentType.isArrayOf(TY_CHAR))
         throw SemanticError(assignment->codeLoc, PRINTF_TYPE_ERROR,
-                            "Template string expects string, but got " + assignmentType.getName(false));
+                            "Template string expects string, char* or char[], but got " + assignmentType.getName(false));
       placeholderCount++;
       break;
     }
     case 'p': {
-      if (!assignmentType.isPointer() && !assignmentType.isArray())
+      if (!assignmentType.isPointer() && !assignmentType.isArray() && !assignmentType.is(TY_STRING))
         throw SemanticError(assignment->codeLoc, PRINTF_TYPE_ERROR,
-                            "Template string expects pointer, but got " + assignmentType.getName(false));
+                            "Template string expects pointer, array or string, but got " + assignmentType.getName(false));
       placeholderCount++;
       break;
     }

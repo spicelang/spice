@@ -27,7 +27,7 @@ public p String.ctor(const string value = "") {
     // Allocate space for the initial number of elements
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        this.contents = (char*) malloc(sizeof(type char) * requiredBytes);
+        this.contents = (char*) malloc(requiredBytes);
     }
 
     // Save initial value
@@ -47,7 +47,7 @@ public p String.ctor(const string value1, const string value2) {
     // Allocate space for the initial number of elements
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        this.contents = (char*) malloc(sizeof(type char) * requiredBytes);
+        this.contents = (char*) malloc(requiredBytes);
     }
 
     // Save initial value
@@ -68,7 +68,7 @@ public p String.ctor(const char value) {
     // Allocate space for the initial number of elements
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        this.contents = (char*) malloc(sizeof(type char) * requiredBytes);
+        this.contents = (char*) malloc(requiredBytes);
     }
 
     // Save initial value
@@ -257,29 +257,53 @@ public p String.clear() {
 }
 
 /**
- * Checks if the string contains a substring
+ * Searches for a substring in a string. Returns -1 if the string was not found.
  *
- * @param needle Substring to search for
- * @return Found or not
+ * @param startIndex Index where to start the search
+ * @return Index, where the substring was found / -1
  */
-public f<bool> String.contains(string needle) {
+public f<long> String.find(string needle, unsigned long startIndex = 0l) {
+    // Return -1 if the startIndex is out of bounds
+    if startIndex >= this.length { return -1l; }
+
     unsigned long needleLength = str.getRawLength(needle);
     // Return false if the needle is longer than the haystack
-    if this.length < needleLength { return false; }
+    if this.length < needleLength { return -1l; }
+
     // Search needle in haystack
-    for unsigned long startIdx = 0l; startIdx <= this.length - needleLength; startIdx++ {
+    for unsigned long idx = startIndex; idx <= this.length - needleLength; idx++ {
         // Start matching at startIdx
         for unsigned long charIdx = 0l; charIdx < needleLength; charIdx++ {
             unsafe {
-                if this.contents[startIdx + charIdx] != needle[charIdx] {
+                if this.contents[idx + charIdx] != needle[charIdx] {
                     continue 2;
                 }
             }
         }
         // Whole string was matched
-        return true;
+        return idx;
     }
-    return false;
+    return -1l;
+}
+
+/**
+ * Searches for a substring in a string. Returns -1 if the string was not found.
+ *
+ * @param startIndex Index where to start the search
+ * @return Index, where the substring was found / -1
+ */
+public f<long> String.find(string needle, unsigned int startIndex) {
+    return this.find(needle, (long) startIndex);
+}
+
+/**
+ * Checks if the string contains a substring
+ *
+ * @param needle Substring to search for
+ * @return Found or not
+ */
+public inline f<bool> String.contains(string needle) {
+    return this.find(needle) != -1l;
 }
 
 /**
@@ -290,12 +314,10 @@ public f<bool> String.contains(string needle) {
  * @param length Length of substring
  * @return Substring
  */
-public f<string> String.substring(unsigned long startIndex, long length = -1l) {
-    String substring = String("");
-
+public f<String> String.substring(unsigned long startIndex, long length = -1l) {
     // Return empty string if the length is 0 or the startIndex is out of bounds
     if length == 0l || startIndex >= this.length {
-        return (string) substring.contents;
+        return String("");
     }
 
     // Get everything after startIndex when length is -1
@@ -309,12 +331,11 @@ public f<string> String.substring(unsigned long startIndex, long length = -1l) {
     }
 
     // Get substring
+    String substring = String("");
     substring.reserve(length);
     unsigned long endIndex = startIndex + length;
     for unsigned long charIndex = startIndex; charIndex < endIndex; charIndex++ {
         unsafe {
-            //printf("'%c'\n", this.contents[charIndex]);
-            //printf("%d\n", charIndex - startIndex);
             substring.contents[charIndex - startIndex] = this.contents[charIndex];
         }
     }
@@ -325,7 +346,7 @@ public f<string> String.substring(unsigned long startIndex, long length = -1l) {
     }
 
     // Return raw string
-    return (string) substring.contents;
+    return substring;
 }
 
 /**
@@ -336,7 +357,7 @@ public f<string> String.substring(unsigned long startIndex, long length = -1l) {
  * @param length Length of substring
  * @return Substring
  */
-public inline f<string> String.substring(unsigned int startIndex, int length = -1) {
+public inline f<String> String.substring(unsigned int startIndex, int length = -1) {
     return this.substring((long) startIndex, (long) length);
 }
 
@@ -370,8 +391,7 @@ p String.resize(unsigned long newLength) {
     unsafe {
         byte* oldAddress = (byte*) this.contents;
         unsigned long requiredBytes = newLength + 1; // +1 because of null terminator
-        int newSize = (int) (sizeof(type char) * requiredBytes);
-        char* newMemory = (char*) realloc(oldAddress, newSize);
+        char* newMemory = (char*) realloc(oldAddress, (int) requiredBytes);
         this.contents = newMemory;
     }
     // Set new capacity

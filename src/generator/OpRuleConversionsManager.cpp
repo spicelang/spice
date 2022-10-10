@@ -1511,16 +1511,14 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhsV, const Symb
   case COMB(TY_CHAR, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_LONG):
     return builder->CreateIntCast(rhsV, lhsTy, false);
-  case COMB(TY_CHAR, TY_CHAR): // fallthrough
-  case COMB(TY_STRING, TY_STRING):
+  case COMB(TY_CHAR, TY_CHAR):     // fallthrough
+  case COMB(TY_STRING, TY_STRING): // fallthrough
+  case COMB(TY_STRING, TY_PTR):    // fallthrough
+  case COMB(TY_BOOL, TY_BOOL):     // fallthrough
+  case COMB(TY_PTR, TY_STRING):
     return rhsV;
-  case COMB(TY_STRING, TY_PTR):
-    return builder->CreatePointerCast(rhsV, lhsTy);
-  case COMB(TY_BOOL, TY_BOOL):
-    return rhsV;
-  case COMB(TY_PTR, TY_STRING): // fallthrough (string corresponds to byte* or char*)
   case COMB(TY_PTR, TY_PTR):
-    return builder->CreatePointerCast(rhsV, lhsTy);
+    return lhsSTy.getContainedTy() == rhsSTy.getContainedTy() ? rhsV : builder->CreatePointerCast(rhsV, lhsTy);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
 }

@@ -1,22 +1,58 @@
 f<int> main() {
-    string test = "Tested";
-    printf("%s\n", test.getRaw());
-    printf("%d\n", test.getLength());
-    printf("%d\n", test.getCapacity());
+    // Directly
+    printf("%d\n", "".isEmpty());
+    printf("%d\n", "Hello".isEmpty());
+    printf("%d\n", "Hello!".getLength());
+    printf("%d\n", "Hello World!".getLength());
+    printf("%d\n", "Hello!".getCapacity());
+    printf("%d\n", "Hello World!".getCapacity());
+    printf("%d\n", "Hello".isFull());
+    printf("%d\n", "Hello World!".isFull());
+    printf("%d\n", "Hello World!".find("ell"));
+    printf("%d\n", "Hello World!".find("Wort"));
+    printf("%d\n", "Hello World!".find("H"));
+    printf("%d\n", "Hello World!".find("!"));
+    printf("%d\n", "Hello World!".find(" ", 12));
+    printf("%d\n", "Hello World!".contains("abc"));
+    printf("%d\n", "Hello World!".contains("Hello"));
+    printf("%d\n", "Hello World!".contains("World!"));
+    printf("%d\n", "Hello World!".contains("o W"));
+    //printf("'%s'\n", "Hello World!".substring(0, 5));
+    //printf("'%s'\n", "Hello World!".substring(4, 2));
+    //printf("'%s'\n", "Hello World!".substring(6));
+    //printf("'%s'\n", "Hello World!".substring(2, 0));
+    //printf("%s\n", "Hello World!".substring(2, 12));
+
+    printf("\n");
+
+    // Via variable
+    string var = "";
+    printf("%d\n", var.isEmpty());
+    var = "Hello";
+    printf("%d\n", var.isEmpty());
+    var = "Hello!";
+    printf("%d\n", var.getLength());
+    var = "Hello World!";
+    printf("%d\n", var.getLength());
+    var = "Hello!";
+    printf("%d\n", var.getCapacity());
+    var = "Hello World!";
+    printf("%d\n", var.getCapacity());
+    printf("%d\n", var.find("ell"));
+    printf("%d\n", var.find("Wort"));
+    printf("%d\n", var.find("H"));
+    printf("%d\n", var.find("!"));
+    printf("%d\n", var.find(" ", 12));
+    printf("%d\n", var.contains("abc"));
+    printf("%d\n", var.contains("Hello"));
+    printf("%d\n", var.contains("World!"));
+    printf("%d\n", var.contains("o W"));
+    //printf("'%s'\n", var.substring(0, 5));
+    //printf("'%s'\n", var.substring(4, 2));
+    //printf("'%s'\n", var.substring(6));
+    //printf("'%s'\n", var.substring(2, 0));
+    //printf("%s\n", var.substring(4, 12));
 }
-
-/*f<int> main() {
-    int v1 = 10;
-    int v2 = v1;
-    printf("v1: %d, v2: %d\n", v1, v2);
-    v2++;
-    printf("v1: %d, v2: %d\n", v1, v2);
-
-    unsigned long startIndex = 10l;
-    for unsigned long charIndex = startIndex; charIndex < 20l; charIndex++ {
-        printf("Char index: %d, start index: %d\n", charIndex, startIndex);
-    }
-}*/
 
 /*import "std/net/http" as http;
 

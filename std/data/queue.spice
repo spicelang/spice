@@ -46,7 +46,7 @@ public p Queue.ctor(unsigned int initAllocItems) {
 
 public p Queue.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
-    this.itemSize = sizeof(type T);
+    this.itemSize = sizeof(type T) / 8;
     unsafe {
         this.contents = (T*) malloc(this.itemSize * initAllocItems);
     }
