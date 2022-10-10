@@ -20,6 +20,7 @@ entry.l5:
   %condition = alloca i1, align 1
   %0 = alloca i32, align 4
   %r = alloca i32, align 4
+  %r1 = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store i1 true, ptr %condition, align 1
   %1 = call i32 @_f__void__get()
@@ -28,9 +29,11 @@ entry.l5:
   %2 = load i1, ptr %condition, align 1
   %3 = select i1 %2, ptr %0, ptr %r
   %4 = load i32, ptr %3, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr @0, i32 %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  store i32 %4, ptr %r1, align 4
+  %5 = load i32, ptr %r1, align 4
+  %6 = call i32 (ptr, ...) @printf(ptr @0, i32 %5)
+  %7 = load i32, ptr %result, align 4
+  ret i32 %7
 }
 
 declare i32 @printf(ptr, ...)

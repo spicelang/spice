@@ -56,16 +56,19 @@ entry.l8:
   %result = alloca i32, align 4
   %input = alloca i32, align 4
   %0 = alloca i32, align 4
+  %faculty = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store i32 10, ptr %input, align 4
   %1 = load i32, ptr %input, align 4
   %2 = call i32 @_f__void__faculty__int(i32 %1)
   store i32 %2, ptr %0, align 4
-  %3 = load i32, ptr %input, align 4
-  %4 = load i32, ptr %0, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr @0, i32 %3, i32 %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  %3 = load i32, ptr %0, align 4
+  store i32 %3, ptr %faculty, align 4
+  %4 = load i32, ptr %input, align 4
+  %5 = load i32, ptr %faculty, align 4
+  %6 = call i32 (ptr, ...) @printf(ptr @0, i32 %4, i32 %5)
+  %7 = load i32, ptr %result, align 4
+  ret i32 %7
 }
 
 declare i32 @printf(ptr, ...)

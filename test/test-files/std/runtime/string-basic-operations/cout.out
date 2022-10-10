@@ -1,18 +1,18 @@
 Content: Hello 
 Length: 6
-Capacity: 11
+Capacity: 12
 
 Content: Hello World!
 Length: 12
-Capacity: 23
+Capacity: 12
 
 Content: Hello World!?
 Length: 13
-Capacity: 23
+Capacity: 24
 
 Content: Hello World!?!
 Length: 14
-Capacity: 23
+Capacity: 24
 
 Equals: 1
 Equals: 0
@@ -20,7 +20,7 @@ Not Equals: 0
 Not Equals: 1
 Content: 
 Length: 0
-Capacity: 23
+Capacity: 24
 
 Content: 
 Length: 0

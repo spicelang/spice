@@ -19,13 +19,16 @@ entry.l5:
   %0 = call double @_f__void__getArg()
   %1 = alloca double, align 8
   %2 = alloca double, align 8
+  %arg = alloca double, align 8
   %result = alloca double, align 8
   store double %0, ptr %1, align 8
   %3 = load double, ptr %1, align 8
   %4 = fadd double %3, 1.200000e+00
   store double %4, ptr %2, align 8
   %5 = load double, ptr %2, align 8
-  ret double %5
+  store double %5, ptr %arg, align 8
+  %6 = load double, ptr %arg, align 8
+  ret double %6
 }
 
 define i32 @main() {

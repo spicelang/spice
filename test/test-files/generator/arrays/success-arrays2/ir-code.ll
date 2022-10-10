@@ -11,15 +11,21 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
+  %intArray = alloca [10 x i32], align 4
   store i32 0, ptr %result, align 4
-  %0 = load i32, ptr getelementptr inbounds ([10 x i32], ptr @intArray, i32 0, i32 3), align 4
-  %1 = call i32 (ptr, ...) @printf(ptr @0, i32 %0)
-  %2 = load i32, ptr getelementptr inbounds ([10 x i32], ptr @intArray, i32 0, i32 7), align 4
-  %3 = call i32 (ptr, ...) @printf(ptr @1, i32 %2)
-  %4 = load i32, ptr getelementptr inbounds ([10 x i32], ptr @intArray, i32 0, i32 9), align 4
-  %5 = call i32 (ptr, ...) @printf(ptr @2, i32 %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  %0 = load [10 x i32], ptr @intArray, align 4
+  store [10 x i32] %0, ptr %intArray, align 4
+  %1 = getelementptr inbounds [10 x i32], ptr %intArray, i32 0, i32 3
+  %2 = load i32, ptr %1, align 4
+  %3 = call i32 (ptr, ...) @printf(ptr @0, i32 %2)
+  %4 = getelementptr inbounds [10 x i32], ptr %intArray, i32 0, i32 7
+  %5 = load i32, ptr %4, align 4
+  %6 = call i32 (ptr, ...) @printf(ptr @1, i32 %5)
+  %7 = getelementptr inbounds [10 x i32], ptr %intArray, i32 0, i32 9
+  %8 = load i32, ptr %7, align 4
+  %9 = call i32 (ptr, ...) @printf(ptr @2, i32 %8)
+  %10 = load i32, ptr %result, align 4
+  ret i32 %10
 }
 
 declare i32 @printf(ptr, ...)

@@ -19,6 +19,7 @@ entry.l13:
   %5 = alloca %_s__TreeNode__TreeNodeptr_int, align 8
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
+  %curNode = alloca ptr, align 8
   %8 = alloca ptr, align 8
   %9 = alloca i1, align 1
   store i32 0, ptr %result, align 4
@@ -47,33 +48,35 @@ entry.l13:
   %21 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %5, i32 0, i32 1
   store i32 3, ptr %21, align 4
   store ptr %5, ptr %7, align 8
+  %22 = load ptr, ptr %7, align 8
+  store ptr %22, ptr %curNode, align 8
   br label %while.cond.l21
 
 while.cond.l21:                                   ; preds = %while.l21, %entry.l13
-  %22 = load ptr, ptr %7, align 8
-  %23 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %22, i32 0, i32 0
-  %24 = load ptr, ptr %23, align 8
+  %23 = load ptr, ptr %curNode, align 8
+  %24 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %23, i32 0, i32 0
+  %25 = load ptr, ptr %24, align 8
   store ptr null, ptr %8, align 8
-  %25 = load ptr, ptr %8, align 8
-  %26 = icmp ne ptr %24, %25
-  store i1 %26, ptr %9, align 1
-  %27 = load i1, ptr %9, align 1
-  br i1 %27, label %while.l21, label %while.end.l21
+  %26 = load ptr, ptr %8, align 8
+  %27 = icmp ne ptr %25, %26
+  store i1 %27, ptr %9, align 1
+  %28 = load i1, ptr %9, align 1
+  br i1 %28, label %while.l21, label %while.end.l21
 
 while.l21:                                        ; preds = %while.cond.l21
-  %28 = load ptr, ptr %7, align 8
-  %29 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %28, i32 0, i32 0
-  %30 = load ptr, ptr %29, align 8
-  store ptr %30, ptr %7, align 8
+  %29 = load ptr, ptr %curNode, align 8
+  %30 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %29, i32 0, i32 0
+  %31 = load ptr, ptr %30, align 8
+  store ptr %31, ptr %curNode, align 8
   br label %while.cond.l21
 
 while.end.l21:                                    ; preds = %while.cond.l21
-  %31 = load ptr, ptr %7, align 8
-  %32 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %31, i32 0, i32 1
-  %33 = load i32, ptr %32, align 4
-  %34 = call i32 (ptr, ...) @printf(ptr @0, i32 %33)
-  %35 = load i32, ptr %result, align 4
-  ret i32 %35
+  %32 = load ptr, ptr %curNode, align 8
+  %33 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %32, i32 0, i32 1
+  %34 = load i32, ptr %33, align 4
+  %35 = call i32 (ptr, ...) @printf(ptr @0, i32 %34)
+  %36 = load i32, ptr %result, align 4
+  ret i32 %36
 }
 
 declare i32 @printf(ptr, ...)

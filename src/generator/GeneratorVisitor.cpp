@@ -1318,34 +1318,50 @@ std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
 std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   setSourceLocation(node);
 
-  // Get var name
-  currentVarName = lhsVarName = node->varName;
-
   // Get variable entry
-  SymbolTableEntry *entry = currentScope->lookup(lhsVarName);
+  SymbolTableEntry *entry = currentScope->lookup(node->varName);
   assert(entry != nullptr);
   currentConstSigned = entry->specifiers.isSigned();
+
+  // Set lhsVarName and currentVarName to varName
+  currentVarName = lhsVarName = node->varName;
 
   // Get data type
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(node->dataType()));
   entry->updateType(currentSymbolType, true);
 
-  // Restore var name
+  // Restore lhsVarName and currentVarName
   currentVarName = lhsVarName = node->varName;
 
   llvm::Value *memAddress = nullptr;
   if (node->assignExpr()) { // Declaration with assignment
-    memAddress = resolveAddress(node->assignExpr());
+    if (varType->isStructTy()) {
+      llvm::Value *rhsAddress = resolveAddress(node->assignExpr());
+      if (entry->getAddress() != nullptr) { // Struct contents need be copied
+        llvm::Function *memcpyFct = stdFunctionManager->getMemcpyIntrinsic();
+        unsigned int typeSize = module->getDataLayout().getTypeSizeInBits(varType);
+        llvm::Value *structSize = builder->getInt64(typeSize);
+        llvm::Value *isVolatile = builder->getInt1(entry->isVolatile);
+        memAddress = insertAlloca(varType, node->varName);
+        builder->CreateCall(memcpyFct, {memAddress, rhsAddress, structSize, isVolatile});
+      } else { // Struct contents need not be copied
+        memAddress = rhsAddress;
+      }
+    } else {
+      llvm::Value *value = resolveValue(node->assignExpr());
+      memAddress = insertAlloca(varType, node->varName);
+      builder->CreateStore(value, memAddress);
+    }
   } else { // Declaration with default value
     if (entry->type.is(TY_PTR) && entry->type.getDynamicArraySize() != nullptr) {
       llvm::Type *itemType = entry->type.getContainedTy().toLLVMType(*context, nullptr);
       dynamicArraySize = entry->type.getDynamicArraySize();
       llvm::Value *value = allocateDynamicallySizedArray(itemType);
-      memAddress = insertAlloca(value->getType(), lhsVarName);
+      memAddress = insertAlloca(value->getType(), node->varName);
       builder->CreateStore(value, memAddress, entry->isVolatile);
     } else {
       llvm::Value *value = getDefaultValueForSymbolType(currentSymbolType);
-      memAddress = insertAlloca(varType, lhsVarName);
+      memAddress = insertAlloca(varType, node->varName);
 
       // Save default value to address
       builder->CreateStore(value, memAddress, entry->isVolatile);
@@ -1353,7 +1369,7 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   }
 
   if (cliOptions.generateDebugInfo)
-    generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress, true);
+    generateDeclDebugInfo(node->codeLoc, node->varName, memAddress, true);
 
   // Update address in symbol table
   entry->updateAddress(memAddress);
@@ -1361,7 +1377,7 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   lhsType = nullptr; // Reset nullptr
 
   // Return the variable name
-  return lhsVarName;
+  return node->varName;
 }
 
 std::any GeneratorVisitor::visitImportStmt(ImportStmtNode * /*node*/) {

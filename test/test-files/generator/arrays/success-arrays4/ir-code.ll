@@ -14,41 +14,44 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
+  %welcomeMessage = alloca [5 x ptr], align 8
   %i = alloca i32, align 4
   %word = alloca ptr, align 8
   store i32 0, ptr %result, align 4
+  %0 = load [5 x ptr], ptr @welcomeMessage, align 8
+  store [5 x ptr] %0, ptr %welcomeMessage, align 8
   store i32 0, ptr %i, align 4
   store ptr @4, ptr %word, align 8
-  %0 = load [5 x ptr], ptr @welcomeMessage, align 8
-  %1 = load i32, ptr %i, align 4
-  %2 = getelementptr inbounds [5 x ptr], ptr @welcomeMessage, i32 0, i32 %1
-  %3 = load ptr, ptr %2, align 8
-  store ptr %3, ptr %word, align 8
+  %1 = load [5 x ptr], ptr %welcomeMessage, align 8
+  %2 = load i32, ptr %i, align 4
+  %3 = getelementptr inbounds [5 x ptr], ptr %welcomeMessage, i32 0, i32 %2
+  %4 = load ptr, ptr %3, align 8
+  store ptr %4, ptr %word, align 8
   br label %foreach.loop.l3
 
 foreach.loop.l3:                                  ; preds = %foreach.cond.l3, %entry.l1
-  %4 = load i32, ptr %i, align 4
-  %5 = load ptr, ptr %word, align 8
-  %6 = call i32 (ptr, ...) @printf(ptr @5, i32 %4, ptr %5)
+  %5 = load i32, ptr %i, align 4
+  %6 = load ptr, ptr %word, align 8
+  %7 = call i32 (ptr, ...) @printf(ptr @5, i32 %5, ptr %6)
   br label %foreach.inc.l3
 
 foreach.inc.l3:                                   ; preds = %foreach.loop.l3
   %idx = load i32, ptr %i, align 4
   %idx.inc = add i32 %idx, 1
   store i32 %idx.inc, ptr %i, align 4
-  %7 = getelementptr inbounds [5 x ptr], ptr @welcomeMessage, i32 0, i32 %idx.inc
-  %8 = load ptr, ptr %7, align 8
-  store ptr %8, ptr %word, align 8
+  %8 = getelementptr inbounds [5 x ptr], ptr %welcomeMessage, i32 0, i32 %idx.inc
+  %9 = load ptr, ptr %8, align 8
+  store ptr %9, ptr %word, align 8
   br label %foreach.cond.l3
 
 foreach.cond.l3:                                  ; preds = %foreach.inc.l3
-  %9 = load i32, ptr %i, align 4
-  %10 = icmp ult i32 %9, 5
-  br i1 %10, label %foreach.loop.l3, label %foreach.end.l3
+  %10 = load i32, ptr %i, align 4
+  %11 = icmp ult i32 %10, 5
+  br i1 %11, label %foreach.loop.l3, label %foreach.end.l3
 
 foreach.end.l3:                                   ; preds = %foreach.cond.l3
-  %11 = load i32, ptr %result, align 4
-  ret i32 %11
+  %12 = load i32, ptr %result, align 4
+  ret i32 %12
 }
 
 declare i32 @printf(ptr, ...)

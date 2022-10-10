@@ -13,6 +13,7 @@ target triple = "x86_64-w64-windows-gnu"
 @5 = private unnamed_addr constant [7 x i8] c"World!\00", align 1
 @6 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @7 = private unnamed_addr constant [4 x i8] c"o W\00", align 1
+@8 = private unnamed_addr constant [6 x i8] c"'%s'\0A\00", align 1
 
 define i32 @main() local_unnamed_addr {
 entry.l1:
@@ -44,105 +45,113 @@ entry.l1:
   %25 = alloca %_s__String__charptr_long_long, align 8
   %26 = alloca %_s__String__charptr_long_long, align 8
   %27 = alloca %_s__String__charptr_long_long, align 8
+  %28 = alloca %_s__String__charptr_long_long, align 8
+  %29 = alloca %_s__String__charptr_long_long, align 8
   call void @_mp__String__ctor__string(ptr nonnull %0, ptr nonnull @0)
-  %28 = call i1 @_mf__String__isEmpty(ptr nonnull %0)
-  %29 = zext i1 %28 to i32
-  %30 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %29)
+  %30 = call i1 @_mf__String__isEmpty(ptr nonnull %0)
+  %31 = zext i1 %30 to i32
+  %32 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %31)
   call void @_mp__String__ctor__string(ptr nonnull %1, ptr nonnull @4)
-  %31 = call i1 @_mf__String__isEmpty(ptr nonnull %1)
-  %32 = zext i1 %31 to i32
-  %33 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %32)
+  %33 = call i1 @_mf__String__isEmpty(ptr nonnull %1)
+  %34 = zext i1 %33 to i32
+  %35 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %34)
   call void @_mp__String__ctor__string(ptr nonnull %2, ptr nonnull @1)
-  %34 = call i64 @_mf__String__getLength(ptr nonnull %2)
-  %35 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %34)
-  call void @_mp__String__ctor__string(ptr nonnull %3, ptr nonnull @2)
-  %36 = call i64 @_mf__String__getLength(ptr nonnull %3)
+  %36 = call i64 @_mf__String__getLength(ptr nonnull %2)
   %37 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %36)
-  call void @_mp__String__ctor__string(ptr nonnull %4, ptr nonnull @1)
-  %38 = call i64 @_mf__String__getCapacity(ptr nonnull %4)
+  call void @_mp__String__ctor__string(ptr nonnull %3, ptr nonnull @2)
+  %38 = call i64 @_mf__String__getLength(ptr nonnull %3)
   %39 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %38)
-  call void @_mp__String__ctor__string(ptr nonnull %5, ptr nonnull @2)
-  %40 = call i64 @_mf__String__getCapacity(ptr nonnull %5)
+  call void @_mp__String__ctor__string(ptr nonnull %4, ptr nonnull @1)
+  %40 = call i64 @_mf__String__getCapacity(ptr nonnull %4)
   %41 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %40)
+  call void @_mp__String__ctor__string(ptr nonnull %5, ptr nonnull @2)
+  %42 = call i64 @_mf__String__getCapacity(ptr nonnull %5)
+  %43 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %42)
   call void @_mp__String__ctor__string(ptr nonnull %6, ptr nonnull @4)
-  %42 = call i1 @_mf__String__isFull(ptr nonnull %6)
-  %43 = zext i1 %42 to i32
-  %44 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %43)
+  %44 = call i1 @_mf__String__isFull(ptr nonnull %6)
+  %45 = zext i1 %44 to i32
+  %46 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %45)
   call void @_mp__String__ctor__string(ptr nonnull %7, ptr nonnull @2)
-  %45 = call i1 @_mf__String__isFull(ptr nonnull %7)
-  %46 = zext i1 %45 to i32
-  %47 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %46)
+  %47 = call i1 @_mf__String__isFull(ptr nonnull %7)
+  %48 = zext i1 %47 to i32
+  %49 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %48)
   call void @_mp__String__ctor__string(ptr nonnull %8, ptr nonnull @2)
-  %48 = call i1 @_mf__String__contains__string(ptr nonnull %8, ptr nonnull @3)
-  %49 = zext i1 %48 to i32
-  %50 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %49)
+  %50 = call i1 @_mf__String__contains__string(ptr nonnull %8, ptr nonnull @3)
+  %51 = zext i1 %50 to i32
+  %52 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %51)
   call void @_mp__String__ctor__string(ptr nonnull %9, ptr nonnull @2)
-  %51 = call i1 @_mf__String__contains__string(ptr nonnull %9, ptr nonnull @4)
-  %52 = zext i1 %51 to i32
-  %53 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %52)
+  %53 = call i1 @_mf__String__contains__string(ptr nonnull %9, ptr nonnull @4)
+  %54 = zext i1 %53 to i32
+  %55 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %54)
   call void @_mp__String__ctor__string(ptr nonnull %10, ptr nonnull @2)
-  %54 = call i1 @_mf__String__contains__string(ptr nonnull %10, ptr nonnull @5)
-  %55 = zext i1 %54 to i32
-  %56 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %55)
+  %56 = call i1 @_mf__String__contains__string(ptr nonnull %10, ptr nonnull @5)
+  %57 = zext i1 %56 to i32
+  %58 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %57)
   call void @_mp__String__ctor__string(ptr nonnull %11, ptr nonnull @2)
-  %57 = call i1 @_mf__String__contains__string(ptr nonnull %11, ptr nonnull @7)
-  %58 = zext i1 %57 to i32
-  %59 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %58)
+  %59 = call i1 @_mf__String__contains__string(ptr nonnull %11, ptr nonnull @7)
+  %60 = zext i1 %59 to i32
+  %61 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %60)
   call void @_mp__String__ctor__string(ptr nonnull %12, ptr nonnull @2)
-  %60 = call ptr @_mf__String__substring__int_int(ptr nonnull %12, i32 0, i32 5)
-  %puts = call i32 @puts(ptr nonnull dereferenceable(1) %60)
+  %62 = call ptr @_mf__String__substring__int_int(ptr nonnull %12, i32 0, i32 5)
+  %63 = call i32 (ptr, ...) @printf(ptr nonnull @8, ptr %62)
   call void @_mp__String__ctor__string(ptr nonnull %13, ptr nonnull @2)
-  %61 = call ptr @_mf__String__substring__int_int(ptr nonnull %13, i32 4, i32 2)
-  %puts72 = call i32 @puts(ptr nonnull dereferenceable(1) %61)
+  %64 = call ptr @_mf__String__substring__int_int(ptr nonnull %13, i32 4, i32 2)
+  %65 = call i32 (ptr, ...) @printf(ptr nonnull @8, ptr %64)
   call void @_mp__String__ctor__string(ptr nonnull %14, ptr nonnull @2)
-  %62 = call ptr @_mf__String__substring__int(ptr nonnull %14, i32 6)
-  %puts73 = call i32 @puts(ptr nonnull dereferenceable(1) %62)
+  %66 = call ptr @_mf__String__substring__int(ptr nonnull %14, i32 6)
+  %67 = call i32 (ptr, ...) @printf(ptr nonnull @8, ptr %66)
+  call void @_mp__String__ctor__string(ptr nonnull %15, ptr nonnull @2)
+  %68 = call ptr @_mf__String__substring__int_int(ptr nonnull %15, i32 2, i32 0)
+  %69 = call i32 (ptr, ...) @printf(ptr nonnull @8, ptr %68)
   %putchar = call i32 @putchar(i32 10)
-  call void @_mp__String__ctor__string(ptr nonnull %15, ptr nonnull @0)
-  %63 = call i1 @_mf__String__isEmpty(ptr nonnull %15)
-  %64 = zext i1 %63 to i32
-  %65 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %64)
-  call void @_mp__String__ctor__string(ptr nonnull %16, ptr nonnull @4)
-  %66 = call i1 @_mf__String__isEmpty(ptr nonnull %16)
-  %67 = zext i1 %66 to i32
-  %68 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %67)
-  call void @_mp__String__ctor__string(ptr nonnull %17, ptr nonnull @1)
-  %69 = call i64 @_mf__String__getLength(ptr nonnull %17)
-  %70 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %69)
-  call void @_mp__String__ctor__string(ptr nonnull %18, ptr nonnull @2)
-  %71 = call i64 @_mf__String__getLength(ptr nonnull %18)
-  %72 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %71)
-  call void @_mp__String__ctor__string(ptr nonnull %19, ptr nonnull @1)
-  %73 = call i64 @_mf__String__getCapacity(ptr nonnull %19)
-  %74 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %73)
-  call void @_mp__String__ctor__string(ptr nonnull %20, ptr nonnull @2)
-  %75 = call i64 @_mf__String__getCapacity(ptr nonnull %20)
-  %76 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %75)
+  call void @_mp__String__ctor__string(ptr nonnull %16, ptr nonnull @0)
+  %70 = call i1 @_mf__String__isEmpty(ptr nonnull %16)
+  %71 = zext i1 %70 to i32
+  %72 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %71)
+  call void @_mp__String__ctor__string(ptr nonnull %17, ptr nonnull @4)
+  %73 = call i1 @_mf__String__isEmpty(ptr nonnull %17)
+  %74 = zext i1 %73 to i32
+  %75 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %74)
+  call void @_mp__String__ctor__string(ptr nonnull %18, ptr nonnull @1)
+  %76 = call i64 @_mf__String__getLength(ptr nonnull %18)
+  %77 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %76)
+  call void @_mp__String__ctor__string(ptr nonnull %19, ptr nonnull @2)
+  %78 = call i64 @_mf__String__getLength(ptr nonnull %19)
+  %79 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %78)
+  call void @_mp__String__ctor__string(ptr nonnull %20, ptr nonnull @1)
+  %80 = call i64 @_mf__String__getCapacity(ptr nonnull %20)
+  %81 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %80)
   call void @_mp__String__ctor__string(ptr nonnull %21, ptr nonnull @2)
-  %77 = call i1 @_mf__String__contains__string(ptr nonnull %21, ptr nonnull @3)
-  %78 = zext i1 %77 to i32
-  %79 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %78)
+  %82 = call i64 @_mf__String__getCapacity(ptr nonnull %21)
+  %83 = call i32 (ptr, ...) @printf(ptr nonnull @6, i64 %82)
   call void @_mp__String__ctor__string(ptr nonnull %22, ptr nonnull @2)
-  %80 = call i1 @_mf__String__contains__string(ptr nonnull %22, ptr nonnull @4)
-  %81 = zext i1 %80 to i32
-  %82 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %81)
+  %84 = call i1 @_mf__String__contains__string(ptr nonnull %22, ptr nonnull @3)
+  %85 = zext i1 %84 to i32
+  %86 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %85)
   call void @_mp__String__ctor__string(ptr nonnull %23, ptr nonnull @2)
-  %83 = call i1 @_mf__String__contains__string(ptr nonnull %23, ptr nonnull @5)
-  %84 = zext i1 %83 to i32
-  %85 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %84)
+  %87 = call i1 @_mf__String__contains__string(ptr nonnull %23, ptr nonnull @4)
+  %88 = zext i1 %87 to i32
+  %89 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %88)
   call void @_mp__String__ctor__string(ptr nonnull %24, ptr nonnull @2)
-  %86 = call i1 @_mf__String__contains__string(ptr nonnull %24, ptr nonnull @7)
-  %87 = zext i1 %86 to i32
-  %88 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %87)
+  %90 = call i1 @_mf__String__contains__string(ptr nonnull %24, ptr nonnull @5)
+  %91 = zext i1 %90 to i32
+  %92 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %91)
   call void @_mp__String__ctor__string(ptr nonnull %25, ptr nonnull @2)
-  %89 = call ptr @_mf__String__substring__int_int(ptr nonnull %25, i32 0, i32 5)
-  %puts74 = call i32 @puts(ptr nonnull dereferenceable(1) %89)
+  %93 = call i1 @_mf__String__contains__string(ptr nonnull %25, ptr nonnull @7)
+  %94 = zext i1 %93 to i32
+  %95 = call i32 (ptr, ...) @printf(ptr nonnull @6, i32 %94)
   call void @_mp__String__ctor__string(ptr nonnull %26, ptr nonnull @2)
-  %90 = call ptr @_mf__String__substring__int_int(ptr nonnull %26, i32 4, i32 2)
-  %puts75 = call i32 @puts(ptr nonnull dereferenceable(1) %90)
+  %96 = call ptr @_mf__String__substring__int_int(ptr nonnull %26, i32 0, i32 5)
+  %97 = call i32 (ptr, ...) @printf(ptr nonnull @8, ptr %96)
   call void @_mp__String__ctor__string(ptr nonnull %27, ptr nonnull @2)
-  %91 = call ptr @_mf__String__substring__int(ptr nonnull %27, i32 6)
-  %puts76 = call i32 @puts(ptr nonnull dereferenceable(1) %91)
+  %98 = call ptr @_mf__String__substring__int_int(ptr nonnull %27, i32 4, i32 2)
+  %99 = call i32 (ptr, ...) @printf(ptr nonnull @8, ptr %98)
+  call void @_mp__String__ctor__string(ptr nonnull %28, ptr nonnull @2)
+  %100 = call ptr @_mf__String__substring__int(ptr nonnull %28, i32 6)
+  %101 = call i32 (ptr, ...) @printf(ptr nonnull @8, ptr %100)
+  call void @_mp__String__ctor__string(ptr nonnull %29, ptr nonnull @2)
+  %102 = call ptr @_mf__String__substring__int_int(ptr nonnull %29, i32 4, i32 0)
+  %103 = call i32 (ptr, ...) @printf(ptr nonnull @8, ptr %102)
   call void @_mp__String__dtor(ptr nonnull %7)
   call void @_mp__String__dtor(ptr nonnull %8)
   call void @_mp__String__dtor(ptr nonnull %9)
@@ -162,9 +171,11 @@ entry.l1:
   call void @_mp__String__dtor(ptr nonnull %23)
   call void @_mp__String__dtor(ptr nonnull %24)
   call void @_mp__String__dtor(ptr nonnull %25)
-  call void @_mp__String__dtor(ptr nonnull %26)
   call void @_mp__String__dtor(ptr nonnull %0)
+  call void @_mp__String__dtor(ptr nonnull %26)
   call void @_mp__String__dtor(ptr nonnull %27)
+  call void @_mp__String__dtor(ptr nonnull %28)
+  call void @_mp__String__dtor(ptr nonnull %29)
   call void @_mp__String__dtor(ptr nonnull %1)
   call void @_mp__String__dtor(ptr nonnull %2)
   call void @_mp__String__dtor(ptr nonnull %3)
@@ -194,9 +205,6 @@ declare ptr @_mf__String__substring__int_int(ptr, i32, i32) local_unnamed_addr
 declare ptr @_mf__String__substring__int(ptr, i32) local_unnamed_addr
 
 declare void @_mp__String__dtor(ptr) local_unnamed_addr
-
-; Function Attrs: nofree nounwind
-declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #0
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #0

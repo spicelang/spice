@@ -10,6 +10,7 @@ entry.l1:
   %result = alloca i32, align 4
   %value0 = alloca i32, align 4
   %0 = alloca [5 x i32], align 4
+  %intArray = alloca [5 x i32], align 4
   store i32 0, ptr %result, align 4
   store i32 2, ptr %value0, align 4
   %1 = load i32, ptr %value0, align 4
@@ -23,19 +24,21 @@ entry.l1:
   store i32 0, ptr %5, align 4
   %6 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 4
   store i32 0, ptr %6, align 4
-  %7 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 2
-  %8 = load i32, ptr %7, align 4
-  %9 = mul i32 %8, 11
-  store i32 %9, ptr %7, align 4
-  %10 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 0
-  store i32 3, ptr %10, align 4
-  %11 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 0
-  %12 = load i32, ptr %11, align 4
-  %13 = getelementptr inbounds [5 x i32], ptr %0, i32 0, i32 2
-  %14 = load i32, ptr %13, align 4
-  %15 = call i32 (ptr, ...) @printf(ptr @0, i32 %12, i32 %14)
-  %16 = load i32, ptr %result, align 4
-  ret i32 %16
+  %7 = load [5 x i32], ptr %0, align 4
+  store [5 x i32] %7, ptr %intArray, align 4
+  %8 = getelementptr inbounds [5 x i32], ptr %intArray, i32 0, i32 2
+  %9 = load i32, ptr %8, align 4
+  %10 = mul i32 %9, 11
+  store i32 %10, ptr %8, align 4
+  %11 = getelementptr inbounds [5 x i32], ptr %intArray, i32 0, i32 0
+  store i32 3, ptr %11, align 4
+  %12 = getelementptr inbounds [5 x i32], ptr %intArray, i32 0, i32 0
+  %13 = load i32, ptr %12, align 4
+  %14 = getelementptr inbounds [5 x i32], ptr %intArray, i32 0, i32 2
+  %15 = load i32, ptr %14, align 4
+  %16 = call i32 (ptr, ...) @printf(ptr @0, i32 %13, i32 %15)
+  %17 = load i32, ptr %result, align 4
+  ret i32 %17
 }
 
 declare i32 @printf(ptr, ...)
