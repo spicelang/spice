@@ -307,6 +307,61 @@ public inline f<bool> String.contains(string needle) {
 }
 
 /**
+ * Replace occurrence of substring with the replacement string
+ *
+ * @param needle Substring to replace
+ * @param replacement Replacement for the substring
+ */
+/*public p String.replace(
+    string* haystack,
+    string needle,
+    string replacement,
+    unsigned long startIndex = 0l
+) {
+    // Find occurrence
+    unsigned long startIdx = haystack.find(needle, startIndex);
+    // Return if not found
+    if startIdx == -1l { return; }
+
+    // Replace
+    unsigned long needleLength = str.getRawLength(needle);
+    for unsigned long idx = 0; idx < needleLength; idx++ {
+        // ToDo: Extend
+    }
+}*/
+
+/**
+ * Replace occurrence of substring with the replacement string
+ *
+ * @param needle Substring to replace
+ * @param replacement Replacement for the substring
+ */
+/*public inline p String.replace(
+    string* haystack,
+    string needle,
+    string replacement,
+    unsigned int startIndex
+) {
+    this.replace(haystack, needle, replacement, (long) startIndex);
+}*/
+
+/**
+ * Replace all occurrences of substring with the replacement string
+ *
+ * @param needle Substring to replace
+ * @param replacement Replacement for the substring
+ */
+/*public p String.replaceAll(string* haystack, string needle, string replacement) {
+    unsigned long needleLength = str.getRawLength(needle);
+    // Return false if the needle is longer than the haystack
+    if this.length < needleLength { return -1l; }
+
+    for unsigned long startIdx = 0; startIdx <= this.length - needle; startIdx++ {
+        // ToDo: Extend
+    }
+}*/
+
+/**
  * Returns the substring of the current string, starting at position `startIndex` with
  * the length of `length`.
  *
