@@ -84,6 +84,7 @@ entry.l22:
   %1 = alloca %_s__ShoppingItem__string_double_string, align 8
   %2 = alloca %_s__ShoppingItem__string_double_string, align 8
   %3 = alloca [3 x %_s__ShoppingItem__string_double_string], align 8
+  %items = alloca [3 x %_s__ShoppingItem__string_double_string], align 8
   %4 = alloca %_s__ShoppingCart__string_ShoppingItemarray, align 8
   %5 = getelementptr inbounds %_s__ShoppingItem__string_double_string, ptr %0, i32 0, i32 0
   store ptr @9, ptr %5, align 8
@@ -112,13 +113,15 @@ entry.l22:
   store %_s__ShoppingItem__string_double_string %12, ptr %18, align 8
   %19 = getelementptr inbounds [3 x %_s__ShoppingItem__string_double_string], ptr %3, i32 0, i32 2
   store %_s__ShoppingItem__string_double_string %16, ptr %19, align 8
-  %20 = getelementptr inbounds %_s__ShoppingCart__string_ShoppingItemarray, ptr %4, i32 0, i32 0
-  store ptr @15, ptr %20, align 8
-  %21 = load [3 x %_s__ShoppingItem__string_double_string], ptr %3, align 8
-  %22 = getelementptr inbounds %_s__ShoppingCart__string_ShoppingItemarray, ptr %4, i32 0, i32 1
-  store [3 x %_s__ShoppingItem__string_double_string] %21, ptr %22, align 8
-  %23 = load %_s__ShoppingCart__string_ShoppingItemarray, ptr %4, align 8
-  ret %_s__ShoppingCart__string_ShoppingItemarray %23
+  %20 = load [3 x %_s__ShoppingItem__string_double_string], ptr %3, align 8
+  store [3 x %_s__ShoppingItem__string_double_string] %20, ptr %items, align 8
+  %21 = getelementptr inbounds %_s__ShoppingCart__string_ShoppingItemarray, ptr %4, i32 0, i32 0
+  store ptr @15, ptr %21, align 8
+  %22 = load [3 x %_s__ShoppingItem__string_double_string], ptr %items, align 8
+  %23 = getelementptr inbounds %_s__ShoppingCart__string_ShoppingItemarray, ptr %4, i32 0, i32 1
+  store [3 x %_s__ShoppingItem__string_double_string] %22, ptr %23, align 8
+  %24 = load %_s__ShoppingCart__string_ShoppingItemarray, ptr %4, align 8
+  ret %_s__ShoppingCart__string_ShoppingItemarray %24
 }
 
 define i32 @main() {

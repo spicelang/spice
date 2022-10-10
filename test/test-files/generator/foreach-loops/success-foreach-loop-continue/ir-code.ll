@@ -13,6 +13,7 @@ entry.l1:
   %result = alloca i32, align 4
   %s1 = alloca i16, align 2
   %0 = alloca [5 x i16], align 2
+  %shortArray = alloca [5 x i16], align 2
   %idx = alloca i32, align 4
   %s = alloca i16, align 2
   %1 = alloca i16, align 2
@@ -32,57 +33,59 @@ entry.l1:
   store i16 -27, ptr %7, align 2
   %8 = getelementptr inbounds [5 x i16], ptr %0, i32 0, i32 4
   store i16 -63, ptr %8, align 2
+  %9 = load [5 x i16], ptr %0, align 2
+  store [5 x i16] %9, ptr %shortArray, align 2
   store i32 0, ptr %idx, align 4
   store i16 0, ptr %s, align 2
-  %9 = load [5 x i16], ptr %0, align 2
-  %10 = load i32, ptr %idx, align 4
-  %11 = getelementptr inbounds [5 x i16], ptr %0, i32 0, i32 %10
-  %12 = load i16, ptr %11, align 2
-  store i16 %12, ptr %s, align 2
+  %10 = load [5 x i16], ptr %shortArray, align 2
+  %11 = load i32, ptr %idx, align 4
+  %12 = getelementptr inbounds [5 x i16], ptr %shortArray, i32 0, i32 %11
+  %13 = load i16, ptr %12, align 2
+  store i16 %13, ptr %s, align 2
   br label %foreach.loop.l4
 
 foreach.loop.l4:                                  ; preds = %foreach.cond.l4, %entry.l1
-  %13 = load i16, ptr %s, align 2
-  %14 = sext i16 %13 to i32
-  %15 = call i32 (ptr, ...) @printf(ptr @0, i32 %14)
-  %16 = load i16, ptr %s, align 2
-  %17 = and i16 %16, 1
-  store i16 %17, ptr %1, align 2
-  %18 = load i16, ptr %1, align 2
-  %19 = sext i16 %18 to i32
-  %20 = icmp eq i32 %19, 1
-  store i1 %20, ptr %2, align 1
-  %21 = load i1, ptr %2, align 1
-  br i1 %21, label %if.then.l6, label %if.end.l6
+  %14 = load i16, ptr %s, align 2
+  %15 = sext i16 %14 to i32
+  %16 = call i32 (ptr, ...) @printf(ptr @0, i32 %15)
+  %17 = load i16, ptr %s, align 2
+  %18 = and i16 %17, 1
+  store i16 %18, ptr %1, align 2
+  %19 = load i16, ptr %1, align 2
+  %20 = sext i16 %19 to i32
+  %21 = icmp eq i32 %20, 1
+  store i1 %21, ptr %2, align 1
+  %22 = load i1, ptr %2, align 1
+  br i1 %22, label %if.then.l6, label %if.end.l6
 
 if.then.l6:                                       ; preds = %foreach.loop.l4
   store i32 0, ptr %idx1, align 4
   store i64 0, ptr %l, align 8
-  %22 = load [2 x i64], ptr @anonymous.0, align 8
-  %23 = load i32, ptr %idx1, align 4
-  %24 = getelementptr inbounds [2 x i64], ptr @anonymous.0, i32 0, i32 %23
-  %25 = load i64, ptr %24, align 8
-  store i64 %25, ptr %l, align 8
+  %23 = load [2 x i64], ptr @anonymous.0, align 8
+  %24 = load i32, ptr %idx1, align 4
+  %25 = getelementptr inbounds [2 x i64], ptr @anonymous.0, i32 0, i32 %24
+  %26 = load i64, ptr %25, align 8
+  store i64 %26, ptr %l, align 8
   br label %foreach.loop.l7
 
 foreach.loop.l7:                                  ; preds = %foreach.cond.l7, %if.then.l6
-  %26 = load i64, ptr %l, align 8
-  %27 = call i32 (ptr, ...) @printf(ptr @1, i64 %26)
+  %27 = load i64, ptr %l, align 8
+  %28 = call i32 (ptr, ...) @printf(ptr @1, i64 %27)
   br label %foreach.inc.l4
 
 foreach.inc.l7:                                   ; No predecessors!
   %idx2 = load i32, ptr %idx1, align 4
   %idx.inc = add i32 %idx2, 1
   store i32 %idx.inc, ptr %idx1, align 4
-  %28 = getelementptr inbounds [2 x i64], ptr @anonymous.0, i32 0, i32 %idx.inc
-  %29 = load i64, ptr %28, align 8
-  store i64 %29, ptr %l, align 8
+  %29 = getelementptr inbounds [2 x i64], ptr @anonymous.0, i32 0, i32 %idx.inc
+  %30 = load i64, ptr %29, align 8
+  store i64 %30, ptr %l, align 8
   br label %foreach.cond.l7
 
 foreach.cond.l7:                                  ; preds = %foreach.inc.l7
-  %30 = load i32, ptr %idx1, align 4
-  %31 = icmp ult i32 %30, 2
-  br i1 %31, label %foreach.loop.l7, label %foreach.end.l7
+  %31 = load i32, ptr %idx1, align 4
+  %32 = icmp ult i32 %31, 2
+  br i1 %32, label %foreach.loop.l7, label %foreach.end.l7
 
 foreach.end.l7:                                   ; preds = %foreach.cond.l7
   br label %if.end.l6
@@ -94,20 +97,20 @@ foreach.inc.l4:                                   ; preds = %if.end.l6, %foreach
   %idx3 = load i32, ptr %idx, align 4
   %idx.inc4 = add i32 %idx3, 1
   store i32 %idx.inc4, ptr %idx, align 4
-  %32 = getelementptr inbounds [5 x i16], ptr %0, i32 0, i32 %idx.inc4
-  %33 = load i16, ptr %32, align 2
-  store i16 %33, ptr %s, align 2
+  %33 = getelementptr inbounds [5 x i16], ptr %shortArray, i32 0, i32 %idx.inc4
+  %34 = load i16, ptr %33, align 2
+  store i16 %34, ptr %s, align 2
   br label %foreach.cond.l4
 
 foreach.cond.l4:                                  ; preds = %foreach.inc.l4
-  %34 = load i32, ptr %idx, align 4
-  %35 = icmp ult i32 %34, 5
-  br i1 %35, label %foreach.loop.l4, label %foreach.end.l4
+  %35 = load i32, ptr %idx, align 4
+  %36 = icmp ult i32 %35, 5
+  br i1 %36, label %foreach.loop.l4, label %foreach.end.l4
 
 foreach.end.l4:                                   ; preds = %foreach.cond.l4
-  %36 = call i32 (ptr, ...) @printf(ptr @2)
-  %37 = load i32, ptr %result, align 4
-  ret i32 %37
+  %37 = call i32 (ptr, ...) @printf(ptr @2)
+  %38 = load i32, ptr %result, align 4
+  ret i32 %38
 }
 
 declare i32 @printf(ptr, ...)

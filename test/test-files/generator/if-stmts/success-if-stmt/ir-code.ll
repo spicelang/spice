@@ -10,22 +10,25 @@ define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
   %0 = alloca i1, align 1
+  %condition = alloca i1, align 1
   %1 = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store i1 true, ptr %0, align 1
   %2 = load i1, ptr %0, align 1
-  br i1 %2, label %if.then.l3, label %if.end.l3
+  store i1 %2, ptr %condition, align 1
+  %3 = load i1, ptr %condition, align 1
+  br i1 %3, label %if.then.l3, label %if.end.l3
 
 if.then.l3:                                       ; preds = %entry.l1
-  %3 = call i32 (ptr, ...) @printf(ptr @0)
+  %4 = call i32 (ptr, ...) @printf(ptr @0)
   store i32 0, ptr %1, align 4
-  %4 = load i32, ptr %1, align 4
-  ret i32 %4
+  %5 = load i32, ptr %1, align 4
+  ret i32 %5
 
 if.end.l3:                                        ; preds = %entry.l1
-  %5 = call i32 (ptr, ...) @printf(ptr @1)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  %6 = call i32 (ptr, ...) @printf(ptr @1)
+  %7 = load i32, ptr %result, align 4
+  ret i32 %7
 }
 
 declare i32 @printf(ptr, ...)

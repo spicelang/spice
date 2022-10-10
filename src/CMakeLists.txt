@@ -47,6 +47,8 @@ set(SOURCES
         ast/AstNodes.h
         dependency/SourceFile.cpp
         dependency/SourceFile.h
+        dependency/RuntimeModuleManager.cpp
+        dependency/RuntimeModuleManager.h
         exception/CliError.cpp
         exception/CliError.h
         exception/SemanticError.cpp

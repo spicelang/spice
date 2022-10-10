@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include <cli/CliInterface.h>
+#include <dependency/RuntimeModuleManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/CliError.h>
 #include <exception/IRError.h>
@@ -22,12 +23,12 @@ bool compileProject(CliOptions &options) {
     llvm::IRBuilder<> builder(context);
 
     // Prepare global Spice assets
-    ThreadFactory threadFactory = ThreadFactory();
+    ThreadFactory threadFactory;
     LinkerInterface linker = LinkerInterface(threadFactory, options);
-    RuntimeModules runtimeModules = {false, false};
+    RuntimeModuleManager runtimeModuleManager;
 
     // Create source file instance for main source file
-    SourceFile mainSourceFile(&context, &builder, threadFactory, runtimeModules, linker, options, nullptr, "root",
+    SourceFile mainSourceFile(&context, &builder, threadFactory, runtimeModuleManager, linker, options, nullptr, "root",
                               options.mainSourceFile, false);
 
     // Visualize the parse tree (only runs in debug mode)

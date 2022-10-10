@@ -11,6 +11,7 @@
 
 #include "TestUtil.h"
 #include <cli/CliInterface.h>
+#include <dependency/RuntimeModuleManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/LexerParserError.h>
 #include <exception/SemanticError.h>
@@ -48,14 +49,14 @@ void execTestCase(const TestCase &testCase) {
   // Prepare resources
   llvm::LLVMContext context;
   llvm::IRBuilder<> builder(context);
-  ThreadFactory threadFactory = ThreadFactory();
+  ThreadFactory threadFactory;
   LinkerInterface linker = LinkerInterface(threadFactory, options);
-  RuntimeModules runtimeModules = {false, false};
+  RuntimeModuleManager runtimeModuleManager;
 
   try {
     // Create source file instance for main source file
-    SourceFile mainSourceFile = SourceFile(&context, &builder, threadFactory, runtimeModules, linker, options, nullptr, "root",
-                                           options.mainSourceFile, false);
+    SourceFile mainSourceFile = SourceFile(&context, &builder, threadFactory, runtimeModuleManager, linker, options, nullptr,
+                                           "root", options.mainSourceFile, false);
 
     // Check CST
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_PARSE_TREE, [&]() {

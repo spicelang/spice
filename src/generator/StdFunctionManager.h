@@ -21,6 +21,7 @@ public:
   [[nodiscard]] llvm::Function *getExitFct() const;
   [[nodiscard]] llvm::Function *getStackSaveIntrinsic() const;
   [[nodiscard]] llvm::Function *getStackRestoreIntrinsic() const;
+  [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
   [[nodiscard]] llvm::Function *getStringGetRawFct() const;
   [[nodiscard]] llvm::Function *getStringCtorCharFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStringFct() const;

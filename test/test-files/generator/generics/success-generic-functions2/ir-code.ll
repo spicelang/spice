@@ -141,39 +141,56 @@ declare i32 @printf(ptr, ...)
 define i32 @main() {
 entry.l17:
   %result = alloca i32, align 4
+  %numberList1 = alloca [7 x i16], align 2
   %0 = alloca i32, align 4
   %1 = alloca i32, align 4
+  %result1 = alloca i32, align 4
+  %numberList2 = alloca [4 x i64], align 8
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
+  %result2 = alloca i32, align 4
   %4 = alloca [2 x i32], align 4
+  %resultList = alloca [2 x i32], align 4
   %5 = alloca i32, align 4
   %6 = alloca i1, align 1
   store i32 0, ptr %result, align 4
   %7 = load [7 x i16], ptr @numberList1, align 2
+  store [7 x i16] %7, ptr %numberList1, align 2
+  %8 = getelementptr inbounds [7 x i16], ptr %numberList1, i32 0, i32 0
+  %9 = load [7 x i16], ptr %numberList1, align 2
   store i32 7, ptr %0, align 4
-  %8 = load i32, ptr %0, align 4
-  %9 = call i32 @_f__void__sumNumbers__shortarray_int(ptr @numberList1, i32 %8)
-  store i32 %9, ptr %1, align 4
-  %10 = load [4 x i64], ptr @numberList2, align 8
+  %10 = load i32, ptr %0, align 4
+  %11 = call i32 @_f__void__sumNumbers__shortarray_int(ptr %8, i32 %10)
+  store i32 %11, ptr %1, align 4
+  %12 = load i32, ptr %1, align 4
+  store i32 %12, ptr %result1, align 4
+  %13 = load [4 x i64], ptr @numberList2, align 8
+  store [4 x i64] %13, ptr %numberList2, align 8
+  %14 = getelementptr inbounds [4 x i64], ptr %numberList2, i32 0, i32 0
+  %15 = load [4 x i64], ptr %numberList2, align 8
   store i32 4, ptr %2, align 4
-  %11 = load i32, ptr %2, align 4
-  %12 = call i32 @_f__void__sumNumbers__longarray_int(ptr @numberList2, i32 %11)
-  store i32 %12, ptr %3, align 4
-  %13 = load i32, ptr %1, align 4
-  %14 = load i32, ptr %3, align 4
-  %15 = getelementptr inbounds [2 x i32], ptr %4, i32 0, i32 0
-  store i32 %13, ptr %15, align 4
-  %16 = getelementptr inbounds [2 x i32], ptr %4, i32 0, i32 1
-  store i32 %14, ptr %16, align 4
-  %17 = load [2 x i32], ptr %4, align 4
+  %16 = load i32, ptr %2, align 4
+  %17 = call i32 @_f__void__sumNumbers__longarray_int(ptr %14, i32 %16)
+  store i32 %17, ptr %3, align 4
+  %18 = load i32, ptr %3, align 4
+  store i32 %18, ptr %result2, align 4
+  %19 = load i32, ptr %result1, align 4
+  %20 = load i32, ptr %result2, align 4
+  %21 = getelementptr inbounds [2 x i32], ptr %4, i32 0, i32 0
+  store i32 %19, ptr %21, align 4
+  %22 = getelementptr inbounds [2 x i32], ptr %4, i32 0, i32 1
+  store i32 %20, ptr %22, align 4
+  %23 = load [2 x i32], ptr %4, align 4
+  store [2 x i32] %23, ptr %resultList, align 4
+  %24 = load [2 x i32], ptr %resultList, align 4
   store i32 2, ptr %5, align 4
-  %18 = load i32, ptr %5, align 4
-  %19 = load [2 x i32], ptr %4, align 4
-  call void @_p__void__printData__int_intarray(i32 %18, [2 x i32] %19)
+  %25 = load i32, ptr %5, align 4
+  %26 = load [2 x i32], ptr %resultList, align 4
+  call void @_p__void__printData__int_intarray(i32 %25, [2 x i32] %26)
   store i1 true, ptr %6, align 1
-  %20 = load i32, ptr %1, align 4
-  %21 = load i32, ptr %3, align 4
-  %22 = call i32 (ptr, ...) @printf(ptr @1, i32 %20, i32 %21)
-  %23 = load i32, ptr %result, align 4
-  ret i32 %23
+  %27 = load i32, ptr %result1, align 4
+  %28 = load i32, ptr %result2, align 4
+  %29 = call i32 (ptr, ...) @printf(ptr @1, i32 %27, i32 %28)
+  %30 = load i32, ptr %result, align 4
+  ret i32 %30
 }

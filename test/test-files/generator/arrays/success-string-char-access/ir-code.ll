@@ -10,15 +10,18 @@ define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
   %test = alloca ptr, align 8
+  %c1 = alloca i8, align 1
   store i32 0, ptr %result, align 4
   store ptr @0, ptr %test, align 8
   %0 = load ptr, ptr %test, align 8
   %1 = getelementptr inbounds i8, ptr %0, i32 2
   %2 = load i8, ptr %1, align 1
-  %3 = sext i8 %2 to i32
-  %4 = call i32 (ptr, ...) @printf(ptr @1, i32 %3)
-  %5 = load i32, ptr %result, align 4
-  ret i32 %5
+  store i8 %2, ptr %c1, align 1
+  %3 = load i8, ptr %c1, align 1
+  %4 = sext i8 %3 to i32
+  %5 = call i32 (ptr, ...) @printf(ptr @1, i32 %4)
+  %6 = load i32, ptr %result, align 4
+  ret i32 %6
 }
 
 declare i32 @printf(ptr, ...)

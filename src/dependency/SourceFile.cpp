@@ -2,8 +2,6 @@
 
 #include "SourceFile.h"
 
-#include <utility>
-
 #include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
 #include <ast/AstNodes.h>
@@ -21,10 +19,10 @@
 #include <visualizer/CSTVisualizerVisitor.h>
 
 SourceFile::SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                       RuntimeModules &runtimeModules, LinkerInterface &linker, CliOptions &options, SourceFile *parent,
-                       std::string name, const std::string &filePath, bool stdFile)
-    : context(context), builder(builder), threadFactory(threadFactory), runtimeModules(runtimeModules), linker(linker),
-      name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
+                       RuntimeModuleManager &runtimeModuleManager, LinkerInterface &linker, CliOptions &options,
+                       SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
+    : context(context), builder(builder), threadFactory(threadFactory), runtimeModuleManager(runtimeModuleManager),
+      linker(linker), name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
   this->objectFilePath = options.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
 
   // Deduce fileName and fileDir
@@ -188,7 +186,7 @@ void SourceFile::analyze() {
   }
 
   // Analyze this source file
-  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, *this, options, runtimeModules, parent == nullptr, stdFile);
+  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, *this, options, parent == nullptr, stdFile);
   analyzer->visit(ast.get());
   antlrCtx.parser->reset();
 }
@@ -209,25 +207,6 @@ void SourceFile::reAnalyze() {
   // Re-analyze the imported source files
   for (const auto &sourceFile : dependencies)
     sourceFile.second.first->reAnalyze();
-
-  // If this is the main source file, import the required runtime modules
-  if (parent == nullptr) {
-    std::vector<std::pair<std::string, std::string>> runtimeFiles;
-    if (runtimeModules.stringRuntime)
-      runtimeFiles.emplace_back("__rt_string", "string_rt");
-    if (runtimeModules.threadRuntime)
-      runtimeFiles.emplace_back("__rt_thread", "thread_rt");
-
-    std::string runtimePath = FileUtil::getStdDir() + "runtime" + FileUtil::DIR_SEPARATOR;
-    for (const auto &[importName, fileName] : runtimeFiles) {
-      addDependency(ast.get(), importName, runtimePath + fileName + ".spice", true);
-      auto &[stringRuntimeFile, _] = dependencies.at(importName);
-      stringRuntimeFile->buildAST();
-      stringRuntimeFile->preAnalyze();
-      stringRuntimeFile->analyze();
-      stringRuntimeFile->reAnalyze();
-    }
-  }
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
@@ -315,14 +294,18 @@ void SourceFile::emitObjectFile() {
   }
 }
 
-void SourceFile::addDependency(const AstNode *declAstNode, const std::string &name, const std::string &filePath, bool stdFile) {
+std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &name, const std::string &filePath, bool stdFile) {
+  return std::make_shared<SourceFile>(context, builder, threadFactory, runtimeModuleManager, linker, options, this, name,
+                                      filePath, stdFile);
+}
+
+void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, const AstNode *declAstNode, const std::string &name,
+                               const std::string &filePath) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(filePath))
     throw SemanticError(declAstNode->codeLoc, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
-  auto sourceFile = std::make_shared<SourceFile>(context, builder, threadFactory, runtimeModules, linker, options, this, name,
-                                                 filePath, stdFile);
   dependencies.insert({name, {sourceFile, declAstNode}});
 }
 
@@ -332,4 +315,12 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {
     return true;
   // Check parent recursively
   return parent != nullptr && parent->isAlreadyImported(filePathSearch);
+}
+
+void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {
+  runtimeModuleManager.requestModule(this, moduleName);
+}
+
+SymbolTable *SourceFile::getRuntimeModuleScope(const RuntimeModuleName &moduleName) const {
+  return runtimeModuleManager.getModuleScope(moduleName);
 }

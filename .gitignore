@@ -7,6 +7,7 @@ spice
 /coverage
 /cmake-build-debug
 /cmake-build-release
+/cmake-build-relwithdebinfo
 
 # Third party libs
 /lib

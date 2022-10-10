@@ -5,6 +5,7 @@
 #include <utility>
 
 #include <cli/CliInterface.h>
+#include <dependency/RuntimeModuleManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/SemanticError.h>
 #include <symbol/Function.h>
@@ -15,9 +16,9 @@
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 
-AnalyzerVisitor::AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, const SourceFile &sourceFile,
-                                 CliOptions &options, RuntimeModules &runtimeModules, bool requiresMainFct, bool isStdFile)
-    : context(context), builder(builder), runtimeModules(runtimeModules), requiresMainFct(requiresMainFct), isStdFile(isStdFile) {
+AnalyzerVisitor::AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, SourceFile &sourceFile,
+                                 CliOptions &options, bool requiresMainFct, bool isStdFile)
+    : context(context), builder(builder), sourceFile(sourceFile), requiresMainFct(requiresMainFct), isStdFile(isStdFile) {
   // Retrieve symbol table
   this->currentScope = this->rootScope = sourceFile.symbolTable.get();
 
@@ -1689,6 +1690,19 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         throw SemanticError(node->codeLoc, MEMBER_ACCESS_ONLY_STRUCTS, "Cannot apply member access operator on " + lhs.getName());
 
       PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
+
+      // Propagate strings to string objects
+      if (lhs.is(TY_STRING)) {
+        insertAnonStringStructSymbol(rhs);
+        lhs = SymbolType(TY_STRUCT, STRING_RT_IMPORT_NAME + std::string(".String"));
+        SymbolTable *stringRuntimeScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+        stringRuntimeScope = stringRuntimeScope->getChild(STRUCT_SCOPE_PREFIX + std::string("String"));
+        assert(stringRuntimeScope != nullptr);
+        scopePath.clear();
+        scopePath.pushFragment(STRING_RT_IMPORT_NAME, stringRuntimeScope);
+      }
+      currentThisType = lhs;
+
       lhs = any_cast<SymbolType>(visit(rhs)); // Visit rhs
       break;
     }
@@ -1906,12 +1920,24 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     std::string identifier = node->functionNameFragments[i];
     SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
 
+    SymbolType symbolBaseType;
+    if (symbolEntry != nullptr) {
+      if (symbolEntry->type.getBaseType().is(TY_STRING)) {
+        insertAnonStringStructSymbol(node);
+        symbolBaseType = SymbolType(TY_STRUCT, std::string("String"));
+        accessScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+        assert(accessScope != nullptr);
+      } else {
+        symbolBaseType = symbolEntry->type.getBaseType();
+      }
+    }
+
     if (i < node->functionNameFragments.size() - 1) {
       if (!symbolEntry)
         throw SemanticError(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION,
                             "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
-      thisType = symbolEntry->type.getBaseType();
-    } else if (symbolEntry != nullptr && symbolEntry->type.getBaseType().is(TY_STRUCT)) { // last fragment is a struct
+      thisType = symbolBaseType;
+    } else if (symbolEntry != nullptr && symbolBaseType.is(TY_STRUCT)) {
       // Get the concrete template types
       std::vector<SymbolType> concreteTemplateTypes;
       if (node->isGeneric) {
@@ -1933,7 +1959,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       if (accessScope->isImported(currentScope))
         thisType = initExtStruct(accessScope, scopePath.getScopePrefix(true), identifier, concreteTemplateTypes, node->codeLoc);
       else
-        thisType = symbolEntry->type.getBaseType();
+        thisType = symbolBaseType;
 
       functionName = CTOR_VARIABLE_NAME;
       constructorCall = true;
@@ -2008,7 +2034,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     // Add anonymous symbol to keep track of de-allocation
     currentScope->insertAnonymous(thisType, node);
     // Return struct type on constructor call
-    return currentThisType = node->setEvaluatedSymbolType(thisType);
+    return node->setEvaluatedSymbolType(thisType);
   }
 
   // If the callee is a procedure, return type bool
@@ -2029,11 +2055,11 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       std::string scopePrefix = scopePathBackup.getScopePrefix(!spiceFunc->isGenericSubstantiation);
       SymbolType symbolType =
           initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node->codeLoc);
-      return currentThisType = node->setEvaluatedSymbolType(symbolType);
+      return node->setEvaluatedSymbolType(symbolType);
     }
   }
 
-  return currentThisType = node->setEvaluatedSymbolType(returnType);
+  return node->setEvaluatedSymbolType(returnType);
 }
 
 std::any AnalyzerVisitor::visitArrayInitialization(ArrayInitializationNode *node) {
@@ -2310,7 +2336,7 @@ SymbolType AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode
   currentScope->insertAnonymous(stringStructType, declNode);
 
   // Enable string runtime
-  runtimeModules.stringRuntime = true;
+  sourceFile.requestRuntimeModule(STRING_RT);
 
   return stringStructType;
 }

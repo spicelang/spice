@@ -6,6 +6,7 @@
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <cli/CliInterface.h>
+#include <dependency/RuntimeModuleManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/IRError.h>
 #include <symbol/Function.h>
@@ -30,9 +31,9 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 GeneratorVisitor::GeneratorVisitor(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                                   const LinkerInterface &linker, const CliOptions &cliOptions, const SourceFile &sourceFile,
+                                   const LinkerInterface &linker, const CliOptions &cliOptions, SourceFile &sourceFile,
                                    const std::string &objectFile)
-    : objectFile(objectFile), cliOptions(cliOptions), linker(linker), context(context), builder(builder),
+    : objectFile(objectFile), sourceFile(sourceFile), cliOptions(cliOptions), linker(linker), context(context), builder(builder),
       threadFactory(threadFactory) {
   // Enrich options
   this->requiresMainFct = sourceFile.parent == nullptr;
@@ -1317,34 +1318,50 @@ std::any GeneratorVisitor::visitAssertStmt(AssertStmtNode *node) {
 std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   setSourceLocation(node);
 
-  // Get var name
-  currentVarName = lhsVarName = node->varName;
-
   // Get variable entry
-  SymbolTableEntry *entry = currentScope->lookup(lhsVarName);
+  SymbolTableEntry *entry = currentScope->lookup(node->varName);
   assert(entry != nullptr);
   currentConstSigned = entry->specifiers.isSigned();
+
+  // Set lhsVarName and currentVarName to varName
+  currentVarName = lhsVarName = node->varName;
 
   // Get data type
   llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(node->dataType()));
   entry->updateType(currentSymbolType, true);
 
-  // Restore var name
+  // Restore lhsVarName and currentVarName
   currentVarName = lhsVarName = node->varName;
 
   llvm::Value *memAddress = nullptr;
   if (node->assignExpr()) { // Declaration with assignment
-    memAddress = resolveAddress(node->assignExpr());
+    if (varType->isStructTy()) {
+      llvm::Value *rhsAddress = resolveAddress(node->assignExpr());
+      if (entry->getAddress() != nullptr) { // Struct contents need be copied
+        llvm::Function *memcpyFct = stdFunctionManager->getMemcpyIntrinsic();
+        unsigned int typeSize = module->getDataLayout().getTypeSizeInBits(varType);
+        llvm::Value *structSize = builder->getInt64(typeSize);
+        llvm::Value *isVolatile = builder->getInt1(entry->isVolatile);
+        memAddress = insertAlloca(varType, node->varName);
+        builder->CreateCall(memcpyFct, {memAddress, rhsAddress, structSize, isVolatile});
+      } else { // Struct contents need not be copied
+        memAddress = rhsAddress;
+      }
+    } else {
+      llvm::Value *value = resolveValue(node->assignExpr());
+      memAddress = insertAlloca(varType, node->varName);
+      builder->CreateStore(value, memAddress);
+    }
   } else { // Declaration with default value
     if (entry->type.is(TY_PTR) && entry->type.getDynamicArraySize() != nullptr) {
       llvm::Type *itemType = entry->type.getContainedTy().toLLVMType(*context, nullptr);
       dynamicArraySize = entry->type.getDynamicArraySize();
       llvm::Value *value = allocateDynamicallySizedArray(itemType);
-      memAddress = insertAlloca(value->getType(), lhsVarName);
+      memAddress = insertAlloca(value->getType(), node->varName);
       builder->CreateStore(value, memAddress, entry->isVolatile);
     } else {
       llvm::Value *value = getDefaultValueForSymbolType(currentSymbolType);
-      memAddress = insertAlloca(varType, lhsVarName);
+      memAddress = insertAlloca(varType, node->varName);
 
       // Save default value to address
       builder->CreateStore(value, memAddress, entry->isVolatile);
@@ -1352,7 +1369,7 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   }
 
   if (cliOptions.generateDebugInfo)
-    generateDeclDebugInfo(node->codeLoc, lhsVarName, memAddress, true);
+    generateDeclDebugInfo(node->codeLoc, node->varName, memAddress, true);
 
   // Update address in symbol table
   entry->updateAddress(memAddress);
@@ -1360,7 +1377,7 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   lhsType = nullptr; // Reset nullptr
 
   // Return the variable name
-  return lhsVarName;
+  return node->varName;
 }
 
 std::any GeneratorVisitor::visitImportStmt(ImportStmtNode * /*node*/) {
@@ -2265,8 +2282,21 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           structAccessType = lhsSymbolType.toLLVMType(*context, currentScope);
         }
 
-        // Visit identifier after the dot
         PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
+
+        // Propagate strings to string objects
+        if (lhsSymbolType.is(TY_STRING)) {
+          lhs = builder->CreateLoad(lhsTy, lhsPtr);
+          lhsPtr = conversionsManager->propagateValueToStringObject(currentScope, lhsSymbolType, lhsPtr, lhs, rhs->codeLoc);
+          currentSymbolType = SymbolType(TY_STRUCT, std::string("String"));
+          SymbolTable *stringRuntimeScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+          assert(stringRuntimeScope != nullptr);
+          scopePath.clear();
+          scopePath.pushFragment(STRING_RT_IMPORT_NAME, stringRuntimeScope);
+        }
+        currentThisValuePtr = structAccessAddress = lhsPtr;
+
+        // Visit identifier after the dot
         lhsPtr = resolveAddress(rhs);
 
         lhs = nullptr;
@@ -2579,18 +2609,38 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     std::string identifier = node->functionNameFragments[i];
     SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
 
+    SymbolType symbolBaseType;
+    if (symbolEntry != nullptr) {
+      if (symbolEntry->type.getBaseType().is(TY_STRING)) {
+        // Load string value
+        llvm::Value *stringPtr = symbolEntry->getAddress();
+        llvm::Value *string = builder->CreateLoad(symbolEntry->type.toLLVMType(*context, currentScope), stringPtr);
+        // Propagate the string to a string object
+        conversionsManager->propagateValueToStringObject(currentScope, symbolEntry->type, stringPtr, string, node->codeLoc);
+        // Replace symbolEntry with anonymous entry
+        symbolEntry = currentScope->lookupAnonymous(node->codeLoc);
+        assert(symbolEntry != nullptr);
+        symbolBaseType = SymbolType(TY_STRUCT, std::string("String"));
+        accessScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+        assert(accessScope != nullptr);
+      } else {
+        symbolBaseType = symbolEntry->type.getBaseType();
+      }
+    }
+
     if (i < node->functionNameFragments.size() - 1) {
       if (!symbolEntry)
         throw IRError(node->codeLoc, REFERENCED_UNDEFINED_FUNCTION_IR,
                       "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
       thisValuePtr = symbolEntry->getAddress();
-    } else if (symbolEntry != nullptr && symbolEntry->type.getBaseType().is(TY_STRUCT)) {
+    } else if (symbolEntry != nullptr && symbolBaseType.is(TY_STRUCT)) {
       Struct *spiceStruct = currentScope->getStructAccessPointer(node->codeLoc);
       assert(spiceStruct != nullptr);
 
       // Check if the struct is defined
       symbolEntry = accessScope->lookup(spiceStruct->getSignature());
       assert(symbolEntry != nullptr);
+      symbolBaseType = symbolEntry->type.getBaseType();
 
       // Get address of variable in memory
       if (lhsVarName.empty()) {
@@ -2613,8 +2663,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     }
     thisSymbolType = symbolEntry->type;
 
-    std::string tableName =
-        symbolEntry->type.is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + symbolEntry->type.getBaseType().getName();
+    std::string tableName = symbolEntry->type.is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + symbolBaseType.getName();
     accessScope = accessScope->lookupTable(tableName);
     assert(accessScope != nullptr);
     scopePath.pushFragment(identifier, accessScope);
@@ -2713,7 +2762,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     // Return pointer to this value
     currentSymbolType = anonEntry->type;
     structAccessType = currentSymbolType.toLLVMType(*context, accessScope);
-    return currentThisValuePtr = structAccessAddress = thisValuePtr;
+    return thisValuePtr;
   } else if (!resultValue->getType()->isSized()) {
     // Set return type bool for procedures
     resultValue = builder->getTrue();
@@ -2721,7 +2770,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   llvm::Value *resultPtr = insertAlloca(resultValue->getType());
   builder->CreateStore(resultValue, resultPtr);
-  return currentThisValuePtr = structAccessAddress = resultPtr;
+  return resultPtr;
 }
 
 std::any GeneratorVisitor::visitArrayInitialization(ArrayInitializationNode *node) {

@@ -1,43 +1,21 @@
-type Stamp struct {
-    double value
-    bool glued
-}
-
-p Stamp.print() {
-    printf("Value: %f, glued: %d", this.value, this.glued);
-}
-
-type Letter struct {
-    string content
-    Stamp stamp
-}
-
-f<string> Letter.getContent() {
-    return this.content;
-}
-
-p Letter.setContent(string text) {
-    this.content = text;
-}
-
-f<Stamp> Letter.getStamp() {
-    return this.stamp;
-}
-
-p Letter.setStamp(Stamp stamp) {
-    this.stamp = stamp;
-}
-
 f<int> main() {
-    dyn letter = Letter{ "", Stamp{ 3.4, false } };
-    printf("Stamp glued: %f\n", letter.getStamp().value);
-    letter.getStamp().print();
+    string test = "Tested";
+    printf("%s\n", test.getRaw());
+    printf("%d\n", test.getLength());
+    printf("%d\n", test.getCapacity());
 }
 
-/*import "std/runtime/string_rt" as _rt_str;
+/*f<int> main() {
+    int v1 = 10;
+    int v2 = v1;
+    printf("v1: %d, v2: %d\n", v1, v2);
+    v2++;
+    printf("v1: %d, v2: %d\n", v1, v2);
 
-f<int> main() {
-    printf("%d", _rt_str::String("Test").isEmpty());
+    unsigned long startIndex = 10l;
+    for unsigned long charIndex = startIndex; charIndex < 20l; charIndex++ {
+        printf("Char index: %d, start index: %d\n", charIndex, startIndex);
+    }
 }*/
 
 /*import "std/net/http" as http;

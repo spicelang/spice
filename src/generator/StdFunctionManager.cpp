@@ -34,6 +34,11 @@ llvm::Function *StdFunctionManager::getStackRestoreIntrinsic() const {
   return getProcedure("llvm.stackrestore", builder->getInt8PtrTy());
 }
 
+llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
+  llvm::Type *ptrTy = builder->getPtrTy();
+  return getProcedure("llvm.memcpy.p0.p0.i64", {ptrTy, ptrTy, builder->getInt64Ty(), builder->getInt1Ty()});
+}
+
 llvm::Function *StdFunctionManager::getStringGetRawFct() const {
   return getFunction("_mf__String__getRaw", builder->getPtrTy(), getStringStructType(*context)->getPointerTo());
 }
