@@ -10,8 +10,8 @@ on:
       - feature/**
 
 jobs:
-  build:
-    name: C++ CI
+  build-linux:
+    name: C++ CI - Linux
     runs-on: ubuntu-22.04
 
     steps:
@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /home/runner/work/spice/llvm
-          key: llvm-15.0.2
+          key: llvm-15.0.2-linux-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -103,12 +103,74 @@ jobs:
           chmod +x codecov
           ./codecov -t ${{ secrets.CODECOV_TOKEN }}
 
-# Currently not working because the data layout and the target triple is present in the ir test refs
-#      - name: Check if test refs are up-to-date
-#        env:
-#          SPICE_STD_DIR: /home/runner/work/spice/spice/std
-#        run: |
-#          cd ./bin/test
-#          ./spicetest true
-#          git status --porcelain
-#          git diff --exit-code
+  build-windows:
+    name: C++ CI - Windows
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 11
+
+      - name: Setup latest GCC
+        shell: pwsh
+        run: |
+          choco uninstall mingw --all-versions
+          choco uninstall llvm --all-versions
+          Remove-Item -Recurse -Force C:/Strawberry
+          echo "Uninstalling done."
+          Invoke-WebRequest https://chillibits.com/files/gh/mingw64_12_2_0.7z -OutFile mingw64.7z
+          echo "Downloading done."
+          7z x mingw64.7z -oC:\mingw64
+          echo "Unpacking done."
+          Copy-Item -Path C:\mingw64\mingw64\bin\mingw32-make.exe -Destination C:\mingw64\mingw64\bin\make.exe
+          echo "All done."
+
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v3
+        with:
+          path: D:/a/spice/spice/llvm
+          key: llvm-15.0.2-win-x86
+
+      - name: Setup LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch llvmorg-15.0.2 https://github.com/llvm/llvm-project.git llvm
+          setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          echo "Adding MinGW to path done."
+          mkdir ./llvm/build
+          cd ./llvm/build
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
+          cmake --build . -j 4
+
+      - name: Download Libs
+        run: .\setup-libs.bat
+
+      - name: Build Test target
+        env:
+          LLVM_DIR: D:/a/spice/spice/llvm/build/lib/cmake/llvm
+        run: |
+          setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          echo "Adding MinGW to path done."
+          mkdir ./bin
+          cd ./bin
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${{ steps.get_version.outputs.version }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+          cmake --build . --target spice -j 4
+
+      - name: Run Test target
+        env:
+          SPICE_STD_DIR: C:\Users\runneradmin\spice\spice\std
+        run: |
+          cd .\bin\test
+          .\spicetest false

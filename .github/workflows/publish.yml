@@ -131,7 +131,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
-          cmake --build . -j %NUMBER_OF_PROCESSORS%
+          cmake --build . -j 4
 
       - name: Download Libs
         run: .\setup-libs.bat
@@ -146,7 +146,7 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${{ steps.get_version.outputs.version }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
-          cmake --build . --target spice -j %NUMBER_OF_PROCESSORS%
+          cmake --build . --target spice -j 4
 
       - name: Process build output
         working-directory: bin
