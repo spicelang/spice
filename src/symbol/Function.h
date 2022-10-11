@@ -10,6 +10,7 @@
 
 // Forward declarations
 struct AstNode;
+struct CodeLoc;
 
 typedef std::vector<std::pair<SymbolType, bool>> ParamList;
 typedef std::vector<std::tuple<std::string, SymbolType, bool>> NamedParamList;

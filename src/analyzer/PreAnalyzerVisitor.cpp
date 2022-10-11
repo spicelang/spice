@@ -30,8 +30,7 @@ std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
     // Find std library
     std::string stdPath = FileUtil::getStdDir();
     if (stdPath.empty())
-      throw SemanticError(node->codeLoc, STD_NOT_FOUND,
-                          "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
+      throw SemanticError(node, STD_NOT_FOUND, "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
     // Check if source file exists
     std::string defaultPath = stdPath + sourceFileIden + ".spice";
     std::string osPath = stdPath + sourceFileIden + "_" + cliOptions.targetOs + ".spice";
@@ -44,7 +43,7 @@ std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
     } else if (FileUtil::fileExists(osArchPath)) {
       importPath = osArchPath;
     } else {
-      throw SemanticError(node->codeLoc, IMPORTED_FILE_NOT_EXISTING,
+      throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING,
                           "The source file '" + node->importPath + ".spice' was not found in the standard library");
     }
   } else { // Include own source file
@@ -63,8 +62,7 @@ std::any PreAnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
     } else if (FileUtil::fileExists(osArchPath)) {
       importPath = osArchPath;
     } else {
-      throw SemanticError(node->codeLoc, IMPORTED_FILE_NOT_EXISTING,
-                          "The source file '" + node->importPath + ".spice' does not exist");
+      throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING, "The source file '" + node->importPath + ".spice' does not exist");
     }
   }
   CommonUtil::replaceAll(importPath, "/", std::string(1, FileUtil::DIR_SEPARATOR));

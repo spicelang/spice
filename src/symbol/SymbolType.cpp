@@ -23,13 +23,13 @@ SymbolType::TypeChain SymbolType::getTypeChain() const { return typeChain; }
  *
  * @return Pointer type of the current type
  */
-SymbolType SymbolType::toPointer(const CodeLoc &codeLoc, llvm::Value *dynamicSize) const {
+SymbolType SymbolType::toPointer(const AstNode *node, llvm::Value *dynamicSize) const {
   // Do not allow pointers of dyn
   if (typeChain.top().superType == TY_DYN)
-    throw SemanticError(codeLoc, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
+    throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_PTR, "", 0, {}, dynamicSize});
+  newTypeChain.push({TY_PTR, "", {.arraySize = 0}, {}, dynamicSize});
   return SymbolType(newTypeChain);
 }
 
@@ -38,10 +38,10 @@ SymbolType SymbolType::toPointer(const CodeLoc &codeLoc, llvm::Value *dynamicSiz
  *
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const CodeLoc &codeLoc, int size) const {
+SymbolType SymbolType::toArray(const AstNode *node, int size) const {
   // Do not allow arrays of dyn
   if (typeChain.top().superType == TY_DYN)
-    throw SemanticError(codeLoc, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
+    throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push({TY_ARRAY, "", {.arraySize = size}, {}, nullptr});

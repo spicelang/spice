@@ -15,6 +15,7 @@
 // Forward declarations
 class SymbolTable;
 struct AstNode;
+struct CodeLoc;
 
 enum SymbolState { DECLARED, INITIALIZED };
 
@@ -31,7 +32,8 @@ public:
 
   // Public methods
   void updateType(const SymbolType &newType, bool force);
-  void updateState(SymbolState newState, const CodeLoc &codeLoc, bool force = false);
+  void updateState(SymbolState newState, const AstNode *node, bool force = false);
+  [[nodiscard]] const AstNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::Type *getStructLLVMType() const;
   void setStructLLVMType(llvm::Type *newStructType);

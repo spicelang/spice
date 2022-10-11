@@ -261,7 +261,7 @@ SymbolType OpRuleManager::getPrefixMulResultType(const AstNode *node, const Symb
 }
 
 SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const AstNode *node, const SymbolType &lhs) {
-  return lhs.toPointer(node->codeLoc);
+  return lhs.toPointer(node);
 }
 
 SymbolType OpRuleManager::getPostfixPlusPlusResultType(const AstNode *node, const SymbolType &lhs) {

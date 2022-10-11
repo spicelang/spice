@@ -15,7 +15,7 @@
 
 // Forward declarations
 class SymbolTable;
-struct CodeLoc;
+struct AstNode;
 
 enum SymbolSuperType {
   TY_INVALID,
@@ -89,8 +89,8 @@ public:
 
   // Public methods
   [[nodiscard]] TypeChain getTypeChain() const;
-  SymbolType toPointer(const CodeLoc &codeLoc, llvm::Value *dynamicSize = nullptr) const;
-  [[nodiscard]] SymbolType toArray(const CodeLoc &codeLoc, int size = 0) const;
+  SymbolType toPointer(const AstNode *node, llvm::Value *dynamicSize = nullptr) const;
+  [[nodiscard]] SymbolType toArray(const AstNode *node, int size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;

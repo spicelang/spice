@@ -1674,11 +1674,11 @@ int8_t AstBuilderVisitor::parseChar(antlr4::tree::TerminalNode *terminal) {
       return '\0';
     default:
       CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), fileName);
-      throw LexerParserError(codeLoc, PARSING_FAILED, "Invalid escape sequence " + input);
+      throw LexerParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid escape sequence " + input);
     }
   } else {
     CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), fileName);
-    throw LexerParserError(codeLoc, PARSING_FAILED, "Invalid char literal " + input);
+    throw LexerParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid char literal " + input);
   }
 }
 

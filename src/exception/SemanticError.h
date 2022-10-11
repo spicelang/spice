@@ -81,7 +81,6 @@ class SemanticError : public std::exception {
 public:
   // Constructors
   explicit SemanticError(const AstNode *node, const SemanticErrorType &type, const std::string &message);
-  [[deprecated]] explicit SemanticError(const CodeLoc &codeLoc, const SemanticErrorType &type, const std::string &message);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

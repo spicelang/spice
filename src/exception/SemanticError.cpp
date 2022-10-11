@@ -11,10 +11,6 @@ SemanticError::SemanticError(const AstNode *node, const SemanticErrorType &type,
   errorMessage += node->errorMessage;
 }
 
-SemanticError::SemanticError(const CodeLoc &codeLoc, const SemanticErrorType &type, const std::string &message) {
-  errorMessage = "Semantic error in " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
-}
-
 /**
  * Get the message for this particular error instance
  *

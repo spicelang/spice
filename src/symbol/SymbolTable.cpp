@@ -377,13 +377,13 @@ void SymbolTable::insertFunction(const Function &function) {
  * @param callThisType This type requirement
  * @param callArgTypes Argument types requirement
  * @param err Error Factory
- * @param codeLoc Declaration code location for the error message
+ * @param node Declaration node for the error message
  *
  * @return Matched function or nullptr
  */
 Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::string &callFunctionName,
                                      const SymbolType &callThisType, const std::vector<SymbolType> &callArgTypes,
-                                     const CodeLoc &codeLoc) {
+                                     const AstNode *node) {
   std::vector<Function *> matches;
 
   // Loop through functions and add any matches to the matches vector
@@ -469,7 +469,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
         if ((f.isMethodFunction() || f.isMethodProcedure()) && !fctThisType.getTemplateTypes().empty()) {
           SymbolTableEntry *thisEntry = childBlock->lookup(THIS_VARIABLE_NAME);
           assert(thisEntry != nullptr);
-          SymbolType newThisType = callThisType.toPointer(codeLoc);
+          SymbolType newThisType = callThisType.toPointer(node);
           thisEntry->updateType(newThisType, true);
         }
       }
@@ -486,13 +486,13 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
   // Throw error if more than one function matches the criteria
   if (matches.size() > 1)
     throw SemanticError(
-        codeLoc, FUNCTION_AMBIGUITY,
+        node, FUNCTION_AMBIGUITY,
         "More than one function matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add function access pointer for function call
   if (currentScope != nullptr) {
     std::string suffix = callFunctionName == DTOR_VARIABLE_NAME ? callFunctionName : "";
-    currentScope->insertFunctionAccessPointer(matches.front(), codeLoc, suffix);
+    currentScope->insertFunctionAccessPointer(matches.front(), node->codeLoc, suffix);
   }
 
   return matches.front();
@@ -549,7 +549,7 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, const As
   std::string mangledFctName = function.getMangledName();
   for (const auto &[_, manifestations] : functions) {
     if (manifestations->contains(mangledFctName))
-      throw SemanticError(declNode->codeLoc, FUNCTION_DECLARED_TWICE,
+      throw SemanticError(declNode, FUNCTION_DECLARED_TWICE,
                           "The function/procedure '" + function.getSignature() + "' is declared twice");
   }
   // Add function to function list
@@ -580,11 +580,11 @@ void SymbolTable::insertStruct(const Struct &s) {
  * @param currentScope Current scope
  * @param structName Struct name
  * @param templateTypes Template type requirements
- * @param codeLoc Declaration code location for the error message
+ * @param node Declaration node for the error message
  * @return Matched struct or nullptr
  */
 Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &structName,
-                                 const std::vector<SymbolType> &templateTypes, const CodeLoc &codeLoc) {
+                                 const std::vector<SymbolType> &templateTypes, const AstNode *node) {
   std::vector<Struct *> matches;
 
   // Loop through structs and add any matches to the matches vector
@@ -632,7 +632,7 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
   }
 
   if (matches.empty() && parent)
-    matches.push_back(parent->matchStruct(currentScope, structName, templateTypes, codeLoc));
+    matches.push_back(parent->matchStruct(currentScope, structName, templateTypes, node));
 
   if (matches.empty())
     return nullptr;
@@ -640,12 +640,12 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
   // Throw error if more than one struct matches the criteria
   if (matches.size() > 1)
     throw SemanticError(
-        codeLoc, STRUCT_AMBIGUITY,
+        node, STRUCT_AMBIGUITY,
         "More than one struct matches your requested signature criteria. Please try to specify the return type explicitly");
 
   // Add struct access pointer for struct reference
   if (currentScope != nullptr)
-    currentScope->insertStructAccessPointer(codeLoc, matches.front());
+    currentScope->insertStructAccessPointer(node->codeLoc, matches.front());
 
   return matches.front();
 }
@@ -697,7 +697,7 @@ void SymbolTable::insertSubstantiatedStruct(const Struct &s, const AstNode *decl
   // Check if the struct exists already
   for (const auto &[_, manifestations] : structs) {
     if (manifestations->contains(s.getMangledName()))
-      throw SemanticError(declNode->codeLoc, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
+      throw SemanticError(declNode, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
   }
   // Add struct to struct list
   assert(structs.at(declNode->codeLoc.toString()) != nullptr);
