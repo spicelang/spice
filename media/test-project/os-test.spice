@@ -1,5 +1,5 @@
 f<int> main() {
-    string test = "Tested";
+    int test = "string";
 }
 
 /*f<int> main() {

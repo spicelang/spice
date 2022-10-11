@@ -5,7 +5,7 @@
 #include <analyzer/AnalyzerVisitor.h>
 #include <ast/AstNodes.h>
 
-SymbolType OpRuleManager::getAssignResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getAssignResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhs.is(TY_DYN))
     return rhs;
@@ -22,101 +22,101 @@ SymbolType OpRuleManager::getAssignResultType(const CodeLoc &codeLoc, const Symb
   if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
     return rhs;
   // Check primitive type combinations
-  return validateBinaryOperation(codeLoc, ASSIGN_OP_RULES, "=", lhs, rhs);
+  return validateBinaryOperation(node, ASSIGN_OP_RULES, "=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPlusEqualResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getPlusEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     if (analyzer->allowUnsafeOperations)
       return lhs;
     else
-      throw printErrorMessageUnsafe(declNode->codeLoc, "+=", lhs, rhs);
+      throw printErrorMessageUnsafe(node, "+=", lhs, rhs);
   }
 
   // Allow string += char
   if (lhs.is(TY_STRING) && rhs.is(TY_CHAR))
-    return analyzer->insertAnonStringStructSymbol(declNode);
+    return analyzer->insertAnonStringStructSymbol(node);
   // Allow string += string
   if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
-    return analyzer->insertAnonStringStructSymbol(declNode);
+    return analyzer->insertAnonStringStructSymbol(node);
 
-  return validateBinaryOperation(declNode->codeLoc, PLUS_EQUAL_OP_RULES, "+=", lhs, rhs);
+  return validateBinaryOperation(node, PLUS_EQUAL_OP_RULES, "+=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMinusEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getMinusEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     if (analyzer->allowUnsafeOperations)
       return lhs;
     else
-      throw printErrorMessageUnsafe(codeLoc, "-=", lhs, rhs);
+      throw printErrorMessageUnsafe(node, "-=", lhs, rhs);
   }
 
-  return validateBinaryOperation(codeLoc, MINUS_EQUAL_OP_RULES, "-=", lhs, rhs);
+  return validateBinaryOperation(node, MINUS_EQUAL_OP_RULES, "-=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMulEqualResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getMulEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow string *= int
   if (lhs.is(TY_STRING) && rhs.is(TY_INT))
-    return analyzer->insertAnonStringStructSymbol(declNode);
+    return analyzer->insertAnonStringStructSymbol(node);
   // Allow string *= long
   if (lhs.is(TY_STRING) && rhs.is(TY_LONG))
-    return analyzer->insertAnonStringStructSymbol(declNode);
+    return analyzer->insertAnonStringStructSymbol(node);
   // Allow string *= short
   if (lhs.is(TY_STRING) && rhs.is(TY_SHORT))
-    return analyzer->insertAnonStringStructSymbol(declNode);
+    return analyzer->insertAnonStringStructSymbol(node);
 
-  return validateBinaryOperation(declNode->codeLoc, MUL_EQUAL_OP_RULES, "*=", lhs, rhs);
+  return validateBinaryOperation(node, MUL_EQUAL_OP_RULES, "*=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getDivEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, DIV_EQUAL_OP_RULES, "/=", lhs, rhs);
+SymbolType OpRuleManager::getDivEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, DIV_EQUAL_OP_RULES, "/=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getRemEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, REM_EQUAL_OP_RULES, "%=", lhs, rhs);
+SymbolType OpRuleManager::getRemEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, REM_EQUAL_OP_RULES, "%=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getSHLEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, SHL_EQUAL_OP_RULES, "<<=", lhs, rhs);
+SymbolType OpRuleManager::getSHLEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, SHL_EQUAL_OP_RULES, "<<=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getSHREqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, SHR_EQUAL_OP_RULES, ">>=", lhs, rhs);
+SymbolType OpRuleManager::getSHREqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, SHR_EQUAL_OP_RULES, ">>=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getAndEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, AND_EQUAL_OP_RULES, "&=", lhs, rhs);
+SymbolType OpRuleManager::getAndEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, AND_EQUAL_OP_RULES, "&=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getOrEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, OR_EQUAL_OP_RULES, "|=", lhs, rhs);
+SymbolType OpRuleManager::getOrEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, OR_EQUAL_OP_RULES, "|=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getXorEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, XOR_EQUAL_OP_RULES, "^=", lhs, rhs);
+SymbolType OpRuleManager::getXorEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, XOR_EQUAL_OP_RULES, "^=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLogicalAndResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, LOGICAL_AND_OP_RULES, "&&", lhs, rhs);
+SymbolType OpRuleManager::getLogicalAndResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, LOGICAL_AND_OP_RULES, "&&", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLogicalOrResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, LOGICAL_OR_OP_RULES, "||", lhs, rhs);
+SymbolType OpRuleManager::getLogicalOrResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, LOGICAL_OR_OP_RULES, "||", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseAndResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, BITWISE_AND_OP_RULES, "&", lhs, rhs);
+SymbolType OpRuleManager::getBitwiseAndResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, BITWISE_AND_OP_RULES, "&", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseOrResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, BITWISE_OR_OP_RULES, "|", lhs, rhs);
+SymbolType OpRuleManager::getBitwiseOrResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, BITWISE_OR_OP_RULES, "|", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseXorResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, BITWISE_XOR_OP_RULES, "^", lhs, rhs);
+SymbolType OpRuleManager::getBitwiseXorResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, BITWISE_XOR_OP_RULES, "^", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow 'pointer == pointer' straight away
   if (lhs.isPointer() && rhs.isPointer())
     return SymbolType(TY_BOOL);
@@ -124,10 +124,10 @@ SymbolType OpRuleManager::getEqualResultType(const CodeLoc &codeLoc, const Symbo
   if (lhs.isPointer() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
   // Check primitive type combinations
-  return validateBinaryOperation(codeLoc, EQUAL_OP_RULES, "==", lhs, rhs);
+  return validateBinaryOperation(node, EQUAL_OP_RULES, "==", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getNotEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getNotEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow 'pointer != pointer' straight away
   if (lhs.isPointer() && rhs.isPointer())
     return SymbolType(TY_BOOL);
@@ -135,80 +135,80 @@ SymbolType OpRuleManager::getNotEqualResultType(const CodeLoc &codeLoc, const Sy
   if (lhs.isPointer() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
   // Check primitive type combinations
-  return validateBinaryOperation(codeLoc, NOT_EQUAL_OP_RULES, "!=", lhs, rhs);
+  return validateBinaryOperation(node, NOT_EQUAL_OP_RULES, "!=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLessResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, LESS_OP_RULES, "<", lhs, rhs);
+SymbolType OpRuleManager::getLessResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, LESS_OP_RULES, "<", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getGreaterResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, GREATER_OP_RULES, ">", lhs, rhs);
+SymbolType OpRuleManager::getGreaterResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, GREATER_OP_RULES, ">", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLessEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, LESS_EQUAL_OP_RULES, "<=", lhs, rhs);
+SymbolType OpRuleManager::getLessEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, LESS_EQUAL_OP_RULES, "<=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getGreaterEqualResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, GREATER_EQUAL_OP_RULES, ">=", lhs, rhs);
+SymbolType OpRuleManager::getGreaterEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, GREATER_EQUAL_OP_RULES, ">=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getShiftLeftResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, SHIFT_LEFT_OP_RULES, "<<", lhs, rhs);
+SymbolType OpRuleManager::getShiftLeftResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, SHIFT_LEFT_OP_RULES, "<<", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getShiftRightResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, SHIFT_RIGHT_OP_RULES, ">>", lhs, rhs);
+SymbolType OpRuleManager::getShiftRightResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, SHIFT_RIGHT_OP_RULES, ">>", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPlusResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getPlusResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow any* + <int/long/short>
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     if (analyzer->allowUnsafeOperations)
       return lhs;
     else
-      throw printErrorMessageUnsafe(declNode->codeLoc, "+", lhs, rhs);
+      throw printErrorMessageUnsafe(node, "+", lhs, rhs);
   }
   // Allow <int/long/short> + any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
     if (analyzer->allowUnsafeOperations)
       return rhs;
     else
-      throw printErrorMessageUnsafe(declNode->codeLoc, "+", lhs, rhs);
+      throw printErrorMessageUnsafe(node, "+", lhs, rhs);
   }
 
   // Allow string + string
   if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
-    return analyzer->insertAnonStringStructSymbol(declNode);
+    return analyzer->insertAnonStringStructSymbol(node);
 
-  return validateBinaryOperation(declNode->codeLoc, PLUS_OP_RULES, "+", lhs, rhs);
+  return validateBinaryOperation(node, PLUS_OP_RULES, "+", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getMinusResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow any* - <int/long/short>
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     if (analyzer->allowUnsafeOperations)
       return lhs;
     else
-      throw printErrorMessageUnsafe(codeLoc, "-", lhs, rhs);
+      throw printErrorMessageUnsafe(node, "-", lhs, rhs);
   }
   // Allow <int/long/short> - any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
     if (analyzer->allowUnsafeOperations)
       return rhs;
     else
-      throw printErrorMessageUnsafe(codeLoc, "-", lhs, rhs);
+      throw printErrorMessageUnsafe(node, "-", lhs, rhs);
   }
 
-  return validateBinaryOperation(codeLoc, MINUS_OP_RULES, "-", lhs, rhs);
+  return validateBinaryOperation(node, MINUS_OP_RULES, "-", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMulResultType(const AstNode *declNode, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::getMulResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow <string|char> * <int|short|long>
   if (lhs.isOneOf({TY_STRING, TY_CHAR}) && rhs.isOneOf({TY_INT, TY_SHORT, TY_LONG})) {
     if (!lhs.isStringStruct()) { // If lhs is a raw string -> insert anon symbol
-      return analyzer->insertAnonStringStructSymbol(declNode);
+      return analyzer->insertAnonStringStructSymbol(node);
     } else { // Otherwise just return the type
       return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
     }
@@ -217,62 +217,62 @@ SymbolType OpRuleManager::getMulResultType(const AstNode *declNode, const Symbol
   // Allow <int|short|long> * <string|char>
   if (lhs.isOneOf({TY_INT, TY_SHORT, TY_LONG}) && rhs.isOneOf({TY_STRING, TY_CHAR})) {
     if (!rhs.isStringStruct()) { // If rhs is a raw string -> insert anon symbol
-      return analyzer->insertAnonStringStructSymbol(declNode);
+      return analyzer->insertAnonStringStructSymbol(node);
     } else { // Otherwise just return the type
       return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
     }
   }
 
-  return validateBinaryOperation(declNode->codeLoc, MUL_OP_RULES, "*", lhs, rhs);
+  return validateBinaryOperation(node, MUL_OP_RULES, "*", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getDivResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, DIV_OP_RULES, "/", lhs, rhs);
+SymbolType OpRuleManager::getDivResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, DIV_OP_RULES, "/", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getRemResultType(const CodeLoc &codeLoc, const SymbolType &lhs, const SymbolType &rhs) {
-  return validateBinaryOperation(codeLoc, REM_OP_RULES, "%", lhs, rhs);
+SymbolType OpRuleManager::getRemResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  return validateBinaryOperation(node, REM_OP_RULES, "%", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPrefixMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
-  return validateUnaryOperation(codeLoc, PREFIX_MINUS_OP_RULES, "-", lhs);
+SymbolType OpRuleManager::getPrefixMinusResultType(const AstNode *node, const SymbolType &lhs) {
+  return validateUnaryOperation(node, PREFIX_MINUS_OP_RULES, "-", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixPlusPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
-  return validateUnaryOperation(codeLoc, PREFIX_PLUS_PLUS_OP_RULES, "++", lhs);
+SymbolType OpRuleManager::getPrefixPlusPlusResultType(const AstNode *node, const SymbolType &lhs) {
+  return validateUnaryOperation(node, PREFIX_PLUS_PLUS_OP_RULES, "++", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixMinusMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
-  return validateUnaryOperation(codeLoc, PREFIX_MINUS_MINUS_OP_RULES, "--", lhs);
+SymbolType OpRuleManager::getPrefixMinusMinusResultType(const AstNode *node, const SymbolType &lhs) {
+  return validateUnaryOperation(node, PREFIX_MINUS_MINUS_OP_RULES, "--", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixNotResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
-  return validateUnaryOperation(codeLoc, PREFIX_NOT_OP_RULES, "!", lhs);
+SymbolType OpRuleManager::getPrefixNotResultType(const AstNode *node, const SymbolType &lhs) {
+  return validateUnaryOperation(node, PREFIX_NOT_OP_RULES, "!", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
-  return validateUnaryOperation(codeLoc, PREFIX_BITWISE_NOT_OP_RULES, "~", lhs);
+SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const AstNode *node, const SymbolType &lhs) {
+  return validateUnaryOperation(node, PREFIX_BITWISE_NOT_OP_RULES, "~", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixMulResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
+SymbolType OpRuleManager::getPrefixMulResultType(const AstNode *node, const SymbolType &lhs) {
   if (!lhs.isPointer())
-    throw SemanticError(codeLoc, OPERATOR_WRONG_DATA_TYPE, "Cannot apply de-referencing operator on type " + lhs.getName(true));
+    throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply de-referencing operator on type " + lhs.getName(true));
   return lhs.getContainedTy();
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
-  return lhs.toPointer(codeLoc);
+SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const AstNode *node, const SymbolType &lhs) {
+  return lhs.toPointer(node->codeLoc);
 }
 
-SymbolType OpRuleManager::getPostfixPlusPlusResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
-  return validateUnaryOperation(codeLoc, POSTFIX_PLUS_PLUS_OP_RULES, "++", lhs);
+SymbolType OpRuleManager::getPostfixPlusPlusResultType(const AstNode *node, const SymbolType &lhs) {
+  return validateUnaryOperation(node, POSTFIX_PLUS_PLUS_OP_RULES, "++", lhs);
 }
 
-SymbolType OpRuleManager::getPostfixMinusMinusResultType(const CodeLoc &codeLoc, const SymbolType &lhs) {
-  return validateUnaryOperation(codeLoc, POSTFIX_MINUS_MINUS_OP_RULES, "--", lhs);
+SymbolType OpRuleManager::getPostfixMinusMinusResultType(const AstNode *node, const SymbolType &lhs) {
+  return validateUnaryOperation(node, POSTFIX_MINUS_MINUS_OP_RULES, "--", lhs);
 }
 
-SymbolType OpRuleManager::getCastResultType(const CodeLoc &codeLoc, const SymbolType &lhs,
+SymbolType OpRuleManager::getCastResultType(const AstNode *node, const SymbolType &lhs,
                                             const SymbolType &rhs) { // double dbl = (double) 10;
   // Allow casts string -> char*  and string -> char[]
   if (lhs.isOneOf({TY_PTR, TY_ARRAY}) && lhs.getContainedTy().is(TY_CHAR) && rhs.is(TY_STRING))
@@ -285,47 +285,43 @@ SymbolType OpRuleManager::getCastResultType(const CodeLoc &codeLoc, const Symbol
     if (analyzer->allowUnsafeOperations)
       return lhs;
     else
-      throw printErrorMessageUnsafe(codeLoc, "(cast)", lhs, rhs);
+      throw printErrorMessageUnsafe(node, "(cast)", lhs, rhs);
   }
   // Check primitive type combinations
-  return validateBinaryOperation(codeLoc, CAST_OP_RULES, "(cast)", lhs, rhs);
+  return validateBinaryOperation(node, CAST_OP_RULES, "(cast)", lhs, rhs);
 }
 
-SymbolType OpRuleManager::validateBinaryOperation(const CodeLoc &codeLoc, const std::vector<BinaryOpRule> &opRules,
-                                                  const std::string &opName, const SymbolType &lhs, const SymbolType &rhs) {
+SymbolType OpRuleManager::validateBinaryOperation(const AstNode *node, const std::vector<BinaryOpRule> &opRules,
+                                                  const std::string &name, const SymbolType &lhs, const SymbolType &rhs) {
   for (const auto &rule : opRules) {
     if (std::get<0>(rule) == lhs && std::get<1>(rule) == rhs)
       return std::get<2>(rule);
   }
-  throw printErrorMessageBinary(codeLoc, opName, lhs, rhs);
+  throw printErrorMessageBinary(node, name, lhs, rhs);
 }
 
-SymbolType OpRuleManager::validateUnaryOperation(const CodeLoc &codeLoc, const std::vector<UnaryOpRule> &opRules,
-                                                 const std::string &opName, const SymbolType &lhs) {
+SymbolType OpRuleManager::validateUnaryOperation(const AstNode *node, const std::vector<UnaryOpRule> &opRules,
+                                                 const std::string &name, const SymbolType &lhs) {
   for (const auto &rule : opRules) {
     if (std::get<0>(rule) == lhs)
       return std::get<1>(rule);
   }
-  throw printErrorMessageUnary(codeLoc, opName, lhs);
+  throw printErrorMessageUnary(node, name, lhs);
 }
 
-SemanticError OpRuleManager::printErrorMessageBinary(const CodeLoc &codeLoc, const std::string &operatorName,
-                                                     const SymbolType &lhs, const SymbolType &rhs) {
-  return SemanticError(codeLoc, OPERATOR_WRONG_DATA_TYPE,
-                       "Cannot apply '" + operatorName + "' operator on types " + lhs.getName(true) + " and " +
-                           rhs.getName(true));
+SemanticError OpRuleManager::printErrorMessageBinary(const AstNode *node, const std::string &name, const SymbolType &lhs,
+                                                     const SymbolType &rhs) {
+  return SemanticError(node, OPERATOR_WRONG_DATA_TYPE,
+                       "Cannot apply '" + name + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true));
 }
 
-SemanticError OpRuleManager::printErrorMessageUnary(const CodeLoc &codeLoc, const std::string &operatorName,
-                                                    const SymbolType &lhs) {
-  return SemanticError(codeLoc, OPERATOR_WRONG_DATA_TYPE,
-                       "Cannot apply '" + operatorName + "' operator on type " + lhs.getName(true));
+SemanticError OpRuleManager::printErrorMessageUnary(const AstNode *node, const std::string &name, const SymbolType &lhs) {
+  return SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + name + "' operator on type " + lhs.getName(true));
 }
 
-SemanticError OpRuleManager::printErrorMessageUnsafe(const CodeLoc &codeLoc, const std::string &operatorName,
-                                                     const SymbolType &lhs, const SymbolType &rhs) {
-  return SemanticError(codeLoc, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
-                       "Cannot apply '" + operatorName + "' operator on types " + lhs.getName(true) + " and " +
-                           rhs.getName(true) +
+SemanticError OpRuleManager::printErrorMessageUnsafe(const AstNode *node, const std::string &name, const SymbolType &lhs,
+                                                     const SymbolType &rhs) {
+  return SemanticError(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
+                       "Cannot apply '" + name + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
                            " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing.");
 }

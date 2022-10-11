@@ -10,7 +10,7 @@
 // Forward declarations
 class AstNode;
 
-#define ERROR_MESSAGE_CONTEXT 15
+#define ERROR_MESSAGE_CONTEXT 20
 
 class AstBuilderVisitor : public SpiceVisitor {
 public:

@@ -1729,22 +1729,47 @@ T AstBuilderVisitor::parseNumeric(antlr4::tree::TerminalNode *terminal, std::fun
 }
 
 void AstBuilderVisitor::saveErrorMessage(AstNode *node, const antlr4::ParserRuleContext *ctx) {
-  const antlr4::misc::Interval sourceInterval(ctx->start->getStartIndex(), ctx->start->getStopIndex());
+  const antlr4::misc::Interval sourceInterval(ctx->start->getStartIndex(), ctx->stop->getStopIndex());
+  antlr4::misc::Interval extendedSourceInterval(sourceInterval);
 
-  ssize_t extendedStart = sourceInterval.a;
-  size_t indentation = std::min(ctx->start->getCharPositionInLine(), size_t(ERROR_MESSAGE_CONTEXT));
-  extendedStart -= ssize_t(indentation);
-  antlr4::misc::Interval extendedInterval(extendedStart, sourceInterval.b);
-  while (inputStream->getText(extendedInterval).find('\n') == std::string::npos)
-    extendedInterval.b++;
+  if (inputStream->getText(extendedSourceInterval).find('\n') != std::string::npos) {
+    extendedSourceInterval.b = extendedSourceInterval.a;
+    while (inputStream->getText(extendedSourceInterval).find('\n') == std::string::npos)
+      extendedSourceInterval.b++;
+  }
+
+  size_t indentation = 0;
+  for (; indentation < ERROR_MESSAGE_CONTEXT; indentation++) {
+    extendedSourceInterval.a--;
+    if (extendedSourceInterval.a < 0 || inputStream->getText(extendedSourceInterval).find('\n') != std::string::npos) {
+      extendedSourceInterval.a++;
+      break;
+    }
+  }
+  for (size_t suffixContext = 0; suffixContext < ERROR_MESSAGE_CONTEXT; suffixContext++) {
+    extendedSourceInterval.b++;
+    if (extendedSourceInterval.b > inputStream->size() ||
+        inputStream->getText(extendedSourceInterval).find('\n') != std::string::npos) {
+      extendedSourceInterval.b--;
+      break;
+    }
+  }
+
+  // Trim start
+  while (inputStream->getText(extendedSourceInterval)[0] == ' ') {
+    extendedSourceInterval.a++;
+    indentation--;
+  }
+
+  // Trim end
+  if (inputStream->getText(extendedSourceInterval)[extendedSourceInterval.length() - 1] == '\n')
+    extendedSourceInterval.b--;
 
   std::stringstream ss;
-  ss << inputStream->getText(extendedInterval);
+  ss << inputStream->getText(extendedSourceInterval) << "\n";
   for (size_t i = 0; i < indentation; i++)
     ss << " ";
-  for (size_t i = 0; i < extendedInterval.length(); i++)
+  for (size_t i = 0; i < std::min(sourceInterval.length(), extendedSourceInterval.length()); i++)
     ss << "^";
   node->errorMessage = ss.str();
-
-  std::cout << node->errorMessage << std::endl;
 }
