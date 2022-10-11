@@ -131,9 +131,9 @@ private:
 
   // Private methods
   SymbolType insertAnonStringStructSymbol(const AstNode *declNode);
-  void insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
+  void insertDestructorCall(const AstNode *node, SymbolTableEntry *varEntry);
   SymbolType initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix, const std::string &structName,
-                           const std::vector<SymbolType> &templateTypes, const CodeLoc &codeLoc);
+                           const std::vector<SymbolType> &templateTypes, const AstNode *node);
   SymbolType initExtGlobal(SymbolTable *sourceScope, const std::string &globalScopePrefix, const std::string &globalName,
-                           const CodeLoc &codeLoc);
+                           const AstNode *node);
 };

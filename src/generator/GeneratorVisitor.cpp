@@ -2987,21 +2987,21 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
       DataTypeNode::TypeModifier typeModifier = tmQueue.front();
       switch (typeModifier.modifierType) {
       case DataTypeNode::TYPE_PTR: {
-        symbolType = symbolType.toPointer(node->codeLoc);
+        symbolType = symbolType.toPointer(node);
         break;
       }
       case DataTypeNode::TYPE_ARRAY: {
         if (!typeModifier.hasSize) {
-          symbolType = symbolType.toPointer(node->codeLoc);
+          symbolType = symbolType.toPointer(node);
         } else if (typeModifier.isSizeHardcoded) {
-          symbolType = symbolType.toArray(node->codeLoc, typeModifier.hardcodedSize);
+          symbolType = symbolType.toArray(node, typeModifier.hardcodedSize);
         } else {
           AssignExprNode *indexExpr = arraySizeExpr[assignExprCounter++];
           assert(indexExpr != nullptr);
           auto sizeValuePtr = any_cast<llvm::Value *>(visit(indexExpr));
           llvm::Type *sizeType = indexExpr->getEvaluatedSymbolType().toLLVMType(*context, currentScope);
           dynamicArraySize = builder->CreateLoad(sizeType, sizeValuePtr);
-          symbolType = symbolType.toPointer(node->codeLoc, dynamicArraySize);
+          symbolType = symbolType.toPointer(node, dynamicArraySize);
         }
         break;
       }

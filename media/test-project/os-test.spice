@@ -1,8 +1,5 @@
 f<int> main() {
-    string test = "Tested";
-    printf("%s\n", test.getRaw());
-    printf("%d\n", test.getLength());
-    printf("%d\n", test.getCapacity());
+    int test = "string";
 }
 
 /*f<int> main() {

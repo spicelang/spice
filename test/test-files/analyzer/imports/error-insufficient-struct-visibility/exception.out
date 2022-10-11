@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/imports/error-insufficient-struct-visibility/source.spice:5:28: Insufficient symbol visibility: Cannot access 's1.Vector' due to its private visibility
+Semantic error in : ./test-files/analyzer/imports/error-insufficient-struct-visibility/source.spice:5:28:
+Insufficient symbol visibility: Cannot access 's1.Vector' due to its private visibility
+
+5  ntf("Result: %d/n", s.i);
+                       ^

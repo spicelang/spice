@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/pointers/error-dyn-pointers/source.spice:3:5: Dyn pointers not allowed: Just use the dyn type without '*' instead
+Semantic error in : ./test-files/analyzer/pointers/error-dyn-pointers/source.spice:3:5:
+Dyn pointers not allowed: Just use the dyn type without '*' instead
+
+3  dyn* test = &i;
+   ^^^^

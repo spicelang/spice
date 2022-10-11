@@ -28,18 +28,25 @@ void SymbolTableEntry::updateType(const SymbolType &newType, bool force) {
  * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
  *
  * @param newState New state of the current symbol
- * @param codeLoc Code location where the update takes place
+ * @param node AST node where the update takes place
  * @param force Force update. This can only be used compiler-internal
  */
-void SymbolTableEntry::updateState(SymbolState newState, const CodeLoc &codeLoc, bool force) {
+void SymbolTableEntry::updateState(SymbolState newState, const AstNode *node, bool force) {
   // Check if this is a constant variable and is already initialized
   if (state == INITIALIZED && specifiers.isConst() && !force)
-    throw SemanticError(codeLoc, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
+    throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
   // Check if the type is known at time of initialization
   if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                  // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
   state = newState;
 }
+
+/**
+ * Retrieve the AST node where the symbol was declared
+ *
+ * @return Declaration node
+ */
+const AstNode *SymbolTableEntry::getDeclNode() const { return declNode; }
 
 /**
  * Retrieve the code location where the symbol was declared

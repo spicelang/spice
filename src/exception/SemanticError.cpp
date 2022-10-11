@@ -2,17 +2,13 @@
 
 #include "SemanticError.h"
 
+#include <ast/AstNodes.h>
 #include <util/CodeLoc.h>
 
-/**
- * Constructor: Used in case that the exact code position where the error occurred is known
- *
- * @param codeLoc Code location where the error occurred
- * @param type Type of the error
- * @param message Error message suffix
- */
-SemanticError::SemanticError(const CodeLoc &codeLoc, const SemanticErrorType &type, const std::string &message) {
-  errorMessage = "Semantic error in " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
+SemanticError::SemanticError(const AstNode *node, const SemanticErrorType &type, const std::string &message) {
+  errorMessage = "Semantic error in : " + node->codeLoc.toPrettyString() + ":\n";
+  errorMessage += getMessagePrefix(type) + ": " + message + "\n\n";
+  errorMessage += node->errorMessage;
 }
 
 /**

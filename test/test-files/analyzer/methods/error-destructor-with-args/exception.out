@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/methods/error-destructor-with-args/source.spice:5:1: Destructors must not have parameters: It is not allowed to specify parameters for destructors
+Semantic error in : ./test-files/analyzer/methods/error-destructor-with-args/source.spice:5:1:
+Destructors must not have parameters: It is not allowed to specify parameters for destructors
+
+5  p TestStruct.dtor(int test) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
