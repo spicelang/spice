@@ -10,10 +10,13 @@
 // Forward declarations
 class AstNode;
 
+#define ERROR_MESSAGE_CONTEXT 15
+
 class AstBuilderVisitor : public SpiceVisitor {
 public:
   // Constructors
-  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName) : currentNode(rootNode), fileName(std::move(fileName)) {}
+  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName, antlr4::ANTLRInputStream *inputStream)
+      : currentNode(rootNode), fileName(std::move(fileName)), inputStream(inputStream) {}
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -88,6 +91,7 @@ private:
   // Members
   AstNode *currentNode;
   std::string fileName;
+  antlr4::ANTLRInputStream *inputStream;
 
   // Private methods
   int32_t parseInt(antlr4::tree::TerminalNode *terminal);
@@ -97,4 +101,5 @@ private:
   static std::string parseString(std::string input);
   template <typename T> T parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
   static void replaceEscapeChars(std::string &string);
+  void saveErrorMessage(AstNode *node, const antlr4::ParserRuleContext *ctx);
 };

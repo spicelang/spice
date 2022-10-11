@@ -122,6 +122,7 @@ public:
   AstNode *parent;
   std::vector<AstNode *> children;
   const CodeLoc codeLoc;
+  std::string errorMessage;
   size_t symbolTypeIndex = SIZE_MAX;
   std::vector<SymbolType> symbolTypes;
   CompileTimeValue compileTimeValue = {};

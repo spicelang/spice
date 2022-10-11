@@ -108,7 +108,7 @@ void SourceFile::buildAST() {
     sourceFile.second.first->buildAST();
 
   // Transform this source file
-  AstBuilderVisitor astBuilder(ast.get(), filePath);
+  AstBuilderVisitor astBuilder(ast.get(), filePath, antlrCtx.inputStream.get());
   astBuilder.visit(antlrCtx.parser->entry());
   antlrCtx.parser->reset();
 }
