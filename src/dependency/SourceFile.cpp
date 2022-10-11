@@ -108,7 +108,7 @@ void SourceFile::buildAST() {
     sourceFile.second.first->buildAST();
 
   // Transform this source file
-  AstBuilderVisitor astBuilder(ast.get(), filePath);
+  AstBuilderVisitor astBuilder(ast.get(), filePath, antlrCtx.inputStream.get());
   astBuilder.visit(antlrCtx.parser->entry());
   antlrCtx.parser->reset();
 }
@@ -303,7 +303,7 @@ void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, co
                                const std::string &filePath) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(filePath))
-    throw SemanticError(declAstNode->codeLoc, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
+    throw SemanticError(declAstNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
 
   // Add the dependency
   dependencies.insert({name, {sourceFile, declAstNode}});

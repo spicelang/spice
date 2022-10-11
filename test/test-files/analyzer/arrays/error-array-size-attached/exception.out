@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/arrays/error-array-size-attached/source.spice:2:5: Array size invalid: The declaration of an array type must have a size attached
+Semantic error in : ./test-files/analyzer/arrays/error-array-size-attached/source.spice:2:5:
+Array size invalid: The declaration of an array type must have a size attached
+
+2  double[] doubleArray = { 1.1
+   ^^^^^^^^

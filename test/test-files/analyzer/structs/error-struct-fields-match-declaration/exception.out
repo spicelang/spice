@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/structs/error-struct-fields-match-declaration/source.spice:8:37: The type of a field value does not match the declaration: Expected type double* for the field 'dbl', but got double
+Semantic error in : ./test-files/analyzer/structs/error-struct-fields-match-declaration/source.spice:8:37:
+The type of a field value does not match the declaration: Expected type double* for the field 'dbl', but got double
+
+8  ance = TestStruct { 6.987, "Hello!", false };
+                       ^^^^^
