@@ -1312,13 +1312,6 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
       Capture *lhsCapture = currentScope->lookupCapture(variableName);
       if (lhsCapture)
         lhsCapture->setCaptureMode(READ_WRITE);
-
-      // Print compiler warning if the rhs size exceeds the lhs size
-      if (lhsTy.isArray() && rhsTy.getArraySize() > lhsTy.getArraySize())
-        CompilerWarning(node->rhs()->codeLoc, ARRAY_TOO_MANY_VALUES,
-                        "You provided more values "
-                        "than your array can hold. Excess variables are being ignored by the compiler.")
-            .print();
     }
 
     return node->setEvaluatedSymbolType(rhsTy);

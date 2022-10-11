@@ -1,0 +1,5 @@
+p unusedProcedure() {
+    printf("Hello World!");
+}
+
+f<int> main() {}

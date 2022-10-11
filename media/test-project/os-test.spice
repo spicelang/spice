@@ -1,6 +1,6 @@
 f<int> main() {
-    int unusedVar = 12; // warning
-    double _ = 13.34;   // no warning
+    int[5] array1 = { 1, 2, 3, 4, 5 };
+    int[3] array2 = array1;
 }
 
 /*import "std/net/http" as http;
