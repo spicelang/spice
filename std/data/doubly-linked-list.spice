@@ -35,7 +35,7 @@ public p DoublyLinkedList.insert<T>(T newValue, Node<T>* prevNode = nil<Node<T>*
     // Create new node
     Node<T>* newNode;
     unsafe {
-        newNode = (Node<T>*) malloc(sizeof(type Node<T>));
+        newNode = (Node<T>*) malloc(sizeof(type Node<T>) / 8);
     }
     newNode.value = newValue;
 

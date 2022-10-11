@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/builtins/error-printf-wrong-type1/source.spice:2:18:
-Types of printf call not matching: Template string expects int, byte or bool, but got double
+Types of printf call not matching: Template string expects int, short, long, byte or bool, but got double
 
 2  printf("%d", 6.23456);
                 ^^^^^^^

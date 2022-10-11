@@ -1,19 +1,10 @@
 f<int> main() {
-    int test = "string";
-}
-
-/*f<int> main() {
     int v1 = 10;
     int v2 = v1;
     printf("v1: %d, v2: %d\n", v1, v2);
     v2++;
     printf("v1: %d, v2: %d\n", v1, v2);
-
-    unsigned long startIndex = 10l;
-    for unsigned long charIndex = startIndex; charIndex < 20l; charIndex++ {
-        printf("Char index: %d, start index: %d\n", charIndex, startIndex);
-    }
-}*/
+}
 
 /*import "std/net/http" as http;
 

@@ -8,6 +8,11 @@ f<int> main() {
     printf("%d\n", "Hello World!".getCapacity());
     printf("%d\n", "Hello".isFull());
     printf("%d\n", "Hello World!".isFull());
+    printf("%d\n", "Hello World!".find("ell"));
+    printf("%d\n", "Hello World!".find("Wort"));
+    printf("%d\n", "Hello World!".find("H"));
+    printf("%d\n", "Hello World!".find("!"));
+    printf("%d\n", "Hello World!".find(" ", 12));
     printf("%d\n", "Hello World!".contains("abc"));
     printf("%d\n", "Hello World!".contains("Hello"));
     printf("%d\n", "Hello World!".contains("World!"));
@@ -33,6 +38,11 @@ f<int> main() {
     printf("%d\n", var.getCapacity());
     var = "Hello World!";
     printf("%d\n", var.getCapacity());
+    printf("%d\n", var.find("ell"));
+    printf("%d\n", var.find("Wort"));
+    printf("%d\n", var.find("H"));
+    printf("%d\n", var.find("!"));
+    printf("%d\n", var.find(" ", 12));
     printf("%d\n", var.contains("abc"));
     printf("%d\n", var.contains("Hello"));
     printf("%d\n", var.contains("World!"));
