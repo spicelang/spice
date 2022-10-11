@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/structs/error-referenced-undefined-struct/source.spice:7:20:
 Referenced undefined struct: Struct 'TestStructTypo' could not be found
 
-TestStruct a = TestStructTypo { 1, 2 };
-               ^^^^^^^^^^^^^^^^^^^^^^^
+7  TestStruct a = TestStructTypo { 1, 2 };
+                  ^^^^^^^^^^^^^^^^^^^^^^^

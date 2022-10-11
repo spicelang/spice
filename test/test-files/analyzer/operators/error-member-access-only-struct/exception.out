@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/operators/error-member-access-only-struct/source.spice:3:5:
 Member access is only allowed on structs: Cannot apply member access operator on double
 
-doubleVar.test = 1;
-^^^^^^^^^^^^^^
+3  doubleVar.test = 1;
+   ^^^^^^^^^^^^^^

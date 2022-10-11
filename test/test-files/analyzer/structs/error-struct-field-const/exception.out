@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/structs/error-struct-field-const/source.spice:2:5:
 Specifier at illegal context: Struct fields cannot have the const specifier attached
 
-const string f1
-^^^^^
+2  const string f1
+   ^^^^^

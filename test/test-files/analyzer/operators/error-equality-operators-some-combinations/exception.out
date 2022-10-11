@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/operators/error-equality-operators-some-combinations/source.spice:2:9:
 Wrong data type for operator: Cannot apply '==' operator on types string and double
 
-if ("test" == 5.6) {
-    ^^^^^^^^^^^^^
+2  if ("test" == 5.6) {
+       ^^^^^^^^^^^^^

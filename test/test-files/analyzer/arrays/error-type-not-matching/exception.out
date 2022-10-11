@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/arrays/error-type-not-matching/source.spice:2:41:
 Array item type not matching: All provided values have to be of the same data type. You provided long and bool
 
-, 2l , 3l, 4l , 5l, false, 7l };
-                    ^^^^^
+2  , 2l , 3l, 4l , 5l, false, 7l };
+                       ^^^^^

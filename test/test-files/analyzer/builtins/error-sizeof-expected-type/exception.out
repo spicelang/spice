@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/builtins/error-sizeof-expected-type/source.spice:3:36:
 Expected type: Expected type, but got double
 
-e: %d", sizeof(type doubleValue));
-                    ^^^^^^^^^^^
+3  e: %d", sizeof(type doubleValue));
+                       ^^^^^^^^^^^

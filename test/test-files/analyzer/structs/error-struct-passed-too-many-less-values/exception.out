@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/structs/error-struct-passed-too-many-less-values/source.spice:9:37:
 Number of struct fields not matching declaration: You've passed too less/many field values. Pass either none or all of them
 
-ance = TestStruct { &str, false };
-                    ^^^^^^^^^^^
+9  ance = TestStruct { &str, false };
+                       ^^^^^^^^^^^

@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/imports/error-insufficient-global-var-visibility/source.spice:4:34:
 Insufficient symbol visibility: Cannot access 'globalTestVar' due to its private visibility
 
-esult: %d/n", src1::globalTestVar);
-                    ^^^^^^^^^^^^^
+4  esult: %d/n", src1::globalTestVar);
+                       ^^^^^^^^^^^^^

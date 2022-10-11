@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/functions/error-function-dyn-return/source.spice:1:1:
 Unexpected dyn type: Dyn return types are not allowed
 
-f<dyn> test() {
-^^^^^^^^^^^^^^^
+1  f<dyn> test() {
+   ^^^^^^^^^^^^^^^

@@ -1765,8 +1765,11 @@ void AstBuilderVisitor::saveErrorMessage(AstNode *node, const antlr4::ParserRule
   if (inputStream->getText(extendedSourceInterval)[extendedSourceInterval.length() - 1] == '\n')
     extendedSourceInterval.b--;
 
+  std::string lineNumberStr = std::to_string(ctx->start->getLine());
+  indentation += lineNumberStr.length() + 2;
+
   std::stringstream ss;
-  ss << inputStream->getText(extendedSourceInterval) << "\n";
+  ss << lineNumberStr << "  " << inputStream->getText(extendedSourceInterval) << "\n";
   for (size_t i = 0; i < indentation; i++)
     ss << " ";
   for (size_t i = 0; i < std::min(sourceInterval.length(), extendedSourceInterval.length()); i++)

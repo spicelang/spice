@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/coming-soon/error-coming-soon1/source.spice:1:1:
 Coming soon: Spice currently not supports pointer return types due to not handling pointer escaping.
 
-f<int*> escapingFunction(int arg) {
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1  f<int*> escapingFunction(int arg) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

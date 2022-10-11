@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/operators/error-assignment-same-type/source.spice:2:5:
 Wrong data type for operator: Cannot apply '=' operator on types int and string
 
-int test = "Test";
-^^^^^^^^^^^^^^^^^
+2  int test = "Test";
+   ^^^^^^^^^^^^^^^^^

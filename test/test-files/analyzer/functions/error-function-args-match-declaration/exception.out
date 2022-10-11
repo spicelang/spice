@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/functions/error-function-args-match-declaration/source.spice:6:5:
 Referenced undefined function: Function/Procedure 'testFunction()' could not be found
 
-testFunction();
-^^^^^^^^^^^^^^
+6  testFunction();
+   ^^^^^^^^^^^^^^

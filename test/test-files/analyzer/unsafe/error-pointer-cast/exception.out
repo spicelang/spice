@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/unsafe/error-pointer-cast/source.spice:4:17:
 Unsafe operation in safe context: Cannot apply '(cast)' operator on types int* and long* as this is an unsafe operation. Please use unsafe blocks if you know what you are doing.
 
-int* iPtr = (int*) lPtr;
-            ^^^^^^^^^^^
+4  int* iPtr = (int*) lPtr;
+               ^^^^^^^^^^^

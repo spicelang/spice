@@ -1,5 +1,5 @@
 Semantic error in : ./test-files/analyzer/structs/error-duplicate-struct-def/source.spice:7:1:
 Multiple declarations of a struct with the same name: Duplicate struct 'Person'
 
-type Person struct {
-^^^^^^^^^^^^^^^^^^^^
+7  type Person struct {
+   ^^^^^^^^^^^^^^^^^^^^
