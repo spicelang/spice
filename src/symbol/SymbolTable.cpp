@@ -744,7 +744,7 @@ void SymbolTable::purgeSubstantiationRemnants() {
  */
 void SymbolTable::printCompilerWarnings() {
   // Omit this table if it is an imported sub-table
-  if (areCompilerWarningsEnabled)
+  if (!areCompilerWarningsEnabled)
     return;
   // Visit own symbols
   for (const auto &[key, entry] : symbols) {

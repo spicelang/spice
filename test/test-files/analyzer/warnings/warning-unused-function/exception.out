@@ -1,0 +1,1 @@
+Warning at ./../../media/test-project/os-test.spice:1:1: Unused function: The function 'unusedFunction(): string' is unused

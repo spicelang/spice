@@ -663,6 +663,10 @@ std::any AnalyzerVisitor::visitGenericTypeDef(GenericTypeDefNode *node) {
     typeConditions.push_back(typeCondition);
   }
 
+  // Check if only one type condition is set
+  if (typeConditions.size() == 1 && !typeConditions.at(0).is(TY_DYN))
+    CompilerWarning(node->typeAltsLst()->codeLoc, SINGLE_GENERIC_TYPE_CONDITION, "Generic type is locked to one type").print();
+
   // Build symbol specifiers
   GenericType genericType = GenericType(node->typeName, typeConditions);
   auto structSymbolSpecifiers = SymbolSpecifiers(genericType);

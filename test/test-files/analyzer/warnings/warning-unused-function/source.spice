@@ -1,0 +1,5 @@
+f<string> unusedFunction() {
+    return "Test";
+}
+
+f<int> main() {}

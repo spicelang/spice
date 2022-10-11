@@ -1,0 +1,3 @@
+type T int;
+
+f<int> main() {}

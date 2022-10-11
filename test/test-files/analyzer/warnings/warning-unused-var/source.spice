@@ -1,0 +1,4 @@
+f<int> main() {
+    int unusedVar = 12; // warning
+    double _ = 13.34;   // no warning
+}

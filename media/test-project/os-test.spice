@@ -1,9 +1,6 @@
 f<int> main() {
-    int v1 = 10;
-    int v2 = v1;
-    printf("v1: %d, v2: %d\n", v1, v2);
-    v2++;
-    printf("v1: %d, v2: %d\n", v1, v2);
+    int unusedVar = 12; // warning
+    double _ = 13.34;   // no warning
 }
 
 /*import "std/net/http" as http;
