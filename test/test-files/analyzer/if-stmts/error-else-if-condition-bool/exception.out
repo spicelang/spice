@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/if-stmts/error-else-if-condition-bool/source.spice:4:15: Condition must be bool: If condition must be of type bool
+Semantic error in : ./test-files/analyzer/if-stmts/error-else-if-condition-bool/source.spice:4:15:
+Condition must be bool: If condition must be of type bool
+
+} else if "not a bool" {
+          ^^^^^^^^^^^^

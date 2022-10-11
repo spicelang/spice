@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/foreach-loops/error-foreach-wrong-index-type/source.spice:3:13: Array index not of type int or long: Index in foreach loop must be of type int. You provided double
+Semantic error in : ./test-files/analyzer/foreach-loops/error-foreach-wrong-index-type/source.spice:3:13:
+Array index not of type int or long: Index in foreach loop must be of type int. You provided double
+
+foreach double i, int item : array {
+        ^^^^^^^^

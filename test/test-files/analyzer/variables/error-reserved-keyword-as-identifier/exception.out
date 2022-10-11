@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/variables/error-reserved-keyword-as-identifier/source.spice:3:26: Reserved keyword used as identifier: 'new' is a reserved keyword for future development of the language. Please use another identifier instead
+Semantic error in : ./test-files/analyzer/variables/error-reserved-keyword-as-identifier/source.spice:3:26:
+Reserved keyword used as identifier: 'new' is a reserved keyword for future development of the language. Please use another identifier instead
+
+rintf("New is: %s", new);
+                    ^^^

@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/functions/error-function-without-return/source.spice:1:1: Missing return statement: Function without return statement
+Semantic error in : ./test-files/analyzer/functions/error-function-without-return/source.spice:1:1:
+Missing return statement: Function without return statement
+
+f<bool> isValid(int input = 12) {
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

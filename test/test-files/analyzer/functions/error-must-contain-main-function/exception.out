@@ -1,1 +1,3 @@
-Semantic error in ./test-files/analyzer/functions/error-must-contain-main-function/source.spice:1:1: Spice programs must contain a main function: No main function found
+Semantic error in : ./test-files/analyzer/functions/error-must-contain-main-function/source.spice:1:1:
+Spice programs must contain a main function: No main function found
+

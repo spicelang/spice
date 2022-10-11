@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/methods/error-field-without-this/source.spice:13:18: Referenced undefined variable: The symbol 'size' could not be found. Missing 'this.' prefix?
+Semantic error in : ./test-files/analyzer/methods/error-field-without-this/source.spice:13:18:
+Referenced undefined variable: The symbol 'size' could not be found. Missing 'this.' prefix?
+
+if (index <= size) { // size instead 
+             ^^^^

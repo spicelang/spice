@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/functions/error-ext-dyn-return/source.spice:1:5: Unexpected dyn type: Dyn data type is not allowed as return type for external functions
+Semantic error in : ./test-files/analyzer/functions/error-ext-dyn-return/source.spice:1:5:
+Unexpected dyn type: Dyn data type is not allowed as return type for external functions
+
+ext<dyn> exteralFunction();
+    ^^^

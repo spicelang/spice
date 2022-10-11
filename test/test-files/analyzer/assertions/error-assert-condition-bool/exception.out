@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/assertions/error-assert-condition-bool/source.spice:2:12: Assertion condition must be bool: The asserted condition must be of type bool
+Semantic error in : ./test-files/analyzer/assertions/error-assert-condition-bool/source.spice:2:12:
+Assertion condition must be bool: The asserted condition must be of type bool
+
+assert "Test";
+       ^^^^^^

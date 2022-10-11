@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/loop-control-insts/error-break-count-not-too-high/source.spice:7:17: Invalid number of break calls: We can only break 2 time(s) here
+Semantic error in : ./test-files/analyzer/loop-control-insts/error-break-count-not-too-high/source.spice:7:17:
+Invalid number of break calls: We can only break 2 time(s) here
+
+break 4;
+^^^^^^^

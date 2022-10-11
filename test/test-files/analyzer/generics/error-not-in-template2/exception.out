@@ -1,1 +1,5 @@
-Semantic error in ./test-files/analyzer/generics/error-not-in-template2/source.spice:4:15: Generic type not contained in template: Generic arg type not included in procedure template
+Semantic error in : ./test-files/analyzer/generics/error-not-in-template2/source.spice:4:15:
+Generic type not contained in template: Generic arg type not included in procedure template
+
+p printDyn<T>(T a1, U a2) {
+              ^^^^^^^^^^
