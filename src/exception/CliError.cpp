@@ -3,12 +3,11 @@
 #include "CliError.h"
 
 /**
- * @param token Syntax token, where the error occurred
  * @param type Type of the error
  * @param message Error message suffix
  */
 CliError::CliError(const CliErrorType &type, const std::string &message) {
-  errorMessage = "[Error/CLI] " + getMessagePrefix(type) + ": " + message;
+  errorMessage = "[Error|CLI] " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

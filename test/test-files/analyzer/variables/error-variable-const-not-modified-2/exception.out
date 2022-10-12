@@ -1,4 +1,4 @@
-[Error/Semantic] ./test-files/analyzer/variables/error-variable-const-not-modified-2/source.spice:3:5:
+[Error|Semantic] ./test-files/analyzer/variables/error-variable-const-not-modified-2/source.spice:3:5:
 Cannot re-assign constant variable: Not re-assignable variable 'constVar'
 
 3  constVar++;

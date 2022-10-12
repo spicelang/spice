@@ -1,4 +1,4 @@
-[Error/Semantic] ./test-files/analyzer/structs/error-custom-type-unknown/source.spice:8:5:
+[Error|Semantic] ./test-files/analyzer/structs/error-custom-type-unknown/source.spice:8:5:
 Unknown datatype: Unknown symbol 'NonExisting'
 
 8  NonExisting instance = Test { "

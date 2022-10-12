@@ -1,4 +1,4 @@
-[Error/Semantic] ./test-files/analyzer/foreach-loops/error-foreach-wrong-array-type/source.spice:3:27:
+[Error|Semantic] ./test-files/analyzer/foreach-loops/error-foreach-wrong-array-type/source.spice:3:27:
 Wrong data type for operator: Can only apply foreach loop on an array type. You provided bool
 
 3  reach string item : b {

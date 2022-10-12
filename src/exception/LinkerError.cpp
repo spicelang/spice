@@ -3,12 +3,11 @@
 #include "LinkerError.h"
 
 /**
- * @param token Syntax token, where the error occurred
  * @param type Type of the error
  * @param message Error message suffix
  */
 LinkerError::LinkerError(const LinkerErrorType &type, const std::string &message) {
-  errorMessage = "[Error/Linker] " + getMessagePrefix(type) + ": " + message;
+  errorMessage = "[Error|Linker] " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

@@ -1,4 +1,4 @@
-[Error/Semantic] ./test-files/analyzer/loop-control-insts/error-break-count-invalid/source.spice:3:9:
+[Error|Semantic] ./test-files/analyzer/loop-control-insts/error-break-count-invalid/source.spice:3:9:
 Invalid number of break calls: Break count must be >= 1, you provided 0
 
 3  break 0;

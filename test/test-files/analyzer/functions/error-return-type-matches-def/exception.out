@@ -1,4 +1,4 @@
-[Error/Semantic] ./test-files/analyzer/functions/error-return-type-matches-def/source.spice:2:12:
+[Error|Semantic] ./test-files/analyzer/functions/error-return-type-matches-def/source.spice:2:12:
 Wrong data type for operator: Passed wrong data type to return statement. Expected string but got int
 
 2  return 7;

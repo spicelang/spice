@@ -1,1 +1,1 @@
-[Warning] .\test-files\analyzer\warnings\warning-bool-assign-condition\source.spice:4:8: Bool assignment as condition: If you want to compare the values, use '=='
+[Warning] ./test-files/analyzer/warnings/warning-bool-assign-condition/source.spice:4:8: Bool assignment as condition: If you want to compare the values, use '=='

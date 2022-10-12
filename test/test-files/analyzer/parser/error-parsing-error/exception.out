@@ -1,1 +1,1 @@
-[Error/Parser] 1:1: Parsing failed: no viable alternative at input 'f'
+[Error|Parser] 1:1: Parsing failed: no viable alternative at input 'f'

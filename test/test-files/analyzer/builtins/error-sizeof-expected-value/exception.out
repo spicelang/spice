@@ -1,4 +1,4 @@
-[Error/Semantic] ./test-files/analyzer/builtins/error-sizeof-expected-value/source.spice:4:31:
+[Error|Semantic] ./test-files/analyzer/builtins/error-sizeof-expected-value/source.spice:4:31:
 Referenced undefined variable: Variable 'T' was referenced before declared
 
 4  ("Size: %d", sizeof(T));

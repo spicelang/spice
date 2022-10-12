@@ -1,1 +1,1 @@
-[Error/Parser] ./test-files/analyzer/parser/error-int-out-of-range/source.spice:2:16: Number is out of range: The provided number is out of range
+[Error|Parser] ./test-files/analyzer/parser/error-int-out-of-range/source.spice:2:16: Number is out of range: The provided number is out of range

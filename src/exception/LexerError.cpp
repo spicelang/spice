@@ -12,7 +12,7 @@
  * @param message Error message suffix
  */
 LexerError::LexerError(const CodeLoc &codeLoc, const LexerErrorType &type, const std::string &message) {
-  errorMessage = "[Error/Lexer] " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
+  errorMessage = "[Error|Lexer] " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

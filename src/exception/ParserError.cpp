@@ -12,7 +12,7 @@
  * @param message Error message suffix
  */
 ParserError::ParserError(const CodeLoc &codeLoc, const ParserErrorType &type, const std::string &message) {
-  errorMessage = "[Error/Parser] " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
+  errorMessage = "[Error|Parser] " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

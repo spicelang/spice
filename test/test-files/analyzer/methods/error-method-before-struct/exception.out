@@ -1,4 +1,4 @@
-[Error/Semantic] ./test-files/analyzer/methods/error-method-before-struct/source.spice:1:1:
+[Error|Semantic] ./test-files/analyzer/methods/error-method-before-struct/source.spice:1:1:
 Referenced undefined struct: Struct 'Vec' could not be found
 
 1  public p Vec.print() {

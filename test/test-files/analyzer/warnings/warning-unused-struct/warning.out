@@ -1,1 +1,1 @@
-[Warning] .\test-files\analyzer\warnings\warning-unused-struct\source.spice:1:1: Unused struct: The struct 'UnusedStruct' is unused
+[Warning] ./test-files/analyzer/warnings/warning-unused-struct/source.spice:1:1: Unused struct: The struct 'UnusedStruct' is unused

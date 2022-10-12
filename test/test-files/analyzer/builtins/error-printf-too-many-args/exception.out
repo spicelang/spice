@@ -1,4 +1,4 @@
-[Error/Semantic] ./test-files/analyzer/builtins/error-printf-too-many-args/source.spice:2:5:
+[Error|Semantic] ./test-files/analyzer/builtins/error-printf-too-many-args/source.spice:2:5:
 Printf arg number not matching template string: The placeholder string contains less placeholders that arguments were passed
 
 2  printf("Test", 3);
