@@ -128,7 +128,10 @@ void GeneratorVisitor::emit() {
   dest.flush();
 }
 
-void GeneratorVisitor::dumpIR() { module->print(llvm::outs(), nullptr); } // GCOV_EXCL_LINE
+void GeneratorVisitor::dumpIR() {
+  module->print(llvm::outs(), nullptr);
+  llvm::outs().flush();
+} // GCOV_EXCL_LINE
 
 std::string GeneratorVisitor::getIRString() {
   std::string output;

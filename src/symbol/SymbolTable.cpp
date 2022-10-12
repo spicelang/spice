@@ -740,32 +740,37 @@ void SymbolTable::purgeSubstantiationRemnants() {
 }
 
 /**
- * Prints compiler values with regard to the symbol table
+ * Retrieves compiler warnings from this table
  */
-void SymbolTable::printCompilerWarnings() {
-  // Omit this table if it is an imported sub-table
-  if (!areCompilerWarningsEnabled)
-    return;
+std::vector<CompilerWarning> SymbolTable::collectWarnings() {
+  std::vector<CompilerWarning> warnings;
+  // Omit this table if it is a shadow table
+  if (isShadowTable)
+    return warnings;
   // Visit own symbols
   for (const auto &[key, entry] : symbols) {
-    if (!entry.isUsed) {
+    if (!entry.isUsed && entry.name != UNUSED_VARIABLE_NAME) {
       if (entry.type.is(TY_FUNCTION)) {
-        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_FUNCTION, "The function '" + entry.name + "' is unused").print();
+        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_FUNCTION, "The function '" + entry.name + "' is unused");
       } else if (entry.type.is(TY_PROCEDURE)) {
-        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.name + "' is unused").print();
+        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.name + "' is unused");
       } else if (entry.type.is(TY_STRUCT) || entry.type.isPointerOf(TY_STRUCT)) {
-        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.name + "' is unused").print();
-      } else if (entry.type.isOneOf({TY_IMPORT})) {
-        CompilerWarning(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.name + "' is unused").print();
+        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.name + "' is unused");
+      } else if (entry.type.is(TY_IMPORT)) {
+        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.name + "' is unused");
       } else {
-        if (entry.name != UNUSED_VARIABLE_NAME && entry.name != FOREACH_DEFAULT_IDX_VARIABLE_NAME)
-          CompilerWarning(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.name + "' is unused").print();
+        // Skip idx variables
+        if (entry.name != FOREACH_DEFAULT_IDX_VARIABLE_NAME)
+          continue;
+        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.name + "' is unused");
       }
     }
   }
   // Visit children
   for (const auto &[key, child] : children)
-    child->printCompilerWarnings();
+    for (const CompilerWarning &warning : child->collectWarnings())
+      warnings.push_back(warning);
+  return warnings;
 }
 
 /**

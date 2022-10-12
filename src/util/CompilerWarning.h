@@ -29,11 +29,13 @@ public:
   explicit CompilerWarning(const CodeLoc &codeLoc, CompilerWarningType type, const std::string &message);
   explicit CompilerWarning(CompilerWarningType type, const std::string &message);
 
+  // Public methods
   void print() const;
 
-private:
-  // Members
-  std::string warningMessage{};
+  // Public members
+  std::string warningMessage;
 
+private:
+  // Private methods
   [[nodiscard]] static std::string getMessagePrefix(CompilerWarningType warningType);
 };

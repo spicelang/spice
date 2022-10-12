@@ -62,6 +62,9 @@ bool compileProject(CliOptions &options) {
     // Link the target executable (Link object files to executable)
     linker.link();
 
+    // Print compiler warnings
+    mainSourceFile.printWarnings();
+
     return true;
   } catch (LexerError &e) {
     std::cout << e.what() << "\n";

@@ -119,6 +119,14 @@ void execTestCase(const TestCase &testCase) {
           });
     }
 
+    // Check warnings
+    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_WARNING_OUTPUT, [&]() {
+      std::string actualWarningString;
+      for (const CompilerWarning &warning : mainSourceFile.compilerOutput.warnings)
+        actualWarningString += warning.warningMessage + "\n";
+      return actualWarningString;
+    });
+
     // Check if the execution output matches the expected output
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_EXECUTION_OUTPUT, [&]() {
       // Prepare linker

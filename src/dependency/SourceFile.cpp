@@ -317,6 +317,15 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {
   return parent != nullptr && parent->isAlreadyImported(filePathSearch);
 }
 
+void SourceFile::printWarnings() const {
+  // Print warnings for all dependencies
+  for (const auto &dependency : dependencies)
+    dependency.second.first->printWarnings();
+  // Print warnings for this file
+  for (const CompilerWarning &warning : compilerOutput.warnings)
+    warning.print();
+}
+
 void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {
   runtimeModuleManager.requestModule(this, moduleName);
 }

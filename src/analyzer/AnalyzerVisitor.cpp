@@ -55,9 +55,10 @@ std::any AnalyzerVisitor::visitEntry(EntryNode *node) {
   if (requiresMainFct && !hasMainFunction)
     throw SemanticError(node, MISSING_MAIN_FUNCTION, "No main function found");
 
-  // Print compiler warnings once the whole ast is present, but not for std files
-  if (requiresMainFct && !isStdFile && !reAnalyze)
-    rootScope->printCompilerWarnings();
+  // Append the scope warnings to the other warnings in the source file
+  if (!reAnalyze)
+    for (const CompilerWarning &warning : rootScope->collectWarnings())
+      sourceFile.compilerOutput.warnings.push_back(warning);
 
   // Increment run number if the source file gets analyzed again
   runNumber++;
@@ -665,7 +666,8 @@ std::any AnalyzerVisitor::visitGenericTypeDef(GenericTypeDefNode *node) {
 
   // Check if only one type condition is set
   if (typeConditions.size() == 1 && !typeConditions.at(0).is(TY_DYN))
-    CompilerWarning(node->typeAltsLst()->codeLoc, SINGLE_GENERIC_TYPE_CONDITION, "Generic type is locked to one type").print();
+    sourceFile.compilerOutput.warnings.emplace_back(node->typeAltsLst()->codeLoc, SINGLE_GENERIC_TYPE_CONDITION,
+                                                    "Generic type is locked to one type");
 
   // Build symbol specifiers
   GenericType genericType = GenericType(node->typeName, typeConditions);
@@ -954,7 +956,8 @@ std::any AnalyzerVisitor::visitIfStmt(IfStmtNode *node) {
 
   // Warning for bool assignment
   if (condition->hasOperator && condition->op == AssignExprNode::OP_ASSIGN)
-    CompilerWarning(condition->codeLoc, BOOL_ASSIGN_AS_CONDITION, "If you want to compare the values, use '=='").print();
+    sourceFile.compilerOutput.warnings.emplace_back(condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
+                                                    "If you want to compare the values, use '=='");
 
   // Visit statement list in new scope
   visit(node->stmtLst());
@@ -2389,7 +2392,7 @@ SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, const std::s
 
   // Mount the external struct table to the new position in the root scope of the current source file
   rootScope->mountChildBlock(STRUCT_SCOPE_PREFIX + newStructSignature, externalStructTable, false);
-  rootScope->lookupTable(STRUCT_SCOPE_PREFIX + newStructSignature)->areCompilerWarningsEnabled = false;
+  rootScope->lookupTable(STRUCT_SCOPE_PREFIX + newStructSignature)->isShadowTable = true;
 
   return newStructTy;
 }
