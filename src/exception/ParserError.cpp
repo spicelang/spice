@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include "LexerParserError.h"
+#include "ParserError.h"
 
 #include <util/CodeLoc.h>
 
@@ -11,8 +11,8 @@
  * @param type Type of the error
  * @param message Error message suffix
  */
-LexerParserError::LexerParserError(const CodeLoc &codeLoc, const LexerParserErrorType &type, const std::string &message) {
-  errorMessage = "Error in " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
+ParserError::ParserError(const CodeLoc &codeLoc, const ParserErrorType &type, const std::string &message) {
+  errorMessage = "[Error/Parser] " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -20,7 +20,7 @@ LexerParserError::LexerParserError(const CodeLoc &codeLoc, const LexerParserErro
  *
  * @return Error message in form of a char array
  */
-const char *LexerParserError::what() const noexcept { return errorMessage.c_str(); }
+const char *ParserError::what() const noexcept { return errorMessage.c_str(); }
 
 /**
  * Get the prefix of the error message for a particular error
@@ -28,10 +28,8 @@ const char *LexerParserError::what() const noexcept { return errorMessage.c_str(
  * @param type Type of the error
  * @return Prefix string for the error type
  */
-std::string LexerParserError::getMessagePrefix(LexerParserErrorType type) {
+std::string ParserError::getMessagePrefix(ParserErrorType type) {
   switch (type) {
-  case TOKENIZING_FAILED:
-    return "Tokenizing failed";
   case PARSING_FAILED:
     return "Parsing failed";
   case NUMBER_OUT_OF_RANGE:

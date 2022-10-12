@@ -6,7 +6,7 @@
 #include <util/CodeLoc.h>
 
 SemanticError::SemanticError(const AstNode *node, const SemanticErrorType &type, const std::string &message) {
-  errorMessage = "Semantic error in : " + node->codeLoc.toPrettyString() + ":\n";
+  errorMessage = "[Error/Semantic] " + node->codeLoc.toPrettyString() + ":\n";
   errorMessage += getMessagePrefix(type) + ": " + message + "\n\n";
   errorMessage += node->errorMessage;
 }

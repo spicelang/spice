@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/builtins/error-sizeof-dyn-size-array/source.spice:4:18:
+[Error/Semantic] ./test-files/analyzer/builtins/error-sizeof-dyn-size-array/source.spice:4:18:
 Sizeof dynamically sized array: Cannot get sizeof dynamically sized array at compile time
 
 4  printf("%d", sizeof(array));

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/builtins/error-sizeof-expected-type/source.spice:3:36:
+[Error/Semantic] ./test-files/analyzer/builtins/error-sizeof-expected-type/source.spice:3:36:
 Expected type: Expected type, but got double
 
 3  e: %d", sizeof(type doubleValue));

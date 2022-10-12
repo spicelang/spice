@@ -1,1 +1,1 @@
-Error in 1:0: Tokenizing failed: token recognition error at: '"test'
+[Error/Lexer] 1:0: Tokenizing failed: token recognition error at: '"test'

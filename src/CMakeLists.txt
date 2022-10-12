@@ -57,8 +57,10 @@ set(SOURCES
         exception/IRError.h
         exception/LinkerError.cpp
         exception/LinkerError.h
-        exception/LexerParserError.cpp
-        exception/LexerParserError.h
+        exception/LexerError.cpp
+        exception/LexerError.h
+        exception/ParserError.cpp
+        exception/ParserError.h
         exception/AntlrThrowingErrorListener.cpp
         exception/AntlrThrowingErrorListener.h
         visualizer/CSTVisualizerVisitor.cpp

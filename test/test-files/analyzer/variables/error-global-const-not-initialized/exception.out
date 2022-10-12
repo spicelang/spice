@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/variables/error-global-const-not-initialized/source.spice:1:1:
+[Error/Semantic] ./test-files/analyzer/variables/error-global-const-not-initialized/source.spice:1:1:
 Global const without value: You must specify a value for constant global variables
 
 1  const int count;

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/generics/error-not-in-template3/source.spice:4:5:
+[Error/Semantic] ./test-files/analyzer/generics/error-not-in-template3/source.spice:4:5:
 Generic type not contained in template: Generic field type not included in struct template
 
 4  T genericField

@@ -1,6 +1,11 @@
 f<int> main() {
-    int[5] array1 = { 1, 2, 3, 4, 5 };
-    int[3] array2 = array1;
+    bool a = false;
+    bool b = true;
+    if a = b {
+        printf("a: %d, b: %d", a, b);
+    } else {
+        printf("a: %d, b: %d", a, b);
+    }
 }
 
 /*import "std/net/http" as http;

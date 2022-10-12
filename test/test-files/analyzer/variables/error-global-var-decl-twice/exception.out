@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/variables/error-global-var-decl-twice/source.spice:3:1:
+[Error/Semantic] ./test-files/analyzer/variables/error-global-var-decl-twice/source.spice:3:1:
 Multiple declarations of the same variable: The global variable 'GLOBAL_VAR' was declared more than once
 
 3  double GLOBAL_VAR = 4.567;

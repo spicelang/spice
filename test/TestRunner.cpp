@@ -13,7 +13,8 @@
 #include <cli/CliInterface.h>
 #include <dependency/RuntimeModuleManager.h>
 #include <dependency/SourceFile.h>
-#include <exception/LexerParserError.h>
+#include <exception/LexerError.h>
+#include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <linker/LinkerInterface.h>
 #include <symbol/SymbolTable.h>
@@ -142,7 +143,9 @@ void execTestCase(const TestCase &testCase) {
       EXPECT_EQ(0, result.exitCode);
       return result.output;
     });
-  } catch (LexerParserError &error) {
+  } catch (LexerError &error) {
+    TestUtil::handleError(testCase, error);
+  } catch (ParserError &error) {
     TestUtil::handleError(testCase, error);
   } catch (SemanticError &error) {
     TestUtil::handleError(testCase, error);

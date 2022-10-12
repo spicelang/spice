@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/functions/error-mandatory-after-optional-arg/source.spice:1:28:
+[Error/Semantic] ./test-files/analyzer/functions/error-mandatory-after-optional-arg/source.spice:1:28:
 Invalid argument order: Mandatory parameters must go before any optional parameters
 
 1  testFunc(int i = 5, int j) {

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/ternary/error-ternary-condition-bool/source.spice:2:25:
+[Error/Semantic] ./test-files/analyzer/ternary/error-ternary-condition-bool/source.spice:2:25:
 Wrong data type for operator: Condition operand in ternary must be a bool
 
 2  double calcResult = "No bool" ? 5.6 : 1.0;

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/functions/error-function-arg-decl-type-dyn/source.spice:1:21:
+[Error/Semantic] ./test-files/analyzer/functions/error-function-arg-decl-type-dyn/source.spice:1:21:
 Parameter type dyn not valid in function/procedure definition without default value: Type of parameter 'arg2' is invalid
 
 1  f<int> testFunction(int arg0, dyn arg1 = "value", dyn arg2) {

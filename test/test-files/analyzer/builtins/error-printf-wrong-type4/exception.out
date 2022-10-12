@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/builtins/error-printf-wrong-type4/source.spice:5:18:
+[Error/Semantic] ./test-files/analyzer/builtins/error-printf-wrong-type4/source.spice:5:18:
 Types of printf call not matching: Template string expects pointer, array or string, but got NotAPointer
 
 5  printf("%p", nonPtr);

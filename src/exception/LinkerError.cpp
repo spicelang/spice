@@ -8,7 +8,7 @@
  * @param message Error message suffix
  */
 LinkerError::LinkerError(const LinkerErrorType &type, const std::string &message) {
-  errorMessage = "Linker error: " + getMessagePrefix(type) + ": " + message;
+  errorMessage = "[Error/Linker] " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

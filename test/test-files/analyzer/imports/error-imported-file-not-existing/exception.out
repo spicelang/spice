@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/imports/error-imported-file-not-existing/source.spice:1:1:
+[Error/Semantic] ./test-files/analyzer/imports/error-imported-file-not-existing/source.spice:1:1:
 Imported source file not existing: The source file 'source2.spice' does not exist
 
 1  import "source2" as s2;

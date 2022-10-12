@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/generics/error-generic-type-check/source.spice:4:18:
+[Error/Semantic] ./test-files/analyzer/generics/error-generic-type-check/source.spice:4:18:
 Types of printf call not matching: Template string expects int, short, long, byte or bool, but got string
 
 4  printf("%d", g);

@@ -12,7 +12,7 @@
  * @param message Warning message suffix
  */
 CompilerWarning::CompilerWarning(const CodeLoc &codeLoc, CompilerWarningType type, const std::string &message) {
-  warningMessage = "Warning at " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
+  warningMessage = codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -22,7 +22,7 @@ CompilerWarning::CompilerWarning(const CodeLoc &codeLoc, CompilerWarningType typ
  * @param message Warning message suffix
  */
 CompilerWarning::CompilerWarning(CompilerWarningType type, const std::string &message) {
-  warningMessage = "Warning: " + getMessagePrefix(type) + ": " + message;
+  warningMessage = getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -30,7 +30,7 @@ CompilerWarning::CompilerWarning(CompilerWarningType type, const std::string &me
  */
 void CompilerWarning::print() const {
   if (!warningMessage.empty())
-    std::cout << warningMessage << "\n";
+    std::cout << "[Warning] " << warningMessage << "\n";
 }
 
 /**
@@ -53,6 +53,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused variable";
   case SINGLE_GENERIC_TYPE_CONDITION:
     return "Only one type condition";
+  case BOOL_ASSIGN_AS_CONDITION:
+    return "Bool assignment as condition";
   case INDEX_EXCEEDS_ARRAY_SIZE:
     return "Array index exceeds its size";
   case UNINSTALL_FAILED:

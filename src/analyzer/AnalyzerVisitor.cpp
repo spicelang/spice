@@ -947,9 +947,14 @@ std::any AnalyzerVisitor::visitIfStmt(IfStmtNode *node) {
   currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_IF_BODY);
 
   // Visit condition
-  auto conditionType = any_cast<SymbolType>(visit(node->condition()));
+  AssignExprNode *condition = node->condition();
+  auto conditionType = any_cast<SymbolType>(visit(condition));
   if (!conditionType.is(TY_BOOL))
     throw SemanticError(node->condition(), CONDITION_MUST_BE_BOOL, "If condition must be of type bool");
+
+  // Warning for bool assignment
+  if (condition->hasOperator && condition->op == AssignExprNode::OP_ASSIGN)
+    CompilerWarning(condition->codeLoc, BOOL_ASSIGN_AS_CONDITION, "If you want to compare the values, use '=='").print();
 
   // Visit statement list in new scope
   visit(node->stmtLst());
