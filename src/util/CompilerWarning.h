@@ -13,7 +13,8 @@ enum CompilerWarningType {
   UNUSED_STRUCT,
   UNUSED_IMPORT,
   UNUSED_VARIABLE,
-  ARRAY_TOO_MANY_VALUES,
+  SINGLE_GENERIC_TYPE_CONDITION,
+  BOOL_ASSIGN_AS_CONDITION,
   INDEX_EXCEEDS_ARRAY_SIZE,
   UNINSTALL_FAILED,
   VERIFIER_DISABLED
@@ -28,11 +29,13 @@ public:
   explicit CompilerWarning(const CodeLoc &codeLoc, CompilerWarningType type, const std::string &message);
   explicit CompilerWarning(CompilerWarningType type, const std::string &message);
 
+  // Public methods
   void print() const;
 
-private:
-  // Members
-  std::string warningMessage{};
+  // Public members
+  std::string warningMessage;
 
+private:
+  // Private methods
   [[nodiscard]] static std::string getMessagePrefix(CompilerWarningType warningType);
 };

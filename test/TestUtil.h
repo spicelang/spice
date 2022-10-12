@@ -29,6 +29,7 @@ const char *const REF_NAME_IR = "ir-code.ll";
 const char *const REF_NAME_OPT_IR[5] = {"ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll"};
 const char *const REF_NAME_EXECUTION_OUTPUT = "cout.out";
 const char *const REF_NAME_ERROR_OUTPUT = "exception.out";
+const char *const REF_NAME_WARNING_OUTPUT = "warning.out";
 const char *const REF_NAME_EXIT_CODE = "exit-code.out";
 
 const char *const CTL_SKIP_DISABLED = "disabled";

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/operators/error-member-access-only-struct/source.spice:3:5:
+[Error|Semantic] ./test-files/analyzer/operators/error-member-access-only-struct/source.spice:3:5:
 Member access is only allowed on structs: Cannot apply member access operator on double
 
 3  doubleVar.test = 1;

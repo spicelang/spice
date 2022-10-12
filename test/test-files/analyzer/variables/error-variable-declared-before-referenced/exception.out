@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/variables/error-variable-declared-before-referenced/source.spice:2:26:
+[Error|Semantic] ./test-files/analyzer/variables/error-variable-declared-before-referenced/source.spice:2:26:
 Referenced undefined variable: Variable 'test' was referenced before declared
 
 2  rintf("Output: %s", test);

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/operators/error-multiplicative-operators-some-combinations/source.spice:2:29:
+[Error|Semantic] ./test-files/analyzer/operators/error-multiplicative-operators-some-combinations/source.spice:2:29:
 Wrong data type for operator: Cannot apply '*' operator on types bool and string
 
 2  calcResult = true * "test";

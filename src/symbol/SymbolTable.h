@@ -10,6 +10,7 @@
 #include <symbol/Capture.h>
 #include <symbol/GenericType.h>
 #include <symbol/SymbolTableEntry.h>
+#include <util/CompilerWarning.h>
 
 #include "../../lib/json/json.hpp"
 
@@ -90,7 +91,7 @@ public:
 
   void purgeSubstantiationRemnants();
 
-  void printCompilerWarnings();
+  std::vector<CompilerWarning> collectWarnings();
 
   [[nodiscard]] bool isImported(const SymbolTable *askingScope) const;
 
@@ -100,7 +101,7 @@ public:
   SymbolTable *parent;
   const ScopeType scopeType;
   bool isSourceFileRootScope = false;
-  bool areCompilerWarningsEnabled = true;
+  bool isShadowTable = false;
   bool isCapturingRequired = false;
 
 private:

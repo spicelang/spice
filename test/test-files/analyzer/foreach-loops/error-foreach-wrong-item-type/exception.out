@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/foreach-loops/error-foreach-wrong-item-type/source.spice:3:13:
+[Error|Semantic] ./test-files/analyzer/foreach-loops/error-foreach-wrong-item-type/source.spice:3:13:
 Wrong data type for operator: Foreach loop item type does not match array type. Expected int[], provided double
 
 3  foreach double item : array {

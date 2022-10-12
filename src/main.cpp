@@ -5,7 +5,8 @@
 #include <dependency/SourceFile.h>
 #include <exception/CliError.h>
 #include <exception/IRError.h>
-#include <exception/LexerParserError.h>
+#include <exception/LexerError.h>
+#include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <linker/LinkerInterface.h>
 #include <util/ThreadFactory.h>
@@ -61,8 +62,13 @@ bool compileProject(CliOptions &options) {
     // Link the target executable (Link object files to executable)
     linker.link();
 
+    // Print compiler warnings
+    mainSourceFile.printWarnings();
+
     return true;
-  } catch (LexerParserError &e) {
+  } catch (LexerError &e) {
+    std::cout << e.what() << "\n";
+  } catch (ParserError &e) {
     std::cout << e.what() << "\n";
   } catch (SemanticError &e) {
     std::cout << e.what() << "\n";

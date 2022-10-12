@@ -7,12 +7,12 @@
 /**
  * Constructor: Used in case that the exact code position where the warning occurred is known
  *
- * @param token Syntax token, where the warning occurred
+ * @param codeLoc Code location, where the warning occurred
  * @param type Type of the warning
  * @param message Warning message suffix
  */
 CompilerWarning::CompilerWarning(const CodeLoc &codeLoc, CompilerWarningType type, const std::string &message) {
-  warningMessage = "Warning at " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
+  warningMessage = "[Warning] " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -22,16 +22,13 @@ CompilerWarning::CompilerWarning(const CodeLoc &codeLoc, CompilerWarningType typ
  * @param message Warning message suffix
  */
 CompilerWarning::CompilerWarning(CompilerWarningType type, const std::string &message) {
-  warningMessage = "Warning: " + getMessagePrefix(type) + ": " + message;
+  warningMessage = "[Warning] " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
  * Print the compiler warning to the standard error output
  */
-void CompilerWarning::print() const {
-  if (!warningMessage.empty())
-    std::cout << warningMessage << "\n";
-}
+void CompilerWarning::print() const { std::cout << warningMessage << "\n"; }
 
 /**
  * Get the prefix of the warning message for a particular error
@@ -51,8 +48,10 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused import";
   case UNUSED_VARIABLE:
     return "Unused variable";
-  case ARRAY_TOO_MANY_VALUES:
-    return "Array initialization item count exceeds arrays capacity";
+  case SINGLE_GENERIC_TYPE_CONDITION:
+    return "Only one type condition";
+  case BOOL_ASSIGN_AS_CONDITION:
+    return "Bool assignment as condition";
   case INDEX_EXCEEDS_ARRAY_SIZE:
     return "Array index exceeds its size";
   case UNINSTALL_FAILED:

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/for-loops/error-for-condition-bool/source.spice:2:20:
+[Error|Semantic] ./test-files/analyzer/for-loops/error-for-condition-bool/source.spice:2:20:
 Condition must be bool: For loop condition must be of type bool
 
 2  for int i = 0; "No bool"; i++ {

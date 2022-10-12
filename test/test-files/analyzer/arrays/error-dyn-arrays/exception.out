@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/arrays/error-dyn-arrays/source.spice:2:5:
+[Error|Semantic] ./test-files/analyzer/arrays/error-dyn-arrays/source.spice:2:5:
 Dyn arrays not allowed: Just use the dyn type without '[]' instead
 
 2  dyn[] test = { "This", "i

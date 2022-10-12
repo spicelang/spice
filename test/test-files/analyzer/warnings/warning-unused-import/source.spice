@@ -1,0 +1,3 @@
+import "std/type/int" as unused;
+
+f<int> main() {}

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/structs/error-constructor-not-found/source.spice:7:29:
+[Error|Semantic] ./test-files/analyzer/structs/error-constructor-not-found/source.spice:7:29:
 Referenced undefined function: Function/Procedure 'TestStruct.ctor()' could not be found
 
 7  Struct testStruct = TestStruct();

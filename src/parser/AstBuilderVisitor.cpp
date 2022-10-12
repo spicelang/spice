@@ -5,7 +5,7 @@
 #include <regex>
 
 #include <ast/AstNodes.h>
-#include <exception/LexerParserError.h>
+#include <exception/ParserError.h>
 #include <util/CommonUtil.h>
 
 std::any AstBuilderVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
@@ -1674,11 +1674,11 @@ int8_t AstBuilderVisitor::parseChar(antlr4::tree::TerminalNode *terminal) {
       return '\0';
     default:
       CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), fileName);
-      throw LexerParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid escape sequence " + input);
+      throw ParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid escape sequence " + input);
     }
   } else {
     CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), fileName);
-    throw LexerParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid char literal " + input);
+    throw ParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid char literal " + input);
   }
 }
 
@@ -1720,11 +1720,10 @@ T AstBuilderVisitor::parseNumeric(antlr4::tree::TerminalNode *terminal, std::fun
     return cb(input, 10);
   } catch (std::out_of_range &e) {
     CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), fileName);
-    throw LexerParserError(codeLoc, NUMBER_OUT_OF_RANGE, "The provided number is out of range");
+    throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "The provided number is out of range");
   } catch (std::invalid_argument &e) {
     CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), fileName);
-    throw LexerParserError(codeLoc, NUMBER_OUT_OF_RANGE,
-                           "You tried to parse '" + input + "' as an integer, but it was no integer");
+    throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "You tried to parse '" + input + "' as an integer, but it was no integer");
   }
 }
 

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/operators/error-postfix-unary-only-integer-identifiers/source.spice:2:5:
+[Error|Semantic] ./test-files/analyzer/operators/error-postfix-unary-only-integer-identifiers/source.spice:2:5:
 Wrong data type for operator: Cannot apply '++' operator on type string
 
 2  "test"++;

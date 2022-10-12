@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/variables/error-global-var-dyn/source.spice:2:1:
+[Error|Semantic] ./test-files/analyzer/variables/error-global-var-dyn/source.spice:2:1:
 Global of type dyn: Global variables must have an explicit data type
 
 2  dyn invalid;

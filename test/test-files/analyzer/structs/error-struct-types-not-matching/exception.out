@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/structs/error-struct-types-not-matching/source.spice:12:5:
+[Error|Semantic] ./test-files/analyzer/structs/error-struct-types-not-matching/source.spice:12:5:
 Wrong data type for operator: Cannot apply '=' operator on types AnotherStruct and TestStruct
 
 12  AnotherStruct testInstance = TestStruct { 6.456, "Hi!", false };

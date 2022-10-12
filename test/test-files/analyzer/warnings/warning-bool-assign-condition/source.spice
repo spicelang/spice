@@ -1,0 +1,9 @@
+f<int> main() {
+    bool a = false;
+    bool b = true;
+    if a = b {
+        printf("a: %d, b: %d", a, b);
+    } else {
+        printf("a: %d, b: %d", a, b);
+    }
+}

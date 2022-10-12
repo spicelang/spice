@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/procedures/error-return-value/source.spice:3:12:
+[Error|Semantic] ./test-files/analyzer/procedures/error-return-value/source.spice:3:12:
 Return with value in procedure: Return statements in procedures may not have a value attached
 
 3  return "Invalid return value";

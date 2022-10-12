@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/structs/error-referenced-undefined-struct-field/source.spice:8:29:
+[Error|Semantic] ./test-files/analyzer/structs/error-referenced-undefined-struct-field/source.spice:8:29:
 Referenced undefined variable: Variable 'f3' was referenced before declared
 
 8  tf("Field 1: %d", a.f3);

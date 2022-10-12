@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/operators/error-relational-operators-are-doubles-or-integers/source.spice:3:12:
+[Error|Semantic] ./test-files/analyzer/operators/error-relational-operators-are-doubles-or-integers/source.spice:3:12:
 Wrong data type for operator: Cannot apply '>' operator on types double and string
 
 3  while (variable > "test") {

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/loop-control-insts/error-continue-count-not-too-high/source.spice:7:17:
+[Error|Semantic] ./test-files/analyzer/loop-control-insts/error-continue-count-not-too-high/source.spice:7:17:
 Invalid number of continue calls: We can only continue 2 time(s) here
 
 7  continue 3;

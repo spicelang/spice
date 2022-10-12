@@ -12,7 +12,7 @@
  * @param message Error message suffix
  */
 IRError::IRError(const CodeLoc &codeLoc, const IRErrorType &type, const std::string &message) {
-  errorMessage = "Internal compiler error in " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
+  errorMessage = "[Error|IR] " + codeLoc.toPrettyString() + ": " + getMessagePrefix(type) + ": " + message;
 }
 
 /**
@@ -22,7 +22,7 @@ IRError::IRError(const CodeLoc &codeLoc, const IRErrorType &type, const std::str
  * @param message Error message suffix
  */
 IRError::IRError(const IRErrorType &type, const std::string &message) {
-  errorMessage = "Internal compiler: " + getMessagePrefix(type) + ": " + message;
+  errorMessage = "[Error|IR] " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

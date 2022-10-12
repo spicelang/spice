@@ -1,1 +1,1 @@
-Error in 2:11: Parsing failed: no viable alternative at input 'thread"non-integer"'
+[Error|Parser] 2:11: Parsing failed: no viable alternative at input 'thread"non-integer"'

@@ -11,6 +11,7 @@
 #include <Token.h>
 
 #include <dependency/RuntimeModuleManager.h>
+#include <util/CompilerWarning.h>
 
 #include <llvm/IR/IRBuilder.h>
 
@@ -41,6 +42,7 @@ struct CompilerOutput {
   std::string symbolTableString;
   std::string irString;
   std::string irOptString;
+  std::vector<CompilerWarning> warnings;
 };
 
 class SourceFile {
@@ -67,6 +69,7 @@ public:
   void addDependency(const std::shared_ptr<SourceFile> &sourceFile, const AstNode *declAstNode, const std::string &name,
                      const std::string &filePath);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
+  void printWarnings() const;
   void requestRuntimeModule(const RuntimeModuleName &moduleName);
   [[nodiscard]] SymbolTable *getRuntimeModuleScope(const RuntimeModuleName &moduleName) const;
 

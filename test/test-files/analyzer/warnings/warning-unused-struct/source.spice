@@ -1,0 +1,6 @@
+type UnusedStruct struct {
+    bool f1
+    int* f2
+}
+
+f<int> main() {}

@@ -1,4 +1,4 @@
-Semantic error in : ./test-files/analyzer/enums/error-duplicate-item-name/source.spice:4:5:
+[Error|Semantic] ./test-files/analyzer/enums/error-duplicate-item-name/source.spice:4:5:
 Duplicate enum item name: Duplicate enum item name, please use another
 
 4  ITEM_NAME
