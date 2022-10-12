@@ -22,7 +22,7 @@ IRError::IRError(const CodeLoc &codeLoc, const IRErrorType &type, const std::str
  * @param message Error message suffix
  */
 IRError::IRError(const IRErrorType &type, const std::string &message) {
-  errorMessage = "Internal compiler: " + getMessagePrefix(type) + ": " + message;
+  errorMessage = "Internal compiler error: " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

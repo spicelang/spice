@@ -56,7 +56,7 @@ std::any AnalyzerVisitor::visitEntry(EntryNode *node) {
     throw SemanticError(node, MISSING_MAIN_FUNCTION, "No main function found");
 
   // Append the scope warnings to the other warnings in the source file
-  if (!reAnalyze)
+  if (!reAnalyze && runNumber > 1)
     for (const CompilerWarning &warning : rootScope->collectWarnings())
       sourceFile.compilerOutput.warnings.push_back(warning);
 

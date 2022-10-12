@@ -743,11 +743,11 @@ void SymbolTable::purgeSubstantiationRemnants() {
  * Retrieves compiler warnings from this table
  */
 std::vector<CompilerWarning> SymbolTable::collectWarnings() {
-  std::vector<CompilerWarning> warnings;
   // Omit this table if it is a shadow table
   if (isShadowTable)
-    return warnings;
+    return {};
   // Visit own symbols
+  std::vector<CompilerWarning> warnings;
   for (const auto &[key, entry] : symbols) {
     if (!entry.isUsed && entry.name != UNUSED_VARIABLE_NAME) {
       if (entry.type.is(TY_FUNCTION)) {
@@ -767,9 +767,12 @@ std::vector<CompilerWarning> SymbolTable::collectWarnings() {
     }
   }
   // Visit children
-  for (const auto &[key, child] : children)
-    for (const CompilerWarning &warning : child->collectWarnings())
-      warnings.push_back(warning);
+  for (const auto &[key, child] : children) {
+    if (!child->isImported(this)) {
+      for (const CompilerWarning &warning : child->collectWarnings())
+        warnings.push_back(warning);
+    }
+  }
   return warnings;
 }
 

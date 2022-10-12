@@ -1,16 +1,1 @@
 [Warning] .\test-files\analyzer\warnings\warning-unused-import\source.spice:1:1: Unused import: The import 'unused' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:42:1: Unused function: The function 'toBool(int): bool' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:26:1: Unused function: The function 'toByte(int): byte' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:31:1: Unused function: The function 'toChar(int): char' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:10:1: Unused function: The function 'toDouble(int): double' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:21:1: Unused function: The function 'toLong(int): long' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:16:1: Unused function: The function 'toShort(int): short' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:36:1: Unused function: The function 'toString(int): string' is unused
-[Warning] .\test-files\analyzer\warnings\warning-unused-import\source.spice:1:1: Unused import: The import 'unused' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:42:1: Unused function: The function 'toBool(int): bool' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:26:1: Unused function: The function 'toByte(int): byte' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:31:1: Unused function: The function 'toChar(int): char' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:10:1: Unused function: The function 'toDouble(int): double' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:21:1: Unused function: The function 'toLong(int): long' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:16:1: Unused function: The function 'toShort(int): short' is unused
-[Warning] D:\Dokumente\JustForFunGitHubClones\spice\std\type\int.spice:36:1: Unused function: The function 'toString(int): string' is unused

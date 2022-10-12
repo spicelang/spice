@@ -194,12 +194,12 @@ void SourceFile::analyze() {
 void SourceFile::reAnalyze() {
   // Re-Analyze this source file
   bool repetitionRequired;
-  unsigned int analyzeCount = 0;
+  unsigned int reAnalyzeCount = 0;
   do {
     repetitionRequired = any_cast<bool>(analyzer->visit(ast.get()));
     antlrCtx.parser->reset();
-    analyzeCount++;
-    if (analyzeCount >= 10)
+    reAnalyzeCount++;
+    if (reAnalyzeCount >= 10)
       throw std::runtime_error("Internal compiler error: Number of analyzer runs for one source file exceeded. Please report "
                                "this as a bug on GitHub.");
   } while (repetitionRequired);
@@ -319,8 +319,10 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {
 
 void SourceFile::printWarnings() const {
   // Print warnings for all dependencies
-  for (const auto &dependency : dependencies)
-    dependency.second.first->printWarnings();
+  for (const auto &dependency : dependencies) {
+    if (!dependency.second.first->stdFile)
+      dependency.second.first->printWarnings();
+  }
   // Print warnings for this file
   for (const CompilerWarning &warning : compilerOutput.warnings)
     warning.print();

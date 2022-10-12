@@ -8,7 +8,7 @@
  * @param message Error message suffix
  */
 CliError::CliError(const CliErrorType &type, const std::string &message) {
-  errorMessage = "CLI error: " + getMessagePrefix(type) + ": " + message;
+  errorMessage = "[Error/CLI] " + getMessagePrefix(type) + ": " + message;
 }
 
 /**

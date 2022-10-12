@@ -1,3 +1,5 @@
+import "std/type/int" as i;
+
 f<int> main() {
     bool a = false;
     bool b = true;
