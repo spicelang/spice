@@ -91,14 +91,14 @@ int main(int argc, char **argv) {
   cli.createInterface();
   try {
     cli.parse(argc, argv);
-    if (cli.shouldCompile()) {
+    if (cli.shouldCompile) {
       cli.validate(); // Check if all required fields are present
       cli.enrich();   // Prepare the cli options
 
       if (!compileProject(cli.getOptions())) // Kick off the compiling process
         return EXIT_FAILURE;
 
-      if (cli.shouldRun())
+      if (cli.shouldRun)
         cli.runBinary(); // Run executable if required
     }
   } catch (CliError &e) {

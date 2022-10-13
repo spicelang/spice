@@ -17,6 +17,7 @@ struct CliOptions {
   std::string targetOs;
   std::string outputDir;  // Where the object files go. Should always be a temp directory
   std::string outputPath; // Where the output binary goes.
+  bool considerCache = true;
   bool printDebugOutput = false;
   bool dumpCST = false;
   bool dumpAST = false;
@@ -43,9 +44,12 @@ public:
   void validate() const;
   void enrich();
   CliOptions &getOptions();
-  [[nodiscard]] bool shouldCompile() const;
-  [[nodiscard]] bool shouldRun() const;
   void runBinary() const;
+
+  // Public members
+  bool shouldCompile = false;
+  bool shouldInstall = false;
+  bool shouldRun = false;
 
 private:
   // Private methods
@@ -57,7 +61,4 @@ private:
   // Members
   CLI::App app = CLI::App{"Spice Programming Language", "Spice"};
   CliOptions cliOptions{};
-  bool compile = false;
-  bool install = false;
-  bool run = false;
 };

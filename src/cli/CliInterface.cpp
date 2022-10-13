@@ -29,11 +29,11 @@ void CliInterface::createInterface() {
   addUninstallSubcommand();
 
   app.final_callback([&]() {
-    if (!compile)
+    if (!shouldCompile)
       return;
 
     // If the binary should be installed, set the output path to the Spice bin directory
-    if (install) {
+    if (shouldInstall) {
       std::string installPath = FileUtil::getSpiceBinDir();
       FileUtil::createDirs(installPath);
       installPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
@@ -68,7 +68,7 @@ void CliInterface::createInterface() {
     cliOptions.outputDir = outputDir;
 
     // Set output path to output dir if running is enabled
-    if (run) {
+    if (shouldRun) {
       cliOptions.outputPath = cliOptions.outputDir + FileUtil::DIR_SEPARATOR;
       cliOptions.outputPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
     }
@@ -136,7 +136,7 @@ void CliInterface::addBuildSubcommand() {
   subCmd->ignore_case();
   subCmd->configurable();
   subCmd->callback([&]() {
-    compile = true; // Requires the source file to be compiled
+    shouldCompile = true; // Requires the source file to be compiled
   });
 
   // --debug-output
@@ -204,7 +204,7 @@ void CliInterface::addRunSubcommand() {
   subCmd->alias("r");
   subCmd->ignore_case();
   subCmd->callback([&]() {
-    compile = run = true; // Requires the source file to be compiled
+    shouldCompile = shouldRun = true; // Requires the source file to be compiled
   });
 
   // --debug-output
@@ -258,7 +258,7 @@ void CliInterface::addInstallSubcommand() {
   subCmd->alias("i");
   subCmd->ignore_case();
   subCmd->callback([&]() {
-    compile = install = true; // Requires the source file to be compiled
+    shouldCompile = shouldInstall = true; // Requires the source file to be compiled
   });
 
   // --debug-output
@@ -331,20 +331,6 @@ void CliInterface::addUninstallSubcommand() {
  * @return Cli options
  */
 CliOptions &CliInterface::getOptions() { return cliOptions; }
-
-/**
- * Checks if compiling is necessary
- *
- * @return Compile or not
- */
-bool CliInterface::shouldCompile() const { return compile; }
-
-/**
- * Checks if running is necessary
- *
- * @return Run or not
- */
-bool CliInterface::shouldRun() const { return run; }
 
 /**
  * Start the parsing process
