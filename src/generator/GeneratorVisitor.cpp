@@ -2289,7 +2289,7 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           lhs = builder.CreateLoad(lhsTy, lhsPtr);
           lhsPtr = conversionsManager->propagateValueToStringObject(currentScope, lhsSymbolType, lhsPtr, lhs, rhs->codeLoc);
           currentSymbolType = SymbolType(TY_STRUCT, std::string("String"));
-          SymbolTable *stringRuntimeScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+          SymbolTable *stringRuntimeScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
           assert(stringRuntimeScope != nullptr);
           scopePath.clear();
           scopePath.pushFragment(STRING_RT_IMPORT_NAME, stringRuntimeScope);
@@ -2621,7 +2621,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
         symbolEntry = currentScope->lookupAnonymous(node->codeLoc);
         assert(symbolEntry != nullptr);
         symbolBaseType = SymbolType(TY_STRUCT, std::string("String"));
-        accessScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+        accessScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
         assert(accessScope != nullptr);
       } else {
         symbolBaseType = symbolEntry->type.getBaseType();

@@ -68,7 +68,6 @@ public:
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   void printWarnings() const;
   void requestRuntimeModule(const RuntimeModuleName &moduleName);
-  [[nodiscard]] SymbolTable *getRuntimeModuleScope(const RuntimeModuleName &moduleName) const;
 
   // Public fields
   std::string name;

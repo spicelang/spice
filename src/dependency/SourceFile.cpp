@@ -47,20 +47,30 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   cacheKeyString << std::hex << std::hash<std::string>{}(antlrCtx.tokenStream->getText());
   cacheKey = cacheKeyString.str();
 
-  // Parse input
-  antlrCtx.parser = std::make_shared<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
-  antlrCtx.parser->removeErrorListeners();
-  antlrCtx.parser->addErrorListener(antlrCtx.parserErrorHandler.get());
-  antlrCtx.parser->removeParseListeners();
+  // Try to load from cache
+  if (!resourceManager.cliOptions.ignoreCache)
+    restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
 
-  // Create AST
-  ast = std::make_shared<EntryNode>(nullptr, CodeLoc(1, 1, filePath));
+  // If we have a cache miss, execute the compiler pipeline for this source file
+  if (!restoredFromCache) {
+    // Parse input
+    antlrCtx.parser = std::make_shared<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
+    antlrCtx.parser->removeErrorListeners();
+    antlrCtx.parser->addErrorListener(antlrCtx.parserErrorHandler.get());
+    antlrCtx.parser->removeParseListeners();
 
-  // Create symbol table
-  symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
+    // Create AST
+    ast = std::make_shared<EntryNode>(nullptr, CodeLoc(1, 1, filePath));
+
+    // Create symbol table
+    symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
+  }
 }
 
 void SourceFile::visualizeCST() {
+  if (restoredFromCache)
+    return;
+
   // Only execute if enabled
   if (!resourceManager.cliOptions.dumpCST && !resourceManager.cliOptions.testMode)
     return;
@@ -105,6 +115,9 @@ void SourceFile::visualizeCST() {
 }
 
 void SourceFile::buildAST() {
+  if (restoredFromCache)
+    return;
+
   // Transform the imported source files
   for (const auto &sourceFile : dependencies)
     sourceFile.second.first->buildAST();
@@ -117,7 +130,7 @@ void SourceFile::buildAST() {
 
 void SourceFile::visualizeAST() {
   // Only execute if enabled
-  if (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode)
+  if (restoredFromCache || (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode))
     return;
 
   std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
@@ -159,6 +172,9 @@ void SourceFile::visualizeAST() {
 }
 
 void SourceFile::preAnalyze() {
+  if (restoredFromCache)
+    return;
+
   // Pre-analyze this source file
   PreAnalyzerVisitor preAnalyzer(resourceManager.cliOptions, *this);
   preAnalyzer.visit(ast.get());
@@ -172,6 +188,9 @@ void SourceFile::preAnalyze() {
 }
 
 void SourceFile::analyze() {
+  if (restoredFromCache)
+    return;
+
   // Analyze the imported source files
   for (const auto &[importName, sourceFile] : dependencies) {
     // Analyze the imported source file
@@ -194,6 +213,9 @@ void SourceFile::analyze() {
 }
 
 void SourceFile::reAnalyze() {
+  if (restoredFromCache)
+    return;
+
   // Re-Analyze this source file
   bool repetitionRequired;
   unsigned int reAnalyzeCount = 0;
@@ -221,6 +243,9 @@ void SourceFile::reAnalyze() {
 }
 
 void SourceFile::generate() {
+  if (restoredFromCache)
+    return;
+
   // Generate the imported source files
   for (const auto &sourceFile : dependencies)
     sourceFile.second.first->generate();
@@ -252,6 +277,9 @@ void SourceFile::generate() {
 }
 
 void SourceFile::optimize() {
+  if (restoredFromCache)
+    return;
+
   // Skip this stage if optimization is disabled
   if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
     return;
@@ -274,6 +302,9 @@ void SourceFile::optimize() {
 }
 
 void SourceFile::emitObjectFile() {
+  if (restoredFromCache)
+    return;
+
   // Optimize the imported source files
   for (const auto &sourceFile : dependencies)
     sourceFile.second.first->emitObjectFile();
@@ -294,6 +325,10 @@ void SourceFile::emitObjectFile() {
     CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.").print();
     std::cout << "\n";
   }
+
+  // Cache the source file
+  if (!resourceManager.cliOptions.ignoreCache)
+    resourceManager.cacheManager.cacheSourceFile(this);
 }
 
 std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &name, const std::string &filePath, bool stdFile) {
@@ -331,8 +366,4 @@ void SourceFile::printWarnings() const {
 
 void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {
   resourceManager.runtimeModuleManager.requestModule(this, moduleName);
-}
-
-SymbolTable *SourceFile::getRuntimeModuleScope(const RuntimeModuleName &moduleName) const {
-  return resourceManager.runtimeModuleManager.getModuleScope(moduleName);
 }

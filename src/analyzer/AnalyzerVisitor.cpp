@@ -1687,7 +1687,7 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       if (lhs.is(TY_STRING)) {
         insertAnonStringStructSymbol(rhs);
         lhs = SymbolType(TY_STRUCT, STRING_RT_IMPORT_NAME + std::string(".String"));
-        SymbolTable *stringRuntimeScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+        SymbolTable *stringRuntimeScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
         stringRuntimeScope = stringRuntimeScope->getChild(STRUCT_SCOPE_PREFIX + std::string("String"));
         assert(stringRuntimeScope != nullptr);
         scopePath.clear();
@@ -1916,7 +1916,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       if (symbolEntry->type.getBaseType().is(TY_STRING)) {
         insertAnonStringStructSymbol(node);
         symbolBaseType = SymbolType(TY_STRUCT, std::string("String"));
-        accessScope = sourceFile.getRuntimeModuleScope(STRING_RT);
+        accessScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
         assert(accessScope != nullptr);
       } else {
         symbolBaseType = symbolEntry->type.getBaseType();
