@@ -13,14 +13,16 @@ class ThreadFactory;
 class LinkerInterface {
 public:
   // Constructors
-  explicit LinkerInterface(const ThreadFactory &threadFactory, CliOptions &cliOptions)
+  explicit LinkerInterface(const ThreadFactory &threadFactory, const CliOptions &cliOptions)
       : threadFactory(threadFactory), cliOptions(cliOptions), outputPath(cliOptions.outputPath){};
 
   // Public methods
-  void link();
+  void link() const;
   void addObjectFilePath(const std::string &objectFilePath);
   void addLinkerFlag(const std::string &linkerFlag);
-  void setOutputPath(const std::string &path);
+
+  // Public members
+  std::string outputPath;
 
 private:
   // Members
@@ -28,5 +30,4 @@ private:
   const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;
   std::vector<std::string> linkerFlags = {"-no-pie", "-flto"};
-  std::string outputPath;
 };

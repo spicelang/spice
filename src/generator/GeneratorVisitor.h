@@ -19,10 +19,8 @@
 
 // Forward declarations
 class SourceFile;
-class ThreadFactory;
-class LinkerInterface;
+class GlobalResourceManager;
 struct CliOptions;
-class LinkerInterface;
 class SymbolTable;
 class SymbolTableEntry;
 class Function;
@@ -39,9 +37,7 @@ class Struct;
 class GeneratorVisitor : public AstVisitor {
 public:
   // Constructors
-  explicit GeneratorVisitor(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                            const LinkerInterface &linker, const CliOptions &cliOptions, SourceFile &sourceFile,
-                            const std::string &objectFile);
+  explicit GeneratorVisitor(GlobalResourceManager &resourceManager, SourceFile &sourceFile, const std::string &objectFile);
 
   // Friend classes
   friend class StdFunctionManager;
@@ -81,7 +77,7 @@ public:
   std::any visitTidCall(TidCallNode *node) override;
   std::any visitJoinCall(JoinCallNode *node) override;
   std::any visitAssignExpr(AssignExprNode *node) override;
-  std::any visitTernaryExpr(TernaryExprNode *cnodetx) override;
+  std::any visitTernaryExpr(TernaryExprNode *node) override;
   std::any visitLogicalOrExpr(LogicalOrExprNode *node) override;
   std::any visitLogicalAndExpr(LogicalAndExprNode *node) override;
   std::any visitBitwiseOrExpr(BitwiseOrExprNode *node) override;
@@ -105,16 +101,16 @@ public:
 
 private:
   // Members
+  GlobalResourceManager &resourceManager;
+  const CliOptions &cliOptions;
+  llvm::LLVMContext &context;
+  llvm::IRBuilder<> &builder;
   std::unique_ptr<StdFunctionManager> stdFunctionManager;
   std::unique_ptr<OpRuleConversionsManager> conversionsManager;
   const std::string &objectFile;
   llvm::TargetMachine *targetMachine;
   SourceFile &sourceFile;
-  const CliOptions &cliOptions;
-  const LinkerInterface &linker;
   bool requiresMainFct = true;
-  llvm::LLVMContext *context;
-  llvm::IRBuilder<> *builder;
   std::unique_ptr<llvm::Module> module;
   std::unique_ptr<llvm::DIBuilder> diBuilder;
   SymbolTable *currentScope;
@@ -122,7 +118,6 @@ private:
   SymbolType currentSymbolType = SymbolType(TY_INVALID);
   llvm::Value *currentThisValuePtr = nullptr;
   ScopePath scopePath;
-  ThreadFactory &threadFactory;
   bool blockAlreadyTerminated = false;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;

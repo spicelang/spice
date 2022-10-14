@@ -1,38 +1,27 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include <cli/CliInterface.h>
-#include <dependency/CacheManager.h>
-#include <dependency/RuntimeModuleManager.h>
+#include <dependency/GlobalResourceManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/CliError.h>
 #include <exception/IRError.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
-#include <linker/LinkerInterface.h>
-#include <util/ThreadFactory.h>
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
- * @param options Command line options
+ * @param cliOptions Command line options
  * @return Successful or not
  */
-bool compileProject(CliOptions &options) {
+bool compileProject(CliOptions &cliOptions) {
   try {
-    // Prepare global LLVM assets
-    llvm::LLVMContext context;
-    llvm::IRBuilder<> builder(context);
-
-    // Prepare global Spice assets
-    ThreadFactory threadFactory;
-    LinkerInterface linker = LinkerInterface(threadFactory, options);
-    CacheManager cacheManager(options.cacheDir);
-    RuntimeModuleManager runtimeModuleManager;
+    // Instantiate GlobalResourceManager
+    GlobalResourceManager resourceManager(cliOptions);
 
     // Create source file instance for main source file
-    SourceFile mainSourceFile(&context, &builder, threadFactory, runtimeModuleManager, linker, options, nullptr, "root",
-                              options.mainSourceFile, false);
+    SourceFile mainSourceFile(resourceManager, nullptr, "root", cliOptions.mainSourceFile, false);
 
     // Visualize the parse tree (only runs in debug mode)
     mainSourceFile.visualizeCST();
@@ -62,7 +51,7 @@ bool compileProject(CliOptions &options) {
     mainSourceFile.emitObjectFile();
 
     // Link the target executable (Link object files to executable)
-    linker.link();
+    resourceManager.linker.link();
 
     // Print compiler warnings
     mainSourceFile.printWarnings();
@@ -89,7 +78,7 @@ bool compileProject(CliOptions &options) {
  */
 int main(int argc, char **argv) {
   // Initialize command line parser
-  CliInterface cli{};
+  CliInterface cli;
   cli.createInterface();
   try {
     cli.parse(argc, argv);

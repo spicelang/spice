@@ -16,6 +16,8 @@ bool CacheManager::lookupSourceFile(SourceFile *sourceFile) {
   // Load symbol table
 
   // Set object file path
+
+  return true;
 }
 
 void CacheManager::cacheSourceFile(const SourceFile *sourceFile) {

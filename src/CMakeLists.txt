@@ -47,6 +47,8 @@ set(SOURCES
         ast/AstNodes.h
         dependency/SourceFile.cpp
         dependency/SourceFile.h
+        dependency/GlobalResourceManager.cpp
+        dependency/GlobalResourceManager.h
         dependency/CacheManager.cpp
         dependency/CacheManager.h
         dependency/RuntimeModuleManager.cpp

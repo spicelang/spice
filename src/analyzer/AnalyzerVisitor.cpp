@@ -5,6 +5,7 @@
 #include <utility>
 
 #include <cli/CliInterface.h>
+#include <dependency/GlobalResourceManager.h>
 #include <dependency/RuntimeModuleManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/SemanticError.h>
@@ -16,18 +17,19 @@
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 
-AnalyzerVisitor::AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, SourceFile &sourceFile,
-                                 CliOptions &options, bool requiresMainFct, bool isStdFile)
-    : context(context), builder(builder), sourceFile(sourceFile), requiresMainFct(requiresMainFct), isStdFile(isStdFile) {
+AnalyzerVisitor::AnalyzerVisitor(GlobalResourceManager &resourceManager, SourceFile &sourceFile, bool requiresMainFct,
+                                 bool isStdFile)
+    : resourceManager(resourceManager), sourceFile(sourceFile), requiresMainFct(requiresMainFct), isStdFile(isStdFile) {
   // Retrieve symbol table
   this->currentScope = this->rootScope = sourceFile.symbolTable.get();
 
   // Use default target triple if empty
-  if (options.targetTriple.empty()) {
+  CliOptions &cliOptions = resourceManager.cliOptions;
+  if (resourceManager.cliOptions.targetTriple.empty()) {
     llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-    options.targetArch = targetTriple.getArchName();
-    options.targetVendor = targetTriple.getVendorName();
-    options.targetOs = targetTriple.getOSName();
+    cliOptions.targetArch = targetTriple.getArchName();
+    cliOptions.targetVendor = targetTriple.getVendorName();
+    cliOptions.targetOs = targetTriple.getOSName();
   }
 
   // Create OpRuleManager

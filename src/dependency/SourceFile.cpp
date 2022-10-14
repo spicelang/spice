@@ -5,10 +5,9 @@
 #include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
 #include <ast/AstNodes.h>
-#include <cli/CliInterface.h>
+#include <dependency/GlobalResourceManager.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <generator/GeneratorVisitor.h>
-#include <linker/LinkerInterface.h>
 #include <parser/AstBuilderVisitor.h>
 #include <symbol/SymbolTable.h>
 #include <util/CodeLoc.h>
@@ -18,12 +17,10 @@
 #include <visualizer/ASTVisualizerVisitor.h>
 #include <visualizer/CSTVisualizerVisitor.h>
 
-SourceFile::SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                       RuntimeModuleManager &runtimeModuleManager, LinkerInterface &linker, CliOptions &options,
-                       SourceFile *parent, std::string name, const std::string &filePath, bool stdFile)
-    : context(context), builder(builder), threadFactory(threadFactory), runtimeModuleManager(runtimeModuleManager),
-      linker(linker), name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), options(options) {
-  this->objectFilePath = options.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
+SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
+                       bool stdFile)
+    : resourceManager(resourceManager), name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent) {
+  this->objectFilePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
 
   // Deduce fileName and fileDir
   fileName = std::filesystem::path(filePath).filename().string();
@@ -65,7 +62,7 @@ SourceFile::SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, T
 
 void SourceFile::visualizeCST() {
   // Only execute if enabled
-  if (!options.dumpCST && !options.testMode)
+  if (!resourceManager.cliOptions.dumpCST && !resourceManager.cliOptions.testMode)
     return;
 
   std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
@@ -88,7 +85,7 @@ void SourceFile::visualizeCST() {
   if (parent == nullptr) {
     compilerOutput.cstString = dotCode;
 
-    if (options.dumpCST) {
+    if (resourceManager.cliOptions.dumpCST) {
       // Dump to console
       std::cout << "\nSerialized CST:\n\n" << dotCode << "\n";
 
@@ -99,7 +96,7 @@ void SourceFile::visualizeCST() {
 
       // Generate SVG
       std::cout << "\nGenerating SVG file ... ";
-      std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "cst";
+      std::string fileBasePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + "cst";
       FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
       FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
       std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
@@ -120,7 +117,7 @@ void SourceFile::buildAST() {
 
 void SourceFile::visualizeAST() {
   // Only execute if enabled
-  if (!options.dumpAST && !options.testMode)
+  if (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode)
     return;
 
   std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
@@ -142,7 +139,7 @@ void SourceFile::visualizeAST() {
   if (parent == nullptr) {
     compilerOutput.astString = dotCode;
 
-    if (options.dumpAST) {
+    if (resourceManager.cliOptions.dumpAST) {
       // Dump to console
       std::cout << "\nSerialized AST:\n\n" << dotCode << "\n";
 
@@ -153,7 +150,7 @@ void SourceFile::visualizeAST() {
 
       // Generate SVG
       std::cout << "\nGenerating SVG file ... ";
-      std::string fileBasePath = options.outputDir + FileUtil::DIR_SEPARATOR + "ast";
+      std::string fileBasePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + "ast";
       FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
       FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
       std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
@@ -163,7 +160,7 @@ void SourceFile::visualizeAST() {
 
 void SourceFile::preAnalyze() {
   // Pre-analyze this source file
-  PreAnalyzerVisitor preAnalyzer(options, *this);
+  PreAnalyzerVisitor preAnalyzer(resourceManager.cliOptions, *this);
   preAnalyzer.visit(ast.get());
   antlrCtx.parser->reset();
 
@@ -191,7 +188,7 @@ void SourceFile::analyze() {
   }
 
   // Analyze this source file
-  analyzer = std::make_shared<AnalyzerVisitor>(context, builder, *this, options, parent == nullptr, stdFile);
+  analyzer = std::make_shared<AnalyzerVisitor>(resourceManager, *this, parent == nullptr, stdFile);
   analyzer->visit(ast.get());
   antlrCtx.parser->reset();
 }
@@ -217,7 +214,7 @@ void SourceFile::reAnalyze() {
   compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
 
   // Dump symbol table
-  if (options.dumpSymbolTables) { // GCOV_EXCL_START
+  if (resourceManager.cliOptions.dumpSymbolTables) { // GCOV_EXCL_START
     std::cout << "\nSymbol table of file " << filePath << ":\n\n";
     std::cout << compilerOutput.symbolTableString << "\n";
   } // GCOV_EXCL_STOP
@@ -229,7 +226,7 @@ void SourceFile::generate() {
     sourceFile.second.first->generate();
 
   // Generate this source file
-  generator = std::make_shared<GeneratorVisitor>(context, builder, threadFactory, linker, options, *this, objectFilePath);
+  generator = std::make_shared<GeneratorVisitor>(resourceManager, *this, objectFilePath);
   bool repetitionRequired;
   unsigned int generateCount = 0;
   do {
@@ -247,7 +244,7 @@ void SourceFile::generate() {
   compilerOutput.irString = generator->getIRString();
 
   // Dump unoptimized IR code
-  if (options.dumpIR) { // GCOV_EXCL_START
+  if (resourceManager.cliOptions.dumpIR) { // GCOV_EXCL_START
     std::cout << "\nUnoptimized IR code:\n";
     generator->dumpIR();
     std::cout << "\n";
@@ -256,7 +253,7 @@ void SourceFile::generate() {
 
 void SourceFile::optimize() {
   // Skip this stage if optimization is disabled
-  if (options.optLevel < 1 || options.optLevel > 5)
+  if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
     return;
 
   // Optimize the imported source files
@@ -269,7 +266,7 @@ void SourceFile::optimize() {
   compilerOutput.irOptString = generator->getIRString();
 
   // Dump optimized IR code
-  if (options.dumpIR) { // GCOV_EXCL_START
+  if (resourceManager.cliOptions.dumpIR) { // GCOV_EXCL_START
     std::cout << "\nOptimized IR code:\n";
     generator->dumpIR();
     std::cout << "\n";
@@ -282,17 +279,17 @@ void SourceFile::emitObjectFile() {
     sourceFile.second.first->emitObjectFile();
 
   // Dump assembly code
-  if (options.dumpAssembly) { // GCOV_EXCL_START
+  if (resourceManager.cliOptions.dumpAssembly) { // GCOV_EXCL_START
     std::cout << "\nAssembly code:\n";
     generator->dumpAsm();
   } // GCOV_EXCL_STOP
 
   // Emit object file and add object file to the linker interface
   generator->emit();
-  linker.addObjectFilePath(objectFilePath);
+  resourceManager.linker.addObjectFilePath(objectFilePath);
 
   // Print warning if verifier is disabled
-  if (parent == nullptr && options.disableVerifier) {
+  if (parent == nullptr && resourceManager.cliOptions.disableVerifier) {
     std::cout << "\n";
     CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.").print();
     std::cout << "\n";
@@ -300,8 +297,7 @@ void SourceFile::emitObjectFile() {
 }
 
 std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &name, const std::string &filePath, bool stdFile) {
-  return std::make_shared<SourceFile>(context, builder, threadFactory, runtimeModuleManager, linker, options, this, name,
-                                      filePath, stdFile);
+  return std::make_shared<SourceFile>(resourceManager, this, name, filePath, stdFile);
 }
 
 void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, const AstNode *declAstNode, const std::string &name,
@@ -334,9 +330,9 @@ void SourceFile::printWarnings() const {
 }
 
 void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {
-  runtimeModuleManager.requestModule(this, moduleName);
+  resourceManager.runtimeModuleManager.requestModule(this, moduleName);
 }
 
 SymbolTable *SourceFile::getRuntimeModuleScope(const RuntimeModuleName &moduleName) const {
-  return runtimeModuleManager.getModuleScope(moduleName);
+  return resourceManager.runtimeModuleManager.getModuleScope(moduleName);
 }

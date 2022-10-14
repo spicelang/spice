@@ -20,9 +20,7 @@ class AnalyzerVisitor;
 class GeneratorVisitor;
 class AntlrThrowingErrorListener;
 class SymbolTable;
-struct CliOptions;
-class LinkerInterface;
-class ThreadFactory;
+class GlobalResourceManager;
 class EntryNode;
 struct AstNode;
 
@@ -48,9 +46,8 @@ struct CompilerOutput {
 class SourceFile {
 public:
   // Constructors
-  explicit SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, ThreadFactory &threadFactory,
-                      RuntimeModuleManager &runtimeModuleManager, LinkerInterface &linker, CliOptions &options,
-                      SourceFile *parent, std::string name, const std::string &filePath, bool stdFile);
+  explicit SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
+                      bool stdFile);
 
   // Friend classes
   friend class RuntimeModuleManager;
@@ -83,7 +80,6 @@ public:
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
   SourceFile *parent;
-  CliOptions &options;
   std::string cacheKey;
   bool restoredFromCache = false;
   std::shared_ptr<EntryNode> ast;
@@ -94,9 +90,5 @@ public:
 
 private:
   // Private fields
-  llvm::LLVMContext *context;
-  llvm::IRBuilder<> *builder;
-  ThreadFactory &threadFactory;
-  LinkerInterface &linker;
-  RuntimeModuleManager &runtimeModuleManager;
+  GlobalResourceManager &resourceManager;
 };

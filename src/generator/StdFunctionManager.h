@@ -2,16 +2,16 @@
 
 #pragma once
 
+#include <dependency/GlobalResourceManager.h>
+
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
-
-// Forward declarations
-class GeneratorVisitor;
 
 class StdFunctionManager {
 public:
   // Constructors
-  explicit StdFunctionManager(GeneratorVisitor *generator);
+  explicit StdFunctionManager(GlobalResourceManager &resourceManager, llvm::Module *module)
+      : context(resourceManager.context), builder(resourceManager.builder), module(module) {}
 
   // Public methods for type retrieval
   static llvm::StructType *getStringStructType(llvm::LLVMContext &context);
@@ -36,8 +36,8 @@ public:
 
 private:
   // Members
-  llvm::LLVMContext *context;
-  llvm::IRBuilder<> *builder;
+  llvm::LLVMContext &context;
+  llvm::IRBuilder<> &builder;
   llvm::Module *module;
 
   // Private methods
