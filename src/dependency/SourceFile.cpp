@@ -45,6 +45,11 @@ SourceFile::SourceFile(llvm::LLVMContext *context, llvm::IRBuilder<> *builder, T
   antlrCtx.lexer->addErrorListener(antlrCtx.lexerErrorHandler.get());
   antlrCtx.tokenStream = std::make_shared<antlr4::CommonTokenStream>(antlrCtx.lexer.get());
 
+  // Calculate cache key
+  std::stringstream cacheKeyString;
+  cacheKeyString << std::hex << std::hash<std::string>{}(antlrCtx.tokenStream->getText());
+  cacheKey = cacheKeyString.str();
+
   // Parse input
   antlrCtx.parser = std::make_shared<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
   antlrCtx.parser->removeErrorListeners();

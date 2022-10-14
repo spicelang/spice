@@ -79,11 +79,13 @@ public:
   std::string filePath;
   std::string fileDir;
   std::string objectFilePath;
-  bool stdFile;
+  bool stdFile = false;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
   SourceFile *parent;
   CliOptions &options;
+  std::string cacheKey;
+  bool restoredFromCache = false;
   std::shared_ptr<EntryNode> ast;
   std::shared_ptr<SymbolTable> symbolTable;
   std::shared_ptr<AnalyzerVisitor> analyzer;

@@ -36,7 +36,7 @@ void execTestCase(const TestCase &testCase) {
                         /* targetOs= */ std::string(targetTriple.getOSName()),
                         /* outputDir= */ ".",
                         /* outputPath= */ ".",
-                        /* considerCache */ false,
+                        /* ignoreCache */ true,
                         /* printDebugOutput= */ false,
                         /* dumpCST= */ false,
                         /* dumpAST= */ false,

@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include <cli/CliInterface.h>
+#include <dependency/CacheManager.h>
 #include <dependency/RuntimeModuleManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/CliError.h>
@@ -26,6 +27,7 @@ bool compileProject(CliOptions &options) {
     // Prepare global Spice assets
     ThreadFactory threadFactory;
     LinkerInterface linker = LinkerInterface(threadFactory, options);
+    CacheManager cacheManager(options.cacheDir);
     RuntimeModuleManager runtimeModuleManager;
 
     // Create source file instance for main source file
@@ -95,7 +97,7 @@ int main(int argc, char **argv) {
       cli.validate(); // Check if all required fields are present
       cli.enrich();   // Prepare the cli options
 
-      if (!compileProject(cli.getOptions())) // Kick off the compiling process
+      if (!compileProject(cli.cliOptions)) // Kick off the compiling process
         return EXIT_FAILURE;
 
       if (cli.shouldRun)
