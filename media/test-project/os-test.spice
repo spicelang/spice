@@ -1,13 +1,14 @@
-import "std/type/int" as i;
+import "std/math/rand" as rand;
 
 f<int> main() {
-    bool a = false;
-    bool b = true;
-    if a = b {
-        printf("a: %d, b: %d", a, b);
-    } else {
-        printf("a: %d, b: %d", a, b);
-    }
+    printf("%d\n", rand.randInt(1, 4));
+    printf("%d\n", rand.randInt(1, 4));
+    printf("%d\n", rand.randInt(1, 4));
+    printf("%d\n", rand.randInt(1, 4));
+    printf("%d\n", rand.randInt(1, 4));
+    printf("%d\n", rand.randInt(1, 4));
+    printf("%d\n", rand.randInt(1, 4));
+    printf("%d\n", rand.randInt(1, 4));
 }
 
 /*import "std/net/http" as http;

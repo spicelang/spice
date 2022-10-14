@@ -862,7 +862,7 @@ std::any AnalyzerVisitor::visitForeachLoop(ForeachLoopNode *node) {
   // Check type of the array
   expectedType = SymbolType(TY_DYN);
   auto arrayType = any_cast<SymbolType>(visit(node->arrayAssign()));
-  if (!arrayType.isArray() && !arrayType.is(TY_STRING))
+  if (!arrayType.isArray())
     throw SemanticError(node->arrayAssign(), OPERATOR_WRONG_DATA_TYPE,
                         "Can only apply foreach loop on an array type. You provided " + arrayType.getName(false));
 
@@ -1758,7 +1758,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
           "'" + currentVarName +
               "' is a reserved keyword for future development of the language. Please use another identifier instead");
 
-    // Load symbol table entry
+    // Retrieve access scope
     SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
     assert(accessScope);
 
@@ -1919,6 +1919,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       } else {
         symbolBaseType = symbolEntry->type.getBaseType();
       }
+      symbolEntry->isUsed = true;
     }
 
     if (i < node->functionNameFragments.size() - 1) {
@@ -1943,6 +1944,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
       symbolEntry = accessScope->lookup(structSignature);
       assert(symbolEntry != nullptr);
+      symbolEntry->isUsed = true;
 
       // Import struct if necessary
       if (accessScope->isImported(currentScope))
