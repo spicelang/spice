@@ -103,18 +103,6 @@ void SymbolTableEntry::pushAddress(llvm::Value *address) {
 void SymbolTableEntry::popAddress() { memAddress.pop(); }
 
 /**
- * Retrieve number of references to the symbol
- *
- * @return Ref count
- */
-// size_t SymbolTableEntry::getRefCount() const { return refCount; }
-
-/**
- * Increase the number of references to the symbol
- */
-// void SymbolTableEntry::increaseRefCount() { refCount++; }
-
-/**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.
  *
  * Example:

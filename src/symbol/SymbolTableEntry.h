@@ -40,8 +40,6 @@ public:
   void updateAddress(llvm::Value *address);
   void pushAddress(llvm::Value *address);
   void popAddress();
-  //[[nodiscard]] size_t getRefCount() const;
-  // void increaseRefCount();
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
   // Public members
@@ -59,6 +57,5 @@ public:
 private:
   // Members
   llvm::Type *llvmType = nullptr;
-  // size_t refCount = 0;
   std::stack<llvm::Value *> memAddress;
 };

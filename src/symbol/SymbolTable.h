@@ -115,23 +115,4 @@ private:
   std::map<std::string, std::shared_ptr<std::map<std::string, Struct>>> structs; // <code-loc, vector-of-representations>
   std::map<std::string, Struct *> structAccessPointers;
   bool isMainSourceFile;
-
-public:
-  // Json serializer/deserializer
-  // NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolTable, children, scopeType, isSourceFileRootScope, isShadowTable, isCapturingRequired);
-  void to_json(nlohmann::json &j, const SymbolTable &st) {
-    // Children
-    nlohmann::json childrenJson;
-    // for (const auto &[key, symbolTable] : children)
-    //   childrenJson[key] = *symbolTable;
-
-    // Symbols
-    nlohmann::json symbolsJson;
-    // for (const auto &[key, symbolTableEntry] : symbols)
-    //   childrenJson[key] = symbolTableEntry.to_json();
-
-    j = nlohmann::json{{"scopeType", st.scopeType}, {"children", childrenJson}, {"symbols", symbolsJson}};
-  }
-
-  void from_json(const nlohmann::json &j, SymbolTable &st) { j.at("scopeType").get_to(st.scopeType); }
 };
