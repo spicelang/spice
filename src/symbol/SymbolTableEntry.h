@@ -25,15 +25,14 @@ enum SymbolState { DECLARED, INITIALIZED };
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, const SymbolType &type, SymbolTable *scope, SymbolSpecifiers specifiers, SymbolState state,
+  SymbolTableEntry(std::string name, SymbolType type, SymbolTable *scope, SymbolSpecifiers specifiers, SymbolState state,
                    const AstNode *declNode, unsigned int orderIndex, const bool global)
-      : name(std::move(name)), type(type), scope(scope), specifiers(specifiers), state(state), declNode(declNode),
+      : name(std::move(name)), type(std::move(type)), scope(scope), specifiers(specifiers), state(state), declNode(declNode),
         orderIndex(orderIndex), isGlobal(global){};
 
   // Public methods
   void updateType(const SymbolType &newType, bool force);
   void updateState(SymbolState newState, const AstNode *node, bool force = false);
-  [[nodiscard]] const AstNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::Type *getStructLLVMType() const;
   void setStructLLVMType(llvm::Type *newStructType);

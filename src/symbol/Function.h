@@ -12,25 +12,32 @@
 struct AstNode;
 struct CodeLoc;
 
-typedef std::vector<std::pair<SymbolType, bool>> ParamList;
-typedef std::vector<std::tuple<std::string, SymbolType, bool>> NamedParamList;
+struct Param {
+  SymbolType type;
+  bool isOptional = false;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Param, type, isOptional)
+};
+struct NamedParam {
+  std::string name;
+  SymbolType type;
+  bool isOptional = false;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(NamedParam, name, type, isOptional)
+};
+using ParamList = std::vector<Param>;
+using NamedParamList = std::vector<NamedParam>;
 
 class Function {
 public:
   // Constructors
-  explicit Function(std::string name, SymbolSpecifiers specifiers, const SymbolType &thisType, const SymbolType &returnType,
-                    std::vector<std::pair<SymbolType, bool>> paramTypes, std::vector<GenericType> templateTypes,
-                    const AstNode *declNode)
-      : name(std::move(name)), specifiers(specifiers), thisType(thisType), returnType(returnType),
-        paramList(std::move(paramTypes)), templateTypes(std::move(templateTypes)), declNode(declNode) {}
+  explicit Function(std::string name, SymbolSpecifiers specifiers, SymbolType thisType, SymbolType returnType,
+                    ParamList paramList, std::vector<GenericType> templateTypes, const AstNode *declNode)
+      : name(std::move(name)), specifiers(specifiers), thisType(std::move(thisType)), returnType(std::move(returnType)),
+        paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode) {}
 
   // Public methods
-  [[nodiscard]] std::string getName() const;
-  [[nodiscard]] SymbolSpecifiers getSpecifiers() const;
-  [[nodiscard]] SymbolType getThisType() const;
-  [[nodiscard]] SymbolType getReturnType() const;
   [[nodiscard]] std::vector<SymbolType> getParamTypes() const;
-  [[nodiscard]] ParamList getParamList() const;
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] std::string getSignature() const;
   [[nodiscard]] bool isFunction() const;
@@ -44,21 +51,20 @@ public:
   [[nodiscard]] bool hasSubstantiatedParams() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
-  [[nodiscard]] const AstNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
   // Public members
-  bool isGenericSubstantiation = false;
-  bool isAlreadyAnalyzed = false;
-  bool isUsed = false;
-
-private:
-  // Members
   std::string name;
   SymbolSpecifiers specifiers;
   SymbolType thisType = SymbolType(TY_DYN);
   SymbolType returnType = SymbolType(TY_DYN);
-  std::vector<std::pair<SymbolType, bool>> paramList;
+  ParamList paramList;
   std::vector<GenericType> templateTypes;
   const AstNode *declNode;
+  bool isGenericSubstantiation = false;
+  bool isAlreadyAnalyzed = false;
+  bool isUsed = false;
+
+  // Json serializer/deserializer
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, specifiers, thisType, returnType, paramList, templateTypes)
 };

@@ -48,7 +48,10 @@ const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b101;
 
 class SymbolSpecifiers {
 public:
+  // Constructors
   explicit SymbolSpecifiers(const SymbolType &symbolType);
+
+  // Public methods
   void setConst(bool value);
   [[nodiscard]] bool isConst() const;
   void setSigned(bool value);
@@ -59,7 +62,11 @@ public:
   [[nodiscard]] bool isPublic() const;
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
+  // JSON serializer/deserializer
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolSpecifiers, specifierValue)
+
 private:
+  // Private members
   unsigned short specifierValue = 0;
   void setBit(unsigned short index);
   void clearBit(unsigned short index);

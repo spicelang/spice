@@ -8,51 +8,16 @@
 #include <util/CommonUtil.h>
 
 /**
- * Retrieve the name of the current function
- *
- * @return Function name
- */
-std::string Function::getName() const { return name; }
-
-/**
- * Retrieve the symbol specifiers of the current function
- *
- * @return Symbol specifiers
- */
-SymbolSpecifiers Function::getSpecifiers() const { return specifiers; }
-
-/**
- * Retrieve the this type of the current function
- *
- * @return This type
- */
-SymbolType Function::getThisType() const { return thisType; }
-
-/**
- * Retrieve the return type of the current function
- *
- * @return Return type
- */
-SymbolType Function::getReturnType() const { return returnType; }
-
-/**
  * Retrieve the parameter types of the current function
  *
  * @return Vector of parameter types
  */
 std::vector<SymbolType> Function::getParamTypes() const {
   std::vector<SymbolType> newParamTypes;
-  for (const auto &paramType : paramList)
-    newParamTypes.push_back(paramType.first);
+  for (const Param &param : paramList)
+    newParamTypes.push_back(param.type);
   return newParamTypes;
 }
-
-/**
- * Retrieve the parameter list of the current function
- *
- * @return Parameter list
- */
-ParamList Function::getParamList() const { return paramList; }
 
 /**
  * Mange the function and return the mangled string
@@ -87,11 +52,11 @@ std::string Function::getMangledName() const {
 
   // Param type string
   std::string paramTyStr;
-  for (const auto &paramType : paramList) {
+  for (const Param &param : paramList) {
     if (!paramTyStr.empty())
       paramTyStr += "_";
-    paramTyStr += paramType.first.getName(false, true);
-    if (paramType.second)
+    paramTyStr += param.type.getName(false, true);
+    if (param.isOptional)
       paramTyStr += "?";
   }
 
@@ -130,11 +95,11 @@ std::string Function::getSignature() const {
 
   // Parameter type string
   std::string paramTyStr;
-  for (const auto &paramType : paramList) {
+  for (const Param &param : paramList) {
     if (!paramTyStr.empty())
       paramTyStr += ",";
-    paramTyStr += paramType.first.getName();
-    if (paramType.second)
+    paramTyStr += param.type.getName();
+    if (param.isOptional)
       paramTyStr += "?";
   }
 
@@ -194,21 +159,21 @@ SymbolType Function::getSymbolType() const { return SymbolType(isFunction() || i
  */
 std::vector<Function> Function::substantiateOptionalParams() const {
   std::vector<Function> definiteFunctions;
-  std::vector<std::pair<SymbolType, bool>> currentFunctionParamTypes;
+  ParamList currentFunctionParamTypes;
   bool metFirstOptionalParam = false;
 
-  for (const auto &paramType : paramList) {
-    if (paramType.second) {         // Met optional parameter
+  for (const Param &param : paramList) {
+    if (param.isOptional) {         // Met optional parameter
       if (!metFirstOptionalParam) { // Add substantiation without the optional parameter
         definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionParamTypes, templateTypes,
                                        declNode);
         metFirstOptionalParam = true;
       }
       // Add substantiation with the optional parameter
-      currentFunctionParamTypes.emplace_back(paramType.first, false);
+      currentFunctionParamTypes.push_back({param.type, false});
       definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
     } else { // Met mandatory parameter
-      currentFunctionParamTypes.emplace_back(paramType.first, false);
+      currentFunctionParamTypes.push_back({param.type, false});
     }
   }
 
@@ -240,7 +205,7 @@ Function Function::substantiateGenerics(const ParamList &concreteParamList, cons
  * @return Substantiated params or not
  */
 bool Function::hasSubstantiatedParams() const {
-  return std::none_of(paramList.begin(), paramList.end(), [](auto t) { return t.second; });
+  return std::none_of(paramList.begin(), paramList.end(), [](auto t) { return t.isOptional; });
 }
 
 /**
@@ -260,13 +225,6 @@ bool Function::hasSubstantiatedGenerics() const {
  * @return Fully substantiated or not
  */
 bool Function::isFullySubstantiated() const { return hasSubstantiatedParams() && hasSubstantiatedGenerics(); }
-
-/**
- * Retrieve the declaration node of this function
- *
- * @return Declaration node
- */
-const AstNode *Function::getDeclNode() const { return declNode; }
 
 /**
  * Retrieve the declaration code location of this function

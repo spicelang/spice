@@ -351,7 +351,7 @@ size_t SymbolTable::getFieldCount() const {
  * @param err Error factory
  */
 void SymbolTable::insertFunction(const Function &function) {
-  const AstNode *declNode = function.getDeclNode();
+  const AstNode *declNode = function.declNode;
 
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
   std::string codeLocStr = declNode->codeLoc.toString();
@@ -392,14 +392,14 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
     auto oldManifestations = *manifestations;
     for (auto &[mangledName, f] : oldManifestations) {
       // Check name requirement
-      if (f.getName() != callFunctionName)
+      if (f.name != callFunctionName)
         continue;
 
       // Initialize mapping from generic type name to concrete symbol type
       std::map<std::string, SymbolType> concreteGenericTypes;
 
       // Check 'this' type requirement
-      SymbolType fctThisType = f.getThisType();
+      const SymbolType fctThisType = f.thisType;
       if (fctThisType.getTemplateTypes().empty()) { // The 'this' type is a non-generic struct
         if (callThisType != fctThisType)
           continue;
@@ -412,13 +412,13 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
       }
 
       // Check arg types requirement
-      auto argList = f.getParamList();
+      ParamList argList = f.paramList;
       if (argList.size() != callArgTypes.size())
         continue;
       bool differentArgTypes = false; // Note: This is a workaround for a break from an inner loop
       for (int i = 0; i < argList.size(); i++) {
-        if (argList[i].first.isBaseType(TY_GENERIC)) { // Resolve concrete type for arguments with generic type
-          std::string genericTypeName = argList[i].first.getBaseType().getSubType();
+        if (argList[i].type.isBaseType(TY_GENERIC)) { // Resolve concrete type for arguments with generic type
+          std::string genericTypeName = argList[i].type.getBaseType().getSubType();
           if (concreteGenericTypes.contains(genericTypeName)) { // This generic type was already resolved => check if it matches
             if (concreteGenericTypes.at(genericTypeName) != callArgTypes[i].getBaseType()) {
               differentArgTypes = true;
@@ -426,7 +426,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
             }
           } else { // This generic type was not resolved yet => resolve it and add it to the list
             // De-assemble the concrete type to match the generic type
-            SymbolType curGenericType = argList[i].first;
+            SymbolType curGenericType = argList[i].type;
             SymbolType curArgType = callArgTypes[i];
             while (curGenericType.isArray() || curGenericType.isPointer()) {
               if ((curGenericType.isArray() && curArgType.isArray()) || (curGenericType.isPointer() && curArgType.isPointer())) {
@@ -443,9 +443,9 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
             }
             concreteGenericTypes.insert({genericTypeName, curArgType});
           }
-          argList[i].first = argList[i].first.replaceBaseType(concreteGenericTypes.at(genericTypeName));
+          argList[i].type = argList[i].type.replaceBaseType(concreteGenericTypes.at(genericTypeName));
         } else { // For arguments with non-generic type, check if the candidate type matches with the call
-          if (!equalsIgnoreArraySizes(argList[i].first, callArgTypes[i])) {
+          if (!equalsIgnoreArraySizes(argList[i].type, callArgTypes[i])) {
             differentArgTypes = true;
             break;
           }
@@ -457,7 +457,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
       // Duplicate function
       Function newFunction = f.substantiateGenerics(argList, callThisType, concreteGenericTypes);
       if (!getChild(newFunction.getSignature())) { // Insert function
-        insertSubstantiatedFunction(newFunction, f.getDeclNode());
+        insertSubstantiatedFunction(newFunction, f.declNode);
         copyChildBlock(f.getSignature(), newFunction.getSignature());
 
         // Insert symbols for generic type names with concrete types into the child block
@@ -556,7 +556,7 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, const As
   assert(functions.contains(declNode->codeLoc.toString()));
   functions.at(declNode->codeLoc.toString())->insert({mangledFctName, function});
   // Add symbol table entry for the function
-  insert(function.getSignature(), function.getSymbolType(), function.getSpecifiers(), INITIALIZED, declNode);
+  insert(function.getSignature(), function.getSymbolType(), function.specifiers, INITIALIZED, declNode);
 }
 
 /**
@@ -567,10 +567,9 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, const As
  */
 void SymbolTable::insertStruct(const Struct &s) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  const AstNode *declNode = s.getDeclNode();
-  std::string codeLocStr = declNode->codeLoc.toString();
+  std::string codeLocStr = s.declNode->codeLoc.toString();
   structs.insert({codeLocStr, std::make_shared<std::map<std::string, Struct>>()});
-  insertSubstantiatedStruct(s, declNode);
+  insertSubstantiatedStruct(s, s.declNode);
 }
 
 /**
@@ -593,21 +592,21 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
     auto oldManifestations = *manifestations;
     for (auto &[mangledName, s] : oldManifestations) {
       // Check name requirement
-      if (s.getName() != structName)
+      if (s.name != structName)
         continue;
 
       // Check template types requirement
-      std::vector<GenericType> curTemplateTypes = s.getTemplateTypes();
-      if (curTemplateTypes.empty()) {
+      const std::vector<GenericType> structTemplateTypes = s.templateTypes;
+      if (structTemplateTypes.empty()) {
         // It's a match!
         matches.push_back(&structs.at(defCodeLocStr)->at(s.getMangledName()));
       } else {
-        if (curTemplateTypes.size() != templateTypes.size())
+        if (structTemplateTypes.size() != templateTypes.size())
           continue;
         std::vector<SymbolType> concreteTemplateTypes;
         bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
         for (int i = 0; i < templateTypes.size(); i++) {
-          if (!curTemplateTypes[i].checkConditionsOf(templateTypes[i])) {
+          if (!structTemplateTypes[i].checkConditionsOf(templateTypes[i])) {
             differentTemplateTypes = true;
             break;
           }
@@ -620,7 +619,7 @@ Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &s
         SymbolTable *structScope = getChild(STRUCT_SCOPE_PREFIX + structName);
         Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, structScope);
         if (!getChild(STRUCT_SCOPE_PREFIX + newStruct.getSignature())) { // Insert struct
-          insertSubstantiatedStruct(newStruct, s.getDeclNode());
+          insertSubstantiatedStruct(newStruct, s.declNode);
           copyChildBlock(STRUCT_SCOPE_PREFIX + structName, STRUCT_SCOPE_PREFIX + newStruct.getSignature());
         }
 
@@ -703,7 +702,7 @@ void SymbolTable::insertSubstantiatedStruct(const Struct &s, const AstNode *decl
   assert(structs.at(declNode->codeLoc.toString()) != nullptr);
   structs.at(declNode->codeLoc.toString())->insert({s.getMangledName(), s});
   // Add symbol table entry for the struct
-  insert(s.getSignature(), s.getSymbolType(), s.getSpecifiers(), INITIALIZED, declNode);
+  insert(s.getSignature(), s.getSymbolType(), s.specifiers, INITIALIZED, declNode);
 }
 
 /**
@@ -726,7 +725,7 @@ void SymbolTable::purgeSubstantiationRemnants() {
   std::erase_if(structs, [&](const auto &kvOuter) {
     std::erase_if(*kvOuter.second, [&](const auto &kvInner) {
       if (!kvInner.second.isFullySubstantiated()) {
-        children.erase(STRUCT_SCOPE_PREFIX + kvInner.second.getName()); // Delete associated symbol table
+        children.erase(STRUCT_SCOPE_PREFIX + kvInner.second.name); // Delete associated symbol table
         return true;
       }
       return false;

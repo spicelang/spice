@@ -109,7 +109,7 @@ std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
     // Call destructors for variables, that are going out of scope
     std::vector<SymbolTableEntry *> varsToDestruct = node->fctScope->getVarsGoingOutOfScope(true);
     for (SymbolTableEntry *varEntry : varsToDestruct)
-      insertDestructorCall(varEntry->getDeclNode(), varEntry);
+      insertDestructorCall(varEntry->declNode, varEntry);
 
     // Return to root scope
     currentScope = node->fctScope->parent;
@@ -164,20 +164,16 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     ParamList paramTypes;
     if (node->hasParams) {
       auto namedParamList = any_cast<NamedParamList>(visit(node->paramLst()));
-      for (const auto &namedParam : namedParamList) {
-        const std::string paramName = std::get<0>(namedParam);
-        const SymbolType paramType = std::get<1>(namedParam);
-        bool isOptional = std::get<2>(namedParam);
-
+      for (const auto &param : namedParamList) {
         // Check if the type is present in the template for generic types
-        if (paramType.is(TY_GENERIC)) {
-          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == paramType; }))
+        if (param.type.is(TY_GENERIC)) {
+          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == param.type; }))
             throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                                 "Generic arg type not included in function template");
         }
 
-        paramNames.push_back(paramName);
-        paramTypes.push_back({paramType, isOptional});
+        paramNames.push_back(param.name);
+        paramTypes.push_back({param.type, param.isOptional});
       }
     }
 
@@ -246,7 +242,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
 
         // Change scope to the struct specialization
         if (node->isMethod) {
-          std::string structSignature = Struct::getSignature(node->structName, spiceFunc.getThisType().getTemplateTypes());
+          std::string structSignature = Struct::getSignature(node->structName, spiceFunc.thisType.getTemplateTypes());
           currentScope = currentScope->getChild(STRUCT_SCOPE_PREFIX + structSignature);
           assert(currentScope);
         }
@@ -265,7 +261,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         // Morph the generic return type
         SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
         if (returnVarEntry->type.is(TY_GENERIC)) {
-          SymbolType returnType = spiceFunc.getReturnType();
+          SymbolType returnType = spiceFunc.returnType;
           /*if (returnType.isPointer())
             throw SemanticError(node, COMING_SOON_SA,
                                 "Spice currently not supports pointer return types due to not handling pointer escaping.");*/
@@ -295,7 +291,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
         // Call destructors for variables, that are going out of scope
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
         for (SymbolTableEntry *varEntry : varsToDestruct)
-          insertDestructorCall(varEntry->getDeclNode(), varEntry);
+          insertDestructorCall(varEntry->declNode, varEntry);
 
         // Reset generic types
         for (const auto &arg : args) {
@@ -370,20 +366,16 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
     ParamList paramTypes;
     if (node->hasParams) {
       auto namedParamList = any_cast<NamedParamList>(visit(node->paramLst()));
-      for (const auto &namedParam : namedParamList) {
-        const std::string paramName = std::get<0>(namedParam);
-        const SymbolType paramType = std::get<1>(namedParam);
-        bool isOptional = std::get<2>(namedParam);
-
+      for (const auto &param : namedParamList) {
         // Check if the type is present in the template for generic types
-        if (paramType.is(TY_GENERIC)) {
-          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == paramType; }))
+        if (param.type.is(TY_GENERIC)) {
+          if (std::none_of(templateTypes.begin(), templateTypes.end(), [&](const GenericType &t) { return t == param.type; }))
             throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                                 "Generic arg type not included in procedure template");
         }
 
-        paramNames.push_back(paramName);
-        paramTypes.push_back({paramType, isOptional});
+        paramNames.push_back(param.name);
+        paramTypes.push_back({param.type, param.isOptional});
       }
     }
 
@@ -443,7 +435,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
 
         // Change scope to the struct specialization
         if (node->isMethod) {
-          std::string structSignature = Struct::getSignature(node->structName, spiceProc.getThisType().getTemplateTypes());
+          std::string structSignature = Struct::getSignature(node->structName, spiceProc.thisType.getTemplateTypes());
           currentScope = currentScope->getChild(STRUCT_SCOPE_PREFIX + structSignature);
           assert(currentScope);
         }
@@ -482,7 +474,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         // Call destructors for variables, that are going out of scope
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
         for (SymbolTableEntry *varEntry : varsToDestruct)
-          insertDestructorCall(varEntry->getDeclNode(), varEntry);
+          insertDestructorCall(varEntry->declNode, varEntry);
 
         // Reset generic types
         for (const auto &arg : params) {
@@ -590,7 +582,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
   // Add struct
   Struct s(node->structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, node);
   currentScope->insertStruct(s);
-  s.setSymbolTable(structScope);
+  s.symbolTable = structScope;
 
   return nullptr;
 }
@@ -766,7 +758,7 @@ std::any AnalyzerVisitor::visitExtDecl(ExtDeclNode *node) {
       auto argType = any_cast<SymbolType>(visit(arg));
       if (argType.is(TY_DYN))
         throw SemanticError(arg, UNEXPECTED_DYN_TYPE_SA, "Dyn data type is not allowed as arg type for external functions");
-      argTypes.emplace_back(argType, false);
+      argTypes.push_back({argType, false});
     }
   }
 
@@ -1018,7 +1010,7 @@ std::any AnalyzerVisitor::visitParamLst(ParamLstNode *node) {
       throw SemanticError(param, INVALID_PARAM_ORDER, "Mandatory parameters must go before any optional parameters");
     }
 
-    namedParamList.emplace_back(param->varName, paramType, metOptional);
+    namedParamList.push_back({param->varName, paramType, metOptional});
   }
   return namedParamList;
 }
@@ -1119,7 +1111,7 @@ std::any AnalyzerVisitor::visitReturnStmt(ReturnStmtNode *node) {
   // Call destructors for variables, that are going out of scope
   std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
   for (SymbolTableEntry *varEntry : varsToDestruct)
-    insertDestructorCall(varEntry->getDeclNode(), varEntry);
+    insertDestructorCall(varEntry->declNode, varEntry);
 
   return nullptr;
 }
@@ -1999,7 +1991,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
     ParamList errArgTypes;
     for (const auto &argType : argTypes)
-      errArgTypes.emplace_back(argType, false);
+      errArgTypes.push_back({argType, false});
 
     Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, node);
 
@@ -2030,11 +2022,11 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   }
 
   // If the callee is a procedure, return type bool
-  if (spiceFunc->isProcedure() || spiceFunc->getReturnType().is(TY_DYN))
+  if (spiceFunc->isProcedure() || spiceFunc->returnType.is(TY_DYN))
     return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
 
   // Retrieve the return type of the function
-  SymbolType returnType = spiceFunc->getReturnType();
+  SymbolType returnType = spiceFunc->returnType;
 
   if (returnType.is(TY_STRUCT)) {
     // Add struct scope to scope path
@@ -2145,17 +2137,17 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
   }
 
   // Set template types to the struct
-  std::vector<GenericType> genericTemplateTypes = spiceStruct->getTemplateTypes();
+  std::vector<GenericType> genericTemplateTypes = spiceStruct->templateTypes;
   std::vector<SymbolType> templateTypes;
   for (const auto &genericType : genericTemplateTypes)
-    templateTypes.emplace_back(genericType.getTypeChain());
+    templateTypes.emplace_back(genericType.typeChain);
   structType.setTemplateTypes(templateTypes);
 
   // Check if the number of fields matches
   SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + accessScopePrefix + structName);
   std::vector<SymbolType> fieldTypes;
   if (node->fieldLst()) { // Check if any fields are passed. Empty braces are also allowed
-    if (spiceStruct->getFieldTypes().size() != node->fieldLst()->args().size())
+    if (spiceStruct->fieldTypes.size() != node->fieldLst()->args().size())
       throw SemanticError(node->fieldLst(), NUMBER_OF_FIELDS_NOT_MATCHING,
                           "You've passed too less/many field values. Pass either none or all of them");
 

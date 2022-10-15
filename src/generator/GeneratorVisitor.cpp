@@ -212,11 +212,11 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
   // Add debug info
   if (cliOptions.generateDebugInfo) {
     // Get arg types
-    std::vector<std::pair<SymbolType, bool>> argSymbolTypes;
+    std::vector<Param> argSymbolTypes;
     for (const auto &argName : argNames) {
       SymbolTableEntry *argEntry = node->fctScope->lookup(argName);
       assert(argEntry != nullptr);
-      argSymbolTypes.emplace_back(argEntry->type, true);
+      argSymbolTypes.push_back({argEntry->type, true});
     }
     // Build spice function
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
@@ -339,17 +339,17 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         continue;
 
       // Do not generate this function if it is private and used by nobody
-      if (!spiceFunc.isUsed && !spiceFunc.getSpecifiers().isPublic())
+      if (!spiceFunc.isUsed && !spiceFunc.specifiers.isPublic())
         continue;
 
       std::vector<std::string> argNames;
       std::vector<llvm::Type *> argTypes;
 
       if (node->isMethod) { // Change to the struct scope
-        std::string structSignature = Struct::getSignature(spiceFunc.getThisType().getBaseType().getSubType(),
-                                                           spiceFunc.getThisType().getBaseType().getTemplateTypes());
+        std::string structSignature = Struct::getSignature(spiceFunc.thisType.getBaseType().getSubType(),
+                                                           spiceFunc.thisType.getBaseType().getTemplateTypes());
         // Get the LLVM type of the struct symbol
-        SymbolType thisSymbolType = spiceFunc.getThisType();
+        SymbolType thisSymbolType = spiceFunc.thisType;
         argNames.emplace_back(THIS_VARIABLE_NAME);
         llvm::Type *thisType = thisSymbolType.toLLVMType(context, fctParentScope)->getPointerTo();
         argTypes.push_back(thisType);
@@ -363,7 +363,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
       assert(currentScope);
 
       // Get return type
-      llvm::Type *returnType = spiceFunc.getReturnType().toLLVMType(context, currentScope);
+      llvm::Type *returnType = spiceFunc.returnType.toLLVMType(context, currentScope);
 
       // Arguments
       unsigned int currentArgIndex = 0;
@@ -534,18 +534,18 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         continue;
 
       // Do not generate this function if it is private and used by nobody
-      if (!spiceProc.isUsed && !spiceProc.getSpecifiers().isPublic())
+      if (!spiceProc.isUsed && !spiceProc.specifiers.isPublic())
         continue;
 
       std::vector<std::string> argNames;
       std::vector<llvm::Type *> argTypes;
 
       if (node->isMethod) { // Change to the struct scope
-        std::string structSignature = Struct::getSignature(spiceProc.getThisType().getBaseType().getSubType(),
-                                                           spiceProc.getThisType().getBaseType().getTemplateTypes());
+        std::string structSignature = Struct::getSignature(spiceProc.thisType.getBaseType().getSubType(),
+                                                           spiceProc.thisType.getBaseType().getTemplateTypes());
         // Get the LLVM type of the struct symbol
         argNames.emplace_back(THIS_VARIABLE_NAME);
-        llvm::Type *thisType = spiceProc.getThisType().toLLVMType(context, procParentScope)->getPointerTo();
+        llvm::Type *thisType = spiceProc.thisType.toLLVMType(context, procParentScope)->getPointerTo();
         argTypes.push_back(thisType);
         // Change scope to struct
         currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + structSignature);
@@ -710,7 +710,7 @@ std::any GeneratorVisitor::visitStructDef(StructDefNode *node) {
         continue;
 
       // Do not generate this struct if it is private and used by nobody
-      if (!spiceStruct.isUsed && !spiceStruct.getSpecifiers().isPublic())
+      if (!spiceStruct.isUsed && !spiceStruct.specifiers.isPublic())
         continue;
 
       // Change scope
@@ -2644,7 +2644,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
 
       // Get address of variable in memory
       if (lhsVarName.empty()) {
-        llvm::Type *thisType = spiceFunc->getThisType().toLLVMType(context, accessScope);
+        llvm::Type *thisType = spiceFunc->thisType.toLLVMType(context, accessScope);
         thisValuePtr = insertAlloca(thisType);
       } else {
         SymbolTableEntry *assignVarEntry = currentScope->lookup(lhsVarName);
@@ -2682,15 +2682,15 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     if (function.getName() == fctIdentifier) {
       functionFound = true;
       break;
-    } else if (function.getName() == spiceFunc->getName()) {
+    } else if (function.getName() == spiceFunc->name) {
       functionFound = true;
-      fctIdentifier = spiceFunc->getName();
+      fctIdentifier = spiceFunc->name;
       break;
     }
   }
 
   if (!functionFound) { // Not found => Declare function, which will be linked in
-    SymbolType returnSymbolType = spiceFunc->getReturnType();
+    SymbolType returnSymbolType = spiceFunc->returnType;
     std::vector<SymbolType> argSymbolTypes = spiceFunc->getParamTypes();
 
     llvm::Type *returnType =
@@ -2744,7 +2744,7 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
   // Create the function call
   llvm::Value *resultValue = builder.CreateCall(fct, argValues);
 
-  SymbolType returnSymbolType = spiceFunc->getReturnType();
+  SymbolType returnSymbolType = spiceFunc->returnType;
   if (returnSymbolType.isBaseType(TY_STRUCT)) {
     // Add struct scope to scope path
     std::string structSignature = Struct::getSignature(returnSymbolType.getSubType(), returnSymbolType.getTemplateTypes());
@@ -3139,9 +3139,9 @@ bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableE
       if (functionName == mangledName) {
         functionFound = true;
         break;
-      } else if (functionName == spiceDtor->getName()) {
+      } else if (functionName == spiceDtor->name) {
         functionFound = true;
-        mangledName = spiceDtor->getName();
+        mangledName = spiceDtor->name;
         break;
       }
     }
@@ -3357,8 +3357,8 @@ llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolT
 void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
   // Create function type
   std::vector<llvm::Metadata *> argTypes;
-  argTypes.push_back(getDITypeForSymbolType(spiceFunc->getReturnType())); // Add result type
-  for (const auto &argType : spiceFunc->getParamTypes())                  // Add arg types
+  argTypes.push_back(getDITypeForSymbolType(spiceFunc->returnType)); // Add result type
+  for (const auto &argType : spiceFunc->getParamTypes())             // Add arg types
     argTypes.push_back(getDITypeForSymbolType(argType));
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
 
@@ -3366,7 +3366,7 @@ void GeneratorVisitor::generateFunctionDebugInfo(llvm::Function *llvmFunction, c
   size_t lineNumber = spiceFunc->getDeclCodeLoc().line;
 
   llvm::DISubprogram *subprogram =
-      diBuilder->createFunction(unit, spiceFunc->getName(), spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
+      diBuilder->createFunction(unit, spiceFunc->name, spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
                                 llvm::DINode::FlagZero, llvm::DISubprogram::SPFlagDefinition);
 
   // Add debug info to LLVM function

@@ -1,13 +1,24 @@
-f<int> ack(int m, int n) {
-    if m == 0 { return n + 1; }
-    if n == 0 { return ack(m - 1, 1); }
-    return ack(m - 1, ack(m, n - 1));
+// See Issue #155 (fixed)
+
+type T dyn;
+
+public type Vector<T> struct {
+    T* contents
+    unsigned long capacity
+    unsigned long size
+    unsigned int itemSize
+}
+
+public f<int> Vector.get(long index) {
+    if (index <= size) { // size instead this.size
+        return 1;
+    }
+    return 0;
 }
 
 f<int> main() {
-    int baseM = 3;
-    int baseN = 12;
-    printf("Ackermann of base m=%d and n=%d: %d", baseM, baseN, ack(baseM, baseN));
+    dyn v = Vector<int>{};
+    int v0 = v.get(0l);
 }
 
 /*import "std/net/http" as http;

@@ -7,34 +7,6 @@
 #include <util/CommonUtil.h>
 
 /**
- * Retrieve the name of the current struct
- *
- * @return Struct name
- */
-std::string Struct::getName() const { return name; }
-
-/**
- * Retrieve the symbol specifiers of the current struct
- *
- * @return Symbol specifiers
- */
-SymbolSpecifiers Struct::getSpecifiers() const { return specifiers; }
-
-/**
- * Retrieve the field types of the current struct
- *
- * @return Vector of field types
- */
-std::vector<SymbolType> Struct::getFieldTypes() const { return fieldTypes; }
-
-/**
- * Retrieve the template types of the current struct
- *
- * @return Vector of template types
- */
-std::vector<GenericType> Struct::getTemplateTypes() const { return templateTypes; }
-
-/**
  * Mange the struct and return the mangled string
  *
  * @return Mangled string
@@ -145,27 +117,6 @@ bool Struct::hasSubstantiatedGenerics() const {
  * @return Fully substantiated or not
  */
 bool Struct::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
-
-/**
- * Set the associated symbol table
- *
- * @param symTab Symbol table
- */
-void Struct::setSymbolTable(SymbolTable *symTab) { this->symbolTable = symTab; }
-
-/**
- * Retrieve the declaration node of this struct
- *
- * @return Declaration node
- */
-const AstNode *Struct::getDeclNode() const { return declNode; }
-
-/**
- * Retrieve the declaration code location of this struct
- *
- * @return Declaration code location
- */
-const CodeLoc &Struct::getDeclCodeLoc() const { return declNode->codeLoc; }
 
 /**
  * Get the signature from the struct name and the concrete template types

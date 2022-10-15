@@ -6,12 +6,10 @@
 #include <string>
 #include <vector>
 
-#include <llvm/IR/Constant.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/DerivedTypes.h>
-#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
+
+#include "../../lib/json/json.hpp"
 
 // Forward declarations
 class SymbolTable;
@@ -38,21 +36,20 @@ enum SymbolSuperType {
   TY_IMPORT
 };
 
-union TypeChainElementData {
-  bool isStringStruct; // TY_STRING
-  int arraySize;       // TY_ARRAY
-};
-
 class SymbolType {
 public:
+  // Unions
+  union TypeChainElementData {
+    // Union fields
+    bool isStringStruct; // TY_STRING
+    int arraySize = 0;   // TY_ARRAY
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
+  };
+
   // Structs
   struct TypeChainElement {
-    SymbolSuperType superType;
-    std::string subType;
-    TypeChainElementData data;
-    std::vector<SymbolType> templateTypes;
-    llvm::Value *dynamicArraySize;
-
+    // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
       // Check super type, subtype and template types
       if (!equalsIgnoreArraySize(lhs, rhs))
@@ -67,28 +64,37 @@ public:
         return true;
       }
     }
+
+    // Public methods
     friend bool equalsIgnoreArraySize(const TypeChainElement &lhs, const TypeChainElement &rhs) {
       // Check super type, subtype and template types
       return lhs.superType == rhs.superType && lhs.subType == rhs.subType && lhs.templateTypes == rhs.templateTypes;
     }
+
+    // Struct fields
+    SymbolSuperType superType = TY_DYN;
+    std::string subType;
+    TypeChainElementData data;
+    std::vector<SymbolType> templateTypes;
+    llvm::Value *dynamicArraySize = nullptr;
+
+    // Json serializer/deserializer
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, data, templateTypes)
   };
 
   // Type defs
-  typedef std::stack<TypeChainElement> TypeChain;
+  using TypeChain = std::vector<TypeChainElement>;
 
   // Constructors
-  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {.arraySize = 0}, {}, nullptr}}) {}
-  explicit SymbolType(SymbolSuperType superType, const std::string &subType)
-      : typeChain({{superType, subType, {.arraySize = 0}, {}, nullptr}}) {}
-  explicit SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
-                      const std::vector<SymbolType> &templateTypes)
+  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}, {}, nullptr}}) {}
+  SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}, {}, nullptr}}) {}
+  SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
+             const std::vector<SymbolType> &templateTypes)
       : typeChain({{superType, subType, data, templateTypes, nullptr}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
   SymbolType() = default;
-  virtual ~SymbolType() = default;
 
   // Public methods
-  [[nodiscard]] TypeChain getTypeChain() const;
   SymbolType toPointer(const AstNode *node, llvm::Value *dynamicSize = nullptr) const;
   [[nodiscard]] SymbolType toArray(const AstNode *node, int size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
@@ -119,16 +125,18 @@ public:
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
 
   // Public members
+  TypeChain typeChain;
   bool isBaseTypeSigned = true;
 
 protected:
-  // Members
-  TypeChain typeChain;
-
   // Protected methods
   void setSubType(const std::string &newSubType);
 
 private:
   // Private methods
   [[nodiscard]] static std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName);
+
+public:
+  // Json serializer/deserializer
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolType, typeChain, isBaseTypeSigned);
 };

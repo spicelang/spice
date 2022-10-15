@@ -42,13 +42,6 @@ void SymbolTableEntry::updateState(SymbolState newState, const AstNode *node, bo
 }
 
 /**
- * Retrieve the AST node where the symbol was declared
- *
- * @return Declaration node
- */
-const AstNode *SymbolTableEntry::getDeclNode() const { return declNode; }
-
-/**
  * Retrieve the code location where the symbol was declared
  *
  * @return Declaration code location
