@@ -82,8 +82,7 @@ public:
   }
 
   SymbolType setEvaluatedSymbolType(const SymbolType &symbolType) {
-    size_t index = getSymbolTypeIndex();
-    symbolTypes.insert(symbolTypes.begin() + index, symbolType);
+    symbolTypes.insert(symbolTypes.begin() + static_cast<long>(getSymbolTypeIndex()), symbolType);
     return symbolType;
   }
 

@@ -40,6 +40,7 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, Symbol
 void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNode) {
   std::string name = "anon." + declNode->codeLoc.toString();
   insert(name, type, SymbolSpecifiers(type), DECLARED, declNode);
+  lookupAnonymous(declNode->codeLoc)->isUsed = true;
 }
 
 /**
@@ -753,15 +754,18 @@ std::vector<CompilerWarning> SymbolTable::collectWarnings() {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_FUNCTION, "The function '" + entry.name + "' is unused");
       } else if (entry.type.is(TY_PROCEDURE)) {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_STRUCT) || entry.type.isPointerOf(TY_STRUCT)) {
+      } else if (entry.type.is(TY_STRUCT) && entry.isGlobal) {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.name + "' is unused");
       } else if (entry.type.is(TY_IMPORT)) {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.name + "' is unused");
       } else {
         // Skip idx variables
-        if (entry.name != FOREACH_DEFAULT_IDX_VARIABLE_NAME)
+        if (entry.name == FOREACH_DEFAULT_IDX_VARIABLE_NAME)
           continue;
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.name + "' is unused");
+        if (scopeType == SCOPE_STRUCT)
+          warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_FIELD, "The field '" + entry.name + "' is unused");
+        else
+          warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.name + "' is unused");
       }
     }
   }

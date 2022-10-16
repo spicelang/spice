@@ -2096,11 +2096,16 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
   bool structIsImported = false;
   for (unsigned int i = 0; i < node->structNameFragments.size(); i++) {
     structName = node->structNameFragments[i];
+
+    SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
+    if (symbolEntry)
+      symbolEntry->isUsed = true;
+
     if (i < node->structNameFragments.size() - 1) {
-      SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
       if (!symbolEntry)
         throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT,
                             "Symbol '" + accessScopePrefix + structName + "' was used before defined");
+
       accessScopePrefix += structName + ".";
       std::string tableName = symbolEntry->type.is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
       accessScope = accessScope->lookupTable(tableName);

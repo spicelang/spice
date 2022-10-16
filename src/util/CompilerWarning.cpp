@@ -46,6 +46,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused struct";
   case UNUSED_IMPORT:
     return "Unused import";
+  case UNUSED_FIELD:
+    return "Unused field";
   case UNUSED_VARIABLE:
     return "Unused variable";
   case SINGLE_GENERIC_TYPE_CONDITION:
