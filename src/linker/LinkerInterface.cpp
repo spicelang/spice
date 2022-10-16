@@ -14,7 +14,7 @@ const char *const LINKER_EXECUTABLE_NAME = "gcc";
 /**
  * Start the linking process
  */
-void LinkerInterface::link() {
+void LinkerInterface::link() const {
   if (FileUtil::isCommandAvailable(std::string(LINKER_EXECUTABLE_NAME))) // GCOV_EXCL_START
     throw LinkerError(LINKER_NOT_FOUND, "Please check if you have installed " + std::string(LINKER_EXECUTABLE_NAME) +
                                             " and added it to the PATH variable"); // GCOV_EXCL_STOP
@@ -62,10 +62,3 @@ void LinkerInterface::addObjectFilePath(const std::string &objectFilePath) { obj
  * @param linkerFlag Linker flag
  */
 void LinkerInterface::addLinkerFlag(const std::string &flag) { linkerFlags.push_back(flag); }
-
-/**
- * Set executable output path
- *
- * @param path Output path
- */
-void LinkerInterface::setOutputPath(const std::string &path) { this->outputPath = path; }

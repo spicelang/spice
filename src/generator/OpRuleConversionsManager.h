@@ -4,6 +4,7 @@
 
 #include <utility>
 
+#include <dependency/GlobalResourceManager.h>
 #include <symbol/SymbolType.h>
 
 #include <llvm/IR/Value.h>
@@ -32,7 +33,7 @@ struct PtrAndValue {
 class OpRuleConversionsManager {
 public:
   // Constructors
-  explicit OpRuleConversionsManager(GeneratorVisitor *generator);
+  OpRuleConversionsManager(GlobalResourceManager &resourceManager, GeneratorVisitor *generator);
 
   // Public methods
   PtrAndValue getPlusEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
@@ -84,8 +85,8 @@ public:
 
 private:
   // Members
+  llvm::LLVMContext &context;
+  llvm::IRBuilder<> &builder;
   GeneratorVisitor *generator;
-  llvm::LLVMContext *context;
-  llvm::IRBuilder<> *builder;
   const StdFunctionManager *stdFunctionManager;
 };

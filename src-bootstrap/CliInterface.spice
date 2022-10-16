@@ -31,9 +31,9 @@ public type CliOptions struct {
 public type CliInterface struct {
     //CliApp cliApp
     CliOptions cliOptions
-    bool compile
-    bool install
-    bool run
+    public bool shouldCompile
+    public bool shouldInstall
+    public bool shouldRun
 }
 
 public p CliInterface.ctor() {
@@ -107,24 +107,6 @@ p CliInterface.addInstallSubcommand() {
 p CliInterface.addUninstallSubcommand() {
     // Create sub-command itself
     // ToDo: Extend
-}
-
-/**
- * Checks if compiling is necessary
- *
- * @return Compile or not
- */
-f<bool> CliInterface.shouldCompile() {
-    return this.compile;
-}
-
-/**
- * Checks if running is necessary
- *
- * @return Run or not
- */
-f<bool> CliInterface.shoudRun() {
-    return this.run;
 }
 
 /**

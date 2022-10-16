@@ -11,15 +11,13 @@
 
 #include "TestUtil.h"
 #include <cli/CliInterface.h>
-#include <dependency/RuntimeModuleManager.h>
+#include <dependency/GlobalResourceManager.h>
 #include <dependency/SourceFile.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
-#include <linker/LinkerInterface.h>
 #include <symbol/SymbolTable.h>
 #include <util/FileUtil.h>
-#include <util/ThreadFactory.h>
 
 void execTestCase(const TestCase &testCase) {
   // Check if test is disabled
@@ -29,35 +27,32 @@ void execTestCase(const TestCase &testCase) {
   // Create fake cli options
   std::string sourceFilePath = testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SOURCE;
   llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-  CliOptions options = {/* mainSourceFile= */ sourceFilePath,
-                        /* targetTriple= */ targetTriple.getTriple(),
-                        /* targetArch= */ std::string(targetTriple.getArchName()),
-                        /* targetVendor= */ std::string(targetTriple.getVendorName()),
-                        /* targetOs= */ std::string(targetTriple.getOSName()),
-                        /* outputDir= */ ".",
-                        /* outputPath= */ ".",
-                        /* printDebugOutput= */ false,
-                        /* dumpCST= */ false,
-                        /* dumpAST= */ false,
-                        /* dumpIR= */ false,
-                        /* dumpAssembly= */ false,
-                        /* dumpSymbolTables= */ false,
-                        /* optLevel= */ 0,
-                        /* generateDebugInfo= */ false,
-                        /* disableVerifier= */ false,
-                        /* testMode= */ true};
+  CliOptions cliOptions = {/* mainSourceFile= */ sourceFilePath,
+                           /* targetTriple= */ targetTriple.getTriple(),
+                           /* targetArch= */ std::string(targetTriple.getArchName()),
+                           /* targetVendor= */ std::string(targetTriple.getVendorName()),
+                           /* targetOs= */ std::string(targetTriple.getOSName()),
+                           /* cacheDir= */ "./cache",
+                           /* outputDir= */ ".",
+                           /* outputPath= */ ".",
+                           /* ignoreCache */ true,
+                           /* printDebugOutput= */ false,
+                           /* dumpCST= */ false,
+                           /* dumpAST= */ false,
+                           /* dumpIR= */ false,
+                           /* dumpAssembly= */ false,
+                           /* dumpSymbolTables= */ false,
+                           /* optLevel= */ 0,
+                           /* generateDebugInfo= */ false,
+                           /* disableVerifier= */ false,
+                           /* testMode= */ true};
 
-  // Prepare resources
-  llvm::LLVMContext context;
-  llvm::IRBuilder<> builder(context);
-  ThreadFactory threadFactory;
-  LinkerInterface linker = LinkerInterface(threadFactory, options);
-  RuntimeModuleManager runtimeModuleManager;
+  // Instantiate GlobalResourceManager
+  GlobalResourceManager resourceManager(cliOptions);
 
   try {
     // Create source file instance for main source file
-    SourceFile mainSourceFile = SourceFile(&context, &builder, threadFactory, runtimeModuleManager, linker, options, nullptr,
-                                           "root", options.mainSourceFile, false);
+    SourceFile mainSourceFile = SourceFile(resourceManager, nullptr, "root", cliOptions.mainSourceFile, false);
 
     // Check CST
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_PARSE_TREE, [&]() {
@@ -106,7 +101,7 @@ void execTestCase(const TestCase &testCase) {
       TestUtil::checkRefMatch(
           testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_OPT_IR[i - 1],
           [&]() {
-            options.optLevel = i;
+            cliOptions.optLevel = i;
             mainSourceFile.optimize();
             return mainSourceFile.compilerOutput.irOptString;
           },
@@ -130,20 +125,20 @@ void execTestCase(const TestCase &testCase) {
     // Check if the execution output matches the expected output
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_EXECUTION_OUTPUT, [&]() {
       // Prepare linker
-      linker.setOutputPath(TestUtil::getDefaultExecutableName());
+      resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
 
       // Parse linker flags
       std::string linkerFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_NAME_LINKER_FLAGS;
       if (FileUtil::fileExists(linkerFlagsFile)) {
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
-          linker.addLinkerFlag(linkerFlag);
+          resourceManager.linker.addLinkerFlag(linkerFlag);
       }
 
       // Emit object file
       mainSourceFile.emitObjectFile();
 
       // Run linker
-      linker.link();
+      resourceManager.linker.link();
 
       // Execute binary
       ExecResult result = FileUtil::exec(TestUtil::getDefaultExecutableName());

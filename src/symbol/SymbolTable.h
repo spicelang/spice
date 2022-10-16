@@ -99,7 +99,7 @@ public:
 
   // Public members
   SymbolTable *parent;
-  const ScopeType scopeType;
+  ScopeType scopeType;
   bool isSourceFileRootScope = false;
   bool isShadowTable = false;
   bool isCapturingRequired = false;

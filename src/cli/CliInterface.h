@@ -15,8 +15,10 @@ struct CliOptions {
   std::string targetArch;
   std::string targetVendor;
   std::string targetOs;
+  std::string cacheDir;   // Where the cache files go. Should always be a temp directory
   std::string outputDir;  // Where the object files go. Should always be a temp directory
   std::string outputPath; // Where the output binary goes.
+  bool ignoreCache = false;
   bool printDebugOutput = false;
   bool dumpCST = false;
   bool dumpAST = false;
@@ -42,10 +44,13 @@ public:
   int parse(int argc, char **argv);
   void validate() const;
   void enrich();
-  CliOptions &getOptions();
-  [[nodiscard]] bool shouldCompile() const;
-  [[nodiscard]] bool shouldRun() const;
   void runBinary() const;
+
+  // Public members
+  CliOptions cliOptions;
+  bool shouldCompile = false;
+  bool shouldInstall = false;
+  bool shouldRun = false;
 
 private:
   // Private methods
@@ -53,11 +58,8 @@ private:
   void addRunSubcommand();
   void addInstallSubcommand();
   void addUninstallSubcommand();
+  void addCompileSubcommandOptions(CLI::App *subCmd);
 
   // Members
   CLI::App app = CLI::App{"Spice Programming Language", "Spice"};
-  CliOptions cliOptions{};
-  bool compile = false;
-  bool install = false;
-  bool run = false;
 };

@@ -26,13 +26,10 @@ const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yi
 
 // Forward declarations
 class OpRuleManager;
-struct CliOptions;
-class ThreadFactory;
-class LinkerInterface;
+class GlobalResourceManager;
 class SymbolTable;
 class SymbolTableEntry;
 class SourceFile;
-struct RuntimeModuleManager;
 
 /**
  * Visitor for analyzing a source file.
@@ -48,8 +45,7 @@ struct RuntimeModuleManager;
 class AnalyzerVisitor : public AstVisitor {
 public:
   // Constructors
-  explicit AnalyzerVisitor(const llvm::LLVMContext *context, const llvm::IRBuilder<> *builder, SourceFile &sourceFile,
-                           CliOptions &options, bool requiresMainFct, bool stdFile);
+  explicit AnalyzerVisitor(GlobalResourceManager &resourceManager, SourceFile &sourceFile, bool requiresMainFct, bool stdFile);
 
   // Friend classes
   friend class OpRuleManager;
@@ -110,8 +106,7 @@ public:
 
 private:
   // Members
-  const llvm::LLVMContext *context;
-  const llvm::IRBuilder<> *builder;
+  const GlobalResourceManager &resourceManager;
   std::unique_ptr<OpRuleManager> opRuleManager;
   SourceFile &sourceFile;
   bool requiresMainFct = true;

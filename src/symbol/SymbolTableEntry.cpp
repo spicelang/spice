@@ -42,13 +42,6 @@ void SymbolTableEntry::updateState(SymbolState newState, const AstNode *node, bo
 }
 
 /**
- * Retrieve the AST node where the symbol was declared
- *
- * @return Declaration node
- */
-const AstNode *SymbolTableEntry::getDeclNode() const { return declNode; }
-
-/**
  * Retrieve the code location where the symbol was declared
  *
  * @return Declaration code location
@@ -108,18 +101,6 @@ void SymbolTableEntry::pushAddress(llvm::Value *address) {
  * Pop an address from the stack. Can be called when leaving a nested function
  */
 void SymbolTableEntry::popAddress() { memAddress.pop(); }
-
-/**
- * Retrieve number of references to the symbol
- *
- * @return Ref count
- */
-// size_t SymbolTableEntry::getRefCount() const { return refCount; }
-
-/**
- * Increase the number of references to the symbol
- */
-// void SymbolTableEntry::increaseRefCount() { refCount++; }
 
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.

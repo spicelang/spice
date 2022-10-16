@@ -1,9 +1,0 @@
-/**
- * Returns the substring of an input string from startPos to endPos
- *
- * @return Substring
- */
-public f<string> getSubstring(string input, int startPos, int endPos) {
-
-    return "";
-}

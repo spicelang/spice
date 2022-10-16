@@ -7,15 +7,21 @@
 
 #include <symbol/SymbolType.h>
 
+#include "../../lib/json/json.hpp"
+
 class GenericType : public SymbolType {
 public:
   // Constructors
   explicit GenericType(const SymbolType &type);
   explicit GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions);
   explicit GenericType(const std::string &name);
+  GenericType() = default;
 
   // Public methods
   [[nodiscard]] bool checkConditionsOf(const SymbolType &symbolType) const;
+
+  // Json serializer/deserializer
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(GenericType, typeChain, isBaseTypeSigned, typeConditions)
 
 private:
   // Members

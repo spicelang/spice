@@ -29,11 +29,11 @@ void CliInterface::createInterface() {
   addUninstallSubcommand();
 
   app.final_callback([&]() {
-    if (!compile)
+    if (!shouldCompile)
       return;
 
     // If the binary should be installed, set the output path to the Spice bin directory
-    if (install) {
+    if (shouldInstall) {
       std::string installPath = FileUtil::getSpiceBinDir();
       FileUtil::createDirs(installPath);
       installPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
@@ -57,18 +57,24 @@ void CliInterface::createInterface() {
     if (cliOptions.mainSourceFile.find("/\\") == std::string::npos)
       cliOptions.mainSourceFile = "./" + cliOptions.mainSourceFile;
 
-    // Set outputDir to <system-tmp-dir>/spice-output
+    // Get temporary directory of system
+    std::string tmpDir = std::filesystem::temp_directory_path().string();
+    if (tmpDir.back() != '/' && tmpDir.back() != '\\')
+      tmpDir += FileUtil::DIR_SEPARATOR;
+
+    // Set cacheDir to <system-tmp-dir>/spice/cache
+    std::stringstream cacheDir;
+    cacheDir << tmpDir << "spice" << FileUtil::DIR_SEPARATOR << "cache";
+    cliOptions.outputDir = cacheDir.str();
+
+    // Set outputDir to <system-tmp-dir>/spice/objects
+    std::stringstream outputDir;
     uint64_t millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    std::string outputDir = std::filesystem::temp_directory_path().string();
-    if (outputDir.back() != '/' && outputDir.back() != '\\')
-      outputDir += FileUtil::DIR_SEPARATOR;
-    outputDir += "spice-output";
-    outputDir += FileUtil::DIR_SEPARATOR;
-    outputDir += std::to_string(millis);
-    cliOptions.outputDir = outputDir;
+    outputDir << tmpDir << "spice" << FileUtil::DIR_SEPARATOR << "output" << FileUtil::DIR_SEPARATOR << std::to_string(millis);
+    cliOptions.outputDir = outputDir.str();
 
     // Set output path to output dir if running is enabled
-    if (run) {
+    if (shouldRun) {
       cliOptions.outputPath = cliOptions.outputDir + FileUtil::DIR_SEPARATOR;
       cliOptions.outputPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
     }
@@ -136,63 +142,29 @@ void CliInterface::addBuildSubcommand() {
   subCmd->ignore_case();
   subCmd->configurable();
   subCmd->callback([&]() {
-    compile = true; // Requires the source file to be compiled
+    shouldCompile = true; // Requires the source file to be compiled
   });
 
-  // --debug-output
-  subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
-  // --dump-cst
-  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpCST, "Dump CST as serialized string and SVG image");
-  // --dump-ast
-  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-symtab
-  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
-  // --dump-assembly
-  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
+  addCompileSubcommandOptions(subCmd);
 
   // --target-triple
   subCmd->add_option<std::string>("--target,-t,--target-triple", cliOptions.targetTriple,
                                   "Target triple for the emitted executable (for cross-compiling)");
-
   // --target-arch
   subCmd->add_option<std::string>("--target-arch", cliOptions.targetArch,
                                   "Target arch for emitted executable (for cross-compiling)");
-
   // --target-vendor
   subCmd->add_option<std::string>("--target-vendor", cliOptions.targetVendor,
                                   "Target vendor for emitted executable (for cross-compiling)");
-
   // --target-os
   subCmd->add_option<std::string>("--target-os", cliOptions.targetOs, "Target os for emitted executable (for cross-compiling)");
 
   // --output
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
-
-  // Opt levels
-  subCmd->add_flag_callback(
-      "-O0", [&]() { cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
-  subCmd->add_flag_callback(
-      "-O1", [&]() { cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
-  subCmd->add_flag_callback(
-      "-O2", [&]() { cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
-  subCmd->add_flag_callback(
-      "-O3", [&]() { cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
-  subCmd->add_flag_callback(
-      "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
-  subCmd->add_flag_callback(
-      "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
-
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
-
-  // Source file
-  subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
-      ->check(CLI::ExistingFile)
-      ->required();
 }
 
 /**
@@ -204,48 +176,17 @@ void CliInterface::addRunSubcommand() {
   subCmd->alias("r");
   subCmd->ignore_case();
   subCmd->callback([&]() {
-    compile = run = true; // Requires the source file to be compiled
+    shouldCompile = shouldRun = true; // Requires the source file to be compiled
   });
 
-  // --debug-output
-  subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
-  // --dump-cst
-  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpCST, "Dump CST as serialized string and SVG image");
-  // --dump-ast
-  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-symtab
-  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
-  // --dump-assembly
-  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
+  addCompileSubcommandOptions(subCmd);
 
   // --output
   subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
-
-  // Opt levels
-  subCmd->add_flag_callback(
-      "-O0", [&]() { cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
-  subCmd->add_flag_callback(
-      "-O1", [&]() { cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
-  subCmd->add_flag_callback(
-      "-O2", [&]() { cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
-  subCmd->add_flag_callback(
-      "-O3", [&]() { cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
-  subCmd->add_flag_callback(
-      "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
-  subCmd->add_flag_callback(
-      "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
-
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
-
-  // Source file
-  subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
-      ->check(CLI::ExistingFile)
-      ->required();
 }
 
 /**
@@ -258,43 +199,10 @@ void CliInterface::addInstallSubcommand() {
   subCmd->alias("i");
   subCmd->ignore_case();
   subCmd->callback([&]() {
-    compile = install = true; // Requires the source file to be compiled
+    shouldCompile = shouldInstall = true; // Requires the source file to be compiled
   });
 
-  // --debug-output
-  subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
-  // --dump-cst
-  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpCST, "Dump CST as serialized string and SVG image");
-  // --dump-ast
-  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-symtab
-  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
-  // --dump-assembly
-  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
-
-  // --output
-  subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
-
-  // Opt levels
-  subCmd->add_flag_callback(
-      "-O0", [&]() { cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
-  subCmd->add_flag_callback(
-      "-O1", [&]() { cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
-  subCmd->add_flag_callback(
-      "-O2", [&]() { cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
-  subCmd->add_flag_callback(
-      "-O3", [&]() { cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
-  subCmd->add_flag_callback(
-      "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
-  subCmd->add_flag_callback(
-      "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
-
-  // Source file
-  subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
-      ->check(CLI::ExistingFile)
-      ->required();
+  addCompileSubcommandOptions(subCmd);
 }
 
 /**
@@ -325,26 +233,42 @@ void CliInterface::addUninstallSubcommand() {
       ->required();
 }
 
-/**
- * Get cli option struct
- *
- * @return Cli options
- */
-CliOptions &CliInterface::getOptions() { return cliOptions; }
+void CliInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
+  // --debug-output
+  subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
+  // --dump-cst
+  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpCST, "Dump CST as serialized string and SVG image");
+  // --dump-ast
+  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
+  // --dump-symtab
+  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  // --dump-assembly
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
 
-/**
- * Checks if compiling is necessary
- *
- * @return Compile or not
- */
-bool CliInterface::shouldCompile() const { return compile; }
+  // --ignore-cache
+  subCmd->add_option<bool>("--ignore-cache", cliOptions.ignoreCache, "Force re-compilation of all source files");
 
-/**
- * Checks if running is necessary
- *
- * @return Run or not
- */
-bool CliInterface::shouldRun() const { return run; }
+  // Opt levels
+  subCmd->add_flag_callback(
+      "-O0", [&]() { cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
+  subCmd->add_flag_callback(
+      "-O1", [&]() { cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
+  subCmd->add_flag_callback(
+      "-O2", [&]() { cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
+  subCmd->add_flag_callback(
+      "-O3", [&]() { cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
+  subCmd->add_flag_callback(
+      "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
+  subCmd->add_flag_callback(
+      "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
+
+  // Source file
+  subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
+      ->check(CLI::ExistingFile)
+      ->required();
+}
 
 /**
  * Start the parsing process

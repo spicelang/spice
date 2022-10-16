@@ -36,7 +36,7 @@ public f<string> toLower(string text) {
     const char min = (char) 65;
     const char max = (char) 90;
 
-    foreach char c : text {<
+    foreach char c : text {
         if c >= min && c <= max {
             c -= shiftOffset;
         }

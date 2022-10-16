@@ -12,24 +12,17 @@
 #include <symbol/SymbolTableEntry.h>
 
 /**
- * Retrieve the type chain of the symbol type
- *
- * @return Type chain
- */
-SymbolType::TypeChain SymbolType::getTypeChain() const { return typeChain; }
-
-/**
  * Get the pointer type of the current type as a new type
  *
  * @return Pointer type of the current type
  */
 SymbolType SymbolType::toPointer(const AstNode *node, llvm::Value *dynamicSize) const {
   // Do not allow pointers of dyn
-  if (typeChain.top().superType == TY_DYN)
+  if (typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_PTR, "", {.arraySize = 0}, {}, dynamicSize});
+  newTypeChain.push_back({TY_PTR, "", {.arraySize = 0}, {}, dynamicSize});
   return SymbolType(newTypeChain);
 }
 
@@ -40,11 +33,11 @@ SymbolType SymbolType::toPointer(const AstNode *node, llvm::Value *dynamicSize) 
  */
 SymbolType SymbolType::toArray(const AstNode *node, int size) const {
   // Do not allow arrays of dyn
-  if (typeChain.top().superType == TY_DYN)
+  if (typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push({TY_ARRAY, "", {.arraySize = size}, {}, nullptr});
+  newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}, nullptr});
   return SymbolType(newTypeChain);
 }
 
@@ -54,12 +47,12 @@ SymbolType SymbolType::toArray(const AstNode *node, int size) const {
  * @return Base type
  */
 SymbolType SymbolType::getContainedTy() const {
-  if (typeChain.top().superType == TY_STRING)
+  if (typeChain.back().superType == TY_STRING)
     return SymbolType(TY_CHAR);
   if (typeChain.size() < 2)                                                                                     // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get contained type of type with type chain < 2"); // GCOV_EXCL_LINE
   TypeChain newTypeChain = typeChain;
-  newTypeChain.pop();
+  newTypeChain.pop_back();
   return SymbolType(newTypeChain);
 }
 
@@ -86,15 +79,15 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   TypeChain chainCopy = typeChain;
   // Reverse type chain
   TypeChain tmp;
-  while (chainCopy.top().superType == TY_PTR || chainCopy.top().superType == TY_ARRAY) {
-    tmp.push(chainCopy.top());
-    chainCopy.pop();
+  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_ARRAY) {
+    tmp.push_back(chainCopy.back());
+    chainCopy.pop_back();
   }
   chainCopy = newBaseType.typeChain; // Replace base type
   // Restore the other chain elements
   for (unsigned int i = 0; i < tmp.size(); i++) {
-    chainCopy.push(tmp.top());
-    tmp.pop();
+    chainCopy.push_back(tmp.back());
+    tmp.pop_back();
   }
   // Return the new chain as a symbol type
   return SymbolType(chainCopy);
@@ -126,7 +119,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
     return llvm::Type::getInt8Ty(context);
 
   if (is(TY_STRING)) {
-    if (typeChain.top().data.isStringStruct) {
+    if (typeChain.back().data.isStringStruct) {
       return StdFunctionManager::getStringStructType(context);
     } else {
       return llvm::Type::getInt8PtrTy(context);
@@ -240,10 +233,10 @@ bool SymbolType::isBaseType(SymbolSuperType superType) const {
   // Copy the stack to not destroy the present one
   TypeChain chainCopy = typeChain;
   // Unwrap the chain until the base type can be retrieved
-  while (chainCopy.top().superType == TY_PTR || chainCopy.top().superType == TY_ARRAY)
-    chainCopy.pop();
+  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_ARRAY)
+    chainCopy.pop_back();
   // Check if it is of the given superType and subType
-  return chainCopy.top().superType == superType;
+  return chainCopy.back().superType == superType;
 }
 
 /**
@@ -262,21 +255,21 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
  *
  * @return String struct or not
  */
-bool SymbolType::isStringStruct() const { return getSuperType() == TY_STRING && typeChain.top().data.isStringStruct; }
+bool SymbolType::isStringStruct() const { return getSuperType() == TY_STRING && typeChain.back().data.isStringStruct; }
 
 /**
  * Retrieve the super type of the current type
  *
  * @return Super type
  */
-SymbolSuperType SymbolType::getSuperType() const { return typeChain.top().superType; }
+SymbolSuperType SymbolType::getSuperType() const { return typeChain.back().superType; }
 
 /**
  * Retrieve the sub type of the current type
  *
  * @return Sub type
  */
-std::string SymbolType::getSubType() const { return typeChain.top().subType; }
+std::string SymbolType::getSubType() const { return typeChain.back().subType; }
 
 /**
  * Retrieve the base type of the current type. E.g. int of int[]*[]**
@@ -287,8 +280,8 @@ SymbolType SymbolType::getBaseType() const {
   // Copy the stack to not destroy the present one
   TypeChain chainCopy = typeChain;
   // Unwrap the chain until the base type can be retrieved
-  while (chainCopy.top().superType == TY_PTR || chainCopy.top().superType == TY_ARRAY)
-    chainCopy.pop();
+  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_ARRAY)
+    chainCopy.pop_back();
   // Check if it is of the given superType and subType
   return SymbolType(chainCopy);
 }
@@ -297,7 +290,7 @@ SymbolType SymbolType::getBaseType() const {
  * Set the list of templates types
  */
 void SymbolType::setTemplateTypes(std::vector<SymbolType> templateTypes) {
-  typeChain.top().templateTypes = std::move(templateTypes);
+  typeChain.back().templateTypes = std::move(templateTypes);
 }
 
 /**
@@ -305,7 +298,7 @@ void SymbolType::setTemplateTypes(std::vector<SymbolType> templateTypes) {
  *
  * @return Template types
  */
-std::vector<SymbolType> SymbolType::getTemplateTypes() const { return typeChain.top().templateTypes; }
+std::vector<SymbolType> SymbolType::getTemplateTypes() const { return typeChain.back().templateTypes; }
 
 /**
  * Get the name of the symbol type as a string
@@ -317,9 +310,9 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const {
   std::string name;
   TypeChain chain = typeChain;
   for (int i = 0; i < typeChain.size(); i++) {
-    TypeChainElement chainElement = chain.top();
+    TypeChainElement chainElement = chain.back();
     name.insert(0, getNameFromChainElement(chainElement, withSize, mangledName));
-    chain.pop();
+    chain.pop_back();
   }
   return name;
 }
@@ -333,10 +326,10 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const {
  * @return Size
  */
 int SymbolType::getArraySize() const {
-  if (typeChain.top().superType != TY_ARRAY)                                                // GCOV_EXCL_LINE
+  if (typeChain.back().superType != TY_ARRAY)                                               // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
 
-  return typeChain.top().data.arraySize;
+  return typeChain.back().data.arraySize;
 }
 
 /**
@@ -345,12 +338,12 @@ int SymbolType::getArraySize() const {
  * @return Dynamic array size
  */
 llvm::Value *SymbolType::getDynamicArraySize() const {
-  if (typeChain.top().superType != TY_PTR)                                                           // GCOV_EXCL_LINE
+  if (typeChain.back().superType != TY_PTR)                                                          // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get dynamic sized of non-array type"); // GCOV_EXCL_LINE
-  if (typeChain.top().data.arraySize > 0)                                                            // GCOV_EXCL_LINE
+  if (typeChain.back().data.arraySize > 0)                                                           // GCOV_EXCL_LINE
     throw std::runtime_error("Cannot retrieve dynamic size of non-dynamically-sized array");         // GCOV_EXCL_LINE
 
-  return typeChain.top().dynamicArraySize;
+  return typeChain.back().dynamicArraySize;
 }
 
 bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
@@ -371,10 +364,10 @@ bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs) {
 
   // Compare stack elements
   for (int i = 0; i < lhs.typeChain.size(); i++) {
-    if (!equalsIgnoreArraySize(lhs.typeChain.top(), rhs.typeChain.top()))
+    if (!equalsIgnoreArraySize(lhs.typeChain.back(), rhs.typeChain.back()))
       return false;
-    lhs.typeChain.pop();
-    rhs.typeChain.pop();
+    lhs.typeChain.pop_back();
+    rhs.typeChain.pop_back();
   }
 
   return true;
@@ -385,7 +378,7 @@ bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs) {
  *
  * @param newSubType New sub type
  */
-void SymbolType::setSubType(const std::string &newSubType) { typeChain.top().subType = newSubType; }
+void SymbolType::setSubType(const std::string &newSubType) { typeChain.back().subType = newSubType; }
 
 /**
  * Get the name of a type chain element
