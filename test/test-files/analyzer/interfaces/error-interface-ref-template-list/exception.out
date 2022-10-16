@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/analyzer/interfaces/error-interface-ref-template-list/source.spice:2:20:
+Unknown datatype: Unknown symbol 'Visitor'
+
+2  f<bool> accept(Visitor*)
+                  ^^^^^^^

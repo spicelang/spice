@@ -238,11 +238,11 @@ public:
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
+  [[nodiscard]] TypeLstNode *interfaceTypeLst() const { return getChild<TypeLstNode>(isGeneric ? 1 : 0); }
 
   // Public members
   std::string structName;
-  std::vector<std::string> interfaceNames;
   bool isGeneric = false;
   bool hasInterfaces = false;
   Struct *spiceStruct = nullptr;

@@ -525,6 +525,18 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
     }
   }
 
+  // Get implemented interfaces
+  std::vector<Interface *> implementedInterfaces;
+  if (node->hasInterfaces) {
+    for (const auto &dataType : node->interfaceTypeLst()->dataTypes()) {
+      auto interfaceType = any_cast<SymbolType>(visit(dataType));
+      if (!interfaceType.is(TY_INTERFACE))
+        throw SemanticError(dataType, EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName());
+      // Interface *interface = rootScope->lookup();
+      // assert(interface != nullptr);
+    }
+  }
+
   // Build struct specifiers
   SymbolType symbolType = SymbolType(TY_STRUCT, node->structName, {}, templateTypes);
   auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
@@ -2312,58 +2324,85 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Get type name in format: a.b.c and retrieve the scope in parallel
   std::string accessScopePrefix;
-  std::string identifier;
-  bool structIsImported = false;
+  std::string typeName;
+  bool isImported = false;
   for (unsigned int i = 0; i < node->typeNameFragments.size(); i++) {
-    identifier = node->typeNameFragments[i];
+    typeName = node->typeNameFragments[i];
     if (i < node->typeNameFragments.size() - 1)
-      accessScopePrefix += identifier + ".";
-    entry = accessScope->lookup(identifier);
+      accessScopePrefix += typeName + ".";
+    entry = accessScope->lookup(typeName);
     if (!entry)
-      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown symbol '" + identifier + "'");
-    if (!entry->type.isOneOf({TY_STRUCT, TY_ENUM, TY_IMPORT}))
+      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown symbol '" + typeName + "'");
+    if (!entry->type.isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_IMPORT}))
       throw SemanticError(node, EXPECTED_TYPE, "Expected type, but got " + entry->type.getName());
 
-    std::string tableName = identifier;
+    std::string tableName = typeName;
     if (entry->type.is(TY_STRUCT)) {
-      tableName = STRUCT_SCOPE_PREFIX + identifier;
+      tableName = STRUCT_SCOPE_PREFIX + typeName;
+    } else if (entry->type.is(TY_INTERFACE)) {
+      tableName = INTERFACE_SCOPE_PREFIX + typeName;
     } else if (entry->type.is(TY_ENUM)) {
-      tableName = ENUM_SCOPE_PREFIX + identifier;
+      tableName = ENUM_SCOPE_PREFIX + typeName;
     }
     accessScope = accessScope->lookupTable(tableName);
     assert(accessScope != nullptr);
     if (accessScope->isImported(currentScope))
-      structIsImported = true;
+      isImported = true;
   }
 
   // Enums can early-return
   if (entry->type.is(TY_ENUM))
     return SymbolType(TY_INT);
 
-  // Get the concrete template types
-  std::vector<SymbolType> concreteTemplateTypes;
-  if (node->templateTypeLst()) {
-    for (const auto &dataType : node->templateTypeLst()->dataTypes())
-      concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
+  if (entry->type.is(TY_STRUCT)) {
+    // Get the concrete template types
+    std::vector<SymbolType> concreteTemplateTypes;
+    if (node->templateTypeLst()) {
+      for (const auto &dataType : node->templateTypeLst()->dataTypes())
+        concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
+    }
+
+    // Set the struct instance to used
+    Struct *spiceStruct = accessScope->matchStruct(nullptr, typeName, concreteTemplateTypes, node);
+    if (spiceStruct)
+      spiceStruct->isUsed = true;
+
+    if (isImported) { // Imported struct
+      SymbolType symbolType = initExtStruct(accessScope, accessScopePrefix, typeName, concreteTemplateTypes, node);
+      return node->setEvaluatedSymbolType(symbolType);
+    }
+
+    // Check if struct was declared
+    SymbolTableEntry *structSymbol = accessScope->lookup(typeName);
+    if (!structSymbol)
+      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + typeName + "'");
+    if (!structSymbol->type.is(TY_STRUCT))
+      throw SemanticError(node, EXPECTED_STRUCT_TYPE, "Expected struct type, but got " + structSymbol->type.getName());
+    structSymbol->isUsed = true;
+
+    return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, typeName, {}, concreteTemplateTypes));
+  } else if (entry->type.is(TY_INTERFACE)) {
+    // Check if template types are given
+    if (node->templateTypeLst())
+      throw SemanticError(node->templateTypeLst(), INTERFACE_WITH_TEMPLATE_LIST,
+                          "Referencing interfaces with template lists is not allowed");
+
+    // Set the interface instance to used
+    Interface *spiceInterface = accessScope->lookupInterface(typeName);
+    if (spiceInterface)
+      spiceInterface->isUsed = true;
+
+    // Check if interface was declared
+    SymbolTableEntry *interfaceSymbol = accessScope->lookup(typeName);
+    if (!interfaceSymbol)
+      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + typeName + "'");
+    if (!interfaceSymbol->type.is(TY_INTERFACE))
+      throw SemanticError(node, EXPECTED_INTERFACE_TYPE, "Expected interface type, but got " + interfaceSymbol->type.getName());
+    interfaceSymbol->isUsed = true;
+
+    return node->setEvaluatedSymbolType(SymbolType(TY_INTERFACE, typeName, {}, {}));
   }
-
-  // Set the struct instance to used
-  Struct *spiceStruct = accessScope->matchStruct(nullptr, identifier, concreteTemplateTypes, node);
-  if (spiceStruct)
-    spiceStruct->isUsed = true;
-
-  if (structIsImported) { // Imported struct
-    SymbolType symbolType = initExtStruct(accessScope, accessScopePrefix, identifier, concreteTemplateTypes, node);
-    return node->setEvaluatedSymbolType(symbolType);
-  }
-
-  // Check if struct was declared
-  SymbolTableEntry *structSymbol = accessScope->lookup(identifier);
-  if (!structSymbol)
-    throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + identifier + "'");
-  structSymbol->isUsed = true;
-
-  return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, identifier, {.arraySize = 0}, concreteTemplateTypes));
+  throw std::runtime_error("Base type fall-through");
 }
 
 SymbolType AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {

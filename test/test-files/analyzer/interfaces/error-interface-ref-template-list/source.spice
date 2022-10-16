@@ -1,0 +1,9 @@
+type Visitable interface {
+    f<bool> accept(Visitor*)
+}
+
+type AstNode struct : Visitable<Test> {
+    int f1
+}
+
+f<int> main() {}

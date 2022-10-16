@@ -572,15 +572,26 @@ void SymbolTable::insertStruct(const Struct &s) {
 }
 
 /**
+ * Retrieve an interface instance by its name
+ *
+ * @param interfaceName Name of the interface
+ * @return Interface object
+ */
+Interface *SymbolTable::lookupInterface(const std::string &interfaceName) {
+  if (!interfaces.contains(interfaceName))
+    return nullptr;
+  return &interfaces.at(interfaceName);
+}
+
+/**
  * Insert an interface object into this symbol table scope
  *
  * @param i Interface object
  */
 void SymbolTable::insertInterface(const Interface &i) {
-  std::string codeLocStr = i.declNode->codeLoc.toString();
   // Add interface to interface list
-  assert(!interfaces.contains(i.declNode->codeLoc.toString()));
-  interfaces.insert({codeLocStr, i});
+  assert(!interfaces.contains(i.name));
+  interfaces.insert({i.name, i});
   // Add symbol table entry for the interface
   insert(i.name, SymbolType(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
 }

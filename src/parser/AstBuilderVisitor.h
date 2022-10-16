@@ -44,7 +44,6 @@ public:
   std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override;
   std::any visitParamLst(SpiceParser::ParamLstContext *ctx) override;
   std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override;
-  std::any visitIdentifierLst(SpiceParser::IdentifierLstContext *ctx) override;
   std::any visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) override;
   std::any visitEnumItem(SpiceParser::EnumItemContext *ctx) override;
   std::any visitField(SpiceParser::FieldContext *ctx) override;

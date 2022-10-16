@@ -145,19 +145,27 @@ std::any AstBuilderVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
   // Extract struct name
   structDefNode->structName = ctx->IDENTIFIER()->getText();
 
+  bool seenStructKeyword = false;
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = structDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
-      currentNode = structDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, fileName));
-      structDefNode->isGeneric = true;
-    } else if (rule = dynamic_cast<SpiceParser::IdentifierLstContext *>(subTree); rule != nullptr) { // IdentifierLst
-      visit(rule);
+      if (!seenStructKeyword) {                                                              // Template type list
+        currentNode = structDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, fileName));
+        structDefNode->isGeneric = true;
+      } else { // Interface type list
+        currentNode = structDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, fileName));
+        structDefNode->hasInterfaces = true;
+      }
     } else if (rule = dynamic_cast<SpiceParser::FieldContext *>(subTree); rule != nullptr) // Field
       currentNode = structDefNode->createChild<FieldNode>(CodeLoc(rule->start, fileName));
-    else
-      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+    else {
+      auto token = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+      assert(token); // Fail if we did not get a terminal
+      if (token->getSymbol()->getType() == SpiceParser::STRUCT)
+        seenStructKeyword = true;
+    }
 
     if (currentNode != structDefNode) {
       visit(rule);
@@ -609,17 +617,6 @@ std::any AstBuilderVisitor::visitArgLst(SpiceParser::ArgLstContext *ctx) {
       currentNode = argLstNode;
     }
   }
-  return nullptr;
-}
-
-std::any AstBuilderVisitor::visitIdentifierLst(SpiceParser::IdentifierLstContext *ctx) {
-  auto structDefNode = dynamic_cast<StructDefNode *>(currentNode);
-  structDefNode->hasInterfaces = true;
-
-  // Extract identifier names
-  for (const auto &identifier : ctx->IDENTIFIER())
-    structDefNode->interfaceNames.push_back(identifier->getText());
-
   return nullptr;
 }
 

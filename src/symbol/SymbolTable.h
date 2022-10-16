@@ -91,6 +91,7 @@ public:
   Struct *getStructAccessPointer(const CodeLoc &codeLoc);
   void insertSubstantiatedStruct(const Struct &s, const AstNode *declNode);
 
+  Interface *lookupInterface(const std::string &interfaceName);
   void insertInterface(const Interface &i);
 
   void purgeSubstantiationRemnants();
