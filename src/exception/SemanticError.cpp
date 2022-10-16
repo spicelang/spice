@@ -44,6 +44,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Multiple declarations of a generic type with the same name";
   case STRUCT_DECLARED_TWICE:
     return "Multiple declarations of a struct with the same name";
+  case INTERFACE_DECLARED_TWICE:
+    return "Multiple declarations of an interface with the same name";
   case ENUM_DECLARED_TWICE:
     return "Multiple declarations of an enum with the same name";
   case DUPLICATE_ENUM_ITEM_NAME:

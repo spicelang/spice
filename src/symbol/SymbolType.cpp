@@ -426,6 +426,8 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     }
     return chainElement.subType + templateStr;
   }
+  case TY_INTERFACE:
+    return "interface(" + chainElement.subType + ")";
   case TY_ENUM:
     return "enum";
   case TY_DYN:

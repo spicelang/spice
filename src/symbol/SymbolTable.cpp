@@ -10,7 +10,6 @@
 #include <symbol/GenericType.h>
 #include <symbol/Struct.h>
 #include <util/CodeLoc.h>
-#include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 
 /**
@@ -540,7 +539,7 @@ Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc, const st
  * an exception will be thrown
  *
  * @param function Substantiated function
- * @param codeLoc Code location
+ * @param declNode Declaration AST node
  */
 void SymbolTable::insertSubstantiatedFunction(const Function &function, const AstNode *declNode) {
   if (!function.hasSubstantiatedParams())
@@ -564,13 +563,26 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, const As
  * Insert a struct object into this symbol table scope
  *
  * @param s Struct object
- * @param err Error factory
  */
 void SymbolTable::insertStruct(const Struct &s) {
-  // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
+  // Open a new struct declaration pointer list. Which gets filled by the 'insertSubstantiatedStruct' method
   std::string codeLocStr = s.declNode->codeLoc.toString();
   structs.insert({codeLocStr, std::make_shared<std::map<std::string, Struct>>()});
   insertSubstantiatedStruct(s, s.declNode);
+}
+
+/**
+ * Insert an interface object into this symbol table scope
+ *
+ * @param i Interface object
+ */
+void SymbolTable::insertInterface(const Interface &i) {
+  std::string codeLocStr = i.declNode->codeLoc.toString();
+  // Add interface to interface list
+  assert(!interfaces.contains(i.declNode->codeLoc.toString()));
+  interfaces.insert({codeLocStr, i});
+  // Add symbol table entry for the interface
+  insert(i.name, SymbolType(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
 }
 
 /**
@@ -665,7 +677,7 @@ std::map<std::string, Struct> *SymbolTable::getStructManifestations(const CodeLo
 /**
  * Add struct access pointer to the current scope
  *
- * @param token Reference token
+ * @param codeLoc Reference code location
  * @param struct Struct
  */
 void SymbolTable::insertStructAccessPointer(const CodeLoc &codeLoc, Struct *spiceStruct) {
@@ -689,9 +701,7 @@ Struct *SymbolTable::getStructAccessPointer(const CodeLoc &codeLoc) {
  * an exception will be thrown
  *
  * @param s Substantiated struct
- * @param err Error factory
- * @param token Token, where the struct is declared
- * @param codeLoc Code location
+ * @param declNode Declaration AST node
  */
 void SymbolTable::insertSubstantiatedStruct(const Struct &s, const AstNode *declNode) {
   // Check if the struct exists already
@@ -756,6 +766,8 @@ std::vector<CompilerWarning> SymbolTable::collectWarnings() {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.name + "' is unused");
       } else if (entry.type.is(TY_STRUCT) && entry.isGlobal) {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.name + "' is unused");
+      } else if (entry.type.is(TY_INTERFACE) && entry.isGlobal) {
+        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_INTERFACE, "The interface '" + entry.name + "' is unused");
       } else if (entry.type.is(TY_IMPORT)) {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.name + "' is unused");
       } else {

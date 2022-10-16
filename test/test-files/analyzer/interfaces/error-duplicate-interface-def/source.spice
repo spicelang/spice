@@ -1,0 +1,9 @@
+type Person interface {
+    f<int> dump()
+}
+
+type Person interface {
+    p print()
+}
+
+f<int> main() {}

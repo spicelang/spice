@@ -9,6 +9,7 @@
 
 #include <symbol/Capture.h>
 #include <symbol/GenericType.h>
+#include <symbol/Interface.h>
 #include <symbol/SymbolTableEntry.h>
 #include <util/CompilerWarning.h>
 
@@ -25,6 +26,7 @@ enum ScopeType {
   SCOPE_GLOBAL,
   SCOPE_FUNC_PROC_BODY,
   SCOPE_STRUCT,
+  SCOPE_INTERFACE,
   SCOPE_ENUM,
   SCOPE_IF_BODY,
   SCOPE_WHILE_BODY,
@@ -89,6 +91,8 @@ public:
   Struct *getStructAccessPointer(const CodeLoc &codeLoc);
   void insertSubstantiatedStruct(const Struct &s, const AstNode *declNode);
 
+  void insertInterface(const Interface &i);
+
   void purgeSubstantiationRemnants();
 
   std::vector<CompilerWarning> collectWarnings();
@@ -113,6 +117,7 @@ private:
   std::map<std::string, std::shared_ptr<std::map<std::string, Function>>> functions; // <code-loc, vector-of-representations>
   std::map<std::string, Function *> functionAccessPointers;
   std::map<std::string, std::shared_ptr<std::map<std::string, Struct>>> structs; // <code-loc, vector-of-representations>
+  std::map<std::string, Interface> interfaces;
   std::map<std::string, Struct *> structAccessPointers;
   bool isMainSourceFile;
 };

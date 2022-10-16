@@ -11,6 +11,7 @@
 #include <exception/SemanticError.h>
 #include <symbol/Function.h>
 #include <symbol/GenericType.h>
+#include <symbol/Interface.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolSpecifiers.h>
 #include <symbol/SymbolTable.h>
@@ -398,7 +399,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         else if (specifier->type == SpecifierNode::TY_PUBLIC)
           procSymbolSpecifiers.setPublic(true);
         else
-          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
       }
     }
 
@@ -532,7 +533,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         structSymbolSpecifiers.setPublic(true);
       else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a struct definition");
     }
   }
 
@@ -566,7 +567,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
         else if (specifier->type == SpecifierNode::TY_PUBLIC)
           fieldSymbolSpecifiers.setPublic(true);
         else
-          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a field definition");
       }
     }
 
@@ -582,7 +583,56 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
   // Add struct
   Struct s(node->structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, node);
   currentScope->insertStruct(s);
-  s.symbolTable = structScope;
+  s.structScope = structScope;
+
+  return nullptr;
+}
+
+std::any AnalyzerVisitor::visitInterfaceDef(InterfaceDefNode *node) {
+  if (runNumber > 1)
+    return nullptr;
+
+  // Check if interface already exists in this scope
+  if (currentScope->lookup(node->interfaceName))
+    throw SemanticError(node, INTERFACE_DECLARED_TWICE, "Duplicate interface '" + node->interfaceName + "'");
+
+  // Build interface specifiers
+  SymbolType symbolType = SymbolType(TY_INTERFACE, node->interfaceName, {}, {});
+  auto interfaceSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const auto &specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        interfaceSymbolSpecifiers.setPublic(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an interface definition");
+    }
+  }
+
+  // Add the interface to the symbol table
+  currentScope->insert(node->interfaceName, symbolType, interfaceSymbolSpecifiers, DECLARED, node);
+
+  // Create scope for interface
+  SymbolTable *interfaceScope = currentScope =
+      currentScope->createChildBlock(INTERFACE_SCOPE_PREFIX + node->interfaceName, SCOPE_INTERFACE);
+
+  // Visit contained signatures
+  std::vector<Function *> methods;
+  if (!node->signatures().empty()) {
+    for (SignatureNode *signature : node->signatures())
+      visit(signature);
+  } else {
+    // Warning when no signatures are defined
+    sourceFile.compilerOutput.warnings.emplace_back(INTERFACE_WITHOUT_SIGNATURE, "The interface '" + node->interfaceName +
+                                                                                     "' does not contain method signatures");
+  }
+
+  // Return to the old scope
+  currentScope = currentScope->parent;
+
+  // Add interface
+  Interface i(node->interfaceName, interfaceSymbolSpecifiers, methods, node);
+  currentScope->insertInterface(i);
+  i.interfaceScope = interfaceScope;
 
   return nullptr;
 }

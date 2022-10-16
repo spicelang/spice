@@ -21,8 +21,8 @@ struct CodeLoc;
 class Struct {
 public:
   // Constructors
-  explicit Struct(std::string name, SymbolSpecifiers specifiers, std::vector<SymbolType> fieldTypes,
-                  std::vector<GenericType> templateTypes, const AstNode *declNode)
+  Struct(std::string name, SymbolSpecifiers specifiers, std::vector<SymbolType> fieldTypes,
+         std::vector<GenericType> templateTypes, const AstNode *declNode)
       : name(std::move(name)), specifiers(specifiers), fieldTypes(std::move(fieldTypes)), templateTypes(std::move(templateTypes)),
         declNode(declNode) {}
 
@@ -42,7 +42,7 @@ public:
   SymbolSpecifiers specifiers;
   std::vector<SymbolType> fieldTypes;
   std::vector<GenericType> templateTypes;
-  SymbolTable *symbolTable = nullptr;
+  SymbolTable *structScope = nullptr;
   const AstNode *declNode;
   bool isGenericSubstantiation = false;
   bool isUsed = false;

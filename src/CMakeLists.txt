@@ -30,6 +30,8 @@ set(SOURCES
         symbol/Function.h
         symbol/Struct.cpp
         symbol/Struct.h
+        symbol/Interface.cpp
+        symbol/Interface.h
         symbol/Capture.cpp
         symbol/Capture.h
         symbol/SymbolType.cpp
