@@ -21,6 +21,8 @@ std::any AstBuilderVisitor::visitEntry(SpiceParser::EntryContext *ctx) {
       currentNode = entryNode->createChild<ProcDefNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::StructDefContext *>(subTree); rule != nullptr) // StructDef
       currentNode = entryNode->createChild<StructDefNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::InterfaceDefContext *>(subTree); rule != nullptr) // InterfaceDef
+      currentNode = entryNode->createChild<InterfaceDefNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::EnumDefContext *>(subTree); rule != nullptr) // EnumDef
       currentNode = entryNode->createChild<EnumDefNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::GenericTypeDefContext *>(subTree); rule != nullptr) // GenericTypeDef
@@ -150,6 +152,8 @@ std::any AstBuilderVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
     else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = structDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, fileName));
       structDefNode->isGeneric = true;
+    } else if (rule = dynamic_cast<SpiceParser::IdentifierLstContext *>(subTree); rule != nullptr) { // IdentifierLst
+      visit(rule);
     } else if (rule = dynamic_cast<SpiceParser::FieldContext *>(subTree); rule != nullptr) // Field
       currentNode = structDefNode->createChild<FieldNode>(CodeLoc(rule->start, fileName));
     else
@@ -158,6 +162,30 @@ std::any AstBuilderVisitor::visitStructDef(SpiceParser::StructDefContext *ctx) {
     if (currentNode != structDefNode) {
       visit(rule);
       currentNode = structDefNode;
+    }
+  }
+  return nullptr;
+}
+
+std::any AstBuilderVisitor::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
+  auto interfaceDefNode = dynamic_cast<InterfaceDefNode *>(currentNode);
+  saveErrorMessage(interfaceDefNode, ctx);
+
+  // Extract interface name
+  interfaceDefNode->interfaceName = ctx->IDENTIFIER()->getText();
+
+  for (const auto &subTree : ctx->children) {
+    antlr4::ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
+      currentNode = interfaceDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::SignatureContext *>(subTree); rule != nullptr) // Signature
+      currentNode = interfaceDefNode->createChild<SignatureNode>(CodeLoc(rule->start, fileName));
+    else
+      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != interfaceDefNode) {
+      visit(rule);
+      currentNode = interfaceDefNode;
     }
   }
   return nullptr;
@@ -244,6 +272,8 @@ std::any AstBuilderVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   // Extract function name
   extDeclNode->extFunctionName = ctx->IDENTIFIER()->getText();
+  // Extract isDll
+  extDeclNode->isDll = ctx->DLL() != nullptr;
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
@@ -252,7 +282,6 @@ std::any AstBuilderVisitor::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = extDeclNode->createChild<TypeLstNode>(CodeLoc(rule->start, fileName));
       extDeclNode->hasArgs = true;
-
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -583,6 +612,17 @@ std::any AstBuilderVisitor::visitArgLst(SpiceParser::ArgLstContext *ctx) {
   return nullptr;
 }
 
+std::any AstBuilderVisitor::visitIdentifierLst(SpiceParser::IdentifierLstContext *ctx) {
+  auto structDefNode = dynamic_cast<StructDefNode *>(currentNode);
+  structDefNode->hasInterfaces = true;
+
+  // Extract identifier names
+  for (const auto &identifier : ctx->IDENTIFIER())
+    structDefNode->interfaceNames.push_back(identifier->getText());
+
+  return nullptr;
+}
+
 std::any AstBuilderVisitor::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
   auto enumItemLstNode = dynamic_cast<EnumItemLstNode *>(currentNode);
   saveErrorMessage(enumItemLstNode, ctx);
@@ -637,6 +677,34 @@ std::any AstBuilderVisitor::visitField(SpiceParser::FieldContext *ctx) {
     if (currentNode != fieldNode) {
       visit(rule);
       currentNode = fieldNode;
+    }
+  }
+  return nullptr;
+}
+
+std::any AstBuilderVisitor::visitSignature(SpiceParser::SignatureContext *ctx) {
+  auto signatureNode = dynamic_cast<SignatureNode *>(currentNode);
+  saveErrorMessage(signatureNode, ctx);
+
+  // Extract signature name
+  signatureNode->signatureName = ctx->IDENTIFIER()->getText();
+  // Extract signature type
+  signatureNode->signatureType = ctx->F() != nullptr ? SignatureNode::TYPE_FUNCTION : SignatureNode::TYPE_PROCEDURE;
+
+  for (const auto &subTree : ctx->children) {
+    antlr4::ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
+      currentNode = signatureNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+      currentNode = signatureNode->createChild<DataTypeNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) // TypeLst
+      currentNode = signatureNode->createChild<TypeLstNode>(CodeLoc(rule->start, fileName));
+    else
+      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != signatureNode) {
+      visit(rule);
+      currentNode = signatureNode;
     }
   }
   return nullptr;

@@ -243,8 +243,28 @@ public:
 
   // Public members
   std::string structName;
+  std::vector<std::string> interfaceNames;
   bool isGeneric = false;
-  Struct *spiceProc = nullptr;
+  bool hasInterfaces = false;
+  Struct *spiceStruct = nullptr;
+};
+
+// ======================================================= InterfaceDefNode ======================================================
+
+class InterfaceDefNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitInterfaceDef(this); }
+
+  // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
+  [[nodiscard]] std::vector<SignatureNode *> signatures() const { return getChildren<SignatureNode>(); }
+
+  // Public members
+  std::string interfaceName;
 };
 
 // ========================================================== EnumDefNode ========================================================
@@ -598,6 +618,33 @@ public:
 
   // Public members
   std::string name;
+};
+
+// ======================================================== SignatureNode ========================================================
+
+class SignatureNode : public AstNode {
+public:
+  // Enums
+  enum Type {
+    TYPE_FUNCTION,
+    TYPE_PROCEDURE,
+  };
+
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitSignature(this); }
+
+  // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
+  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
+
+  // Public members
+  std::string signatureName;
+  Type signatureType;
+  bool hasParams = false;
 };
 
 // =========================================================== StmtNode ==========================================================

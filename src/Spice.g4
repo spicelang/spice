@@ -7,7 +7,7 @@ entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef 
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON IDENTIFIER)? LBRACE field* RBRACE;
+structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON identifierLst)? LBRACE field* RBRACE;
 interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature* RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: specifierLst? TYPE IDENTIFIER typeAltsLst SEMICOLON;
@@ -30,6 +30,7 @@ typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
+identifierLst: IDENTIFIER (COMMA IDENTIFIER)*;
 enumItemLst: enumItem (COMMA enumItem)*;
 enumItem: IDENTIFIER (ASSIGN INT_LIT)?;
 field: specifierLst? dataType IDENTIFIER;

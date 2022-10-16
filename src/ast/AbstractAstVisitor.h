@@ -4,6 +4,8 @@
 
 #include <any>
 
+#define noop (void)0
+
 // Forward declarations
 class AstNode;
 class EntryNode;
@@ -11,6 +13,7 @@ class MainFctDefNode;
 class FctDefNode;
 class ProcDefNode;
 class StructDefNode;
+class InterfaceDefNode;
 class EnumDefNode;
 class GenericTypeDefNode;
 class GlobalVarDefNode;
@@ -31,6 +34,7 @@ class ArgLstNode;
 class EnumItemLstNode;
 class EnumItemNode;
 class FieldNode;
+class SignatureNode;
 class StmtNode;
 class DeclStmtNode;
 class SpecifierLstNode;
@@ -80,6 +84,7 @@ public:
   virtual std::any visitFctDef(FctDefNode *node) = 0;
   virtual std::any visitProcDef(ProcDefNode *node) = 0;
   virtual std::any visitStructDef(StructDefNode *node) = 0;
+  virtual std::any visitInterfaceDef(InterfaceDefNode *node) = 0;
   virtual std::any visitEnumDef(EnumDefNode *node) = 0;
   virtual std::any visitGenericTypeDef(GenericTypeDefNode *node) = 0;
   virtual std::any visitGlobalVarDef(GlobalVarDefNode *node) = 0;
@@ -100,6 +105,7 @@ public:
   virtual std::any visitEnumItemLst(EnumItemLstNode *node) = 0;
   virtual std::any visitEnumItem(EnumItemNode *node) = 0;
   virtual std::any visitField(FieldNode *node) = 0;
+  virtual std::any visitSignature(SignatureNode *node) = 0;
   virtual std::any visitStmt(StmtNode *node) = 0;
   virtual std::any visitDeclStmt(DeclStmtNode *node) = 0;
   virtual std::any visitSpecifierLst(SpecifierLstNode *node) = 0;
