@@ -2,8 +2,8 @@
 
 ## Implementation steps:
 
-- [ ] 1. Adjust grammar
-- [ ] 2. Update IntelliJ plugin
+- [x] 1. Adjust grammar
+- [x] 2. Update IntelliJ plugin
 - [ ] 3. Add semantic checks
 - [ ] 4. Add tests for semantic checks
 

@@ -1,8 +1,0 @@
-f<int*> escapingFunction(int arg) {
-    return &arg;
-}
-
-f<int> main() {
-    int* intPtr = escapingFunction(5);
-    printf("Int ptr: %p", intPtr);
-}

@@ -4,8 +4,6 @@
 
 #include <any>
 
-#define noop (void)0
-
 // Forward declarations
 class AstNode;
 class EntryNode;
