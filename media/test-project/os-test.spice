@@ -1,14 +1,4 @@
-type Person interface {
-    f<int> dump()
-}
-
-type Person interface {
-    p print()
-}
-
-f<int> main() {}
-
-/*type Visitor struct {
+type Visitor struct {
 
 }
 
@@ -24,16 +14,24 @@ type AstNode struct : VisitableNode {
 
 }
 
+f<bool> AstNode.accept(Visitor* v) {
+    return true;
+}
+
 type AstEntryNode struct : VisitableNode {
     AstNode astNode
     SymbolTable* fctScope
     bool hasArgs
 }
 
+f<bool> AstEntryNode.accept(Visitor* v) {
+    return true;
+}
+
 f<int> main() {
     dyn entryNode = AstEntryNode{};
     printf("%d", entryNode.hasArgs);
-}*/
+}
 
 /*import "std/net/http" as http;
 

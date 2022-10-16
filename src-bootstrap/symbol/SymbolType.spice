@@ -1,0 +1,50 @@
+// Std imports
+import "std/data/vector" as vec;
+
+public type SymbolSuperType enum {
+    TY_INVALID,
+    TY_DOUBLE,
+    TY_INT,
+    TY_SHORT,
+    TY_LONG,
+    TY_BYTE,
+    TY_CHAR,
+    TY_STRING,
+    TY_BOOL,
+    TY_GENERIC,
+    TY_STRUCT,
+    TY_INTERFACE,
+    TY_ENUM,
+    TY_DYN,
+    TY_PTR,
+    TY_ARRAY,
+    TY_FUNCTION,
+    TY_PROCEDURE,
+    TY_IMPORT
+}
+
+type TypeChainElement struct {
+    SuperSymbolType superType
+    string subType
+    TypeChainElementData data
+    vec::Vector<SymbolType> templateTypes
+    //llvm::Type* dynamicArraySize
+}
+
+p TypeChainElement.ctor() {
+    this.superType = SymbolSuperType.TY_DYN;
+    //this.dynamicArraySize = nil<llvm::Type*>;
+}
+
+f<bool> TypeChainElement.equalsIgnoreArraySize(const TypeChainElement* lhs, const TypeChainElement rhs) {
+    return lhs.superType == rhs.superType && lhs.subType == rhs.subType /*&& lhs.templateTypes == rhs.templateTypes*/;
+}
+
+public type SymbolType struct {
+    vec::Vector<TypeChainElement> typeChain
+    bool isBaseTypeSigned
+}
+
+p SymbolType.ctor() {
+    this.isBaseTypeSigned = true;
+}
