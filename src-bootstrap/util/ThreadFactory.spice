@@ -1,9 +1,9 @@
 public type ThreadFactory struct {
-    unsigned int nextSuffix
+    unsigned long nextSuffix
 }
 
 public p ThreadFactory.ctor() {
-    this.nextSuffix = 0;
+    this.nextSuffix = 0l;
 }
 
 public f<int> ThreadFactory.getNextFunctionSuffix() {
@@ -11,5 +11,5 @@ public f<int> ThreadFactory.getNextFunctionSuffix() {
 }
 
 public f<bool> ThreadFactory.isUsingThreads() {
-    return this.nextSuffix > 0;
+    return this.nextSuffix > 0l;
 }

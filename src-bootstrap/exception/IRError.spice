@@ -1,0 +1,58 @@
+// Imports
+import "../util/CodeLoc" as cl;
+
+public type IRErrorType enum {
+    TARGET_NOT_AVAILABLE,
+    CANT_OPEN_OUTPUT_FILE,
+    WRONG_TYPE,
+    BRANCH_NOT_FOUND,
+    REFERENCED_UNDEFINED_FUNCTION_IR,
+    UNEXPECTED_DYN_TYPE_IR,
+    PRINTF_NULL_TYPE,
+    INVALID_FUNCTION,
+    INVALID_MODULE,
+    COMING_SOON_IR
+}
+
+/**
+ * Custom exception for errors, occurring in the code generation phase
+ */
+public type IRError struct {
+    string errorMessage
+}
+
+/**
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+public p IRError.ctor(const CodeLoc* codeLoc, const IRErrorType errorType, const string message) {
+    this.errorMessage = "[Error|Linker] " + this.getMessagePrefix(errorType) + ": " + message;
+}
+
+/**
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+public p IRError.ctor(const IRErrorType errorType, const string message) {
+    this.errorMessage = "[Error|Linker] " + this.getMessagePrefix(errorType) + ": " + message;
+}
+
+/**
+ * Get the prefix of the error message for a particular error
+ *
+ * @param errorType Type of the error
+ * @return Prefix string for the error type
+ */
+f<string> IRError.getMessagePrefix(const IRErrorType errorType) {
+    if errorType == LinkerErrorType.TARGET_NOT_AVAILABLE { return "Selected target not available"; }
+    if errorType == LinkerErrorType.CANT_OPEN_OUTPUT_FILE { return "Could not open output file"; }
+    if errorType == LinkerErrorType.WRONG_TYPE { return "Wrong type of output file"; }
+    if errorType == LinkerErrorType.BRANCH_NOT_FOUND { return "Branch not found"; }
+    if errorType == LinkerErrorType.REFERENCED_UNDEFINED_FUNCTION_IR { return "Referenced undefined function"; }
+    if errorType == LinkerErrorType.UNEXPECTED_DYN_TYPE_IR { return "Unexpected type of dyn. Symbol table incomplete"; }
+    if errorType == LinkerErrorType.PRINTF_NULL_TYPE { return "Printf has null type"; }
+    if errorType == LinkerErrorType.INVALID_FUNCTION { return "Invalid function"; }
+    if errorType == LinkerErrorType.INVALID_MODULE { return "Invalid module"; }
+    if errorType == LinkerErrorType.COMING_SOON_IR { return "Coming soon"; }
+    return "Unknown error";
+}

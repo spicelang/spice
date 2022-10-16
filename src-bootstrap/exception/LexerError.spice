@@ -1,0 +1,35 @@
+// Imports
+import "../util/CodeLoc" as cl;
+
+public type LexerErrorType enum {
+    TOKENIZING_FAILED
+}
+
+/**
+ * Custom exception for errors, occurring while parsing
+ */
+public type ParserError struct {
+    string errorMessage
+}
+
+/**
+ * Constructor: Used in case that the exact code position where the error occurred is known
+ *
+ * @param codeLoc Code location where the error occurred
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+public p ParserError.ctor(const cl::CodeLoc* codeLoc, const LexerErrorType errorType, const string message) {
+    this.errorMessage = "[Error|Lexer] " + codeLoc.toPrettyString() + ": " + this.getMessagePrefix(errorType) + ": " + message;
+}
+
+/**
+ * Get the prefix of the error message for a particular error
+ *
+ * @param errorType Type of the error
+ * @return Prefix string for the error type
+ */
+f<string> ParserError.getMessagePrefix(const LexerErrorType errorType) {
+    if errorType == LexerErrorType.TOKENIZING_FAILED  { return "Parsing failed"; }
+    return "Unknown error";
+}

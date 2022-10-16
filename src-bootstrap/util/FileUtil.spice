@@ -1,0 +1,27 @@
+// Std imports
+import "std/io/file" as file;
+
+public type ExecResult struct {
+    string output
+    int exitCode
+}
+
+/**
+ * Util class for file-related work
+ */
+public type FileUtil struct {}
+
+public f<ExecResult> FileUtil.exec(const string cmd) {
+    // ToDo
+    return ExecResult{};
+}
+
+public f<string> FileUtil.getStdDir() {
+    // ToDo
+    return "";
+}
+
+public f<string> FileUtil.getSpiceBinDir() {
+    // ToDo
+    return "";
+}

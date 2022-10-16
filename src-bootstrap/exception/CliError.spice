@@ -1,0 +1,42 @@
+// Imports
+import "../util/CodeLoc" as cl;
+
+public type CliErrorType enum {
+    INCOMPLETE_TARGET_TRIPLE,
+    INVALID_TARGET_TRIPLE,
+    SOURCE_FILE_MISSING,
+    OPT_DEBUG_INFO_INCOMPATIBILITY,
+    NON_ZERO_EXIT_CODE,
+    COMING_SOON_CLI
+}
+
+/**
+ * Custom exception for errors, occurring when linking the output executable
+ */
+public type CliError struct {
+    string errorMessage
+}
+
+/**
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+public p CliError.ctor(const CliErrorType errorType, const string message) {
+    this.errorMessage = "[Error|CLI] " + this.getMessagePrefix(errorType) + ": " + message;;
+}
+
+/**
+ * Get the prefix of the error message for a particular error
+ *
+ * @param errorType Type of the error
+ * @return Prefix string for the error type
+ */
+f<string> CliError.getMessagePrefix(const CliErrorType errorType) {
+    if errorType == CliErrorType.INCOMPLETE_TARGET_TRIPLE { return "Incomplete target triple"; }
+    if errorType == CliErrorType.INVALID_TARGET_TRIPLE { return "Invalid target triple"; }
+    if errorType == CliErrorType.SOURCE_FILE_MISSING { return "Source file missing"; }
+    if errorType == CliErrorType.OPT_DEBUG_INFO_INCOMPATIBILITY { return "Cannot emit debug info with optimization enabled"; }
+    if errorType == CliErrorType.NON_ZERO_EXIT_CODE { return "Non-zero exit code"; }
+    if errorType == CliErrorType.COMING_SOON_CLI { return "Coming soon"; }
+    return "Unknown error";
+}

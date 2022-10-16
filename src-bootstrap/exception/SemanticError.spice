@@ -1,7 +1,8 @@
 // Imports
+import "../ast/AstNodes" as ast;
 import "../util/CodeLoc" as cl;
 
-public type ErrorType enum {
+public type SemanticErrorType enum {
     REFERENCED_UNDEFINED_FUNCTION,
     REFERENCED_UNDEFINED_VARIABLE,
     REFERENCED_UNDEFINED_STRUCT,
@@ -11,6 +12,8 @@ public type ErrorType enum {
     FUNCTION_DECLARED_TWICE,
     GENERIC_TYPE_DECLARED_TWICE,
     STRUCT_DECLARED_TWICE,
+    INTERFACE_DECLARED_TWICE,
+    INTERFACE_METHOD_NOT_IMPLEMENTED,
     ENUM_DECLARED_TWICE,
     DUPLICATE_ENUM_ITEM_NAME,
     DUPLICATE_ENUM_ITEM_VALUE,
@@ -55,6 +58,9 @@ public type ErrorType enum {
     TID_INVALID,
     JOIN_ARG_MUST_BE_TID,
     EXPECTED_GENERIC_TYPE,
+    EXPECTED_STRUCT_TYPE,
+    EXPECTED_INTERFACE_TYPE,
+    INTERFACE_WITH_TEMPLATE_LIST,
     EXPECTED_VALUE,
     EXPECTED_TYPE,
     UNSAFE_OPERATION_IN_SAFE_CONTEXT,
@@ -65,7 +71,28 @@ public type ErrorType enum {
 }
 
 public type SemanticError struct {
-    cl::CodeLoc codeLoc
-    ErrorType errorType
     string message
+}
+
+public p SemanticError.ctor(const ast::AstNode* node, const SemanticErrorType errorType, const string message) {
+    this.errorMessage = "[Error|Semantic] " + node.codeLoc.toPrettyString() + ":\n" + this.getMessagePrefix(errorType) +
+            ": " + message + "\n\n" + node.errorMessage;
+}
+
+/**
+ * Get the prefix of the error message for a particular error
+ *
+ * @param type Type of the error
+ * @return Prefix string for the error type
+ */
+f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
+    if errorType == SemanticErrorType.REFERENCED_UNDEFINED_FUNCTION { return "Referenced undefined function"; }
+    if errorType == SemanticErrorType.REFERENCED_UNDEFINED_VARIABLE { return "Referenced undefined variable"; }
+    if errorType == SemanticErrorType.REFERENCED_UNDEFINED_STRUCT { return "Referenced undefined struct"; }
+    if errorType == SemanticErrorType.FUNCTION_AMBIGUITY { return "Function ambiguity"; }
+    if errorType == SemanticErrorType.STRUCT_AMBIGUITY { return "Struct ambiguity"; }
+    if errorType == SemanticErrorType.VARIABLE_DECLARED_TWICE { return "Multiple declarations of the same variable"; }
+    if errorType == SemanticErrorType.FUNCTION_DECLARED_TWICE { return "Multiple declarations of a function/procedure"; }
+    // ToDo: Extend
+    return "Unknown error";
 }
