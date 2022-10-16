@@ -1,0 +1,83 @@
+// Own imports
+import "CodeLoc" as cl;
+
+public type CompilerWarningType enum {
+    UNUSED_FUNCTION,
+    UNUSED_PROCEDURE,
+    UNUSED_STRUCT,
+    UNUSED_INTERFACE,
+    UNUSED_IMPORT,
+    UNUSED_FIELD,
+    UNUSED_VARIABLE,
+    INTERFACE_WITHOUT_SIGNATURE,
+    SINGLE_GENERIC_TYPE_CONDITION,
+    BOOL_ASSIGN_AS_CONDITION,
+    INDEX_EXCEEDS_ARRAY_SIZE,
+    UNINSTALL_FAILED,
+    VERIFIER_DISABLED
+}
+
+/**
+ * Compiler warning template engine
+ */
+public type CompilerWarning struct {
+    string warningMessage
+}
+
+/**
+ * Constructor: Used in case that the exact code position where the warning occurred is known
+ *
+ * @param codeLoc Code location, where the warning occurred
+ * @param warningType Type of the warning
+ * @param message Warning message suffix
+ */
+public p CompilerWarning.ctor(const cl::CodeLoc* codeLoc, const CompilerWarningType warningType, const string message) {
+    this.warningMessage = "[Warning] " + codeLoc.toPrettyString() + ": " +
+            this.getMessagePrefix(warningType) + ": " + message;
+}
+
+/**
+ * Constructor: Used in case the exact code position where the warning occurred is not known
+ *
+ * @param warningType Type of the warning
+ * @param message Warning message suffix
+ */
+public p CompilerWarning.ctor(const CompilerWarningType warningType, const string message) {
+    this.warningMessage = "[Warning] " + this.getMessagePrefix(warningType) + ": " + message;
+}
+
+/**
+ * Print the compiler warning to the standard error output
+ */
+public p CompilerWarning.print() {
+    printf("%s", this.warningMessage);
+}
+
+/**
+ * Get the prefix of the warning message for a particular error
+ *
+ * @param type Type of the warning
+ * @return Prefix string for the warning type
+ */
+f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType) {
+    if warningType == CompilerWarningType.UNUSED_FUNCTION { return "Unused function"; }
+    if warningType == CompilerWarningType.UNUSED_PROCEDURE { return "Unused procedure"; }
+    if warningType == CompilerWarningType.UNUSED_STRUCT { return "Unused struct"; }
+    if warningType == CompilerWarningType.UNUSED_INTERFACE { return "Unused interface"; }
+    if warningType == CompilerWarningType.UNUSED_IMPORT { return "Unused import"; }
+    if warningType == CompilerWarningType.UNUSED_FIELD { return "Unused field"; }
+    if warningType == CompilerWarningType.UNUSED_VARIABLE { return "Unused variable"; }
+    if warningType == CompilerWarningType.INTERFACE_WITHOUT_SIGNATURE { return "Interface without signature"; }
+    if warningType == CompilerWarningType.SINGLE_GENERIC_TYPE_CONDITION { return "Only one type condition"; }
+    if warningType == CompilerWarningType.BOOL_ASSIGN_AS_CONDITION { return "Bool assignment as condition"; }
+    if warningType == CompilerWarningType.INDEX_EXCEEDS_ARRAY_SIZE { return "Array index exceeds its size"; }
+    if warningType == CompilerWarningType.UNINSTALL_FAILED { return "Uninstall failed"; }
+    if warningType == CompilerWarningType.VERIFIER_DISABLED { return "Verifier disabled"; }
+    return "Unknown warning";
+}
+
+f<int> main() {
+    const cl::CodeLoc codeLoc = cl::CodeLoc(2l, 3l);
+    CompilerWarning warning = CompilerWarning(&codeLoc, CompilerWarningType.UNUSED_STRUCT, "Dies ist ein Test");
+    warning.print();
+}
