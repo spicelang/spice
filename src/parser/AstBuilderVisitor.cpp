@@ -683,8 +683,8 @@ std::any AstBuilderVisitor::visitSignature(SpiceParser::SignatureContext *ctx) {
   auto signatureNode = dynamic_cast<SignatureNode *>(currentNode);
   saveErrorMessage(signatureNode, ctx);
 
-  // Extract signature name
-  signatureNode->signatureName = ctx->IDENTIFIER()->getText();
+  // Extract method name
+  signatureNode->methodName = ctx->IDENTIFIER()->getText();
   // Extract signature type
   signatureNode->signatureType = ctx->F() != nullptr ? SignatureNode::TYPE_FUNCTION : SignatureNode::TYPE_PROCEDURE;
 
@@ -692,11 +692,13 @@ std::any AstBuilderVisitor::visitSignature(SpiceParser::SignatureContext *ctx) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = signatureNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, fileName));
-    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
       currentNode = signatureNode->createChild<DataTypeNode>(CodeLoc(rule->start, fileName));
-    else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) // TypeLst
+      signatureNode->signatureType = SignatureNode::TYPE_FUNCTION;
+    } else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = signatureNode->createChild<TypeLstNode>(CodeLoc(rule->start, fileName));
-    else
+      signatureNode->hasParams = true;
+    } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
     if (currentNode != signatureNode) {

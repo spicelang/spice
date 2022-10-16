@@ -22,9 +22,9 @@ class Struct {
 public:
   // Constructors
   Struct(std::string name, SymbolSpecifiers specifiers, std::vector<SymbolType> fieldTypes,
-         std::vector<GenericType> templateTypes, const AstNode *declNode)
+         std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, const AstNode *declNode)
       : name(std::move(name)), specifiers(specifiers), fieldTypes(std::move(fieldTypes)), templateTypes(std::move(templateTypes)),
-        declNode(declNode) {}
+        interfaceTypes(std::move(interfaceTypes)), declNode(declNode) {}
 
   // Public methods
   [[nodiscard]] std::string getMangledName() const;
@@ -42,11 +42,13 @@ public:
   SymbolSpecifiers specifiers;
   std::vector<SymbolType> fieldTypes;
   std::vector<GenericType> templateTypes;
+  std::vector<SymbolType> interfaceTypes;
   SymbolTable *structScope = nullptr;
   const AstNode *declNode;
   bool isGenericSubstantiation = false;
   bool isUsed = false;
 
   // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, specifiers, fieldTypes, templateTypes, isGenericSubstantiation, isUsed)
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, specifiers, fieldTypes, templateTypes, interfaceTypes, isGenericSubstantiation,
+                                 isUsed)
 };

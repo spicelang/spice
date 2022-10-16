@@ -350,7 +350,7 @@ size_t SymbolTable::getFieldCount() const {
  * @param function Function object
  * @param err Error factory
  */
-void SymbolTable::insertFunction(const Function &function) {
+Function *SymbolTable::insertFunction(const Function &function) {
   const AstNode *declNode = function.declNode;
 
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
@@ -358,14 +358,14 @@ void SymbolTable::insertFunction(const Function &function) {
   functions.insert({codeLocStr, std::make_shared<std::map<std::string, Function>>()});
 
   // Check if function is already substantiated
-  if (function.hasSubstantiatedParams()) {
-    insertSubstantiatedFunction(function, declNode);
-    return;
-  }
+  if (function.hasSubstantiatedParams())
+    return insertSubstantiatedFunction(function, declNode);
 
   // Substantiate the function and insert the substantiated instances
   for (const auto &fct : function.substantiateOptionalParams())
     insertSubstantiatedFunction(fct, declNode);
+
+  return nullptr;
 }
 
 /**
@@ -541,7 +541,7 @@ Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc, const st
  * @param function Substantiated function
  * @param declNode Declaration AST node
  */
-void SymbolTable::insertSubstantiatedFunction(const Function &function, const AstNode *declNode) {
+Function *SymbolTable::insertSubstantiatedFunction(const Function &function, const AstNode *declNode) {
   if (!function.hasSubstantiatedParams())
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
@@ -553,10 +553,12 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, const As
                           "The function/procedure '" + function.getSignature() + "' is declared twice");
   }
   // Add function to function list
-  assert(functions.contains(declNode->codeLoc.toString()));
-  functions.at(declNode->codeLoc.toString())->insert({mangledFctName, function});
+  const std::string codeLocStr = declNode->codeLoc.toString();
+  assert(functions.contains(codeLocStr));
+  functions.at(codeLocStr)->insert({mangledFctName, function});
   // Add symbol table entry for the function
   insert(function.getSignature(), function.getSymbolType(), function.specifiers, INITIALIZED, declNode);
+  return &functions.at(codeLocStr)->at(mangledFctName);
 }
 
 /**
@@ -564,11 +566,11 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, const As
  *
  * @param s Struct object
  */
-void SymbolTable::insertStruct(const Struct &s) {
+Struct *SymbolTable::insertStruct(const Struct &s) {
   // Open a new struct declaration pointer list. Which gets filled by the 'insertSubstantiatedStruct' method
   std::string codeLocStr = s.declNode->codeLoc.toString();
   structs.insert({codeLocStr, std::make_shared<std::map<std::string, Struct>>()});
-  insertSubstantiatedStruct(s, s.declNode);
+  return insertSubstantiatedStruct(s, s.declNode);
 }
 
 /**
@@ -714,17 +716,19 @@ Struct *SymbolTable::getStructAccessPointer(const CodeLoc &codeLoc) {
  * @param s Substantiated struct
  * @param declNode Declaration AST node
  */
-void SymbolTable::insertSubstantiatedStruct(const Struct &s, const AstNode *declNode) {
+Struct *SymbolTable::insertSubstantiatedStruct(const Struct &s, const AstNode *declNode) {
   // Check if the struct exists already
   for (const auto &[_, manifestations] : structs) {
     if (manifestations->contains(s.getMangledName()))
       throw SemanticError(declNode, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
   }
   // Add struct to struct list
-  assert(structs.at(declNode->codeLoc.toString()) != nullptr);
-  structs.at(declNode->codeLoc.toString())->insert({s.getMangledName(), s});
+  const std::string codeLocStr = declNode->codeLoc.toString();
+  assert(structs.at(codeLocStr) != nullptr);
+  structs.at(codeLocStr)->insert({s.getMangledName(), s});
   // Add symbol table entry for the struct
   insert(s.getSignature(), s.getSymbolType(), s.specifiers, INITIALIZED, declNode);
+  return &structs.at(codeLocStr)->at(s.getMangledName());
 }
 
 /**

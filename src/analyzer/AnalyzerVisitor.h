@@ -71,6 +71,7 @@ public:
   std::any visitElseStmt(ElseStmtNode *node) override;
   std::any visitAssertStmt(AssertStmtNode *node) override;
   std::any visitParamLst(ParamLstNode *node) override;
+  std::any visitSignature(SignatureNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
   std::any visitImportStmt(ImportStmtNode *node) override;
   std::any visitReturnStmt(ReturnStmtNode *node) override;

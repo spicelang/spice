@@ -1,1 +1,2 @@
 [Warning] ./test-files/analyzer/warnings/warning-unused-interface/source.spice:1:1: Unused interface: The interface 'UnusedInterface' is unused
+[Warning] ./test-files/analyzer/warnings/warning-unused-interface/source.spice:2:5: Unused function: The function 'testFunction(): int' is unused

@@ -245,7 +245,7 @@ public:
   std::string structName;
   bool isGeneric = false;
   bool hasInterfaces = false;
-  Struct *spiceStruct = nullptr;
+  Struct *spiceStruct;
 };
 
 // ======================================================= InterfaceDefNode ======================================================
@@ -641,9 +641,12 @@ public:
   [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Public members
-  std::string signatureName;
-  Type signatureType;
+  std::string methodName;
+  Type signatureType = SignatureNode::TYPE_PROCEDURE;
+  std::vector<GenericType> templateTypes;
+  ParamList paramTypes;
   bool hasParams = false;
+  SymbolType returnType = SymbolType(TY_DYN);
 };
 
 // =========================================================== StmtNode ==========================================================
