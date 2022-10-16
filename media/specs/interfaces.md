@@ -4,8 +4,11 @@
 
 - [x] 1. Adjust grammar
 - [x] 2. Update IntelliJ plugin
-- [ ] 3. Add semantic checks (in progress)
-- [ ] 4. Add tests for semantic checks (in progress)
+- [x] 3. Add semantic checks
+- [x] 4. Add tests for semantic checks
+- [ ] 5. Allow optional args for interface methods
+- [ ] 6. Allow template types for interface methods
+- [ ] 7. Match visibility modifiers
 
 ## Syntax
 
