@@ -8,7 +8,7 @@ std::any AbstractAstVisitor::visit(AstNode *node) { return node->accept(this); }
 
 std::any AbstractAstVisitor::visitChildren(AstNode *node) {
   std::any result = std::any();
-  for (const auto child : node->children)
+  for (const auto &child : node->children)
     result = child->accept(this);
   return result;
 }

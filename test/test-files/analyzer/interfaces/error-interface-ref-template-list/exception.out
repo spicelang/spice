@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/analyzer/interfaces/error-interface-ref-template-list/source.spice:5:33:
+Interface reference with template list: Referencing interfaces with template lists is not allowed
+
+5  struct : Visitable<Test> {
+                      ^^^^

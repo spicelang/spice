@@ -26,6 +26,7 @@ public:
   std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
   std::any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override;
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
+  std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override;
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override;
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
   std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
@@ -46,6 +47,7 @@ public:
   std::any visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) override;
   std::any visitEnumItem(SpiceParser::EnumItemContext *ctx) override;
   std::any visitField(SpiceParser::FieldContext *ctx) override;
+  std::any visitSignature(SpiceParser::SignatureContext *ctx) override;
   std::any visitStmt(SpiceParser::StmtContext *ctx) override;
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
   std::any visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) override;

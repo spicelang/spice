@@ -11,6 +11,7 @@
 #include <exception/SemanticError.h>
 #include <symbol/Function.h>
 #include <symbol/GenericType.h>
+#include <symbol/Interface.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolSpecifiers.h>
 #include <symbol/SymbolTable.h>
@@ -398,7 +399,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
         else if (specifier->type == SpecifierNode::TY_PUBLIC)
           procSymbolSpecifiers.setPublic(true);
         else
-          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
       }
     }
 
@@ -502,87 +503,174 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
 }
 
 std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
-  if (runNumber > 1)
-    return nullptr;
+  if (runNumber == 1) { // First run
+    // Check if struct already exists
+    if (rootScope->lookup(node->structName))
+      throw SemanticError(node, STRUCT_DECLARED_TWICE, "Duplicate struct '" + node->structName + "'");
 
-  // Check if struct already exists in this scope
-  if (currentScope->lookup(node->structName))
-    throw SemanticError(node, STRUCT_DECLARED_TWICE, "Duplicate struct '" + node->structName + "'");
-
-  // Get template types
-  std::vector<GenericType> genericTemplateTypes;
-  std::vector<SymbolType> templateTypes;
-  if (node->isGeneric) {
-    for (const auto &dataType : node->templateTypeLst()->dataTypes()) {
-      auto templateType = any_cast<SymbolType>(visit(dataType));
-      if (!templateType.is(TY_GENERIC))
-        throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
-      GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
-      assert(genericType != nullptr);
-      genericTemplateTypes.push_back(*genericType);
-      templateTypes.push_back(*genericType);
-    }
-  }
-
-  // Build struct specifiers
-  SymbolType symbolType = SymbolType(TY_STRUCT, node->structName, {}, templateTypes);
-  auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const auto &specifier : specifierLst->specifiers()) {
-      if (specifier->type == SpecifierNode::TY_PUBLIC)
-        structSymbolSpecifiers.setPublic(true);
-      else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
-    }
-  }
-
-  // Add the struct to the symbol table
-  currentScope->insert(node->structName, symbolType, structSymbolSpecifiers, DECLARED, node);
-
-  // Create scope for struct
-  SymbolTable *structScope = currentScope = currentScope->createChildBlock(STRUCT_SCOPE_PREFIX + node->structName, SCOPE_STRUCT);
-
-  // Insert a field for each field list entry
-  std::vector<SymbolType> fieldTypes;
-  for (const auto &field : node->fields()) {
-    auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
-
-    if (fieldType.isBaseType(TY_GENERIC)) { // Check if the type is present in the template for generic types
-      if (std::none_of(genericTemplateTypes.begin(), genericTemplateTypes.end(),
-                       [&](const GenericType &t) { return t == fieldType.getBaseType(); }))
-        throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
-                            "Generic field type not included in struct template");
-    }
-
-    auto fieldSymbolSpecifiers = SymbolSpecifiers(symbolType);
-    if (SpecifierLstNode *specifierLst = field->specifierLst(); specifierLst) {
-      for (const auto &specifier : specifierLst->specifiers()) {
-        if (specifier->type == SpecifierNode::TY_CONST)
-          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Struct fields cannot have the const specifier attached");
-        else if (specifier->type == SpecifierNode::TY_SIGNED)
-          fieldSymbolSpecifiers.setSigned(true);
-        else if (specifier->type == SpecifierNode::TY_UNSIGNED)
-          fieldSymbolSpecifiers.setSigned(false);
-        else if (specifier->type == SpecifierNode::TY_PUBLIC)
-          fieldSymbolSpecifiers.setPublic(true);
-        else
-          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+    // Get template types
+    std::vector<GenericType> genericTemplateTypes;
+    std::vector<SymbolType> templateTypes;
+    if (node->isGeneric) {
+      for (const auto &dataType : node->templateTypeLst()->dataTypes()) {
+        auto templateType = any_cast<SymbolType>(visit(dataType));
+        if (!templateType.is(TY_GENERIC))
+          throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+        GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
+        assert(genericType != nullptr);
+        genericTemplateTypes.push_back(*genericType);
+        templateTypes.push_back(*genericType);
       }
     }
 
-    // Add the field to the symbol table
-    currentScope->insert(field->name, fieldType, fieldSymbolSpecifiers, DECLARED, field);
+    // Get implemented interfaces
+    std::vector<SymbolType> interfaceTypes;
+    if (node->hasInterfaces) {
+      for (const auto &dataType : node->interfaceTypeLst()->dataTypes()) {
+        auto interfaceType = any_cast<SymbolType>(visit(dataType));
+        if (!interfaceType.is(TY_INTERFACE))
+          throw SemanticError(dataType, EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName());
+        interfaceTypes.push_back(interfaceType);
+      }
+    }
 
-    fieldTypes.push_back(fieldType);
+    // Build struct specifiers
+    SymbolType symbolType = SymbolType(TY_STRUCT, node->structName, {}, templateTypes);
+    auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
+    if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+      for (const auto &specifier : specifierLst->specifiers()) {
+        if (specifier->type == SpecifierNode::TY_PUBLIC)
+          structSymbolSpecifiers.setPublic(true);
+        else
+          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a struct definition");
+      }
+    }
+
+    // Add the struct to the symbol table
+    currentScope->insert(node->structName, symbolType, structSymbolSpecifiers, DECLARED, node);
+
+    // Create scope for struct
+    SymbolTable *structScope = currentScope =
+        currentScope->createChildBlock(STRUCT_SCOPE_PREFIX + node->structName, SCOPE_STRUCT);
+
+    // Insert a field for each field list entry
+    std::vector<SymbolType> fieldTypes;
+    for (const auto &field : node->fields()) {
+      auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
+
+      if (fieldType.isBaseType(TY_GENERIC)) { // Check if the type is present in the template for generic types
+        if (std::none_of(genericTemplateTypes.begin(), genericTemplateTypes.end(),
+                         [&](const GenericType &t) { return t == fieldType.getBaseType(); }))
+          throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                              "Generic field type not included in struct template");
+      }
+
+      auto fieldSymbolSpecifiers = SymbolSpecifiers(symbolType);
+      if (SpecifierLstNode *specifierLst = field->specifierLst(); specifierLst) {
+        for (const auto &specifier : specifierLst->specifiers()) {
+          if (specifier->type == SpecifierNode::TY_CONST)
+            throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                                "Struct fields cannot have the const specifier attached");
+          else if (specifier->type == SpecifierNode::TY_SIGNED)
+            fieldSymbolSpecifiers.setSigned(true);
+          else if (specifier->type == SpecifierNode::TY_UNSIGNED)
+            fieldSymbolSpecifiers.setSigned(false);
+          else if (specifier->type == SpecifierNode::TY_PUBLIC)
+            fieldSymbolSpecifiers.setPublic(true);
+          else
+            throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a field definition");
+        }
+      }
+
+      // Add the field to the symbol table
+      currentScope->insert(field->name, fieldType, fieldSymbolSpecifiers, DECLARED, field);
+
+      fieldTypes.push_back(fieldType);
+    }
+
+    // Return to the old scope
+    currentScope = currentScope->parent;
+
+    // Add struct
+    Struct s(node->structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, interfaceTypes, node);
+    node->spiceStruct = currentScope->insertStruct(s);
+    s.structScope = structScope;
+  } else if (runNumber == 2) { // Second run
+    // Change to struct scope
+    currentScope = currentScope->getChild(STRUCT_SCOPE_PREFIX + node->structName);
+
+    // Check if the struct implements all methods of all attached interfaces
+    for (const SymbolType &interfaceType : node->spiceStruct->interfaceTypes) {
+      // Lookup interface by its name
+      Interface *interface = rootScope->lookupInterface(interfaceType.getSubType());
+      assert(interface != nullptr);
+
+      for (const Function *expectedMethod : interface->methods) {
+        // Check if the struct implements the method
+        Function *actualMethod = currentScope->matchFunction(
+            currentScope, expectedMethod->name, node->spiceStruct->getSymbolType(), expectedMethod->getParamTypes(), node);
+        if (actualMethod == nullptr)
+          throw SemanticError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
+                              "The struct '" + node->structName + "' does not implement the method '" +
+                                  expectedMethod->getSignature() + "', requested of interface '" + interface->name + "'");
+      }
+    }
+
+    // Return to the old scope
+    currentScope = currentScope->parent;
+  }
+
+  return nullptr;
+}
+
+std::any AnalyzerVisitor::visitInterfaceDef(InterfaceDefNode *node) {
+  if (runNumber > 1)
+    return nullptr;
+
+  // Check if interface already exists in this scope
+  if (currentScope->lookup(node->interfaceName))
+    throw SemanticError(node, INTERFACE_DECLARED_TWICE, "Duplicate interface '" + node->interfaceName + "'");
+
+  // Build interface specifiers
+  SymbolType symbolType = SymbolType(TY_INTERFACE, node->interfaceName, {}, {});
+  auto interfaceSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const auto &specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        interfaceSymbolSpecifiers.setPublic(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an interface definition");
+    }
+  }
+
+  // Add the interface to the symbol table
+  currentScope->insert(node->interfaceName, symbolType, interfaceSymbolSpecifiers, DECLARED, node);
+
+  // Create scope for interface
+  SymbolTable *interfaceScope = currentScope =
+      currentScope->createChildBlock(INTERFACE_SCOPE_PREFIX + node->interfaceName, SCOPE_INTERFACE);
+
+  // Warning when no signatures are defined
+  if (node->signatures().empty())
+    sourceFile.compilerOutput.warnings.emplace_back(INTERFACE_WITHOUT_SIGNATURE, "The interface '" + node->interfaceName +
+                                                                                     "' does not contain method signatures");
+
+  // Visit contained signatures
+  std::vector<Function *> methods;
+  methods.reserve(node->signatures().size());
+  for (SignatureNode *signature : node->signatures()) {
+    auto method = any_cast<Function *>(visit(signature));
+    assert(method != nullptr);
+    methods.push_back(method);
   }
 
   // Return to the old scope
   currentScope = currentScope->parent;
 
-  // Add struct
-  Struct s(node->structName, structSymbolSpecifiers, fieldTypes, genericTemplateTypes, node);
-  currentScope->insertStruct(s);
-  s.symbolTable = structScope;
+  // Add interface
+  Interface i(node->interfaceName, interfaceSymbolSpecifiers, methods, node);
+  currentScope->insertInterface(i);
+  i.interfaceScope = interfaceScope;
 
   return nullptr;
 }
@@ -1013,6 +1101,34 @@ std::any AnalyzerVisitor::visitParamLst(ParamLstNode *node) {
     namedParamList.push_back({param->varName, paramType, metOptional});
   }
   return namedParamList;
+}
+
+std::any AnalyzerVisitor::visitSignature(SignatureNode *node) {
+  // Build method specifiers
+  auto methodSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const auto &specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        methodSpecifiers.setPublic(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a signature definition");
+    }
+  }
+
+  // Visit return type
+  node->returnType = any_cast<SymbolType>(visit(node->dataType()));
+
+  // Visit param types
+  if (node->hasParams) {
+    for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
+      auto paramType = any_cast<SymbolType>(visit(param));
+      node->paramTypes.push_back({paramType, false});
+    }
+  }
+
+  Function f(node->methodName, methodSpecifiers, SymbolType(TY_DYN), node->returnType, node->paramTypes, node->templateTypes,
+             node);
+  return currentScope->insertFunction(f);
 }
 
 std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
@@ -2096,11 +2212,16 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
   bool structIsImported = false;
   for (unsigned int i = 0; i < node->structNameFragments.size(); i++) {
     structName = node->structNameFragments[i];
+
+    SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
+    if (symbolEntry)
+      symbolEntry->isUsed = true;
+
     if (i < node->structNameFragments.size() - 1) {
-      SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
       if (!symbolEntry)
         throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT,
                             "Symbol '" + accessScopePrefix + structName + "' was used before defined");
+
       accessScopePrefix += structName + ".";
       std::string tableName = symbolEntry->type.is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
       accessScope = accessScope->lookupTable(tableName);
@@ -2257,58 +2378,85 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Get type name in format: a.b.c and retrieve the scope in parallel
   std::string accessScopePrefix;
-  std::string identifier;
-  bool structIsImported = false;
+  std::string typeName;
+  bool isImported = false;
   for (unsigned int i = 0; i < node->typeNameFragments.size(); i++) {
-    identifier = node->typeNameFragments[i];
+    typeName = node->typeNameFragments[i];
     if (i < node->typeNameFragments.size() - 1)
-      accessScopePrefix += identifier + ".";
-    entry = accessScope->lookup(identifier);
+      accessScopePrefix += typeName + ".";
+    entry = accessScope->lookup(typeName);
     if (!entry)
-      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown symbol '" + identifier + "'");
-    if (!entry->type.isOneOf({TY_STRUCT, TY_ENUM, TY_IMPORT}))
+      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown symbol '" + typeName + "'");
+    if (!entry->type.isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_IMPORT}))
       throw SemanticError(node, EXPECTED_TYPE, "Expected type, but got " + entry->type.getName());
 
-    std::string tableName = identifier;
+    std::string tableName = typeName;
     if (entry->type.is(TY_STRUCT)) {
-      tableName = STRUCT_SCOPE_PREFIX + identifier;
+      tableName = STRUCT_SCOPE_PREFIX + typeName;
+    } else if (entry->type.is(TY_INTERFACE)) {
+      tableName = INTERFACE_SCOPE_PREFIX + typeName;
     } else if (entry->type.is(TY_ENUM)) {
-      tableName = ENUM_SCOPE_PREFIX + identifier;
+      tableName = ENUM_SCOPE_PREFIX + typeName;
     }
     accessScope = accessScope->lookupTable(tableName);
     assert(accessScope != nullptr);
     if (accessScope->isImported(currentScope))
-      structIsImported = true;
+      isImported = true;
   }
 
   // Enums can early-return
   if (entry->type.is(TY_ENUM))
     return SymbolType(TY_INT);
 
-  // Get the concrete template types
-  std::vector<SymbolType> concreteTemplateTypes;
-  if (node->templateTypeLst()) {
-    for (const auto &dataType : node->templateTypeLst()->dataTypes())
-      concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
+  if (entry->type.is(TY_STRUCT)) {
+    // Get the concrete template types
+    std::vector<SymbolType> concreteTemplateTypes;
+    if (node->templateTypeLst()) {
+      for (const auto &dataType : node->templateTypeLst()->dataTypes())
+        concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
+    }
+
+    // Set the struct instance to used
+    Struct *spiceStruct = accessScope->matchStruct(nullptr, typeName, concreteTemplateTypes, node);
+    if (spiceStruct)
+      spiceStruct->isUsed = true;
+
+    if (isImported) { // Imported struct
+      SymbolType symbolType = initExtStruct(accessScope, accessScopePrefix, typeName, concreteTemplateTypes, node);
+      return node->setEvaluatedSymbolType(symbolType);
+    }
+
+    // Check if struct was declared
+    SymbolTableEntry *structSymbol = accessScope->lookup(typeName);
+    if (!structSymbol)
+      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + typeName + "'");
+    if (!structSymbol->type.is(TY_STRUCT))
+      throw SemanticError(node, EXPECTED_STRUCT_TYPE, "Expected struct type, but got " + structSymbol->type.getName());
+    structSymbol->isUsed = true;
+
+    return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, typeName, {}, concreteTemplateTypes));
+  } else if (entry->type.is(TY_INTERFACE)) {
+    // Check if template types are given
+    if (node->templateTypeLst())
+      throw SemanticError(node->templateTypeLst(), INTERFACE_WITH_TEMPLATE_LIST,
+                          "Referencing interfaces with template lists is not allowed");
+
+    // Set the interface instance to used
+    Interface *spiceInterface = accessScope->lookupInterface(typeName);
+    if (spiceInterface)
+      spiceInterface->isUsed = true;
+
+    // Check if interface was declared
+    SymbolTableEntry *interfaceSymbol = accessScope->lookup(typeName);
+    if (!interfaceSymbol)
+      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + typeName + "'");
+    if (!interfaceSymbol->type.is(TY_INTERFACE))
+      throw SemanticError(node, EXPECTED_INTERFACE_TYPE, "Expected interface type, but got " + interfaceSymbol->type.getName());
+    interfaceSymbol->isUsed = true;
+
+    return node->setEvaluatedSymbolType(SymbolType(TY_INTERFACE, typeName, {}, {}));
   }
-
-  // Set the struct instance to used
-  Struct *spiceStruct = accessScope->matchStruct(nullptr, identifier, concreteTemplateTypes, node);
-  if (spiceStruct)
-    spiceStruct->isUsed = true;
-
-  if (structIsImported) { // Imported struct
-    SymbolType symbolType = initExtStruct(accessScope, accessScopePrefix, identifier, concreteTemplateTypes, node);
-    return node->setEvaluatedSymbolType(symbolType);
-  }
-
-  // Check if struct was declared
-  SymbolTableEntry *structSymbol = accessScope->lookup(identifier);
-  if (!structSymbol)
-    throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + identifier + "'");
-  structSymbol->isUsed = true;
-
-  return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, identifier, {.arraySize = 0}, concreteTemplateTypes));
+  throw std::runtime_error("Base type fall-through");
 }
 
 SymbolType AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {

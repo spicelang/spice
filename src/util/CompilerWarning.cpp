@@ -44,10 +44,16 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused procedure";
   case UNUSED_STRUCT:
     return "Unused struct";
+  case UNUSED_INTERFACE:
+    return "Unused interface";
   case UNUSED_IMPORT:
     return "Unused import";
+  case UNUSED_FIELD:
+    return "Unused field";
   case UNUSED_VARIABLE:
     return "Unused variable";
+  case INTERFACE_WITHOUT_SIGNATURE:
+    return "Interface without signature";
   case SINGLE_GENERIC_TYPE_CONDITION:
     return "Only one type condition";
   case BOOL_ASSIGN_AS_CONDITION:

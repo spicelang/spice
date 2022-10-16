@@ -1,5 +1,62 @@
-// Imports
+// Std imports
+import "std/type/Any" as any;
+import "std/type/long" as longTy;
+import "std/data/Vector" as vec;
 
-public type EntryNode struct {
+// Own imports
+import "AbstractAstVisitor" as visitor;
+import "../util/CodeLoc" as codeLoc;
+import "../symbol/SymbolType" as symbolType;
+
+/**
+ * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
+ */
+public type CompileTimeValue struct {
+    double doubleValue
+    int intValue
+    short shortValue
+    long longValue
+    byte byteValue
+    char charValue
+    char *stringValue
+    bool boolValue
+}
+
+public type Visitable interface {
+    f<any::Any> accept(visitor::AbstractAstVisitor*)
+}
+
+// =========================================================== AstNode ===========================================================
+
+public type AstNode struct : Visitable {
+    AstNode* parent
+    vec::Vector<AstNode*> children
+    const codeLoc::CodeLoc codeLoc
+    string errorMessage
+    unsigned long symbolTypeIndex
+    vec::Vector<symbolType::SymbolType> symbolTypes
+    CompileTimeValue compileTimeValue
+    string compileTimeStringValue
+    bool hasDirectCompileTimeValue
+}
+
+p AstNode.ctor(AstNode *parent, codeLoc::CodeLoc codeLoc) {
+    this.parent = parent;
+    this.codeLoc = codeLoc;
+    this.symbolTypeIndex = longTy::MAX_VALUE;
+    hasDirectCompileTimeValue = false;
+}
+
+public f<any::Any> AstNode.accept(visitor::AbstractAstVisitor* _) {
+    assert false; // Please override at child level
+}
+
+// ========================================================== EntryNode ==========================================================
+
+public type AstEntryNode struct : Visitable {
+    AstNode astNode
+}
+
+public p AstEntryNode.ctor() {
 
 }

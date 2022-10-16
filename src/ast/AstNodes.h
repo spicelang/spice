@@ -82,8 +82,7 @@ public:
   }
 
   SymbolType setEvaluatedSymbolType(const SymbolType &symbolType) {
-    size_t index = getSymbolTypeIndex();
-    symbolTypes.insert(symbolTypes.begin() + index, symbolType);
+    symbolTypes.insert(symbolTypes.begin() + static_cast<long>(getSymbolTypeIndex()), symbolType);
     return symbolType;
   }
 
@@ -239,12 +238,32 @@ public:
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
+  [[nodiscard]] TypeLstNode *interfaceTypeLst() const { return getChild<TypeLstNode>(isGeneric ? 1 : 0); }
 
   // Public members
   std::string structName;
   bool isGeneric = false;
-  Struct *spiceProc = nullptr;
+  bool hasInterfaces = false;
+  Struct *spiceStruct;
+};
+
+// ======================================================= InterfaceDefNode ======================================================
+
+class InterfaceDefNode : public AstNode {
+public:
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitInterfaceDef(this); }
+
+  // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
+  [[nodiscard]] std::vector<SignatureNode *> signatures() const { return getChildren<SignatureNode>(); }
+
+  // Public members
+  std::string interfaceName;
 };
 
 // ========================================================== EnumDefNode ========================================================
@@ -598,6 +617,36 @@ public:
 
   // Public members
   std::string name;
+};
+
+// ======================================================== SignatureNode ========================================================
+
+class SignatureNode : public AstNode {
+public:
+  // Enums
+  enum Type {
+    TYPE_FUNCTION,
+    TYPE_PROCEDURE,
+  };
+
+  // Constructors
+  using AstNode::AstNode;
+
+  // Visitor methods
+  std::any accept(AbstractAstVisitor *visitor) override { return visitor->visitSignature(this); }
+
+  // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
+  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
+
+  // Public members
+  std::string methodName;
+  Type signatureType = SignatureNode::TYPE_PROCEDURE;
+  std::vector<GenericType> templateTypes;
+  ParamList paramTypes;
+  bool hasParams = false;
+  SymbolType returnType = SymbolType(TY_DYN);
 };
 
 // =========================================================== StmtNode ==========================================================

@@ -9,6 +9,7 @@
 
 #include <symbol/Capture.h>
 #include <symbol/GenericType.h>
+#include <symbol/Interface.h>
 #include <symbol/SymbolTableEntry.h>
 #include <util/CompilerWarning.h>
 
@@ -25,6 +26,7 @@ enum ScopeType {
   SCOPE_GLOBAL,
   SCOPE_FUNC_PROC_BODY,
   SCOPE_STRUCT,
+  SCOPE_INTERFACE,
   SCOPE_ENUM,
   SCOPE_IF_BODY,
   SCOPE_WHILE_BODY,
@@ -73,21 +75,24 @@ public:
   std::map<std::string, Capture> &getCaptures();
   [[nodiscard]] size_t getFieldCount() const;
 
-  void insertFunction(const Function &function);
+  Function *insertFunction(const Function &function);
   Function *matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,
                           const std::vector<SymbolType> &callArgTypes, const AstNode *node);
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc) const;
   void insertFunctionAccessPointer(Function *spiceFunc, const CodeLoc &codeLoc, const std::string &suffix);
   Function *getFunctionAccessPointer(const CodeLoc &codeLoc, const std::string &suffix = "");
-  void insertSubstantiatedFunction(const Function &function, const AstNode *declNode);
+  Function *insertSubstantiatedFunction(const Function &function, const AstNode *declNode);
 
-  void insertStruct(const Struct &s);
+  Struct *insertStruct(const Struct &s);
   Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
                       const AstNode *node);
   [[nodiscard]] std::map<std::string, Struct> *getStructManifestations(const CodeLoc &defCodeLoc) const;
   void insertStructAccessPointer(const CodeLoc &codeLoc, Struct *spiceStruct);
   Struct *getStructAccessPointer(const CodeLoc &codeLoc);
-  void insertSubstantiatedStruct(const Struct &s, const AstNode *declNode);
+  Struct *insertSubstantiatedStruct(const Struct &s, const AstNode *declNode);
+
+  Interface *lookupInterface(const std::string &interfaceName);
+  void insertInterface(const Interface &i);
 
   void purgeSubstantiationRemnants();
 
@@ -113,6 +118,7 @@ private:
   std::map<std::string, std::shared_ptr<std::map<std::string, Function>>> functions; // <code-loc, vector-of-representations>
   std::map<std::string, Function *> functionAccessPointers;
   std::map<std::string, std::shared_ptr<std::map<std::string, Struct>>> structs; // <code-loc, vector-of-representations>
+  std::map<std::string, Interface> interfaces;
   std::map<std::string, Struct *> structAccessPointers;
   bool isMainSourceFile;
 };

@@ -31,10 +31,11 @@ using NamedParamList = std::vector<NamedParam>;
 class Function {
 public:
   // Constructors
-  explicit Function(std::string name, SymbolSpecifiers specifiers, SymbolType thisType, SymbolType returnType,
-                    ParamList paramList, std::vector<GenericType> templateTypes, const AstNode *declNode)
+  Function(std::string name, SymbolSpecifiers specifiers, SymbolType thisType, SymbolType returnType, ParamList paramList,
+           std::vector<GenericType> templateTypes, const AstNode *declNode)
       : name(std::move(name)), specifiers(specifiers), thisType(std::move(thisType)), returnType(std::move(returnType)),
         paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode) {}
+  Function() = default;
 
   // Public methods
   [[nodiscard]] std::vector<SymbolType> getParamTypes() const;
@@ -55,7 +56,7 @@ public:
 
   // Public members
   std::string name;
-  SymbolSpecifiers specifiers;
+  SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
   SymbolType thisType = SymbolType(TY_DYN);
   SymbolType returnType = SymbolType(TY_DYN);
   ParamList paramList;

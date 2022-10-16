@@ -25,6 +25,7 @@ public:
   std::any visitFctDef(FctDefNode *ctx) override { return buildNode(ctx); }
   std::any visitProcDef(ProcDefNode *ctx) override { return buildNode(ctx); }
   std::any visitStructDef(StructDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitInterfaceDef(InterfaceDefNode *ctx) override { return buildNode(ctx); }
   std::any visitEnumDef(EnumDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGenericTypeDef(GenericTypeDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGlobalVarDef(GlobalVarDefNode *ctx) override { return buildNode(ctx); }
@@ -45,6 +46,7 @@ public:
   std::any visitEnumItemLst(EnumItemLstNode *ctx) override { return buildNode(ctx); }
   std::any visitEnumItem(EnumItemNode *ctx) override { return buildNode(ctx); }
   std::any visitField(FieldNode *ctx) override { return buildNode(ctx); }
+  std::any visitSignature(SignatureNode *ctx) override { return buildNode(ctx); }
   std::any visitStmt(StmtNode *ctx) override { return buildNode(ctx); }
   std::any visitDeclStmt(DeclStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifierLst(SpecifierLstNode *ctx) override { return buildNode(ctx); }
@@ -129,6 +131,8 @@ private:
       return "ProcDef";
     if (std::is_same<StructDefNode, T>())
       return "StructDef";
+    if (std::is_same<InterfaceDefNode, T>())
+      return "InterfaceDef";
     if (std::is_same<EnumDefNode, T>())
       return "EnumDef";
     if (std::is_same<GenericTypeDefNode, T>())
@@ -169,6 +173,8 @@ private:
       return "EnumItem";
     if (std::is_same<FieldNode, T>())
       return "Field";
+    if (std::is_same<SignatureNode, T>())
+      return "Signature";
     if (std::is_same<StmtNode, T>())
       return "Stmt";
     if (std::is_same<DeclStmtNode, T>())

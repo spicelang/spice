@@ -1,25 +1,39 @@
-// See Issue #155 (fixed)
-
-type T dyn;
-
-public type Vector<T> struct {
-    T* contents
-    unsigned long capacity
-    unsigned long size
-    unsigned int itemSize
+type Person interface {
+    f<int> dump()
 }
 
-public f<int> Vector.get(long index) {
-    if (index <= size) { // size instead this.size
-        return 1;
-    }
-    return 0;
+type Person interface {
+    p print()
+}
+
+f<int> main() {}
+
+/*type Visitor struct {
+
+}
+
+type SymbolTable struct {
+
+}
+
+type VisitableNode interface {
+    f<bool> accept(Visitor*)
+}
+
+type AstNode struct : VisitableNode {
+
+}
+
+type AstEntryNode struct : VisitableNode {
+    AstNode astNode
+    SymbolTable* fctScope
+    bool hasArgs
 }
 
 f<int> main() {
-    dyn v = Vector<int>{};
-    int v0 = v.get(0l);
-}
+    dyn entryNode = AstEntryNode{};
+    printf("%d", entryNode.hasArgs);
+}*/
 
 /*import "std/net/http" as http;
 

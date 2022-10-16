@@ -27,6 +27,7 @@ public:
   std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override { return buildRule(ctx); };
   std::any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override { return buildRule(ctx); };
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override { return buildRule(ctx); };
+  std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override { return buildRule(ctx); };
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override { return buildRule(ctx); };
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override { return buildRule(ctx); };
   std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override { return buildRule(ctx); };
@@ -41,6 +42,7 @@ public:
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override { return buildRule(ctx); };
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override { return buildRule(ctx); };
   std::any visitField(SpiceParser::FieldContext *ctx) override { return buildRule(ctx); };
+  std::any visitSignature(SpiceParser::SignatureContext *ctx) override { return buildRule(ctx); };
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override { return buildRule(ctx); };
   std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override { return buildRule(ctx); };
   std::any visitParamLst(SpiceParser::ParamLstContext *ctx) override { return buildRule(ctx); };

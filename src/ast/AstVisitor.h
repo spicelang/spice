@@ -12,6 +12,7 @@ public:
   std::any visitFctDef(FctDefNode *node) override;
   std::any visitProcDef(ProcDefNode *node) override;
   std::any visitStructDef(StructDefNode *node) override;
+  std::any visitInterfaceDef(InterfaceDefNode *node) override;
   std::any visitEnumDef(EnumDefNode *node) override;
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
@@ -32,6 +33,7 @@ public:
   std::any visitEnumItemLst(EnumItemLstNode *node) override;
   std::any visitEnumItem(EnumItemNode *node) override;
   std::any visitField(FieldNode *node) override;
+  std::any visitSignature(SignatureNode *node) override;
   std::any visitStmt(StmtNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
   std::any visitSpecifierLst(SpecifierLstNode *node) override;

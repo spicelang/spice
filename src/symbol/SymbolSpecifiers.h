@@ -37,6 +37,8 @@ const unsigned short SPECIFIER_DEFAULTS_ARRAY = 0b000;
 const unsigned short SPECIFIER_DEFAULTS_GENERIC = 0b000;
 // Defaults: Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_STRUCT = 0b000;
+// Defaults: Const: 0; Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_INTERFACE = 0b000;
 // Defaults: Const: 1, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_ENUM = 0b100;
 // Defaults: Const: 1, Signed: 0, Public: 0

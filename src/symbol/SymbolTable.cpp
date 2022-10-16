@@ -10,7 +10,6 @@
 #include <symbol/GenericType.h>
 #include <symbol/Struct.h>
 #include <util/CodeLoc.h>
-#include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 
 /**
@@ -40,6 +39,7 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, Symbol
 void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNode) {
   std::string name = "anon." + declNode->codeLoc.toString();
   insert(name, type, SymbolSpecifiers(type), DECLARED, declNode);
+  lookupAnonymous(declNode->codeLoc)->isUsed = true;
 }
 
 /**
@@ -350,7 +350,7 @@ size_t SymbolTable::getFieldCount() const {
  * @param function Function object
  * @param err Error factory
  */
-void SymbolTable::insertFunction(const Function &function) {
+Function *SymbolTable::insertFunction(const Function &function) {
   const AstNode *declNode = function.declNode;
 
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
@@ -358,14 +358,14 @@ void SymbolTable::insertFunction(const Function &function) {
   functions.insert({codeLocStr, std::make_shared<std::map<std::string, Function>>()});
 
   // Check if function is already substantiated
-  if (function.hasSubstantiatedParams()) {
-    insertSubstantiatedFunction(function, declNode);
-    return;
-  }
+  if (function.hasSubstantiatedParams())
+    return insertSubstantiatedFunction(function, declNode);
 
   // Substantiate the function and insert the substantiated instances
   for (const auto &fct : function.substantiateOptionalParams())
     insertSubstantiatedFunction(fct, declNode);
+
+  return nullptr;
 }
 
 /**
@@ -539,9 +539,9 @@ Function *SymbolTable::getFunctionAccessPointer(const CodeLoc &codeLoc, const st
  * an exception will be thrown
  *
  * @param function Substantiated function
- * @param codeLoc Code location
+ * @param declNode Declaration AST node
  */
-void SymbolTable::insertSubstantiatedFunction(const Function &function, const AstNode *declNode) {
+Function *SymbolTable::insertSubstantiatedFunction(const Function &function, const AstNode *declNode) {
   if (!function.hasSubstantiatedParams())
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
@@ -553,23 +553,49 @@ void SymbolTable::insertSubstantiatedFunction(const Function &function, const As
                           "The function/procedure '" + function.getSignature() + "' is declared twice");
   }
   // Add function to function list
-  assert(functions.contains(declNode->codeLoc.toString()));
-  functions.at(declNode->codeLoc.toString())->insert({mangledFctName, function});
+  const std::string codeLocStr = declNode->codeLoc.toString();
+  assert(functions.contains(codeLocStr));
+  functions.at(codeLocStr)->insert({mangledFctName, function});
   // Add symbol table entry for the function
   insert(function.getSignature(), function.getSymbolType(), function.specifiers, INITIALIZED, declNode);
+  return &functions.at(codeLocStr)->at(mangledFctName);
 }
 
 /**
  * Insert a struct object into this symbol table scope
  *
  * @param s Struct object
- * @param err Error factory
  */
-void SymbolTable::insertStruct(const Struct &s) {
-  // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
+Struct *SymbolTable::insertStruct(const Struct &s) {
+  // Open a new struct declaration pointer list. Which gets filled by the 'insertSubstantiatedStruct' method
   std::string codeLocStr = s.declNode->codeLoc.toString();
   structs.insert({codeLocStr, std::make_shared<std::map<std::string, Struct>>()});
-  insertSubstantiatedStruct(s, s.declNode);
+  return insertSubstantiatedStruct(s, s.declNode);
+}
+
+/**
+ * Retrieve an interface instance by its name
+ *
+ * @param interfaceName Name of the interface
+ * @return Interface object
+ */
+Interface *SymbolTable::lookupInterface(const std::string &interfaceName) {
+  if (!interfaces.contains(interfaceName))
+    return nullptr;
+  return &interfaces.at(interfaceName);
+}
+
+/**
+ * Insert an interface object into this symbol table scope
+ *
+ * @param i Interface object
+ */
+void SymbolTable::insertInterface(const Interface &i) {
+  // Add interface to interface list
+  assert(!interfaces.contains(i.name));
+  interfaces.insert({i.name, i});
+  // Add symbol table entry for the interface
+  insert(i.name, SymbolType(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
 }
 
 /**
@@ -664,7 +690,7 @@ std::map<std::string, Struct> *SymbolTable::getStructManifestations(const CodeLo
 /**
  * Add struct access pointer to the current scope
  *
- * @param token Reference token
+ * @param codeLoc Reference code location
  * @param struct Struct
  */
 void SymbolTable::insertStructAccessPointer(const CodeLoc &codeLoc, Struct *spiceStruct) {
@@ -688,21 +714,21 @@ Struct *SymbolTable::getStructAccessPointer(const CodeLoc &codeLoc) {
  * an exception will be thrown
  *
  * @param s Substantiated struct
- * @param err Error factory
- * @param token Token, where the struct is declared
- * @param codeLoc Code location
+ * @param declNode Declaration AST node
  */
-void SymbolTable::insertSubstantiatedStruct(const Struct &s, const AstNode *declNode) {
+Struct *SymbolTable::insertSubstantiatedStruct(const Struct &s, const AstNode *declNode) {
   // Check if the struct exists already
   for (const auto &[_, manifestations] : structs) {
     if (manifestations->contains(s.getMangledName()))
       throw SemanticError(declNode, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
   }
   // Add struct to struct list
-  assert(structs.at(declNode->codeLoc.toString()) != nullptr);
-  structs.at(declNode->codeLoc.toString())->insert({s.getMangledName(), s});
+  const std::string codeLocStr = declNode->codeLoc.toString();
+  assert(structs.at(codeLocStr) != nullptr);
+  structs.at(codeLocStr)->insert({s.getMangledName(), s});
   // Add symbol table entry for the struct
   insert(s.getSignature(), s.getSymbolType(), s.specifiers, INITIALIZED, declNode);
+  return &structs.at(codeLocStr)->at(s.getMangledName());
 }
 
 /**
@@ -753,15 +779,20 @@ std::vector<CompilerWarning> SymbolTable::collectWarnings() {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_FUNCTION, "The function '" + entry.name + "' is unused");
       } else if (entry.type.is(TY_PROCEDURE)) {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_STRUCT) || entry.type.isPointerOf(TY_STRUCT)) {
+      } else if (entry.type.is(TY_STRUCT) && entry.isGlobal) {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.name + "' is unused");
+      } else if (entry.type.is(TY_INTERFACE) && entry.isGlobal) {
+        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_INTERFACE, "The interface '" + entry.name + "' is unused");
       } else if (entry.type.is(TY_IMPORT)) {
         warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.name + "' is unused");
       } else {
         // Skip idx variables
-        if (entry.name != FOREACH_DEFAULT_IDX_VARIABLE_NAME)
+        if (entry.name == FOREACH_DEFAULT_IDX_VARIABLE_NAME)
           continue;
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.name + "' is unused");
+        if (scopeType == SCOPE_STRUCT)
+          warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_FIELD, "The field '" + entry.name + "' is unused");
+        else
+          warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.name + "' is unused");
       }
     }
   }

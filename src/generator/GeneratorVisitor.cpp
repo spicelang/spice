@@ -744,6 +744,16 @@ std::any GeneratorVisitor::visitStructDef(StructDefNode *node) {
   return nullptr;
 }
 
+std::any GeneratorVisitor::visitInterfaceDef(InterfaceDefNode * /*node*/) {
+  // Noop
+  return nullptr;
+}
+
+std::any GeneratorVisitor::visitEnumDef(EnumDefNode * /*node*/) {
+  // Noop
+  return nullptr;
+}
+
 std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (secondRun)
     return nullptr;
