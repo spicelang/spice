@@ -1,0 +1,31 @@
+import "std/type/char" as charTy;
+
+f<int> main() {
+    // toDouble()
+    double asDouble = charTy.toDouble('d');
+    assert asDouble == 100.0;
+
+    // toInt()
+    int asInt = charTy.toInt('T');
+    assert asInt == 84;
+
+    // toShort()
+    short asShort = charTy.toShort('j');
+    assert asShort == 106s;
+
+    // toLong()
+    long asLong = charTy.toLong('K');
+    assert asLong == 75l;
+
+    // toString()
+    //string asString = charTy.toString('v');
+    //assert asString == "v";
+
+    // toBool()
+    bool asBool1 = charTy.toBool('1');
+    assert asBool1 == true;
+    bool asBool2 = charTy.toBool('0');
+    assert asBool2 == false;
+
+    printf("All assertions succeeded");
+}

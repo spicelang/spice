@@ -1501,12 +1501,14 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhsV, const Symb
   case COMB(TY_BYTE, TY_SHORT): // fallthrough
   case COMB(TY_BYTE, TY_LONG):
     return builder.CreateIntCast(rhsV, lhsTy, false);
+  case COMB(TY_BYTE, TY_CHAR): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return rhsV;
   case COMB(TY_CHAR, TY_INT):   // fallthrough
   case COMB(TY_CHAR, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_LONG):
     return builder.CreateIntCast(rhsV, lhsTy, false);
+  case COMB(TY_CHAR, TY_BYTE):     // fallthrough
   case COMB(TY_CHAR, TY_CHAR):     // fallthrough
   case COMB(TY_STRING, TY_STRING): // fallthrough
   case COMB(TY_STRING, TY_PTR):    // fallthrough
