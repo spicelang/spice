@@ -8,8 +8,7 @@ const string smallsString100 = "000102030405060708091011121314151617181920212223
 
 // Converts an int to a double
 public f<double> toDouble(int input) {
-    // ToDo: Implement
-    return 0.0;
+    return 0.0 + input;
 }
 
 // Converts an int to a short
@@ -35,12 +34,18 @@ public f<char> toChar(int input) {
 // Converts an int to a string
 public f<string> toString(int input) {
     // ToDo: Implement (See https://github.com/golang/go/blob/master/src/strconv/itoa.go)
-    return "";
+    //if input >= 0 && input < nSmalls { return small(input); }
+    return formatBits(input);
 }
 
 // Converts an int to a boolean
 public f<bool> toBool(int input) {
     return input >= 1;
+}
+
+// Check if the input is a power of two
+public f<bool> isPowerOfTwo(int input) {
+    return (input & (input - 1)) == 0;
 }
 
 // Helper function: returns the string of a small number
@@ -50,3 +55,8 @@ public f<bool> toBool(int input) {
     }
     return smallsString100.substring(i*2, i*2+2);
 }*/
+
+f<string> formatBits(int input) {
+    // ToDo: Implement
+    return "";
+}

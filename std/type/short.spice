@@ -1,6 +1,6 @@
 public const int SIZE = 16;
-public const short MIN_VALUE = -32768;
-public const short MAX_VALUE = 32767;
+public const short MIN_VALUE = -32768s;
+public const short MAX_VALUE = 32767s;
 
 // Converts a short to a double
 public f<double> toDouble(short input) {
@@ -19,7 +19,7 @@ public f<long> toLong(short input) {
 
 // Converts a short to a byte
 public f<byte> toByte(short input) {
-    return (byte) input;
+    return (byte) ((int) input);
 }
 
 // Converts a short to a char
@@ -34,6 +34,11 @@ public f<string> toString(short input) {
 }
 
 // Converts a v to a boolean
-public f<bool> toBool(v input) {
+public f<bool> toBool(short input) {
     return input >= 1;
+}
+
+// Check if the input is a power of two
+public f<bool> isPowerOfTwo(short input) {
+    return (input & (input - 1s)) == 0s;
 }

@@ -41,7 +41,7 @@ public type SymbolTable struct {
     map::Map<string, fct::Function*> functionAccessPointers
     map::Map<string, map::Map<string, sct::Struct>> structs // <code-loc, vector-of-representations>
     map::Map<string, sct::Struct*> structAccessPointers
-    map::Map<string, itf::Interface> interfaces;
+    map::Map<string, itf::Interface> interfaces
 
     bool inMainSourceFile
     bool isSourceFileRootScope
