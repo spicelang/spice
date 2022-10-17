@@ -1,4 +1,12 @@
-// Imports
+// Std imports
+
+// Own imports
+
+// Enums
+public type SymbolState enum {
+    DECLARED,
+    INITIALIZED
+}
 
 public type SymbolTableEntry struct {
 

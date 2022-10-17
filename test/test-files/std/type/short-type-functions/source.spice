@@ -1,0 +1,40 @@
+import "std/type/short" as shortTy;
+
+f<int> main() {
+    // toDouble()
+    double asDouble = shortTy.toDouble(123s);
+    assert asDouble == 123.0;
+
+    // toInt()
+    int asInt = shortTy.toInt(-345s);
+    assert asInt == -345;
+
+    // toLong()
+    long asLong = shortTy.toLong(45s);
+    assert asLong == 45l;
+
+    // toByte()
+    byte asByte = shortTy.toByte(12s);
+    assert asByte == (byte) 12;
+
+    // toChar()
+    char asChar = shortTy.toChar(66s);
+    assert asChar == 'B';
+
+    // toString()
+    //string asString = shortTy.toString(15);
+    //assert asString == "15";
+    //printf("Str: %s\n", asString);
+
+    // toBool()
+    bool asBool1 = shortTy.toBool(1s);
+    assert asBool1 == true;
+    bool asBool2 = shortTy.toBool(0s);
+    assert asBool2 == false;
+
+    // isPowerOfTwo()
+    assert shortTy.isPowerOfTwo(16s);
+    assert !shortTy.isPowerOfTwo(31s);
+
+    printf("All assertions succeeded");
+}

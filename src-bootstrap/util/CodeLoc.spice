@@ -1,5 +1,5 @@
 // Imports
-import "std/type/int" as intTy;
+import "std/type/long" as longTy;
 
 public type CodeLoc struct {
     unsigned long line
@@ -18,8 +18,8 @@ public p CodeLoc.ctor(unsigned long line, unsigned long col, string sourceFilePa
  *
  * @return Code location string
  */
-public f<string> toString() {
-    return "L" + intTy.toString(line) + "C" + intTy.toString(col);
+public f<string> CodeLoc.toString() {
+    return "L" + longTy.toString(this.line) + "C" + longTy.toString(this.col);
 }
 
 /**
@@ -27,11 +27,11 @@ public f<string> toString() {
  *
  * @return Pretty code location
  */
-public f<string> toPrettyString() {
-    if sourceFilePath.empty() {
-        return intTy.toString(line) + ":" + intTy.toString(col);
+public f<string> CodeLoc.toPrettyString() {
+    if this.sourceFilePath.empty() {
+        return intTy.toString(line) + ":" + longTy.toString(this.col);
     }
-    return sourceFilePath + ":" + intTy.toString(line) + ":" + intTy.toString(col);
+    return this.sourceFilePath + ":" + longTy.toString(this.line) + ":" + longTy.toString(this.col);
 }
 
 /**
@@ -39,6 +39,6 @@ public f<string> toPrettyString() {
  *
  * @return Pretty line number
  */
-public f<string> toPrettyLine() {
-    return "l" + intTy.toString(line);
+public f<string> CodeLoc.toPrettyLine() {
+    return "l" + intTy.toString(this.line);
 }

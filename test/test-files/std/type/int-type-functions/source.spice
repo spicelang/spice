@@ -1,0 +1,40 @@
+import "std/type/int" as intTy;
+
+f<int> main() {
+    // toDouble()
+    double asDouble = intTy.toDouble(123);
+    assert asDouble == 123.0;
+
+    // toShort()
+    short asShort = intTy.toShort(-345);
+    assert asShort == -345s;
+
+    // toLong()
+    long asLong = intTy.toLong(459873);
+    assert asLong == 459873l;
+
+    // toByte()
+    byte asByte = intTy.toByte(12);
+    assert asByte == (byte) 12;
+
+    // toChar()
+    char asChar = intTy.toChar(66);
+    assert asChar == 'B';
+
+    // toString()
+    //string asString = intTy.toString(12345);
+    //assert asString == "12345";
+    //printf("Str: %s\n", asString);
+
+    // toBool()
+    bool asBool1 = intTy.toBool(1);
+    assert asBool1 == true;
+    bool asBool2 = intTy.toBool(0);
+    assert asBool2 == false;
+
+    // isPowerOfTwo()
+    assert intTy.isPowerOfTwo(16);
+    assert !intTy.isPowerOfTwo(31);
+
+    printf("All assertions succeeded");
+}

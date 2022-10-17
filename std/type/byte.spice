@@ -1,10 +1,10 @@
 public const int SIZE = 8;
-public const byte MIN_VALUE = 0;
-public const byte MAX_VALUE = 255;
+public const int MIN_VALUE = 0;
+public const int MAX_VALUE = 255;
 
 // Converts a byte to a double
 public f<double> toDouble(byte input) {
-    return 0.0;
+    return 0.0 + ((int) input);
 }
 
 // Converts a byte to an int
@@ -14,12 +14,12 @@ public f<int> toInt(byte input) {
 
 // Converts a byte to a short
 public f<short> toShort(byte input) {
-    return (short) input;
+    return (short) ((int) input);
 }
 
 // Converts a byte to a long
 public f<long> toLong(byte input) {
-    return (long) input;
+    return (long) ((int) input);
 }
 
 // Converts a byte to a char
@@ -29,10 +29,11 @@ public f<char> toChar(byte input) {
 
 // Converts a byte to a string
 public f<string> toString(byte input) {
+    // ToDo: Impmenet
     return "0";
 }
 
 // Converts a byte to a bool
 public f<bool> toBool(byte input) {
-    return input == 1;
+    return input == (byte) 1;
 }

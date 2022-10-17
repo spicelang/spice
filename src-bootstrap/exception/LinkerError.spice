@@ -1,0 +1,34 @@
+// Imports
+import "../util/CodeLoc" as cl;
+
+public type LinkerErrorType enum {
+    LINKER_NOT_FOUND,
+    LINKER_ERROR
+}
+
+/**
+ * Custom exception for errors, occurring when linking the output executable
+ */
+public type LinkerError struct {
+    string errorMessage
+}
+
+/**
+ * @param type Type of the error
+ * @param message Error message suffix
+ */
+public p LinkerError.ctor(const LinkerErrorType errorType, const string message) {
+    this.errorMessage = "[Error|Linker] " + this.getMessagePrefix(errorType) + ": " + message;
+}
+
+/**
+ * Get the prefix of the error message for a particular error
+ *
+ * @param errorType Type of the error
+ * @return Prefix string for the error type
+ */
+f<string> LinkerError.getMessagePrefix(const LinkerErrorType errorType) {
+    if errorType == LinkerErrorType.PARSING_FAILED { return "Parsing failed"; }
+    if errorType == LinkerErrorType.NUMBER_OUT_OF_RANGE { return "Number is out of range"; }
+    return "Unknown error";
+}

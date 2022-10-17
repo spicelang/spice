@@ -215,24 +215,39 @@ entry.l1:
   call void @_mp__String__opMul__int(ptr nonnull %24, i32 7)
   %57 = call ptr @_mf__String__getRaw(ptr nonnull %24)
   %58 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %57)
-  %59 = call i32 (ptr, ...) @printf(ptr nonnull @7, i32 zext (i1 icmp eq (ptr @8, ptr @9) to i32))
-  %60 = call i32 (ptr, ...) @printf(ptr nonnull @7, i32 zext (i1 icmp eq (ptr @12, ptr @10) to i32))
-  %61 = call i32 (ptr, ...) @printf(ptr nonnull @7, i32 1)
-  %62 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 zext (i1 icmp ne (ptr @8, ptr @9) to i32))
-  %63 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 zext (i1 icmp ne (ptr @12, ptr @10) to i32))
-  %64 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 0)
+  %59 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @8, ptr nonnull @9)
+  %60 = zext i1 %59 to i32
+  %61 = call i32 (ptr, ...) @printf(ptr nonnull @7, i32 %60)
+  %62 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @10)
+  %63 = zext i1 %62 to i32
+  %64 = call i32 (ptr, ...) @printf(ptr nonnull @7, i32 %63)
+  %65 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @12)
+  %66 = zext i1 %65 to i32
+  %67 = call i32 (ptr, ...) @printf(ptr nonnull @7, i32 %66)
+  %68 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @8, ptr nonnull @9)
+  %69 = xor i1 %68, true
+  %70 = zext i1 %69 to i32
+  %71 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 %70)
+  %72 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @10)
+  %73 = xor i1 %72, true
+  %74 = zext i1 %73 to i32
+  %75 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 %74)
+  %76 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @12)
+  %77 = xor i1 %76, true
+  %78 = zext i1 %77 to i32
+  %79 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 %78)
   call void @_mp__String__ctor__string(ptr nonnull %25, ptr nonnull @12)
   call void @_mp__String__append__char(ptr nonnull %25, i8 108)
-  %65 = call ptr @_mf__String__getRaw(ptr nonnull %25)
-  %66 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %65)
+  %80 = call ptr @_mf__String__getRaw(ptr nonnull %25)
+  %81 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %80)
   call void @_mp__String__ctor__string(ptr nonnull %26, ptr nonnull @14)
   call void @_mp__String__append__string(ptr nonnull %26, ptr nonnull @13)
-  %67 = call ptr @_mf__String__getRaw(ptr nonnull %26)
-  %68 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %67)
+  %82 = call ptr @_mf__String__getRaw(ptr nonnull %26)
+  %83 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %82)
   call void @_mp__String__ctor__string(ptr nonnull %27, ptr nonnull @14)
   call void @_mp__String__opMul__int(ptr nonnull %27, i32 3)
-  %69 = call ptr @_mf__String__getRaw(ptr nonnull %27)
-  %70 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %69)
+  %84 = call ptr @_mf__String__getRaw(ptr nonnull %27)
+  %85 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %84)
   call void @_mp__String__dtor(ptr nonnull %17)
   call void @_mp__String__dtor(ptr nonnull %19)
   call void @_mp__String__dtor(ptr nonnull %21)
@@ -266,6 +281,8 @@ declare void @_mp__String__opMul__short(ptr, i16) local_unnamed_addr
 declare void @_mp__String__opMul__int(ptr, i32) local_unnamed_addr
 
 declare void @_mp__String__ctor__char(ptr, i8) local_unnamed_addr
+
+declare i1 @_f__void__isRawEqual__string_string(ptr, ptr) local_unnamed_addr
 
 declare void @_mp__String__append__char(ptr, i8) local_unnamed_addr
 

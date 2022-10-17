@@ -1,0 +1,41 @@
+import "std/type/bool" as boolTy;
+
+f<int> main() {
+    // toDouble()
+    double asDouble1 = boolTy.toDouble(true);
+    assert asDouble1 == 1.0;
+    double asDouble2 = boolTy.toDouble(false);
+    assert asDouble2 == 0.0;
+
+    // toInt()
+    int asInt1 = boolTy.toInt(true);
+    assert asInt1 == 1;
+    int asInt2 = boolTy.toInt(false);
+    assert asInt2 == 0;
+
+    // toShort()
+    short asShort1 = boolTy.toShort(true);
+    assert asShort1 == 1s;
+    short asShort2 = boolTy.toShort(false);
+    assert asShort2 == 0s;
+
+    // toLong()
+    long asLong1 = boolTy.toLong(true);
+    assert asLong1 == 1l;
+    long asLong2 = boolTy.toLong(false);
+    assert asLong2 == 0l;
+
+    // toByte()
+    byte asByte1 = boolTy.toByte(true);
+    assert asByte1 == (byte) 1;
+    byte asByte2 = boolTy.toByte(false);
+    assert asByte2 == (byte) 0;
+
+    // toString()
+    //string asString1 = boolTy.toString(true);
+    //assert asString1 == "true";
+    //string asString2 = boolTy.toString(false);
+    //assert asString2 == "false";
+
+    printf("All assertions succeeded");
+}

@@ -1,6 +1,6 @@
 public const int SIZE = 64;
-public const double MIN_VALUE = 0; // ToDo: Fix
-public const double MAX_VALUE = 0; // ToDo: Fix
+public const double MIN_VALUE = -1.7976931348623157e+308;
+public const double MAX_VALUE = 1.7976931348623157e+308;
 
 // Converts a double to an int
 public f<int> toInt(double input) {
@@ -9,13 +9,13 @@ public f<int> toInt(double input) {
 }
 
 // Converts a double to a short
-public f<short> toInt(double input) {
+public f<short> toShort(double input) {
     // ToDo: Implement
     return (short) 0;
 }
 
 // Converts a double to a long
-public f<long> toInt(double input) {
+public f<long> toLong(double input) {
     // ToDo: Implement
     return (long) 0;
 }

@@ -11,7 +11,7 @@ public f<int> toInt(string input) {
     }
 
     bool neg = false;
-    
+
 
     // ToDo: implement the rest
     return 0;
@@ -24,7 +24,7 @@ public f<short> toShort(string input) {
     }
 
     bool neg = false;
-    
+
 
     // ToDo: implement the rest
     return (short) 0;
@@ -37,7 +37,7 @@ public f<long> toLong(string input) {
     }
 
     bool neg = false;
-    
+
 
     // ToDo: implement the rest
     return (long) 0;
@@ -50,7 +50,7 @@ public f<byte> toByte(string input) {
     }
 
     bool neg = false;
-    
+
 
     // ToDo: implement the rest
     return (byte) 0;
@@ -65,27 +65,4 @@ public f<char> toChar(string input) {
 // Converts a string to a bool
 public f<bool> toBool(string input) {
     return input == "true";
-}
-
-// Returns the length of a string
-public f<long> getRawLength(string input) {
-    result = 0l;
-    while input[result] != '\0' {
-        result++;
-    }
-}
-
-// Returns the equality of two strings
-public f<bool> isRawEqual(string lhs, string rhs) {
-    unsigned long lhsLength = getRawLength(lhs);
-    unsigned long rhsLength = getRawLength(rhs);
-    // Return false immediately if length does not match
-    if lhsLength != rhsLength { return false; }
-    // Compare chars
-    for int i = 0; i < lhsLength; i++ {
-        if lhs[i] != rhs[i] {
-            return false;
-        }
-    }
-    return true;
 }

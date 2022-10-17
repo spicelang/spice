@@ -442,10 +442,10 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhsV, llvm::Val
   llvm::Type *rhsVTy = rhsV->getType();
 
   // Check if both values are of type pointer
-  if (lhsVTy->isPointerTy() && rhsVTy->isPointerTy())
+  if (lhsSTy.isPointer() && rhsSTy.isPointer())
     return builder.CreateICmpEQ(lhsV, rhsV);
 
-  // Check if one value is of type pointer and one is of type byte
+  // Check if one value is of type pointer and one is of type int
   if (lhsVTy->isPointerTy() && rhsVTy->isIntegerTy(32)) {
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV, rhsVTy);
     return builder.CreateICmpEQ(lhsInt, rhsV);
@@ -553,10 +553,10 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhsV, llvm::
   llvm::Type *rhsVTy = rhsV->getType();
 
   // Check if both values are of type pointer
-  if (lhsVTy->isPointerTy() && rhsVTy->isPointerTy())
+  if (lhsSTy.isPointer() && rhsSTy.isPointer())
     return builder.CreateICmpNE(lhsV, rhsV);
 
-  // Check if one value is of type pointer and one is of type byte
+  // Check if one value is of type pointer and one is of type int
   if (lhsVTy->isPointerTy() && rhsVTy->isIntegerTy(32)) {
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV, rhsVTy);
     return builder.CreateICmpNE(lhsInt, rhsV);
@@ -1501,12 +1501,14 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhsV, const Symb
   case COMB(TY_BYTE, TY_SHORT): // fallthrough
   case COMB(TY_BYTE, TY_LONG):
     return builder.CreateIntCast(rhsV, lhsTy, false);
+  case COMB(TY_BYTE, TY_CHAR): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return rhsV;
   case COMB(TY_CHAR, TY_INT):   // fallthrough
   case COMB(TY_CHAR, TY_SHORT): // fallthrough
   case COMB(TY_CHAR, TY_LONG):
     return builder.CreateIntCast(rhsV, lhsTy, false);
+  case COMB(TY_CHAR, TY_BYTE):     // fallthrough
   case COMB(TY_CHAR, TY_CHAR):     // fallthrough
   case COMB(TY_STRING, TY_STRING): // fallthrough
   case COMB(TY_STRING, TY_PTR):    // fallthrough

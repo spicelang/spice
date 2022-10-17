@@ -1,0 +1,39 @@
+// Imports
+import "../util/CodeLoc" as cl;
+
+public type ParserErrorType enum {
+    PARSING_FAILED,
+    NUMBER_OUT_OF_RANGE,
+    INVALID_CHAR_LITERAL
+}
+
+/**
+ * Custom exception for errors, occurring while parsing
+ */
+public type ParserError struct {
+    string errorMessage
+}
+
+/**
+ * Constructor: Used in case that the exact code position where the error occurred is known
+ *
+ * @param codeLoc Code location where the error occurred
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+public p ParserError.ctor(const cl::CodeLoc* codeLoc, const ParserErrorType errorType, const string message) {
+    this.errorMessage = "[Error|Parser] " + codeLoc.toPrettyString() + ": " + this.getMessagePrefix(errorType) + ": " + message;
+}
+
+/**
+ * Get the prefix of the error message for a particular error
+ *
+ * @param errorType Type of the error
+ * @return Prefix string for the error type
+ */
+f<string> ParserError.getMessagePrefix(const ParserErrorType errorType) {
+    if errorType == ParserErrorType.PARSING_FAILED { return "Parsing failed"; }
+    if errorType == ParserErrorType.NUMBER_OUT_OF_RANGE { return "Number is out of range"; }
+    if errorType == ParserErrorType.INVALID_CHAR_LITERAL { return "Invalid char literal"; }
+    return "Unknown error";
+}

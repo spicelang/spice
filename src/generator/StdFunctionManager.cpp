@@ -50,7 +50,7 @@ llvm::Function *StdFunctionManager::getStringCtorStringStringFct() const {
 llvm::Function *StdFunctionManager::getStringDtorFct() const { return getProcedure("_mp__String__dtor", builder.getPtrTy()); }
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
-  return getFunction("_mf__isRawEqual__string_string", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
+  return getFunction("_f__void__isRawEqual__string_string", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getStringAppendStringFct() const {
@@ -73,17 +73,17 @@ llvm::Function *StdFunctionManager::getStringMulOpShortFct() const {
   return getProcedure("_mp__String__opMul__short", {builder.getPtrTy(), builder.getInt16Ty()});
 }
 
-llvm::Function *StdFunctionManager::getFunction(const std::string &functionName, llvm::Type *returnType,
+llvm::Function *StdFunctionManager::getFunction(const std::string &funcName, llvm::Type *returnType,
                                                 llvm::ArrayRef<llvm::Type *> args, bool varArg) const {
-  llvm::Function *opFct = module->getFunction(functionName);
+  llvm::Function *opFct = module->getFunction(funcName);
   if (opFct != nullptr)
     return opFct;
   llvm::FunctionType *opFctTy = llvm::FunctionType::get(returnType, args, varArg);
-  module->getOrInsertFunction(functionName, opFctTy);
-  return module->getFunction(functionName);
+  module->getOrInsertFunction(funcName, opFctTy);
+  return module->getFunction(funcName);
 }
 
-llvm::Function *StdFunctionManager::getProcedure(const std::string &procedureName, llvm::ArrayRef<llvm::Type *> args,
+llvm::Function *StdFunctionManager::getProcedure(const std::string &procName, llvm::ArrayRef<llvm::Type *> args,
                                                  bool varArg) const {
-  return getFunction(procedureName, builder.getVoidTy(), args, varArg);
+  return getFunction(procName, builder.getVoidTy(), args, varArg);
 }

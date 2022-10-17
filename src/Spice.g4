@@ -178,7 +178,7 @@ SCOPE_ACCESS: '::';
 ELLIPSIS: '...';
 
 // Regex tokens
-DOUBLE_LIT: [-]?[0-9]*[.][0-9]+;
+DOUBLE_LIT: [-]?[0-9]*[.][0-9]+([eE][+-]?[0-9]+)?;
 INT_LIT: NUM_LIT;
 SHORT_LIT: NUM_LIT 's';
 LONG_LIT: NUM_LIT 'l';
