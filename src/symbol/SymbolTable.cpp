@@ -45,7 +45,8 @@ void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNod
 /**
  * Add a capture to the capture list manually
  *
- * @param capture
+ * @param name Capture name
+ * @param capture Capture
  */
 void SymbolTable::addCapture(const std::string &name, const Capture &capture) { captures.insert({name, capture}); }
 
@@ -145,7 +146,7 @@ SymbolTableEntry *SymbolTable::lookupAnonymous(const CodeLoc &codeLoc) { return 
 /**
  * Check if a capture exists in the current or any parent scope scope and return it if possible
  *
- * @param symbolName Name of the desired captured symbol
+ * @param name Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
 Capture *SymbolTable::lookupCapture(const std::string &name) {
@@ -164,7 +165,7 @@ Capture *SymbolTable::lookupCapture(const std::string &name) {
 /**
  * Check if a capture exists in the current scope and return it if possible
  *
- * @param symbolName Name of the desired captured symbol
+ * @param name Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
 Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
@@ -179,7 +180,7 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
  * Search for a symbol table by its name, where a function is defined. Used for function calls to function/procedures
  * which were linked in from other modules
  *
- * @param scopeId Scope ID of the desired symbol table
+ * @param tableName Name of the desired table
  * @return Desired symbol table
  */
 SymbolTable *SymbolTable::lookupTable(const std::string &tableName) {
@@ -194,6 +195,7 @@ SymbolTable *SymbolTable::lookupTable(const std::string &tableName) {
  * Create a child leaf for the tree of symbol tables and return it
  *
  * @param childBlockName Name of the child scope
+ * @param type Type of the child scope
  * @return Newly created child table
  */
 SymbolTable *SymbolTable::createChildBlock(const std::string &childBlockName, const ScopeType &type) {
@@ -230,6 +232,7 @@ GenericType *SymbolTable::lookupGenericType(const std::string &typeName) {
  *
  * @param childBlockName Name of the child block
  * @param childBlock Child symbol table
+ * @param alterParent Set the current symbol table as parent of the mounted one
  */
 void SymbolTable::mountChildBlock(const std::string &childBlockName, SymbolTable *childBlock, bool alterParent) {
   if (alterParent)
@@ -253,43 +256,41 @@ void SymbolTable::renameChildBlock(const std::string &oldName, const std::string
 /**
  * Duplicates the child block by copying it. The duplicated symbols point to the original ones.
  *
- * @param originalChildBlockName Original name of the child block
- * @param newChildBlockName New block name
+ * @param oldName Old name of the child block
+ * @param newName New block name
  */
-void SymbolTable::copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName) {
-  assert(children.contains(originalChildBlockName));
-  SymbolTable *originalChildBlock = children.at(originalChildBlockName);
+void SymbolTable::copyChildBlock(const std::string &oldName, const std::string &newName) {
+  assert(children.contains(oldName));
+  SymbolTable *originalChildBlock = children.at(oldName);
   // Copy child block
   auto newChildBlock = new SymbolTable(*originalChildBlock);
   // Save the new child block
-  children.insert({newChildBlockName, newChildBlock});
+  children.insert({newName, newChildBlock});
 }
 
 /**
  * Navigate to a child table of the current one in the tree structure
  *
- * @param scopeId Name of the child scope
+ * @param tableName Name of the child table
  * @return Pointer to the child symbol table
  */
-SymbolTable *SymbolTable::getChild(const std::string &scopeId) {
-  if (children.empty() || !children.contains(scopeId))
+SymbolTable *SymbolTable::getChild(const std::string &tableName) {
+  if (children.empty() || !children.contains(tableName))
     return nullptr;
-  return children.at(scopeId);
+  return children.at(tableName);
 }
 
 /**
  * Retrieve all variables that can be freed, because the ref count went down to 0.
  *
- * @param Get only struct variables
- *
+ * @param filterForDtorStructs Get only struct variables
  * @return Variables that can be de-allocated
  */
 std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForDtorStructs) {
   assert(parent != nullptr); // Should not be called in root scope
+  std::vector<SymbolTableEntry *> varsGoingOutOfScope;
 
   // Collect all variables in this scope
-  std::vector<SymbolTableEntry *> varsGoingOutOfScope;
-  varsGoingOutOfScope.reserve(symbols.size());
   for (auto [name, entry] : symbols) {
     if (name == THIS_VARIABLE_NAME)
       continue;
@@ -316,14 +317,14 @@ std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterF
 }
 
 /**
- * Returns all symbols of this particular sub-table
+ * Returns all symbols of the current table
  *
  * @return Map of names and the corresponding symbol table entries
  */
 std::map<std::string, SymbolTableEntry> &SymbolTable::getSymbols() { return symbols; }
 
 /**
- * Returns all captures of this particular sub-table
+ * Returns all captures of the current table
  *
  * @return Map of names and the corresponding capture
  */
@@ -348,7 +349,7 @@ size_t SymbolTable::getFieldCount() const {
  * Insert a function object into this symbol table scope
  *
  * @param function Function object
- * @param err Error factory
+ * @return Inserted function
  */
 Function *SymbolTable::insertFunction(const Function &function) {
   const AstNode *declNode = function.declNode;
@@ -376,9 +377,7 @@ Function *SymbolTable::insertFunction(const Function &function) {
  * @param callFunctionName Function name requirement
  * @param callThisType This type requirement
  * @param callArgTypes Argument types requirement
- * @param err Error Factory
- * @param node Declaration node for the error message
- *
+ * @param node Declaration node for a potential error message
  * @return Matched function or nullptr
  */
 Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::string &callFunctionName,
@@ -502,7 +501,6 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
  * Retrieve the manifestations of the function, defined at defToken
  *
  * @param defCodeLoc Definition code location
- *
  * @return Function manifestations
  */
 std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const CodeLoc &defCodeLoc) const {
@@ -518,7 +516,8 @@ std::map<std::string, Function> *SymbolTable::getFunctionManifestations(const Co
  * @param suffix Key suffix
  */
 void SymbolTable::insertFunctionAccessPointer(Function *spiceFunc, const CodeLoc &codeLoc, const std::string &suffix) {
-  functionAccessPointers.insert({codeLoc.toString() + ":" + suffix, spiceFunc});
+  std::string mapKey = codeLoc.toString() + ":" + suffix;
+  functionAccessPointers.insert({mapKey, spiceFunc});
 }
 
 /**
@@ -564,38 +563,13 @@ Function *SymbolTable::insertSubstantiatedFunction(const Function &function, con
 /**
  * Insert a struct object into this symbol table scope
  *
- * @param s Struct object
+ * @param spiceStruct Struct object
  */
-Struct *SymbolTable::insertStruct(const Struct &s) {
+Struct *SymbolTable::insertStruct(const Struct &spiceStruct) {
   // Open a new struct declaration pointer list. Which gets filled by the 'insertSubstantiatedStruct' method
-  std::string codeLocStr = s.declNode->codeLoc.toString();
+  std::string codeLocStr = spiceStruct.declNode->codeLoc.toString();
   structs.insert({codeLocStr, std::make_shared<std::map<std::string, Struct>>()});
-  return insertSubstantiatedStruct(s, s.declNode);
-}
-
-/**
- * Retrieve an interface instance by its name
- *
- * @param interfaceName Name of the interface
- * @return Interface object
- */
-Interface *SymbolTable::lookupInterface(const std::string &interfaceName) {
-  if (!interfaces.contains(interfaceName))
-    return nullptr;
-  return &interfaces.at(interfaceName);
-}
-
-/**
- * Insert an interface object into this symbol table scope
- *
- * @param i Interface object
- */
-void SymbolTable::insertInterface(const Interface &i) {
-  // Add interface to interface list
-  assert(!interfaces.contains(i.name));
-  interfaces.insert({i.name, i});
-  // Add symbol table entry for the interface
-  insert(i.name, SymbolType(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
+  return insertSubstantiatedStruct(spiceStruct, spiceStruct.declNode);
 }
 
 /**
@@ -729,6 +703,31 @@ Struct *SymbolTable::insertSubstantiatedStruct(const Struct &s, const AstNode *d
   // Add symbol table entry for the struct
   insert(s.getSignature(), s.getSymbolType(), s.specifiers, INITIALIZED, declNode);
   return &structs.at(codeLocStr)->at(s.getMangledName());
+}
+
+/**
+ * Retrieve an interface instance by its name
+ *
+ * @param interfaceName Name of the interface
+ * @return Interface object
+ */
+Interface *SymbolTable::lookupInterface(const std::string &interfaceName) {
+  if (!interfaces.contains(interfaceName))
+    return nullptr;
+  return &interfaces.at(interfaceName);
+}
+
+/**
+ * Insert an interface object into this symbol table scope
+ *
+ * @param i Interface object
+ */
+void SymbolTable::insertInterface(const Interface &i) {
+  // Add interface to interface list
+  assert(!interfaces.contains(i.name));
+  interfaces.insert({i.name, i});
+  // Add symbol table entry for the interface
+  insert(i.name, SymbolType(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
 }
 
 /**

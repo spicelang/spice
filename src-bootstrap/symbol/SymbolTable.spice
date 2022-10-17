@@ -1,14 +1,22 @@
-// Imports
+// Std imports
 import "std/data/map" as map;
+import "std/data/vector" as vec;
 
+// Own imports
+import "../ast/AstNodes" as ast;
+import "SymbolType" as st;
 import "SymbolTableEntry" as ste;
+import "SymbolSpecifiers" as ss;
 import "Capture" as cpt;
 import "GenericType" as gt;
+import "Function" as fct;
+import "Interface" as itf;
 
 public type ScopeType enum {
     SCOPE_GLOBAL,
     SCOPE_FUNC_PROC_BODY,
     SCOPE_STRUCT,
+    SCOPE_INTERFACE,
     SCOPE_ENUM,
     SCOPE_IF_BODY,
     SCOPE_WHILE_BODY,
@@ -29,23 +37,558 @@ public type SymbolTable struct {
     map::Map<string, ste::SymbolTableEntry> symbols
     map::Map<string, cpt::Capture> captures
     map::Map<string, gt::GenericType> genericTypes
+    map::Map<string, map::Map<string, fct::Function>> functions // <code-loc, vector-of-representations>
+    map::Map<string, fct::Function*> functionAccessPointers
+    map::Map<string, map::Map<string, sct::Struct>> structs // <code-loc, vector-of-representations>
+    map::Map<string, sct::Struct*> structAccessPointers
+    map::Map<string, itf::Interface> interfaces;
 
     bool inMainSourceFile
     bool isSourceFileRootScope
-    bool compilerWarningsEnabled
-    bool requiresCapturing
+    bool isShadowTable
+    bool isCapturingRequired
 }
 
-p SymbolTable.ctor(SymbolTable* parent, ScopeType scopeType, bool inMainSourceFile = false, bool isSourceFileRoot = false) {
+public p SymbolTable.ctor(
+    const SymbolTable* parent,
+    const ScopeType scopeType,
+    const bool inMainSourceFile = false,
+    const bool isSourceFileRoot = false
+) {
     this.parent = parent;
     this.scopeType = scopeType;
 
     this.inMainSourceFile = inMainSourceFile;
     this.isSourceFileRootScope = isSourceFileRoot;
-    this.compilerWarningsEnabled = true;
-    this.requiresCapturing = false;
+    this.isShadowTable = false;
+    this.isCapturingRequired = false;
 }
 
-p SymbolTable.insert() {
+/**
+ * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
+ *
+ * @param name Name of the symbol
+ * @param symbolType Type of the symbol
+ * @param specifiers Specifiers of the symbol
+ * @param state State of the symbol (declared or initialized)
+ * @param declNode AST node where the symbol is declared
+ */
+public p SymbolTable.insert(
+    const string name,
+    const st::SymbolType symbolType,
+    const ss::SymbolSpecifiers specifiers,
+    const ste::SymbolState state,
+    const ast::AstNode* declNode
+) {
+    bool isGlobal = this.parent == nil<SymbolTable*>;
+    unsigned int orderIndex = this.symbols.getSize();
+    // Insert into symbols map
+    symbols.insert(ste::SymbolTableEntry{name, symbolType, this, specifiers, state, declNode, orderIndex, isGlobal});
+}
+
+/**
+ * Insert a new anonymous symbol into the current symbol table.
+ * The anonymous symbol will be identified via the definition code location
+ *
+ * @param symbolType Type of the symbol
+ * @param declNode AST node where the symbol is declared
+ */
+public p SymbolTable.insertAnonymous(const st::SymbolType symbolType, const ast::AstNode* declNode) {
+    string name = "anon." + declNode.codeLoc.toString();
+    this.insert(name, symbolType, ss::SymbolSpecifiers(symbolType), ste::SymbolState.DECLARED, declNode);
+    this.lookupAnonymous(declNode.codeLoc).isUsed = true;
+}
+
+/**
+ * Add a capture to the capture list manually
+ *
+ * @param name Capture name
+ * @param capture Capture
+ */
+public p SymbolTable.addCapture(const string name, const Capture capture) {
+    this.captures.insert(name, capture);
+}
+
+/**
+ * Check if a symbol exists in the current or any parent scope and return it if possible
+ *
+ * @param name Name of the desired symbol
+ * @return Desired symbol / nullptr if the symbol was not found
+ */
+public f<ste::SymbolTableEntry*> SymbolTable.lookup(const string name) {
+    // Check if the symbol exists in the current scope. If yes, take it
+    ste::SymbolTableEntry* entry = this.lookupStrict(name);
+    if entry != nil<ste::SymbolTableEntry*> { // Symbol was not found in the current scope
+        // We reached the root scope, the symbol does not exist at all
+        if parent == nil<SymbolTable*> { return nil<ste::SymbolTableEntry*>; }
+        // If there is a parent scope, continue the search there
+        entry = this.parent.lookup(name);
+        // Symbol was also not found in all the parent scopes, return nullptr
+        if entry == nil<SymbolTable*> { return nil<ste::SymbolTableEntry*>; }
+
+        // Check if this scope requires capturing and capture the variable if appropriate
+        if this.isCapturingRequired && !this.captures.contains(name) && !entry.ty.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}) {
+            this.captures.insert(name, cpt::Capture(entry));
+        }
+    }
+    return entry;
+}
+
+/**
+ * Check if a symbol exists in the current scope and return it if possible
+ *
+ * @param name Name of the desired symbol
+ * @return Desired symbol / nullptr if the symbol was not found
+ */
+public f<ste::SymbolTableEntry*> SymbolTable.lookupStrict(const string name) {
+    if name.isEmpty() { return nil<ste::SymbolTableEntry*>; }
+    // Check if a symbol with this name exists in this scope
+    if this.symbols.contains(name) { return &this.symbols.get(name); }
+    // Check if a capture with this name exists in this scope
+    if this.captures.contains(name) { return &this.captures.get(name).capturedEntry; }
+    // Otherwise, return a nullptr
+    return nil<ste::SymbolTableEntry*>;
+}
+
+/**
+ * Check if an order index exists in the current or any parent scope and returns it if possible.
+ * Warning: Unlike the `lookup` method, this one doesn't consider the parent scopes
+ *
+ * @param orderIndex Order index of the desired symbol
+ * @return Desired symbol / nullptr if the symbol was not found
+ */
+public f<ste::SymbolTableEntry*> SymbolTable.lookupByIndex(const unsigned int orderIndex) {
+    // ToDo
+    return nil<ste::SymbolTableEntry*>;
+}
+
+/**
+ * Check if a global variable exists in any of the imported modules and return it if found
+ *
+ * @param globalName Name of the global variable
+ * @param skipThisScope Skip the current scope while searching
+ * @return Desired symbol / nullptr if the global was not found
+ */
+public f<ste::SymbolTableEntry*> SymbolTable.lookupGlobal(const string globalName, const bool skipThisScope = false) {
+    // Search in the current scope
+    if !skipThisScope {
+        ste::SymbolTableEntry* globalSymbol = this.lookupStrict(globalName);
+        if globalSymbol != nil<ste::SymbolTableEntry*> { return globalSymbol; }
+    }
+    // Loop through all children to find the global var
+    // ToDo
+    return nil<ste::SymbolTableEntry*>;
+}
+
+/**
+ * Check if an anonymous symbol exists in the current scope and return it if possible
+ *
+ * @param codeLoc Definition code loc
+ * @return Anonymous symbol
+ */
+public f<ste::SymbolTableEntry*> SymbolTable.lookupAnonymous(const cl::CodeLoc codeLoc) {
+    return this.lookup("anon." + codeLoc.toString());
+}
+
+/**
+ * Check if a capture exists in the current or any parent scope scope and return it if possible
+ *
+ * @param captureName Name of the desired captured symbol
+ * @return Capture / nullptr if the capture was not found
+ */
+public f<cpt::Capture> SymbolTable.lookupCapture(const string captureName) {
+    // Check if the capture exists in the current scope. If yes, take it
+    cpt::Capture* capture = this.lookupCaptureStrict(name);
+    if capture != nil<cpt::Capture*> { return capture; }
+
+    // We reached the root scope, the symbol does not exist at all
+    if this.parent == nil<SymbolTable*> { return nullptr; }
+
+    return this.parent.lookupCapture(name);
+}
+
+/**
+ * Check if a capture exists in the current scope and return it if possible
+ *
+ * @param captureName Name of the desired captured symbol
+ * @return Capture / nullptr if the capture was not found
+ */
+public f<cpt::Capture> SymbolTable.lookupCaptureStrict(const string captureName) {
+
+}
+
+/**
+ * Search for a symbol table by its name, where a function is defined. Used for function calls to function/procedures
+ * which were linked in from other modules
+ *
+ * @param tableName Name of the desired table
+ * @return Desired symbol table
+ */
+public f<SymbolTable*> SymbolTable.lookupTable(const string tableName) {
+    // If not available in the current scope, search in the parent scope
+    if !this.children.contains(tableName) {
+        return this.parent != nil<SymbolTable*> ? this.parent.lookupTable(tableName) : nil<SymbolTable*>;
+    }
+    // Otherwise, return the entry
+    return this.children.get(tableName);
+}
+
+/**
+ * Create a child leaf for the tree of symbol tables and return it
+ *
+ * @param childBlockName Name of the child scope
+ * @param type Type of the child scope
+ * @return Newly created child table
+ */
+public f<SymbolTable*> SymbolTable.createChildBlock(const string tableName, const ScopeType scopeType) {
+    // ToDo
+}
+
+/**
+ * Insert a new generic type in this scope
+ *
+ * @param typeName Name of the generic type
+ * @param genericType Generic type itself
+ */
+public p SymbolTable.insertGenericType(const string typeName, const gt::GenericType genericType) {
+    this.genericTypes.insert(typeName, genericType);
+}
+
+/**
+ * Search for a generic type by its name. If it was not found, the parent scopes will be searched.
+ * If the generic type does not exist at all, the function will return a nullptr.
+ *
+ * @param typeName Name of the generic type
+ * @return Generic type
+ */
+public f<gt::GenericType> SymbolTable.lookupGenericType(const string typeName) {
+    if this.genericTypes.contains(typeName) {
+        return &this.genericTypes.get(typeName);
+    }
+    return this.parent != nil<SymbolTable*> ? this.parent.lookupGenericType(typeName) : nil<gt::GenericType*>;
+}
+
+/**
+ * Mount in symbol tables manually. This is used to hook in symbol tables of imported modules into the symbol table of
+ * the source file, which imported the modules
+ *
+ * @param childBlockName Name of the child block
+ * @param childBlock Child symbol table
+ * @param alterParent Set the current symbol table as parent of the mounted one
+ */
+public p SymbolTable.mountChildBlock(const string childBlockName, const SymbolTable *childBlock, const bool alterParent = true) {
+    if alterParent {
+        childBlock.parent = this;
+    }
+    this.children.insert(childBlockName, childBlock);
+}
+
+/**
+ * Rename the scope of a symbol table. This is useful for realizing function overloading by storing a function with not
+ * only its name, but also its signature
+ *
+ * @param oldName Old name of the child table
+ * @param newName New name of the child table
+ */
+public p SymbolTable.renameChildBlock(const string oldName, const string newName) {
+    // ToDo
+}
+
+/**
+ * Duplicates the child block by copying it. The duplicated symbols point to the original ones.
+ *
+ * @param oldName Original name of the child block
+ * @param newName New block name
+ */
+public p SymbolTable.copyChildBlock(const string oldName, const string newName) {
+    assert this.children.contains(oldName);
+    SymbolTable* originalChildBlock = this.children.get(oldName);
+    // Copy child block
+    // ToDo
+    // Save the new child block
+    this.children.insert(newName, newChildBlock);
+}
+
+/**
+ * Navigate to a child table of the current one in the tree structure
+ *
+ * @param tableName Name of the child table
+ * @return Pointer to the child symbol table
+ */
+public f<SymbolTable*> SymbolTable.getChild(const string tableName) {
+    if this.children.isEmpty() || !this.children.contains(tableName) { return nil<SymbolTable*>; }
+    return children.get(tableName);
+}
+
+/**
+ * Retrieve all variables that can be freed, because the ref count went down to 0.
+ *
+ * @param filterForDtorStructs Get only struct variables
+ * @return Variables that can be de-allocated
+ */
+public f<vec::Vector<ste::SymbolTableEntry*>> SymbolTable.getVarsGoingOutOfScope(const bool filterForDtorStructs = false) {
+    assert this.parent != nil<SymbolTable*>; // Should not be called in root scope
+    vec::Vector<ste::SymbolTableEntry*> varsGoingOutOfScope;
+
+    // Collect all variables in this scope
+    // ToDo
+
+    // Collect all variables in the child scopes
+    // ToDo
+
+    return varsGoingOutOfScope;
+}
+
+/**
+ * Returns all symbols of the current table
+ *
+ * @return Map of names and the corresponding symbol table entries
+ */
+public f<map::Map<string, SymbolTableEntry>*> SymbolTable.getSymbols() {
+    return &this.symbols;
+}
+
+/**
+ * Returns all captures of the current table
+ *
+ * @return Map of names and the corresponding capture
+ */
+public f<map::Map<string, Capture>*> SymbolTable.getCaptures() {
+    return &this.captures;
+}
+
+/**
+ * Get the number of fields if this is a struct scope
+ *
+ * @return Number of fields
+ */
+public f<long> SymbolTable.getFieldCount() {
+    assert this.scopeType == ScopeType.SCOPE_STRUCT;
+    unsigned long fieldCount = 0l;
+    // ToDo
+    return fieldCount;
+}
+
+/**
+ * Insert a function object into this symbol table scope
+ *
+ * @param function Function object
+ * @param err Error factory
+ */
+public f<fct::Function*> SymbolTable.insertFunction(const fct::Function *function) {
+    const AstNode *declNode = function.declNode;
+    // ToDo
+    return nil<fct::Function*>;
+}
+
+/**
+ * Check if there is a function in this scope, fulfilling all given requirements and if found, return it.
+ * If more than one function matches the requirement, an error gets thrown
+ *
+ * @param currentScope Current scope
+ * @param callFunctionName Function name requirement
+ * @param callThisType This type requirement
+ * @param callArgTypes Argument types requirement
+ * @param node Declaration node for a potential error message
+ * @return Matched function or nullptr
+ */
+public f<fct::Function*> SymbolTable.matchFunction(
+    SymbolTable* currentScope,
+    const string callFunctionName,
+    const st::SymbolType callThisType,
+    const vec::Vector<st::SymbolType>* callArgTypes,
+    const ast::AstNode* node
+) {
+    vec::Vector<fct::Function*> matches;
+
+    // Loop through functions and add any matches to the matches vector
+    // ToDo
+
+    if matches.isEmpty() { return nil<fct::Function*>; }
+
+    // Throw error if more than one function matches the criteria
+    if matches.getSize() > 1 {
+        // ToDo
+    }
+
+    // Add function access pointer for function call
+    if currentScope != nil<SymbolTable*> {
+        string suffix = callFunctionName == DTOR_VARIABLE_NAME ? callFunctionName : "";
+        currentScope.insertFunctionAccessPointer(matches.front(), node.codeLoc, suffix);
+    }
+
+    return matches.front();
+}
+
+/**
+ * Retrieve the manifestations of the function, defined at defToken
+ *
+ * @param defCodeLoc Definition code location
+ * @return Function manifestations
+ */
+public f<map::Map<string, fct::Function>*> SymbolTable.getFunctionManifestations(const cl::CodeLoc defCodeLoc) {
+    string codeLocStr = defCodeLoc.toString();
+    return this.functions.contains(codeLocStr) ? this.functions.get(codeLocStr) : nil<map::Map<string, fct::Function>*>;
+}
+
+/**
+ * Add function access pointer to the current scope
+ *
+ * @param spiceFunc Function
+ * @param codeLoc Call code location
+ * @param suffix Key suffix
+ */
+public p SymbolTable.insertFunctionAccessPointer(
+    const fct::Function* spiceFunc,
+    const cl::CodeLoc codeLoc,
+    const string suffix
+) {
+    string mapKey = codeLoc.toString() + ":" + suffix;
+    this.functionAccessPointers.insert(mapKey, spiceFunc);
+}
+
+/**
+ * Get the function access pointer by code location
+ *
+ * @param codeLoc Code location
+ * @param suffix Key suffix
+ *
+ * @return Function pointer for the function access
+ */
+public f<fct::Function*> SymbolTable.getFunctionAccessPointer(const cl::CodeLoc codeLoc, const string suffix) {
+    string mapKey = codeLoc.toString() + ":" + suffix;
+    return this.functionAccessPointers.contains(mapKey) ? this.functionAccessPointers.get(mapKey) : nil<fct::Function*>;
+}
+
+/**
+ * Insert a substantiated function into the function list. If the list already contains a function with the same signature,
+ * an exception will be thrown
+ *
+ * @param function Substantiated function
+ * @param declNode Declaration AST node
+ */
+f<fct::Function*> SymbolTable.insertSubstantiatedFunction(const fct::Function spiceFunc, const ast::AstNode* declNode) {
+    // ToDo
+}
+
+/**
+ * Insert a struct object into this symbol table scope
+ *
+ * @param spiceStruct Struct object
+ */
+public f<sct::Struct*> SymbolTable.insertStruct(const sct::Struct *spiceStruct) {
+    // Open a new struct declaration pointer list. Which gets filled by the 'insertSubstantiatedStruct' method
+    string codeLocStr = spiceStruct.declNode.codeLoc.toString();
+    //this.stucts.insert(codeLocStr, );
+    return this.insertSubstantiatedStruct(spiceStruct, spiceStruct.declNode);
+}
+
+/**
+ * Check if there is a struct in this scope, fulfilling all given requirements and if found, return it.
+ * If more than one struct matches the requirement, an error gets thrown
+ *
+ * @param currentScope Current scope
+ * @param structName Struct name
+ * @param templateTypes Template type requirements
+ * @param node Declaration node for the error message
+ * @return Matched struct or nullptr
+ */
+public f<sct::Struct*> SymbolTable.matchStruct(
+    SymbolTable* currentScope,
+    const string structName,
+    const vec::Vector<st::SymbolType>* templateTypes,
+    const ast::AstNode* node
+) {
+    vec::Vector<sct::Struct*> matches;
+
+    // ToDo
+}
+
+/**
+ * Retrieve the manifestations of the struct, defined at defToken
+ *
+ * @return Struct manifestations
+ */
+public f<map::Map<string, sct::Struct>*> SymbolTable.getStructManifestations(const cl::CodeLoc defCodeLoc) {
+    string codeLocStr = defCodeLoc.toString();
+    if !this.structs.contains(codeLocStr) {
+        // ToDo
+    }
+    return this.structs.get(codeLocStr);
+}
+
+/**
+ * Add struct access pointer to the current scope
+ *
+ * @param codeLoc Reference code location
+ * @param struct Struct
+ */
+public p SymbolTable.insertStructAccessPointer(const cl::CodeLoc codeLoc, const sct::Struct* spiceStruct) {
+    this.structAccessPointers.insert(codeLoc.toString, spiceStruct);
+}
+
+/**
+ * Get the next struct access in order of visiting
+ *
+ * @return Struct pointer for the struct access
+ */
+public f<sct::Struct*> SymbolTable.getStructAccessPointer(const cl::CodeLoc codeLoc, const string suffix = "") {
+    string codeLocStr = codeLoc.toString();
+    if !this.structAccessPointers.contains(codeLocStr) {
+        // ToDo
+    }
+    return this.structAccessPointers.get(codeLocStr);
+}
+
+/**
+ * Insert a substantiated struct into the struct list. If the list already contains a struct with the same signature,
+ * an exception will be thrown
+ *
+ * @param s Substantiated struct
+ * @param declNode Declaration AST node
+ */
+f<sct::Struct*> SymbolTable.insertSubstantiatedStruct(const sct::Struct spiceStruct, const ast::AstNode* declNode) {
+    // ToDo
+}
+
+/**
+ * Retrieve an interface instance by its name
+ *
+ * @param interfaceName Name of the interface
+ * @return Interface object
+ */
+public f<itf::Interface*> SymbolTable.lookupInterface(const string interfaceName) {
+    if !this.interfaces.contains(interfaceName) { return nil<itf::Interface*>; }
+    return &this.interfaces.get(interfaceName);
+}
+
+/**
+ * Insert an interface object into this symbol table scope
+ *
+ * @param i Interface object
+ */
+public p SymbolTable.insertInterface(const itf::Interface* i) {
+    // Add interface to interface list
+    assert !this.interfaces.contains(i.name);
+    this.interfaces.insert(i.name, i);
+    // Add symbol table entry for the interface
+    this.insert(i.name, st::SymbolType(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
+}
+
+/**
+ * Retrieves compiler warnings from this table
+ */
+public f<vec::Vector<cw::CompilerWarning>> SymbolTable.collectWarnings() {
+    // ToDo
+}
+
+/**
+ * Checks if this symbol table is imported
+ *
+ * @param askingScope Symbol table, which asks whether the current one is imported from its point of view or not
+ *
+ * @return Imported / not imported
+ */
+public f<bool> SymbolTable.isImported(const SymbolTable* askingScope) {
     // ToDo
 }

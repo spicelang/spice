@@ -65,7 +65,7 @@ public:
   GenericType *lookupGenericType(const std::string &typeName);
   void mountChildBlock(const std::string &childBlockName, SymbolTable *symbolTable, bool alterParent = true);
   void renameChildBlock(const std::string &oldName, const std::string &newName);
-  void copyChildBlock(const std::string &originalChildBlockName, const std::string &newChildBlockName);
+  void copyChildBlock(const std::string &oldName, const std::string &newName);
 
   SymbolTable *getChild(const std::string &tableName);
 
@@ -83,7 +83,7 @@ public:
   Function *getFunctionAccessPointer(const CodeLoc &codeLoc, const std::string &suffix = "");
   Function *insertSubstantiatedFunction(const Function &function, const AstNode *declNode);
 
-  Struct *insertStruct(const Struct &s);
+  Struct *insertStruct(const Struct &spiceStruct);
   Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
                       const AstNode *node);
   [[nodiscard]] std::map<std::string, Struct> *getStructManifestations(const CodeLoc &defCodeLoc) const;
@@ -118,7 +118,7 @@ private:
   std::map<std::string, std::shared_ptr<std::map<std::string, Function>>> functions; // <code-loc, vector-of-representations>
   std::map<std::string, Function *> functionAccessPointers;
   std::map<std::string, std::shared_ptr<std::map<std::string, Struct>>> structs; // <code-loc, vector-of-representations>
-  std::map<std::string, Interface> interfaces;
   std::map<std::string, Struct *> structAccessPointers;
+  std::map<std::string, Interface> interfaces;
   bool isMainSourceFile;
 };
