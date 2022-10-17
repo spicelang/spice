@@ -1,5 +1,0 @@
-type Number double|int|short|long;
-
-public f<Number> abs<Number>(Number input) {
-    return input < 0 ? -input : input;
-}

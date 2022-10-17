@@ -1,0 +1,57 @@
+// Imports
+import "const" as cst;
+
+// Generic type defs
+type Number double|int|short|long;
+
+/**
+ * Calculate absolute value of the input
+ *
+ * @param input Input number
+ * @return Absulute value of input
+ */
+public f<Number> abs<Number>(Number input) {
+    return input < 0 ? -input : input;
+}
+
+/**
+ * Round the input number down
+ *
+ * @param input Intput number
+ * @return Rounding result
+ */
+public f<double> floor(double input) {
+    int truncatedInt = (int) input;
+    return (double) truncatedInt;
+}
+
+/**
+ * Round the input number up
+ *
+ * @param input Intput number
+ * @return Rounding result
+ */
+public f<double> ceil(double input) {
+    int truncatedInt = (int) input;
+    if truncatedInt != input {
+        truncatedInt++;
+    }
+    return (double) truncatedInt;
+}
+
+/**
+ * Calculate the cosine of the input
+ *
+ * @param input Input number
+ * @return Cosine of input
+ */
+public f<Number> cos<Number>(Number input, bool precise = false) {
+    Number tp = 1.0 / (2.0 / cst.PI);
+    input *= tp;
+    input -= .25 + floor(input + .25);
+    input *= 16.0 * (abs(input) - .5);
+    if precise {
+        input += .225 * input * (abs(input) - 1.0);
+    }
+    return input;
+}

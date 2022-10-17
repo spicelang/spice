@@ -1,6 +1,18 @@
+import "std/math/fct" as fct;
+
 f<int> main() {
-    string input = "true";
-    printf("%d", input == "true");
+    printf("Abs (int): %d\n", fct.abs(123));
+    printf("Abs (int): %d\n", fct.abs(-137));
+    printf("Abs (short): %d\n", fct.abs(56s));
+    printf("Abs (short): %d\n", fct.abs(-3s));
+    printf("Abs (long): %d\n", fct.abs(1234567890l));
+    printf("Abs (long): %d\n", fct.abs(-987654321l));
+    printf("Abs (double): %f\n", fct.abs(56.123));
+    printf("Abs (double): %f\n", fct.abs(-348.12));
+
+    printf("Cos (int): %d\n", fct.cos(23));
+    printf("Cos (short): %d\n", fct.cos(68s));
+    printf("Cos (long): %d\n", fct.cos(359l));
 }
 
 /*type Visitor struct {
