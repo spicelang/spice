@@ -442,10 +442,10 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhsV, llvm::Val
   llvm::Type *rhsVTy = rhsV->getType();
 
   // Check if both values are of type pointer
-  if (lhsVTy->isPointerTy() && rhsVTy->isPointerTy())
+  if (lhsSTy.isPointer() && rhsSTy.isPointer())
     return builder.CreateICmpEQ(lhsV, rhsV);
 
-  // Check if one value is of type pointer and one is of type byte
+  // Check if one value is of type pointer and one is of type int
   if (lhsVTy->isPointerTy() && rhsVTy->isIntegerTy(32)) {
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV, rhsVTy);
     return builder.CreateICmpEQ(lhsInt, rhsV);
@@ -553,10 +553,10 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhsV, llvm::
   llvm::Type *rhsVTy = rhsV->getType();
 
   // Check if both values are of type pointer
-  if (lhsVTy->isPointerTy() && rhsVTy->isPointerTy())
+  if (lhsSTy.isPointer() && rhsSTy.isPointer())
     return builder.CreateICmpNE(lhsV, rhsV);
 
-  // Check if one value is of type pointer and one is of type byte
+  // Check if one value is of type pointer and one is of type int
   if (lhsVTy->isPointerTy() && rhsVTy->isIntegerTy(32)) {
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV, rhsVTy);
     return builder.CreateICmpNE(lhsInt, rhsV);

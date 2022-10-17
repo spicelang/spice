@@ -41,8 +41,8 @@ private:
   llvm::Module *module;
 
   // Private methods
-  llvm::Function *getFunction(const std::string &functionName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
+  llvm::Function *getFunction(const std::string &funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
                               bool varArg = false) const;
-  [[nodiscard]] llvm::Function *getProcedure(const std::string &procedureName, llvm::ArrayRef<llvm::Type *> args,
+  [[nodiscard]] llvm::Function *getProcedure(const std::string &procName, llvm::ArrayRef<llvm::Type *> args,
                                              bool varArg = false) const;
 };

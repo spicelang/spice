@@ -1,6 +1,3 @@
-// Imports
-import "std/type/string" as str;
-
 // Constants
 const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
@@ -21,7 +18,7 @@ public type String struct {
 }
 
 public p String.ctor(const string value = "") {
-    this.length = str.getRawLength(value);
+    this.length = getRawLength(value);
     this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
 
     // Allocate space for the initial number of elements
@@ -39,8 +36,8 @@ public p String.ctor(const string value = "") {
 }
 
 public p String.ctor(const string value1, const string value2) {
-    unsigned long value1Length = str.getRawLength(value1);
-    unsigned long value2Length = str.getRawLength(value2);
+    unsigned long value1Length = getRawLength(value1);
+    unsigned long value2Length = getRawLength(value2);
     this.length = value1Length + value2Length;
     this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
 
@@ -91,7 +88,7 @@ public p String.dtor() {
  * @param appendix string to be appended
  */
 public p String.append(const string appendix) {
-    unsigned long appendixLength = str.getRawLength(appendix);
+    unsigned long appendixLength = getRawLength(appendix);
     // Check if we need to re-allocate memory
     while this.capacity < this.length + appendixLength {
         this.resize(this.capacity * RESIZE_FACTOR);
@@ -176,7 +173,7 @@ public inline p String.opMul(const short operand) {
  */
 public f<bool> String.opEquals(const string operand) {
     // Compare sizes
-    if str.getRawLength(operand) != this.length {
+    if getRawLength(operand) != this.length {
         return false;
     }
 
@@ -266,7 +263,7 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
     // Return -1 if the startIndex is out of bounds
     if startIndex >= this.length { return -1l; }
 
-    unsigned long needleLength = str.getRawLength(needle);
+    unsigned long needleLength = getRawLength(needle);
     // Return false if the needle is longer than the haystack
     if this.length < needleLength { return -1l; }
 
@@ -324,7 +321,7 @@ public inline f<bool> String.contains(string needle) {
     if startIdx == -1l { return; }
 
     // Replace
-    unsigned long needleLength = str.getRawLength(needle);
+    unsigned long needleLength = getRawLength(needle);
     for unsigned long idx = 0; idx < needleLength; idx++ {
         // ToDo: Extend
     }
@@ -352,7 +349,7 @@ public inline f<bool> String.contains(string needle) {
  * @param replacement Replacement for the substring
  */
 /*public p String.replaceAll(string* haystack, string needle, string replacement) {
-    unsigned long needleLength = str.getRawLength(needle);
+    unsigned long needleLength = getRawLength(needle);
     // Return false if the needle is longer than the haystack
     if this.length < needleLength { return -1l; }
 
@@ -451,4 +448,40 @@ p String.resize(unsigned long newLength) {
     }
     // Set new capacity
     this.capacity = newLength;
+}
+
+// ======================================================= Static functions ======================================================
+
+/*
+ * Returns the length of a string
+ *
+ * @param input Input string
+ * @return Length of the input string
+ */
+public f<long> getRawLength(string input) {
+    result = 0l;
+    while input[result] != '\0' {
+        result++;
+    }
+}
+
+/*
+ * Checks the equality of two strings
+ *
+ * @param lhs First input string
+ * @param rhs Second input string
+ * @return Equality of lhs and rhs
+ */
+public f<bool> isRawEqual(string lhs, string rhs) {
+    unsigned long lhsLength = getRawLength(lhs);
+    unsigned long rhsLength = getRawLength(rhs);
+    // Return false immediately if length does not match
+    if lhsLength != rhsLength { return false; }
+    // Compare chars
+    for int i = 0; i < lhsLength; i++ {
+        if lhs[i] != rhs[i] {
+            return false;
+        }
+    }
+    return true;
 }

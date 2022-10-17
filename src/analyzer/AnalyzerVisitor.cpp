@@ -1539,6 +1539,9 @@ std::any AnalyzerVisitor::visitEqualityExpr(EqualityExprNode *node) {
     auto lhsTy = any_cast<SymbolType>(visit(node->operands()[0]));
     auto rhsTy = any_cast<SymbolType>(visit(node->operands()[1]));
 
+    if (lhsTy.is(TY_STRING) && rhsTy.is(TY_STRING))
+      sourceFile.requestRuntimeModule(STRING_RT);
+
     if (node->op == EqualityExprNode::OP_EQUAL) // Operator was equal
       return node->setEvaluatedSymbolType(opRuleManager->getEqualResultType(node, lhsTy, rhsTy));
     else if (node->op == EqualityExprNode::OP_NOT_EQUAL) // Operator was not equal
