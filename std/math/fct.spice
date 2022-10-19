@@ -1,8 +1,23 @@
 // Imports
 import "const" as cst;
+import "../type/double" as doubleTy;
 
 // Generic type defs
 type Number double|int|short|long;
+
+/**
+ * Calculate the factorial of the input
+ *
+ * @param input Input number
+ * @return Factorial of input
+ */
+public inline f<Number> factorial<Number>(Number input) {
+    Number fac = (Number) 1;
+    for (int i = 1; i <= input; i++) {
+        fac *= i;
+    }
+    return fac;
+}
 
 /**
  * Calculate absolute value of the input
@@ -10,7 +25,7 @@ type Number double|int|short|long;
  * @param input Input number
  * @return Absulute value of input
  */
-public f<Number> abs<Number>(Number input) {
+public inline f<Number> abs<Number>(Number input) {
     return input < 0 ? -input : input;
 }
 
@@ -20,9 +35,9 @@ public f<Number> abs<Number>(Number input) {
  * @param input Intput number
  * @return Rounding result
  */
-public f<double> floor(double input) {
-    int truncatedInt = (int) input;
-    return (double) truncatedInt;
+public inline f<double> floor(double input) {
+    int truncatedInt = doubleTy.toInt(input);
+    return 0.0 + truncatedInt;
 }
 
 /**
@@ -31,27 +46,58 @@ public f<double> floor(double input) {
  * @param input Intput number
  * @return Rounding result
  */
-public f<double> ceil(double input) {
-    int truncatedInt = (int) input;
+public inline f<double> ceil(double input) {
+    int truncatedInt = doubleTy.toInt(input);
     if truncatedInt != input {
         truncatedInt++;
     }
-    return (double) truncatedInt;
+    return 0.0 + truncatedInt;
 }
 
 /**
- * Calculate the cosine of the input
+ * Calculate the sine of the input, using the taylor series:
+ * sin x = x - x^3/3! + x^5/5! - x^7/7! ...
  *
- * @param input Input number
+ * @param x Input number
+ * @return Sine of input
+ */
+public f<double> sin<Number>(Number x) {
+    bool negative = x < 0 ? true : false;
+    x = abs(x);
+    if x > 360 {
+        x -= (Number) (x / 360) * 360;
+    }
+    double xNew = x * (cst::PI / 180.0);
+    double res = 0.0;
+    double term = 0.0 + xNew;
+    double k = 1.0;
+    while (res + term != res) {
+        res += term;
+        k += 2.0;
+        term *= -xNew * xNew / k / (k - 1);
+    }
+    return negative ? -res : res;
+}
+
+/**
+ * Calculate the cosine of the input, using the taylor series:
+ * cos x = 1 - x^2/2! + x^4/4! - x^6/6! ...
+ * @param x Input number
  * @return Cosine of input
  */
-public f<Number> cos<Number>(Number input, bool precise = false) {
-    Number tp = 1.0 / (2.0 / cst.PI);
-    input *= tp;
-    input -= .25 + floor(input + .25);
-    input *= 16.0 * (abs(input) - .5);
-    if precise {
-        input += .225 * input * (abs(input) - 1.0);
+public f<double> cos<Number>(Number x) {
+    x = abs(x);
+    if x > 360 {
+        x -= (Number) (x / 360) * 360;
     }
-    return input;
+    double xNew = x * (cst::PI / 180.0);
+    double res = 0.0;
+    double term = 1.0;
+    double k = 0.0;
+    while (res + term != res) {
+        res += term;
+        k += 2.0;
+        term *= -xNew * xNew / k / (k - 1);
+    }
+    return res;
 }

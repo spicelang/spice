@@ -10,9 +10,15 @@ f<int> main() {
     printf("Abs (double): %f\n", fct.abs(56.123));
     printf("Abs (double): %f\n", fct.abs(-348.12));
 
-    printf("Cos (int): %d\n", fct.cos(23));
-    printf("Cos (short): %d\n", fct.cos(68s));
-    printf("Cos (long): %d\n", fct.cos(359l));
+    printf("Sin (double): %f\n", fct.sin(78.345));
+    printf("Sin (int): %f\n", fct.sin(23));
+    printf("Sin (short): %f\n", fct.sin(-68s));
+    printf("Sin (long): %f\n", fct.sin(359l));
+
+    printf("Cos (double): %f\n", fct.cos(78.345));
+    printf("Cos (int): %f\n", fct.cos(23));
+    printf("Cos (short): %f\n", fct.cos(-68s));
+    printf("Cos (long): %f\n", fct.cos(359l));
 }
 
 /*type Visitor struct {

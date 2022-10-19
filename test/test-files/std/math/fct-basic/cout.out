@@ -1,0 +1,16 @@
+Abs (int): 123
+Abs (int): 137
+Abs (short): 56
+Abs (short): 3
+Abs (long): 1234567890
+Abs (long): 987654321
+Abs (double): 56.123000
+Abs (double): 348.120000
+Sin (double): 0.979382
+Sin (int): 0.390731
+Sin (short): -0.927184
+Sin (long): -0.017452
+Cos (double): 0.202018
+Cos (int): 0.920505
+Cos (short): 0.374607
+Cos (long): 0.999848
