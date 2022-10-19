@@ -149,7 +149,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
     }
 
     // Get template types
-    if (node->isGeneric) {
+    if (node->hasTemplateTypes) {
       for (const auto &dataType : node->templateTypeLst()->dataTypes()) {
         auto templateType = any_cast<SymbolType>(visit(dataType));
         if (!templateType.is(TY_GENERIC))
@@ -608,7 +608,7 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
       for (const Function *expectedMethod : interface->methods) {
         // Check if the struct implements the method
         Function *actualMethod = currentScope->matchFunction(
-            currentScope, expectedMethod->name, node->spiceStruct->getSymbolType(), expectedMethod->getParamTypes(), node);
+            currentScope, expectedMethod->name, node->spiceStruct->getSymbolType(), {}, expectedMethod->getParamTypes(), node);
         if (actualMethod == nullptr)
           throw SemanticError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                               "The struct '" + node->structName + "' does not implement the method '" +
@@ -2015,6 +2015,8 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   // Get the access scope
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
+  std::vector<SymbolType> concreteTemplateTypes;
+
   std::string functionName;
   SymbolType thisType = currentThisType;
   bool constructorCall = false;
@@ -2035,41 +2037,43 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       symbolEntry->isUsed = true;
     }
 
-    if (i < node->functionNameFragments.size() - 1) {
+    if (i < node->functionNameFragments.size() - 1) { // not last fragment
       if (!symbolEntry)
         throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION,
                             "Symbol '" + scopePath.getScopePrefix() + identifier + "' was used before defined");
       thisType = symbolBaseType;
-    } else if (symbolEntry != nullptr && symbolBaseType.is(TY_STRUCT)) {
+    } else { // last fragment
       // Get the concrete template types
-      std::vector<SymbolType> concreteTemplateTypes;
-      if (node->isGeneric) {
+      if (node->hasTemplateTypes) {
         for (const auto &dataType : node->templateTypeLst()->dataTypes())
           concreteTemplateTypes.push_back(any_cast<SymbolType>(visit(dataType)));
       }
-      std::string structSignature = Struct::getSignature(identifier, concreteTemplateTypes);
 
-      // Get the struct instance
-      Struct *spiceStruct = accessScope->matchStruct(currentScope, identifier, concreteTemplateTypes, node);
-      if (!spiceStruct)
-        throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
-      spiceStruct->isUsed = true;
+      if (symbolEntry != nullptr && symbolBaseType.is(TY_STRUCT)) {
+        std::string structSignature = Struct::getSignature(identifier, concreteTemplateTypes);
 
-      symbolEntry = accessScope->lookup(structSignature);
-      assert(symbolEntry != nullptr);
-      symbolEntry->isUsed = true;
+        // Get the struct instance
+        Struct *spiceStruct = accessScope->matchStruct(currentScope, identifier, concreteTemplateTypes, node);
+        if (!spiceStruct)
+          throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
+        spiceStruct->isUsed = true;
 
-      // Import struct if necessary
-      if (accessScope->isImported(currentScope))
-        thisType = initExtStruct(accessScope, scopePath.getScopePrefix(true), identifier, concreteTemplateTypes, node);
-      else
-        thisType = symbolBaseType;
+        symbolEntry = accessScope->lookup(structSignature);
+        assert(symbolEntry != nullptr);
+        symbolEntry->isUsed = true;
 
-      functionName = CTOR_VARIABLE_NAME;
-      constructorCall = true;
-    } else { // last fragment is no struct
-      functionName = identifier;
-      continue;
+        // Import struct if necessary
+        if (accessScope->isImported(currentScope))
+          thisType = initExtStruct(accessScope, scopePath.getScopePrefix(true), identifier, concreteTemplateTypes, node);
+        else
+          thisType = symbolBaseType;
+
+        functionName = CTOR_VARIABLE_NAME;
+        constructorCall = true;
+      } else { // last fragment is no struct
+        functionName = identifier;
+        continue;
+      }
     }
 
     std::string tableName = symbolEntry->type.is(TY_IMPORT) ? identifier : STRUCT_SCOPE_PREFIX + thisType.getName();
@@ -2103,7 +2107,8 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   // Get the function/procedure instance
   SymbolType origThisType = thisType.replaceBaseSubType(CommonUtil::getLastFragment(thisType.getBaseType().getSubType(), "."));
-  Function *spiceFunc = accessScope->matchFunction(currentScope, functionName, origThisType, argTypes, node);
+  Function *spiceFunc =
+      accessScope->matchFunction(currentScope, functionName, origThisType, concreteTemplateTypes, argTypes, node);
   if (!spiceFunc) {
     // Build dummy function to get a better error message
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
@@ -2487,7 +2492,7 @@ void AnalyzerVisitor::insertDestructorCall(const AstNode *node, SymbolTableEntry
   accessScope = accessScope->getChild(STRUCT_SCOPE_PREFIX + structEntry->name);
   assert(accessScope != nullptr);
   SymbolType thisType = varEntry->type;
-  Function *spiceFunc = accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, node);
+  Function *spiceFunc = accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, {}, node);
   if (spiceFunc)
     spiceFunc->isUsed = true;
 }

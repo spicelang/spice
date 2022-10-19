@@ -3,7 +3,8 @@ import "const" as cst;
 import "../type/double" as doubleTy;
 
 // Generic type defs
-type Number double|int|short|long;
+type Numeric double|int|short|long;
+type WholeNumber int|short|long;
 
 /**
  * Calculate the factorial of the input
@@ -11,8 +12,8 @@ type Number double|int|short|long;
  * @param input Input number
  * @return Factorial of input
  */
-public inline f<Number> factorial<Number>(Number input) {
-    Number fac = (Number) 1;
+public inline f<WholeNumber> factorial<WholeNumber>(WholeNumber input) {
+    Numeric fac = (Numeric) 1;
     for (int i = 1; i <= input; i++) {
         fac *= i;
     }
@@ -25,7 +26,7 @@ public inline f<Number> factorial<Number>(Number input) {
  * @param input Input number
  * @return Absulute value of input
  */
-public inline f<Number> abs<Number>(Number input) {
+public inline f<Numeric> abs<Numeric>(Numeric input) {
     return input < 0 ? -input : input;
 }
 
@@ -35,9 +36,9 @@ public inline f<Number> abs<Number>(Number input) {
  * @param input Intput number
  * @return Rounding result
  */
-public inline f<double> floor(double input) {
+public inline f<WholeNumber> floor<WholeNumber>(double input) {
     int truncatedInt = doubleTy.toInt(input);
-    return 0.0 + truncatedInt;
+    return (WholeNumber) truncatedInt;
 }
 
 /**
@@ -46,12 +47,12 @@ public inline f<double> floor(double input) {
  * @param input Intput number
  * @return Rounding result
  */
-public inline f<double> ceil(double input) {
+public inline f<WholeNumber> ceil<WholeNumber>(double input) {
     int truncatedInt = doubleTy.toInt(input);
     if truncatedInt != input {
         truncatedInt++;
     }
-    return 0.0 + truncatedInt;
+    return (WholeNumber) truncatedInt;
 }
 
 /**
@@ -61,11 +62,11 @@ public inline f<double> ceil(double input) {
  * @param x Input number
  * @return Sine of input
  */
-public f<double> sin<Number>(Number x) {
+public f<double> sin<Numeric>(Numeric x) {
     bool negative = x < 0 ? true : false;
     x = abs(x);
     if x > 360 {
-        x -= (Number) (x / 360) * 360;
+        x -= (Numeric) (x / 360) * 360;
     }
     double xNew = x * (cst::PI / 180.0);
     double res = 0.0;
@@ -85,10 +86,10 @@ public f<double> sin<Number>(Number x) {
  * @param x Input number
  * @return Cosine of input
  */
-public f<double> cos<Number>(Number x) {
+public f<double> cos<Numeric>(Numeric x) {
     x = abs(x);
     if x > 360 {
-        x -= (Number) (x / 360) * 360;
+        x -= (Numeric) (x / 360) * 360;
     }
     double xNew = x * (cst::PI / 180.0);
     double res = 0.0;

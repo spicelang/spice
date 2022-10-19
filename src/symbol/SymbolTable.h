@@ -77,7 +77,8 @@ public:
 
   Function *insertFunction(const Function &function);
   Function *matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,
-                          const std::vector<SymbolType> &callArgTypes, const AstNode *node);
+                          const std::vector<SymbolType> &callTemplateTypes, const std::vector<SymbolType> &callArgTypes,
+                          const AstNode *node);
   [[nodiscard]] std::map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc) const;
   void insertFunctionAccessPointer(Function *spiceFunc, const CodeLoc &codeLoc, const std::string &suffix);
   Function *getFunctionAccessPointer(const CodeLoc &codeLoc, const std::string &suffix = "");

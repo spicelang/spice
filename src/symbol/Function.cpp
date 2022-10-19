@@ -2,8 +2,6 @@
 
 #include "Function.h"
 
-#include <utility>
-
 #include <ast/AstNodes.h>
 #include <util/CommonUtil.h>
 
@@ -50,6 +48,11 @@ std::string Function::getMangledName() const {
       thisTyStr += "_" + templateType.getName(false, true);
   }
 
+  // Return type string
+  std::string returnTyStr = "void";
+  if (!returnType.is(TY_DYN))
+    returnTyStr = returnType.getName(false, true);
+
   // Param type string
   std::string paramTyStr;
   for (const Param &param : paramList) {
@@ -69,7 +72,7 @@ std::string Function::getMangledName() const {
   }
 
   // Construct mangled name
-  std::string mangledName = "_" + functionTyStr + "__" + thisTyStr;
+  std::string mangledName = "_" + functionTyStr + "__" + thisTyStr + "__" + returnTyStr;
   if (!templateTyStr.empty())
     mangledName += "__" + templateTyStr;
   mangledName += "__" + name;

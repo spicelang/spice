@@ -188,7 +188,7 @@ public:
   std::string fqFunctionName;
   std::vector<std::string> functionNameFragments;
   bool isMethod = false;
-  bool isGeneric = false;
+  bool hasTemplateTypes = false;
   bool hasParams = false;
   SymbolTable *structScope = nullptr;
   SymbolTable *fctScope = nullptr;
@@ -1226,7 +1226,7 @@ public:
   // Public members
   std::string fqFunctionName;
   std::vector<std::string> functionNameFragments;
-  bool isGeneric = false;
+  bool hasTemplateTypes = false;
   bool hasArgs = false;
   Function *functionAccessPtr;
 };

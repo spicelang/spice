@@ -10,6 +10,11 @@ f<int> main() {
     printf("Abs (double): %f\n", fct.abs(56.123));
     printf("Abs (double): %f\n", fct.abs(-348.12));
 
+    printf("Floor (int): %d\n", fct.floor<int>(-348.12));
+    long fl = fct.floor<long>(-348.12);
+    printf("Floor (long): %d\n", fl);
+    printf("Floor (short): %d\n", fct.floor<short>(-348.12));
+
     printf("Sin (double): %f\n", fct.sin(78.345));
     printf("Sin (int): %f\n", fct.sin(23));
     printf("Sin (short): %f\n", fct.sin(-68s));
