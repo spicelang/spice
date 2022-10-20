@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 @4 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
 @5 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 1
 
-define internal void @_mp__Vector__ctor(ptr %0) {
+define internal void @_mp__Vector__void__ctor(ptr %0) {
 entry.l6:
   %this = alloca ptr, align 8
   %msg = alloca ptr, align 8
@@ -28,7 +28,7 @@ entry.l6:
   ret void
 }
 
-define internal void @_mp__Vector__ctor__string(ptr %0, ptr %1) {
+define internal void @_mp__Vector__void__ctor__string(ptr %0, ptr %1) {
 entry.l6:
   %this = alloca ptr, align 8
   %msg = alloca ptr, align 8
@@ -44,7 +44,7 @@ entry.l6:
   ret void
 }
 
-define internal ptr @_mf__Vector__test(ptr %0) {
+define internal ptr @_mf__Vector__string__test(ptr %0) {
 entry.l11:
   %this = alloca ptr, align 8
   %result = alloca ptr, align 8
@@ -63,7 +63,7 @@ entry.l15:
   %0 = alloca %_s__Vector__bool_string, align 8
   %1 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  call void @_mp__Vector__ctor(ptr %vec)
+  call void @_mp__Vector__void__ctor(ptr %vec)
   %2 = getelementptr inbounds %_s__Vector__bool_string, ptr %vec, i32 0, i32 0
   %3 = load i1, ptr %2, align 1
   %4 = zext i1 %3 to i32
@@ -72,7 +72,7 @@ entry.l15:
   %7 = call i32 (ptr, ...) @printf(ptr @2, i32 %4, ptr %6)
   store ptr @3, ptr %vec1, align 8
   %8 = load ptr, ptr %vec1, align 8
-  call void @_mp__Vector__ctor__string(ptr %vec, ptr %8)
+  call void @_mp__Vector__void__ctor__string(ptr %vec, ptr %8)
   %9 = load %_s__Vector__bool_string, ptr %vec, align 8
   store %_s__Vector__bool_string %9, ptr %vec, align 8
   %10 = getelementptr inbounds %_s__Vector__bool_string, ptr %vec, i32 0, i32 0
@@ -81,8 +81,8 @@ entry.l15:
   %13 = getelementptr inbounds %_s__Vector__bool_string, ptr %vec, i32 0, i32 1
   %14 = load ptr, ptr %13, align 8
   %15 = call i32 (ptr, ...) @printf(ptr @4, i32 %12, ptr %14)
-  call void @_mp__Vector__ctor(ptr %0)
-  %16 = call ptr @_mf__Vector__test(ptr %0)
+  call void @_mp__Vector__void__ctor(ptr %0)
+  %16 = call ptr @_mf__Vector__string__test(ptr %0)
   store ptr %16, ptr %1, align 8
   %17 = load ptr, ptr %1, align 8
   %18 = call i32 (ptr, ...) @printf(ptr @5, ptr %17)

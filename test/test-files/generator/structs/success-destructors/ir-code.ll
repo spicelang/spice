@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
 @2 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
 
-define internal void @_mp__Vector__dtor(ptr %0) {
+define internal void @_mp__Vector__void__dtor(ptr %0) {
 entry.l6:
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -37,7 +37,7 @@ entry.l10:
   br label %cleanup.l10
 
 cleanup.l10:                                      ; preds = %entry.l10
-  call void @_mp__Vector__dtor(ptr %0)
+  call void @_mp__Vector__void__dtor(ptr %0)
   %9 = load i32, ptr %result, align 4
   ret i32 %9
 }

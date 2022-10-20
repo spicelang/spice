@@ -52,7 +52,7 @@ entry.l1:
   %25 = alloca %_s__String__charptr_long_long, align 8
   %26 = alloca %_s__String__charptr_long_long, align 8
   %27 = alloca %_s__String__charptr_long_long, align 8
-  call void @_mp__String__ctor__string_string(ptr nonnull %0, ptr nonnull @6, ptr nonnull @0)
+  call void @_mp__String__void__ctor__string_string(ptr nonnull %0, ptr nonnull @6, ptr nonnull @0)
   %.fca.0.load214 = load ptr, ptr %0, align 8
   %.fca.1.gep216 = getelementptr inbounds %_s__String__charptr_long_long, ptr %0, i64 0, i32 1
   %.fca.1.load217 = load i64, ptr %.fca.1.gep216, align 8
@@ -63,9 +63,9 @@ entry.l1:
   store i64 %.fca.1.load217, ptr %.fca.1.gep210, align 8
   %.fca.2.gep212 = getelementptr inbounds %_s__String__charptr_long_long, ptr %1, i64 0, i32 2
   store i64 %.fca.2.load220, ptr %.fca.2.gep212, align 8
-  %28 = call ptr @_mf__String__getRaw(ptr nonnull %1)
+  %28 = call ptr @_mf__String__string__getRaw(ptr nonnull %1)
   %29 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %28)
-  call void @_mp__String__ctor__string_string(ptr nonnull %2, ptr nonnull @6, ptr nonnull @0)
+  call void @_mp__String__void__ctor__string_string(ptr nonnull %2, ptr nonnull @6, ptr nonnull @0)
   %.fca.0.load199 = load ptr, ptr %2, align 8
   %.fca.1.gep201 = getelementptr inbounds %_s__String__charptr_long_long, ptr %2, i64 0, i32 1
   %.fca.1.load202 = load i64, ptr %.fca.1.gep201, align 8
@@ -76,7 +76,7 @@ entry.l1:
   store i64 %.fca.1.load202, ptr %.fca.1.gep168, align 8
   %.fca.2.gep170 = getelementptr inbounds %_s__String__charptr_long_long, ptr %3, i64 0, i32 2
   store i64 %.fca.2.load205, ptr %.fca.2.gep170, align 8
-  %30 = call ptr @_mf__String__getRaw(ptr nonnull %3)
+  %30 = call ptr @_mf__String__string__getRaw(ptr nonnull %3)
   %31 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %30)
   %.fca.0.load172 = load ptr, ptr %3, align 8
   %.fca.1.load175 = load i64, ptr %.fca.1.gep168, align 8
@@ -86,8 +86,8 @@ entry.l1:
   store i64 %.fca.1.load175, ptr %.fca.1.gep162, align 8
   %.fca.2.gep164 = getelementptr inbounds %_s__String__charptr_long_long, ptr %4, i64 0, i32 2
   store i64 %.fca.2.load178, ptr %.fca.2.gep164, align 8
-  %32 = call ptr @_mf__String__getRaw(ptr nonnull %4)
-  call void @_mp__String__ctor__string_string(ptr nonnull %5, ptr %32, ptr nonnull @1)
+  %32 = call ptr @_mf__String__string__getRaw(ptr nonnull %4)
+  call void @_mp__String__void__ctor__string_string(ptr nonnull %5, ptr %32, ptr nonnull @1)
   %.fca.0.load151 = load ptr, ptr %5, align 8
   %.fca.1.gep153 = getelementptr inbounds %_s__String__charptr_long_long, ptr %5, i64 0, i32 1
   %.fca.1.load154 = load i64, ptr %.fca.1.gep153, align 8
@@ -98,10 +98,10 @@ entry.l1:
   store i64 %.fca.1.load154, ptr %.fca.1.gep147, align 8
   %.fca.2.gep149 = getelementptr inbounds %_s__String__charptr_long_long, ptr %6, i64 0, i32 2
   store i64 %.fca.2.load157, ptr %.fca.2.gep149, align 8
-  %33 = call ptr @_mf__String__getRaw(ptr nonnull %6)
+  %33 = call ptr @_mf__String__string__getRaw(ptr nonnull %6)
   %34 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %33)
-  %35 = call ptr @_mf__String__getRaw(ptr nonnull %3)
-  call void @_mp__String__ctor__string_string(ptr nonnull %7, ptr nonnull @2, ptr %35)
+  %35 = call ptr @_mf__String__string__getRaw(ptr nonnull %3)
+  call void @_mp__String__void__ctor__string_string(ptr nonnull %7, ptr nonnull @2, ptr %35)
   %.fca.0.load136 = load ptr, ptr %7, align 8
   %.fca.1.gep138 = getelementptr inbounds %_s__String__charptr_long_long, ptr %7, i64 0, i32 1
   %.fca.1.load139 = load i64, ptr %.fca.1.gep138, align 8
@@ -112,7 +112,7 @@ entry.l1:
   store i64 %.fca.1.load139, ptr %.fca.1.gep132, align 8
   %.fca.2.gep134 = getelementptr inbounds %_s__String__charptr_long_long, ptr %8, i64 0, i32 2
   store i64 %.fca.2.load142, ptr %.fca.2.gep134, align 8
-  %36 = call ptr @_mf__String__getRaw(ptr nonnull %8)
+  %36 = call ptr @_mf__String__string__getRaw(ptr nonnull %8)
   %37 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %36)
   %.fca.0.load181 = load ptr, ptr %3, align 8
   %.fca.1.load184 = load i64, ptr %.fca.1.gep168, align 8
@@ -122,9 +122,9 @@ entry.l1:
   store i64 %.fca.1.load184, ptr %.fca.1.gep126, align 8
   %.fca.2.gep128 = getelementptr inbounds %_s__String__charptr_long_long, ptr %9, i64 0, i32 2
   store i64 %.fca.2.load187, ptr %.fca.2.gep128, align 8
-  %38 = call ptr @_mf__String__getRaw(ptr nonnull %9)
-  %39 = call ptr @_mf__String__getRaw(ptr nonnull %3)
-  call void @_mp__String__ctor__string_string(ptr nonnull %10, ptr %38, ptr %39)
+  %38 = call ptr @_mf__String__string__getRaw(ptr nonnull %9)
+  %39 = call ptr @_mf__String__string__getRaw(ptr nonnull %3)
+  call void @_mp__String__void__ctor__string_string(ptr nonnull %10, ptr %38, ptr %39)
   %.fca.0.load115 = load ptr, ptr %10, align 8
   %.fca.1.gep117 = getelementptr inbounds %_s__String__charptr_long_long, ptr %10, i64 0, i32 1
   %.fca.1.load118 = load i64, ptr %.fca.1.gep117, align 8
@@ -135,7 +135,7 @@ entry.l1:
   store i64 %.fca.1.load118, ptr %.fca.1.gep111, align 8
   %.fca.2.gep113 = getelementptr inbounds %_s__String__charptr_long_long, ptr %11, i64 0, i32 2
   store i64 %.fca.2.load121, ptr %.fca.2.gep113, align 8
-  %40 = call ptr @_mf__String__getRaw(ptr nonnull %11)
+  %40 = call ptr @_mf__String__string__getRaw(ptr nonnull %11)
   %41 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %40)
   %.fca.0.load190 = load ptr, ptr %3, align 8
   %.fca.1.load193 = load i64, ptr %.fca.1.gep168, align 8
@@ -145,8 +145,8 @@ entry.l1:
   store i64 %.fca.1.load193, ptr %.fca.1.gep105, align 8
   %.fca.2.gep107 = getelementptr inbounds %_s__String__charptr_long_long, ptr %12, i64 0, i32 2
   store i64 %.fca.2.load196, ptr %.fca.2.gep107, align 8
-  %42 = call ptr @_mf__String__getRaw(ptr nonnull %12)
-  call void @_mp__String__ctor__string_string(ptr nonnull %13, ptr %42, ptr nonnull @3)
+  %42 = call ptr @_mf__String__string__getRaw(ptr nonnull %12)
+  call void @_mp__String__void__ctor__string_string(ptr nonnull %13, ptr %42, ptr nonnull @3)
   %.fca.0.load94 = load ptr, ptr %13, align 8
   %.fca.1.gep96 = getelementptr inbounds %_s__String__charptr_long_long, ptr %13, i64 0, i32 1
   %.fca.1.load97 = load i64, ptr %.fca.1.gep96, align 8
@@ -157,9 +157,9 @@ entry.l1:
   store i64 %.fca.1.load97, ptr %.fca.1.gep90, align 8
   %.fca.2.gep92 = getelementptr inbounds %_s__String__charptr_long_long, ptr %14, i64 0, i32 2
   store i64 %.fca.2.load100, ptr %.fca.2.gep92, align 8
-  %43 = call ptr @_mf__String__getRaw(ptr nonnull %14)
-  %44 = call ptr @_mf__String__getRaw(ptr nonnull %3)
-  call void @_mp__String__ctor__string_string(ptr nonnull %15, ptr %43, ptr %44)
+  %43 = call ptr @_mf__String__string__getRaw(ptr nonnull %14)
+  %44 = call ptr @_mf__String__string__getRaw(ptr nonnull %3)
+  call void @_mp__String__void__ctor__string_string(ptr nonnull %15, ptr %43, ptr %44)
   %.fca.0.load79 = load ptr, ptr %15, align 8
   %.fca.1.gep81 = getelementptr inbounds %_s__String__charptr_long_long, ptr %15, i64 0, i32 1
   %.fca.1.load82 = load i64, ptr %.fca.1.gep81, align 8
@@ -170,10 +170,10 @@ entry.l1:
   store i64 %.fca.1.load82, ptr %.fca.1.gep75, align 8
   %.fca.2.gep77 = getelementptr inbounds %_s__String__charptr_long_long, ptr %16, i64 0, i32 2
   store i64 %.fca.2.load85, ptr %.fca.2.gep77, align 8
-  %45 = call ptr @_mf__String__getRaw(ptr nonnull %16)
+  %45 = call ptr @_mf__String__string__getRaw(ptr nonnull %16)
   %46 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %45)
-  %47 = call ptr @_mf__String__getRaw(ptr nonnull %3)
-  call void @_mp__String__ctor__string_string(ptr nonnull %17, ptr nonnull @4, ptr %47)
+  %47 = call ptr @_mf__String__string__getRaw(ptr nonnull %3)
+  call void @_mp__String__void__ctor__string_string(ptr nonnull %17, ptr nonnull @4, ptr %47)
   %.fca.0.load64 = load ptr, ptr %17, align 8
   %.fca.1.gep66 = getelementptr inbounds %_s__String__charptr_long_long, ptr %17, i64 0, i32 1
   %.fca.1.load67 = load i64, ptr %.fca.1.gep66, align 8
@@ -184,8 +184,8 @@ entry.l1:
   store i64 %.fca.1.load67, ptr %.fca.1.gep60, align 8
   %.fca.2.gep62 = getelementptr inbounds %_s__String__charptr_long_long, ptr %18, i64 0, i32 2
   store i64 %.fca.2.load70, ptr %.fca.2.gep62, align 8
-  %48 = call ptr @_mf__String__getRaw(ptr nonnull %18)
-  call void @_mp__String__ctor__string_string(ptr nonnull %19, ptr %48, ptr nonnull @5)
+  %48 = call ptr @_mf__String__string__getRaw(ptr nonnull %18)
+  call void @_mp__String__void__ctor__string_string(ptr nonnull %19, ptr %48, ptr nonnull @5)
   %.fca.0.load49 = load ptr, ptr %19, align 8
   %.fca.1.gep51 = getelementptr inbounds %_s__String__charptr_long_long, ptr %19, i64 0, i32 1
   %.fca.1.load52 = load i64, ptr %.fca.1.gep51, align 8
@@ -196,57 +196,57 @@ entry.l1:
   store i64 %.fca.1.load52, ptr %.fca.1.gep46, align 8
   %.fca.2.gep47 = getelementptr inbounds %_s__String__charptr_long_long, ptr %20, i64 0, i32 2
   store i64 %.fca.2.load55, ptr %.fca.2.gep47, align 8
-  %49 = call ptr @_mf__String__getRaw(ptr nonnull %20)
+  %49 = call ptr @_mf__String__string__getRaw(ptr nonnull %20)
   %50 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %49)
-  call void @_mp__String__ctor__string(ptr nonnull %21, ptr nonnull @14)
-  call void @_mp__String__opMul__short(ptr nonnull %21, i16 4)
-  %51 = call ptr @_mf__String__getRaw(ptr nonnull %21)
+  call void @_mp__String__void__ctor__string(ptr nonnull %21, ptr nonnull @14)
+  call void @_mp__String__void__opMul__short(ptr nonnull %21, i16 4)
+  %51 = call ptr @_mf__String__string__getRaw(ptr nonnull %21)
   %52 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %51)
-  call void @_mp__String__ctor__string(ptr nonnull %22, ptr nonnull @6)
-  call void @_mp__String__opMul__int(ptr nonnull %22, i32 5)
-  %53 = call ptr @_mf__String__getRaw(ptr nonnull %22)
+  call void @_mp__String__void__ctor__string(ptr nonnull %22, ptr nonnull @6)
+  call void @_mp__String__void__opMul__int(ptr nonnull %22, i32 5)
+  %53 = call ptr @_mf__String__string__getRaw(ptr nonnull %22)
   %54 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %53)
-  call void @_mp__String__ctor__char(ptr nonnull %23, i8 97)
-  call void @_mp__String__opMul__int(ptr nonnull %23, i32 20)
-  %55 = call ptr @_mf__String__getRaw(ptr nonnull %23)
+  call void @_mp__String__void__ctor__char(ptr nonnull %23, i8 97)
+  call void @_mp__String__void__opMul__int(ptr nonnull %23, i32 20)
+  %55 = call ptr @_mf__String__string__getRaw(ptr nonnull %23)
   %56 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %55)
-  call void @_mp__String__ctor__char(ptr nonnull %24, i8 99)
-  call void @_mp__String__opMul__int(ptr nonnull %24, i32 2)
-  call void @_mp__String__opMul__int(ptr nonnull %24, i32 7)
-  %57 = call ptr @_mf__String__getRaw(ptr nonnull %24)
+  call void @_mp__String__void__ctor__char(ptr nonnull %24, i8 99)
+  call void @_mp__String__void__opMul__int(ptr nonnull %24, i32 2)
+  call void @_mp__String__void__opMul__int(ptr nonnull %24, i32 7)
+  %57 = call ptr @_mf__String__string__getRaw(ptr nonnull %24)
   %58 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %57)
-  %59 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @8, ptr nonnull @9)
+  %59 = call i1 @_f__void__bool__isRawEqual__string_string(ptr nonnull @8, ptr nonnull @9)
   %60 = zext i1 %59 to i32
   %61 = call i32 (ptr, ...) @printf(ptr nonnull @7, i32 %60)
-  %62 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @10)
+  %62 = call i1 @_f__void__bool__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @10)
   %63 = zext i1 %62 to i32
   %64 = call i32 (ptr, ...) @printf(ptr nonnull @7, i32 %63)
-  %65 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @12)
+  %65 = call i1 @_f__void__bool__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @12)
   %66 = zext i1 %65 to i32
   %67 = call i32 (ptr, ...) @printf(ptr nonnull @7, i32 %66)
-  %68 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @8, ptr nonnull @9)
+  %68 = call i1 @_f__void__bool__isRawEqual__string_string(ptr nonnull @8, ptr nonnull @9)
   %69 = xor i1 %68, true
   %70 = zext i1 %69 to i32
   %71 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 %70)
-  %72 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @10)
+  %72 = call i1 @_f__void__bool__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @10)
   %73 = xor i1 %72, true
   %74 = zext i1 %73 to i32
   %75 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 %74)
-  %76 = call i1 @_f__void__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @12)
+  %76 = call i1 @_f__void__bool__isRawEqual__string_string(ptr nonnull @12, ptr nonnull @12)
   %77 = xor i1 %76, true
   %78 = zext i1 %77 to i32
   %79 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 %78)
-  call void @_mp__String__ctor__string(ptr nonnull %25, ptr nonnull @12)
-  call void @_mp__String__append__char(ptr nonnull %25, i8 108)
-  %80 = call ptr @_mf__String__getRaw(ptr nonnull %25)
+  call void @_mp__String__void__ctor__string(ptr nonnull %25, ptr nonnull @12)
+  call void @_mp__String__void__append__char(ptr nonnull %25, i8 108)
+  %80 = call ptr @_mf__String__string__getRaw(ptr nonnull %25)
   %81 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %80)
-  call void @_mp__String__ctor__string(ptr nonnull %26, ptr nonnull @14)
-  call void @_mp__String__append__string(ptr nonnull %26, ptr nonnull @13)
-  %82 = call ptr @_mf__String__getRaw(ptr nonnull %26)
+  call void @_mp__String__void__ctor__string(ptr nonnull %26, ptr nonnull @14)
+  call void @_mp__String__void__append__string(ptr nonnull %26, ptr nonnull @13)
+  %82 = call ptr @_mf__String__string__getRaw(ptr nonnull %26)
   %83 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %82)
-  call void @_mp__String__ctor__string(ptr nonnull %27, ptr nonnull @14)
-  call void @_mp__String__opMul__int(ptr nonnull %27, i32 3)
-  %84 = call ptr @_mf__String__getRaw(ptr nonnull %27)
+  call void @_mp__String__void__ctor__string(ptr nonnull %27, ptr nonnull @14)
+  call void @_mp__String__void__opMul__int(ptr nonnull %27, i32 3)
+  %84 = call ptr @_mf__String__string__getRaw(ptr nonnull %27)
   %85 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %84)
   call void @_mp__String__dtor(ptr nonnull %17)
   call void @_mp__String__dtor(ptr nonnull %19)
@@ -270,23 +270,23 @@ entry.l1:
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
-declare void @_mp__String__ctor__string_string(ptr, ptr, ptr) local_unnamed_addr
+declare void @_mp__String__void__ctor__string_string(ptr, ptr, ptr) local_unnamed_addr
 
-declare ptr @_mf__String__getRaw(ptr) local_unnamed_addr
+declare ptr @_mf__String__string__getRaw(ptr) local_unnamed_addr
 
-declare void @_mp__String__ctor__string(ptr, ptr) local_unnamed_addr
+declare void @_mp__String__void__ctor__string(ptr, ptr) local_unnamed_addr
 
-declare void @_mp__String__opMul__short(ptr, i16) local_unnamed_addr
+declare void @_mp__String__void__opMul__short(ptr, i16) local_unnamed_addr
 
-declare void @_mp__String__opMul__int(ptr, i32) local_unnamed_addr
+declare void @_mp__String__void__opMul__int(ptr, i32) local_unnamed_addr
 
-declare void @_mp__String__ctor__char(ptr, i8) local_unnamed_addr
+declare void @_mp__String__void__ctor__char(ptr, i8) local_unnamed_addr
 
-declare i1 @_f__void__isRawEqual__string_string(ptr, ptr) local_unnamed_addr
+declare i1 @_f__void__bool__isRawEqual__string_string(ptr, ptr) local_unnamed_addr
 
-declare void @_mp__String__append__char(ptr, i8) local_unnamed_addr
+declare void @_mp__String__void__append__char(ptr, i8) local_unnamed_addr
 
-declare void @_mp__String__append__string(ptr, ptr) local_unnamed_addr
+declare void @_mp__String__void__append__string(ptr, ptr) local_unnamed_addr
 
 declare void @_mp__String__dtor(ptr) local_unnamed_addr
 

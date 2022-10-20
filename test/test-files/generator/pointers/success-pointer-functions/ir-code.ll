@@ -11,7 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 @3 = private unnamed_addr constant [25 x i8] c"Age before birthday: %d\0A\00", align 1
 @4 = private unnamed_addr constant [24 x i8] c"Age after birthday: %d\0A\00", align 1
 
-define internal void @_p__void__birthday__Personptr(ptr %0) {
+define internal void @_p__void__void__birthday__Personptr(ptr %0) {
 entry.l7:
   %person = alloca ptr, align 8
   %1 = alloca i32, align 4
@@ -48,7 +48,7 @@ entry.l11:
   %13 = call i32 (ptr, ...) @printf(ptr @3, i32 %12)
   store ptr %0, ptr %1, align 8
   %14 = load ptr, ptr %1, align 8
-  call void @_p__void__birthday__Personptr(ptr %14)
+  call void @_p__void__void__birthday__Personptr(ptr %14)
   store i1 true, ptr %2, align 1
   %15 = getelementptr inbounds %_s__Person__string_string_int, ptr %0, i32 0, i32 2
   %16 = load i32, ptr %15, align 4

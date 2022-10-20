@@ -15,10 +15,10 @@ entry.l3:
   store i32 11, ptr %2, align 4
   %3 = getelementptr inbounds %_s__Vec__int_bool, ptr %0, i32 0, i32 1
   store i1 false, ptr %3, align 1
-  call void @_mp__Vec__print(ptr %0)
+  call void @_mp__Vec__void__print(ptr %0)
   store i1 true, ptr %1, align 1
   %4 = load i32, ptr %result, align 4
   ret i32 %4
 }
 
-declare void @_mp__Vec__print(ptr)
+declare void @_mp__Vec__void__print(ptr)

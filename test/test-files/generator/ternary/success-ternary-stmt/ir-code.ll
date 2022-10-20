@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
 
-define internal i32 @_f__void__get() {
+define internal i32 @_f__void__int__get() {
 entry.l1:
   %result = alloca i32, align 4
   %0 = alloca i32, align 4
@@ -23,7 +23,7 @@ entry.l5:
   %r1 = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store i1 true, ptr %condition, align 1
-  %1 = call i32 @_f__void__get()
+  %1 = call i32 @_f__void__int__get()
   store i32 %1, ptr %0, align 4
   store i32 24, ptr %r, align 4
   %2 = load i1, ptr %condition, align 1

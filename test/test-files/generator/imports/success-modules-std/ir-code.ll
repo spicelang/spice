@@ -13,7 +13,7 @@ entry.l3:
   store i32 0, ptr %result, align 4
   store i1 true, ptr %0, align 1
   %2 = load i1, ptr %0, align 1
-  %3 = call i32 @_f__void__toInt__bool(i1 %2)
+  %3 = call i32 @_f__void__int__toInt__bool(i1 %2)
   store i32 %3, ptr %1, align 4
   %4 = load i32, ptr %1, align 4
   %5 = call i32 (ptr, ...) @printf(ptr @0, i32 %4)
@@ -23,4 +23,4 @@ entry.l3:
 
 declare i32 @printf(ptr, ...)
 
-declare i32 @_f__void__toInt__bool(i1)
+declare i32 @_f__void__int__toInt__bool(i1)

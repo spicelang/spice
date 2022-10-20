@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [15 x i8] c"The age is: %d\00", align 1
 
-define internal i32 @_f__void__getAge() {
+define internal i32 @_f__void__int__getAge() {
 entry.l1:
   %result = alloca i32, align 4
   %i = alloca i1, align 1
@@ -42,7 +42,7 @@ entry.l12:
   %0 = alloca i32, align 4
   %age = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_f__void__getAge()
+  %1 = call i32 @_f__void__int__getAge()
   store i32 %1, ptr %0, align 4
   %2 = load i32, ptr %0, align 4
   store i32 %2, ptr %age, align 4
