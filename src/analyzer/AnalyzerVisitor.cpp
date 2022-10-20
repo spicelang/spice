@@ -1865,7 +1865,7 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
     currentVarName = node->identifier;
 
     // Check if this is a reserved keyword
-    if (std::find(RESERVED_KEYWORDS.begin(), RESERVED_KEYWORDS.end(), currentVarName) != RESERVED_KEYWORDS.end())
+    if (std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), currentVarName) != std::end(RESERVED_KEYWORDS))
       throw SemanticError(
           node, RESERVED_KEYWORD,
           "'" + currentVarName +

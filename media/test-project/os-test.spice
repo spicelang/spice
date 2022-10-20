@@ -1,12 +1,4 @@
-import "std/data/pair" as pair;
-
-f<int> main() {
-    pair::Pair<string, int> stringIntPair = pair::Pair<string, int>("Test", 1234);
-    printf("First: %s\n", stringIntPair.getFirst());
-    printf("Second: %d\n", stringIntPair.getSecond());
-}
-
-/*import "std/math/fct" as fct;
+import "std/math/fct" as fct;
 
 f<int> main() {
     printf("Abs (int): %d\n", fct.abs(123));
@@ -32,7 +24,7 @@ f<int> main() {
     printf("Cos (int): %f\n", fct.cos(23));
     printf("Cos (short): %f\n", fct.cos(-68s));
     printf("Cos (long): %f\n", fct.cos(359l));
-}*/
+}
 
 /*type Visitor struct {
 

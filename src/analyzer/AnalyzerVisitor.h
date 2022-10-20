@@ -23,7 +23,7 @@ const char *const STRUCT_SCOPE_PREFIX = "struct:";
 const char *const INTERFACE_SCOPE_PREFIX = "interface:";
 const char *const ENUM_SCOPE_PREFIX = "enum:";
 const char *const UNUSED_VARIABLE_NAME = "_";
-const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
+const char *const RESERVED_KEYWORDS[8] = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
 
 // Forward declarations
 class OpRuleManager;
