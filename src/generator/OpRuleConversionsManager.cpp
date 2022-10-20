@@ -392,7 +392,8 @@ llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhsV, llvm::
     return builder.CreateXor(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
-  case COMB(TY_BYTE, TY_BYTE):
+  case COMB(TY_BYTE, TY_BYTE): // fallthrough
+  case COMB(TY_CHAR, TY_CHAR):
     return builder.CreateXor(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^="); // GCOV_EXCL_LINE

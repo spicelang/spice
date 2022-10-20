@@ -42,3 +42,7 @@ public f<string> CodeLoc.toPrettyString() {
 public f<string> CodeLoc.toPrettyLine() {
     return "l" + intTy.toString(this.line);
 }
+
+f<int> main() {
+
+}

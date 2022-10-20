@@ -176,6 +176,7 @@ const std::vector<BinaryOpRule> XOR_EQUAL_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),   // long ^= short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long ^= long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),    // byte ^= byte -> byte
+    BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),    // char ^= char -> char
 };
 
 // Logical and op rules
