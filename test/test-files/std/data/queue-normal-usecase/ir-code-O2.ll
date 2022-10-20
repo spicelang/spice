@@ -10,47 +10,47 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() local_unnamed_addr {
 entry.l3:
   %q1 = alloca %_s__char__Queue__charptr_long_long_long_long_int, align 8
-  call void @_mp__Queue_char__ctor(ptr nonnull %q1)
-  call void @_mp__Queue_char__push__char(ptr nonnull %q1, i8 72)
-  call void @_mp__Queue_char__push__char(ptr nonnull %q1, i8 101)
-  call void @_mp__Queue_char__push__char(ptr nonnull %q1, i8 108)
-  call void @_mp__Queue_char__push__char(ptr nonnull %q1, i8 108)
-  call void @_mp__Queue_char__push__char(ptr nonnull %q1, i8 111)
-  call void @_mp__Queue_char__push__char(ptr nonnull %q1, i8 33)
-  %0 = call i64 @_mf__Queue_char__getSize(ptr nonnull %q1)
-  %1 = call i64 @_mf__Queue_char__getCapacity(ptr nonnull %q1)
+  call void @_mp__Queue_char__void__ctor(ptr nonnull %q1)
+  call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 72)
+  call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 101)
+  call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 108)
+  call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 108)
+  call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 111)
+  call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 33)
+  %0 = call i64 @_mf__Queue_char__long__getSize(ptr nonnull %q1)
+  %1 = call i64 @_mf__Queue_char__long__getCapacity(ptr nonnull %q1)
   %2 = call i32 (ptr, ...) @printf(ptr nonnull @0, i64 %0, i64 %1)
-  %3 = call i1 @_mf__Queue_char__isEmpty(ptr nonnull %q1)
+  %3 = call i1 @_mf__Queue_char__bool__isEmpty(ptr nonnull %q1)
   br i1 %3, label %cleanup.l3, label %while.l12
 
 while.l12:                                        ; preds = %entry.l3, %while.l12
-  %4 = call i8 @_mf__Queue_char__pop(ptr nonnull %q1)
+  %4 = call i8 @_mf__Queue_char__char__pop(ptr nonnull %q1)
   %5 = sext i8 %4 to i32
   %putchar = call i32 @putchar(i32 %5)
-  %6 = call i1 @_mf__Queue_char__isEmpty(ptr nonnull %q1)
+  %6 = call i1 @_mf__Queue_char__bool__isEmpty(ptr nonnull %q1)
   br i1 %6, label %cleanup.l3, label %while.l12
 
 cleanup.l3:                                       ; preds = %while.l12, %entry.l3
-  call void @_mp__Queue_char__dtor(ptr nonnull %q1)
+  call void @_mp__Queue_char__void__dtor(ptr nonnull %q1)
   ret i32 0
 }
 
-declare void @_mp__Queue_char__ctor(ptr) local_unnamed_addr
+declare void @_mp__Queue_char__void__ctor(ptr) local_unnamed_addr
 
-declare void @_mp__Queue_char__push__char(ptr, i8) local_unnamed_addr
+declare void @_mp__Queue_char__void__push__char(ptr, i8) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
-declare i64 @_mf__Queue_char__getSize(ptr) local_unnamed_addr
+declare i64 @_mf__Queue_char__long__getSize(ptr) local_unnamed_addr
 
-declare i64 @_mf__Queue_char__getCapacity(ptr) local_unnamed_addr
+declare i64 @_mf__Queue_char__long__getCapacity(ptr) local_unnamed_addr
 
-declare i1 @_mf__Queue_char__isEmpty(ptr) local_unnamed_addr
+declare i1 @_mf__Queue_char__bool__isEmpty(ptr) local_unnamed_addr
 
-declare i8 @_mf__Queue_char__pop(ptr) local_unnamed_addr
+declare i8 @_mf__Queue_char__char__pop(ptr) local_unnamed_addr
 
-declare void @_mp__Queue_char__dtor(ptr) local_unnamed_addr
+declare void @_mp__Queue_char__void__dtor(ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #0

@@ -49,7 +49,9 @@ llvm::Function *StdFunctionManager::getStringCtorStringStringFct() const {
   return getProcedure("_mp__String__void__ctor__string_string", {builder.getPtrTy(), builder.getPtrTy(), builder.getPtrTy()});
 }
 
-llvm::Function *StdFunctionManager::getStringDtorFct() const { return getProcedure("_mp__String__dtor", builder.getPtrTy()); }
+llvm::Function *StdFunctionManager::getStringDtorFct() const {
+  return getProcedure("_mp__String__void__dtor", builder.getPtrTy());
+}
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   return getFunction("_f__void__bool__isRawEqual__string_string", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});

@@ -473,7 +473,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
         callTemplateTypeIndex++;
       }
       // If types remain in the callTemplateTypes vector, skip this function substantiation (useful for generic return types)
-      if (callTemplateTypeIndex < callTemplateTypes.size())
+      if (callTemplateTypeIndex < callTemplateTypes.size() && f.name != CTOR_FUNCTION_NAME)
         continue;
 
       // Duplicate function
@@ -513,7 +513,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
 
   // Add function access pointer for function call
   if (currentScope != nullptr) {
-    std::string suffix = callFunctionName == DTOR_VARIABLE_NAME ? callFunctionName : "";
+    std::string suffix = callFunctionName == DTOR_FUNCTION_NAME ? callFunctionName : "";
     currentScope->insertFunctionAccessPointer(matches.front(), node->codeLoc, suffix);
   }
 

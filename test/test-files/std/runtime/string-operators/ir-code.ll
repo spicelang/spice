@@ -250,22 +250,22 @@ entry.l1:
   br label %cleanup.l1
 
 cleanup.l1:                                       ; preds = %entry.l1
-  call void @_mp__String__dtor(ptr %17)
-  call void @_mp__String__dtor(ptr %19)
-  call void @_mp__String__dtor(ptr %23)
-  call void @_mp__String__dtor(ptr %24)
-  call void @_mp__String__dtor(ptr %27)
-  call void @_mp__String__dtor(ptr %28)
-  call void @_mp__String__dtor(ptr %35)
-  call void @_mp__String__dtor(ptr %36)
-  call void @_mp__String__dtor(ptr %0)
-  call void @_mp__String__dtor(ptr %37)
-  call void @_mp__String__dtor(ptr %2)
-  call void @_mp__String__dtor(ptr %5)
-  call void @_mp__String__dtor(ptr %7)
-  call void @_mp__String__dtor(ptr %10)
-  call void @_mp__String__dtor(ptr %13)
-  call void @_mp__String__dtor(ptr %15)
+  call void @_mp__String__void__dtor(ptr %17)
+  call void @_mp__String__void__dtor(ptr %19)
+  call void @_mp__String__void__dtor(ptr %23)
+  call void @_mp__String__void__dtor(ptr %24)
+  call void @_mp__String__void__dtor(ptr %27)
+  call void @_mp__String__void__dtor(ptr %28)
+  call void @_mp__String__void__dtor(ptr %35)
+  call void @_mp__String__void__dtor(ptr %36)
+  call void @_mp__String__void__dtor(ptr %0)
+  call void @_mp__String__void__dtor(ptr %37)
+  call void @_mp__String__void__dtor(ptr %2)
+  call void @_mp__String__void__dtor(ptr %5)
+  call void @_mp__String__void__dtor(ptr %7)
+  call void @_mp__String__void__dtor(ptr %10)
+  call void @_mp__String__void__dtor(ptr %13)
+  call void @_mp__String__void__dtor(ptr %15)
   %122 = load i32, ptr %result, align 4
   ret i32 %122
 }
@@ -290,4 +290,4 @@ declare void @_mp__String__void__append__char(ptr, i8)
 
 declare void @_mp__String__void__append__string(ptr, ptr)
 
-declare void @_mp__String__dtor(ptr)
+declare void @_mp__String__void__dtor(ptr)

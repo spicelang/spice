@@ -2068,7 +2068,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
         else
           thisType = symbolBaseType;
 
-        functionName = CTOR_VARIABLE_NAME;
+        functionName = CTOR_FUNCTION_NAME;
         constructorCall = true;
       } else { // last fragment is no struct
         functionName = identifier;
@@ -2492,7 +2492,7 @@ void AnalyzerVisitor::insertDestructorCall(const AstNode *node, SymbolTableEntry
   accessScope = accessScope->getChild(STRUCT_SCOPE_PREFIX + structEntry->name);
   assert(accessScope != nullptr);
   SymbolType thisType = varEntry->type;
-  Function *spiceFunc = accessScope->matchFunction(currentScope, DTOR_VARIABLE_NAME, thisType, {}, {}, node);
+  Function *spiceFunc = accessScope->matchFunction(currentScope, DTOR_FUNCTION_NAME, thisType, {}, {}, node);
   if (spiceFunc)
     spiceFunc->isUsed = true;
 }

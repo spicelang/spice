@@ -248,22 +248,22 @@ entry.l1:
   call void @_mp__String__void__opMul__int(ptr nonnull %27, i32 3)
   %84 = call ptr @_mf__String__string__getRaw(ptr nonnull %27)
   %85 = call i32 (ptr, ...) @printf(ptr nonnull @15, ptr %84)
-  call void @_mp__String__dtor(ptr nonnull %17)
-  call void @_mp__String__dtor(ptr nonnull %19)
-  call void @_mp__String__dtor(ptr nonnull %21)
-  call void @_mp__String__dtor(ptr nonnull %22)
-  call void @_mp__String__dtor(ptr nonnull %23)
-  call void @_mp__String__dtor(ptr nonnull %24)
-  call void @_mp__String__dtor(ptr nonnull %25)
-  call void @_mp__String__dtor(ptr nonnull %26)
-  call void @_mp__String__dtor(ptr nonnull %0)
-  call void @_mp__String__dtor(ptr nonnull %27)
-  call void @_mp__String__dtor(ptr nonnull %2)
-  call void @_mp__String__dtor(ptr nonnull %5)
-  call void @_mp__String__dtor(ptr nonnull %7)
-  call void @_mp__String__dtor(ptr nonnull %10)
-  call void @_mp__String__dtor(ptr nonnull %13)
-  call void @_mp__String__dtor(ptr nonnull %15)
+  call void @_mp__String__void__dtor(ptr nonnull %17)
+  call void @_mp__String__void__dtor(ptr nonnull %19)
+  call void @_mp__String__void__dtor(ptr nonnull %21)
+  call void @_mp__String__void__dtor(ptr nonnull %22)
+  call void @_mp__String__void__dtor(ptr nonnull %23)
+  call void @_mp__String__void__dtor(ptr nonnull %24)
+  call void @_mp__String__void__dtor(ptr nonnull %25)
+  call void @_mp__String__void__dtor(ptr nonnull %26)
+  call void @_mp__String__void__dtor(ptr nonnull %0)
+  call void @_mp__String__void__dtor(ptr nonnull %27)
+  call void @_mp__String__void__dtor(ptr nonnull %2)
+  call void @_mp__String__void__dtor(ptr nonnull %5)
+  call void @_mp__String__void__dtor(ptr nonnull %7)
+  call void @_mp__String__void__dtor(ptr nonnull %10)
+  call void @_mp__String__void__dtor(ptr nonnull %13)
+  call void @_mp__String__void__dtor(ptr nonnull %15)
   ret i32 0
 }
 
@@ -288,6 +288,6 @@ declare void @_mp__String__void__append__char(ptr, i8) local_unnamed_addr
 
 declare void @_mp__String__void__append__string(ptr, ptr) local_unnamed_addr
 
-declare void @_mp__String__dtor(ptr) local_unnamed_addr
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { nofree nounwind }
