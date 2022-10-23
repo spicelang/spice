@@ -281,7 +281,7 @@ SymbolTable *SymbolTable::getChild(const std::string &tableName) {
 }
 
 /**
- * Retrieve all variables that can be freed, because the ref count went down to 0.
+ * Retrieve all variables that can be freed.
  *
  * @param filterForDtorStructs Get only struct variables
  * @return Variables that can be de-allocated
@@ -299,7 +299,7 @@ std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterF
       continue;
     }
     // For dtor calls, only anonymous structs are relevant
-    if ((entry.type.is(TY_STRUCT) || entry.type.isStringStruct()) && entry.name.starts_with("anon."))
+    if ((entry.type.is(TY_STRUCT) || entry.type.is(TY_STROBJ)) && entry.name.starts_with("anon."))
       varsGoingOutOfScope.push_back(&symbols.at(name));
   }
 

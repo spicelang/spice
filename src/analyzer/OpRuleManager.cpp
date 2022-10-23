@@ -18,9 +18,6 @@ SymbolType OpRuleManager::getAssignResultType(const AstNode *node, const SymbolT
   // Allow char* = string
   if (lhs.isPointerOf(TY_CHAR) && rhs.is(TY_STRING))
     return lhs;
-  // Allow string = string_object
-  if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
-    return rhs;
   // Check primitive type combinations
   return validateBinaryOperation(node, ASSIGN_OP_RULES, "=", lhs, rhs);
 }
@@ -32,13 +29,6 @@ SymbolType OpRuleManager::getPlusEqualResultType(const AstNode *node, const Symb
     else
       throw printErrorMessageUnsafe(node, "+=", lhs, rhs);
   }
-
-  // Allow string += char
-  if (lhs.is(TY_STRING) && rhs.is(TY_CHAR))
-    return analyzer->insertAnonStringStructSymbol(node);
-  // Allow string += string
-  if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
-    return analyzer->insertAnonStringStructSymbol(node);
 
   return validateBinaryOperation(node, PLUS_EQUAL_OP_RULES, "+=", lhs, rhs);
 }
@@ -55,16 +45,6 @@ SymbolType OpRuleManager::getMinusEqualResultType(const AstNode *node, const Sym
 }
 
 SymbolType OpRuleManager::getMulEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
-  // Allow string *= int
-  if (lhs.is(TY_STRING) && rhs.is(TY_INT))
-    return analyzer->insertAnonStringStructSymbol(node);
-  // Allow string *= long
-  if (lhs.is(TY_STRING) && rhs.is(TY_LONG))
-    return analyzer->insertAnonStringStructSymbol(node);
-  // Allow string *= short
-  if (lhs.is(TY_STRING) && rhs.is(TY_SHORT))
-    return analyzer->insertAnonStringStructSymbol(node);
-
   return validateBinaryOperation(node, MUL_EQUAL_OP_RULES, "*=", lhs, rhs);
 }
 
@@ -178,10 +158,6 @@ SymbolType OpRuleManager::getPlusResultType(const AstNode *node, const SymbolTyp
       throw printErrorMessageUnsafe(node, "+", lhs, rhs);
   }
 
-  // Allow string + string
-  if (lhs.is(TY_STRING) && rhs.is(TY_STRING))
-    return analyzer->insertAnonStringStructSymbol(node);
-
   return validateBinaryOperation(node, PLUS_OP_RULES, "+", lhs, rhs);
 }
 
@@ -205,24 +181,6 @@ SymbolType OpRuleManager::getMinusResultType(const AstNode *node, const SymbolTy
 }
 
 SymbolType OpRuleManager::getMulResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
-  // Allow <string|char> * <int|short|long>
-  if (lhs.isOneOf({TY_STRING, TY_CHAR}) && rhs.isOneOf({TY_INT, TY_SHORT, TY_LONG})) {
-    if (!lhs.isStringStruct()) { // If lhs is a raw string -> insert anon symbol
-      return analyzer->insertAnonStringStructSymbol(node);
-    } else { // Otherwise just return the type
-      return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
-    }
-  }
-
-  // Allow <int|short|long> * <string|char>
-  if (lhs.isOneOf({TY_INT, TY_SHORT, TY_LONG}) && rhs.isOneOf({TY_STRING, TY_CHAR})) {
-    if (!rhs.isStringStruct()) { // If rhs is a raw string -> insert anon symbol
-      return analyzer->insertAnonStringStructSymbol(node);
-    } else { // Otherwise just return the type
-      return SymbolType(TY_STRING, "", {.isStringStruct = true}, {});
-    }
-  }
-
   return validateBinaryOperation(node, MUL_OP_RULES, "*", lhs, rhs);
 }
 

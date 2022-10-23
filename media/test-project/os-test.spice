@@ -1,7 +1,9 @@
 f<int> main() {
-    string str = "Hello World!";
+    string rawStr = "Hello World!";
+    printf("Raw String: %s\n", rawStr);
+    String str = String(rawStr);
     str.reverse();
-    printf("%s", str);
+    printf("String object: %s", str);
 }
 
 /*type Visitor struct {

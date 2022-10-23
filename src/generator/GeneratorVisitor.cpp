@@ -1492,7 +1492,7 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
       llvm::Value *argValPtr = resolveAddress(arg);
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
       argVal = builder.CreateInBoundsGEP(targetType, argValPtr, indices);
-    } else if (argSymbolType.isStringStruct()) {
+    } else if (argSymbolType.is(TY_STROBJ)) {
       argVal = materializeString(resolveAddress(arg));
     } else {
       argVal = resolveValue(arg);
@@ -1904,7 +1904,8 @@ std::any GeneratorVisitor::visitEqualityExpr(EqualityExprNode *node) {
   if (node->operands().size() > 1) {
     RelationalExprNode *lhsOperand = node->operands()[0];
     SymbolType lhsSymbolType = lhsOperand->getEvaluatedSymbolType();
-    llvm::Value *lhs = resolveValue(lhsOperand);
+    llvm::Value *lhsPtr = resolveAddress(lhsOperand);
+    llvm::Value *lhs = builder.CreateLoad(lhsSymbolType.toLLVMType(context, currentScope), lhsPtr);
 
     RelationalExprNode *rhsOperand = node->operands()[1];
     SymbolType rhsSymbolType = rhsOperand->getEvaluatedSymbolType();
@@ -1913,10 +1914,10 @@ std::any GeneratorVisitor::visitEqualityExpr(EqualityExprNode *node) {
     llvm::Value *result;
     switch (node->op) {
     case EqualityExprNode::OP_EQUAL:
-      result = conversionsManager->getEqualInst(lhs, rhs, lhsSymbolType, rhsSymbolType, node->codeLoc);
+      result = conversionsManager->getEqualInst({lhsPtr, lhs}, rhs, lhsSymbolType, rhsSymbolType, node->codeLoc);
       break;
     case EqualityExprNode::OP_NOT_EQUAL:
-      result = conversionsManager->getNotEqualInst(lhs, rhs, lhsSymbolType, rhsSymbolType, node->codeLoc);
+      result = conversionsManager->getNotEqualInst({lhsPtr, lhs}, rhs, lhsSymbolType, rhsSymbolType, node->codeLoc);
       break;
     default:
       throw std::runtime_error("Equality expr fall-through");
@@ -2015,12 +2016,7 @@ std::any GeneratorVisitor::visitAdditiveExpr(AdditiveExprNode *node) {
       PtrAndValue result = {nullptr, nullptr};
       switch (opQueue.front().first) {
       case AdditiveExprNode::OP_PLUS:
-        if (lhsSymbolType.isStringStruct()) {
-          llvm::Value *lhsPtr = insertAlloca(lhs->getType());
-          builder.CreateStore(lhs, lhsPtr);
-          lhs = materializeString(lhsPtr);
-        }
-        rhs = rhsSymbolType.isStringStruct() ? materializeString(resolveAddress(rhsOperand)) : resolveValue(rhsOperand);
+        rhs = resolveValue(rhsOperand);
         result = conversionsManager->getPlusInst(lhs, rhs, lhsSymbolType, rhsSymbolType, currentScope, rhsOperand->codeLoc);
         break;
       case AdditiveExprNode::OP_MINUS:
@@ -2294,16 +2290,6 @@ std::any GeneratorVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
         PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
 
-        // Propagate strings to string objects
-        if (lhsSymbolType.is(TY_STRING)) {
-          lhs = builder.CreateLoad(lhsTy, lhsPtr);
-          lhsPtr = conversionsManager->propagateValueToStringObject(currentScope, lhsSymbolType, lhsPtr, lhs, rhs->codeLoc);
-          currentSymbolType = SymbolType(TY_STRUCT, std::string("String"));
-          SymbolTable *stringRuntimeScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
-          assert(stringRuntimeScope != nullptr);
-          scopePath.clear();
-          scopePath.pushFragment(STRING_RT_IMPORT_NAME, stringRuntimeScope);
-        }
         currentThisValuePtr = structAccessAddress = lhsPtr;
 
         // Visit identifier after the dot
@@ -2620,23 +2606,8 @@ std::any GeneratorVisitor::visitFunctionCall(FunctionCallNode *node) {
     SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
 
     SymbolType symbolBaseType;
-    if (symbolEntry != nullptr) {
-      if (symbolEntry->type.getBaseType().is(TY_STRING)) {
-        // Load string value
-        llvm::Value *stringPtr = symbolEntry->getAddress();
-        llvm::Value *string = builder.CreateLoad(symbolEntry->type.toLLVMType(context, currentScope), stringPtr);
-        // Propagate the string to a string object
-        conversionsManager->propagateValueToStringObject(currentScope, symbolEntry->type, stringPtr, string, node->codeLoc);
-        // Replace symbolEntry with anonymous entry
-        symbolEntry = currentScope->lookupAnonymous(node->codeLoc);
-        assert(symbolEntry != nullptr);
-        symbolBaseType = SymbolType(TY_STRUCT, std::string("String"));
-        accessScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
-        assert(accessScope != nullptr);
-      } else {
-        symbolBaseType = symbolEntry->type.getBaseType();
-      }
-    }
+    if (symbolEntry != nullptr)
+      symbolBaseType = symbolEntry->type.getBaseType();
 
     if (i < node->functionNameFragments.size() - 1) {
       if (!symbolEntry)
@@ -3121,53 +3092,41 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
 }
 
 bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
-  if (varEntry->type.isStringStruct()) {
-    // Get dtor function
-    llvm::Function *fct = stdFunctionManager->getStringDtorFct();
+  Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc, DTOR_FUNCTION_NAME);
 
-    // Get this value pointer
-    llvm::Value *thisValuePtr = varEntry->getAddress();
-    assert(thisValuePtr != nullptr);
+  // Cancel if no destructor was found
+  if (spiceDtor == nullptr)
+    return false;
 
-    // Insert call
-    builder.CreateCall(fct, thisValuePtr);
-  } else {
-    Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc, DTOR_FUNCTION_NAME);
+  // Get this value pointer
+  llvm::Value *thisValuePtr = varEntry->getAddress();
 
-    // Cancel if no destructor was found
-    if (spiceDtor == nullptr)
-      return false;
-
-    // Get this value pointer
-    llvm::Value *thisValuePtr = varEntry->getAddress();
-
-    // Check if function exists in the current module
-    bool functionFound = false;
-    std::string mangledName = spiceDtor->getMangledName();
-    for (const auto &function : module->getFunctionList()) { // Search for function definition
-      llvm::StringRef functionName = function.getName();
-      if (functionName == mangledName) {
-        functionFound = true;
-        break;
-      } else if (functionName == spiceDtor->name) {
-        functionFound = true;
-        mangledName = spiceDtor->name;
-        break;
-      }
+  // Check if function exists in the current module
+  bool functionFound = false;
+  std::string mangledName = spiceDtor->getMangledName();
+  for (const auto &function : module->getFunctionList()) { // Search for function definition
+    llvm::StringRef functionName = function.getName();
+    if (functionName == mangledName) {
+      functionFound = true;
+      break;
+    } else if (functionName == spiceDtor->name) {
+      functionFound = true;
+      mangledName = spiceDtor->name;
+      break;
     }
-
-    if (!functionFound) { // Not found => Declare function, which will be linked in
-      llvm::FunctionType *fctType = llvm::FunctionType::get(llvm::Type::getVoidTy(context), thisValuePtr->getType(), false);
-      module->getOrInsertFunction(mangledName, fctType);
-    }
-
-    // Get the declared function and its type
-    llvm::Function *fct = module->getFunction(mangledName);
-    assert(fct != nullptr);
-
-    // Create the function call
-    builder.CreateCall(fct, thisValuePtr);
   }
+
+  if (!functionFound) { // Not found => Declare function, which will be linked in
+    llvm::FunctionType *fctType = llvm::FunctionType::get(llvm::Type::getVoidTy(context), thisValuePtr->getType(), false);
+    module->getOrInsertFunction(mangledName, fctType);
+  }
+
+  // Get the declared function and its type
+  llvm::Function *fct = module->getFunction(mangledName);
+  assert(fct != nullptr);
+
+  // Create the function call
+  builder.CreateCall(fct, thisValuePtr);
   return true;
 }
 
@@ -3200,6 +3159,11 @@ llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(const SymbolType 
   // String
   if (symbolType.is(TY_STRING))
     return currentConstValue = builder.CreateGlobalStringPtr("", "", 0, module.get());
+
+  // Strobj
+  if (symbolType.is(TY_STROBJ)) {
+    llvm::Function *emptyCtor = stdFunctionManager->getStringCtorStringStringFct();
+  }
 
   // Bool
   if (symbolType.is(TY_BOOL))

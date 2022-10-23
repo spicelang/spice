@@ -118,13 +118,11 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
   if (isOneOf({TY_CHAR, TY_BYTE}))
     return llvm::Type::getInt8Ty(context);
 
-  if (is(TY_STRING)) {
-    if (typeChain.back().data.isStringStruct) {
-      return StdFunctionManager::getStringStructType(context);
-    } else {
-      return llvm::Type::getInt8PtrTy(context);
-    }
-  }
+  if (is(TY_STRING))
+    return llvm::Type::getInt8PtrTy(context);
+
+  if (is(TY_STROBJ))
+    return StdFunctionManager::getStrobjType(context);
 
   if (is(TY_BOOL))
     return llvm::Type::getInt1Ty(context);
@@ -249,13 +247,6 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
   SymbolSuperType superType = getSuperType();
   return std::any_of(superTypes.begin(), superTypes.end(), [&superType](int type) { return type == superType; });
 }
-
-/**
- * Check if the current type is a string object type
- *
- * @return String struct or not
- */
-bool SymbolType::isStringStruct() const { return getSuperType() == TY_STRING && typeChain.back().data.isStringStruct; }
 
 /**
  * Retrieve the super type of the current type
@@ -412,6 +403,8 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "char";
   case TY_STRING:
     return "string";
+  case TY_STROBJ:
+    return "String";
   case TY_BOOL:
     return "bool";
   case TY_STRUCT: {

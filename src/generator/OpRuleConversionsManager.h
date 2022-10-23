@@ -52,9 +52,9 @@ public:
   llvm::Value *getBitwiseAndInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
   llvm::Value *getBitwiseOrInst(llvm::Value *lhsV, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
   llvm::Value *getBitwiseXorInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy);
-  llvm::Value *getEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
+  llvm::Value *getEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
                             const CodeLoc &codeLoc);
-  llvm::Value *getNotEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
+  llvm::Value *getNotEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
                                const CodeLoc &codeLoc);
   llvm::Value *getLessInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
   llvm::Value *getGreaterInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
@@ -80,8 +80,8 @@ public:
   llvm::Value *getCastInst(llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy, SymbolTable *accessScope);
 
   // Util methods
-  llvm::Value *propagateValueToStringObject(SymbolTable *accessScope, const SymbolType &symbolType, llvm::Value *operandPtr,
-                                            llvm::Value *operandValue, const CodeLoc &codeLoc);
+  /*llvm::Value *propagateValueToStringObject(SymbolTable *accessScope, const SymbolType &symbolType, llvm::Value *operandPtr,
+                                            llvm::Value *operandValue, const CodeLoc &codeLoc);*/
 
 private:
   // Members

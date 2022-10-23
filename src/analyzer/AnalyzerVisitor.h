@@ -128,7 +128,6 @@ private:
   bool allowUnsafeOperations = false;
 
   // Private methods
-  SymbolType insertAnonStringStructSymbol(const AstNode *declNode);
   void insertDestructorCall(const AstNode *node, SymbolTableEntry *varEntry);
   SymbolType initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix, const std::string &structName,
                            const std::vector<SymbolType> &templateTypes, const AstNode *node);

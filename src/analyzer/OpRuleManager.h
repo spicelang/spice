@@ -28,6 +28,8 @@ const std::vector<BinaryOpRule> ASSIGN_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long = long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte = byte -> byte
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // char = char -> char
+    BinaryOpRule(TY_STRING, TY_STRING, TY_STRING, false), // string = string -> string
+    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_STROBJ, false), // strobj = strobj -> strobj
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),       // bool = bool -> bool
 };
 
@@ -44,6 +46,8 @@ const std::vector<BinaryOpRule> PLUS_EQUAL_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long += short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long += long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte += byte -> byte
+    BinaryOpRule(TY_STROBJ, TY_CHAR, TY_STROBJ, false),   // strobj += char -> strobj
+    BinaryOpRule(TY_STROBJ, TY_STRING, TY_STROBJ, false), // strobj += string -> strobj
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // char += char -> char
 };
 
@@ -76,6 +80,9 @@ const std::vector<BinaryOpRule> MUL_EQUAL_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long *= short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long *= long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte *= byte -> byte
+    BinaryOpRule(TY_STROBJ, TY_INT, TY_STROBJ, false),    // strobj *= int -> strobj
+    BinaryOpRule(TY_STROBJ, TY_SHORT, TY_STROBJ, false),  // strobj *= short strobj
+    BinaryOpRule(TY_STROBJ, TY_LONG, TY_STROBJ, false),   // strobj *= long -> strobj
 };
 
 // Div equal op rules
@@ -240,6 +247,7 @@ const std::vector<BinaryOpRule> EQUAL_OP_RULES = {
     BinaryOpRule(TY_CHAR, TY_LONG, TY_BOOL, false),     // char == long -> bool
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL, false),     // char == char -> bool
     BinaryOpRule(TY_STRING, TY_STRING, TY_BOOL, false), // string == string -> bool
+    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_BOOL, false), // strobj == strobj -> bool
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),     // bool == bool -> bool
 };
 
@@ -270,6 +278,7 @@ const std::vector<BinaryOpRule> NOT_EQUAL_OP_RULES = {
     BinaryOpRule(TY_CHAR, TY_LONG, TY_BOOL, false),     // char != long -> bool
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL, false),     // char != char -> bool
     BinaryOpRule(TY_STRING, TY_STRING, TY_BOOL, false), // string != string -> bool
+    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_BOOL, false), // strobj != strobj -> bool
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),     // bool != bool -> bool
 };
 
@@ -414,6 +423,9 @@ const std::vector<BinaryOpRule> PLUS_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long + short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long + long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte + byte -> byte
+    BinaryOpRule(TY_STRING, TY_STROBJ, TY_STROBJ, false), // string + strobj -> strobj
+    BinaryOpRule(TY_STROBJ, TY_STRING, TY_STROBJ, false), // strobj + string -> strobj
+    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_STROBJ, false), // strobj + strobj -> strobj
 };
 
 // Minus op rules
@@ -447,15 +459,27 @@ const std::vector<BinaryOpRule> MUL_OP_RULES = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int * int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int * short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),        // int * long -> long
+    BinaryOpRule(TY_INT, TY_STRING, TY_LONG, false),      // int * string -> strobj
+    BinaryOpRule(TY_INT, TY_STROBJ, TY_LONG, false),      // int * strobj -> strobj
     BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_DOUBLE, false),  // short * double -> double
     BinaryOpRule(TY_SHORT, TY_INT, TY_INT, false),        // short * int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // short * short -> short
     BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG, false),      // short * long -> long
+    BinaryOpRule(TY_SHORT, TY_STRING, TY_STROBJ, false),  // short * string -> strobj
+    BinaryOpRule(TY_SHORT, TY_STROBJ, TY_STROBJ, false),  // short * strobj -> strobj
     BinaryOpRule(TY_LONG, TY_DOUBLE, TY_DOUBLE, false),   // long * double -> double
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long * int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long * short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long * long -> long
+    BinaryOpRule(TY_LONG, TY_STRING, TY_STROBJ, false),   // long * string -> strobj
+    BinaryOpRule(TY_LONG, TY_STROBJ, TY_STROBJ, false),   // long * strobj -> strobj
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte * byte -> byte
+    BinaryOpRule(TY_STRING, TY_INT, TY_STROBJ, false),    // string * int -> strobj
+    BinaryOpRule(TY_STRING, TY_SHORT, TY_STROBJ, false),  // string * short -> strobj
+    BinaryOpRule(TY_STRING, TY_LONG, TY_STROBJ, false),   // string * long -> strobj
+    BinaryOpRule(TY_STROBJ, TY_INT, TY_STROBJ, false),    // strobj * int -> strobj
+    BinaryOpRule(TY_STROBJ, TY_SHORT, TY_STROBJ, false),  // strobj * short -> strobj
+    BinaryOpRule(TY_STROBJ, TY_LONG, TY_STROBJ, false),   // strobj * long -> strobj
 };
 
 // Div op rules
@@ -510,7 +534,7 @@ const std::vector<UnaryOpRule> PREFIX_PLUS_PLUS_OP_RULES = {
 
 // Prefix Minus-Minus op rules
 const std::vector<UnaryOpRule> PREFIX_MINUS_MINUS_OP_RULES = {
-    UnaryOpRule(TY_INT, TY_INT, false),     // in--+ -> int
+    UnaryOpRule(TY_INT, TY_INT, false),     // in-- -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // short-- -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // long-- -> long
 };
@@ -568,6 +592,7 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
     BinaryOpRule(TY_CHAR, TY_BYTE, TY_CHAR, false),       // (char) byte -> char
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // (char) char -> char
     BinaryOpRule(TY_STRING, TY_STRING, TY_STRING, false), // (string) string -> string
+    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_STROBJ, false), // (strobj) strobj -> strobj
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),       // (bool) bool -> bool
 };
 

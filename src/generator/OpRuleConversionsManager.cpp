@@ -48,21 +48,17 @@ PtrAndValue OpRuleConversionsManager::getPlusEqualInst(const PtrAndValue &lhsDat
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateAdd(lhsV, rhsV)};
-  case COMB(TY_STRING, TY_CHAR): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
+  case COMB(TY_STROBJ, TY_CHAR): {
     // Generate call to the method append(char) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringAppendCharFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
+    builder.CreateCall(opFct, {lhsP, rhsV});
+    return {.ptr = lhsP};
   }
-  case COMB(TY_STRING, TY_STRING): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
+  case COMB(TY_STROBJ, TY_STRING): {
     // Generate call to the method append(string) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringAppendStringFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
+    builder.CreateCall(opFct, {lhsP, rhsV});
+    return {.ptr = lhsP};
   }
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
@@ -151,29 +147,23 @@ PtrAndValue OpRuleConversionsManager::getMulEqualInst(const PtrAndValue &lhsData
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateMul(lhsV, rhsV)};
-  case COMB(TY_STRING, TY_INT): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
+  case COMB(TY_STROBJ, TY_INT): {
     // Generate call to the method append(char) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
+    builder.CreateCall(opFct, {lhsP, rhsV});
+    return {.ptr = lhsP};
   }
-  case COMB(TY_STRING, TY_LONG): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
+  case COMB(TY_STROBJ, TY_LONG): {
     // Generate call to the method append(char) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
+    builder.CreateCall(opFct, {lhsP, rhsV});
+    return {.ptr = lhsP};
   }
-  case COMB(TY_STRING, TY_SHORT): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
+  case COMB(TY_STROBJ, TY_SHORT): {
     // Generate call to the method append(char) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
+    builder.CreateCall(opFct, {lhsP, rhsV});
+    return {.ptr = lhsP};
   }
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *="); // GCOV_EXCL_LINE
@@ -435,9 +425,11 @@ llvm::Value *OpRuleConversionsManager::getBitwiseXorInst(llvm::Value *lhsV, llvm
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                     const SymbolType &rhsSTy, const CodeLoc &codeLoc) {
   // Unpack lhs
+  llvm::Value *lhsV = lhsData.value;
+  llvm::Value *lhsP = lhsData.ptr;
   llvm::Type *lhsVTy = lhsV->getType();
   // Unpack rhs
   llvm::Type *rhsVTy = rhsV->getType();
@@ -540,15 +532,23 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(llvm::Value *lhsV, llvm::Val
     llvm::Value *result = builder.CreateCall(opFct, {lhsV, rhsV});
     return result;
   }
+  case COMB(TY_STROBJ, TY_STROBJ): {
+    // Generate call to the function isEqual(strobj) of the string_rt std
+    llvm::Function *opFct = stdFunctionManager->getStringIsEqualStrobjFct();
+    llvm::Value *result = builder.CreateCall(opFct, {lhsP, rhsV});
+    return result;
+  }
   case COMB(TY_BOOL, TY_BOOL):
     return builder.CreateICmpEQ(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getNotEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy, const CodeLoc &codeLoc) {
   // Unpack lhs
+  llvm::Value *lhsV = lhsData.value;
+  llvm::Value *lhsP = lhsData.ptr;
   llvm::Type *lhsVTy = lhsV->getType();
   // Unpack rhs
   llvm::Type *rhsVTy = rhsV->getType();
@@ -648,6 +648,13 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(llvm::Value *lhsV, llvm::
     // Generate call to the function isRawEqual(string, string) of the string std
     llvm::Function *opFct = stdFunctionManager->getStringIsRawEqualStringStringFct();
     llvm::Value *result = builder.CreateCall(opFct, {lhsV, rhsV});
+    // Negate the result
+    return builder.CreateNot(result);
+  }
+  case COMB(TY_STROBJ, TY_STROBJ): {
+    // Generate call to the function isEqual(strobj) of the string_rt std
+    llvm::Function *opFct = stdFunctionManager->getStringIsEqualStrobjFct();
+    llvm::Value *result = builder.CreateCall(opFct, {lhsP, rhsV});
     // Negate the result
     return builder.CreateNot(result);
   }
@@ -1041,16 +1048,32 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateAdd(lhsV, rhsV)};
-  case COMB(TY_STRING, TY_STRING): {
-    /*llvm::Function *getRawFct = stdFunctionManager->getStringGetRawFct();
-    if (lhsSTy.isStringStruct())
-      lhsV = builder.CreateCall(getRawFct, lhsV);
-    if (rhsSTy.isStringStruct())
-      rhsV = builder.CreateCall(getRawFct, rhsV);*/
-
-    // Generate call to the constructor ctor(string, string) of the String struct
+  case COMB(TY_STRING, TY_STROBJ): {
+    // Generate call to the constructor ctor(string, strobj) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStringStrobjptrFct();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
+    // Update mem address of anonymous symbol
+    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisPtr);
+    return {.ptr = thisPtr};
+  }
+  case COMB(TY_STROBJ, TY_STRING): {
+    // Generate call to the constructor ctor(strobj, string) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjptrStringFct();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
+    // Update mem address of anonymous symbol
+    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisPtr);
+    return {.ptr = thisPtr};
+  }
+  case COMB(TY_STROBJ, TY_STROBJ): {
+    // Generate call to the constructor ctor(strobj, strobj) of the String struct
     llvm::Function *opFct = stdFunctionManager->getStringCtorStringStringFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStringStructType(context));
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
     // Update mem address of anonymous symbol
     SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
@@ -1175,12 +1198,25 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV, rhsTy, true);
     return {.value = builder.CreateMul(lhsLong, rhsV)};
   }
-  case COMB(TY_INT, TY_CHAR): // fallthrough
   case COMB(TY_INT, TY_STRING): {
-    // Convert rhsV literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, rhsSTy, rhsV, rhsV, codeLoc);
+    // Generate call to the constructor ctor(string) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    builder.CreateCall(opFct, {thisPtr, rhsV});
     // Generate call to the method opMul(int) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
+    opFct = stdFunctionManager->getStringMulOpIntFct();
+    builder.CreateCall(opFct, {thisPtr, lhsV});
+    return {.ptr = thisPtr};
+  }
+  case COMB(TY_INT, TY_STROBJ): {
+    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
+    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(rhsTy);
+    llvm::Value *structSize = builder.getInt64(typeSize);
+    builder.CreateCall(opFct, {thisPtr, rhsP, structSize, builder.getTrue()});
+    // Generate call to the method opMul(int) of the String struct
+    opFct = stdFunctionManager->getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
     return {.ptr = thisPtr};
   }
@@ -1198,12 +1234,25 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV, rhsTy, true);
     return {.value = builder.CreateMul(lhsLong, rhsV)};
   }
-  case COMB(TY_SHORT, TY_CHAR): // fallthrough
   case COMB(TY_SHORT, TY_STRING): {
-    // Convert rhsV literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, rhsSTy, rhsP, rhsV, codeLoc);
-    // Generate call to the method opMul(int) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
+    // Generate call to the constructor ctor(string) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    builder.CreateCall(opFct, {thisPtr, rhsV});
+    // Generate call to the method opMul(short) of the String struct
+    opFct = stdFunctionManager->getStringMulOpShortFct();
+    builder.CreateCall(opFct, {thisPtr, lhsV});
+    return {.ptr = thisPtr};
+  }
+  case COMB(TY_SHORT, TY_STROBJ): {
+    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
+    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(rhsTy);
+    llvm::Value *structSize = builder.getInt64(typeSize);
+    builder.CreateCall(opFct, {thisPtr, rhsP, structSize, builder.getTrue()});
+    // Generate call to the method opMul(short) of the String struct
+    opFct = stdFunctionManager->getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
     return {.ptr = thisPtr};
   }
@@ -1218,62 +1267,93 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
   }
   case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateMul(lhsV, rhsV)};
-  case COMB(TY_LONG, TY_CHAR): // fallthrough
   case COMB(TY_LONG, TY_STRING): {
-    // Convert rhsV literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, rhsSTy, rhsP, rhsV, codeLoc);
-    // Generate call to the method opMul(int) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
+    // Generate call to the constructor ctor(string) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    builder.CreateCall(opFct, {thisPtr, rhsV});
+    // Generate call to the method opMul(long) of the String struct
+    opFct = stdFunctionManager->getStringMulOpLongFct();
+    builder.CreateCall(opFct, {thisPtr, lhsV});
+    return {.ptr = thisPtr};
+  }
+  case COMB(TY_LONG, TY_STROBJ): {
+    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
+    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(rhsTy);
+    llvm::Value *structSize = builder.getInt64(typeSize);
+    builder.CreateCall(opFct, {thisPtr, rhsP, structSize, builder.getTrue()});
+    // Generate call to the method opMul(long) of the String struct
+    opFct = stdFunctionManager->getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
     return {.ptr = thisPtr};
   }
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateMul(lhsV, rhsV)};
-  case COMB(TY_CHAR, TY_INT): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
-    // Generate call to the method opMul(int) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
-  }
-  case COMB(TY_CHAR, TY_SHORT): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
-    // Generate call to the method opMul(int) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
-  }
-  case COMB(TY_CHAR, TY_LONG): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
-    // Generate call to the method opMul(int) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
-  }
   case COMB(TY_STRING, TY_INT): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
+    // Generate call to the constructor ctor(string, strobj) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    builder.CreateCall(opFct, {thisPtr, lhsV});
     // Generate call to the method opMul(int) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
+    opFct = stdFunctionManager->getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
     return {.ptr = thisPtr};
   }
   case COMB(TY_STRING, TY_SHORT): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
-    // Generate call to the method opMul(int) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
+    // Generate call to the constructor ctor(string, strobj) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    builder.CreateCall(opFct, {thisPtr, lhsV});
+    // Generate call to the method opMul(short) of the String struct
+    opFct = stdFunctionManager->getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
     return {.ptr = thisPtr};
   }
   case COMB(TY_STRING, TY_LONG): {
-    // Convert lhs literal to string object if required
-    llvm::Value *thisPtr = propagateValueToStringObject(accessScope, lhsSTy, lhsP, lhsV, codeLoc);
+    // Generate call to the constructor ctor(string, strobj) of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    builder.CreateCall(opFct, {thisPtr, lhsV});
+    // Generate call to the method opMul(long) of the String struct
+    opFct = stdFunctionManager->getStringMulOpLongFct();
+    builder.CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
+  }
+  case COMB(TY_STROBJ, TY_INT): {
+    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
+    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(lhsTy);
+    llvm::Value *structSize = builder.getInt64(typeSize);
+    builder.CreateCall(opFct, {thisPtr, lhsP, structSize, builder.getTrue()});
     // Generate call to the method opMul(int) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
+    opFct = stdFunctionManager->getStringMulOpIntFct();
+    builder.CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
+  }
+  case COMB(TY_STROBJ, TY_SHORT): {
+    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
+    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(lhsTy);
+    llvm::Value *structSize = builder.getInt64(typeSize);
+    builder.CreateCall(opFct, {thisPtr, lhsP, structSize, builder.getTrue()});
+    // Generate call to the method opMul(short) of the String struct
+    opFct = stdFunctionManager->getStringMulOpShortFct();
+    builder.CreateCall(opFct, {thisPtr, rhsV});
+    return {.ptr = thisPtr};
+  }
+  case COMB(TY_STROBJ, TY_LONG): {
+    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
+    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(lhsTy);
+    llvm::Value *structSize = builder.getInt64(typeSize);
+    builder.CreateCall(opFct, {thisPtr, lhsP, structSize, builder.getTrue()});
+    // Generate call to the method opMul(long) of the String struct
+    opFct = stdFunctionManager->getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
     return {.ptr = thisPtr};
   }
@@ -1522,6 +1602,7 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhsV, const Symb
   case COMB(TY_CHAR, TY_CHAR):     // fallthrough
   case COMB(TY_STRING, TY_STRING): // fallthrough
   case COMB(TY_STRING, TY_PTR):    // fallthrough
+  case COMB(TY_STROBJ, TY_STROBJ): // fallthrough
   case COMB(TY_BOOL, TY_BOOL):     // fallthrough
   case COMB(TY_PTR, TY_STRING):
     return rhsV;
@@ -1529,22 +1610,4 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhsV, const Symb
     return lhsSTy.getContainedTy() == rhsSTy.getContainedTy() ? rhsV : builder.CreatePointerCast(rhsV, lhsTy);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
-}
-
-llvm::Value *OpRuleConversionsManager::propagateValueToStringObject(SymbolTable *accessScope, const SymbolType &symbolType,
-                                                                    llvm::Value *operandPtr, llvm::Value *operandValue,
-                                                                    const CodeLoc &codeLoc) {
-  if (symbolType.isStringStruct())
-    return operandPtr;
-  assert(symbolType.isOneOf({TY_CHAR, TY_STRING}));
-  // Convert rhs literal to string object
-  llvm::Function *opFct =
-      symbolType.is(TY_CHAR) ? stdFunctionManager->getStringCtorCharFct() : stdFunctionManager->getStringCtorStringFct();
-  llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStringStructType(context));
-  builder.CreateCall(opFct, {thisPtr, operandValue});
-  // Update mem address of anonymous symbol
-  SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
-  assert(anonEntry != nullptr);
-  anonEntry->updateAddress(thisPtr);
-  return thisPtr;
 }

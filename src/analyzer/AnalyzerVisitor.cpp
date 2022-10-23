@@ -1792,20 +1792,9 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       if (!lhs.isBaseType(TY_STRUCT) && !lhs.isOneOf({TY_ENUM, TY_STRING}))
         throw SemanticError(node, MEMBER_ACCESS_ONLY_STRUCTS, "Cannot apply member access operator on " + lhs.getName());
 
-      PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
-
-      // Propagate strings to string objects
-      if (lhs.is(TY_STRING)) {
-        insertAnonStringStructSymbol(rhs);
-        lhs = SymbolType(TY_STRUCT, STRING_RT_IMPORT_NAME + std::string(".String"));
-        SymbolTable *stringRuntimeScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
-        stringRuntimeScope = stringRuntimeScope->getChild(STRUCT_SCOPE_PREFIX + std::string("String"));
-        assert(stringRuntimeScope != nullptr);
-        scopePath.clear();
-        scopePath.pushFragment(STRING_RT_IMPORT_NAME, stringRuntimeScope);
-      }
       currentThisType = lhs;
 
+      PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
       lhs = any_cast<SymbolType>(visit(rhs)); // Visit rhs
       break;
     }
@@ -2026,14 +2015,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
     SymbolType symbolBaseType;
     if (symbolEntry != nullptr) {
-      if (symbolEntry->type.getBaseType().is(TY_STRING)) {
-        insertAnonStringStructSymbol(node);
-        symbolBaseType = SymbolType(TY_STRUCT, std::string("String"));
-        accessScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
-        assert(accessScope != nullptr);
-      } else {
-        symbolBaseType = symbolEntry->type.getBaseType();
-      }
+      symbolBaseType = symbolEntry->type.getBaseType();
       symbolEntry->isUsed = true;
     }
 
@@ -2373,6 +2355,12 @@ std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {
 }
 
 std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
+  // Check if it is a String type
+  if (node->typeNameFragments.size() == 1 && node->typeNameFragments.back() == "String") {
+    sourceFile.requestRuntimeModule(STRING_RT);
+    return node->setEvaluatedSymbolType(SymbolType(TY_STROBJ));
+  }
+
   // Check if it is a generic type
   std::string firstFragment = node->typeNameFragments.front();
   SymbolTableEntry *entry = currentScope->lookup(firstFragment);
@@ -2467,22 +2455,9 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   throw std::runtime_error("Base type fall-through");
 }
 
-SymbolType AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {
-  // Insert anonymous string symbol
-  SymbolType stringStructType(TY_STRING, "", {.isStringStruct = true}, {});
-  currentScope->insertAnonymous(stringStructType, declNode);
-
-  // Enable string runtime
-  sourceFile.requestRuntimeModule(STRING_RT);
-
-  return stringStructType;
-}
-
 void AnalyzerVisitor::insertDestructorCall(const AstNode *node, SymbolTableEntry *varEntry) {
   assert(varEntry != nullptr);
   SymbolType varEntryType = varEntry->type;
-  if (varEntryType.isStringStruct())
-    return;
   assert(varEntryType.is(TY_STRUCT));
 
   // Create Spice function for destructor
