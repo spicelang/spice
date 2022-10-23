@@ -36,12 +36,13 @@ public f<string> toString(const int input) {
     unsigned int uInput = isNeg ? -input : input;
 
     while (uInput != 0) {
-        str.append(uInput % 10 + '0');
+        str.append((char) (uInput % 10 + 48 /* ASCII for '0' */));
         uInput = uInput / 10;
     }
     if isNeg { str.append('-'); }
 
-    return str.reverse();
+    //return str.reverse();
+    return str;
 }
 
 // Converts an int to a boolean
