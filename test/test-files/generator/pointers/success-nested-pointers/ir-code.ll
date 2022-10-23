@@ -10,7 +10,7 @@ target triple = "x86_64-w64-windows-gnu"
 @intArray = global [4 x i32] [i32 1, i32 2, i32 3, i32 4]
 @4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 1
 
-define internal void @_p__void__testProc__intarrayptrptrptr(ptr %0) {
+define internal void @_p__void__void__testProc__intarrayptrptrptr(ptr %0) {
 entry.l1:
   %nums = alloca ptr, align 8
   %nums1 = alloca ptr, align 8
@@ -78,7 +78,7 @@ entry.l11:
   store ptr %14, ptr %3, align 8
   store ptr %3, ptr %4, align 8
   store ptr %4, ptr %5, align 8
-  call void @_p__void__testProc__intarrayptrptrptr(ptr %5)
+  call void @_p__void__void__testProc__intarrayptrptrptr(ptr %5)
   store i1 true, ptr %6, align 1
   %15 = load i32, ptr %result, align 4
   ret i32 %15

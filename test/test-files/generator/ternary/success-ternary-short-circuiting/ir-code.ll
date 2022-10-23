@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
 
-define internal i1 @_f__void__condition1() {
+define internal i1 @_f__void__bool__condition1() {
 entry.l1:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
@@ -14,7 +14,7 @@ entry.l1:
   ret i1 %1
 }
 
-define internal i1 @_f__void__condition2() {
+define internal i1 @_f__void__bool__condition2() {
 entry.l5:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
@@ -32,13 +32,13 @@ entry.l9:
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %5 = call i1 @_f__void__condition1()
+  %5 = call i1 @_f__void__bool__condition1()
   store i1 %5, ptr %0, align 1
   %6 = load i1, ptr %0, align 1
   br i1 %6, label %land.1.l10, label %land.end.l10
 
 land.1.l10:                                       ; preds = %entry.l9
-  %7 = call i1 @_f__void__condition2()
+  %7 = call i1 @_f__void__bool__condition2()
   store i1 %7, ptr %1, align 1
   %8 = load i1, ptr %1, align 1
   br label %land.end.l10

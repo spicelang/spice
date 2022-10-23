@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [20 x i8] c"Fibonacci of %d: %d\00", align 1
 
-define internal i32 @_f__void__fib__int(i32 %0) {
+define internal i32 @_f__void__int__fib__int(i32 %0) {
 entry.l1:
   %n = alloca i32, align 4
   %result = alloca i32, align 4
@@ -33,14 +33,14 @@ if.end.l2:                                        ; preds = %entry.l1
   %13 = sub i32 %12, 1
   store i32 %13, ptr %3, align 4
   %14 = load i32, ptr %3, align 4
-  %15 = call i32 @_f__void__fib__int(i32 %14)
+  %15 = call i32 @_f__void__int__fib__int(i32 %14)
   store i32 %15, ptr %4, align 4
   %16 = load i32, ptr %4, align 4
   %17 = load i32, ptr %n, align 4
   %18 = sub i32 %17, 2
   store i32 %18, ptr %5, align 4
   %19 = load i32, ptr %5, align 4
-  %20 = call i32 @_f__void__fib__int(i32 %19)
+  %20 = call i32 @_f__void__int__fib__int(i32 %19)
   store i32 %20, ptr %6, align 4
   %21 = load i32, ptr %6, align 4
   %22 = add i32 %16, %21
@@ -58,7 +58,7 @@ entry.l6:
   store i32 46, ptr %base, align 4
   %1 = load i32, ptr %base, align 4
   %2 = load i32, ptr %base, align 4
-  %3 = call i32 @_f__void__fib__int(i32 %2)
+  %3 = call i32 @_f__void__int__fib__int(i32 %2)
   store i32 %3, ptr %0, align 4
   %4 = load i32, ptr %0, align 4
   %5 = call i32 (ptr, ...) @printf(ptr @0, i32 %1, i32 %4)

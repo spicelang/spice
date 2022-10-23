@@ -1,6 +1,7 @@
 f<int> main() {
-    string input = "true";
-    printf("%d", input == "true");
+    string str = "Hello World!";
+    str.reverse();
+    printf("%s", str);
 }
 
 /*type Visitor struct {

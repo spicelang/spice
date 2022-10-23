@@ -14,37 +14,37 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() local_unnamed_addr {
 entry.l3:
   %0 = alloca %_s__int__Stack__intptr_long_long_int, align 8
-  call void @_mp__Stack_int__ctor(ptr nonnull %0)
-  call void @_mp__Stack_int__push__int(ptr nonnull %0, i32 123)
-  call void @_mp__Stack_int__push__int(ptr nonnull %0, i32 456)
-  call void @_mp__Stack_int__push__int(ptr nonnull %0, i32 789)
-  %1 = call i64 @_mf__Stack_int__getSize(ptr nonnull %0)
+  call void @_mp__Stack_int__void__ctor(ptr nonnull %0)
+  call void @_mp__Stack_int__void__push__int(ptr nonnull %0, i32 123)
+  call void @_mp__Stack_int__void__push__int(ptr nonnull %0, i32 456)
+  call void @_mp__Stack_int__void__push__int(ptr nonnull %0, i32 789)
+  %1 = call i64 @_mf__Stack_int__long__getSize(ptr nonnull %0)
   %2 = call i32 (ptr, ...) @printf(ptr nonnull @0, i64 %1)
-  %3 = call i64 @_mf__Stack_int__getCapacity(ptr nonnull %0)
+  %3 = call i64 @_mf__Stack_int__long__getCapacity(ptr nonnull %0)
   %4 = call i32 (ptr, ...) @printf(ptr nonnull @1, i64 %3)
-  %5 = call i32 @_mf__Stack_int__pop(ptr nonnull %0)
+  %5 = call i32 @_mf__Stack_int__int__pop(ptr nonnull %0)
   %6 = call i32 (ptr, ...) @printf(ptr nonnull @2, i32 %5)
-  %7 = call i32 @_mf__Stack_int__pop(ptr nonnull %0)
+  %7 = call i32 @_mf__Stack_int__int__pop(ptr nonnull %0)
   %8 = call i32 (ptr, ...) @printf(ptr nonnull @3, i32 %7)
-  %9 = call i32 @_mf__Stack_int__pop(ptr nonnull %0)
+  %9 = call i32 @_mf__Stack_int__int__pop(ptr nonnull %0)
   %10 = call i32 (ptr, ...) @printf(ptr nonnull @4, i32 %9)
-  call void @_mp__Stack_int__dtor(ptr nonnull %0)
+  call void @_mp__Stack_int__void__dtor(ptr nonnull %0)
   ret i32 0
 }
 
-declare void @_mp__Stack_int__ctor(ptr) local_unnamed_addr
+declare void @_mp__Stack_int__void__ctor(ptr) local_unnamed_addr
 
-declare void @_mp__Stack_int__push__int(ptr, i32) local_unnamed_addr
+declare void @_mp__Stack_int__void__push__int(ptr, i32) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
-declare i64 @_mf__Stack_int__getSize(ptr) local_unnamed_addr
+declare i64 @_mf__Stack_int__long__getSize(ptr) local_unnamed_addr
 
-declare i64 @_mf__Stack_int__getCapacity(ptr) local_unnamed_addr
+declare i64 @_mf__Stack_int__long__getCapacity(ptr) local_unnamed_addr
 
-declare i32 @_mf__Stack_int__pop(ptr) local_unnamed_addr
+declare i32 @_mf__Stack_int__int__pop(ptr) local_unnamed_addr
 
-declare void @_mp__Stack_int__dtor(ptr) local_unnamed_addr
+declare void @_mp__Stack_int__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { nofree nounwind }

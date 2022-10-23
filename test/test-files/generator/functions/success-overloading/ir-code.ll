@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [13 x i8] c"Test func 1\0A\00", align 1
 @1 = private unnamed_addr constant [12 x i8] c"Result: %d\0A\00", align 1
 
-define internal i32 @_f__void__testFunc() {
+define internal i32 @_f__void__int__testFunc() {
 entry.l1:
   %result = alloca i32, align 4
   %0 = alloca i32, align 4
@@ -24,7 +24,7 @@ entry.l11:
   %0 = alloca i32, align 4
   %res = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_f__void__testFunc()
+  %1 = call i32 @_f__void__int__testFunc()
   store i32 %1, ptr %0, align 4
   %2 = load i32, ptr %0, align 4
   store i32 %2, ptr %res, align 4

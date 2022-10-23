@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
 
-define internal i32 @_f__void__ack__int_int(i32 %0, i32 %1) {
+define internal i32 @_f__void__int__ack__int_int(i32 %0, i32 %1) {
 entry.l1:
   %m = alloca i32, align 4
   %n = alloca i32, align 4
@@ -49,7 +49,7 @@ if.then.l3:                                       ; preds = %if.end.l2
   %23 = load i32, ptr %5, align 4
   store i32 1, ptr %6, align 4
   %24 = load i32, ptr %6, align 4
-  %25 = call i32 @_f__void__ack__int_int(i32 %23, i32 %24)
+  %25 = call i32 @_f__void__int__ack__int_int(i32 %23, i32 %24)
   store i32 %25, ptr %7, align 4
   %26 = load i32, ptr %7, align 4
   ret i32 %26
@@ -64,10 +64,10 @@ if.end.l3:                                        ; preds = %if.end.l2
   %32 = sub i32 %31, 1
   store i32 %32, ptr %9, align 4
   %33 = load i32, ptr %9, align 4
-  %34 = call i32 @_f__void__ack__int_int(i32 %30, i32 %33)
+  %34 = call i32 @_f__void__int__ack__int_int(i32 %30, i32 %33)
   store i32 %34, ptr %10, align 4
   %35 = load i32, ptr %10, align 4
-  %36 = call i32 @_f__void__ack__int_int(i32 %29, i32 %35)
+  %36 = call i32 @_f__void__int__ack__int_int(i32 %29, i32 %35)
   store i32 %36, ptr %11, align 4
   %37 = load i32, ptr %11, align 4
   ret i32 %37
@@ -86,7 +86,7 @@ entry.l7:
   %2 = load i32, ptr %baseN, align 4
   %3 = load i32, ptr %baseM, align 4
   %4 = load i32, ptr %baseN, align 4
-  %5 = call i32 @_f__void__ack__int_int(i32 %3, i32 %4)
+  %5 = call i32 @_f__void__int__ack__int_int(i32 %3, i32 %4)
   store i32 %5, ptr %0, align 4
   %6 = load i32, ptr %0, align 4
   %7 = call i32 (ptr, ...) @printf(ptr @0, i32 %1, i32 %2, i32 %6)

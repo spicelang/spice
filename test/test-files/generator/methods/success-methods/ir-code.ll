@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
 @2 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 1
 
-define internal ptr @_mf__Letter__getContent(ptr %0) {
+define internal ptr @_mf__Letter__string__getContent(ptr %0) {
 entry.l5:
   %this = alloca ptr, align 8
   %result = alloca ptr, align 8
@@ -20,7 +20,7 @@ entry.l5:
   ret ptr %3
 }
 
-define internal void @_mp__Letter__setContent__string(ptr %0, ptr %1) {
+define internal void @_mp__Letter__void__setContent__string(ptr %0, ptr %1) {
 entry.l9:
   %this = alloca ptr, align 8
   %text = alloca ptr, align 8
@@ -45,9 +45,9 @@ entry.l13:
   store ptr @0, ptr %4, align 8
   store ptr @1, ptr %1, align 8
   %5 = load ptr, ptr %1, align 8
-  call void @_mp__Letter__setContent__string(ptr %0, ptr %5)
+  call void @_mp__Letter__void__setContent__string(ptr %0, ptr %5)
   store i1 true, ptr %2, align 1
-  %6 = call ptr @_mf__Letter__getContent(ptr %0)
+  %6 = call ptr @_mf__Letter__string__getContent(ptr %0)
   store ptr %6, ptr %3, align 8
   %7 = load ptr, ptr %3, align 8
   %8 = call i32 (ptr, ...) @printf(ptr @2, ptr %7)

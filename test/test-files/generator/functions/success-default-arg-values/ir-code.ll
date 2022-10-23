@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @0 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
 @1 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 1
 
-define internal ptr @_f__void__getTestString__int_double_bool(i32 %0, double %1, i1 %2) {
+define internal ptr @_f__void__string__getTestString__int_double_bool(i32 %0, double %1, i1 %2) {
 entry.l1:
   %arg0 = alloca i32, align 4
   %arg1 = alloca double, align 8
@@ -37,7 +37,7 @@ entry.l5:
   %5 = load double, ptr %1, align 8
   store i1 true, ptr %2, align 1
   %6 = load i1, ptr %2, align 1
-  %7 = call ptr @_f__void__getTestString__int_double_bool(i32 %4, double %5, i1 %6)
+  %7 = call ptr @_f__void__string__getTestString__int_double_bool(i32 %4, double %5, i1 %6)
   store ptr %7, ptr %3, align 8
   %8 = load ptr, ptr %3, align 8
   %9 = call i32 (ptr, ...) @printf(ptr @1, ptr %8)

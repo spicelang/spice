@@ -27,7 +27,7 @@ echo done.
 
 REM - Clone LLVM
 echo [Step 2] Cloning LLVM (Could take a while) ...
-git clone --depth 1 --branch llvmorg-15.0.2 https://github.com/llvm/llvm-project llvm
+git clone --depth 1 --branch llvmorg-15.0.3 https://github.com/llvm/llvm-project llvm
 echo done.
 
 REM - Build LLVM

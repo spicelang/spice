@@ -1,3 +1,6 @@
+// Constants
+const int ASCII_SHIFT_OFFSET = 32;
+
 /**
  * Returns a formatted storage string (e.g. 1.4 MB for 1,500,000)
  *
@@ -14,7 +17,6 @@ public f<string> formatStorageSize(long bytes) {
  * @return Text in caps
  */
 public f<string> toUpper(string text) {
-    const char shiftOffset = (char) 32;
     const char min = (char) 97;
     const char max = (char) 122;
 
@@ -32,13 +34,12 @@ public f<string> toUpper(string text) {
  * @return Text in all-lower letters
  */
 public f<string> toLower(string text) {
-    const char shiftOffset = (char) 32;
     const char min = (char) 65;
     const char max = (char) 90;
 
     foreach char c : text {
         if c >= min && c <= max {
-            c -= shiftOffset;
+            c -= ASCII_SHIFT_OFFSET;
         }
     }
     return text;
@@ -51,7 +52,7 @@ public f<string> toLower(string text) {
  */
 public f<string> capitalize(string text) {
     if text[0] >= (char) 97 && text[0] <= (char) 122 {
-        text[0] += (char) 32;
+        text[0] += ASCII_SHIFT_OFFSET;
     }
     return text;
 }

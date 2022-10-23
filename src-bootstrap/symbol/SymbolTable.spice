@@ -413,7 +413,7 @@ public f<fct::Function*> SymbolTable.matchFunction(
 
     // Add function access pointer for function call
     if currentScope != nil<SymbolTable*> {
-        string suffix = callFunctionName == DTOR_VARIABLE_NAME ? callFunctionName : "";
+        string suffix = callFunctionName == DTOR_FUNCTION_NAME ? callFunctionName : "";
         currentScope.insertFunctionAccessPointer(matches.front(), node.codeLoc, suffix);
     }
 

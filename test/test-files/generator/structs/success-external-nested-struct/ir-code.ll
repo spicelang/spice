@@ -17,7 +17,7 @@ entry.l3:
   store i32 0, ptr %result, align 4
   store i16 8080, ptr %s, align 2
   %1 = load i16, ptr %s, align 2
-  %2 = call %_s__Socket__int_short_NestedSocket @_f__void__openServerSocket__short(i16 %1)
+  %2 = call %_s__Socket__int_short_NestedSocket @_f__void__Socket__openServerSocket__short(i16 %1)
   store %_s__Socket__int_short_NestedSocket %2, ptr %0, align 8
   %3 = getelementptr inbounds %_s__Socket__int_short_NestedSocket, ptr %0, i32 0, i32 2
   %4 = getelementptr inbounds %_s__NestedSocket__string_long, ptr %3, i32 0, i32 0
@@ -30,6 +30,6 @@ entry.l3:
   ret i32 %10
 }
 
-declare %_s__Socket__int_short_NestedSocket @_f__void__openServerSocket__short(i16)
+declare %_s__Socket__int_short_NestedSocket @_f__void__Socket__openServerSocket__short(i16)
 
 declare i32 @printf(ptr, ...)

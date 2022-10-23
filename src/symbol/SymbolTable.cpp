@@ -376,13 +376,14 @@ Function *SymbolTable::insertFunction(const Function &function) {
  * @param currentScope Current scope
  * @param callFunctionName Function name requirement
  * @param callThisType This type requirement
+ * @param callTemplateTypes Template types to substantiate generic types
  * @param callArgTypes Argument types requirement
  * @param node Declaration node for a potential error message
  * @return Matched function or nullptr
  */
 Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::string &callFunctionName,
-                                     const SymbolType &callThisType, const std::vector<SymbolType> &callArgTypes,
-                                     const AstNode *node) {
+                                     const SymbolType &callThisType, const std::vector<SymbolType> &callTemplateTypes,
+                                     const std::vector<SymbolType> &callArgTypes, const AstNode *node) {
   std::vector<Function *> matches;
 
   // Loop through functions and add any matches to the matches vector
@@ -406,7 +407,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
         for (int i = 0; i < fctThisType.getTemplateTypes().size(); i++) {
           SymbolType genericType = fctThisType.getTemplateTypes()[i];
           SymbolType concreteGenericType = callThisType.getTemplateTypes()[i];
-          concreteGenericTypes.insert({genericType.getSubType(), concreteGenericType});
+          concreteGenericTypes.emplace(genericType.getSubType(), concreteGenericType);
         }
       }
 
@@ -440,7 +441,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
               differentArgTypes = true;
               break;
             }
-            concreteGenericTypes.insert({genericTypeName, curArgType});
+            concreteGenericTypes.emplace(genericTypeName, curArgType);
           }
           argList[i].type = argList[i].type.replaceBaseType(concreteGenericTypes.at(genericTypeName));
         } else { // For arguments with non-generic type, check if the candidate type matches with the call
@@ -451,6 +452,28 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
         }
       }
       if (differentArgTypes)
+        continue;
+
+      // Determine the concrete types of all generic types, that were not yet resolved via the arg types
+      size_t callTemplateTypeIndex = 0;
+      for (const GenericType &definitionTemplateType : f.templateTypes) {
+        std::string genericTypeName = definitionTemplateType.getSubType();
+
+        // Check if the generic type was already resolved
+        if (concreteGenericTypes.contains(genericTypeName))
+          continue;
+
+        // Check if we exceeded the length of the call template list
+        if (callTemplateTypeIndex >= callTemplateTypes.size())
+          throw SemanticError(node, GENERIC_TYPE_NOT_IN_TEMPLATE,
+                              "Could not determine concrete type of the generic type '" + genericTypeName +
+                                  "'. Please specify it in the template list at the call site.");
+
+        concreteGenericTypes.emplace(genericTypeName, callTemplateTypes[callTemplateTypeIndex]);
+        callTemplateTypeIndex++;
+      }
+      // If types remain in the callTemplateTypes vector, skip this function substantiation (useful for generic return types)
+      if (callTemplateTypeIndex < callTemplateTypes.size() && f.name != CTOR_FUNCTION_NAME)
         continue;
 
       // Duplicate function
@@ -490,7 +513,7 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
 
   // Add function access pointer for function call
   if (currentScope != nullptr) {
-    std::string suffix = callFunctionName == DTOR_VARIABLE_NAME ? callFunctionName : "";
+    std::string suffix = callFunctionName == DTOR_FUNCTION_NAME ? callFunctionName : "";
     currentScope->insertFunctionAccessPointer(matches.front(), node->codeLoc, suffix);
   }
 
@@ -554,7 +577,7 @@ Function *SymbolTable::insertSubstantiatedFunction(const Function &function, con
   // Add function to function list
   const std::string codeLocStr = declNode->codeLoc.toString();
   assert(functions.contains(codeLocStr));
-  functions.at(codeLocStr)->insert({mangledFctName, function});
+  functions.at(codeLocStr)->emplace(mangledFctName, function);
   // Add symbol table entry for the function
   insert(function.getSignature(), function.getSymbolType(), function.specifiers, INITIALIZED, declNode);
   return &functions.at(codeLocStr)->at(mangledFctName);
@@ -699,7 +722,7 @@ Struct *SymbolTable::insertSubstantiatedStruct(const Struct &s, const AstNode *d
   // Add struct to struct list
   const std::string codeLocStr = declNode->codeLoc.toString();
   assert(structs.at(codeLocStr) != nullptr);
-  structs.at(codeLocStr)->insert({s.getMangledName(), s});
+  structs.at(codeLocStr)->emplace(s.getMangledName(), s);
   // Add symbol table entry for the struct
   insert(s.getSignature(), s.getSymbolType(), s.specifiers, INITIALIZED, declNode);
   return &structs.at(codeLocStr)->at(s.getMangledName());

@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @1 = private unnamed_addr constant [12 x i8] c"F2 called.\0A\00", align 1
 @2 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
 
-define internal i1 @_f__void__f1() {
+define internal i1 @_f__void__bool__f1() {
 entry.l1:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
@@ -19,7 +19,7 @@ entry.l1:
 
 declare i32 @printf(ptr, ...)
 
-define internal i1 @_f__void__f2() {
+define internal i1 @_f__void__bool__f2() {
 entry.l6:
   %result = alloca i1, align 1
   %0 = alloca i1, align 1
@@ -35,9 +35,9 @@ entry.l11:
   %0 = alloca i1, align 1
   %1 = alloca i1, align 1
   store i32 0, ptr %result, align 4
-  %2 = call i1 @_f__void__f1()
+  %2 = call i1 @_f__void__bool__f1()
   store i1 %2, ptr %0, align 1
-  %3 = call i1 @_f__void__f2()
+  %3 = call i1 @_f__void__bool__f2()
   store i1 %3, ptr %1, align 1
   %4 = load i1, ptr %0, align 1
   %5 = select i1 %4, ptr %0, ptr %1

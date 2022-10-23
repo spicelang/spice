@@ -11,7 +11,7 @@ entry.l1:
   %0 = alloca i32, align 4
   %res = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_f__void__test()
+  %1 = call i32 @_f__void__int__test()
   store i32 %1, ptr %0, align 4
   %2 = load i32, ptr %0, align 4
   store i32 %2, ptr %res, align 4
@@ -21,7 +21,7 @@ entry.l1:
   ret i32 %5
 }
 
-define internal i32 @_f__void__test() {
+define internal i32 @_f__void__int__test() {
 entry.l6:
   %result = alloca i32, align 4
   %0 = alloca i32, align 4

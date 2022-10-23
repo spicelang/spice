@@ -17,13 +17,13 @@ const char *const MAIN_FUNCTION_NAME = "main";
 const char *const RETURN_VARIABLE_NAME = "result";
 const char *const THIS_VARIABLE_NAME = "this";
 const char *const FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
-const char *const CTOR_VARIABLE_NAME = "ctor";
-const char *const DTOR_VARIABLE_NAME = "dtor";
+const char *const CTOR_FUNCTION_NAME = "ctor";
+const char *const DTOR_FUNCTION_NAME = "dtor";
 const char *const STRUCT_SCOPE_PREFIX = "struct:";
 const char *const INTERFACE_SCOPE_PREFIX = "interface:";
 const char *const ENUM_SCOPE_PREFIX = "enum:";
 const char *const UNUSED_VARIABLE_NAME = "_";
-const std::vector<std::string> RESERVED_KEYWORDS = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
+const char *const RESERVED_KEYWORDS[8] = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
 
 // Forward declarations
 class OpRuleManager;

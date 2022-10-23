@@ -17,19 +17,19 @@ entry.l1:
   store i8 97, ptr %2, align 1
   %3 = getelementptr inbounds %_s__char__TestStruct__char_int, ptr %0, i32 0, i32 1
   store i32 1, ptr %3, align 4
-  call void @_mp__TestStruct_char__printTest(ptr %0)
+  call void @_mp__TestStruct_char__void__printTest(ptr %0)
   store i1 true, ptr %1, align 1
   %4 = load i32, ptr %result, align 4
   ret i32 %4
 }
 
-define internal void @_mp__TestStruct_char__printTest(ptr %0) {
+define internal void @_mp__TestStruct_char__void__printTest(ptr %0) {
 entry.l13:
   %this = alloca ptr, align 8
   %1 = alloca i32, align 4
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = call i32 @_mf__TestStruct_char__getTest(ptr %2)
+  %3 = call i32 @_mf__TestStruct_char__int__getTest(ptr %2)
   store i32 %3, ptr %1, align 4
   %4 = load i32, ptr %1, align 4
   %5 = call i32 (ptr, ...) @printf(ptr @0, i32 %4)
@@ -38,7 +38,7 @@ entry.l13:
 
 declare i32 @printf(ptr, ...)
 
-define internal i32 @_mf__TestStruct_char__getTest(ptr %0) {
+define internal i32 @_mf__TestStruct_char__int__getTest(ptr %0) {
 entry.l17:
   %this = alloca ptr, align 8
   %result = alloca i32, align 4
@@ -62,7 +62,7 @@ if.then.l18:                                      ; preds = %entry.l17
   store i32 %12, ptr %10, align 4
   store i32 %11, ptr %2, align 4
   %13 = load ptr, ptr %this, align 8
-  call void @_mp__TestStruct_char__printTest(ptr %13)
+  call void @_mp__TestStruct_char__void__printTest(ptr %13)
   store i1 true, ptr %3, align 1
   br label %if.end.l18
 

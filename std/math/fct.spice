@@ -1,0 +1,104 @@
+// Imports
+import "const" as cst;
+import "../type/double" as doubleTy;
+
+// Generic type defs
+type Numeric double|int|short|long;
+type WholeNumber int|short|long;
+
+/**
+ * Calculate the factorial of the input
+ *
+ * @param input Input number
+ * @return Factorial of input
+ */
+public inline f<WholeNumber> factorial<WholeNumber>(WholeNumber input) {
+    Numeric fac = (Numeric) 1;
+    for (int i = 1; i <= input; i++) {
+        fac *= i;
+    }
+    return fac;
+}
+
+/**
+ * Calculate absolute value of the input
+ *
+ * @param input Input number
+ * @return Absulute value of input
+ */
+public inline f<Numeric> abs<Numeric>(Numeric input) {
+    return input < 0 ? -input : input;
+}
+
+/**
+ * Round the input number down
+ *
+ * @param input Intput number
+ * @return Rounding result
+ */
+public inline f<WholeNumber> floor<WholeNumber>(double input) {
+    int truncatedInt = doubleTy.toInt(input);
+    return (WholeNumber) truncatedInt;
+}
+
+/**
+ * Round the input number up
+ *
+ * @param input Intput number
+ * @return Rounding result
+ */
+public inline f<WholeNumber> ceil<WholeNumber>(double input) {
+    int truncatedInt = doubleTy.toInt(input);
+    if truncatedInt != input {
+        truncatedInt++;
+    }
+    return (WholeNumber) truncatedInt;
+}
+
+/**
+ * Calculate the sine of the input, using the taylor series:
+ * sin x = x - x^3/3! + x^5/5! - x^7/7! ...
+ *
+ * @param x Input number
+ * @return Sine of input
+ */
+public f<double> sin<Numeric>(Numeric x) {
+    bool negative = x < 0 ? true : false;
+    x = abs(x);
+    if x > 360 {
+        x -= (Numeric) (x / 360) * 360;
+    }
+    double xNew = x * (cst::PI / 180.0);
+    double res = 0.0;
+    double term = 0.0 + xNew;
+    double k = 1.0;
+    while (res + term != res) {
+        res += term;
+        k += 2.0;
+        term *= -xNew * xNew / k / (k - 1);
+    }
+    return negative ? -res : res;
+}
+
+/**
+ * Calculate the cosine of the input, using the taylor series:
+ * cos x = 1 - x^2/2! + x^4/4! - x^6/6! ...
+ * @param x Input number
+ * @return Cosine of input
+ */
+public f<double> cos<Numeric>(Numeric x) {
+    x = abs(x);
+    if x > 360 {
+        x -= (Numeric) (x / 360) * 360;
+    }
+    double xNew = x * (cst::PI / 180.0);
+    double res = 0.0;
+    double term = 1.0;
+    double k = 0.0;
+    while (res + term != res) {
+        res += term;
+        k += 2.0;
+        term *= -xNew * xNew / k / (k - 1);
+    }
+    return res;
+}

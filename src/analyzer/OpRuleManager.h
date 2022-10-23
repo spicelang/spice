@@ -176,6 +176,7 @@ const std::vector<BinaryOpRule> XOR_EQUAL_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),   // long ^= short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long ^= long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),    // byte ^= byte -> byte
+    BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),    // char ^= char -> char
 };
 
 // Logical and op rules
@@ -544,14 +545,17 @@ const std::vector<UnaryOpRule> POSTFIX_MINUS_MINUS_OP_RULES = {
 // Cast op rules
 const std::vector<BinaryOpRule> CAST_OP_RULES = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // (double) double -> double
+    BinaryOpRule(TY_INT, TY_DOUBLE, TY_INT, false),       // (int) double -> int
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // (int) int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // (int) short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_INT, false),         // (int) long -> int
     BinaryOpRule(TY_INT, TY_BYTE, TY_INT, false),         // (int) byte -> int
     BinaryOpRule(TY_INT, TY_CHAR, TY_INT, false),         // (int) char -> int
+    BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_SHORT, false),   // (short) double -> short
     BinaryOpRule(TY_SHORT, TY_INT, TY_SHORT, false),      // (short) int -> short
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // (short) short -> short
     BinaryOpRule(TY_SHORT, TY_LONG, TY_SHORT, false),     // (short) long -> short
+    BinaryOpRule(TY_LONG, TY_DOUBLE, TY_LONG, false),     // (long) double -> long
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // (long) int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // (long) short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // (long) long -> long

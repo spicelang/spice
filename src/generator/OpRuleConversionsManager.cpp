@@ -392,7 +392,8 @@ llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhsV, llvm::
     return builder.CreateXor(lhsV, rhsLong);
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
-  case COMB(TY_BYTE, TY_BYTE):
+  case COMB(TY_BYTE, TY_BYTE): // fallthrough
+  case COMB(TY_CHAR, TY_CHAR):
     return builder.CreateXor(lhsV, rhsV);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^="); // GCOV_EXCL_LINE
@@ -1480,19 +1481,28 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhsV, const Symb
   llvm::Type *lhsTy = lhsSTy.toLLVMType(context, accessScope);
 
   switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
-  case COMB(TY_DOUBLE, TY_DOUBLE): // fallthrough
+  case COMB(TY_DOUBLE, TY_DOUBLE):
+    return rhsV;
+  case COMB(TY_INT, TY_DOUBLE):
+    return builder.CreateFPToSI(rhsV, lhsTy);
   case COMB(TY_INT, TY_INT):
     return rhsV;
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG):  // fallthrough
   case COMB(TY_INT, TY_BYTE):  // fallthrough
-  case COMB(TY_INT, TY_CHAR):  // fallthrough
+  case COMB(TY_INT, TY_CHAR):
+    return builder.CreateIntCast(rhsV, lhsTy, true);
+  case COMB(TY_SHORT, TY_DOUBLE):
+    return builder.CreateFPToSI(rhsV, lhsTy);
   case COMB(TY_SHORT, TY_INT):
     return builder.CreateIntCast(rhsV, lhsTy, true);
   case COMB(TY_SHORT, TY_SHORT):
     return rhsV;
-  case COMB(TY_SHORT, TY_LONG): // fallthrough
-  case COMB(TY_LONG, TY_INT):   // fallthrough
+  case COMB(TY_SHORT, TY_LONG):
+    return builder.CreateIntCast(rhsV, lhsTy, true);
+  case COMB(TY_LONG, TY_DOUBLE):
+    return builder.CreateFPToSI(rhsV, lhsTy);
+  case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT):
     return builder.CreateIntCast(rhsV, lhsTy, true);
   case COMB(TY_LONG, TY_LONG):

@@ -235,7 +235,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
 
   // Store function arguments
   for (auto &arg : fct->args()) {
-    unsigned argNo = arg.getArgNo();
+    size_t argNo = arg.getArgNo();
     std::string argName = argNames[argNo];
     llvm::Type *argType = fctType->getParamType(argNo);
     llvm::Value *memAddress = insertAlloca(argType, argName);
@@ -244,7 +244,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
     argSymbol->updateAddress(memAddress);
 
     if (cliOptions.generateDebugInfo)
-      generateDeclDebugInfo(node->codeLoc, argName, memAddress);
+      generateDeclDebugInfo(node->codeLoc, argName, memAddress, argNo);
 
     builder.CreateStore(&arg, memAddress);
   }
@@ -415,7 +415,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
 
       // Store mandatory function args
       for (auto &arg : fct->args()) {
-        unsigned int argNo = arg.getArgNo();
+        size_t argNo = arg.getArgNo();
         std::string argName = argNames[argNo];
         llvm::Type *argType = fctType->getParamType(argNo);
         llvm::Value *memAddress = insertAlloca(argType, argName);
@@ -424,7 +424,7 @@ std::any GeneratorVisitor::visitFctDef(FctDefNode *node) {
         argEntry->updateAddress(memAddress);
 
         if (cliOptions.generateDebugInfo)
-          generateDeclDebugInfo(node->codeLoc, argName, memAddress);
+          generateDeclDebugInfo(node->codeLoc, argName, memAddress, argNo);
 
         builder.CreateStore(&arg, memAddress);
       }
@@ -606,7 +606,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
 
       // Store mandatory procedure args
       for (auto &arg : proc->args()) {
-        unsigned int argNo = arg.getArgNo();
+        size_t argNo = arg.getArgNo();
         std::string argName = argNames[argNo];
         llvm::Type *argType = procType->getParamType(argNo);
         llvm::Value *memAddress = insertAlloca(argType, argName);
@@ -615,7 +615,7 @@ std::any GeneratorVisitor::visitProcDef(ProcDefNode *node) {
         argSymbol->updateAddress(memAddress);
 
         if (cliOptions.generateDebugInfo)
-          generateDeclDebugInfo(node->codeLoc, argName, memAddress);
+          generateDeclDebugInfo(node->codeLoc, argName, memAddress, argNo);
 
         builder.CreateStore(&arg, memAddress);
       }
@@ -1379,7 +1379,7 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   }
 
   if (cliOptions.generateDebugInfo)
-    generateDeclDebugInfo(node->codeLoc, node->varName, memAddress, true);
+    generateDeclDebugInfo(node->codeLoc, node->varName, memAddress, SIZE_MAX, true);
 
   // Update address in symbol table
   entry->updateAddress(memAddress);
@@ -3132,7 +3132,7 @@ bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableE
     // Insert call
     builder.CreateCall(fct, thisValuePtr);
   } else {
-    Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc, DTOR_VARIABLE_NAME);
+    Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc, DTOR_FUNCTION_NAME);
 
     // Cancel if no destructor was found
     if (spiceDtor == nullptr)
@@ -3405,7 +3405,7 @@ void GeneratorVisitor::generateGlobalVarDebugInfo(llvm::GlobalVariable *global, 
 }
 
 void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address,
-                                             bool moveToPrev) {
+                                             size_t argNo, bool moveToPrev) {
   if (!cliOptions.generateDebugInfo)
     return;
   // Get symbol table entry
@@ -3415,7 +3415,11 @@ void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
   llvm::DIScope *scope = debugInfo.lexicalBlocks.top();
   llvm::DIType *diType = getDITypeForSymbolType(variableEntry->type);
-  llvm::DILocalVariable *varInfo = diBuilder->createAutoVariable(scope, varName, unit, codeLoc.line, diType);
+  llvm::DILocalVariable *varInfo;
+  if (argNo != SIZE_MAX)
+    varInfo = diBuilder->createParameterVariable(scope, varName, argNo, unit, codeLoc.line, diType);
+  else
+    varInfo = diBuilder->createAutoVariable(scope, varName, unit, codeLoc.line, diType);
   llvm::DIExpression *expr = diBuilder->createExpression();
   auto inst = diBuilder->insertDeclare(address, varInfo, expr, builder.getCurrentDebugLocation(), allocaInsertBlock);
   if (moveToPrev)

@@ -25,7 +25,7 @@ target triple = "x86_64-w64-windows-gnu"
 @16 = private unnamed_addr constant [26 x i8] c"Shopping cart item 1: %s\0A\00", align 1
 @17 = private unnamed_addr constant [30 x i8] c"Another cart item 2 unit: %s\0A\00", align 1
 
-define internal %_s__ShoppingCart__string_ShoppingItemarray @_f__void__newShoppingCart() {
+define internal %_s__ShoppingCart__string_ShoppingItemarray @_f__void__ShoppingCart__newShoppingCart() {
 entry.l14:
   %result = alloca %_s__ShoppingCart__string_ShoppingItemarray, align 8
   %0 = alloca %_s__ShoppingItem__string_double_string, align 8
@@ -77,7 +77,7 @@ entry.l14:
   ret %_s__ShoppingCart__string_ShoppingItemarray %26
 }
 
-define internal %_s__ShoppingCart__string_ShoppingItemarray @_f__void__anotherShoppingCart() {
+define internal %_s__ShoppingCart__string_ShoppingItemarray @_f__void__ShoppingCart__anotherShoppingCart() {
 entry.l22:
   %result = alloca %_s__ShoppingCart__string_ShoppingItemarray, align 8
   %0 = alloca %_s__ShoppingItem__string_double_string, align 8
@@ -130,14 +130,14 @@ entry.l31:
   %0 = alloca %_s__ShoppingCart__string_ShoppingItemarray, align 8
   %1 = alloca %_s__ShoppingCart__string_ShoppingItemarray, align 8
   store i32 0, ptr %result, align 4
-  %2 = call %_s__ShoppingCart__string_ShoppingItemarray @_f__void__newShoppingCart()
+  %2 = call %_s__ShoppingCart__string_ShoppingItemarray @_f__void__ShoppingCart__newShoppingCart()
   store %_s__ShoppingCart__string_ShoppingItemarray %2, ptr %0, align 8
   %3 = getelementptr inbounds %_s__ShoppingCart__string_ShoppingItemarray, ptr %0, i32 0, i32 1
   %4 = getelementptr inbounds [3 x %_s__ShoppingItem__string_double_string], ptr %3, i32 0, i32 1
   %5 = getelementptr inbounds %_s__ShoppingItem__string_double_string, ptr %4, i32 0, i32 0
   %6 = load ptr, ptr %5, align 8
   %7 = call i32 (ptr, ...) @printf(ptr @16, ptr %6)
-  %8 = call %_s__ShoppingCart__string_ShoppingItemarray @_f__void__anotherShoppingCart()
+  %8 = call %_s__ShoppingCart__string_ShoppingItemarray @_f__void__ShoppingCart__anotherShoppingCart()
   store %_s__ShoppingCart__string_ShoppingItemarray %8, ptr %1, align 8
   %9 = load %_s__ShoppingCart__string_ShoppingItemarray, ptr %1, align 8
   store %_s__ShoppingCart__string_ShoppingItemarray %9, ptr %0, align 8

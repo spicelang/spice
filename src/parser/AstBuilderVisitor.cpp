@@ -86,7 +86,7 @@ std::any AstBuilderVisitor::visitFunctionDef(SpiceParser::FunctionDefContext *ct
       currentNode = fctDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = fctDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, fileName));
-      fctDefNode->isGeneric = true;
+      fctDefNode->hasTemplateTypes = true;
     } else if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ParamLst
       currentNode = fctDefNode->createChild<ParamLstNode>(CodeLoc(rule->start, fileName));
       fctDefNode->hasParams = true;
@@ -1445,7 +1445,7 @@ std::any AstBuilderVisitor::visitFunctionCall(SpiceParser::FunctionCallContext *
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = fctCallNode->createChild<TypeLstNode>(CodeLoc(rule->start, fileName));
-      fctCallNode->isGeneric = true;
+      fctCallNode->hasTemplateTypes = true;
     } else if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) { // ArgLst
       currentNode = fctCallNode->createChild<ArgLstNode>(CodeLoc(rule->start, fileName));
       fctCallNode->hasArgs = true;

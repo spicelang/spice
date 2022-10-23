@@ -304,6 +304,20 @@ public inline f<bool> String.contains(string needle) {
 }
 
 /**
+ * Reverse the string
+ */
+public p String.reverse() {
+    unsafe {
+        for int i = 0; i <= this.length / 2; i++ {
+            printf("%s\n", this.contents);
+            this.contents[i] ^= this.contents[this.length - i - 1];
+            this.contents[this.length - i - 1] ^= this.contents[i];
+            this.contents[i] ^= this.contents[this.length - i - 1];
+        }
+    }
+}
+
+/**
  * Replace occurrence of substring with the replacement string
  *
  * @param needle Substring to replace

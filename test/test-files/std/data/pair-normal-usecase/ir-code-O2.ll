@@ -12,21 +12,21 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() local_unnamed_addr {
 entry.l3:
   %stringIntPair = alloca %_s__string_int__Pair__string_int, align 8
-  call void @_mp__Pair_string_int__ctor__string_int(ptr nonnull %stringIntPair, ptr nonnull @0, i32 1234)
-  %0 = call ptr @_mf__Pair_string_int__getFirst(ptr nonnull %stringIntPair)
+  call void @_mp__Pair_string_int__void__ctor__string_int(ptr nonnull %stringIntPair, ptr nonnull @0, i32 1234)
+  %0 = call ptr @_mf__Pair_string_int__string__getFirst(ptr nonnull %stringIntPair)
   %1 = call i32 (ptr, ...) @printf(ptr nonnull @1, ptr %0)
-  %2 = call i32 @_mf__Pair_string_int__getSecond(ptr nonnull %stringIntPair)
+  %2 = call i32 @_mf__Pair_string_int__int__getSecond(ptr nonnull %stringIntPair)
   %3 = call i32 (ptr, ...) @printf(ptr nonnull @2, i32 %2)
   ret i32 0
 }
 
-declare void @_mp__Pair_string_int__ctor__string_int(ptr, ptr, i32) local_unnamed_addr
+declare void @_mp__Pair_string_int__void__ctor__string_int(ptr, ptr, i32) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
-declare ptr @_mf__Pair_string_int__getFirst(ptr) local_unnamed_addr
+declare ptr @_mf__Pair_string_int__string__getFirst(ptr) local_unnamed_addr
 
-declare i32 @_mf__Pair_string_int__getSecond(ptr) local_unnamed_addr
+declare i32 @_mf__Pair_string_int__int__getSecond(ptr) local_unnamed_addr
 
 attributes #0 = { nofree nounwind }

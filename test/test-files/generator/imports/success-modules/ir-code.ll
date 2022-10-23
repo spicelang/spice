@@ -11,7 +11,7 @@ entry.l3:
   %0 = alloca i32, align 4
   %integer = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_f__void__forwardToOtherModule()
+  %1 = call i32 @_f__void__int__forwardToOtherModule()
   store i32 %1, ptr %0, align 4
   %2 = load i32, ptr %0, align 4
   store i32 %2, ptr %integer, align 4
@@ -21,6 +21,6 @@ entry.l3:
   ret i32 %5
 }
 
-declare i32 @_f__void__forwardToOtherModule()
+declare i32 @_f__void__int__forwardToOtherModule()
 
 declare i32 @printf(ptr, ...)
