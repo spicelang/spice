@@ -24,7 +24,7 @@
 void SymbolTable::insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
                          const AstNode *declNode) {
   bool isGlobal = parent == nullptr;
-  unsigned int orderIndex = symbols.size();
+  size_t orderIndex = symbols.size();
   // Insert into symbols map
   symbols.insert({name, SymbolTableEntry(name, type, this, specifiers, state, declNode, orderIndex, isGlobal)});
 }

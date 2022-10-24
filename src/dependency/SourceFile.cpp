@@ -207,7 +207,7 @@ void SourceFile::analyze() {
   }
 
   // Analyze this source file
-  analyzer = std::make_shared<AnalyzerVisitor>(resourceManager, *this, parent == nullptr, stdFile);
+  analyzer = std::make_shared<AnalyzerVisitor>(resourceManager, *this, parent == nullptr);
   analyzer->visit(ast.get());
   antlrCtx.parser->reset();
 }

@@ -645,7 +645,7 @@ std::any AstBuilderVisitor::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
 
   for (const auto &subTree : ctx->children) {
     if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER)
-      enumItemNode->itemName = t->getText();
+      enumItemNode->name = t->getText();
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INT_LIT) {
       enumItemNode->itemValue = parseInt(t);
       enumItemNode->hasValue = true;

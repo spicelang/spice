@@ -10,10 +10,11 @@
 
 SourceFile *RuntimeModuleManager::requestModule(SourceFile *sourceFile, const RuntimeModuleName &moduleName) {
   // Make the module available
-  if (!isModuleAvailable(moduleName))
-    addModule(sourceFile, moduleName);
+  bool available = isModuleAvailable(moduleName);
+  if (!available)
+    available = addModule(sourceFile, moduleName);
 
-  return modules.at(moduleName);
+  return available ? modules.at(moduleName) : nullptr;
 }
 
 SymbolTable *RuntimeModuleManager::getModuleScope(const RuntimeModuleName &moduleName) const {
@@ -23,7 +24,7 @@ SymbolTable *RuntimeModuleManager::getModuleScope(const RuntimeModuleName &modul
 
 bool RuntimeModuleManager::isModuleAvailable(const RuntimeModuleName &module) const { return modules.contains(module); }
 
-void RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const RuntimeModuleName &moduleName) {
+bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const RuntimeModuleName &moduleName) {
   std::string importName;
   std::string fileName;
   switch (moduleName) {
@@ -39,6 +40,8 @@ void RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const Runtime
     throw std::runtime_error("Internal compiler error: Requested unknown runtime module");
   }
   std::string filePath = FileUtil::getStdDir() + "runtime" + FileUtil::DIR_SEPARATOR + fileName + ".spice";
+  if (filePath == parentSourceFile->filePath)
+    return false;
   const auto moduleSourceFile = parentSourceFile->createSourceFile(importName, filePath, true);
   parentSourceFile->addDependency(moduleSourceFile, parentSourceFile->ast.get(), importName, filePath);
 
@@ -49,4 +52,5 @@ void RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const Runtime
   runtimeFile->reAnalyze();
 
   modules.emplace(moduleName, runtimeFile.get());
+  return true;
 }

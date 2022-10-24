@@ -596,7 +596,7 @@ public:
   // Public get methods
 
   // Public members
-  std::string itemName;
+  std::string name;
   uint32_t itemValue;
   bool hasValue = false;
 };

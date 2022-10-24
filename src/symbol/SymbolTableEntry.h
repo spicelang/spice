@@ -26,7 +26,7 @@ class SymbolTableEntry {
 public:
   // Constructors
   SymbolTableEntry(std::string name, SymbolType type, SymbolTable *scope, SymbolSpecifiers specifiers, SymbolState state,
-                   const AstNode *declNode, unsigned int orderIndex, const bool global)
+                   const AstNode *declNode, size_t orderIndex, const bool global)
       : name(std::move(name)), type(std::move(type)), scope(scope), specifiers(specifiers), state(state), declNode(declNode),
         orderIndex(orderIndex), isGlobal(global){};
 
