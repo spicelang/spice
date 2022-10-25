@@ -795,28 +795,67 @@ std::vector<CompilerWarning> SymbolTable::collectWarnings() {
     return {};
   // Visit own symbols
   std::vector<CompilerWarning> warnings;
+  CompilerWarningType warningType;
+  std::string warningMessage;
   for (const auto &[key, entry] : symbols) {
-    if (!entry.isUsed && entry.name != UNUSED_VARIABLE_NAME) {
-      if (entry.type.is(TY_FUNCTION)) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_FUNCTION, "The function '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_PROCEDURE)) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_STRUCT) && entry.isGlobal) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_INTERFACE) && entry.isGlobal) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_INTERFACE, "The interface '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_IMPORT)) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.name + "' is unused");
-      } else {
-        // Skip idx variables
+    // Do not produce a warning if the symbol is used or has a special name
+    if (entry.isUsed || entry.name == UNUSED_VARIABLE_NAME)
+      continue;
+
+    switch (entry.type.getSuperType()) {
+    case TY_FUNCTION: {
+      warningType = UNUSED_FUNCTION;
+      warningMessage = "The function '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_PROCEDURE: {
+      warningType = UNUSED_PROCEDURE;
+      warningMessage = "The procedure '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_STRUCT: {
+      warningType = UNUSED_STRUCT;
+      warningMessage = "The struct '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_INTERFACE: {
+      warningType = UNUSED_INTERFACE;
+      warningMessage = "The interface '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_IMPORT: {
+      warningType = UNUSED_IMPORT;
+      warningMessage = "The import '" + entry.name + "' is unused";
+      break;
+    }
+    default: {
+      // Check parent scope type
+      switch (scopeType) {
+      case SCOPE_STRUCT: {
+        warningType = UNUSED_FIELD;
+        warningMessage = "The import '" + entry.name + "' is unused";
+        break;
+      }
+      case SCOPE_ENUM: {
+        warningType = UNUSED_ENUM_ITEM;
+        warningMessage = "The enum item '" + entry.name + "' is unused";
+        break;
+      }
+      case SCOPE_FOREACH_BODY: {
+        // Skip idx variables, otherwise fall-through
         if (entry.name == FOREACH_DEFAULT_IDX_VARIABLE_NAME)
           continue;
-        if (scopeType == SCOPE_STRUCT)
-          warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_FIELD, "The field '" + entry.name + "' is unused");
-        else
-          warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.name + "' is unused");
+      }
+      default: {
+        warningType = UNUSED_VARIABLE;
+        warningMessage = "The variable '" + entry.name + "' is unused";
+      }
       }
     }
+    }
+
+    // Add warning
+    warnings.emplace_back(entry.getDeclCodeLoc(), warningType, warningMessage);
   }
   // Visit children
   for (const auto &[key, child] : children) {

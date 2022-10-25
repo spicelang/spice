@@ -2371,23 +2371,23 @@ std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {
 }
 
 std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
+  // It is a struct type -> get the access scope
+  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+  std::string firstFragment = node->typeNameFragments.front();
+
   // Check if it is a String type
-  if (node->typeNameFragments.size() == 1 && node->typeNameFragments.back() == "String") {
+  if (node->typeNameFragments.size() == 1 && firstFragment == "String" && !accessScope->lookup(firstFragment)) {
     sourceFile.requestRuntimeModule(STRING_RT);
     return node->setEvaluatedSymbolType(SymbolType(TY_STROBJ));
   }
 
   // Check if it is a generic type
-  std::string firstFragment = node->typeNameFragments.front();
   SymbolTableEntry *entry = currentScope->lookup(firstFragment);
   if (node->typeNameFragments.size() == 1 && !entry && currentScope->lookupGenericType(firstFragment)) {
     checkForReservedKeyword(node, firstFragment);
     SymbolType symbolType = *static_cast<SymbolType *>(currentScope->lookupGenericType(firstFragment));
     return node->setEvaluatedSymbolType(symbolType);
   }
-
-  // It is a struct type -> get the access scope
-  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
   // Get type name in format: a.b.c and retrieve the scope in parallel
   std::string accessScopePrefix;

@@ -2,7 +2,7 @@
 title: Procedures
 ---
 
-Spice distinguishes strictly between functions and procedures. Procedures are concise and enclosed blocks of code which a programmer can define within his source code holds a set of instructions to execute in the stated order. Other than functions, procedures do not have a return value. The paradigm here is, that a function calculates and returns something whereas a procedure executes some action.
+Spice distinguishes strictly between functions and procedures. Procedures are concise and enclosed blocks of code, which a programmer can define within his source code. Each procedure holds a set of instructions to execute in the stated order. Other than functions, procedures do not have a return value. The paradigm here is, that a function calculates and returns something whereas a procedure executes some action.
 
 Procedures in Spice can be defined like this:
 ```spice
@@ -23,7 +23,7 @@ p demoProcedure(int arg1, bool arg2 = false) {
 }
 ```
 
-Theis procedure could get called like so:
+This procedure could get called like so:
 ```spice
 demoProcedure(10);
 demoProcedure(7, true);
