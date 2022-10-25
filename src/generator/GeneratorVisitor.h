@@ -166,7 +166,7 @@ private:
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
   llvm::Value *createGlobalArray(llvm::Constant *constArray);
-  bool insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry);
+  bool insertDestructorCall(const CodeLoc &codeLoc, const SymbolTableEntry *varEntry);
   llvm::Value *materializeString(llvm::Value *stringStruct);
   llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);

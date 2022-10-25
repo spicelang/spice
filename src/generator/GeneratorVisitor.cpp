@@ -273,7 +273,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
 
       // Generate cleanup instructions (e.g. dtor calls)
       bool destructorCalled = false;
-      for (SymbolTableEntry *varEntry : varsToDestruct)
+      for (const SymbolTableEntry *varEntry : varsToDestruct)
         destructorCalled |= insertDestructorCall(varEntry->getDeclCodeLoc(), varEntry);
 
       if (destructorCalled) {
@@ -3091,7 +3091,7 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
   return memAddress;
 }
 
-bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, SymbolTableEntry *varEntry) {
+bool GeneratorVisitor::insertDestructorCall(const CodeLoc &codeLoc, const SymbolTableEntry *varEntry) {
   Function *spiceDtor = currentScope->getFunctionAccessPointer(codeLoc, DTOR_FUNCTION_NAME);
 
   // Cancel if no destructor was found

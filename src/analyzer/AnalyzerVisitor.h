@@ -127,7 +127,7 @@ private:
   bool allowUnsafeOperations = false;
 
   // Private methods
-  void insertDestructorCall(const AstNode *node, SymbolTableEntry *varEntry);
+  void insertDestructorCall(const AstNode *node, const SymbolTableEntry *varEntry);
   SymbolType initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix, const std::string &structName,
                            const std::vector<SymbolType> &templateTypes, const AstNode *node);
   SymbolType initExtGlobal(SymbolTable *sourceScope, const std::string &globalScopePrefix, const std::string &globalName,

@@ -108,7 +108,7 @@ std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
 
     // Call destructors for variables, that are going out of scope
     std::vector<SymbolTableEntry *> varsToDestruct = node->fctScope->getVarsGoingOutOfScope(true);
-    for (SymbolTableEntry *varEntry : varsToDestruct)
+    for (const SymbolTableEntry *varEntry : varsToDestruct)
       insertDestructorCall(varEntry->declNode, varEntry);
 
     // Return to root scope
@@ -292,7 +292,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
 
         // Call destructors for variables, that are going out of scope
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
-        for (SymbolTableEntry *varEntry : varsToDestruct)
+        for (const SymbolTableEntry *varEntry : varsToDestruct)
           insertDestructorCall(varEntry->declNode, varEntry);
 
         // Reset generic types
@@ -477,7 +477,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
 
         // Call destructors for variables, that are going out of scope
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
-        for (SymbolTableEntry *varEntry : varsToDestruct)
+        for (const SymbolTableEntry *varEntry : varsToDestruct)
           insertDestructorCall(varEntry->declNode, varEntry);
 
         // Reset generic types
@@ -2474,7 +2474,7 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   throw std::runtime_error("Base type fall-through");
 }
 
-void AnalyzerVisitor::insertDestructorCall(const AstNode *node, SymbolTableEntry *varEntry) {
+void AnalyzerVisitor::insertDestructorCall(const AstNode *node, const SymbolTableEntry *varEntry) {
   assert(varEntry != nullptr);
   SymbolType varEntryType = varEntry->type;
   assert(varEntryType.is(TY_STRUCT));
