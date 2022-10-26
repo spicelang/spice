@@ -1,8 +1,9 @@
 f<int> main() {
     string rawStr = "Hello World!";
     printf("Raw String: %s\n", rawStr);
-    String str = String("Test");
+    String str = String("Teste");
     str.reverse();
+    str *= 2;
     str += "1";
     printf("String object: %s", str);
 }

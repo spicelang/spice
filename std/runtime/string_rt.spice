@@ -308,8 +308,7 @@ public inline f<bool> String.contains(string needle) {
  */
 public p String.reverse() {
     unsafe {
-        for int i = 0; i <= this.length / 2; i++ {
-            printf("%s\n", this.contents);
+        for int i = 0; i < this.length / 2; i++ {
             this.contents[i] ^= this.contents[this.length - i - 1];
             this.contents[this.length - i - 1] ^= this.contents[i];
             this.contents[i] ^= this.contents[this.length - i - 1];

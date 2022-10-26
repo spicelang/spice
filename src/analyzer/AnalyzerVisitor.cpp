@@ -2111,6 +2111,8 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   // Avoid this type import
   if (thisType.is(TY_IMPORT))
     thisType = SymbolType(TY_DYN);
+  else if (thisType.is(TY_STROBJ))
+    thisType = SymbolType(TY_STRUCT, STROBJ_NAME);
 
   // Get the function/procedure instance
   SymbolType origThisType = thisType.replaceBaseSubType(CommonUtil::getLastFragment(thisType.getBaseType().getSubType(), "."));

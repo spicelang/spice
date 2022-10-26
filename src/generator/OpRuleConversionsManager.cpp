@@ -1138,10 +1138,7 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhsV, llvm::Val
     llvm::Value *lhsFP = builder.CreateSIToFP(lhsV, rhsVTy);
     return builder.CreateFSub(lhsFP, rhsV);
   }
-  case COMB(TY_LONG, TY_INT): {
-    llvm::Value *lhsInt = builder.CreateIntCast(lhsV, rhsVTy, true);
-    return builder.CreateSub(lhsInt, rhsV);
-  }
+  case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV, lhsVTy, true);
     return builder.CreateSub(lhsV, rhsLong);
