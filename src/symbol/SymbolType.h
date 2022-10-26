@@ -38,6 +38,8 @@ enum SymbolSuperType {
   TY_IMPORT
 };
 
+const char *const STROBJ_NAME = "String";
+
 class SymbolType {
 public:
   // Unions

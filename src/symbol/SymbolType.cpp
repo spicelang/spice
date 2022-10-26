@@ -404,7 +404,7 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
   case TY_STRING:
     return "string";
   case TY_STROBJ:
-    return "String";
+    return STROBJ_NAME;
   case TY_BOOL:
     return "bool";
   case TY_STRUCT: {

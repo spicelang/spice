@@ -1033,10 +1033,7 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
     llvm::Value *lhsFP = builder.CreateSIToFP(lhsV, rhsVTy);
     return {.value = builder.CreateFAdd(lhsFP, rhsV)};
   }
-  case COMB(TY_LONG, TY_INT): {
-    llvm::Value *lhsInt = builder.CreateIntCast(lhsV, rhsVTy, true);
-    return {.value = builder.CreateAdd(lhsInt, rhsV)};
-  }
+  case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV, lhsVTy, true);
     return {.value = builder.CreateAdd(lhsV, rhsLong)};

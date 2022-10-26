@@ -1328,7 +1328,8 @@ std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
       break;
     }
     case 's': {
-      if (!assignmentType.is(TY_STRING) && !assignmentType.isPointerOf(TY_CHAR) && !assignmentType.isArrayOf(TY_CHAR))
+      if (!assignmentType.isOneOf({TY_STRING, TY_STROBJ}) && !assignmentType.isPointerOf(TY_CHAR) &&
+          !assignmentType.isArrayOf(TY_CHAR))
         throw SemanticError(assignment, PRINTF_TYPE_ERROR,
                             "Template string expects string, char* or char[], but got " + assignmentType.getName(false));
       placeholderCount++;
@@ -2019,11 +2020,19 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   // Get the access scope
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
+  // Initialize loop variable
   std::vector<SymbolType> concreteTemplateTypes;
-
   std::string functionName;
   SymbolType thisType = currentThisType;
   bool constructorCall = false;
+
+  // Check if it is a reference to the String type
+  if (thisType.is(TY_DYN) && node->functionNameFragments.size() == 1 && node->functionNameFragments.front() == STROBJ_NAME &&
+      !currentScope->lookup(STROBJ_NAME)) {
+    sourceFile.requestRuntimeModule(STRING_RT);
+    accessScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
+  }
+
   for (size_t i = 0; i < node->functionNameFragments.size(); i++) {
     std::string identifier = node->functionNameFragments[i];
     checkForReservedKeyword(node, identifier);
@@ -2376,7 +2385,7 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   std::string firstFragment = node->typeNameFragments.front();
 
   // Check if it is a String type
-  if (node->typeNameFragments.size() == 1 && firstFragment == "String" && !accessScope->lookup(firstFragment)) {
+  if (node->typeNameFragments.size() == 1 && firstFragment == STROBJ_NAME && !accessScope->lookup(firstFragment)) {
     sourceFile.requestRuntimeModule(STRING_RT);
     return node->setEvaluatedSymbolType(SymbolType(TY_STROBJ));
   }

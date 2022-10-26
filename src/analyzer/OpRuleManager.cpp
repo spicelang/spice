@@ -4,6 +4,7 @@
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <ast/AstNodes.h>
+#include <dependency/RuntimeModuleManager.h>
 
 SymbolType OpRuleManager::getAssignResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
@@ -17,6 +18,9 @@ SymbolType OpRuleManager::getAssignResultType(const AstNode *node, const SymbolT
     return lhs;
   // Allow char* = string
   if (lhs.isPointerOf(TY_CHAR) && rhs.is(TY_STRING))
+    return lhs;
+  // Allow String (strobj) = String (struct)
+  if (lhs.is(TY_STROBJ) && rhs.is(TY_STRUCT, STROBJ_NAME))
     return lhs;
   // Check primitive type combinations
   return validateBinaryOperation(node, ASSIGN_OP_RULES, "=", lhs, rhs);

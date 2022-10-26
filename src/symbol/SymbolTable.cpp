@@ -833,7 +833,7 @@ std::vector<CompilerWarning> SymbolTable::collectWarnings() {
       switch (scopeType) {
       case SCOPE_STRUCT: {
         warningType = UNUSED_FIELD;
-        warningMessage = "The import '" + entry.name + "' is unused";
+        warningMessage = "The field '" + entry.name + "' is unused";
         break;
       }
       case SCOPE_ENUM: {

@@ -28,10 +28,10 @@ public f<char> toChar(int input) {
 }
 
 // Converts an int to a string
-public f<string> toString(const int input) {
-    if input == 0 { return "0"; }
+public f<String> toString(const int input) {
+    if input == 0 { return String("0"); }
 
-    string str;
+    String str;
     bool isNeg = input < 0;
     unsigned int uInput = isNeg ? -input : input;
 
