@@ -19,7 +19,7 @@ target triple = "x86_64-w64-windows-gnu"
 @11 = private unnamed_addr constant [10 x i8] c"Empty: %d\00", align 1
 
 define i32 @main() local_unnamed_addr {
-entry.l3:
+entry.l1:
   %s = alloca %_s__String__charptr_long_long, align 8
   call void @_mp__String__void__ctor__string(ptr nonnull %s, ptr nonnull @0)
   %0 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
@@ -83,6 +83,7 @@ entry.l3:
   %51 = call i1 @_mf__String__bool__isEmpty(ptr nonnull %s)
   %52 = zext i1 %51 to i32
   %53 = call i32 (ptr, ...) @printf(ptr nonnull @11, i32 %52)
+  call void @_mp__String__void__dtor(ptr nonnull %s)
   ret i32 0
 }
 
@@ -110,5 +111,7 @@ declare void @_mp__String__void__clear(ptr) local_unnamed_addr
 declare void @_mp__String__void__reserve__long(ptr, i64) local_unnamed_addr
 
 declare i1 @_mf__String__bool__isEmpty(ptr) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { nofree nounwind }

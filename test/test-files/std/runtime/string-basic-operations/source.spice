@@ -1,7 +1,5 @@
-import "std/runtime/string_rt" as _rt_str;
-
 f<int> main() {
-    _rt_str::String s = _rt_str::String("Hello ");
+    String s = String("Hello ");
     printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
     printf("Capacity: %d\n\n", s.getCapacity());
@@ -29,7 +27,7 @@ f<int> main() {
     printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
     printf("Capacity: %d\n\n", s.getCapacity());
-    s = _rt_str::String("");
+    s = String("");
     printf("Empty: %d\n", s.isEmpty());
     s.append('a');
     printf("Empty: %d", s.isEmpty());

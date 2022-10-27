@@ -2027,8 +2027,9 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   bool constructorCall = false;
 
   // Check if it is a reference to the String type
+  bool isStringRuntime = rootScope->lookupStrict(STROBJ_NAME) != nullptr && !rootScope->lookupCaptureStrict(STROBJ_NAME);
   if (thisType.is(TY_DYN) && node->functionNameFragments.size() == 1 && node->functionNameFragments.front() == STROBJ_NAME &&
-      !currentScope->lookup(STROBJ_NAME)) {
+      !isStringRuntime) {
     sourceFile.requestRuntimeModule(STRING_RT);
     accessScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
   }
@@ -2108,11 +2109,11 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   if (accessScope == currentScope)
     accessScope = rootScope;
 
-  // Avoid this type import
+  // Map this type
   if (thisType.is(TY_IMPORT))
-    thisType = SymbolType(TY_DYN);
+    thisType = SymbolType(TY_DYN); // Avoid this type import
   else if (thisType.is(TY_STROBJ))
-    thisType = SymbolType(TY_STRUCT, STROBJ_NAME);
+    thisType = SymbolType(TY_STRUCT, STROBJ_NAME); // Change this type from strobj to struct(String)
 
   // Get the function/procedure instance
   SymbolType origThisType = thisType.replaceBaseSubType(CommonUtil::getLastFragment(thisType.getBaseType().getSubType(), "."));
@@ -2150,6 +2151,11 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   if (constructorCall) {
     // Add anonymous symbol to keep track of de-allocation
     currentScope->insertAnonymous(thisType, node);
+
+    // Map this type back
+    if (thisType.is(TY_STRUCT, STROBJ_NAME) && !isStringRuntime)
+      thisType = SymbolType(TY_STROBJ); // Change this type from struct(String) to strobj
+
     // Return struct type on constructor call
     return node->setEvaluatedSymbolType(thisType);
   }
@@ -2170,11 +2176,13 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     // If the return type is an external struct, initialize it
     if (!scopePathBackup.isEmpty() && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
       std::string scopePrefix = scopePathBackup.getScopePrefix(!spiceFunc->isGenericSubstantiation);
-      SymbolType symbolType =
-          initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node);
-      return node->setEvaluatedSymbolType(symbolType);
+      returnType = initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node);
     }
   }
+
+  // Map return type
+  if (returnType.is(TY_STRUCT, STROBJ_NAME) && !isStringRuntime)
+    returnType = SymbolType(TY_STROBJ);
 
   return node->setEvaluatedSymbolType(returnType);
 }
@@ -2387,7 +2395,8 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   std::string firstFragment = node->typeNameFragments.front();
 
   // Check if it is a String type
-  if (node->typeNameFragments.size() == 1 && firstFragment == STROBJ_NAME && !accessScope->lookup(firstFragment)) {
+  bool isStringRuntime = rootScope->lookupStrict(STROBJ_NAME) != nullptr && !rootScope->lookupCaptureStrict(STROBJ_NAME);
+  if (node->typeNameFragments.size() == 1 && firstFragment == STROBJ_NAME && !isStringRuntime) {
     sourceFile.requestRuntimeModule(STRING_RT);
     return node->setEvaluatedSymbolType(SymbolType(TY_STROBJ));
   }

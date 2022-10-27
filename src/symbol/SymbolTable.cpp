@@ -34,12 +34,22 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, Symbol
  * The anonymous symbol will be identified via the definition code location
  *
  * @param type Type of the symbol
- * @param declNode AST node where the symbol is declared
+ * @param declNode AST node where the anonymous symbol is declared
  */
 void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNode) {
   std::string name = "anon." + declNode->codeLoc.toString();
   insert(name, type, SymbolSpecifiers(type), DECLARED, declNode);
   lookupAnonymous(declNode->codeLoc)->isUsed = true;
+}
+
+/**
+ * Deletes an anonymous symbol. This is called, when an anon symbol was created and the result is assigned to a variable.
+ * To do not track dtor calls on the variable and the anon symbol, we delete the anon symbol
+ *
+ * @param declNode AST node where the anonymous symbol is declared
+ */
+void SymbolTable::deleteAnonymous(const AstNode *declNode) {
+  symbols.erase("anon." + declNode->codeLoc.toString());
 }
 
 /**

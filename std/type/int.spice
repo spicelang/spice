@@ -31,7 +31,7 @@ public f<char> toChar(int input) {
 public f<String> toString(const int input) {
     if input == 0 { return String("0"); }
 
-    String str;
+    String str = String();
     bool isNeg = input < 0;
     unsigned int uInput = isNeg ? -input : input;
 
@@ -41,8 +41,7 @@ public f<String> toString(const int input) {
     }
     if isNeg { str.append('-'); }
 
-    // ToDo: Uncomment
-    //return str.reverse();
+    str.reverse();
     return str;
 }
 

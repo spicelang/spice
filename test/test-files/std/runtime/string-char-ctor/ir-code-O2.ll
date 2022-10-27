@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 @4 = private unnamed_addr constant [13 x i8] c"Capacity: %d\00", align 1
 
 define i32 @main() local_unnamed_addr {
-entry.l3:
+entry.l1:
   %s = alloca %_s__String__charptr_long_long, align 8
   call void @_mp__String__void__ctor__char(ptr nonnull %s, i8 72)
   %0 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
@@ -28,6 +28,7 @@ entry.l3:
   %9 = call i32 (ptr, ...) @printf(ptr nonnull @3, i64 %8)
   %10 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s)
   %11 = call i32 (ptr, ...) @printf(ptr nonnull @4, i64 %10)
+  call void @_mp__String__void__dtor(ptr nonnull %s)
   ret i32 0
 }
 
@@ -43,5 +44,7 @@ declare i64 @_mf__String__long__getLength(ptr) local_unnamed_addr
 declare i64 @_mf__String__long__getCapacity(ptr) local_unnamed_addr
 
 declare void @_mp__String__void__append__string(ptr, ptr) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { nofree nounwind }
