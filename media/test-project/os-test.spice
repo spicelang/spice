@@ -1,8 +1,14 @@
 f<int> main() {
-    String s = String("Hello ");
-    printf("Output: %s\n", s);
-    s = String("");
-    printf("Output: %s\n", s);
+    //String s = String("Hello ");
+    //printf("Output: %s\n", s);
+    //s = String("");
+    //printf("Output: %s\n", s);
+    String s1 = String("Hello World!");
+    printf("S1: %s\n", s1);
+    String s2 = String(s1);
+    s2 += " Hi!";
+    printf("S1: %s\n", s1);
+    printf("S2: %s\n", s1);
 }
 
 /*type Visitor struct {

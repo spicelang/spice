@@ -6,7 +6,7 @@ const unsigned int RESIZE_FACTOR = 2;
 ext<byte*> malloc(long);
 ext<byte*> realloc(byte*, int);
 ext free(byte*);
-ext<byte*> memcpy(byte*, byte*, int);
+ext memcpy(char*, char*, long);
 
 /**
  * String wrapper for enriching raw strings with information and make them mutable
@@ -72,6 +72,22 @@ public p String.ctor(const char value) {
     unsafe {
         this.contents[0] = value;
         this.contents[1] = '\0';
+    }
+}
+
+public p String.ctor(const String value) {
+    this.length = value.length;
+    this.capacity = value.capacity;
+
+    // Allocate space
+    unsafe {
+        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
+        this.contents = (char*) malloc(requiredBytes);
+    }
+
+    // Copy the contents from the other string
+    unsafe {
+        memcpy(this.contents, value.contents, this.length);
     }
 }
 
@@ -205,8 +221,8 @@ public inline f<bool> String.opNotEquals(const string operand) {
  *
  * @return Raw immutable string
  */
-public inline f<string> String.getRaw() {
-    return (string) this.contents;
+public inline f<char*> String.getRaw() {
+    return this.contents;
 }
 
 /**

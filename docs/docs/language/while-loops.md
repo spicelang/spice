@@ -3,7 +3,7 @@ title: While Loops
 ---
 
 While loops are designed to do something until a certain condition evaluates to `false`. This means, that a while loop could also run infinitely when the condition never gets fulfilled. <br>
-Like the [if statement](../if-statements), the condition of the `while` loop must evaluate to a [boolean value](../data-types#the-bool-data-type), but can hold complex, nested expressions.
+Like the [if statement](../if-statements), the condition of the `while` loop must evaluate to a [boolean value](../primitive-types#the-bool-data-type), but can hold complex, nested expressions.
 
 Here is an example of a simple `while` loop:
 ```spice
