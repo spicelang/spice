@@ -29,11 +29,11 @@ bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const Runtime
   std::string fileName;
   switch (moduleName) {
   case STRING_RT:
-    importName = "__rt_string";
+    importName = STRING_RT_IMPORT_NAME;
     fileName = "string_rt";
     break;
   case THREAD_RT:
-    importName = "__rt_thread";
+    importName = THREAD_RT_IMPORT_NAME;
     fileName = "thread_rt";
     break;
   default:

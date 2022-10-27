@@ -3135,7 +3135,7 @@ llvm::Value *GeneratorVisitor::materializeString(llvm::Value *stringStructPtr) {
   return rawStringValue;
 }
 
-llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(const SymbolType &symbolType) {
+llvm::Constant *GeneratorVisitor::getDefaultValueForSymbolType(const SymbolType &symbolType) { // NOLINT(misc-no-recursion)
   // Double
   if (symbolType.is(TY_DOUBLE))
     return currentConstValue = llvm::ConstantFP::get(context, llvm::APFloat(0.0));
@@ -3293,7 +3293,7 @@ void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName, co
   debugInfo.boolTy = diBuilder->createBasicType("bool", 1, llvm::dwarf::DW_ATE_boolean);
 }
 
-llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolType) const {
+llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolType) const { // NOLINT(misc-no-recursion)
   if (symbolType.isPointer()) { // Pointer type
     llvm::DIType *pointeeTy = getDITypeForSymbolType(symbolType.getContainedTy());
     unsigned int pointerWidth = module->getDataLayout().getPointerSizeInBits();

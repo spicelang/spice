@@ -43,16 +43,6 @@ void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNod
 }
 
 /**
- * Deletes an anonymous symbol. This is called, when an anon symbol was created and the result is assigned to a variable.
- * To do not track dtor calls on the variable and the anon symbol, we delete the anon symbol
- *
- * @param declNode AST node where the anonymous symbol is declared
- */
-void SymbolTable::deleteAnonymous(const AstNode *declNode) {
-  symbols.erase("anon." + declNode->codeLoc.toString());
-}
-
-/**
  * Add a capture to the capture list manually
  *
  * @param name Capture name
@@ -66,7 +56,7 @@ void SymbolTable::addCapture(const std::string &name, const Capture &capture) { 
  * @param name Name of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-SymbolTableEntry *SymbolTable::lookup(const std::string &name) {
+SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-no-recursion)
   // Check if the symbol exists in the current scope. If yes, take it
   SymbolTableEntry *entry = lookupStrict(name);
   if (!entry) { // Symbol was not found in the current scope
@@ -127,7 +117,7 @@ SymbolTableEntry *SymbolTable::lookupByIndex(unsigned int orderIndex) {
  * @param globalName Name of the global variable
  * @return Desired symbol / nullptr if the global was not found
  */
-SymbolTableEntry *SymbolTable::lookupGlobal(const std::string &globalName, bool skipThisScope) {
+SymbolTableEntry *SymbolTable::lookupGlobal(const std::string &globalName, bool skipThisScope) { // NOLINT(misc-no-recursion)
   // Search in the current scope
   if (!skipThisScope) {
     SymbolTableEntry *globalSymbol = lookupStrict(globalName);
@@ -159,7 +149,7 @@ SymbolTableEntry *SymbolTable::lookupAnonymous(const CodeLoc &codeLoc) { return 
  * @param name Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
-Capture *SymbolTable::lookupCapture(const std::string &name) {
+Capture *SymbolTable::lookupCapture(const std::string &name) { // NOLINT(misc-no-recursion)
   // Check if the capture exists in the current scope. If yes, take it
   Capture *capture = lookupCaptureStrict(name);
   if (capture)
@@ -193,7 +183,7 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
  * @param tableName Name of the desired table
  * @return Desired symbol table
  */
-SymbolTable *SymbolTable::lookupTable(const std::string &tableName) {
+SymbolTable *SymbolTable::lookupTable(const std::string &tableName) { // NOLINT(misc-no-recursion)
   // If not available in the current scope, search in the parent scope
   if (!children.contains(tableName))
     return parent ? parent->lookupTable(tableName) : nullptr;
@@ -230,7 +220,7 @@ void SymbolTable::insertGenericType(const std::string &typeName, const GenericTy
  * @param typeName Name of the generic type
  * @return Generic type
  */
-GenericType *SymbolTable::lookupGenericType(const std::string &typeName) {
+GenericType *SymbolTable::lookupGenericType(const std::string &typeName) { // NOLINT(misc-no-recursion)
   if (genericTypes.contains(typeName))
     return &genericTypes.at(typeName);
   return parent ? parent->lookupGenericType(typeName) : nullptr;
@@ -296,7 +286,7 @@ SymbolTable *SymbolTable::getChild(const std::string &tableName) {
  * @param filterForDtorStructs Get only struct variables
  * @return Variables that can be de-allocated
  */
-std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForDtorStructs) {
+std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForDtorStructs) { // NOLINT(misc-no-recursion)
   assert(parent != nullptr); // Should not be called in root scope
   std::vector<SymbolTableEntry *> varsGoingOutOfScope;
 
@@ -615,7 +605,7 @@ Struct *SymbolTable::insertStruct(const Struct &spiceStruct) {
  * @param node Declaration node for the error message
  * @return Matched struct or nullptr
  */
-Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &structName,
+Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &structName, // NOLINT(misc-no-recursion)
                                  const std::vector<SymbolType> &templateTypes, const AstNode *node) {
   std::vector<Struct *> matches;
 
@@ -766,7 +756,7 @@ void SymbolTable::insertInterface(const Interface &i) {
 /**
  * Purge all non-substantiated manifestations of functions and structs
  */
-void SymbolTable::purgeSubstantiationRemnants() {
+void SymbolTable::purgeSubstantiationRemnants() { // NOLINT(misc-no-recursion)
   // Prune non-substantiated functions
   std::erase_if(functions, [&](const auto &kvOuter) {
     std::erase_if(*kvOuter.second, [&](const auto &kvInner) {
@@ -799,7 +789,7 @@ void SymbolTable::purgeSubstantiationRemnants() {
 /**
  * Retrieves compiler warnings from this table
  */
-std::vector<CompilerWarning> SymbolTable::collectWarnings() {
+std::vector<CompilerWarning> SymbolTable::collectWarnings() { // NOLINT(misc-no-recursion)
   // Omit this table if it is a shadow table
   if (isShadowTable)
     return {};
@@ -914,7 +904,7 @@ bool SymbolTable::isImported(const SymbolTable *askingScope) const {
  *
  * @return Symbol table if form of a string
  */
-nlohmann::json SymbolTable::toJSON() const {
+nlohmann::json SymbolTable::toJSON() const { // NOLINT(misc-no-recursion)
   // Collect all symbols
   std::vector<nlohmann::json> jsonSymbols;
   jsonSymbols.reserve(symbols.size());

@@ -2511,9 +2511,9 @@ void AnalyzerVisitor::insertDestructorCall(const AstNode *node, const SymbolTabl
     spiceFunc->isUsed = true;
 }
 
-SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix,
-                                          const std::string &structName, const std::vector<SymbolType> &templateTypes,
-                                          const AstNode *node) {
+SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, // NOLINT(misc-no-recursion)
+                                          const std::string &structScopePrefix, const std::string &structName,
+                                          const std::vector<SymbolType> &templateTypes, const AstNode *node) {
   // Get external struct name
   std::string newStructName = structScopePrefix + structName;
 

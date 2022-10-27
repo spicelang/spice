@@ -100,7 +100,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
  * @param accessScope Access scope for structs
  * @return Corresponding LLVM type
  */
-llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const {
+llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const { // NOLINT(misc-no-recursion)
   assert(!typeChain.empty() && !isOneOf({TY_DYN, TY_INVALID}));
 
   if (is(TY_DOUBLE))
@@ -297,7 +297,7 @@ std::vector<SymbolType> SymbolType::getTemplateTypes() const { return typeChain.
  * @param withSize Include the array size for sized types
  * @return Symbol type name
  */
-std::string SymbolType::getName(bool withSize, bool mangledName) const {
+std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLINT(misc-no-recursion)
   std::string name;
   TypeChain chain = typeChain;
   for (int i = 0; i < typeChain.size(); i++) {
@@ -378,7 +378,8 @@ void SymbolType::setSubType(const std::string &newSubType) { typeChain.back().su
  * @param withSize Include size in string
  * @return Type chain element name
  */
-std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName) {
+std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, // NOLINT(misc-no-recursion)
+                                                bool mangledName) {
   switch (chainElement.superType) {
   case TY_PTR:
     return mangledName ? "ptr" : "*";

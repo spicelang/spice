@@ -72,7 +72,7 @@ public:
     return nodes;
   }
 
-  [[nodiscard]] size_t getSymbolTypeIndex() const {
+  [[nodiscard]] size_t getSymbolTypeIndex() const { // NOLINT(misc-no-recursion)
     if (symbolTypeIndex == SIZE_MAX) {
       if (parent != nullptr)
         return parent->getSymbolTypeIndex();
@@ -86,7 +86,7 @@ public:
     return symbolType;
   }
 
-  SymbolType getEvaluatedSymbolType() {
+  SymbolType getEvaluatedSymbolType() { // NOLINT(misc-no-recursion)
     size_t idx = getSymbolTypeIndex();
     if (!symbolTypes.empty() && !symbolTypes[idx].is(TY_INVALID))
       return symbolTypes.at(idx);
@@ -95,7 +95,7 @@ public:
     return children.front()->getEvaluatedSymbolType();
   }
 
-  void reset() {
+  void reset() { // NOLINT(misc-no-recursion)
     // Reset all children
     for (const auto &child : children)
       child->reset();
@@ -103,13 +103,13 @@ public:
     symbolTypeIndex = SIZE_MAX;
   }
 
-  [[nodiscard]] const CompileTimeValue &getCompileTimeValue() const {
+  [[nodiscard]] const CompileTimeValue &getCompileTimeValue() const { // NOLINT(misc-no-recursion)
     if (hasDirectCompileTimeValue || children.size() != 1)
       return compileTimeValue;
     return children.front()->getCompileTimeValue();
   }
 
-  [[nodiscard]] bool hasCompileTimeValue() const {
+  [[nodiscard]] bool hasCompileTimeValue() const { // NOLINT(misc-no-recursion)
     if (hasDirectCompileTimeValue)
       return true;
     if (children.size() != 1)

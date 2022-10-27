@@ -25,7 +25,6 @@ public:
   [[nodiscard]] llvm::Function *getStringGetRawFct() const;
   //[[nodiscard]] llvm::Function *getStringCtorCharFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStringFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStringStrobjptrFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStrobjptrStringFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStringStringFct() const;

@@ -45,10 +45,6 @@ llvm::Function *StdFunctionManager::getStringCtorStringFct() const {
   return getProcedure("_mp__String__void__ctor__string", {builder.getPtrTy(), builder.getPtrTy()});
 }
 
-llvm::Function *StdFunctionManager::getStringCtorFct() const {
-  return getProcedure("_mp__String__void__ctor", builder.getPtrTy());
-}
-
 llvm::Function *StdFunctionManager::getStringCtorStringStrobjptrFct() const {
   return getProcedure("_mp__String__void__ctor__string_Stringptr", {builder.getPtrTy(), builder.getPtrTy(), builder.getPtrTy()});
 }

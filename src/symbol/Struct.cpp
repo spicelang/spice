@@ -69,7 +69,7 @@ SymbolType Struct::getSymbolType() const {
  *
  * @return Substantiated struct without template types
  */
-Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *structScope) const {
+Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *scope) const {
   // Convert concrete template types to a list of generic types
   std::vector<GenericType> concreteTemplateTypesGeneric;
   for (const auto &concreteTemplateType : concreteTemplateTypes)
@@ -78,7 +78,7 @@ Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTempl
   // Substantiate field types
   std::vector<SymbolType> currentFieldTypes;
   for (int i = 0; i < fieldTypes.size(); i++) {
-    SymbolTableEntry *fieldEntry = structScope->lookupByIndex(i);
+    SymbolTableEntry *fieldEntry = scope->lookupByIndex(i);
     if (fieldTypes[i].isBaseType(TY_GENERIC)) {        // We have to replace it only if it is a generic type
       for (int j = 0; j < templateTypes.size(); j++) { // Go through all template types and get the respective concrete type
         if (fieldTypes[i].getBaseType() == templateTypes[j]) {

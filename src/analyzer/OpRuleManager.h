@@ -605,7 +605,7 @@ public:
   static SymbolType getAssignResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getPlusEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getMinusEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getMulEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
+  static SymbolType getMulEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getDivEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &hs);
   static SymbolType getRemEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getSHLEqualResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
@@ -628,7 +628,7 @@ public:
   static SymbolType getShiftRightResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getPlusResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getMinusResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getMulResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
+  static SymbolType getMulResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getDivResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getRemResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getPrefixMinusResultType(const AstNode *node, const SymbolType &lhs);
