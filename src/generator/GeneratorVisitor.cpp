@@ -183,44 +183,46 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
   if (!requiresMainFct)
     return nullptr;
 
+  setSourceLocation(node);
+
   // Change scope to function scope
   currentScope = node->fctScope;
   assert(currentScope != nullptr);
 
-  // Visit arguments
-  std::vector<std::string> argNames;
-  std::vector<llvm::Type *> argTypes;
+  // Visit parameters
+  std::vector<std::string> paramNames;
+  std::vector<llvm::Type *> paramTypes;
   if (node->paramLst()) {
-    argNames.reserve(node->paramLst()->params().size());
-    argTypes.reserve(node->paramLst()->params().size());
+    paramNames.reserve(node->paramLst()->params().size());
+    paramTypes.reserve(node->paramLst()->params().size());
     for (const auto &param : node->paramLst()->params()) {
       currentVarName = param->varName;
-      argNames.push_back(currentVarName);
-      SymbolTableEntry *argSymbol = node->fctScope->lookup(currentVarName);
-      assert(argSymbol != nullptr);
-      currentConstSigned = argSymbol->specifiers.isSigned();
-      auto argType = any_cast<llvm::Type *>(visit(param->dataType()));
-      argTypes.push_back(argType);
+      paramNames.push_back(currentVarName);
+      SymbolTableEntry *paramSymbol = node->fctScope->lookup(currentVarName);
+      assert(paramSymbol != nullptr);
+      currentConstSigned = paramSymbol->specifiers.isSigned();
+      auto paramType = any_cast<llvm::Type *>(visit(param->dataType()));
+      paramTypes.push_back(paramType);
     }
   }
 
   // Build function itself
   llvm::Type *returnType = builder.getInt32Ty();
-  llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
+  llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
   llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, MAIN_FUNCTION_NAME, module.get());
 
   // Add debug info
   if (cliOptions.generateDebugInfo) {
-    // Get arg types
-    std::vector<Param> argSymbolTypes;
-    for (const auto &argName : argNames) {
-      SymbolTableEntry *argEntry = node->fctScope->lookup(argName);
-      assert(argEntry != nullptr);
-      argSymbolTypes.push_back({argEntry->type, true});
+    // Get param types
+    std::vector<Param> paramSymbolTypes;
+    for (const auto &paramName : paramNames) {
+      SymbolTableEntry *paramSymbol = node->fctScope->lookup(paramName);
+      assert(paramSymbol != nullptr);
+      paramSymbolTypes.push_back({paramSymbol->type, true});
     }
     // Build spice function
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
-    Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), argSymbolTypes, {}, node);
+    Function spiceFunc("main", specifiers, SymbolType(TY_DYN), SymbolType(TY_INT), paramSymbolTypes, {}, node);
     // Add debug info
     generateFunctionDebugInfo(fct, &spiceFunc);
     setSourceLocation(node);
@@ -236,15 +238,15 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
   // Store function arguments
   for (auto &arg : fct->args()) {
     size_t argNo = arg.getArgNo();
-    std::string argName = argNames[argNo];
-    llvm::Type *argType = fctType->getParamType(argNo);
-    llvm::Value *memAddress = insertAlloca(argType, argName);
-    SymbolTableEntry *argSymbol = node->fctScope->lookup(argName);
-    assert(argSymbol != nullptr);
-    argSymbol->updateAddress(memAddress);
+    std::string paramName = paramNames[argNo];
+    llvm::Type *paramType = fctType->getParamType(argNo);
+    llvm::Value *memAddress = insertAlloca(paramType, paramName);
+    SymbolTableEntry *paramSymbol = node->fctScope->lookup(paramName);
+    assert(paramSymbol != nullptr);
+    paramSymbol->updateAddress(memAddress);
 
     if (cliOptions.generateDebugInfo)
-      generateDeclDebugInfo(node->codeLoc, argName, memAddress, argNo);
+      generateDeclDebugInfo(node->codeLoc, paramName, memAddress, argNo);
 
     builder.CreateStore(&arg, memAddress);
   }
@@ -1636,13 +1638,21 @@ std::any GeneratorVisitor::visitAssignExpr(AssignExprNode *node) {
     if (!node->lhs()->postfixUnaryExpr()->atomicExpr()->identifier.empty())
       lhsVarName = node->lhs()->postfixUnaryExpr()->atomicExpr()->identifier;
 
+    // If necessary, destruct the old value
+    SymbolType lhsTy = node->lhs()->getEvaluatedSymbolType();
+    if (node->op == AssignExprNode::OP_ASSIGN && lhsTy.isOneOf({TY_STRUCT, TY_STROBJ})) {
+      SymbolTableEntry *variableEntry = currentScope->lookup(lhsVarName);
+      assert(variableEntry != nullptr);
+      if (variableEntry->getAddress())
+        insertDestructorCall(node->rhs()->codeLoc, variableEntry);
+    }
+
     // Get value of right side
     llvm::Value *rhs = resolveValue(node->rhs());
     SymbolType rhsTy = node->rhs()->getEvaluatedSymbolType();
 
     // Visit the left side
     llvm::Value *lhsPtr = resolveAddress(node->lhs());
-    SymbolType lhsTy = node->lhs()->getEvaluatedSymbolType();
     lhsVarName = currentVarName;
 
     // Take a look at the operator
@@ -3294,7 +3304,7 @@ void GeneratorVisitor::initializeDIBuilder(const std::string &sourceFileName, co
 }
 
 llvm::DIType *GeneratorVisitor::getDITypeForSymbolType(const SymbolType &symbolType) const { // NOLINT(misc-no-recursion)
-  if (symbolType.isPointer()) { // Pointer type
+  if (symbolType.isPointer()) {                                                              // Pointer type
     llvm::DIType *pointeeTy = getDITypeForSymbolType(symbolType.getContainedTy());
     unsigned int pointerWidth = module->getDataLayout().getPointerSizeInBits();
     return diBuilder->createPointerType(pointeeTy, pointerWidth);

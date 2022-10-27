@@ -1,6 +1,8 @@
 f<int> main() {
     String s = String("Hello ");
+    printf("Output: %s\n", s);
     s = String("");
+    printf("Output: %s\n", s);
 }
 
 /*type Visitor struct {

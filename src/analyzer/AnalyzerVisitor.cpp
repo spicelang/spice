@@ -1452,6 +1452,10 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
       Capture *lhsCapture = currentScope->lookupCapture(variableName);
       if (lhsCapture)
         lhsCapture->setCaptureMode(READ_WRITE);
+
+      // If we overwrite the value of a variable, destruct the old value
+      if (node->op == AssignExprNode::OP_ASSIGN && lhsTy.isOneOf({TY_STRUCT, TY_STROBJ}))
+        insertDestructorCall(node->rhs(), currentEntry);
     }
 
     return node->setEvaluatedSymbolType(rhsTy);
@@ -2497,7 +2501,7 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
 void AnalyzerVisitor::insertDestructorCall(const AstNode *node, const SymbolTableEntry *varEntry) {
   assert(varEntry != nullptr);
   SymbolType varEntryType = varEntry->type;
-  assert(varEntryType.is(TY_STRUCT));
+  assert(varEntryType.isOneOf({TY_STRUCT, TY_STROBJ}));
 
   // Create Spice function for destructor
   SymbolTableEntry *structEntry = currentScope->lookup(varEntry->type.getName());
