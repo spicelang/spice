@@ -34,47 +34,32 @@ llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
 }
 
 llvm::Function *StdFunctionManager::getStringGetRawFct() const {
-  return getFunction("_mf__String__string__getRaw", builder.getPtrTy(), getStrobjType(context)->getPointerTo());
+  return getFunction("_mf__String__charptr__getRaw", builder.getPtrTy(), getStrobjType(context)->getPointerTo());
 }
-
-/*llvm::Function *StdFunctionManager::getStringCtorCharFct() const {
-  return getProcedure("_mp__String__void__ctor__char", {builder.getPtrTy(), builder.getInt8Ty()});
-}*/
 
 llvm::Function *StdFunctionManager::getStringCtorStringFct() const {
   return getProcedure("_mp__String__void__ctor__string", {builder.getPtrTy(), builder.getPtrTy()});
 }
 
-llvm::Function *StdFunctionManager::getStringCtorStringStrobjptrFct() const {
-  return getProcedure("_mp__String__void__ctor__string_Stringptr", {builder.getPtrTy(), builder.getPtrTy(), builder.getPtrTy()});
+llvm::Function *StdFunctionManager::getStringCtorStrobjStringFct() const {
+  return getProcedure("_mp__String__void__ctor__String_string", {builder.getPtrTy(), getStrobjType(context), builder.getPtrTy()});
 }
 
-llvm::Function *StdFunctionManager::getStringCtorStrobjptrStringFct() const {
-  return getProcedure("_mp__String__void__ctor__Stringptr_string", {builder.getPtrTy(), builder.getPtrTy(), builder.getPtrTy()});
+llvm::Function *StdFunctionManager::getStringCtorStrobjStrobjFct() const {
+  return getProcedure("_mp__String__void__ctor__String_String",
+                      {builder.getPtrTy(), getStrobjType(context), getStrobjType(context)});
 }
-
-llvm::Function *StdFunctionManager::getStringCtorStringStringFct() const {
-  return getProcedure("_mp__String__void__ctor__string_string", {builder.getPtrTy(), builder.getPtrTy(), builder.getPtrTy()});
-}
-
-/*llvm::Function *StdFunctionManager::getStringDtorFct() const {
-  return getProcedure("_mp__String__void__dtor", builder.getPtrTy());
-}*/
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   return getFunction("_f__void__bool__isRawEqual__string_string", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getStringIsEqualStrobjFct() const {
-  return getFunction("_f__String__bool__isEqual__Stringptr", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
+  return getFunction("_mf__String__bool__isEqual__String", builder.getInt1Ty(), {builder.getPtrTy(), getStrobjType(context)});
 }
 
 llvm::Function *StdFunctionManager::getStringAppendStringFct() const {
   return getProcedure("_mp__String__void__append__string", {builder.getPtrTy(), builder.getPtrTy()});
-}
-
-llvm::Function *StdFunctionManager::getStringAppendStrobjptrFct() const {
-  return getProcedure("_mp__String__void__append__Stringptr", {builder.getPtrTy(), builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getStringAppendCharFct() const {

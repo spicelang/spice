@@ -50,7 +50,7 @@ public:
   // Public methods
   void insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
               const AstNode *declNode);
-  void insertAnonymous(const SymbolType &type, const AstNode *declNode);
+  void insertAnonymous(const SymbolType &type, const AstNode *declNode, const SymbolState &state = DECLARED);
   void addCapture(const std::string &name, const Capture &capture);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);

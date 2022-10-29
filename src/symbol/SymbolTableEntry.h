@@ -17,7 +17,7 @@ class SymbolTable;
 struct AstNode;
 struct CodeLoc;
 
-enum SymbolState { DECLARED, INITIALIZED };
+enum SymbolState { DECLARED, INITIALIZED, DESTRUCTED };
 
 /**
  * Entry of a symbol table, representing an individual symbol with all its properties
@@ -33,6 +33,7 @@ public:
   // Public methods
   void updateType(const SymbolType &newType, bool force);
   void updateState(SymbolState newState, const AstNode *node, bool force = false);
+  [[nodiscard]] const AstNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::Type *getStructLLVMType() const;
   void setStructLLVMType(llvm::Type *newStructType);

@@ -1197,6 +1197,13 @@ std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
   // Insert variable into symbol table
   currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, initialState, node);
 
+  // Insert call to empty constructor, if no value was assigned to a struct
+  if (!node->isParam() && !node->hasAssignment && symbolType.isOneOf({TY_STRUCT, TY_STROBJ})) {
+    SymbolTableEntry *entry = currentScope->lookupStrict(node->varName);
+    assert(entry != nullptr);
+    insertEmptyConstructorCall(node, entry);
+  }
+
   return symbolType;
 }
 
@@ -1454,7 +1461,7 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
         lhsCapture->setCaptureMode(READ_WRITE);
 
       // If we overwrite the value of a variable, destruct the old value
-      if (node->op == AssignExprNode::OP_ASSIGN && lhsTy.isOneOf({TY_STRUCT, TY_STROBJ}))
+      if (node->op == AssignExprNode::OP_ASSIGN && lhsTy == currentEntry->type && lhsTy.isOneOf({TY_STRUCT, TY_STROBJ}))
         insertDestructorCall(node->rhs(), currentEntry);
     }
 
@@ -2132,7 +2139,6 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       errArgTypes.push_back({argType, false});
 
     Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, node);
-
     throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/Procedure '" + f.getSignature() + "' could not be found");
   }
   spiceFunc->isUsed = true;
@@ -2154,7 +2160,7 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   if (constructorCall) {
     // Add anonymous symbol to keep track of de-allocation
-    currentScope->insertAnonymous(thisType, node);
+    currentScope->insertAnonymous(thisType, node, INITIALIZED);
 
     // Map this type back
     if (thisType.is(TY_STRUCT, STROBJ_NAME) && !isStringRuntime)
@@ -2323,7 +2329,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
   }
 
   // Insert anonymous symbol to keep track of dtor calls for de-allocation
-  currentScope->insertAnonymous(structType, node);
+  currentScope->insertAnonymous(structType, node, INITIALIZED);
 
   return node->setEvaluatedSymbolType(structType);
 }
@@ -2498,19 +2504,49 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   throw std::runtime_error("Base type fall-through");
 }
 
+void AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {
+  // Insert anonymous string symbol
+  SymbolType stringStructType(TY_STRING, "", {}, {});
+  currentScope->insertAnonymous(stringStructType, declNode);
+
+  // Enable string runtime
+  sourceFile.requestRuntimeModule(STRING_RT);
+}
+
 void AnalyzerVisitor::insertDestructorCall(const AstNode *node, const SymbolTableEntry *varEntry) {
+  insertStructMethodCall(node, varEntry, DTOR_FUNCTION_NAME);
+}
+
+void AnalyzerVisitor::insertEmptyConstructorCall(const AstNode *node, const SymbolTableEntry *varEntry) {
+  insertStructMethodCall(node, varEntry, CTOR_FUNCTION_NAME);
+
+  // Add anonymous symbol to keep track of de-allocation
+  SymbolType thisType = varEntry->type;
+  if (thisType.is(TY_STROBJ))
+    thisType = SymbolType(TY_STRUCT, STROBJ_NAME);
+  currentScope->insertAnonymous(thisType, node, INITIALIZED);
+}
+
+void AnalyzerVisitor::insertStructMethodCall(const AstNode *node, const SymbolTableEntry *varEntry, const std::string &name) {
   assert(varEntry != nullptr);
   SymbolType varEntryType = varEntry->type;
   assert(varEntryType.isOneOf({TY_STRUCT, TY_STROBJ}));
 
-  // Create Spice function for destructor
-  SymbolTableEntry *structEntry = currentScope->lookup(varEntry->type.getName());
+  // Resolve strobj type
+  if (varEntryType.is(TY_STROBJ)) {
+    sourceFile.requestRuntimeModule(STRING_RT);
+    SymbolTable *stringScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
+    varEntryType = initExtStruct(stringScope, "", STROBJ_NAME, {}, node);
+  }
+
+  // Create Spice function
+  std::string symbolName = varEntryType.getName();
+  SymbolTableEntry *structEntry = currentScope->lookup(symbolName);
   SymbolTable *accessScope = structEntry->scope;
   assert(accessScope != nullptr);
   accessScope = accessScope->getChild(STRUCT_SCOPE_PREFIX + structEntry->name);
   assert(accessScope != nullptr);
-  SymbolType thisType = varEntry->type;
-  Function *spiceFunc = accessScope->matchFunction(currentScope, DTOR_FUNCTION_NAME, thisType, {}, {}, node);
+  Function *spiceFunc = accessScope->matchFunction(currentScope, name, varEntryType, {}, {}, node);
   if (spiceFunc)
     spiceFunc->isUsed = true;
 }

@@ -127,7 +127,10 @@ private:
   bool allowUnsafeOperations = false;
 
   // Private methods
+  void insertAnonStringStructSymbol(const AstNode *declNode);
   void insertDestructorCall(const AstNode *node, const SymbolTableEntry *varEntry);
+  void insertEmptyConstructorCall(const AstNode *node, const SymbolTableEntry *varEntry);
+  void insertStructMethodCall(const AstNode *node, const SymbolTableEntry *varEntry, const std::string &name);
   SymbolType initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix, const std::string &structName,
                            const std::vector<SymbolType> &templateTypes, const AstNode *node);
   SymbolType initExtGlobal(SymbolTable *sourceScope, const std::string &globalScopePrefix, const std::string &globalName,

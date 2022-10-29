@@ -22,28 +22,28 @@ define i32 @main() local_unnamed_addr {
 entry.l1:
   %s = alloca %_s__String__charptr_long_long, align 8
   call void @_mp__String__void__ctor__string(ptr nonnull %s, ptr nonnull @0)
-  %0 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
+  %0 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s)
   %1 = call i32 (ptr, ...) @printf(ptr nonnull @6, ptr %0)
   %2 = call i64 @_mf__String__long__getLength(ptr nonnull %s)
   %3 = call i32 (ptr, ...) @printf(ptr nonnull @7, i64 %2)
   %4 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s)
   %5 = call i32 (ptr, ...) @printf(ptr nonnull @8, i64 %4)
   call void @_mp__String__void__append__string(ptr nonnull %s, ptr nonnull @1)
-  %6 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
+  %6 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s)
   %7 = call i32 (ptr, ...) @printf(ptr nonnull @6, ptr %6)
   %8 = call i64 @_mf__String__long__getLength(ptr nonnull %s)
   %9 = call i32 (ptr, ...) @printf(ptr nonnull @7, i64 %8)
   %10 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s)
   %11 = call i32 (ptr, ...) @printf(ptr nonnull @8, i64 %10)
   call void @_mp__String__void__append__char(ptr nonnull %s, i8 63)
-  %12 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
+  %12 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s)
   %13 = call i32 (ptr, ...) @printf(ptr nonnull @6, ptr %12)
   %14 = call i64 @_mf__String__long__getLength(ptr nonnull %s)
   %15 = call i32 (ptr, ...) @printf(ptr nonnull @7, i64 %14)
   %16 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s)
   %17 = call i32 (ptr, ...) @printf(ptr nonnull @8, i64 %16)
   call void @_mp__String__void__append__char(ptr nonnull %s, i8 33)
-  %18 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
+  %18 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s)
   %19 = call i32 (ptr, ...) @printf(ptr nonnull @6, ptr %18)
   %20 = call i64 @_mf__String__long__getLength(ptr nonnull %s)
   %21 = call i32 (ptr, ...) @printf(ptr nonnull @7, i64 %20)
@@ -62,19 +62,20 @@ entry.l1:
   %34 = zext i1 %33 to i32
   %35 = call i32 (ptr, ...) @printf(ptr nonnull @4, i32 %34)
   call void @_mp__String__void__clear(ptr nonnull %s)
-  %36 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
+  %36 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s)
   %37 = call i32 (ptr, ...) @printf(ptr nonnull @6, ptr %36)
   %38 = call i64 @_mf__String__long__getLength(ptr nonnull %s)
   %39 = call i32 (ptr, ...) @printf(ptr nonnull @7, i64 %38)
   %40 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s)
   %41 = call i32 (ptr, ...) @printf(ptr nonnull @8, i64 %40)
   call void @_mp__String__void__reserve__long(ptr nonnull %s, i64 100)
-  %42 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
+  %42 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s)
   %43 = call i32 (ptr, ...) @printf(ptr nonnull @6, ptr %42)
   %44 = call i64 @_mf__String__long__getLength(ptr nonnull %s)
   %45 = call i32 (ptr, ...) @printf(ptr nonnull @7, i64 %44)
   %46 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s)
   %47 = call i32 (ptr, ...) @printf(ptr nonnull @8, i64 %46)
+  call void @_mp__String__void__dtor(ptr nonnull %s)
   call void @_mp__String__void__ctor__string(ptr nonnull %s, ptr nonnull @9)
   %48 = call i1 @_mf__String__bool__isEmpty(ptr nonnull %s)
   %49 = zext i1 %48 to i32
@@ -92,7 +93,7 @@ declare void @_mp__String__void__ctor__string(ptr, ptr) local_unnamed_addr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
-declare ptr @_mf__String__string__getRaw(ptr) local_unnamed_addr
+declare ptr @_mf__String__charptr__getRaw(ptr) local_unnamed_addr
 
 declare i64 @_mf__String__long__getLength(ptr) local_unnamed_addr
 
@@ -110,8 +111,8 @@ declare void @_mp__String__void__clear(ptr) local_unnamed_addr
 
 declare void @_mp__String__void__reserve__long(ptr, i64) local_unnamed_addr
 
-declare i1 @_mf__String__bool__isEmpty(ptr) local_unnamed_addr
-
 declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
+
+declare i1 @_mf__String__bool__isEmpty(ptr) local_unnamed_addr
 
 attributes #0 = { nofree nounwind }

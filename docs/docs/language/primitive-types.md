@@ -84,7 +84,7 @@ variable2 = "Hello World!";
 
 !!! info "Note"
     This type of string is immutable. So if you want to mutate your string, during it's lifetime, please consider using
-    [the builtin String data type](../builtin-types#the-String-data-type).
+    [the builtin String data type](../builtin-types#the-string-data-type).
 
 !!! tip "Tip"
     Use the `string` primitive type over the `String` builtin type as much as possible, due to its advantages in runtime

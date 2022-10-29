@@ -162,6 +162,13 @@ SymbolType OpRuleManager::getPlusResultType(const AstNode *node, const SymbolTyp
       throw printErrorMessageUnsafe(node, "+", lhs, rhs);
   }
 
+  // Allow strobj + string
+  if (lhs.is(TY_STROBJ) && rhs.is(TY_STRING))
+    analyzer->insertAnonStringStructSymbol(node);
+  // Allow strobj + strobj
+  if (lhs.is(TY_STROBJ) && rhs.is(TY_STROBJ))
+    analyzer->insertAnonStringStructSymbol(node);
+
   return validateBinaryOperation(node, PLUS_OP_RULES, "+", lhs, rhs);
 }
 
@@ -185,6 +192,14 @@ SymbolType OpRuleManager::getMinusResultType(const AstNode *node, const SymbolTy
 }
 
 SymbolType OpRuleManager::getMulResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  // Allow strobj * <int|short|long>
+  if (lhs.is(TY_STROBJ) && rhs.isOneOf({TY_INT, TY_SHORT, TY_LONG}))
+    analyzer->insertAnonStringStructSymbol(node);
+
+  // Allow <int|short|long> * strobj
+  if (lhs.isOneOf({TY_INT, TY_SHORT, TY_LONG}) && rhs.is(TY_STROBJ))
+    analyzer->insertAnonStringStructSymbol(node);
+
   return validateBinaryOperation(node, MUL_OP_RULES, "*", lhs, rhs);
 }
 

@@ -35,29 +35,6 @@ public p String.ctor(const string value = "") {
     }
 }
 
-public p String.ctor(const string value1, const string value2) {
-    unsigned long value1Length = getRawLength(value1);
-    unsigned long value2Length = getRawLength(value2);
-    this.length = value1Length + value2Length;
-    this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
-
-    // Allocate space for the initial number of elements
-    unsafe {
-        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        this.contents = (char*) malloc(requiredBytes);
-    }
-
-    // Save initial value
-    unsafe {
-        for unsigned long i; i < value1Length; i++ {
-            this.contents[i] = value1[i];
-        }
-        for unsigned long i; i < value2Length + 1; i++ { // +1 because of null terminator
-            this.contents[value1Length + i] = value2[i];
-        }
-    }
-}
-
 public p String.ctor(const char value) {
     this.length = 1l;
     this.capacity = INITIAL_ALLOC_COUNT;
@@ -75,9 +52,9 @@ public p String.ctor(const char value) {
     }
 }
 
-public p String.ctor(const String value) {
-    this.length = value.length;
-    this.capacity = value.capacity;
+public p String.ctor(const String value1, const string value2 = "") {
+    this.length = value1.length;
+    this.capacity = value1.capacity;
 
     // Allocate space
     unsafe {
@@ -87,7 +64,28 @@ public p String.ctor(const String value) {
 
     // Copy the contents from the other string
     unsafe {
-        memcpy(this.contents, value.contents, this.length);
+        memcpy(this.contents, value1.contents, value1.length + 1l); // +1 because of null terminator
+    }
+
+    if getRawLength(value2) > 0l {
+        this.append(value2);
+    }
+}
+
+public p String.ctor(const String value1, const String value2) {
+    this.length = value1.length + value2.length;
+    this.capacity = value1.capacity + value2.capacity;
+
+    // Allocate space
+    unsafe {
+        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
+        this.contents = (char*) malloc(requiredBytes);
+    }
+
+    // Copy the contents from the other string
+    unsafe {
+        memcpy(this.contents, value1.contents, value1.length);
+        memcpy(this.contents + value1.length, value2.contents, value2.length + 1l); // +1 because of null terminator
     }
 }
 
@@ -99,7 +97,7 @@ public p String.dtor() {
 }
 
 /**
- * Appends the given string wrapper to the current one
+ * Appends the given string to the current one
  *
  * @param appendix string to be appended
  */
@@ -114,6 +112,28 @@ public p String.append(const string appendix) {
     unsafe {
         for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
             this.contents[this.length++] = appendix[i];
+        }
+    }
+    this.length--; // Remove null terminator
+}
+
+/**
+ * Appends the given String to the current one
+ *
+ * @param appendix String to be appended
+ */
+public p String.append(const String appendix) {
+    const char* rawAppendix = appendix.getRaw();
+    unsigned long appendixLength = appendix.length;
+    // Check if we need to re-allocate memory
+    while this.capacity < this.length + appendixLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Save data
+    unsafe {
+        for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
+            this.contents[this.length++] = rawAppendix[i];
         }
     }
     this.length--; // Remove null terminator
@@ -181,39 +201,26 @@ public inline p String.opMul(const short operand) {
 }
 
 /**
- * Implements the equals operator for 'string == string'
+ * Checks if this String equals another String
  *
  * @param operand String to comare the current string to
  *
  * @return Equal or not
  */
-public f<bool> String.opEquals(const string operand) {
+public f<bool> String.isEqual(const String operand) {
     // Compare sizes
-    if getRawLength(operand) != this.length {
-        return false;
-    }
+    if operand.length != this.length { return false; }
 
     // Compare contents
     unsafe {
         for int i = 0; i < this.length; i++ {
-            if this.contents[i] != operand[i] {
+            if this.contents[i] != operand.contents[i] {
                 return false;
             }
         }
     }
 
     return true;
-}
-
-/**
- * Implements the equals operator for 'string != string'
- *
- * @param operand String to comare the current string to
- *
- * @return Equal or not
- */
-public inline f<bool> String.opNotEquals(const string operand) {
-    return !this.opEquals(operand);
 }
 
 /**

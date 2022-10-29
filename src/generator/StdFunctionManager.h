@@ -23,16 +23,12 @@ public:
   [[nodiscard]] llvm::Function *getStackRestoreIntrinsic() const;
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
   [[nodiscard]] llvm::Function *getStringGetRawFct() const;
-  //[[nodiscard]] llvm::Function *getStringCtorCharFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStringFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorStringStrobjptrFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorStrobjptrStringFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorStringStringFct() const;
-  //[[nodiscard]] llvm::Function *getStringDtorFct() const;
+  [[nodiscard]] llvm::Function *getStringCtorStrobjStringFct() const;
+  [[nodiscard]] llvm::Function *getStringCtorStrobjStrobjFct() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
   [[nodiscard]] llvm::Function *getStringIsEqualStrobjFct() const;
   [[nodiscard]] llvm::Function *getStringAppendStringFct() const;
-  [[nodiscard]] llvm::Function *getStringAppendStrobjptrFct() const;
   [[nodiscard]] llvm::Function *getStringAppendCharFct() const;
   [[nodiscard]] llvm::Function *getStringMulOpIntFct() const;
   [[nodiscard]] llvm::Function *getStringMulOpLongFct() const;

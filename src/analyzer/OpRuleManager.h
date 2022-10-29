@@ -423,7 +423,6 @@ const std::vector<BinaryOpRule> PLUS_OP_RULES = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long + short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long + long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte + byte -> byte
-    BinaryOpRule(TY_STRING, TY_STROBJ, TY_STROBJ, false), // string + strobj -> strobj
     BinaryOpRule(TY_STROBJ, TY_STRING, TY_STROBJ, false), // strobj + string -> strobj
     BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_STROBJ, false), // strobj + strobj -> strobj
 };
@@ -459,24 +458,18 @@ const std::vector<BinaryOpRule> MUL_OP_RULES = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int * int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int * short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),        // int * long -> long
-    BinaryOpRule(TY_INT, TY_STRING, TY_LONG, false),      // int * string -> strobj
-    BinaryOpRule(TY_INT, TY_STROBJ, TY_LONG, false),      // int * strobj -> strobj
+    BinaryOpRule(TY_INT, TY_STROBJ, TY_STROBJ, false),    // int * strobj -> strobj
     BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_DOUBLE, false),  // short * double -> double
     BinaryOpRule(TY_SHORT, TY_INT, TY_INT, false),        // short * int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // short * short -> short
     BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG, false),      // short * long -> long
-    BinaryOpRule(TY_SHORT, TY_STRING, TY_STROBJ, false),  // short * string -> strobj
     BinaryOpRule(TY_SHORT, TY_STROBJ, TY_STROBJ, false),  // short * strobj -> strobj
     BinaryOpRule(TY_LONG, TY_DOUBLE, TY_DOUBLE, false),   // long * double -> double
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long * int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long * short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long * long -> long
-    BinaryOpRule(TY_LONG, TY_STRING, TY_STROBJ, false),   // long * string -> strobj
     BinaryOpRule(TY_LONG, TY_STROBJ, TY_STROBJ, false),   // long * strobj -> strobj
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte * byte -> byte
-    BinaryOpRule(TY_STRING, TY_INT, TY_STROBJ, false),    // string * int -> strobj
-    BinaryOpRule(TY_STRING, TY_SHORT, TY_STROBJ, false),  // string * short -> strobj
-    BinaryOpRule(TY_STRING, TY_LONG, TY_STROBJ, false),   // string * long -> strobj
     BinaryOpRule(TY_STROBJ, TY_INT, TY_STROBJ, false),    // strobj * int -> strobj
     BinaryOpRule(TY_STROBJ, TY_SHORT, TY_STROBJ, false),  // strobj * short -> strobj
     BinaryOpRule(TY_STROBJ, TY_LONG, TY_STROBJ, false),   // strobj * long -> strobj
@@ -628,7 +621,7 @@ public:
   static SymbolType getShiftRightResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getPlusResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getMinusResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
-  static SymbolType getMulResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
+  SymbolType getMulResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getDivResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getRemResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getPrefixMinusResultType(const AstNode *node, const SymbolType &lhs);

@@ -36,9 +36,9 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, Symbol
  * @param type Type of the symbol
  * @param declNode AST node where the anonymous symbol is declared
  */
-void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNode) {
+void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNode, const SymbolState &state) {
   std::string name = "anon." + declNode->codeLoc.toString();
-  insert(name, type, SymbolSpecifiers(type), DECLARED, declNode);
+  insert(name, type, SymbolSpecifiers(type), state, declNode);
   lookupAnonymous(declNode->codeLoc)->isUsed = true;
 }
 
@@ -299,7 +299,7 @@ std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterF
       continue;
     }
     // For dtor calls, only anonymous structs are relevant
-    if ((entry.type.is(TY_STRUCT) || entry.type.is(TY_STROBJ)) && entry.name.starts_with("anon."))
+    if (entry.type.isOneOf({TY_STRUCT, TY_STROBJ}) && entry.state != DESTRUCTED && entry.name.starts_with("anon."))
       varsGoingOutOfScope.push_back(&symbols.at(name));
   }
 
@@ -445,7 +445,9 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
           }
           argList[i].type = argList[i].type.replaceBaseType(concreteGenericTypes.at(genericTypeName));
         } else { // For arguments with non-generic type, check if the candidate type matches with the call
-          if (!equalsIgnoreArraySizes(argList[i].type, callArgTypes[i])) {
+          const SymbolType &expected = argList[i].type;
+          const SymbolType &actual = callArgTypes[i];
+          if (!equalsIgnoreArraySizes(actual, expected) && !(actual.is(TY_STROBJ) && expected.is(TY_STRUCT, STROBJ_NAME))) {
             differentArgTypes = true;
             break;
           }

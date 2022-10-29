@@ -1045,20 +1045,9 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateAdd(lhsV, rhsV)};
-  case COMB(TY_STRING, TY_STROBJ): {
-    // Generate call to the constructor ctor(string, strobj) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStringStrobjptrFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
-    // Update mem address of anonymous symbol
-    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
-    assert(anonEntry != nullptr);
-    anonEntry->updateAddress(thisPtr);
-    return {.ptr = thisPtr};
-  }
   case COMB(TY_STROBJ, TY_STRING): {
     // Generate call to the constructor ctor(strobj, string) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjptrStringFct();
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjStringFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
     // Update mem address of anonymous symbol
@@ -1069,7 +1058,7 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
   }
   case COMB(TY_STROBJ, TY_STROBJ): {
     // Generate call to the constructor ctor(strobj, strobj) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStringStringFct();
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjStrobjFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
     // Update mem address of anonymous symbol
@@ -1192,16 +1181,6 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV, rhsTy, true);
     return {.value = builder.CreateMul(lhsLong, rhsV)};
   }
-  case COMB(TY_INT, TY_STRING): {
-    // Generate call to the constructor ctor(string) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    // Generate call to the method opMul(int) of the String struct
-    opFct = stdFunctionManager->getStringMulOpIntFct();
-    builder.CreateCall(opFct, {thisPtr, lhsV});
-    return {.ptr = thisPtr};
-  }
   case COMB(TY_INT, TY_STROBJ): {
     // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
     llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
@@ -1212,6 +1191,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     // Generate call to the method opMul(int) of the String struct
     opFct = stdFunctionManager->getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
+    // Update mem address of anonymous symbol
+    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
@@ -1228,16 +1211,6 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV, rhsTy, true);
     return {.value = builder.CreateMul(lhsLong, rhsV)};
   }
-  case COMB(TY_SHORT, TY_STRING): {
-    // Generate call to the constructor ctor(string) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    // Generate call to the method opMul(short) of the String struct
-    opFct = stdFunctionManager->getStringMulOpShortFct();
-    builder.CreateCall(opFct, {thisPtr, lhsV});
-    return {.ptr = thisPtr};
-  }
   case COMB(TY_SHORT, TY_STROBJ): {
     // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
     llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
@@ -1248,6 +1221,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     // Generate call to the method opMul(short) of the String struct
     opFct = stdFunctionManager->getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
+    // Update mem address of anonymous symbol
+    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
@@ -1261,16 +1238,6 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
   }
   case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateMul(lhsV, rhsV)};
-  case COMB(TY_LONG, TY_STRING): {
-    // Generate call to the constructor ctor(string) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    // Generate call to the method opMul(long) of the String struct
-    opFct = stdFunctionManager->getStringMulOpLongFct();
-    builder.CreateCall(opFct, {thisPtr, lhsV});
-    return {.ptr = thisPtr};
-  }
   case COMB(TY_LONG, TY_STROBJ): {
     // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
     llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
@@ -1281,40 +1248,14 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     // Generate call to the method opMul(long) of the String struct
     opFct = stdFunctionManager->getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
+    // Update mem address of anonymous symbol
+    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
   }
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateMul(lhsV, rhsV)};
-  case COMB(TY_STRING, TY_INT): {
-    // Generate call to the constructor ctor(string, strobj) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    builder.CreateCall(opFct, {thisPtr, lhsV});
-    // Generate call to the method opMul(int) of the String struct
-    opFct = stdFunctionManager->getStringMulOpIntFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
-  }
-  case COMB(TY_STRING, TY_SHORT): {
-    // Generate call to the constructor ctor(string, strobj) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    builder.CreateCall(opFct, {thisPtr, lhsV});
-    // Generate call to the method opMul(short) of the String struct
-    opFct = stdFunctionManager->getStringMulOpShortFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
-  }
-  case COMB(TY_STRING, TY_LONG): {
-    // Generate call to the constructor ctor(string, strobj) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStringFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    builder.CreateCall(opFct, {thisPtr, lhsV});
-    // Generate call to the method opMul(long) of the String struct
-    opFct = stdFunctionManager->getStringMulOpLongFct();
-    builder.CreateCall(opFct, {thisPtr, rhsV});
-    return {.ptr = thisPtr};
-  }
   case COMB(TY_STROBJ, TY_INT): {
     // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
     llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
@@ -1325,6 +1266,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     // Generate call to the method opMul(int) of the String struct
     opFct = stdFunctionManager->getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
+    // Update mem address of anonymous symbol
+    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
   }
   case COMB(TY_STROBJ, TY_SHORT): {
@@ -1337,6 +1282,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     // Generate call to the method opMul(short) of the String struct
     opFct = stdFunctionManager->getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
+    // Update mem address of anonymous symbol
+    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
   }
   case COMB(TY_STROBJ, TY_LONG): {
@@ -1349,6 +1298,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     // Generate call to the method opMul(long) of the String struct
     opFct = stdFunctionManager->getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
+    // Update mem address of anonymous symbol
+    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    assert(anonEntry != nullptr);
+    anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
   }
   }

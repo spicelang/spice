@@ -355,7 +355,7 @@ bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs) {
 
   // Compare stack elements
   for (int i = 0; i < lhs.typeChain.size(); i++) {
-    if (!equalsIgnoreArraySize(lhs.typeChain.back(), rhs.typeChain.back()))
+    if (!itemEqualsIgnoreArraySize(lhs.typeChain.back(), rhs.typeChain.back()))
       return false;
     lhs.typeChain.pop_back();
     rhs.typeChain.pop_back();

@@ -55,7 +55,7 @@ public:
     // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
       // Check super type, subtype and template types
-      if (!equalsIgnoreArraySize(lhs, rhs))
+      if (!itemEqualsIgnoreArraySize(lhs, rhs))
         return false;
       // Check data
       switch (lhs.superType) {
@@ -67,7 +67,7 @@ public:
     }
 
     // Public methods
-    friend bool equalsIgnoreArraySize(const TypeChainElement &lhs, const TypeChainElement &rhs) {
+    friend bool itemEqualsIgnoreArraySize(const TypeChainElement &lhs, const TypeChainElement &rhs) {
       // Check super type, subtype and template types
       return lhs.superType == rhs.superType && lhs.subType == rhs.subType && lhs.templateTypes == rhs.templateTypes;
     }
