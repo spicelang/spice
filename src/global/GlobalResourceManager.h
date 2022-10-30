@@ -9,6 +9,7 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/Target/TargetMachine.h>
 
 // Forward declarations
 struct CliOptions;
@@ -20,15 +21,15 @@ struct CliOptions;
 class GlobalResourceManager {
 public:
   // Constructors
-  explicit GlobalResourceManager(CliOptions &cliOptions)
-      : cliOptions(cliOptions), linker(threadFactory, cliOptions), cacheManager(cliOptions.cacheDir) {}
+  explicit GlobalResourceManager(const CliOptions &cliOptions);
 
   // Public members
-  CliOptions &cliOptions;
+  const CliOptions &cliOptions;
   ThreadFactory threadFactory;
   LinkerInterface linker;
   CacheManager cacheManager;
   RuntimeModuleManager runtimeModuleManager;
   llvm::LLVMContext context;
   llvm::IRBuilder<> builder = llvm::IRBuilder<>(context);
+  llvm::TargetMachine *targetMachine;
 };

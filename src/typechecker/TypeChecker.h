@@ -3,10 +3,13 @@
 #pragma once
 
 #include <CompilerPass.h>
+#include <ast/ASTVisitor.h>
 
-class TypeChecker : private CompilerPass {
+class TypeChecker : private CompilerPass, public ASTVisitor {
 public:
+  // Constructors
+  TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile) : CompilerPass(resourceManager, sourceFile) {}
 
 private:
-
+  // Private members
 };

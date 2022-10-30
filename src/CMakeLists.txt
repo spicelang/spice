@@ -9,28 +9,32 @@ set(SOURCES
         SourceFile.cpp
         SourceFile.h
         # Global resource
+        global/GlobalResourceManager.cpp
         global/GlobalResourceManager.h
         global/CacheManager.cpp
         global/CacheManager.h
         global/RuntimeModuleManager.cpp
         global/RuntimeModuleManager.h
         # CLI
-        cli/CliInterface.cpp
-        cli/CliInterface.h
+        cli/CLIInterface.cpp
+        cli/CLIInterface.h
         # CST visualizer
-        visualizer/CSTVisualizerVisitor.cpp
-        visualizer/CSTVisualizerVisitor.h
+        visualizer/CSTVisualizer.cpp
+        visualizer/CSTVisualizer.h
         # AST builder
-        ast/AbstractAstVisitor.cpp
-        ast/AbstractAstVisitor.h
-        ast/AstVisitor.cpp
-        ast/AstVisitor.h
-        ast/AstNodes.h
-        ast/AstBuilder.cpp
-        ast/AstBuilder.h
+        ast/AbstractASTVisitor.cpp
+        ast/AbstractASTVisitor.h
+        ast/ASTVisitor.cpp
+        ast/ASTVisitor.h
+        ast/ASTNodes.h
+        ast/ASTBuilder.cpp
+        ast/ASTBuilder.h
         # AST visualizer
-        visualizer/ASTVisualizerVisitor.cpp
-        visualizer/ASTVisualizerVisitor.h
+        visualizer/ASTVisualizer.cpp
+        visualizer/ASTVisualizer.h
+        # AST optimizer
+        astoptimizer/ASTOptimizer.cpp
+        astoptimizer/ASTOptimizer.h
         # Import collector
         importcollector/ImportCollector.cpp
         importcollector/ImportCollector.h
@@ -60,6 +64,9 @@ set(SOURCES
         # Linker
         linker/LinkerInterface.cpp
         linker/LinkerInterface.h
+        # Scope management
+        scope/Scope.cpp
+        scope/Scope.h
         # Symbol table management
         symbol/SymbolTable.cpp
         symbol/SymbolTable.h
@@ -119,7 +126,7 @@ set(SOURCES
         generator/StdFunctionManager.h
         generator/OpRuleConversionsManager.cpp
         generator/OpRuleConversionsManager.h
-)
+        borrowchecker/Lifecycle.cpp borrowchecker/Lifecycle.h)
 
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 

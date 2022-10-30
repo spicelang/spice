@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <ast/AstVisitor.h>
+#include <ast/ASTVisitor.h>
 
 // Forward declarations
 struct CliOptions;
@@ -14,7 +14,7 @@ class SourceFile;
  * Jobs:
  * - Collect imports
  */
-class PreAnalyzerVisitor : public AstVisitor {
+class PreAnalyzerVisitor : public ASTVisitor {
 public:
   // Constructors
   explicit PreAnalyzerVisitor(const CliOptions &options, SourceFile &sourceFile) : cliOptions(options), sourceFile(sourceFile) {}

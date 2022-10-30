@@ -5,7 +5,7 @@
 #include <any>
 
 // Forward declarations
-class AstNode;
+class ASTNode;
 class EntryNode;
 class MainFctDefNode;
 class FctDefNode;
@@ -24,6 +24,7 @@ class WhileLoopNode;
 class IfStmtNode;
 class ElseStmtNode;
 class AssertStmtNode;
+class ScopeNode;
 class StmtLstNode;
 class TypeLstNode;
 class TypeAltsLstNode;
@@ -71,10 +72,10 @@ class DataTypeNode;
 class BaseDataTypeNode;
 class CustomDataTypeNode;
 
-class AbstractAstVisitor {
+class AbstractASTVisitor {
 public:
   // General visitor method
-  virtual std::any visit(AstNode *node);
+  virtual std::any visit(ASTNode *node);
 
   // Visitor methods
   virtual std::any visitEntry(EntryNode *node) = 0;
@@ -95,6 +96,7 @@ public:
   virtual std::any visitIfStmt(IfStmtNode *node) = 0;
   virtual std::any visitElseStmt(ElseStmtNode *node) = 0;
   virtual std::any visitAssertStmt(AssertStmtNode *node) = 0;
+  virtual std::any visitScope(ScopeNode *node) = 0;
   virtual std::any visitStmtLst(StmtLstNode *node) = 0;
   virtual std::any visitTypeLst(TypeLstNode *node) = 0;
   virtual std::any visitTypeAltsLst(TypeAltsLstNode *node) = 0;
@@ -143,5 +145,5 @@ public:
   virtual std::any visitCustomDataType(CustomDataTypeNode *node) = 0;
 
   // Public methods
-  virtual std::any visitChildren(AstNode *node);
+  virtual std::any visitChildren(ASTNode *node);
 };

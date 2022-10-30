@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <ast/AstNodes.h>
-#include <ast/AstVisitor.h>
+#include <ast/ASTNodes.h>
+#include <ast/ASTVisitor.h>
 
 #include <typechecker/OpRuleManager.h>
 #include <symbol/ScopePath.h>
@@ -43,7 +43,7 @@ class SourceFile;
  * - Resolve generic functions/procedure/structs
  * - Detect usages of runtime modules
  */
-class AnalyzerVisitor : public AstVisitor {
+class AnalyzerVisitor : public ASTVisitor {
 public:
   // Constructors
   explicit AnalyzerVisitor(GlobalResourceManager &resourceManager, SourceFile &sourceFile, bool requiresMainFct);
@@ -127,13 +127,13 @@ private:
   bool allowUnsafeOperations = false;
 
   // Private methods
-  void insertAnonStringStructSymbol(const AstNode *declNode);
-  void insertDestructorCall(const AstNode *node, const SymbolTableEntry *varEntry);
-  void insertEmptyConstructorCall(const AstNode *node, const SymbolTableEntry *varEntry);
-  void insertStructMethodCall(const AstNode *node, const SymbolTableEntry *varEntry, const std::string &name);
+  void insertAnonStringStructSymbol(const ASTNode *declNode);
+  void insertDestructorCall(const ASTNode *node, const SymbolTableEntry *varEntry);
+  void insertEmptyConstructorCall(const ASTNode *node, const SymbolTableEntry *varEntry);
+  void insertStructMethodCall(const ASTNode *node, const SymbolTableEntry *varEntry, const std::string &name);
   SymbolType initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix, const std::string &structName,
-                           const std::vector<SymbolType> &templateTypes, const AstNode *node);
+                           const std::vector<SymbolType> &templateTypes, const ASTNode *node);
   SymbolType initExtGlobal(SymbolTable *sourceScope, const std::string &globalScopePrefix, const std::string &globalName,
-                           const AstNode *node);
-  static void checkForReservedKeyword(const AstNode *node, const std::string &identifier) ;
+                           const ASTNode *node);
+  static void checkForReservedKeyword(const ASTNode *node, const std::string &identifier) ;
 };

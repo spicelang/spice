@@ -2,10 +2,10 @@
 
 #include "SemanticError.h"
 
-#include <ast/AstNodes.h>
+#include <ast/ASTNodes.h>
 #include <util/CodeLoc.h>
 
-SemanticError::SemanticError(const AstNode *node, const SemanticErrorType &type, const std::string &message) {
+SemanticError::SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message) {
   errorMessage = "[Error|Semantic] " + node->codeLoc.toPrettyString() + ":\n";
   errorMessage += getMessagePrefix(type) + ": " + message + "\n\n";
   errorMessage += node->errorMessage;
@@ -124,6 +124,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Return with value in procedure";
   case DYN_POINTERS_NOT_ALLOWED:
     return "Dyn pointers not allowed";
+  case DYN_REFERENCES_NOT_ALLOWED:
+    return "Dyn references not allowed";
   case DYN_ARRAYS_NOT_ALLOWED:
     return "Dyn arrays not allowed";
   case GENERIC_TYPE_NOT_IN_TEMPLATE:

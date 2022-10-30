@@ -15,14 +15,14 @@
 class SymbolTable;
 class SymbolType;
 class Function;
-struct AstNode;
+class ASTNode;
 struct CodeLoc;
 
 class Struct {
 public:
   // Constructors
   Struct(std::string name, SymbolSpecifiers specifiers, std::vector<SymbolType> fieldTypes,
-         std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, const AstNode *declNode)
+         std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, const ASTNode *declNode)
       : name(std::move(name)), specifiers(specifiers), fieldTypes(std::move(fieldTypes)), templateTypes(std::move(templateTypes)),
         interfaceTypes(std::move(interfaceTypes)), declNode(declNode) {}
 
@@ -44,7 +44,7 @@ public:
   std::vector<GenericType> templateTypes;
   std::vector<SymbolType> interfaceTypes;
   SymbolTable *structScope = nullptr;
-  const AstNode *declNode;
+  const ASTNode *declNode;
   bool isGenericSubstantiation = false;
   bool isUsed = false;
 

@@ -2,7 +2,7 @@
 
 #include "SymbolTableEntry.h"
 
-#include <ast/AstNodes.h>
+#include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <util/CodeLoc.h>
 
@@ -31,18 +31,19 @@ void SymbolTableEntry::updateType(const SymbolType &newType, bool force) {
  * @param node AST node where the update takes place
  * @param force Force update. This can only be used compiler-internal
  */
-void SymbolTableEntry::updateState(SymbolState newState, const AstNode *node, bool force) {
+void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node, bool force) {
+  const LifecycleState oldState = lifecycle.getCurrentState();
   // Check if this is a constant variable and is already initialized
-  if (newState != DESTRUCTED && state != DECLARED && specifiers.isConst() && !force)
+  if (newState != DEAD && oldState != DECLARED && specifiers.isConst() && !force)
     throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
   // Check if the type is known at time of initialization
   if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                    // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'");   // GCOV_EXCL_LINE
-  if (newState == DESTRUCTED && state == DECLARED)                                                              // GCOV_EXCL_LINE
+  if (newState == DEAD && oldState == DECLARED)                                                              // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
-  if (newState == DESTRUCTED && state == DESTRUCTED)                                                            // GCOV_EXCL_LINE
+  if (newState == DEAD && oldState == DEAD)                                                            // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: cannot destruct already freed variable '" + name + "'"); // GCOV_EXCL_LINE
-  state = newState;
+  lifecycle.addEvent({newState, node});
 }
 
 /**
@@ -50,7 +51,7 @@ void SymbolTableEntry::updateState(SymbolState newState, const AstNode *node, bo
  *
  * @return Declaration node
  */
-const AstNode *SymbolTableEntry::getDeclNode() const { return declNode; }
+const ASTNode *SymbolTableEntry::getDeclNode() const { return declNode; }
 
 /**
  * Retrieve the code location where the symbol was declared
@@ -141,7 +142,7 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   case INITIALIZED:
     stateStr = "initialized";
     break;
-  case DESTRUCTED:
+  case DEAD:
     stateStr = "destructed";
     break;
   }

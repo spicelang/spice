@@ -2,9 +2,9 @@
 
 #include "PreAnalyzerVisitor.h"
 
-#include <ast/AstNodes.h>
-#include <cli/CliInterface.h>
 #include <SourceFile.h>
+#include <ast/ASTNodes.h>
+#include <cli/CLIInterface.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/SemanticError.h>
 #include <util/CommonUtil.h>

@@ -14,7 +14,7 @@
 
 ```spice
 type AstNode interface {
-    f<bool> accept(AstVisitor*)
+    f<bool> accept(ASTVisitor*)
     p dump()
 }
 
@@ -24,7 +24,7 @@ type MainFctDefNode struct : AstNode {
 }
 
 // Must exist. Otherwise the compiler throws an error
-f<bool> MainFctDefNode.accept(AstVisitor* v) {
+f<bool> MainFctDefNode.accept(ASTVisitor* v) {
     // Do something
 }
 ```

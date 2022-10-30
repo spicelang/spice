@@ -2,7 +2,7 @@
 
 #include "Struct.h"
 
-#include <ast/AstNodes.h>
+#include <ast/ASTNodes.h>
 #include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
 

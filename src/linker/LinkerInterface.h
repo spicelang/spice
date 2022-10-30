@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include <cli/CliInterface.h>
+#include <cli/CLIInterface.h>
 
 // Forward declarations
 class ThreadFactory;
