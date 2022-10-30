@@ -62,9 +62,9 @@ public:
   void generate();
   void optimize();
   void emitObjectFile();
-  [[nodiscard]] std::shared_ptr<SourceFile> createSourceFile(const std::string &name, const std::string &filePath, bool stdFile);
+  [[nodiscard]] std::shared_ptr<SourceFile> createSourceFile(const std::string &dependencyName, const std::string &path, bool isStdFile);
   void addDependency(const std::shared_ptr<SourceFile> &sourceFile, const AstNode *declAstNode, const std::string &name,
-                     const std::string &filePath);
+                     const std::string &path);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   void printWarnings() const;
   void requestRuntimeModule(const RuntimeModuleName &moduleName);

@@ -42,6 +42,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Multiple declarations of a function/procedure";
   case GENERIC_TYPE_DECLARED_TWICE:
     return "Multiple declarations of a generic type with the same name";
+  case STRUCT_WITH_ILLEGAL_NAME:
+    return "Struct name illegal";
   case STRUCT_DECLARED_TWICE:
     return "Multiple declarations of a struct with the same name";
   case INTERFACE_DECLARED_TWICE:
@@ -96,8 +98,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Imported source file not existing";
   case CIRCULAR_DEPENDENCY:
     return "Circular import detected";
-  case MEMBER_ACCESS_ONLY_STRUCTS:
-    return "Member access is only allowed on structs";
+  case INVALID_MEMBER_ACCESS:
+    return "Member access is only allowed on enums and Strings";
   case SCOPE_ACCESS_ONLY_IMPORTS:
     return "Scope access is only allowed on imports";
   case UNKNOWN_DATATYPE:

@@ -24,7 +24,7 @@
 void SymbolTable::insert(const std::string &name, const SymbolType &type, SymbolSpecifiers specifiers, SymbolState state,
                          const AstNode *declNode) {
   bool isGlobal = parent == nullptr;
-  unsigned int orderIndex = symbols.size();
+  size_t orderIndex = symbols.size();
   // Insert into symbols map
   symbols.insert({name, SymbolTableEntry(name, type, this, specifiers, state, declNode, orderIndex, isGlobal)});
 }
@@ -34,11 +34,11 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, Symbol
  * The anonymous symbol will be identified via the definition code location
  *
  * @param type Type of the symbol
- * @param declNode AST node where the symbol is declared
+ * @param declNode AST node where the anonymous symbol is declared
  */
-void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNode) {
+void SymbolTable::insertAnonymous(const SymbolType &type, const AstNode *declNode, const SymbolState &state) {
   std::string name = "anon." + declNode->codeLoc.toString();
-  insert(name, type, SymbolSpecifiers(type), DECLARED, declNode);
+  insert(name, type, SymbolSpecifiers(type), state, declNode);
   lookupAnonymous(declNode->codeLoc)->isUsed = true;
 }
 
@@ -56,7 +56,7 @@ void SymbolTable::addCapture(const std::string &name, const Capture &capture) { 
  * @param name Name of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-SymbolTableEntry *SymbolTable::lookup(const std::string &name) {
+SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-no-recursion)
   // Check if the symbol exists in the current scope. If yes, take it
   SymbolTableEntry *entry = lookupStrict(name);
   if (!entry) { // Symbol was not found in the current scope
@@ -117,7 +117,7 @@ SymbolTableEntry *SymbolTable::lookupByIndex(unsigned int orderIndex) {
  * @param globalName Name of the global variable
  * @return Desired symbol / nullptr if the global was not found
  */
-SymbolTableEntry *SymbolTable::lookupGlobal(const std::string &globalName, bool skipThisScope) {
+SymbolTableEntry *SymbolTable::lookupGlobal(const std::string &globalName, bool skipThisScope) { // NOLINT(misc-no-recursion)
   // Search in the current scope
   if (!skipThisScope) {
     SymbolTableEntry *globalSymbol = lookupStrict(globalName);
@@ -149,7 +149,7 @@ SymbolTableEntry *SymbolTable::lookupAnonymous(const CodeLoc &codeLoc) { return 
  * @param name Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
-Capture *SymbolTable::lookupCapture(const std::string &name) {
+Capture *SymbolTable::lookupCapture(const std::string &name) { // NOLINT(misc-no-recursion)
   // Check if the capture exists in the current scope. If yes, take it
   Capture *capture = lookupCaptureStrict(name);
   if (capture)
@@ -183,7 +183,7 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
  * @param tableName Name of the desired table
  * @return Desired symbol table
  */
-SymbolTable *SymbolTable::lookupTable(const std::string &tableName) {
+SymbolTable *SymbolTable::lookupTable(const std::string &tableName) { // NOLINT(misc-no-recursion)
   // If not available in the current scope, search in the parent scope
   if (!children.contains(tableName))
     return parent ? parent->lookupTable(tableName) : nullptr;
@@ -220,7 +220,7 @@ void SymbolTable::insertGenericType(const std::string &typeName, const GenericTy
  * @param typeName Name of the generic type
  * @return Generic type
  */
-GenericType *SymbolTable::lookupGenericType(const std::string &typeName) {
+GenericType *SymbolTable::lookupGenericType(const std::string &typeName) { // NOLINT(misc-no-recursion)
   if (genericTypes.contains(typeName))
     return &genericTypes.at(typeName);
   return parent ? parent->lookupGenericType(typeName) : nullptr;
@@ -281,12 +281,12 @@ SymbolTable *SymbolTable::getChild(const std::string &tableName) {
 }
 
 /**
- * Retrieve all variables that can be freed, because the ref count went down to 0.
+ * Retrieve all variables that can be freed.
  *
  * @param filterForDtorStructs Get only struct variables
  * @return Variables that can be de-allocated
  */
-std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForDtorStructs) {
+std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterForDtorStructs) { // NOLINT(misc-no-recursion)
   assert(parent != nullptr); // Should not be called in root scope
   std::vector<SymbolTableEntry *> varsGoingOutOfScope;
 
@@ -299,7 +299,7 @@ std::vector<SymbolTableEntry *> SymbolTable::getVarsGoingOutOfScope(bool filterF
       continue;
     }
     // For dtor calls, only anonymous structs are relevant
-    if ((entry.type.is(TY_STRUCT) || entry.type.isStringStruct()) && entry.name.starts_with("anon."))
+    if (entry.type.isOneOf({TY_STRUCT, TY_STROBJ}) && entry.state != DESTRUCTED && entry.name.starts_with("anon."))
       varsGoingOutOfScope.push_back(&symbols.at(name));
   }
 
@@ -445,7 +445,9 @@ Function *SymbolTable::matchFunction(SymbolTable *currentScope, const std::strin
           }
           argList[i].type = argList[i].type.replaceBaseType(concreteGenericTypes.at(genericTypeName));
         } else { // For arguments with non-generic type, check if the candidate type matches with the call
-          if (!equalsIgnoreArraySizes(argList[i].type, callArgTypes[i])) {
+          const SymbolType &expected = argList[i].type;
+          const SymbolType &actual = callArgTypes[i];
+          if (!equalsIgnoreArraySizes(actual, expected) && !(actual.is(TY_STROBJ) && expected.is(TY_STRUCT, STROBJ_NAME))) {
             differentArgTypes = true;
             break;
           }
@@ -605,7 +607,7 @@ Struct *SymbolTable::insertStruct(const Struct &spiceStruct) {
  * @param node Declaration node for the error message
  * @return Matched struct or nullptr
  */
-Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &structName,
+Struct *SymbolTable::matchStruct(SymbolTable *currentScope, const std::string &structName, // NOLINT(misc-no-recursion)
                                  const std::vector<SymbolType> &templateTypes, const AstNode *node) {
   std::vector<Struct *> matches;
 
@@ -756,7 +758,7 @@ void SymbolTable::insertInterface(const Interface &i) {
 /**
  * Purge all non-substantiated manifestations of functions and structs
  */
-void SymbolTable::purgeSubstantiationRemnants() {
+void SymbolTable::purgeSubstantiationRemnants() { // NOLINT(misc-no-recursion)
   // Prune non-substantiated functions
   std::erase_if(functions, [&](const auto &kvOuter) {
     std::erase_if(*kvOuter.second, [&](const auto &kvInner) {
@@ -789,34 +791,73 @@ void SymbolTable::purgeSubstantiationRemnants() {
 /**
  * Retrieves compiler warnings from this table
  */
-std::vector<CompilerWarning> SymbolTable::collectWarnings() {
+std::vector<CompilerWarning> SymbolTable::collectWarnings() { // NOLINT(misc-no-recursion)
   // Omit this table if it is a shadow table
   if (isShadowTable)
     return {};
   // Visit own symbols
   std::vector<CompilerWarning> warnings;
+  CompilerWarningType warningType;
+  std::string warningMessage;
   for (const auto &[key, entry] : symbols) {
-    if (!entry.isUsed && entry.name != UNUSED_VARIABLE_NAME) {
-      if (entry.type.is(TY_FUNCTION)) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_FUNCTION, "The function '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_PROCEDURE)) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_PROCEDURE, "The procedure '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_STRUCT) && entry.isGlobal) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_STRUCT, "The struct '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_INTERFACE) && entry.isGlobal) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_INTERFACE, "The interface '" + entry.name + "' is unused");
-      } else if (entry.type.is(TY_IMPORT)) {
-        warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_IMPORT, "The import '" + entry.name + "' is unused");
-      } else {
-        // Skip idx variables
+    // Do not produce a warning if the symbol is used or has a special name
+    if (entry.isUsed || entry.name == UNUSED_VARIABLE_NAME)
+      continue;
+
+    switch (entry.type.getSuperType()) {
+    case TY_FUNCTION: {
+      warningType = UNUSED_FUNCTION;
+      warningMessage = "The function '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_PROCEDURE: {
+      warningType = UNUSED_PROCEDURE;
+      warningMessage = "The procedure '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_STRUCT: {
+      warningType = UNUSED_STRUCT;
+      warningMessage = "The struct '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_INTERFACE: {
+      warningType = UNUSED_INTERFACE;
+      warningMessage = "The interface '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_IMPORT: {
+      warningType = UNUSED_IMPORT;
+      warningMessage = "The import '" + entry.name + "' is unused";
+      break;
+    }
+    default: {
+      // Check parent scope type
+      switch (scopeType) {
+      case SCOPE_STRUCT: {
+        warningType = UNUSED_FIELD;
+        warningMessage = "The field '" + entry.name + "' is unused";
+        break;
+      }
+      case SCOPE_ENUM: {
+        warningType = UNUSED_ENUM_ITEM;
+        warningMessage = "The enum item '" + entry.name + "' is unused";
+        break;
+      }
+      case SCOPE_FOREACH_BODY: {
+        // Skip idx variables, otherwise fall-through
         if (entry.name == FOREACH_DEFAULT_IDX_VARIABLE_NAME)
           continue;
-        if (scopeType == SCOPE_STRUCT)
-          warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_FIELD, "The field '" + entry.name + "' is unused");
-        else
-          warnings.emplace_back(entry.getDeclCodeLoc(), UNUSED_VARIABLE, "The variable '" + entry.name + "' is unused");
+      }
+      default: {
+        warningType = UNUSED_VARIABLE;
+        warningMessage = "The variable '" + entry.name + "' is unused";
+      }
       }
     }
+    }
+
+    // Add warning
+    warnings.emplace_back(entry.getDeclCodeLoc(), warningType, warningMessage);
   }
   // Visit children
   for (const auto &[key, child] : children) {
@@ -865,7 +906,7 @@ bool SymbolTable::isImported(const SymbolTable *askingScope) const {
  *
  * @return Symbol table if form of a string
  */
-nlohmann::json SymbolTable::toJSON() const {
+nlohmann::json SymbolTable::toJSON() const { // NOLINT(misc-no-recursion)
   // Collect all symbols
   std::vector<nlohmann::json> jsonSymbols;
   jsonSymbols.reserve(symbols.size());

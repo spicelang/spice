@@ -29,6 +29,9 @@ SymbolSpecifiers::SymbolSpecifiers(const SymbolType &type) {
   case TY_STRING:
     specifierValue = SPECIFIER_DEFAULTS_STRING;
     break;
+  case TY_STROBJ:
+    specifierValue = SPECIFIER_DEFAULTS_STROBJ;
+    break;
   case TY_BOOL:
     specifierValue = SPECIFIER_DEFAULTS_BOOL;
     break;

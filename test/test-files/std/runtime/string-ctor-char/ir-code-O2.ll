@@ -12,22 +12,23 @@ target triple = "x86_64-w64-windows-gnu"
 @4 = private unnamed_addr constant [13 x i8] c"Capacity: %d\00", align 1
 
 define i32 @main() local_unnamed_addr {
-entry.l3:
+entry.l1:
   %s = alloca %_s__String__charptr_long_long, align 8
   call void @_mp__String__void__ctor__char(ptr nonnull %s, i8 72)
-  %0 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
+  %0 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s)
   %1 = call i32 (ptr, ...) @printf(ptr nonnull @2, ptr %0)
   %2 = call i64 @_mf__String__long__getLength(ptr nonnull %s)
   %3 = call i32 (ptr, ...) @printf(ptr nonnull @3, i64 %2)
   %4 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s)
   %5 = call i32 (ptr, ...) @printf(ptr nonnull @0, i64 %4)
   call void @_mp__String__void__append__string(ptr nonnull %s, ptr nonnull @1)
-  %6 = call ptr @_mf__String__string__getRaw(ptr nonnull %s)
+  %6 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s)
   %7 = call i32 (ptr, ...) @printf(ptr nonnull @2, ptr %6)
   %8 = call i64 @_mf__String__long__getLength(ptr nonnull %s)
   %9 = call i32 (ptr, ...) @printf(ptr nonnull @3, i64 %8)
   %10 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s)
   %11 = call i32 (ptr, ...) @printf(ptr nonnull @4, i64 %10)
+  call void @_mp__String__void__dtor(ptr nonnull %s)
   ret i32 0
 }
 
@@ -36,12 +37,14 @@ declare void @_mp__String__void__ctor__char(ptr, i8) local_unnamed_addr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
-declare ptr @_mf__String__string__getRaw(ptr) local_unnamed_addr
+declare ptr @_mf__String__charptr__getRaw(ptr) local_unnamed_addr
 
 declare i64 @_mf__String__long__getLength(ptr) local_unnamed_addr
 
 declare i64 @_mf__String__long__getCapacity(ptr) local_unnamed_addr
 
 declare void @_mp__String__void__append__string(ptr, ptr) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { nofree nounwind }

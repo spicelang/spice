@@ -50,6 +50,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused import";
   case UNUSED_FIELD:
     return "Unused field";
+  case UNUSED_ENUM_ITEM:
+    return "Unused enum item";
   case UNUSED_VARIABLE:
     return "Unused variable";
   case INTERFACE_WITHOUT_SIGNATURE:

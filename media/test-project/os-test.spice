@@ -1,8 +1,46 @@
 f<int> main() {
-    string str = "Hello World!";
-    str.reverse();
-    printf("%s", str);
+    // Directly
+    printf("%d\n", String("").isEmpty());
+    printf("%d\n", String("Hello").isEmpty());
+    printf("%d\n", String("Hello!").getLength());
+    printf("%d\n", String("Hello World!").getLength());
+    printf("%d\n", String("Hello!").getCapacity());
+    printf("%d\n", String("Hello World!").getCapacity());
+    printf("%d\n", String("Hello").isFull());
+    printf("%d\n", String("Hello World!").isFull());
+    printf("%d\n", String("Hello World!").find("ell"));
+    printf("%d\n", String("Hello World!").find("Wort"));
+    printf("%d\n", String("Hello World!").find("H"));
+    printf("%d\n", String("Hello World!").find("!"));
+    printf("%d\n", String("Hello World!").find(" ", 12));
+    printf("%d\n", String("Hello World!").contains("abc"));
+    printf("%d\n", String("Hello World!").contains("Hello"));
+    printf("%d\n", String("Hello World!").contains("World!"));
+    printf("%d\n", String("Hello World!").contains("o W"));
+    //printf("'%s'\n", String("Hello World!").substring(0, 5));
+    //printf("'%s'\n", String("Hello World!").substring(4, 2));
+    //printf("'%s'\n", String("Hello World!").substring(6));
+    //printf("'%s'\n", String("Hello World!").substring(2, 0));
+    //printf("%s\n", String("Hello World!").substring(2, 12));
 }
+
+/*f<int> main() {
+    String testString;
+    printf("Test: %s\n", testString);
+    testString += "Hi!";
+    printf("Test: %s\n", testString);
+    //testString = String("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.");
+
+    //printf("Length: %d\n", testString.getLength());
+    //printf("Capacity: %d", testString.getCapacity());
+}*/
+
+/*f<int> main() {
+    String s = String("Hello ");
+    printf("Output: %s\n", s);
+    s = String("");
+    printf("Output: %s\n", s);
+}*/
 
 /*type Visitor struct {
 

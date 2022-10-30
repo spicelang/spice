@@ -71,7 +71,8 @@ nav:
     - language/hello-world.md
     - language/main-function.md
     - language/builtins.md
-    - language/data-types.md
+    - language/primitive-types.md
+    - language/builtin-types.md
     - language/casts.md
     - language/if-statements.md
     - language/while-loops.md

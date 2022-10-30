@@ -2,7 +2,7 @@
 title: Arrays
 ---
 
-You can use arrays in Spice for any [primitive](../data-types) or custom [struct](../structs) data type.
+You can use arrays in Spice for any [primitive](../primitive-types) or custom [struct](../structs) data type.
 
 To initialize an `array` e.g. of type string, you can write:
 ```spice

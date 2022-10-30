@@ -33,7 +33,7 @@ void Capture::setCaptureMode(CaptureMode captureMode) {
  *
  * Example:
  * {
- *   "name": "testIden"
+ *   "name": "testIdentifier"
  * }
  *
  * @return Capture as a JSON object

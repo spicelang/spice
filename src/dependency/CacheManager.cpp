@@ -20,7 +20,7 @@ bool CacheManager::lookupSourceFile(SourceFile *sourceFile) {
   return true;
 }
 
-void CacheManager::cacheSourceFile(const SourceFile *sourceFile) {
+void CacheManager::cacheSourceFile(const SourceFile */*sourceFile*/) {
   // Cache symbol table
 
   // Cache object file

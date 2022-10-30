@@ -9,9 +9,15 @@ Result: HiHiHiHi
 Result: Hello Hello Hello Hello Hello 
 Result: aaaaaaaaaaaaaaaaaaaa
 Result: cccccccccccccc
+Equal raw: 0
+Equal raw: 0
+Equal raw: 1
 Equal: 0
 Equal: 0
 Equal: 1
+Non-equal raw: 1
+Non-equal raw: 1
+Non-equal raw: 0
 Non-equal: 1
 Non-equal: 1
 Non-equal: 0

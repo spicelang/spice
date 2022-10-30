@@ -33,13 +33,24 @@ void SymbolTableEntry::updateType(const SymbolType &newType, bool force) {
  */
 void SymbolTableEntry::updateState(SymbolState newState, const AstNode *node, bool force) {
   // Check if this is a constant variable and is already initialized
-  if (state == INITIALIZED && specifiers.isConst() && !force)
+  if (newState != DESTRUCTED && state != DECLARED && specifiers.isConst() && !force)
     throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
   // Check if the type is known at time of initialization
-  if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                  // GCOV_EXCL_LINE
-    throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'"); // GCOV_EXCL_LINE
+  if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                    // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'");   // GCOV_EXCL_LINE
+  if (newState == DESTRUCTED && state == DECLARED)                                                              // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
+  if (newState == DESTRUCTED && state == DESTRUCTED)                                                            // GCOV_EXCL_LINE
+    throw std::runtime_error("Internal compiler error: cannot destruct already freed variable '" + name + "'"); // GCOV_EXCL_LINE
   state = newState;
 }
+
+/**
+ * Retrieve the AST node where the symbol was declared
+ *
+ * @return Declaration node
+ */
+const AstNode *SymbolTableEntry::getDeclNode() const { return declNode; }
 
 /**
  * Retrieve the code location where the symbol was declared
@@ -122,11 +133,24 @@ void SymbolTableEntry::popAddress() { memAddress.pop(); }
  * @return Symbol table entry as a JSON object
  */
 nlohmann::ordered_json SymbolTableEntry::toJSON() const {
+  std::string stateStr;
+  switch (state) {
+  case DECLARED:
+    stateStr = "declared";
+    break;
+  case INITIALIZED:
+    stateStr = "initialized";
+    break;
+  case DESTRUCTED:
+    stateStr = "destructed";
+    break;
+  }
+
   nlohmann::json result;
   result["name"] = name;
   result["type"] = type.getName(true);
   result["orderIndex"] = orderIndex;
-  result["state"] = state == INITIALIZED ? "initialized" : "declared";
+  result["state"] = stateStr;
   result["specifiers"] = specifiers.toJSON();
   result["isGlobal"] = isGlobal;
   result["isVolatile"] = isVolatile;

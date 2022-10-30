@@ -18,9 +18,8 @@
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 
-AnalyzerVisitor::AnalyzerVisitor(GlobalResourceManager &resourceManager, SourceFile &sourceFile, bool requiresMainFct,
-                                 bool isStdFile)
-    : resourceManager(resourceManager), sourceFile(sourceFile), requiresMainFct(requiresMainFct), isStdFile(isStdFile) {
+AnalyzerVisitor::AnalyzerVisitor(GlobalResourceManager &resourceManager, SourceFile &sourceFile, bool requiresMainFct)
+    : resourceManager(resourceManager), sourceFile(sourceFile), requiresMainFct(requiresMainFct) {
   // Retrieve symbol table
   this->currentScope = this->rootScope = sourceFile.symbolTable.get();
 
@@ -109,7 +108,7 @@ std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
 
     // Call destructors for variables, that are going out of scope
     std::vector<SymbolTableEntry *> varsToDestruct = node->fctScope->getVarsGoingOutOfScope(true);
-    for (SymbolTableEntry *varEntry : varsToDestruct)
+    for (const SymbolTableEntry *varEntry : varsToDestruct)
       insertDestructorCall(varEntry->declNode, varEntry);
 
     // Return to root scope
@@ -120,6 +119,12 @@ std::any AnalyzerVisitor::visitMainFctDef(MainFctDefNode *node) {
 
 std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
   if (runNumber == 1) { // First run
+    checkForReservedKeyword(node, node->functionName);
+
+    // Check if name is dtor
+    if (node->functionName == "dtor")
+      throw SemanticError(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
+
     // Check if this is a global function or a method
     if (node->isMethod) {
       // Change to the struct scope
@@ -127,10 +132,6 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
       if (!node->structScope)
         throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->structName + "' could not be found");
     }
-
-    // Check if name is dtor
-    if (node->functionName == "dtor")
-      throw SemanticError(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
 
     // Create a new scope
     node->fctScope = currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_FUNC_PROC_BODY);
@@ -291,7 +292,7 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
 
         // Call destructors for variables, that are going out of scope
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
-        for (SymbolTableEntry *varEntry : varsToDestruct)
+        for (const SymbolTableEntry *varEntry : varsToDestruct)
           insertDestructorCall(varEntry->declNode, varEntry);
 
         // Reset generic types
@@ -325,6 +326,8 @@ std::any AnalyzerVisitor::visitFctDef(FctDefNode *node) {
 
 std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
   if (runNumber == 1) { // First run
+    checkForReservedKeyword(node, node->procedureName);
+
     // Change to the struct scope
     if (node->isMethod) {
       node->structScope = currentScope = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + node->structName);
@@ -474,7 +477,7 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
 
         // Call destructors for variables, that are going out of scope
         std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
-        for (SymbolTableEntry *varEntry : varsToDestruct)
+        for (const SymbolTableEntry *varEntry : varsToDestruct)
           insertDestructorCall(varEntry->declNode, varEntry);
 
         // Reset generic types
@@ -504,6 +507,8 @@ std::any AnalyzerVisitor::visitProcDef(ProcDefNode *node) {
 
 std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
   if (runNumber == 1) { // First run
+    checkForReservedKeyword(node, node->structName);
+
     // Check if struct already exists
     if (rootScope->lookup(node->structName))
       throw SemanticError(node, STRUCT_DECLARED_TWICE, "Duplicate struct '" + node->structName + "'");
@@ -556,6 +561,8 @@ std::any AnalyzerVisitor::visitStructDef(StructDefNode *node) {
     // Insert a field for each field list entry
     std::vector<SymbolType> fieldTypes;
     for (const auto &field : node->fields()) {
+      checkForReservedKeyword(node, field->name);
+
       auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
 
       if (fieldType.isBaseType(TY_GENERIC)) { // Check if the type is present in the template for generic types
@@ -627,6 +634,8 @@ std::any AnalyzerVisitor::visitInterfaceDef(InterfaceDefNode *node) {
   if (runNumber > 1)
     return nullptr;
 
+  checkForReservedKeyword(node, node->interfaceName);
+
   // Check if interface already exists in this scope
   if (currentScope->lookup(node->interfaceName))
     throw SemanticError(node, INTERFACE_DECLARED_TWICE, "Duplicate interface '" + node->interfaceName + "'");
@@ -679,6 +688,8 @@ std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
   if (runNumber > 1)
     return nullptr;
 
+  checkForReservedKeyword(node, node->enumName);
+
   // Check if enum already exists in this scope
   if (currentScope->lookup(node->enumName))
     throw SemanticError(node, ENUM_DECLARED_TWICE, "Duplicate symbol name '" + node->enumName + "'");
@@ -702,10 +713,12 @@ std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
   std::vector<std::string> names;
   std::vector<uint32_t> values;
   for (auto enumItem : node->itemLst()->items()) {
+    checkForReservedKeyword(node, enumItem->name);
+
     // Check if the name does exist already
-    if (std::find(names.begin(), names.end(), enumItem->itemName) != names.end())
+    if (std::find(names.begin(), names.end(), enumItem->name) != names.end())
       throw SemanticError(enumItem, DUPLICATE_ENUM_ITEM_NAME, "Duplicate enum item name, please use another");
-    names.push_back(enumItem->itemName);
+    names.push_back(enumItem->name);
 
     if (enumItem->hasValue) {
       if (std::find(values.begin(), values.end(), enumItem->itemValue) != values.end())
@@ -725,7 +738,7 @@ std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
       values.push_back(nextValue);
     }
 
-    node->enumScope->insert(enumItem->itemName, intSymbolType, SymbolSpecifiers(intSymbolType), INITIALIZED, enumItem);
+    node->enumScope->insert(enumItem->name, intSymbolType, SymbolSpecifiers(intSymbolType), INITIALIZED, enumItem);
   }
 
   return nullptr;
@@ -734,6 +747,8 @@ std::any AnalyzerVisitor::visitEnumDef(EnumDefNode *node) {
 std::any AnalyzerVisitor::visitGenericTypeDef(GenericTypeDefNode *node) {
   if (runNumber > 1)
     return nullptr;
+
+  checkForReservedKeyword(node, node->typeName);
 
   // Check if type already exists in this scope
   if (currentScope->lookup(node->typeName))
@@ -772,6 +787,8 @@ std::any AnalyzerVisitor::visitGenericTypeDef(GenericTypeDefNode *node) {
 std::any AnalyzerVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (runNumber > 1)
     return nullptr;
+
+  checkForReservedKeyword(node, node->varName);
 
   // Check if symbol already exists in the symbol table
   if (currentScope->lookup(node->varName))
@@ -838,6 +855,8 @@ std::any AnalyzerVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
 std::any AnalyzerVisitor::visitExtDecl(ExtDeclNode *node) {
   if (runNumber > 1)
     return nullptr;
+
+  checkForReservedKeyword(node, node->extFunctionName);
 
   ParamList argTypes;
   if (node->hasArgs) {
@@ -1104,6 +1123,8 @@ std::any AnalyzerVisitor::visitParamLst(ParamLstNode *node) {
 }
 
 std::any AnalyzerVisitor::visitSignature(SignatureNode *node) {
+  checkForReservedKeyword(node, node->methodName);
+
   // Build method specifiers
   auto methodSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
@@ -1176,11 +1197,18 @@ std::any AnalyzerVisitor::visitDeclStmt(DeclStmtNode *node) {
   // Insert variable into symbol table
   currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, initialState, node);
 
+  // Insert call to empty constructor, if no value was assigned to a struct
+  if (!node->isParam() && !node->hasAssignment && symbolType.isOneOf({TY_STRUCT, TY_STROBJ})) {
+    SymbolTableEntry *entry = currentScope->lookupStrict(node->varName);
+    assert(entry != nullptr);
+    insertEmptyConstructorCall(node, entry);
+  }
+
   return symbolType;
 }
 
-std::any AnalyzerVisitor::visitImportStmt(ImportStmtNode * /*node*/) {
-  // Noop
+std::any AnalyzerVisitor::visitImportStmt(ImportStmtNode *node) {
+  checkForReservedKeyword(node, node->importName);
   return nullptr;
 }
 
@@ -1307,7 +1335,8 @@ std::any AnalyzerVisitor::visitPrintfCall(PrintfCallNode *node) {
       break;
     }
     case 's': {
-      if (!assignmentType.is(TY_STRING) && !assignmentType.isPointerOf(TY_CHAR) && !assignmentType.isArrayOf(TY_CHAR))
+      if (!assignmentType.isOneOf({TY_STRING, TY_STROBJ}) && !assignmentType.isPointerOf(TY_CHAR) &&
+          !assignmentType.isArrayOf(TY_CHAR))
         throw SemanticError(assignment, PRINTF_TYPE_ERROR,
                             "Template string expects string, char* or char[], but got " + assignmentType.getName(false));
       placeholderCount++;
@@ -1430,6 +1459,10 @@ std::any AnalyzerVisitor::visitAssignExpr(AssignExprNode *node) {
       Capture *lhsCapture = currentScope->lookupCapture(variableName);
       if (lhsCapture)
         lhsCapture->setCaptureMode(READ_WRITE);
+
+      // If we overwrite the value of a variable, destruct the old value
+      if (node->op == AssignExprNode::OP_ASSIGN && lhsTy == currentEntry->type && lhsTy.isOneOf({TY_STRUCT, TY_STROBJ}))
+        insertDestructorCall(node->rhs(), currentEntry);
     }
 
     return node->setEvaluatedSymbolType(rhsTy);
@@ -1788,24 +1821,13 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       break;
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
-      // Check if lhs is struct
-      if (!lhs.isBaseType(TY_STRUCT) && !lhs.isOneOf({TY_ENUM, TY_STRING}))
-        throw SemanticError(node, MEMBER_ACCESS_ONLY_STRUCTS, "Cannot apply member access operator on " + lhs.getName());
+      // Check if lhs is enum or strobj
+      if (!lhs.isBaseType(TY_STRUCT) && !lhs.isOneOf({TY_ENUM, TY_STROBJ}))
+        throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhs.getName());
 
-      PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
-
-      // Propagate strings to string objects
-      if (lhs.is(TY_STRING)) {
-        insertAnonStringStructSymbol(rhs);
-        lhs = SymbolType(TY_STRUCT, STRING_RT_IMPORT_NAME + std::string(".String"));
-        SymbolTable *stringRuntimeScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
-        stringRuntimeScope = stringRuntimeScope->getChild(STRUCT_SCOPE_PREFIX + std::string("String"));
-        assert(stringRuntimeScope != nullptr);
-        scopePath.clear();
-        scopePath.pushFragment(STRING_RT_IMPORT_NAME, stringRuntimeScope);
-      }
       currentThisType = lhs;
 
+      PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberAccessCounter++];
       lhs = any_cast<SymbolType>(visit(rhs)); // Visit rhs
       break;
     }
@@ -1862,14 +1884,8 @@ std::any AnalyzerVisitor::visitAtomicExpr(AtomicExprNode *node) {
     return visit(node->value());
 
   if (!node->identifier.empty()) {
+    checkForReservedKeyword(node, node->identifier);
     currentVarName = node->identifier;
-
-    // Check if this is a reserved keyword
-    if (std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), currentVarName) != std::end(RESERVED_KEYWORDS))
-      throw SemanticError(
-          node, RESERVED_KEYWORD,
-          "'" + currentVarName +
-              "' is a reserved keyword for future development of the language. Please use another identifier instead");
 
     // Retrieve access scope
     SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
@@ -2015,25 +2031,28 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   // Get the access scope
   SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
+  // Initialize loop variable
   std::vector<SymbolType> concreteTemplateTypes;
-
   std::string functionName;
   SymbolType thisType = currentThisType;
   bool constructorCall = false;
-  for (unsigned int i = 0; i < node->functionNameFragments.size(); i++) {
+
+  // Check if it is a reference to the String type
+  bool isStringRuntime = rootScope->lookupStrict(STROBJ_NAME) != nullptr && !rootScope->lookupCaptureStrict(STROBJ_NAME);
+  if (thisType.is(TY_DYN) && node->functionNameFragments.size() == 1 && node->functionNameFragments.front() == STROBJ_NAME &&
+      !isStringRuntime) {
+    sourceFile.requestRuntimeModule(STRING_RT);
+    accessScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
+  }
+
+  for (size_t i = 0; i < node->functionNameFragments.size(); i++) {
     std::string identifier = node->functionNameFragments[i];
+    checkForReservedKeyword(node, identifier);
     SymbolTableEntry *symbolEntry = accessScope->lookup(identifier);
 
     SymbolType symbolBaseType;
     if (symbolEntry != nullptr) {
-      if (symbolEntry->type.getBaseType().is(TY_STRING)) {
-        insertAnonStringStructSymbol(node);
-        symbolBaseType = SymbolType(TY_STRUCT, std::string("String"));
-        accessScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
-        assert(accessScope != nullptr);
-      } else {
-        symbolBaseType = symbolEntry->type.getBaseType();
-      }
+      symbolBaseType = symbolEntry->type.getBaseType();
       symbolEntry->isUsed = true;
     }
 
@@ -2101,9 +2120,11 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
   if (accessScope == currentScope)
     accessScope = rootScope;
 
-  // Avoid this type import
+  // Map this type
   if (thisType.is(TY_IMPORT))
-    thisType = SymbolType(TY_DYN);
+    thisType = SymbolType(TY_DYN); // Avoid this type import
+  else if (thisType.is(TY_STROBJ))
+    thisType = SymbolType(TY_STRUCT, STROBJ_NAME); // Change this type from strobj to struct(String)
 
   // Get the function/procedure instance
   SymbolType origThisType = thisType.replaceBaseSubType(CommonUtil::getLastFragment(thisType.getBaseType().getSubType(), "."));
@@ -2118,7 +2139,6 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
       errArgTypes.push_back({argType, false});
 
     Function f(functionName, specifiers, thisType, SymbolType(TY_DYN), errArgTypes, {}, node);
-
     throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/Procedure '" + f.getSignature() + "' could not be found");
   }
   spiceFunc->isUsed = true;
@@ -2140,7 +2160,12 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
 
   if (constructorCall) {
     // Add anonymous symbol to keep track of de-allocation
-    currentScope->insertAnonymous(thisType, node);
+    currentScope->insertAnonymous(thisType, node, INITIALIZED);
+
+    // Map this type back
+    if (thisType.is(TY_STRUCT, STROBJ_NAME) && !isStringRuntime)
+      thisType = SymbolType(TY_STROBJ); // Change this type from struct(String) to strobj
+
     // Return struct type on constructor call
     return node->setEvaluatedSymbolType(thisType);
   }
@@ -2161,11 +2186,13 @@ std::any AnalyzerVisitor::visitFunctionCall(FunctionCallNode *node) {
     // If the return type is an external struct, initialize it
     if (!scopePathBackup.isEmpty() && scopePathBackup.getCurrentScope()->isImported(currentScope)) {
       std::string scopePrefix = scopePathBackup.getScopePrefix(!spiceFunc->isGenericSubstantiation);
-      SymbolType symbolType =
-          initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node);
-      return node->setEvaluatedSymbolType(symbolType);
+      returnType = initExtStruct(currentScope, scopePrefix, returnType.getSubType(), returnType.getTemplateTypes(), node);
     }
   }
+
+  // Map return type
+  if (returnType.is(TY_STRUCT, STROBJ_NAME) && !isStringRuntime)
+    returnType = SymbolType(TY_STROBJ);
 
   return node->setEvaluatedSymbolType(returnType);
 }
@@ -2220,7 +2247,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
   bool structIsImported = false;
   for (unsigned int i = 0; i < node->structNameFragments.size(); i++) {
     structName = node->structNameFragments[i];
-
+    checkForReservedKeyword(node, structName);
     SymbolTableEntry *symbolEntry = accessScope->lookup(structName);
     if (symbolEntry)
       symbolEntry->isUsed = true;
@@ -2302,7 +2329,7 @@ std::any AnalyzerVisitor::visitStructInstantiation(StructInstantiationNode *node
   }
 
   // Insert anonymous symbol to keep track of dtor calls for de-allocation
-  currentScope->insertAnonymous(structType, node);
+  currentScope->insertAnonymous(structType, node, INITIALIZED);
 
   return node->setEvaluatedSymbolType(structType);
 }
@@ -2373,16 +2400,24 @@ std::any AnalyzerVisitor::visitBaseDataType(BaseDataTypeNode *node) {
 }
 
 std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
-  // Check if it is a generic type
+  // It is a struct type -> get the access scope
+  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
   std::string firstFragment = node->typeNameFragments.front();
+
+  // Check if it is a String type
+  bool isStringRuntime = rootScope->lookupStrict(STROBJ_NAME) != nullptr && !rootScope->lookupCaptureStrict(STROBJ_NAME);
+  if (node->typeNameFragments.size() == 1 && firstFragment == STROBJ_NAME && !isStringRuntime) {
+    sourceFile.requestRuntimeModule(STRING_RT);
+    return node->setEvaluatedSymbolType(SymbolType(TY_STROBJ));
+  }
+
+  // Check if it is a generic type
   SymbolTableEntry *entry = currentScope->lookup(firstFragment);
   if (node->typeNameFragments.size() == 1 && !entry && currentScope->lookupGenericType(firstFragment)) {
+    checkForReservedKeyword(node, firstFragment);
     SymbolType symbolType = *static_cast<SymbolType *>(currentScope->lookupGenericType(firstFragment));
     return node->setEvaluatedSymbolType(symbolType);
   }
-
-  // It is a struct type -> get the access scope
-  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
   // Get type name in format: a.b.c and retrieve the scope in parallel
   std::string accessScopePrefix;
@@ -2390,6 +2425,8 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   bool isImported = false;
   for (unsigned int i = 0; i < node->typeNameFragments.size(); i++) {
     typeName = node->typeNameFragments[i];
+    checkForReservedKeyword(node, typeName);
+
     if (i < node->typeNameFragments.size() - 1)
       accessScopePrefix += typeName + ".";
     entry = accessScope->lookup(typeName);
@@ -2467,39 +2504,56 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   throw std::runtime_error("Base type fall-through");
 }
 
-SymbolType AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {
+void AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {
   // Insert anonymous string symbol
-  SymbolType stringStructType(TY_STRING, "", {.isStringStruct = true}, {});
+  SymbolType stringStructType(TY_STRING, "", {}, {});
   currentScope->insertAnonymous(stringStructType, declNode);
 
   // Enable string runtime
   sourceFile.requestRuntimeModule(STRING_RT);
-
-  return stringStructType;
 }
 
-void AnalyzerVisitor::insertDestructorCall(const AstNode *node, SymbolTableEntry *varEntry) {
+void AnalyzerVisitor::insertDestructorCall(const AstNode *node, const SymbolTableEntry *varEntry) {
+  insertStructMethodCall(node, varEntry, DTOR_FUNCTION_NAME);
+}
+
+void AnalyzerVisitor::insertEmptyConstructorCall(const AstNode *node, const SymbolTableEntry *varEntry) {
+  insertStructMethodCall(node, varEntry, CTOR_FUNCTION_NAME);
+
+  // Add anonymous symbol to keep track of de-allocation
+  SymbolType thisType = varEntry->type;
+  if (thisType.is(TY_STROBJ))
+    thisType = SymbolType(TY_STRUCT, STROBJ_NAME);
+  currentScope->insertAnonymous(thisType, node, INITIALIZED);
+}
+
+void AnalyzerVisitor::insertStructMethodCall(const AstNode *node, const SymbolTableEntry *varEntry, const std::string &name) {
   assert(varEntry != nullptr);
   SymbolType varEntryType = varEntry->type;
-  if (varEntryType.isStringStruct())
-    return;
-  assert(varEntryType.is(TY_STRUCT));
+  assert(varEntryType.isOneOf({TY_STRUCT, TY_STROBJ}));
 
-  // Create Spice function for destructor
-  SymbolTableEntry *structEntry = currentScope->lookup(varEntry->type.getName());
+  // Resolve strobj type
+  if (varEntryType.is(TY_STROBJ)) {
+    sourceFile.requestRuntimeModule(STRING_RT);
+    SymbolTable *stringScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
+    varEntryType = initExtStruct(stringScope, "", STROBJ_NAME, {}, node);
+  }
+
+  // Create Spice function
+  std::string symbolName = varEntryType.getName();
+  SymbolTableEntry *structEntry = currentScope->lookup(symbolName);
   SymbolTable *accessScope = structEntry->scope;
   assert(accessScope != nullptr);
   accessScope = accessScope->getChild(STRUCT_SCOPE_PREFIX + structEntry->name);
   assert(accessScope != nullptr);
-  SymbolType thisType = varEntry->type;
-  Function *spiceFunc = accessScope->matchFunction(currentScope, DTOR_FUNCTION_NAME, thisType, {}, {}, node);
+  Function *spiceFunc = accessScope->matchFunction(currentScope, name, varEntryType, {}, {}, node);
   if (spiceFunc)
     spiceFunc->isUsed = true;
 }
 
-SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix,
-                                          const std::string &structName, const std::vector<SymbolType> &templateTypes,
-                                          const AstNode *node) {
+SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, // NOLINT(misc-no-recursion)
+                                          const std::string &structScopePrefix, const std::string &structName,
+                                          const std::vector<SymbolType> &templateTypes, const AstNode *node) {
   // Get external struct name
   std::string newStructName = structScopePrefix + structName;
 
@@ -2570,4 +2624,12 @@ SymbolType AnalyzerVisitor::initExtGlobal(SymbolTable *sourceScope, const std::s
   externalGlobalSymbol->isUsed = true;
 
   return externalGlobalSymbol->type;
+}
+
+void AnalyzerVisitor::checkForReservedKeyword(const AstNode *node, const std::string &identifier) {
+  if (std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), identifier) != std::end(RESERVED_KEYWORDS))
+    throw SemanticError(
+        node, RESERVED_KEYWORD,
+        "'" + identifier +
+            "' is a reserved keyword for future development of the language. Please use another identifier instead");
 }

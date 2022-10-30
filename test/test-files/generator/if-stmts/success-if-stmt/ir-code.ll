@@ -9,26 +9,30 @@ target triple = "x86_64-w64-windows-gnu"
 define i32 @main() {
 entry.l1:
   %result = alloca i32, align 4
+  %condition = alloca i32, align 4
   %0 = alloca i1, align 1
-  %condition = alloca i1, align 1
+  %condition1 = alloca i1, align 1
   %1 = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  store i1 true, ptr %0, align 1
-  %2 = load i1, ptr %0, align 1
-  store i1 %2, ptr %condition, align 1
-  %3 = load i1, ptr %condition, align 1
-  br i1 %3, label %if.then.l3, label %if.end.l3
+  store i32 3, ptr %condition, align 4
+  %2 = load i32, ptr %condition, align 4
+  %3 = icmp eq i32 %2, 3
+  store i1 %3, ptr %0, align 1
+  %4 = load i1, ptr %0, align 1
+  store i1 %4, ptr %condition1, align 1
+  %5 = load i1, ptr %condition1, align 1
+  br i1 %5, label %if.then.l3, label %if.end.l3
 
 if.then.l3:                                       ; preds = %entry.l1
-  %4 = call i32 (ptr, ...) @printf(ptr @0)
+  %6 = call i32 (ptr, ...) @printf(ptr @0)
   store i32 0, ptr %1, align 4
-  %5 = load i32, ptr %1, align 4
-  ret i32 %5
+  %7 = load i32, ptr %1, align 4
+  ret i32 %7
 
 if.end.l3:                                        ; preds = %entry.l1
-  %6 = call i32 (ptr, ...) @printf(ptr @1)
-  %7 = load i32, ptr %result, align 4
-  ret i32 %7
+  %8 = call i32 (ptr, ...) @printf(ptr @1)
+  %9 = load i32, ptr %result, align 4
+  ret i32 %9
 }
 
 declare i32 @printf(ptr, ...)

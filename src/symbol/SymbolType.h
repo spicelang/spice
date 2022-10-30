@@ -24,6 +24,7 @@ enum SymbolSuperType {
   TY_BYTE,
   TY_CHAR,
   TY_STRING,
+  TY_STROBJ,
   TY_BOOL,
   TY_GENERIC,
   TY_STRUCT,
@@ -37,13 +38,14 @@ enum SymbolSuperType {
   TY_IMPORT
 };
 
+const char *const STROBJ_NAME = "String";
+
 class SymbolType {
 public:
   // Unions
   union TypeChainElementData {
     // Union fields
-    bool isStringStruct; // TY_STRING
-    int arraySize = 0;   // TY_ARRAY
+    int arraySize = 0; // TY_ARRAY
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
@@ -53,12 +55,10 @@ public:
     // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
       // Check super type, subtype and template types
-      if (!equalsIgnoreArraySize(lhs, rhs))
+      if (!itemEqualsIgnoreArraySize(lhs, rhs))
         return false;
       // Check data
       switch (lhs.superType) {
-      case TY_STRING:
-        return lhs.data.isStringStruct == rhs.data.isStringStruct;
       case TY_ARRAY:
         return lhs.data.arraySize == rhs.data.arraySize;
       default:
@@ -67,7 +67,7 @@ public:
     }
 
     // Public methods
-    friend bool equalsIgnoreArraySize(const TypeChainElement &lhs, const TypeChainElement &rhs) {
+    friend bool itemEqualsIgnoreArraySize(const TypeChainElement &lhs, const TypeChainElement &rhs) {
       // Check super type, subtype and template types
       return lhs.superType == rhs.superType && lhs.subType == rhs.subType && lhs.templateTypes == rhs.templateTypes;
     }
@@ -112,7 +112,6 @@ public:
   [[nodiscard]] bool isPrimitive() const;
   [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
   [[nodiscard]] bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const;
-  [[nodiscard]] bool isStringStruct() const;
   [[nodiscard]] SymbolSuperType getSuperType() const;
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;

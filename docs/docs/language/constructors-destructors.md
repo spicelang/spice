@@ -52,7 +52,7 @@ destructor and calls it if available.
 Here is an example for a custom destructor:
 
 ```spice
-// Declarations of the generic type T as well as malloc() and free()
+// Declarations of the generic type T as well as malloc() and free() ...
 
 type ExampleStruct<T> struct {
 	string message

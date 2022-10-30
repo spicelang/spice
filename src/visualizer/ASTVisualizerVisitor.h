@@ -94,30 +94,32 @@ private:
 
   // Private methods
   template <typename T> std::string buildNode(const T *ctx) {
+    std::stringstream result;
+
     // Prepare strings
     std::string codeLoc = ctx->codeLoc.toString();
     std::string nodeName = getNodeName(ctx);
     std::string nodeId = codeLoc + "_" + nodeName;
 
     // Build result
-    std::string result = nodeId + R"( [color="lightgreen",label=")" + nodeName + "\"];\n";
+    result << nodeId << R"( [color="lightgreen",label=")" << nodeName << "\"];\n";
 
     // Link parent node with the current one
     std::string parentNodeIdBackup = parentNodeId;
     if (!parentNodeId.empty())
-      result += getSpaces() + parentNodeId + " -> " + nodeId + ";\n";
+      result << getSpaces() << parentNodeId << " -> " << nodeId << ";\n";
     parentNodeId = nodeId; // Set parentNodeId for children
 
     // Visit all the children
-    for (auto &child : ctx->children) {
-      result += getSpaces();
-      result += any_cast<std::string>(visit(child));
+    for (const auto &child : ctx->children) {
+      result << getSpaces();
+      result << any_cast<std::string>(visit(child));
     }
 
     // Restore parent node id
     parentNodeId = parentNodeIdBackup;
 
-    return result;
+    return result.str();
   }
 
   template <typename T> std::string getNodeName(const T *) const {

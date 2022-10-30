@@ -67,7 +67,7 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   }
 }
 
-void SourceFile::visualizeCST() {
+void SourceFile::visualizeCST() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
@@ -114,7 +114,7 @@ void SourceFile::visualizeCST() {
   }
 }
 
-void SourceFile::buildAST() {
+void SourceFile::buildAST() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
@@ -128,7 +128,7 @@ void SourceFile::buildAST() {
   antlrCtx.parser->reset();
 }
 
-void SourceFile::visualizeAST() {
+void SourceFile::visualizeAST() { // NOLINT(misc-no-recursion)
   // Only execute if enabled
   if (restoredFromCache || (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode))
     return;
@@ -171,7 +171,7 @@ void SourceFile::visualizeAST() {
   }
 }
 
-void SourceFile::preAnalyze() {
+void SourceFile::preAnalyze() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
@@ -187,7 +187,7 @@ void SourceFile::preAnalyze() {
   }
 }
 
-void SourceFile::analyze() {
+void SourceFile::analyze() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
@@ -207,12 +207,12 @@ void SourceFile::analyze() {
   }
 
   // Analyze this source file
-  analyzer = std::make_shared<AnalyzerVisitor>(resourceManager, *this, parent == nullptr, stdFile);
+  analyzer = std::make_shared<AnalyzerVisitor>(resourceManager, *this, parent == nullptr);
   analyzer->visit(ast.get());
   antlrCtx.parser->reset();
 }
 
-void SourceFile::reAnalyze() {
+void SourceFile::reAnalyze() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
@@ -242,7 +242,7 @@ void SourceFile::reAnalyze() {
   } // GCOV_EXCL_STOP
 }
 
-void SourceFile::generate() {
+void SourceFile::generate() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
@@ -276,7 +276,7 @@ void SourceFile::generate() {
   } // GCOV_EXCL_STOP
 }
 
-void SourceFile::optimize() {
+void SourceFile::optimize() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
@@ -301,7 +301,7 @@ void SourceFile::optimize() {
   } // GCOV_EXCL_STOP
 }
 
-void SourceFile::emitObjectFile() {
+void SourceFile::emitObjectFile() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
@@ -331,21 +331,22 @@ void SourceFile::emitObjectFile() {
     resourceManager.cacheManager.cacheSourceFile(this);
 }
 
-std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &name, const std::string &filePath, bool stdFile) {
-  return std::make_shared<SourceFile>(resourceManager, this, name, filePath, stdFile);
+std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &dependencyName, const std::string &path,
+                                                         bool isStdFile) {
+  return std::make_shared<SourceFile>(resourceManager, this, dependencyName, path, isStdFile);
 }
 
-void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, const AstNode *declAstNode, const std::string &name,
-                               const std::string &filePath) {
+void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, const AstNode *declAstNode,
+                               const std::string &dependencyName, const std::string &path) {
   // Check if this would cause a circular dependency
-  if (isAlreadyImported(filePath))
-    throw SemanticError(declAstNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + filePath + "'");
+  if (isAlreadyImported(path))
+    throw SemanticError(declAstNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + path + "'");
 
   // Add the dependency
-  dependencies.insert({name, {sourceFile, declAstNode}});
+  dependencies.insert({dependencyName, {sourceFile, declAstNode}});
 }
 
-bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {
+bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { // NOLINT(misc-no-recursion)
   // Check if the current source file corresponds to the path to search
   if (filePath == filePathSearch)
     return true;
@@ -353,7 +354,7 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const {
   return parent != nullptr && parent->isAlreadyImported(filePathSearch);
 }
 
-void SourceFile::printWarnings() const {
+void SourceFile::printWarnings() const { // NOLINT(misc-no-recursion)
   // Print warnings for all dependencies
   for (const auto &dependency : dependencies) {
     if (!dependency.second.first->stdFile)

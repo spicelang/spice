@@ -644,10 +644,10 @@ std::any AstBuilderVisitor::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
   saveErrorMessage(enumItemNode, ctx);
 
   for (const auto &subTree : ctx->children) {
-    if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER)
-      enumItemNode->itemName = t->getText();
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INT_LIT) {
-      enumItemNode->itemValue = parseInt(t);
+    if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::IDENTIFIER)
+      enumItemNode->name = t1->getText();
+    else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::INT_LIT) {
+      enumItemNode->itemValue = parseInt(t2);
       enumItemNode->hasValue = true;
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1213,9 +1213,9 @@ std::any AstBuilderVisitor::visitAdditiveExpr(SpiceParser::AdditiveExprContext *
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::MultiplicativeExprContext *>(subTree); rule != nullptr) // MultiplicativeExpr
       currentNode = additiveExprNode->createChild<MultiplicativeExprNode>(CodeLoc(rule->start, fileName));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::PLUS)
+    else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::PLUS)
       additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_PLUS, SymbolType(TY_INVALID));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::MINUS)
+    else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::MINUS)
       additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, SymbolType(TY_INVALID));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1236,11 +1236,11 @@ std::any AstBuilderVisitor::visitMultiplicativeExpr(SpiceParser::MultiplicativeE
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::CastExprContext *>(subTree); rule != nullptr) // CastExpr
       currentNode = multiplicativeExprNode->createChild<CastExprNode>(CodeLoc(rule->start, fileName));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::MUL)
+    else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::MUL)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_MUL, SymbolType(TY_INVALID));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::DIV)
+    else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DIV)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_DIV, SymbolType(TY_INVALID));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::REM)
+    else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::REM)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, SymbolType(TY_INVALID));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1308,15 +1308,17 @@ std::any AstBuilderVisitor::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprC
       currentNode = postfixUnaryExprNode->createChild<AssignExprNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(subTree); rule != nullptr) // PostfixUnaryExpr
       currentNode = postfixUnaryExprNode->createChild<PostfixUnaryExprNode>(CodeLoc(rule->start, fileName));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::LBRACKET)
+    else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::LBRACKET)
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_SUBSCRIPT, SymbolType(TY_INVALID));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::DOT)
+    else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DOT)
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_MEMBER_ACCESS, SymbolType(TY_INVALID));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::PLUS_PLUS)
+    else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::PLUS_PLUS)
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_PLUS_PLUS, SymbolType(TY_INVALID));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::MINUS_MINUS)
+    else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+             t4->getSymbol()->getType() == SpiceParser::MINUS_MINUS)
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_MINUS_MINUS, SymbolType(TY_INVALID));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
+    else if (auto t5 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+             t5->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_SCOPE_ACCESS, SymbolType(TY_INVALID));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1392,36 +1394,39 @@ std::any AstBuilderVisitor::visitPrimitiveValue(SpiceParser::PrimitiveValueConte
       primitiveValueNode->type = PrimitiveValueNode::TYPE_DOUBLE;
       primitiveValueNode->compileTimeValue.doubleValue = std::stod(t->toString());
       primitiveValueNode->hasDirectCompileTimeValue = true;
-    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::INT_LIT) {
+    } else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+               t1->getSymbol()->getType() == SpiceParser::INT_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_INT;
-      primitiveValueNode->compileTimeValue.intValue = parseInt(t);
+      primitiveValueNode->compileTimeValue.intValue = parseInt(t1);
       primitiveValueNode->hasDirectCompileTimeValue = true;
-    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
-               t->getSymbol()->getType() == SpiceParser::SHORT_LIT) {
+    } else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+               t2->getSymbol()->getType() == SpiceParser::SHORT_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_SHORT;
-      primitiveValueNode->compileTimeValue.shortValue = parseShort(t);
+      primitiveValueNode->compileTimeValue.shortValue = parseShort(t2);
       primitiveValueNode->hasDirectCompileTimeValue = true;
-    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::LONG_LIT) {
+    } else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+               t3->getSymbol()->getType() == SpiceParser::LONG_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_LONG;
-      primitiveValueNode->compileTimeValue.longValue = parseLong(t);
+      primitiveValueNode->compileTimeValue.longValue = parseLong(t3);
       primitiveValueNode->hasDirectCompileTimeValue = true;
-    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::CHAR_LIT) {
+    } else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+               t4->getSymbol()->getType() == SpiceParser::CHAR_LIT) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_CHAR;
       primitiveValueNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
       primitiveValueNode->hasDirectCompileTimeValue = true;
-    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
-               t->getSymbol()->getType() == SpiceParser::STRING_LIT) {
+    } else if (auto t5 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+               t5->getSymbol()->getType() == SpiceParser::STRING_LIT) {
       std::string stringValue = parseString(ctx->STRING_LIT()->toString());
 
       primitiveValueNode->type = PrimitiveValueNode::TYPE_STRING;
       primitiveValueNode->compileTimeStringValue = stringValue;
       primitiveValueNode->compileTimeValue.stringValue = primitiveValueNode->compileTimeStringValue.c_str();
       primitiveValueNode->hasDirectCompileTimeValue = true;
-    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TRUE) {
+    } else if (auto t6 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t6->getSymbol()->getType() == SpiceParser::TRUE) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_BOOL;
       primitiveValueNode->compileTimeValue.boolValue = true;
       primitiveValueNode->hasDirectCompileTimeValue = true;
-    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::FALSE) {
+    } else if (auto t7 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t7->getSymbol()->getType() == SpiceParser::FALSE) {
       primitiveValueNode->type = PrimitiveValueNode::TYPE_BOOL;
       primitiveValueNode->compileTimeValue.boolValue = false;
       primitiveValueNode->hasDirectCompileTimeValue = true;
@@ -1522,9 +1527,9 @@ std::any AstBuilderVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::BaseDataTypeContext *>(subTree); rule != nullptr) // BaseDataType
       currentNode = dataTypeNode->createChild<BaseDataTypeNode>(CodeLoc(rule->start, fileName));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::MUL)
+    else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::MUL)
       dataTypeNode->tmQueue.push({DataTypeNode::TYPE_PTR, false, false, 0});
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::LBRACKET) {
+    else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::LBRACKET) {
       i++; // Consume LBRACKET
       subTree = ctx->children[i];
       bool hasSize = false;
@@ -1535,11 +1540,11 @@ std::any AstBuilderVisitor::visitDataType(SpiceParser::DataTypeContext *ctx) {
         hardCodedSize = -1;
         currentNode = dataTypeNode->createChild<AssignExprNode>(CodeLoc(rule->start, fileName));
         i++; // Consume INTEGER
-      } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
-                 t->getSymbol()->getType() == SpiceParser::INT_LIT) {
+      } else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+                 t3->getSymbol()->getType() == SpiceParser::INT_LIT) {
         hasSize = true;
         isHardcoded = true;
-        hardCodedSize = std::stoi(t->getSymbol()->getText());
+        hardCodedSize = std::stoi(t3->getSymbol()->getText());
         i++; // Consume INTEGER
       }
       dataTypeNode->tmQueue.push({DataTypeNode::TYPE_ARRAY, hasSize, isHardcoded, hardCodedSize});
@@ -1563,24 +1568,24 @@ std::any AstBuilderVisitor::visitBaseDataType(SpiceParser::BaseDataTypeContext *
     if (rule = dynamic_cast<SpiceParser::CustomDataTypeContext *>(subTree); rule != nullptr) { // CustomDataType
       baseDataTypeNode->type = BaseDataTypeNode::TY_CUSTOM;
       currentNode = baseDataTypeNode->createChild<CustomDataTypeNode>(CodeLoc(rule->start, fileName));
-    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
-               t->getSymbol()->getType() == SpiceParser::TYPE_DOUBLE)
+    } else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+               t1->getSymbol()->getType() == SpiceParser::TYPE_DOUBLE)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_DOUBLE;
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TYPE_INT)
+    else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::TYPE_INT)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_INT;
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TYPE_SHORT)
+    else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::TYPE_SHORT)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_SHORT;
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TYPE_LONG)
+    else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t4->getSymbol()->getType() == SpiceParser::TYPE_LONG)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_LONG;
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TYPE_BYTE)
+    else if (auto t5 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t5->getSymbol()->getType() == SpiceParser::TYPE_BYTE)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_BYTE;
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TYPE_CHAR)
+    else if (auto t6 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t6->getSymbol()->getType() == SpiceParser::TYPE_CHAR)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_CHAR;
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TYPE_STRING)
+    else if (auto t7 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t7->getSymbol()->getType() == SpiceParser::TYPE_STRING)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_STRING;
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TYPE_BOOL)
+    else if (auto t8 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t8->getSymbol()->getType() == SpiceParser::TYPE_BOOL)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_BOOL;
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::TYPE_DYN)
+    else if (auto t9 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t9->getSymbol()->getType() == SpiceParser::TYPE_DYN)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_DYN;
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1694,20 +1699,20 @@ void AstBuilderVisitor::replaceEscapeChars(std::string &string) {
 }
 
 int32_t AstBuilderVisitor::parseInt(antlr4::tree::TerminalNode *terminal) {
-  std::function<int32_t(const std::string &, int)> cb = [this](const std::string &substr, int base) {
+  std::function<int32_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return std::stoi(substr, nullptr, base);
   };
   return parseNumeric(terminal, cb);
 }
 int16_t AstBuilderVisitor::parseShort(antlr4::tree::TerminalNode *terminal) {
-  std::function<int16_t(const std::string &, int)> cb = [this](const std::string &substr, int base) {
+  std::function<int16_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return (int16_t)std::stoi(substr, nullptr, base);
   };
   return parseNumeric(terminal, cb);
 }
 
 int64_t AstBuilderVisitor::parseLong(antlr4::tree::TerminalNode *terminal) {
-  std::function<int64_t(const std::string &, int)> cb = [this](const std::string &substr, int base) {
+  std::function<int64_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return std::stoll(substr, nullptr, base);
   };
   return parseNumeric(terminal, cb);

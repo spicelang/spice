@@ -46,7 +46,7 @@ class SourceFile;
 class AnalyzerVisitor : public AstVisitor {
 public:
   // Constructors
-  explicit AnalyzerVisitor(GlobalResourceManager &resourceManager, SourceFile &sourceFile, bool requiresMainFct, bool stdFile);
+  explicit AnalyzerVisitor(GlobalResourceManager &resourceManager, SourceFile &sourceFile, bool requiresMainFct);
 
   // Friend classes
   friend class OpRuleManager;
@@ -114,8 +114,7 @@ private:
   SourceFile &sourceFile;
   bool requiresMainFct = true;
   bool hasMainFunction = false;
-  bool isStdFile = false;
-  unsigned int runNumber = 1;
+  size_t runNumber = 1;
   bool reAnalyzeRequired = false;
   SymbolTable *currentScope = nullptr;
   SymbolTable *rootScope = nullptr;
@@ -128,10 +127,13 @@ private:
   bool allowUnsafeOperations = false;
 
   // Private methods
-  SymbolType insertAnonStringStructSymbol(const AstNode *declNode);
-  void insertDestructorCall(const AstNode *node, SymbolTableEntry *varEntry);
+  void insertAnonStringStructSymbol(const AstNode *declNode);
+  void insertDestructorCall(const AstNode *node, const SymbolTableEntry *varEntry);
+  void insertEmptyConstructorCall(const AstNode *node, const SymbolTableEntry *varEntry);
+  void insertStructMethodCall(const AstNode *node, const SymbolTableEntry *varEntry, const std::string &name);
   SymbolType initExtStruct(SymbolTable *sourceScope, const std::string &structScopePrefix, const std::string &structName,
                            const std::vector<SymbolType> &templateTypes, const AstNode *node);
   SymbolType initExtGlobal(SymbolTable *sourceScope, const std::string &globalScopePrefix, const std::string &globalName,
                            const AstNode *node);
+  static void checkForReservedKeyword(const AstNode *node, const std::string &identifier) ;
 };

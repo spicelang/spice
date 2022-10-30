@@ -14,7 +14,7 @@ public:
       : context(resourceManager.context), builder(resourceManager.builder), module(module) {}
 
   // Public methods for type retrieval
-  static llvm::StructType *getStringStructType(llvm::LLVMContext &context);
+  static llvm::StructType *getStrobjType(llvm::LLVMContext &context);
 
   // Public methods for function retrieval
   [[nodiscard]] llvm::Function *getPrintfFct() const;
@@ -23,11 +23,11 @@ public:
   [[nodiscard]] llvm::Function *getStackRestoreIntrinsic() const;
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
   [[nodiscard]] llvm::Function *getStringGetRawFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorCharFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorStringFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorStringStringFct() const;
-  [[nodiscard]] llvm::Function *getStringDtorFct() const;
+  [[nodiscard]] llvm::Function *getStringCtorStrobjFct() const;
+  [[nodiscard]] llvm::Function *getStringCtorStrobjStringFct() const;
+  [[nodiscard]] llvm::Function *getStringCtorStrobjStrobjFct() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
+  [[nodiscard]] llvm::Function *getStringIsEqualStrobjFct() const;
   [[nodiscard]] llvm::Function *getStringAppendStringFct() const;
   [[nodiscard]] llvm::Function *getStringAppendCharFct() const;
   [[nodiscard]] llvm::Function *getStringMulOpIntFct() const;

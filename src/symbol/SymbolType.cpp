@@ -100,7 +100,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
  * @param accessScope Access scope for structs
  * @return Corresponding LLVM type
  */
-llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const {
+llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const { // NOLINT(misc-no-recursion)
   assert(!typeChain.empty() && !isOneOf({TY_DYN, TY_INVALID}));
 
   if (is(TY_DOUBLE))
@@ -118,13 +118,11 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
   if (isOneOf({TY_CHAR, TY_BYTE}))
     return llvm::Type::getInt8Ty(context);
 
-  if (is(TY_STRING)) {
-    if (typeChain.back().data.isStringStruct) {
-      return StdFunctionManager::getStringStructType(context);
-    } else {
-      return llvm::Type::getInt8PtrTy(context);
-    }
-  }
+  if (is(TY_STRING))
+    return llvm::Type::getInt8PtrTy(context);
+
+  if (is(TY_STROBJ))
+    return StdFunctionManager::getStrobjType(context);
 
   if (is(TY_BOOL))
     return llvm::Type::getInt1Ty(context);
@@ -251,13 +249,6 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
 }
 
 /**
- * Check if the current type is a string object type
- *
- * @return String struct or not
- */
-bool SymbolType::isStringStruct() const { return getSuperType() == TY_STRING && typeChain.back().data.isStringStruct; }
-
-/**
  * Retrieve the super type of the current type
  *
  * @return Super type
@@ -306,7 +297,7 @@ std::vector<SymbolType> SymbolType::getTemplateTypes() const { return typeChain.
  * @param withSize Include the array size for sized types
  * @return Symbol type name
  */
-std::string SymbolType::getName(bool withSize, bool mangledName) const {
+std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLINT(misc-no-recursion)
   std::string name;
   TypeChain chain = typeChain;
   for (int i = 0; i < typeChain.size(); i++) {
@@ -364,7 +355,7 @@ bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs) {
 
   // Compare stack elements
   for (int i = 0; i < lhs.typeChain.size(); i++) {
-    if (!equalsIgnoreArraySize(lhs.typeChain.back(), rhs.typeChain.back()))
+    if (!itemEqualsIgnoreArraySize(lhs.typeChain.back(), rhs.typeChain.back()))
       return false;
     lhs.typeChain.pop_back();
     rhs.typeChain.pop_back();
@@ -387,7 +378,8 @@ void SymbolType::setSubType(const std::string &newSubType) { typeChain.back().su
  * @param withSize Include size in string
  * @return Type chain element name
  */
-std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName) {
+std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, // NOLINT(misc-no-recursion)
+                                                bool mangledName) {
   switch (chainElement.superType) {
   case TY_PTR:
     return mangledName ? "ptr" : "*";
@@ -412,6 +404,8 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "char";
   case TY_STRING:
     return "string";
+  case TY_STROBJ:
+    return STROBJ_NAME;
   case TY_BOOL:
     return "bool";
   case TY_STRUCT: {

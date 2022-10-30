@@ -22,7 +22,7 @@ public:
 
 private:
   // Private methods
-  void addModule(SourceFile *parentSourceFile, const RuntimeModuleName &moduleName);
+  bool addModule(SourceFile *parentSourceFile, const RuntimeModuleName &moduleName);
 
   // Private fields
   std::map<RuntimeModuleName, SourceFile *> modules;
