@@ -12,10 +12,10 @@ class AstNode;
 
 #define ERROR_MESSAGE_CONTEXT 20
 
-class AstBuilderVisitor : public SpiceVisitor {
+class AstBuilder : public SpiceVisitor {
 public:
   // Constructors
-  explicit AstBuilderVisitor(AstNode *rootNode, std::string fileName, antlr4::ANTLRInputStream *inputStream)
+  explicit AstBuilder(AstNode *rootNode, std::string fileName, antlr4::ANTLRInputStream *inputStream)
       : currentNode(rootNode), fileName(std::move(fileName)), inputStream(inputStream) {}
 
   // Public methods

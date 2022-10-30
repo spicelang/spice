@@ -5,7 +5,7 @@
 #include <ast/AstNodes.h>
 #include <ast/AstVisitor.h>
 
-#include <analyzer/OpRuleManager.h>
+#include <typechecker/OpRuleManager.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
 

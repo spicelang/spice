@@ -10,7 +10,7 @@
 #include <SpiceParser.h>
 #include <Token.h>
 
-#include <dependency/RuntimeModuleManager.h>
+#include <global/RuntimeModuleManager.h>
 #include <util/CompilerWarning.h>
 
 #include <llvm/IR/IRBuilder.h>

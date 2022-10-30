@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <dependency/GlobalResourceManager.h>
+#include <global/GlobalResourceManager.h>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>

@@ -4,11 +4,11 @@
 
 #include <stdexcept>
 
+#include <SourceFile.h>
 #include <analyzer/AnalyzerVisitor.h>
 #include <cli/CliInterface.h>
-#include <dependency/GlobalResourceManager.h>
-#include <dependency/SourceFile.h>
 #include <exception/IRError.h>
+#include <global/GlobalResourceManager.h>
 #include <symbol/Function.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolTable.h>

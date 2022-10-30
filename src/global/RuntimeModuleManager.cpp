@@ -2,7 +2,7 @@
 
 #include "RuntimeModuleManager.h"
 
-#include <dependency/SourceFile.h>
+#include <SourceFile.h>
 #include <symbol/SymbolTable.h>
 #include <util/FileUtil.h>
 
