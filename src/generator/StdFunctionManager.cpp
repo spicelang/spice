@@ -37,8 +37,8 @@ llvm::Function *StdFunctionManager::getStringGetRawFct() const {
   return getFunction("_mf__String__charptr__getRaw", builder.getPtrTy(), getStrobjType(context)->getPointerTo());
 }
 
-llvm::Function *StdFunctionManager::getStringCtorStringFct() const {
-  return getProcedure("_mp__String__void__ctor__string", {builder.getPtrTy(), builder.getPtrTy()});
+llvm::Function *StdFunctionManager::getStringCtorStrobjFct() const {
+  return getProcedure("_mp__String__void__ctor__String", {builder.getPtrTy(), getStrobjType(context)});
 }
 
 llvm::Function *StdFunctionManager::getStringCtorStrobjStringFct() const {

@@ -23,7 +23,7 @@ public:
   [[nodiscard]] llvm::Function *getStackRestoreIntrinsic() const;
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
   [[nodiscard]] llvm::Function *getStringGetRawFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorStringFct() const;
+  [[nodiscard]] llvm::Function *getStringCtorStrobjFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStrobjStringFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStrobjStrobjFct() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;

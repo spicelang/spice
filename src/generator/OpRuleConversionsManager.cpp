@@ -1182,12 +1182,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     return {.value = builder.CreateMul(lhsLong, rhsV)};
   }
   case COMB(TY_INT, TY_STROBJ): {
-    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
-    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    // Generate call to the copy constructor of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(rhsTy);
-    llvm::Value *structSize = builder.getInt64(typeSize);
-    builder.CreateCall(opFct, {thisPtr, rhsP, structSize, builder.getTrue()});
+    builder.CreateCall(opFct, {thisPtr, rhsV});
     // Generate call to the method opMul(int) of the String struct
     opFct = stdFunctionManager->getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
@@ -1212,12 +1210,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     return {.value = builder.CreateMul(lhsLong, rhsV)};
   }
   case COMB(TY_SHORT, TY_STROBJ): {
-    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
-    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    // Generate call to the copy constructor of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(rhsTy);
-    llvm::Value *structSize = builder.getInt64(typeSize);
-    builder.CreateCall(opFct, {thisPtr, rhsP, structSize, builder.getTrue()});
+    builder.CreateCall(opFct, {thisPtr, rhsV});
     // Generate call to the method opMul(short) of the String struct
     opFct = stdFunctionManager->getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
@@ -1239,12 +1235,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
   case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateMul(lhsV, rhsV)};
   case COMB(TY_LONG, TY_STROBJ): {
-    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
-    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    // Generate call to the copy constructor of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(rhsTy);
-    llvm::Value *structSize = builder.getInt64(typeSize);
-    builder.CreateCall(opFct, {thisPtr, rhsP, structSize, builder.getTrue()});
+    builder.CreateCall(opFct, {thisPtr, rhsV});
     // Generate call to the method opMul(long) of the String struct
     opFct = stdFunctionManager->getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
@@ -1257,12 +1251,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateMul(lhsV, rhsV)};
   case COMB(TY_STROBJ, TY_INT): {
-    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
-    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    // Generate call to the copy constructor of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(lhsTy);
-    llvm::Value *structSize = builder.getInt64(typeSize);
-    builder.CreateCall(opFct, {thisPtr, lhsP, structSize, builder.getTrue()});
+    builder.CreateCall(opFct, {thisPtr, lhsV});
     // Generate call to the method opMul(int) of the String struct
     opFct = stdFunctionManager->getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
@@ -1273,12 +1265,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     return {.ptr = thisPtr};
   }
   case COMB(TY_STROBJ, TY_SHORT): {
-    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
-    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    // Generate call to the copy constructor of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(lhsTy);
-    llvm::Value *structSize = builder.getInt64(typeSize);
-    builder.CreateCall(opFct, {thisPtr, lhsP, structSize, builder.getTrue()});
+    builder.CreateCall(opFct, {thisPtr, lhsV});
     // Generate call to the method opMul(short) of the String struct
     opFct = stdFunctionManager->getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
@@ -1289,12 +1279,10 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     return {.ptr = thisPtr};
   }
   case COMB(TY_STROBJ, TY_LONG): {
-    // Generate call to the llvm.memcpy intrinsic to deep copy the String struct
-    llvm::Function *opFct = stdFunctionManager->getMemcpyIntrinsic();
+    // Generate call to the copy constructor of the String struct
+    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
     llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
-    unsigned int typeSize = generator->module->getDataLayout().getTypeSizeInBits(lhsTy);
-    llvm::Value *structSize = builder.getInt64(typeSize);
-    builder.CreateCall(opFct, {thisPtr, lhsP, structSize, builder.getTrue()});
+    builder.CreateCall(opFct, {thisPtr, lhsV});
     // Generate call to the method opMul(long) of the String struct
     opFct = stdFunctionManager->getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});

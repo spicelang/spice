@@ -1821,9 +1821,9 @@ std::any AnalyzerVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       break;
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
-      // Check if lhs is struct
-      if (!lhs.isBaseType(TY_STRUCT) && !lhs.isOneOf({TY_ENUM, TY_STRING}))
-        throw SemanticError(node, MEMBER_ACCESS_ONLY_STRUCTS, "Cannot apply member access operator on " + lhs.getName());
+      // Check if lhs is enum or strobj
+      if (!lhs.isBaseType(TY_STRUCT) && !lhs.isOneOf({TY_ENUM, TY_STROBJ}))
+        throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhs.getName());
 
       currentThisType = lhs;
 
