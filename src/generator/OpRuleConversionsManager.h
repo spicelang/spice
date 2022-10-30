@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#include <dependency/GlobalResourceManager.h>
+#include <global/GlobalResourceManager.h>
 #include <symbol/SymbolType.h>
 
 #include <llvm/IR/Value.h>

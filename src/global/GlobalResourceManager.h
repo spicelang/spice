@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <dependency/CacheManager.h>
-#include <dependency/RuntimeModuleManager.h>
+#include <global/CacheManager.h>
+#include <global/RuntimeModuleManager.h>
 #include <linker/LinkerInterface.h>
 #include <util/ThreadFactory.h>
 

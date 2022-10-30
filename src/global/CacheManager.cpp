@@ -2,7 +2,7 @@
 
 #include "CacheManager.h"
 
-#include <dependency/SourceFile.h>
+#include <SourceFile.h>
 #include <util/FileUtil.h>
 
 bool CacheManager::lookupSourceFile(SourceFile *sourceFile) {

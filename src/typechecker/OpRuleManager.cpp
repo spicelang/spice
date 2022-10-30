@@ -4,7 +4,7 @@
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <ast/AstNodes.h>
-#include <dependency/RuntimeModuleManager.h>
+#include <global/RuntimeModuleManager.h>
 
 SymbolType OpRuleManager::getAssignResultType(const AstNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference

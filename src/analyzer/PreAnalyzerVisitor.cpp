@@ -4,7 +4,7 @@
 
 #include <ast/AstNodes.h>
 #include <cli/CliInterface.h>
-#include <dependency/SourceFile.h>
+#include <SourceFile.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/SemanticError.h>
 #include <util/CommonUtil.h>

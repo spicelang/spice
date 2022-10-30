@@ -11,8 +11,8 @@
 
 #include "TestUtil.h"
 #include <cli/CliInterface.h>
-#include <dependency/GlobalResourceManager.h>
-#include <dependency/SourceFile.h>
+#include <global/GlobalResourceManager.h>
+#include <SourceFile.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>

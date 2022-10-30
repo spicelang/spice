@@ -4,11 +4,11 @@
 
 #include <utility>
 
+#include <SourceFile.h>
 #include <cli/CliInterface.h>
-#include <dependency/GlobalResourceManager.h>
-#include <dependency/RuntimeModuleManager.h>
-#include <dependency/SourceFile.h>
 #include <exception/SemanticError.h>
+#include <global/GlobalResourceManager.h>
+#include <global/RuntimeModuleManager.h>
 #include <symbol/Function.h>
 #include <symbol/GenericType.h>
 #include <symbol/Interface.h>

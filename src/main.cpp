@@ -1,8 +1,8 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include <cli/CliInterface.h>
-#include <dependency/GlobalResourceManager.h>
-#include <dependency/SourceFile.h>
+#include <global/GlobalResourceManager.h>
+#include <SourceFile.h>
 #include <exception/CliError.h>
 #include <exception/IRError.h>
 #include <exception/LexerError.h>

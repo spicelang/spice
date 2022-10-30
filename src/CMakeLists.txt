@@ -3,25 +3,64 @@ find_package(ANTLR REQUIRED)
 antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/Spice.g4 VISITOR)
 
 set(SOURCES
+        # Global source files
         main.cpp
+        CompilerPass.h
+        SourceFile.cpp
+        SourceFile.h
+        # Global resource
+        global/GlobalResourceManager.h
+        global/CacheManager.cpp
+        global/CacheManager.h
+        global/RuntimeModuleManager.cpp
+        global/RuntimeModuleManager.h
+        # CLI
         cli/CliInterface.cpp
         cli/CliInterface.h
-        parser/AstBuilderVisitor.cpp
-        parser/AstBuilderVisitor.h
-        analyzer/PreAnalyzerVisitor.cpp
-        analyzer/PreAnalyzerVisitor.h
-        analyzer/AnalyzerVisitor.cpp
-        analyzer/AnalyzerVisitor.h
-        analyzer/OpRuleManager.cpp
-        analyzer/OpRuleManager.h
-        generator/GeneratorVisitor.cpp
-        generator/GeneratorVisitor.h
-        generator/StdFunctionManager.cpp
-        generator/StdFunctionManager.h
-        generator/OpRuleConversionsManager.cpp
-        generator/OpRuleConversionsManager.h
+        # CST visualizer
+        visualizer/CSTVisualizerVisitor.cpp
+        visualizer/CSTVisualizerVisitor.h
+        # AST builder
+        ast/AbstractAstVisitor.cpp
+        ast/AbstractAstVisitor.h
+        ast/AstVisitor.cpp
+        ast/AstVisitor.h
+        ast/AstNodes.h
+        ast/AstBuilder.cpp
+        ast/AstBuilder.h
+        # AST visualizer
+        visualizer/ASTVisualizerVisitor.cpp
+        visualizer/ASTVisualizerVisitor.h
+        # Import collector
+        importcollector/ImportCollector.cpp
+        importcollector/ImportCollector.h
+        # Semantic analyzer
+        semanticanalyzer/SemanticAnalyzer.cpp
+        semanticanalyzer/SemanticAnalyzer.h
+        # Type checker
+        typechecker/TypeChecker.cpp
+        typechecker/TypeChecker.h
+        typechecker/OpRuleManager.cpp
+        typechecker/OpRuleManager.h
+        # Borrow checker
+        borrowchecker/BorrowChecker.cpp
+        borrowchecker/BorrowChecker.h
+        # Escape analyzer
+        escapeanalyzer/EscapeAnalyzer.cpp
+        escapeanalyzer/EscapeAnalyzer.h
+        # IR generator
+        irgenerator/IRGenerator.cpp
+        irgenerator/IRGenerator.h
+        # IR optimizer
+        iroptimizer/IROptimizer.cpp
+        iroptimizer/IROptimizer.h
+        # Object emitter
+        objectemitter/ObjectEmitter.cpp
+        objectemitter/ObjectEmitter.h
+        # Linker
         linker/LinkerInterface.cpp
         linker/LinkerInterface.h
+        # Symbol table management
         symbol/SymbolTable.cpp
         symbol/SymbolTable.h
         symbol/SymbolTableEntry.cpp
@@ -42,18 +81,7 @@ set(SOURCES
         symbol/ScopePath.h
         symbol/SymbolSpecifiers.cpp
         symbol/SymbolSpecifiers.h
-        ast/AbstractAstVisitor.cpp
-        ast/AbstractAstVisitor.h
-        ast/AstVisitor.cpp
-        ast/AstVisitor.h
-        ast/AstNodes.h
-        dependency/SourceFile.cpp
-        dependency/SourceFile.h
-        dependency/GlobalResourceManager.h
-        dependency/CacheManager.cpp
-        dependency/CacheManager.h
-        dependency/RuntimeModuleManager.cpp
-        dependency/RuntimeModuleManager.h
+        # Exception handling
         exception/CliError.cpp
         exception/CliError.h
         exception/SemanticError.cpp
@@ -68,10 +96,7 @@ set(SOURCES
         exception/ParserError.h
         exception/AntlrThrowingErrorListener.cpp
         exception/AntlrThrowingErrorListener.h
-        visualizer/CSTVisualizerVisitor.cpp
-        visualizer/CSTVisualizerVisitor.h
-        visualizer/ASTVisualizerVisitor.cpp
-        visualizer/ASTVisualizerVisitor.h
+        # Utility
         util/CommonUtil.cpp
         util/CommonUtil.h
         util/ThreadFactory.cpp
@@ -81,7 +106,20 @@ set(SOURCES
         util/CodeLoc.cpp
         util/CodeLoc.h
         util/CompilerWarning.cpp
-        util/CompilerWarning.h)
+        util/CompilerWarning.h
+
+        # ToDo: Remove
+        analyzer/PreAnalyzerVisitor.cpp
+        analyzer/PreAnalyzerVisitor.h
+        analyzer/AnalyzerVisitor.cpp
+        analyzer/AnalyzerVisitor.h
+        generator/GeneratorVisitor.cpp
+        generator/GeneratorVisitor.h
+        generator/StdFunctionManager.cpp
+        generator/StdFunctionManager.h
+        generator/OpRuleConversionsManager.cpp
+        generator/OpRuleConversionsManager.h
+)
 
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 

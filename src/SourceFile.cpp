@@ -5,10 +5,10 @@
 #include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
 #include <ast/AstNodes.h>
-#include <dependency/GlobalResourceManager.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <generator/GeneratorVisitor.h>
-#include <parser/AstBuilderVisitor.h>
+#include <global/GlobalResourceManager.h>
+#include <ast/AstBuilder.h>
 #include <symbol/SymbolTable.h>
 #include <util/CodeLoc.h>
 #include <util/CommonUtil.h>
@@ -123,7 +123,7 @@ void SourceFile::buildAST() { // NOLINT(misc-no-recursion)
     sourceFile.second.first->buildAST();
 
   // Transform this source file
-  AstBuilderVisitor astBuilder(ast.get(), filePath, antlrCtx.inputStream.get());
+  AstBuilder astBuilder(ast.get(), filePath, antlrCtx.inputStream.get());
   astBuilder.visit(antlrCtx.parser->entry());
   antlrCtx.parser->reset();
 }
