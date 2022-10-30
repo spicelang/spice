@@ -3,17 +3,19 @@
 #pragma once
 
 #include <SourceFile.h>
-#include <ast/AstVisitor.h>
 #include <global/GlobalResourceManager.h>
 
-class CompilerPass : public AstVisitor {
+class CompilerPass {
 public:
   // Constructors
-  CompilerPass(GlobalResourceManager &resourceManager, SourceFile &sourceFile)
-      : resourceManager(resourceManager), sourceFile(sourceFile){};
+  CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
+      : resourceManager(resourceManager), cliOptions(resourceManager.cliOptions), sourceFile(sourceFile),
+        rootScope(sourceFile->globalScope.get()){};
 
 protected:
   // Protected members
   GlobalResourceManager &resourceManager;
-  SourceFile &sourceFile;
+  const CliOptions &cliOptions;
+  SourceFile *sourceFile;
+  Scope *rootScope;
 };

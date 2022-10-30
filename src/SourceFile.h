@@ -10,6 +10,7 @@
 #include <SpiceParser.h>
 #include <Token.h>
 
+#include <ast/ASTNodes.h>
 #include <global/RuntimeModuleManager.h>
 #include <util/CompilerWarning.h>
 
@@ -19,10 +20,21 @@
 class AnalyzerVisitor;
 class GeneratorVisitor;
 class AntlrThrowingErrorListener;
-class SymbolTable;
+class Scope;
 class GlobalResourceManager;
 class EntryNode;
-struct AstNode;
+class ASTNode;
+
+enum CompilerStageIOType {
+  IO_CODE = 0,
+  IO_TOKENS = 1,
+  IO_CST = 2,
+  IO_AST = 3,
+  IO_IR = 4,
+  IO_OBJECT_FILE = 5,
+};
+
+const char *COMPILER_STAGE_IO_TYPE_NAME[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
 
 struct SourceFileAntlrCtx {
   // Create error handlers for lexer and parser
@@ -52,18 +64,38 @@ public:
   // Friend classes
   friend class RuntimeModuleManager;
 
+  // Compiler pipeline triggers
+  void runLexer();
+  void runParser();
+  void runCSTVisualizer();
+  void runASTBuilder();
+  void runASTOptimizer();
+  void runASTVisualizer();
+  void runImportCollector();
+  void runSemanticAnalyzer();
+  void runTypeChecker();
+
+private:
+  void runTypeCheckerFirst();
+  void runTypeCheckerSecond();
+
+public:
+  void runBorrowChecker();
+  void runEscapeAnalyzer();
+  void runIRGenerator();
+  void runIROptimizer();
+  void runObjectEmitter();
+  void concludeCompilation();
+
+  // Shortcuts
+  void runFrontEnd();
+  void runMiddleEnd();
+  void runBackEnd();
+
   // Public methods
-  void visualizeCST();
-  void buildAST();
-  void visualizeAST();
-  void preAnalyze();
-  void analyze();
-  void reAnalyze();
-  void generate();
-  void optimize();
-  void emitObjectFile();
-  [[nodiscard]] std::shared_ptr<SourceFile> createSourceFile(const std::string &dependencyName, const std::string &path, bool isStdFile);
-  void addDependency(const std::shared_ptr<SourceFile> &sourceFile, const AstNode *declAstNode, const std::string &name,
+  [[nodiscard]] std::shared_ptr<SourceFile> createSourceFile(const std::string &dependencyName, const std::string &path,
+                                                             bool isStdFile);
+  void addDependency(const std::shared_ptr<SourceFile> &sourceFile, const ASTNode *declAstNode, const std::string &name,
                      const std::string &path);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   void printWarnings() const;
@@ -81,13 +113,17 @@ public:
   SourceFile *parent;
   std::string cacheKey;
   bool restoredFromCache = false;
-  std::shared_ptr<EntryNode> ast;
-  std::shared_ptr<SymbolTable> symbolTable;
-  std::shared_ptr<AnalyzerVisitor> analyzer;
-  std::shared_ptr<GeneratorVisitor> generator;
-  std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const AstNode *>> dependencies;
+  std::unique_ptr<EntryNode> ast;
+  std::unique_ptr<Scope> globalScope;
+  std::unique_ptr<llvm::Module> llvmModule;
+  std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const ASTNode *>> dependencies;
 
 private:
   // Private fields
   GlobalResourceManager &resourceManager;
+
+  // Private methods
+  void visualizerPreamble(std::stringstream &output) const;
+  void visualizerOutput(std::string outputName, const std::string &output) const;
+  void printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out) const;
 };

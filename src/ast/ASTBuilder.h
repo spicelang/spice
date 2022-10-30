@@ -2,21 +2,24 @@
 
 #pragma once
 
+#include <CompilerPass.h>
 #include <SpiceVisitor.h>
 
 #include <functional>
 #include <utility>
 
 // Forward declarations
-class AstNode;
+class ASTNode;
 
 #define ERROR_MESSAGE_CONTEXT 20
 
-class AstBuilder : public SpiceVisitor {
+class ASTBuilder : private CompilerPass, public SpiceVisitor {
 public:
   // Constructors
-  explicit AstBuilder(AstNode *rootNode, std::string fileName, antlr4::ANTLRInputStream *inputStream)
-      : currentNode(rootNode), fileName(std::move(fileName)), inputStream(inputStream) {}
+  ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile, ASTNode *rootNode,
+             antlr4::ANTLRInputStream *inputStream)
+      : CompilerPass(resourceManager, sourceFile), currentNode(rootNode), fileName(sourceFile->filePath),
+        inputStream(inputStream) {}
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -39,6 +42,7 @@ public:
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
+  std::any visitScope(SpiceParser::ScopeContext *ctx) override;
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override;
   std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override;
@@ -91,8 +95,8 @@ public:
 
 private:
   // Members
-  AstNode *currentNode;
-  std::string fileName;
+  ASTNode *currentNode;
+  const std::string &fileName;
   antlr4::ANTLRInputStream *inputStream;
 
   // Private methods
@@ -103,5 +107,5 @@ private:
   static std::string parseString(std::string input);
   template <typename T> T parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
   static void replaceEscapeChars(std::string &string);
-  void saveErrorMessage(AstNode *node, const antlr4::ParserRuleContext *ctx);
+  void saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext *ctx);
 };

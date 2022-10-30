@@ -4,18 +4,27 @@
 
 #include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
-#include <ast/AstNodes.h>
+#include <ast/ASTBuilder.h>
+#include <astoptimizer/ASTOptimizer.h>
+#include <borrowchecker/BorrowChecker.h>
+#include <escapeanalyzer/EscapeAnalyzer.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <generator/GeneratorVisitor.h>
 #include <global/GlobalResourceManager.h>
-#include <ast/AstBuilder.h>
+#include <importcollector/ImportCollector.h>
+#include <irgenerator/IRGenerator.h>
+#include <iroptimizer/IROptimizer.h>
+#include <objectemitter/ObjectEmitter.h>
+#include <scope/Scope.h>
+#include <semanticanalyzer/SemanticAnalyzer.h>
 #include <symbol/SymbolTable.h>
+#include <typechecker/TypeChecker.h>
 #include <util/CodeLoc.h>
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
-#include <visualizer/ASTVisualizerVisitor.h>
-#include <visualizer/CSTVisualizerVisitor.h>
+#include <visualizer/ASTVisualizer.h>
+#include <visualizer/CSTVisualizer.h>
 
 SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
                        bool stdFile)
@@ -25,7 +34,9 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   // Deduce fileName and fileDir
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();
+}
 
+void SourceFile::runLexer() {
   // Read from file
   std::ifstream fileInputStream(filePath);
   if (!fileInputStream)
@@ -51,189 +62,195 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   if (!resourceManager.cliOptions.ignoreCache)
     restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
 
-  // If we have a cache miss, execute the compiler pipeline for this source file
-  if (!restoredFromCache) {
-    // Parse input
-    antlrCtx.parser = std::make_shared<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
-    antlrCtx.parser->removeErrorListeners();
-    antlrCtx.parser->addErrorListener(antlrCtx.parserErrorHandler.get());
-    antlrCtx.parser->removeParseListeners();
-
-    // Create AST
-    ast = std::make_shared<EntryNode>(nullptr, CodeLoc(1, 1, filePath));
-
-    // Create symbol table
-    symbolTable = std::make_shared<SymbolTable>(nullptr, SCOPE_GLOBAL, parent == nullptr, true);
-  }
+  printStatusMessage("Lexer", IO_CODE, IO_TOKENS);
 }
 
-void SourceFile::visualizeCST() { // NOLINT(misc-no-recursion)
+void SourceFile::runParser() {
+  // Skip if restored from cache
   if (restoredFromCache)
     return;
 
+  // Parse input
+  antlrCtx.parser = std::make_shared<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
+  antlrCtx.parser->removeErrorListeners();
+  antlrCtx.parser->addErrorListener(antlrCtx.parserErrorHandler.get());
+  antlrCtx.parser->removeParseListeners();
+
+  printStatusMessage("Parser", IO_TOKENS, IO_CST);
+}
+
+void SourceFile::runCSTVisualizer() {
   // Only execute if enabled
-  if (!resourceManager.cliOptions.dumpCST && !resourceManager.cliOptions.testMode)
+  if (restoredFromCache || (!resourceManager.cliOptions.dumpCST && !resourceManager.cliOptions.testMode))
     return;
 
-  std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
-  std::string replacedFilePath = filePath;
-  CommonUtil::replaceAll(replacedFilePath, "\\", "/");
-  dotCode += " label=\"" + replacedFilePath + "\";\n ";
-
-  // Visualize the imported source files
-  for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->visualizeCST();
-
   // Generate dot code for this source file
-  CSTVisualizerVisitor visualizerVisitor(antlrCtx.lexer, antlrCtx.parser);
-  dotCode += any_cast<std::string>(visualizerVisitor.visit(antlrCtx.parser->entry()));
+  std::stringstream dotCode;
+  visualizerPreamble(dotCode);
+  CSTVisualizer cstVisualizer(resourceManager, this, antlrCtx.lexer.get(), antlrCtx.parser.get());
+  dotCode << any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry()));
   antlrCtx.parser->reset();
-
-  dotCode += "}";
+  dotCode << "}";
 
   // If this is the root source file, output the serialized string and the SVG file
   if (parent == nullptr) {
-    compilerOutput.cstString = dotCode;
-
-    if (resourceManager.cliOptions.dumpCST) {
-      // Dump to console
-      std::cout << "\nSerialized CST:\n\n" << dotCode << "\n";
-
-      // Check if the dot command exists
-      if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
-        throw std::runtime_error(
-            "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable"); // GCOV_EXCL_STOP
-
-      // Generate SVG
-      std::cout << "\nGenerating SVG file ... ";
-      std::string fileBasePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + "cst";
-      FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
-      FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
-      std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
-    }
+    compilerOutput.cstString = dotCode.str();
+    if (resourceManager.cliOptions.dumpCST)
+      visualizerOutput("CST", compilerOutput.cstString);
   }
+
+  printStatusMessage("CST Visualizer", IO_CST, IO_CST);
 }
 
-void SourceFile::buildAST() { // NOLINT(misc-no-recursion)
+void SourceFile::runASTBuilder() {
+  // Skip if restored from cache
   if (restoredFromCache)
     return;
 
-  // Transform the imported source files
-  for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->buildAST();
+  // Create AST
+  ast = std::make_unique<EntryNode>(nullptr, CodeLoc(1, 1, filePath));
 
-  // Transform this source file
-  AstBuilder astBuilder(ast.get(), filePath, antlrCtx.inputStream.get());
+  // Build AST for this source file
+  ASTBuilder astBuilder(resourceManager, this, ast.get(), antlrCtx.inputStream.get());
   astBuilder.visit(antlrCtx.parser->entry());
   antlrCtx.parser->reset();
+
+  // Create global scope
+  globalScope = std::make_unique<Scope>(nullptr, SCOPE_GLOBAL);
+
+  printStatusMessage("AST Builder", IO_CST, IO_AST);
 }
 
-void SourceFile::visualizeAST() { // NOLINT(misc-no-recursion)
+void SourceFile::runASTOptimizer() {
+  // Only execute if enabled
+  if (restoredFromCache)
+    return;
+
+  ASTOptimizer astOptimizer(resourceManager, this);
+  astOptimizer.visit(ast.get());
+
+  printStatusMessage("AST Optimizer", IO_AST, IO_AST);
+}
+
+void SourceFile::runASTVisualizer() {
   // Only execute if enabled
   if (restoredFromCache || (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode))
     return;
 
-  std::string dotCode = parent == nullptr ? "digraph {\n rankdir=\"TB\";\n" : "subgraph {\n";
-  std::string replacedFilePath = filePath;
-  CommonUtil::replaceAll(replacedFilePath, "\\", "/");
-  dotCode += " label=\"" + replacedFilePath + "\";\n ";
-
-  // Visualize the imported source files
-  for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->visualizeAST();
-
   // Generate dot code for this source file
-  ASTVisualizerVisitor visualizerVisitor(ast.get());
-  dotCode += any_cast<std::string>(visualizerVisitor.visit(ast.get()));
-
-  dotCode += "}";
+  std::stringstream dotCode;
+  visualizerPreamble(dotCode);
+  ASTVisualizer astVisualizer(resourceManager, this, ast.get());
+  dotCode << any_cast<std::string>(astVisualizer.visit(ast.get()));
+  dotCode << "}";
 
   // If this is the root source file, output the serialized string and the SVG file
   if (parent == nullptr) {
-    compilerOutput.astString = dotCode;
-
-    if (resourceManager.cliOptions.dumpAST) {
-      // Dump to console
-      std::cout << "\nSerialized AST:\n\n" << dotCode << "\n";
-
-      // Check if the dot command exists
-      if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
-        throw std::runtime_error(
-            "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable"); // GCOV_EXCL_STOP
-
-      // Generate SVG
-      std::cout << "\nGenerating SVG file ... ";
-      std::string fileBasePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + "ast";
-      FileUtil::writeToFile(fileBasePath + ".dot", dotCode);
-      FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
-      std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
-    }
+    compilerOutput.astString = dotCode.str();
+    if (resourceManager.cliOptions.dumpAST)
+      visualizerOutput("AST", compilerOutput.astString);
   }
+
+  printStatusMessage("AST Visualizer", IO_AST, IO_AST);
 }
 
-void SourceFile::preAnalyze() { // NOLINT(misc-no-recursion)
+void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
   if (restoredFromCache)
     return;
 
-  // Pre-analyze this source file
-  PreAnalyzerVisitor preAnalyzer(resourceManager.cliOptions, *this);
-  preAnalyzer.visit(ast.get());
-  antlrCtx.parser->reset();
+  // Collect the imports for this source file
+  ImportCollector importCollector(resourceManager, this);
+  importCollector.visit(ast.get());
 
-  // Pre-analyze the imported source files
-  for (const auto &sourceFile : dependencies) {
-    sourceFile.second.first->buildAST();
-    sourceFile.second.first->preAnalyze();
+  // Run first part of pipeline for the imported source file
+  for (const auto &dependency : dependencies) {
+    auto sourceFile = dependency.second.first;
+    sourceFile->runASTBuilder();
+    sourceFile->runASTOptimizer();
+    sourceFile->runASTVisualizer();
+    sourceFile->runImportCollector();
   }
+
+  printStatusMessage("Import Collector", IO_AST, IO_AST);
 }
 
-void SourceFile::analyze() { // NOLINT(misc-no-recursion)
+void SourceFile::runSemanticAnalyzer() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
   if (restoredFromCache)
     return;
-
-  // Analyze the imported source files
-  for (const auto &[importName, sourceFile] : dependencies) {
-    // Analyze the imported source file
-    sourceFile.first->analyze();
-
-    // Mount symbol table to the current one
-    sourceFile.first->symbolTable->parent = symbolTable.get();
-    symbolTable->mountChildBlock(importName, sourceFile.first->symbolTable.get());
-
-    // Insert import symbol
-    SymbolType type = SymbolType(TY_IMPORT);
-    SymbolSpecifiers specifiers(type);
-    symbolTable->insert(importName, type, specifiers, INITIALIZED, sourceFile.second);
-  }
 
   // Analyze this source file
-  analyzer = std::make_shared<AnalyzerVisitor>(resourceManager, *this, parent == nullptr);
-  analyzer->visit(ast.get());
-  antlrCtx.parser->reset();
+  SemanticAnalyzer semanticAnalyzer(resourceManager, this);
+  semanticAnalyzer.visit(ast.get());
+
+  // Analyze all dependencies
+  for (const auto &[importName, sourceFile] : dependencies) {
+    // Analyze the imported source file
+    sourceFile.first->runSemanticAnalyzer();
+  }
+
+  printStatusMessage("Semantic Analyzer", IO_AST, IO_AST);
 }
 
-void SourceFile::reAnalyze() { // NOLINT(misc-no-recursion)
+void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
+  // We need two runs here due to generics.
+  // The first run to determine all concrete substantiations of potentially generic elements
+  runTypeCheckerFirst(); // Visit dependency tree from bottom to top
+  // The second run to ensure, also generic scopes are type-checked properly
+  runTypeCheckerSecond(); // Visit dependency tree from top to bottom
+
+  printStatusMessage("Type Checker", IO_AST, IO_AST);
+}
+
+void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
   if (restoredFromCache)
     return;
 
-  // Re-Analyze this source file
+  // Type-check all dependencies first
+  for (const auto &[importName, sourceFile] : dependencies) {
+    // Type-check the imported source file
+    sourceFile.first->runTypeChecker();
+
+    // Mount symbol table to the current one
+    // sourceFile.first->globalScope->symbolTable.parent = &globalScope->symbolTable;
+    // globalScope->symbolTable->mountChildBlock(importName, sourceFile.first->symbolTable.get());
+
+    // Insert import symbol
+    // SymbolType type = SymbolType(TY_IMPORT);
+    // SymbolSpecifiers specifiers(type);
+    // symbolTable->insert(importName, type, specifiers, INITIALIZED, sourceFile.second);
+  }
+
+  // Then type-check the current file
+  TypeChecker typeChecker(resourceManager, this);
+  typeChecker.visit(ast.get());
+}
+
+void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
+  if (restoredFromCache)
+    return;
+
+  // Type-check the current file first, if requested multiple times
   bool repetitionRequired;
-  unsigned int reAnalyzeCount = 0;
+  unsigned short typeCheckRuns = 0;
   do {
-    repetitionRequired = any_cast<bool>(analyzer->visit(ast.get()));
-    antlrCtx.parser->reset();
-    reAnalyzeCount++;
-    if (reAnalyzeCount >= 10)
-      throw std::runtime_error("Internal compiler error: Number of analyzer runs for one source file exceeded. Please report "
+    TypeChecker typeChecker(resourceManager, this);
+    repetitionRequired = any_cast<bool>(typeChecker.visit(ast.get()));
+    typeCheckRuns++;
+    if (typeCheckRuns >= 10)
+      throw std::runtime_error("Internal compiler error: Number of type checker runs for one source file exceeded. Please report "
                                "this as a bug on GitHub.");
   } while (repetitionRequired);
 
-  // Re-analyze the imported source files
-  for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->reAnalyze();
+  // Then type-check all dependencies
+  for (const auto &[importName, sourceFile] : dependencies)
+    sourceFile.first->runTypeChecker();
 
   // Save the JSON version in the compiler output
-  compilerOutput.symbolTableString = symbolTable->toJSON().dump(2);
+  compilerOutput.symbolTableString = globalScope->symbolTable.toJSON().dump(2);
 
   // Dump symbol table
   if (resourceManager.cliOptions.dumpSymbolTables) { // GCOV_EXCL_START
@@ -242,41 +259,69 @@ void SourceFile::reAnalyze() { // NOLINT(misc-no-recursion)
   } // GCOV_EXCL_STOP
 }
 
-void SourceFile::generate() { // NOLINT(misc-no-recursion)
+void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
+  if (restoredFromCache)
+    return;
+
+  // Borrow-check all dependencies first
+  for (const auto &[importName, sourceFile] : dependencies)
+    sourceFile.first->runBorrowChecker();
+
+  // Then borrow-check current file
+  BorrowChecker borrowChecker(resourceManager, this);
+  borrowChecker.visit(ast.get());
+
+  printStatusMessage("Borrow Checker", IO_AST, IO_AST);
+}
+
+void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
+  if (restoredFromCache)
+    return;
+
+  // Escape-analyze all dependencies first
+  for (const auto &[importName, sourceFile] : dependencies)
+    sourceFile.first->runEscapeAnalyzer();
+
+  // Then escape-analyze current file
+  EscapeAnalyzer escapeanalyzer(resourceManager, this);
+  escapeanalyzer.visit(ast.get());
+
+  printStatusMessage("Escape Analyzer", IO_AST, IO_AST);
+}
+
+void SourceFile::runIRGenerator() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
   if (restoredFromCache)
     return;
 
   // Generate the imported source files
   for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->generate();
+    sourceFile.second.first->runIRGenerator();
+
+  // Create LLVM module for this source file
+  llvmModule = std::make_unique<llvm::Module>(FileUtil::getFileName(filePath), resourceManager.context);
 
   // Generate this source file
-  generator = std::make_shared<GeneratorVisitor>(resourceManager, *this, objectFilePath);
-  bool repetitionRequired;
-  unsigned int generateCount = 0;
-  do {
-    repetitionRequired = any_cast<bool>(generator->visit(ast.get()));
-    antlrCtx.parser->reset();
-    generateCount++;
-    if (generateCount >= 10)
-      throw std::runtime_error("Internal compiler error: Number of generator runs for one source file exceeded. Please report "
-                               "this as a bug on GitHub.");
-  } while (repetitionRequired);
-
-  antlrCtx.parser->reset();
+  IRGenerator irGenerator(resourceManager, this);
+  irGenerator.visit(ast.get());
 
   // Save the JSON version in the compiler output
-  compilerOutput.irString = generator->getIRString();
+  compilerOutput.irString = irGenerator.getIRString();
 
   // Dump unoptimized IR code
   if (resourceManager.cliOptions.dumpIR) { // GCOV_EXCL_START
     std::cout << "\nUnoptimized IR code:\n";
-    generator->dumpIR();
+    irGenerator.dumpIR();
     std::cout << "\n";
   } // GCOV_EXCL_STOP
+
+  printStatusMessage("IR Generator", IO_AST, IO_IR);
 }
 
-void SourceFile::optimize() { // NOLINT(misc-no-recursion)
+void SourceFile::runIROptimizer() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
   if (restoredFromCache)
     return;
 
@@ -286,38 +331,55 @@ void SourceFile::optimize() { // NOLINT(misc-no-recursion)
 
   // Optimize the imported source files
   for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->optimize();
+    sourceFile.second.first->runIROptimizer();
 
-  generator->optimize();
+  // Optimize this source file
+  IROptimizer irOptimizer(resourceManager, this);
+  irOptimizer.optimize();
 
   // Save the JSON version in the compiler output
-  compilerOutput.irOptString = generator->getIRString();
+  compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
 
   // Dump optimized IR code
   if (resourceManager.cliOptions.dumpIR) { // GCOV_EXCL_START
     std::cout << "\nOptimized IR code:\n";
-    generator->dumpIR();
+    irOptimizer.dumpOptimizedIR();
     std::cout << "\n";
   } // GCOV_EXCL_STOP
+
+  printStatusMessage("IR Optimizer", IO_IR, IO_IR);
 }
 
-void SourceFile::emitObjectFile() { // NOLINT(misc-no-recursion)
+void SourceFile::runObjectEmitter() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
   if (restoredFromCache)
     return;
 
-  // Optimize the imported source files
+  // Emit objects for the imported source files
   for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->emitObjectFile();
+    sourceFile.second.first->runIROptimizer();
+
+  // Emit object for this source file
+  ObjectEmitter objectEmitter(resourceManager, this);
+  objectEmitter.emit();
 
   // Dump assembly code
   if (resourceManager.cliOptions.dumpAssembly) { // GCOV_EXCL_START
     std::cout << "\nAssembly code:\n";
-    generator->dumpAsm();
+    objectEmitter.dumpAsm();
   } // GCOV_EXCL_STOP
 
-  // Emit object file and add object file to the linker interface
-  generator->emit();
-  resourceManager.linker.addObjectFilePath(objectFilePath);
+  printStatusMessage("IR Optimizer", IO_IR, IO_OBJECT_FILE);
+}
+
+void SourceFile::concludeCompilation() { // NOLINT(misc-no-recursion)
+  // Conclude all dependencies
+  for (const auto &sourceFile : dependencies)
+    sourceFile.second.first->concludeCompilation();
+
+  // Cache the source file
+  if (!resourceManager.cliOptions.ignoreCache)
+    resourceManager.cacheManager.cacheSourceFile(this);
 
   // Print warning if verifier is disabled
   if (parent == nullptr && resourceManager.cliOptions.disableVerifier) {
@@ -326,17 +388,30 @@ void SourceFile::emitObjectFile() { // NOLINT(misc-no-recursion)
     std::cout << "\n";
   }
 
-  // Cache the source file
-  if (!resourceManager.cliOptions.ignoreCache)
-    resourceManager.cacheManager.cacheSourceFile(this);
+  if (resourceManager.cliOptions.printDebugOutput)
+    std::cout << "Finished compiling " << fileName << ".\n";
 }
+
+void SourceFile::runFrontEnd() {
+  runLexer();
+  runParser();
+  runCSTVisualizer();
+  runASTBuilder();
+  runASTOptimizer();
+  runASTVisualizer();
+  runImportCollector();
+}
+
+void SourceFile::runMiddleEnd() {}
+
+void SourceFile::runBackEnd() {}
 
 std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &dependencyName, const std::string &path,
                                                          bool isStdFile) {
   return std::make_shared<SourceFile>(resourceManager, this, dependencyName, path, isStdFile);
 }
 
-void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, const AstNode *declAstNode,
+void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, const ASTNode *declAstNode,
                                const std::string &dependencyName, const std::string &path) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(path))
@@ -367,4 +442,40 @@ void SourceFile::printWarnings() const { // NOLINT(misc-no-recursion)
 
 void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {
   resourceManager.runtimeModuleManager.requestModule(this, moduleName);
+}
+
+void SourceFile::visualizerPreamble(std::stringstream &output) const {
+  if (parent == nullptr)
+    output << "digraph {\n rankdir=\"TB\";\n";
+  else
+    output << "subgraph {\n";
+  std::string replacedFilePath = filePath;
+  CommonUtil::replaceAll(replacedFilePath, "\\", "/");
+  output << " label=\"" + replacedFilePath + "\";\n ";
+}
+
+void SourceFile::visualizerOutput(std::string outputName, const std::string &output) const {
+  // Dump to console
+  std::cout << "\nSerialized " << outputName << ":\n\n" << output << "\n";
+
+  // Check if the dot command exists
+  if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
+    throw std::runtime_error(
+        "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable"); // GCOV_EXCL_STOP
+
+  // Generate SVG
+  std::cout << "\nGenerating SVG file ... ";
+  std::transform(outputName.begin(), outputName.end(), outputName.begin(), ::tolower);
+  std::string fileBasePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + outputName + ".dot";
+  FileUtil::writeToFile(fileBasePath, output);
+  FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
+  std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
+}
+
+void SourceFile::printStatusMessage(const std::string &stage, const CompilerStageIOType &in,
+                                    const CompilerStageIOType &out) const {
+  if (resourceManager.cliOptions.printDebugOutput) {
+    std::cout << "[" << stage << "] for " << fileName << ": ";
+    std::cout << COMPILER_STAGE_IO_TYPE_NAME[in] << " --> " << COMPILER_STAGE_IO_TYPE_NAME[out] << "\n";
+  }
 }

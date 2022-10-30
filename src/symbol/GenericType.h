@@ -21,7 +21,7 @@ public:
   [[nodiscard]] bool checkConditionsOf(const SymbolType &symbolType) const;
 
   // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(GenericType, typeChain, isBaseTypeSigned, typeConditions)
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(GenericType, typeChain, typeConditions)
 
 private:
   // Members

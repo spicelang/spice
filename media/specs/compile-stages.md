@@ -21,43 +21,47 @@ such things like semantic analysis and type checker.
     Input/Output: CST -> AST <br>
     Note: Transforms the Concrete Syntax Tree to an Abstract Syntax Tree, enriches it and executes concluding syntax checks.
 
-5.  **AST Visualizer** <br>
+5.  **AST Optimizer** <br>
+    Input/Output: AST -> AST <br>
+    Note: Removes obviously unnecessary nodes like empty if-statements
+
+6.  **AST Visualizer** <br>
     Input/Output: AST -> AST <br>
     Note: Prints the AST as JSON or Dot code.
 
-6.  **Import Collector** <br>
+7.  **Import Collector** <br>
     Input/Output: AST -> AST <br>
     Note: Checks, which other source file are imported by the current one. Registers external symbols as described
     [here](./better-imports.md).
 
-7.  **Semantic Analyzer**
+8.  **Semantic Analyzer** <br>
     Input/Output: AST -> AST <br>
     Note: Prints errors for semantically incorrect code and warnings for potential bugs
 
-8.  **Type Checker** <br>
+9.  **Type Checker** <br>
     Input/Output: AST -> AST <br>
     Note: Checks if all types match, performs type inference, create symbol table
 
-9.  **Borrow Checker** (new component, maybe added in the future)
+10. **Borrow Checker** (new component, maybe added in the future) <br>
     Input/Output: AST -> AST <br>
     Additional used resources: Symbol Table <br>
     Note: Checks if all variable accesses are valid, escape analysis
 
-10. **Escape Analyzer**
+11. **Escape Analyzer** <br>
     Input/Output: AST -> AST <br>
     Additional used resources: Symbol Table <br>
     Note: Checks, which variables escape their scopes and check if these variables are marked as heap-allocated by the programmer.
 
-11. **IR Generator**
+12. **IR Generator** <br>
     Input/Output: AST -> IR <br>
     Additional used resources: Symbol Table <br>
     Note: Uses several helper modules to generate IR from the information of AST and Symbol Table.
 
-12. **IR Optimizer**
+13. **IR Optimizer** <br>
     Input/Output: IR -> IR <br>
     Note: Uses the stated optimization level to call the LLVM optimizer. In case of -O0, the IR Optimizer is not called.
 
-13. **Object Emitter**
+14. **Object Emitter** <br>
     Input/Output: IR -> Object file <br>
     Note: Calls LLVM to emit an object file from the generated IR.
 

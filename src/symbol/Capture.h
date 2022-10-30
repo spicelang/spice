@@ -13,12 +13,10 @@ enum CaptureMode { READ_ONLY, READ_WRITE };
 class Capture {
 public:
   // Constructors
-  explicit Capture(SymbolTableEntry *entry, std::string name = "", SymbolState state = INITIALIZED)
-      : capturedEntry(entry), name(std::move(name)), state(state){};
+  explicit Capture(SymbolTableEntry *entry, std::string name = "") : capturedEntry(entry), name(std::move(name)){};
 
   // Public methods
   [[nodiscard]] std::string getName() const;
-  [[nodiscard]] SymbolState getState() const;
   void setCaptureMode(CaptureMode captureMode);
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
@@ -29,5 +27,4 @@ private:
   // Members
   CaptureMode mode = READ_ONLY;
   std::string name;
-  SymbolState state;
 };

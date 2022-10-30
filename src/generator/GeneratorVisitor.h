@@ -4,8 +4,8 @@
 
 #include <regex>
 
-#include <ast/AstNodes.h>
-#include <ast/AstVisitor.h>
+#include <ast/ASTNodes.h>
+#include <ast/ASTVisitor.h>
 
 #include <generator/OpRuleConversionsManager.h>
 #include <generator/StdFunctionManager.h>
@@ -34,7 +34,7 @@ class Struct;
  * - Optimization
  * - Emitting object files
  */
-class GeneratorVisitor : public AstVisitor {
+class GeneratorVisitor : public ASTVisitor {
 public:
   // Constructors
   explicit GeneratorVisitor(GlobalResourceManager &resourceManager, SourceFile &sourceFile, const std::string &objectFile);
@@ -158,15 +158,15 @@ private:
   } debugInfo;
 
   // Private methods
-  llvm::Value *resolveValue(AstNode *node, SymbolTable *accessScope = nullptr);
-  llvm::Value *resolveAddress(AstNode *node, bool storeVolatile = false);
+  llvm::Value *resolveValue(ASTNode *node, SymbolTable *accessScope = nullptr);
+  llvm::Value *resolveAddress(ASTNode *node, bool storeVolatile = false);
   void moveInsertPointToBlock(llvm::BasicBlock *block);
   void createBr(llvm::BasicBlock *targetBlock);
   void createCondBr(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *allocateDynamicallySizedArray(llvm::Type *itemType);
   llvm::Value *createGlobalArray(llvm::Constant *constArray);
-  bool insertDestructorCall(const AstNode *node, SymbolTableEntry *varEntry);
+  bool insertDestructorCall(const ASTNode *node, SymbolTableEntry *varEntry);
   bool insertEmptyCtorCall(const CodeLoc &codeLoc, const SymbolTableEntry *varEntry);
   bool insertStructMethodCall(const CodeLoc &codeLoc, const SymbolTableEntry *varEntry, const std::string &accessSuffix = "");
   llvm::Value *materializeString(llvm::Value *stringStruct);
@@ -180,6 +180,6 @@ private:
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
   void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address, size_t argNo = SIZE_MAX,
                              bool moveToPrev = false);
-  void setSourceLocation(AstNode *node);
+  void setSourceLocation(ASTNode *node);
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

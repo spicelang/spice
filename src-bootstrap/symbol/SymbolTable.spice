@@ -105,7 +105,7 @@ public p SymbolTable.insertAnonymous(const st::SymbolType symbolType, const ast:
  * @param name Capture name
  * @param capture Capture
  */
-public p SymbolTable.addCapture(const string name, const Capture capture) {
+public p SymbolTable.insertCapture(const string name, const Capture capture) {
     this.captures.insert(name, capture);
 }
 

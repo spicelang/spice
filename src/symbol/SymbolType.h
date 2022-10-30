@@ -13,7 +13,7 @@
 
 // Forward declarations
 class SymbolTable;
-struct AstNode;
+class ASTNode;
 
 enum SymbolSuperType {
   TY_INVALID,
@@ -32,6 +32,7 @@ enum SymbolSuperType {
   TY_ENUM,
   TY_DYN,
   TY_PTR,
+  TY_REF,
   TY_ARRAY,
   TY_FUNCTION,
   TY_PROCEDURE,
@@ -46,12 +47,14 @@ public:
   union TypeChainElementData {
     // Union fields
     int arraySize = 0; // TY_ARRAY
+    bool numericSigned; // TY_INT, TY_SHORT, TY_LONG
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
 
   // Structs
   struct TypeChainElement {
+  public:
     // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
       // Check super type, subtype and template types
@@ -72,7 +75,7 @@ public:
       return lhs.superType == rhs.superType && lhs.subType == rhs.subType && lhs.templateTypes == rhs.templateTypes;
     }
 
-    // Struct fields
+    // Public members
     SymbolSuperType superType = TY_DYN;
     std::string subType;
     TypeChainElementData data;
@@ -96,14 +99,17 @@ public:
   SymbolType() = default;
 
   // Public methods
-  SymbolType toPointer(const AstNode *node, llvm::Value *dynamicSize = nullptr) const;
-  [[nodiscard]] SymbolType toArray(const AstNode *node, int size = 0) const;
+  [[nodiscard]] SymbolType toPointer(const ASTNode *node, llvm::Value *dynamicSize = nullptr) const;
+  [[nodiscard]] SymbolType toReference(const ASTNode *node) const;
+  [[nodiscard]] SymbolType toArray(const ASTNode *node, int size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const;
   [[nodiscard]] bool isPointer() const;
   [[nodiscard]] bool isPointerOf(SymbolSuperType superType) const;
+  [[nodiscard]] bool isReference() const;
+  [[nodiscard]] bool isReferenceOf(SymbolSuperType superType) const;
   [[nodiscard]] bool isArray() const;
   [[nodiscard]] bool isArrayOf(SymbolSuperType superType) const;
   [[nodiscard]] bool isArrayOf(const SymbolType &symbolType) const;
@@ -126,7 +132,6 @@ public:
 
   // Public members
   TypeChain typeChain;
-  bool isBaseTypeSigned = true;
 
 protected:
   // Protected methods
@@ -138,5 +143,5 @@ private:
 
 public:
   // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolType, typeChain, isBaseTypeSigned);
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolType, typeChain);
 };

@@ -16,13 +16,28 @@
  *
  * @return Pointer type of the current type
  */
-SymbolType SymbolType::toPointer(const AstNode *node, llvm::Value *dynamicSize) const {
+SymbolType SymbolType::toPointer(const ASTNode *node, llvm::Value *dynamicSize) const {
   // Do not allow pointers of dyn
   if (typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_PTR, "", {.arraySize = 0}, {}, dynamicSize});
+  newTypeChain.push_back({TY_PTR, "", {}, {}, dynamicSize});
+  return SymbolType(newTypeChain);
+}
+
+/**
+ * Get the reference type of the current type as a new type
+ *
+ * @return Reference type of the current type
+ */
+SymbolType SymbolType::toReference(const ASTNode *node) const {
+  // Do not allow pointers of dyn
+  if (typeChain.back().superType == TY_DYN)
+    throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
+
+  TypeChain newTypeChain = typeChain;
+  newTypeChain.push_back({TY_REF, "", {}, {}, nullptr});
   return SymbolType(newTypeChain);
 }
 
@@ -31,7 +46,7 @@ SymbolType SymbolType::toPointer(const AstNode *node, llvm::Value *dynamicSize) 
  *
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const AstNode *node, int size) const {
+SymbolType SymbolType::toArray(const ASTNode *node, int size) const {
   // Do not allow arrays of dyn
   if (typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
@@ -79,7 +94,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   TypeChain chainCopy = typeChain;
   // Reverse type chain
   TypeChain tmp;
-  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_ARRAY) {
+  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_REF || chainCopy.back().superType == TY_ARRAY) {
     tmp.push_back(chainCopy.back());
     chainCopy.pop_back();
   }
@@ -139,7 +154,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
   if (is(TY_ENUM))
     return llvm::Type::getInt32Ty(context);
 
-  if (isPointer() || (isArray() && getArraySize() <= 0)) {
+  if (isPointer() || isReference() || (isArray() && getArraySize() <= 0)) {
     llvm::PointerType *pointerType = getContainedTy().toLLVMType(context, accessScope)->getPointerTo();
     return static_cast<llvm::Type *>(pointerType);
   }
@@ -168,6 +183,23 @@ bool SymbolType::isPointer() const { return getSuperType() == TY_PTR; }
  */
 bool SymbolType::isPointerOf(SymbolSuperType elementSuperType) const {
   return isPointer() && getContainedTy().is(elementSuperType);
+}
+
+/**
+ * Check is the current type is of type reference
+ *
+ * @return Reference or not
+ */
+bool SymbolType::isReference() const { return getSuperType() == TY_REF; }
+
+/**
+ * Check if the current type is a reference of a certain super type
+ *
+ * @param elementSuperType Super type to check for
+ * @return Reference or not
+ */
+bool SymbolType::isReferenceOf(SymbolSuperType elementSuperType) const {
+  return isReference() && getContainedTy().is(elementSuperType);
 }
 
 /**
@@ -231,7 +263,7 @@ bool SymbolType::isBaseType(SymbolSuperType superType) const {
   // Copy the stack to not destroy the present one
   TypeChain chainCopy = typeChain;
   // Unwrap the chain until the base type can be retrieved
-  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_ARRAY)
+  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_REF || chainCopy.back().superType == TY_ARRAY)
     chainCopy.pop_back();
   // Check if it is of the given superType and subType
   return chainCopy.back().superType == superType;
@@ -271,7 +303,7 @@ SymbolType SymbolType::getBaseType() const {
   // Copy the stack to not destroy the present one
   TypeChain chainCopy = typeChain;
   // Unwrap the chain until the base type can be retrieved
-  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_ARRAY)
+  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_REF || chainCopy.back().superType == TY_ARRAY)
     chainCopy.pop_back();
   // Check if it is of the given superType and subType
   return SymbolType(chainCopy);
@@ -383,6 +415,8 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
   switch (chainElement.superType) {
   case TY_PTR:
     return mangledName ? "ptr" : "*";
+  case TY_REF:
+    return mangledName ? "ref" : "&";
   case TY_ARRAY: {
     if (mangledName)
       return "array";

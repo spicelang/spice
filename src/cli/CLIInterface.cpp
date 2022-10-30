@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include "CliInterface.h"
+#include "CLIInterface.h"
 
 #include <exception/CliError.h>
 #include <util/CompilerWarning.h>
@@ -9,7 +9,7 @@
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
 
-void CliInterface::createInterface() {
+void CLIInterface::createInterface() {
   // Allow positional args
   app.allow_windows_style_options();
   app.allow_extras();
@@ -90,7 +90,7 @@ void CliInterface::createInterface() {
  *
  * @throws InvalidCliOptionsException if there were an invalid combination of cli options provided
  */
-void CliInterface::validate() const {
+void CLIInterface::validate() const {
   // Check if all three of --target-arch, --target-vendor and --target-os are provided or none of them
   if (!((cliOptions.targetArch.empty() && cliOptions.targetVendor.empty() && cliOptions.targetOs.empty()) ||
         (!cliOptions.targetArch.empty() && !cliOptions.targetVendor.empty() && !cliOptions.targetOs.empty()))) {
@@ -107,7 +107,7 @@ void CliInterface::validate() const {
 /**
  * Initialize the cli options based on the input of the user
  */
-void CliInterface::enrich() {
+void CLIInterface::enrich() {
   // Propagate target information
   if (cliOptions.targetTriple.empty() && cliOptions.targetArch.empty()) { // We have nothing -> obtain the host triplet
     llvm::Triple triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
@@ -135,7 +135,7 @@ void CliInterface::enrich() {
 /**
  * Add build subcommand to cli interface
  */
-void CliInterface::addBuildSubcommand() {
+void CLIInterface::addBuildSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("build", "Builds your Spice program and emits an executable");
   subCmd->alias("b");
@@ -170,7 +170,7 @@ void CliInterface::addBuildSubcommand() {
 /**
  * Add run subcommand to cli interface
  */
-void CliInterface::addRunSubcommand() {
+void CLIInterface::addRunSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("run", "Builds your Spice program and runs it immediately");
   subCmd->alias("r");
@@ -192,7 +192,7 @@ void CliInterface::addRunSubcommand() {
 /**
  * Add install subcommand to cli interface
  */
-void CliInterface::addInstallSubcommand() {
+void CLIInterface::addInstallSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd =
       app.add_subcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
@@ -208,7 +208,7 @@ void CliInterface::addInstallSubcommand() {
 /**
  * Add uninstall subcommand to cli interface
  */
-void CliInterface::addUninstallSubcommand() {
+void CLIInterface::addUninstallSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("uninstall", "Builds your Spice program and runs it immediately");
   subCmd->alias("u");
@@ -233,7 +233,7 @@ void CliInterface::addUninstallSubcommand() {
       ->required();
 }
 
-void CliInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
+void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
   // --dump-cst
@@ -249,6 +249,8 @@ void CliInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
 
   // --ignore-cache
   subCmd->add_option<bool>("--ignore-cache", cliOptions.ignoreCache, "Force re-compilation of all source files");
+  // --disable-ast-opt
+  subCmd->add_option<bool>("--disable-ast-opt", cliOptions.disableAstOpt, "Disable first order optimizations on the AST");
 
   // Opt levels
   subCmd->add_flag_callback(
@@ -277,7 +279,7 @@ void CliInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
  * @param argv Argument vector
  * @return Return code
  */
-int CliInterface::parse(int argc, char **argv) {
+int CLIInterface::parse(int argc, char **argv) {
   try {
     app.parse(argc, argv);
   } catch (const CLI::ParseError &e) {
@@ -289,7 +291,7 @@ int CliInterface::parse(int argc, char **argv) {
 /**
  * Executes the built executable
  */
-void CliInterface::runBinary() const {
+void CLIInterface::runBinary() const {
   // Print status message
   if (cliOptions.printDebugOutput)
     std::cout << "Running executable ...\n\n";

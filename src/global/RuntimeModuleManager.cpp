@@ -3,10 +3,11 @@
 #include "RuntimeModuleManager.h"
 
 #include <SourceFile.h>
+#include <scope/Scope.h>
 #include <symbol/SymbolTable.h>
 #include <util/FileUtil.h>
 
-#include <ast/AstNodes.h>
+#include <ast/ASTNodes.h>
 
 SourceFile *RuntimeModuleManager::requestModule(SourceFile *sourceFile, const RuntimeModuleName &moduleName) {
   // Make the module available
@@ -19,7 +20,7 @@ SourceFile *RuntimeModuleManager::requestModule(SourceFile *sourceFile, const Ru
 
 SymbolTable *RuntimeModuleManager::getModuleScope(const RuntimeModuleName &moduleName) const {
   assert(modules.contains(moduleName));
-  return modules.at(moduleName)->symbolTable.get();
+  return &modules.at(moduleName)->globalScope->symbolTable;
 }
 
 bool RuntimeModuleManager::isModuleAvailable(const RuntimeModuleName &module) const { return modules.contains(module); }
@@ -46,10 +47,7 @@ bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const Runtime
   parentSourceFile->addDependency(moduleSourceFile, parentSourceFile->ast.get(), importName, filePath);
 
   const auto runtimeFile = parentSourceFile->dependencies.at(importName).first;
-  runtimeFile->buildAST();
-  runtimeFile->preAnalyze();
-  runtimeFile->analyze();
-  runtimeFile->reAnalyze();
+  runtimeFile->runFrontEnd();
 
   modules.emplace(moduleName, runtimeFile.get());
   return true;

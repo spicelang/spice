@@ -8,7 +8,7 @@
 #include <Token.h>
 
 // Forward declarations
-struct AstNode;
+class ASTNode;
 struct CodeLoc;
 
 enum SemanticErrorType {
@@ -61,6 +61,7 @@ enum SemanticErrorType {
   RETURN_WITHOUT_VALUE_RESULT,
   RETURN_WITH_VALUE_IN_PROCEDURE,
   DYN_POINTERS_NOT_ALLOWED,
+  DYN_REFERENCES_NOT_ALLOWED,
   DYN_ARRAYS_NOT_ALLOWED,
   GENERIC_TYPE_NOT_IN_TEMPLATE,
   SPECIFIER_AT_ILLEGAL_CONTEXT,
@@ -86,7 +87,7 @@ enum SemanticErrorType {
 class SemanticError : public std::exception {
 public:
   // Constructors
-  explicit SemanticError(const AstNode *node, const SemanticErrorType &type, const std::string &message);
+  explicit SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

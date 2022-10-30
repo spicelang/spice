@@ -1,14 +1,14 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include "AstBuilder.h"
+#include "ASTBuilder.h"
 
 #include <regex>
 
-#include <ast/AstNodes.h>
+#include <ast/ASTNodes.h>
 #include <exception/ParserError.h>
 #include <util/CommonUtil.h>
 
-std::any AstBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
+std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = dynamic_cast<EntryNode *>(currentNode);
   for (const auto &subTree : ctx->children) {
     // Create child for the current node
@@ -44,7 +44,7 @@ std::any AstBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
+std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
   auto mainFctDefNode = dynamic_cast<MainFctDefNode *>(currentNode);
   saveErrorMessage(mainFctDefNode, ctx);
 
@@ -53,8 +53,8 @@ std::any AstBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
     if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ArgLstDef
       currentNode = mainFctDefNode->createChild<ParamLstNode>(CodeLoc(rule->start, fileName));
       mainFctDefNode->hasArgs = true;
-    } else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = mainFctDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    } else if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = mainFctDefNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -66,7 +66,7 @@ std::any AstBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
   return nullptr;
 }
 
-std::any AstBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
+std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   auto fctDefNode = dynamic_cast<FctDefNode *>(currentNode);
   saveErrorMessage(fctDefNode, ctx);
 
@@ -90,8 +90,8 @@ std::any AstBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     } else if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ParamLst
       currentNode = fctDefNode->createChild<ParamLstNode>(CodeLoc(rule->start, fileName));
       fctDefNode->hasParams = true;
-    } else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = fctDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    } else if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = fctDefNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -103,7 +103,7 @@ std::any AstBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
+std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   auto procDefNode = dynamic_cast<ProcDefNode *>(currentNode);
   saveErrorMessage(procDefNode, ctx);
 
@@ -125,8 +125,8 @@ std::any AstBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
     } else if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ParamLst
       currentNode = procDefNode->createChild<ParamLstNode>(CodeLoc(rule->start, fileName));
       procDefNode->hasParams = true;
-    } else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = procDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    } else if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = procDefNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -138,7 +138,7 @@ std::any AstBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
+std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
   auto structDefNode = dynamic_cast<StructDefNode *>(currentNode);
   saveErrorMessage(structDefNode, ctx);
 
@@ -175,7 +175,7 @@ std::any AstBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
+std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
   auto interfaceDefNode = dynamic_cast<InterfaceDefNode *>(currentNode);
   saveErrorMessage(interfaceDefNode, ctx);
 
@@ -199,7 +199,7 @@ std::any AstBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
+std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   auto enumDefNode = dynamic_cast<EnumDefNode *>(currentNode);
   saveErrorMessage(enumDefNode, ctx);
 
@@ -224,7 +224,7 @@ std::any AstBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
+std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
   auto genericTypeDefNode = dynamic_cast<GenericTypeDefNode *>(currentNode);
   saveErrorMessage(genericTypeDefNode, ctx);
 
@@ -248,7 +248,7 @@ std::any AstBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
   return nullptr;
 }
 
-std::any AstBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
+std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
   auto globalVarDefNode = dynamic_cast<GlobalVarDefNode *>(currentNode);
   saveErrorMessage(globalVarDefNode, ctx);
 
@@ -274,7 +274,7 @@ std::any AstBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
+std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   auto extDeclNode = dynamic_cast<ExtDeclNode *>(currentNode);
   saveErrorMessage(extDeclNode, ctx);
 
@@ -301,14 +301,14 @@ std::any AstBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
+std::any ASTBuilder::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   auto threadDefNode = dynamic_cast<ThreadDefNode *>(currentNode);
   saveErrorMessage(threadDefNode, ctx);
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = threadDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = threadDefNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -320,14 +320,14 @@ std::any AstBuilder::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
+std::any ASTBuilder::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
   auto unsafeBlockDefNode = dynamic_cast<UnsafeBlockDefNode *>(currentNode);
   saveErrorMessage(unsafeBlockDefNode, ctx);
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = unsafeBlockDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = unsafeBlockDefNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -339,7 +339,7 @@ std::any AstBuilder::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx
   return nullptr;
 }
 
-std::any AstBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
+std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto forLoopNode = dynamic_cast<ForLoopNode *>(currentNode);
   saveErrorMessage(forLoopNode, ctx);
 
@@ -347,8 +347,8 @@ std::any AstBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::ForHeadContext *>(subTree); rule != nullptr) // ForHead
       visit(rule);
-    else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = forLoopNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = forLoopNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -360,7 +360,7 @@ std::any AstBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
+std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
   auto forLoopNode = dynamic_cast<ForLoopNode *>(currentNode);
   saveErrorMessage(forLoopNode, ctx);
 
@@ -381,7 +381,7 @@ std::any AstBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
+std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
   auto foreachLoopNode = dynamic_cast<ForeachLoopNode *>(currentNode);
   saveErrorMessage(foreachLoopNode, ctx);
 
@@ -389,8 +389,8 @@ std::any AstBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::ForeachHeadContext *>(subTree); rule != nullptr) // ForeachHead
       visit(rule);
-    else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = foreachLoopNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = foreachLoopNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -402,7 +402,7 @@ std::any AstBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
+std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
   auto foreachLoopNode = dynamic_cast<ForeachLoopNode *>(currentNode);
   saveErrorMessage(foreachLoopNode, ctx);
 
@@ -423,7 +423,7 @@ std::any AstBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
+std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   auto whileLoopNode = dynamic_cast<WhileLoopNode *>(currentNode);
   saveErrorMessage(whileLoopNode, ctx);
 
@@ -431,8 +431,8 @@ std::any AstBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = whileLoopNode->createChild<AssignExprNode>(CodeLoc(rule->start, fileName));
-    else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = whileLoopNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = whileLoopNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -444,7 +444,7 @@ std::any AstBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
+std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   auto ifStmtNode = dynamic_cast<IfStmtNode *>(currentNode);
   saveErrorMessage(ifStmtNode, ctx);
 
@@ -452,8 +452,8 @@ std::any AstBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = ifStmtNode->createChild<AssignExprNode>(CodeLoc(rule->start, fileName));
-    else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = ifStmtNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = ifStmtNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::ElseStmtContext *>(subTree); rule != nullptr) // ElseStmt
       currentNode = ifStmtNode->createChild<ElseStmtNode>(CodeLoc(rule->start, fileName));
     else
@@ -467,7 +467,7 @@ std::any AstBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
+std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   auto elseStmtNode = dynamic_cast<ElseStmtNode *>(currentNode);
   saveErrorMessage(elseStmtNode, ctx);
 
@@ -476,8 +476,8 @@ std::any AstBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
     if (rule = dynamic_cast<SpiceParser::IfStmtContext *>(subTree); rule != nullptr) { // IfStmt
       currentNode = elseStmtNode->createChild<IfStmtNode>(CodeLoc(rule->start, fileName));
       elseStmtNode->isElseIf = true;
-    } else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = elseStmtNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
+    } else if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = elseStmtNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -489,7 +489,7 @@ std::any AstBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
+std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   auto assertStmtNode = dynamic_cast<AssertStmtNode *>(currentNode);
   saveErrorMessage(assertStmtNode, ctx);
 
@@ -509,7 +509,26 @@ std::any AstBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
+std::any ASTBuilder::visitScope(SpiceParser::ScopeContext *ctx) {
+  auto scopeNode = dynamic_cast<ScopeNode *>(currentNode);
+  saveErrorMessage(scopeNode, ctx);
+
+  for (const auto &subTree : ctx->children) {
+    antlr4::ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
+      currentNode = scopeNode->createChild<AssignExprNode>(CodeLoc(rule->start, fileName));
+    else
+      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != scopeNode) {
+      visit(rule);
+      currentNode = scopeNode;
+    }
+  }
+  return nullptr;
+}
+
+std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   auto stmtLstNode = dynamic_cast<StmtLstNode *>(currentNode);
   saveErrorMessage(stmtLstNode, ctx);
 
@@ -531,8 +550,13 @@ std::any AstBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
       currentNode = stmtLstNode->createChild<ThreadDefNode>(CodeLoc(rule->start, fileName));
     else if (rule = dynamic_cast<SpiceParser::UnsafeBlockDefContext *>(subTree); rule != nullptr) // UnsafeBlockDef
       currentNode = stmtLstNode->createChild<UnsafeBlockDefNode>(CodeLoc(rule->start, fileName));
+    else if (rule = dynamic_cast<SpiceParser::ScopeContext *>(subTree); rule != nullptr) // Scope
+      currentNode = stmtLstNode->createChild<ScopeNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    // Sum statements as complexity
+    stmtLstNode->complexity++;
 
     if (currentNode != stmtLstNode) {
       visit(rule);
@@ -542,7 +566,7 @@ std::any AstBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
+std::any ASTBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
   auto typeLstNode = dynamic_cast<TypeLstNode *>(currentNode);
   saveErrorMessage(typeLstNode, ctx);
 
@@ -562,7 +586,7 @@ std::any AstBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
+std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
   auto typeAltsLstNode = dynamic_cast<TypeAltsLstNode *>(currentNode);
   saveErrorMessage(typeAltsLstNode, ctx);
 
@@ -582,7 +606,7 @@ std::any AstBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
+std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
   auto argLstDefNode = dynamic_cast<ParamLstNode *>(currentNode);
   saveErrorMessage(argLstDefNode, ctx);
 
@@ -601,7 +625,7 @@ std::any AstBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
+std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
   auto argLstNode = dynamic_cast<ArgLstNode *>(currentNode);
   saveErrorMessage(argLstNode, ctx);
 
@@ -620,7 +644,7 @@ std::any AstBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
+std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
   auto enumItemLstNode = dynamic_cast<EnumItemLstNode *>(currentNode);
   saveErrorMessage(enumItemLstNode, ctx);
 
@@ -639,7 +663,7 @@ std::any AstBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
+std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
   auto enumItemNode = dynamic_cast<EnumItemNode *>(currentNode);
   saveErrorMessage(enumItemNode, ctx);
 
@@ -655,7 +679,7 @@ std::any AstBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitField(SpiceParser::FieldContext *ctx) {
+std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   auto fieldNode = dynamic_cast<FieldNode *>(currentNode);
   saveErrorMessage(fieldNode, ctx);
 
@@ -679,7 +703,7 @@ std::any AstBuilder::visitField(SpiceParser::FieldContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
+std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   auto signatureNode = dynamic_cast<SignatureNode *>(currentNode);
   saveErrorMessage(signatureNode, ctx);
 
@@ -709,7 +733,7 @@ std::any AstBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
+std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
   auto stmtNode = dynamic_cast<StmtNode *>(currentNode);
   saveErrorMessage(stmtNode, ctx);
 
@@ -736,7 +760,7 @@ std::any AstBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
+std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   auto declStmtNode = dynamic_cast<DeclStmtNode *>(currentNode);
   saveErrorMessage(declStmtNode, ctx);
 
@@ -763,7 +787,7 @@ std::any AstBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
+std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
   auto specifierLstNode = dynamic_cast<SpecifierLstNode *>(currentNode);
   saveErrorMessage(specifierLstNode, ctx);
 
@@ -782,7 +806,7 @@ std::any AstBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
+std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
   auto specifierNode = dynamic_cast<SpecifierNode *>(currentNode);
   saveErrorMessage(specifierNode, ctx);
 
@@ -800,13 +824,15 @@ std::any AstBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
       specifierNode->type = SpecifierNode::TY_INLINE;
     else if (symbolType == SpiceParser::PUBLIC)
       specifierNode->type = SpecifierNode::TY_PUBLIC;
+    else if (symbolType == SpiceParser::HEAP)
+      specifierNode->type = SpecifierNode::TY_HEAP;
     else
       assert(false);
   }
   return nullptr;
 }
 
-std::any AstBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
+std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   auto importStmtNode = dynamic_cast<ImportStmtNode *>(currentNode);
   saveErrorMessage(importStmtNode, ctx);
 
@@ -820,7 +846,7 @@ std::any AstBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
+std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   auto returnStmtNode = dynamic_cast<ReturnStmtNode *>(currentNode);
   saveErrorMessage(returnStmtNode, ctx);
 
@@ -840,7 +866,7 @@ std::any AstBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
+std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
   auto breakStmtNode = dynamic_cast<BreakStmtNode *>(currentNode);
   saveErrorMessage(breakStmtNode, ctx);
 
@@ -851,7 +877,7 @@ std::any AstBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
+std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
   auto continueStmtNode = dynamic_cast<ContinueStmtNode *>(currentNode);
   saveErrorMessage(continueStmtNode, ctx);
 
@@ -862,7 +888,7 @@ std::any AstBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
+std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
   auto atomicExprNode = dynamic_cast<AtomicExprNode *>(currentNode);
   saveErrorMessage(atomicExprNode, ctx);
 
@@ -889,7 +915,7 @@ std::any AstBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
+std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   auto printfCallNode = dynamic_cast<PrintfCallNode *>(currentNode);
   saveErrorMessage(printfCallNode, ctx);
 
@@ -914,7 +940,7 @@ std::any AstBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
+std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   auto sizeofCallNode = dynamic_cast<SizeofCallNode *>(currentNode);
   saveErrorMessage(sizeofCallNode, ctx);
 
@@ -938,7 +964,7 @@ std::any AstBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
+std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
   auto lenCallNode = dynamic_cast<LenCallNode *>(currentNode);
   saveErrorMessage(lenCallNode, ctx);
 
@@ -957,13 +983,13 @@ std::any AstBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitTidCall(SpiceParser::TidCallContext *ctx) {
+std::any ASTBuilder::visitTidCall(SpiceParser::TidCallContext *ctx) {
   auto tidCallNode = dynamic_cast<TidCallNode *>(currentNode);
   saveErrorMessage(tidCallNode, ctx);
   return nullptr;
 }
 
-std::any AstBuilder::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
+std::any ASTBuilder::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
   auto joinCallNode = dynamic_cast<JoinCallNode *>(currentNode);
   saveErrorMessage(joinCallNode, ctx);
 
@@ -982,7 +1008,7 @@ std::any AstBuilder::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
+std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   auto assignExprNode = dynamic_cast<AssignExprNode *>(currentNode);
   saveErrorMessage(assignExprNode, ctx);
 
@@ -1009,7 +1035,7 @@ std::any AstBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
+std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   auto ternaryExprNode = dynamic_cast<TernaryExprNode *>(currentNode);
   saveErrorMessage(ternaryExprNode, ctx);
 
@@ -1031,7 +1057,7 @@ std::any AstBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
+std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
   auto logicalOrExprNode = dynamic_cast<LogicalOrExprNode *>(currentNode);
   saveErrorMessage(logicalOrExprNode, ctx);
 
@@ -1050,7 +1076,7 @@ std::any AstBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) 
   return nullptr;
 }
 
-std::any AstBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
+std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
   auto logicalAndExprNode = dynamic_cast<LogicalAndExprNode *>(currentNode);
   saveErrorMessage(logicalAndExprNode, ctx);
 
@@ -1069,7 +1095,7 @@ std::any AstBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx
   return nullptr;
 }
 
-std::any AstBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
+std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
   auto bitwiseOrExprNode = dynamic_cast<BitwiseOrExprNode *>(currentNode);
   saveErrorMessage(bitwiseOrExprNode, ctx);
 
@@ -1088,7 +1114,7 @@ std::any AstBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) 
   return nullptr;
 }
 
-std::any AstBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
+std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
   auto bitwiseXorExprNode = dynamic_cast<BitwiseXorExprNode *>(currentNode);
   saveErrorMessage(bitwiseXorExprNode, ctx);
 
@@ -1107,7 +1133,7 @@ std::any AstBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx
   return nullptr;
 }
 
-std::any AstBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
+std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
   auto bitwiseAndExprNode = dynamic_cast<BitwiseAndExprNode *>(currentNode);
   saveErrorMessage(bitwiseAndExprNode, ctx);
 
@@ -1126,7 +1152,7 @@ std::any AstBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx
   return nullptr;
 }
 
-std::any AstBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
+std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   auto equalityExprNode = dynamic_cast<EqualityExprNode *>(currentNode);
   saveErrorMessage(equalityExprNode, ctx);
 
@@ -1151,7 +1177,7 @@ std::any AstBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
+std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
   auto relationalExprNode = dynamic_cast<RelationalExprNode *>(currentNode);
   saveErrorMessage(relationalExprNode, ctx);
 
@@ -1180,7 +1206,7 @@ std::any AstBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx
   return nullptr;
 }
 
-std::any AstBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
+std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   auto shiftExprNode = dynamic_cast<ShiftExprNode *>(currentNode);
   saveErrorMessage(shiftExprNode, ctx);
 
@@ -1205,7 +1231,7 @@ std::any AstBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
+std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
   auto additiveExprNode = dynamic_cast<AdditiveExprNode *>(currentNode);
   saveErrorMessage(additiveExprNode, ctx);
 
@@ -1228,7 +1254,7 @@ std::any AstBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
+std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
   auto multiplicativeExprNode = dynamic_cast<MultiplicativeExprNode *>(currentNode);
   saveErrorMessage(multiplicativeExprNode, ctx);
 
@@ -1253,7 +1279,7 @@ std::any AstBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
   return nullptr;
 }
 
-std::any AstBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
+std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   auto castExprNode = dynamic_cast<CastExprNode *>(currentNode);
   saveErrorMessage(castExprNode, ctx);
 
@@ -1275,7 +1301,7 @@ std::any AstBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
   auto prefixUnaryExprNode = dynamic_cast<PrefixUnaryExprNode *>(currentNode);
   saveErrorMessage(prefixUnaryExprNode, ctx);
 
@@ -1296,7 +1322,7 @@ std::any AstBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
   return nullptr;
 }
 
-std::any AstBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
+std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
   auto postfixUnaryExprNode = dynamic_cast<PostfixUnaryExprNode *>(currentNode);
   saveErrorMessage(postfixUnaryExprNode, ctx);
 
@@ -1331,7 +1357,7 @@ std::any AstBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
   return nullptr;
 }
 
-std::any AstBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
+std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   auto atomicExprNode = dynamic_cast<AtomicExprNode *>(currentNode);
   saveErrorMessage(atomicExprNode, ctx);
 
@@ -1356,7 +1382,7 @@ std::any AstBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitValue(SpiceParser::ValueContext *ctx) {
+std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
   auto valueNode = dynamic_cast<ValueNode *>(currentNode);
   saveErrorMessage(valueNode, ctx);
 
@@ -1384,7 +1410,7 @@ std::any AstBuilder::visitValue(SpiceParser::ValueContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
+std::any ASTBuilder::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
   auto primitiveValueNode = dynamic_cast<PrimitiveValueNode *>(currentNode);
   saveErrorMessage(primitiveValueNode, ctx);
 
@@ -1442,7 +1468,7 @@ std::any AstBuilder::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx
   return nullptr;
 }
 
-std::any AstBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
+std::any ASTBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
   auto fctCallNode = dynamic_cast<FunctionCallNode *>(currentNode);
   saveErrorMessage(fctCallNode, ctx);
 
@@ -1472,7 +1498,7 @@ std::any AstBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
+std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
   auto arrayInitializationNode = dynamic_cast<ArrayInitializationNode *>(currentNode);
   saveErrorMessage(arrayInitializationNode, ctx);
 
@@ -1491,7 +1517,7 @@ std::any AstBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationCo
   return nullptr;
 }
 
-std::any AstBuilder::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
+std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
   auto structInstantiationNode = dynamic_cast<StructInstantiationNode *>(currentNode);
   saveErrorMessage(structInstantiationNode, ctx);
 
@@ -1518,7 +1544,7 @@ std::any AstBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
   return nullptr;
 }
 
-std::any AstBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
+std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   auto dataTypeNode = dynamic_cast<DataTypeNode *>(currentNode);
   saveErrorMessage(dataTypeNode, ctx);
 
@@ -1559,7 +1585,7 @@ std::any AstBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
+std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
   auto baseDataTypeNode = dynamic_cast<BaseDataTypeNode *>(currentNode);
   saveErrorMessage(baseDataTypeNode, ctx);
 
@@ -1598,7 +1624,7 @@ std::any AstBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
+std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
   auto customDataTypeNode = dynamic_cast<CustomDataTypeNode *>(currentNode);
   saveErrorMessage(customDataTypeNode, ctx);
 
@@ -1623,7 +1649,7 @@ std::any AstBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
   return nullptr;
 }
 
-std::any AstBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
+std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
   auto assignExprNode = dynamic_cast<AssignExprNode *>(currentNode);
   saveErrorMessage(assignExprNode, ctx);
 
@@ -1658,7 +1684,7 @@ std::any AstBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
   return nullptr;
 }
 
-std::any AstBuilder::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) {
+std::any ASTBuilder::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) {
   auto prefixUnaryExprNode = dynamic_cast<PrefixUnaryExprNode *>(currentNode);
   saveErrorMessage(prefixUnaryExprNode, ctx);
 
@@ -1686,7 +1712,7 @@ std::any AstBuilder::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) 
   return nullptr;
 }
 
-void AstBuilder::replaceEscapeChars(std::string &string) {
+void ASTBuilder::replaceEscapeChars(std::string &string) {
   CommonUtil::replaceAll(string, "\\a", "\a");
   CommonUtil::replaceAll(string, "\\b", "\b");
   CommonUtil::replaceAll(string, "\\f", "\f");
@@ -1698,27 +1724,27 @@ void AstBuilder::replaceEscapeChars(std::string &string) {
   CommonUtil::replaceAll(string, "\\?", "\?");
 }
 
-int32_t AstBuilder::parseInt(antlr4::tree::TerminalNode *terminal) {
+int32_t ASTBuilder::parseInt(antlr4::tree::TerminalNode *terminal) {
   std::function<int32_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return std::stoi(substr, nullptr, base);
   };
   return parseNumeric(terminal, cb);
 }
-int16_t AstBuilder::parseShort(antlr4::tree::TerminalNode *terminal) {
+int16_t ASTBuilder::parseShort(antlr4::tree::TerminalNode *terminal) {
   std::function<int16_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return (int16_t)std::stoi(substr, nullptr, base);
   };
   return parseNumeric(terminal, cb);
 }
 
-int64_t AstBuilder::parseLong(antlr4::tree::TerminalNode *terminal) {
+int64_t ASTBuilder::parseLong(antlr4::tree::TerminalNode *terminal) {
   std::function<int64_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return std::stoll(substr, nullptr, base);
   };
   return parseNumeric(terminal, cb);
 }
 
-int8_t AstBuilder::parseChar(antlr4::tree::TerminalNode *terminal) {
+int8_t ASTBuilder::parseChar(antlr4::tree::TerminalNode *terminal) {
   std::string input = terminal->toString();
   if (input.length() == 3) { // Normal char literals
     return input[1];
@@ -1754,14 +1780,14 @@ int8_t AstBuilder::parseChar(antlr4::tree::TerminalNode *terminal) {
   }
 }
 
-std::string AstBuilder::parseString(std::string input) {
+std::string ASTBuilder::parseString(std::string input) {
   input = input.substr(1, input.size() - 2);
   replaceEscapeChars(input);
   return input;
 }
 
 template <typename T>
-T AstBuilder::parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb) {
+T ASTBuilder::parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb) {
   std::string input = terminal->toString();
   try {
     if (input.length() >= 3) {
@@ -1799,7 +1825,7 @@ T AstBuilder::parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T
   }
 }
 
-void AstBuilder::saveErrorMessage(AstNode *node, const antlr4::ParserRuleContext *ctx) {
+void ASTBuilder::saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext *ctx) {
   const antlr4::misc::Interval sourceInterval(ctx->start->getStartIndex(), ctx->stop->getStopIndex());
   antlr4::misc::Interval extendedSourceInterval(sourceInterval);
 

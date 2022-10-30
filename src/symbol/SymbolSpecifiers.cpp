@@ -146,6 +146,25 @@ void SymbolSpecifiers::setPublic(bool value) {
 bool SymbolSpecifiers::isPublic() const { return getBit(BIT_INDEX_PUBLIC); }
 
 /**
+ * Set or clear the heap flag
+ *
+ * @param value True or false
+ */
+void SymbolSpecifiers::setHeap(bool value) {
+  if (value)
+    setBit(BIT_INDEX_HEAP);
+  else
+    clearBit(BIT_INDEX_HEAP);
+}
+
+/**
+ * Check if the heap flag is set
+ *
+ * @return True or false
+ */
+bool SymbolSpecifiers::isHeap() const { return getBit(BIT_INDEX_HEAP); }
+
+/**
  * Set or clear bit in specifier value
  *
  * @param index Index of the bit to set

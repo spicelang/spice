@@ -12,43 +12,44 @@ const unsigned short BIT_INDEX_PUBLIC = 0;
 const unsigned short BIT_INDEX_SIGNED = 1;
 const unsigned short BIT_INDEX_CONST = 2;
 const unsigned short BIT_INDEX_INLINE = 3;
+const unsigned short BIT_INDEX_HEAP = 4;
 
 // Defaults: Const: 0, Signed: 1, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_DOUBLE = 0b010;
+const unsigned short SPECIFIER_DEFAULTS_DOUBLE = 0b0010;
 // Defaults: Const: 0, Signed: 1, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_INT = 0b010;
+const unsigned short SPECIFIER_DEFAULTS_INT = 0b0010;
 // Defaults: Const: 0, Signed: 1, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_SHORT = 0b010;
+const unsigned short SPECIFIER_DEFAULTS_SHORT = 0b0010;
 // Defaults: Const: 0, Signed: 1, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_LONG = 0b010;
+const unsigned short SPECIFIER_DEFAULTS_LONG = 0b0010;
 // Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_BYTE = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_BYTE = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_CHAR = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_CHAR = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_STRING = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_STRING = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_STROBJ = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_STROBJ = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_BOOL = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_BOOL = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_PTR = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_PTR = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_ARRAY = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_ARRAY = 0b0000;
 // Defaults: Const: 1, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_GENERIC = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_GENERIC = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_STRUCT = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_STRUCT = 0b0000;
 // Defaults: Const: 0; Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_INTERFACE = 0b000;
+const unsigned short SPECIFIER_DEFAULTS_INTERFACE = 0b0000;
 // Defaults: Const: 1, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_ENUM = 0b100;
+const unsigned short SPECIFIER_DEFAULTS_ENUM = 0b0100;
 // Defaults: Const: 1, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_FUNCTION = 0b100;
+const unsigned short SPECIFIER_DEFAULTS_FUNCTION = 0b0100;
 // Defaults: Const: 1, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_PROCEDURE = 0b100;
+const unsigned short SPECIFIER_DEFAULTS_PROCEDURE = 0b0100;
 // Defaults: Const: 1, Signed: 0, Public: 1
-const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b101;
+const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b0101;
 
 class SymbolSpecifiers {
 public:
@@ -64,6 +65,8 @@ public:
   [[nodiscard]] bool isInline() const;
   void setPublic(bool value);
   [[nodiscard]] bool isPublic() const;
+  void setHeap(bool heap);
+  [[nodiscard]] bool isHeap() const;
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
   // JSON serializer/deserializer

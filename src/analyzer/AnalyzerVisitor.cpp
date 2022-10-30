@@ -5,7 +5,7 @@
 #include <utility>
 
 #include <SourceFile.h>
-#include <cli/CliInterface.h>
+#include <cli/CLIInterface.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <global/RuntimeModuleManager.h>
@@ -40,7 +40,7 @@ std::any AnalyzerVisitor::visitEntry(EntryNode *node) {
   // --- Pre-traversing actions
 
   // --- Traverse AST
-  AstVisitor::visitChildren(node);
+  ASTVisitor::visitChildren(node);
 
   // --- Post traversing actions
   // Remove non-substantiated functions and structs
@@ -2504,7 +2504,7 @@ std::any AnalyzerVisitor::visitCustomDataType(CustomDataTypeNode *node) {
   throw std::runtime_error("Base type fall-through");
 }
 
-void AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {
+void AnalyzerVisitor::insertAnonStringStructSymbol(const ASTNode *declNode) {
   // Insert anonymous string symbol
   SymbolType stringStructType(TY_STRING, "", {}, {});
   currentScope->insertAnonymous(stringStructType, declNode);
@@ -2513,11 +2513,11 @@ void AnalyzerVisitor::insertAnonStringStructSymbol(const AstNode *declNode) {
   sourceFile.requestRuntimeModule(STRING_RT);
 }
 
-void AnalyzerVisitor::insertDestructorCall(const AstNode *node, const SymbolTableEntry *varEntry) {
+void AnalyzerVisitor::insertDestructorCall(const ASTNode *node, const SymbolTableEntry *varEntry) {
   insertStructMethodCall(node, varEntry, DTOR_FUNCTION_NAME);
 }
 
-void AnalyzerVisitor::insertEmptyConstructorCall(const AstNode *node, const SymbolTableEntry *varEntry) {
+void AnalyzerVisitor::insertEmptyConstructorCall(const ASTNode *node, const SymbolTableEntry *varEntry) {
   insertStructMethodCall(node, varEntry, CTOR_FUNCTION_NAME);
 
   // Add anonymous symbol to keep track of de-allocation
@@ -2527,7 +2527,7 @@ void AnalyzerVisitor::insertEmptyConstructorCall(const AstNode *node, const Symb
   currentScope->insertAnonymous(thisType, node, INITIALIZED);
 }
 
-void AnalyzerVisitor::insertStructMethodCall(const AstNode *node, const SymbolTableEntry *varEntry, const std::string &name) {
+void AnalyzerVisitor::insertStructMethodCall(const ASTNode *node, const SymbolTableEntry *varEntry, const std::string &name) {
   assert(varEntry != nullptr);
   SymbolType varEntryType = varEntry->type;
   assert(varEntryType.isOneOf({TY_STRUCT, TY_STROBJ}));
@@ -2553,7 +2553,7 @@ void AnalyzerVisitor::insertStructMethodCall(const AstNode *node, const SymbolTa
 
 SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, // NOLINT(misc-no-recursion)
                                           const std::string &structScopePrefix, const std::string &structName,
-                                          const std::vector<SymbolType> &templateTypes, const AstNode *node) {
+                                          const std::vector<SymbolType> &templateTypes, const ASTNode *node) {
   // Get external struct name
   std::string newStructName = structScopePrefix + structName;
 
@@ -2588,7 +2588,7 @@ SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, // NOLINT(mi
 
   // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
   Capture newGlobalCapture(externalStructSymbol, newStructSignature, DECLARED);
-  rootScope->addCapture(newStructSignature, newGlobalCapture);
+  rootScope->insertCapture(newStructSignature, newGlobalCapture);
   externalStructSymbol->isUsed = true;
 
   // Set the struct instance to used
@@ -2604,7 +2604,7 @@ SymbolType AnalyzerVisitor::initExtStruct(SymbolTable *sourceScope, // NOLINT(mi
 }
 
 SymbolType AnalyzerVisitor::initExtGlobal(SymbolTable *sourceScope, const std::string &globalScopePrefix,
-                                          const std::string &globalName, const AstNode *node) {
+                                          const std::string &globalName, const ASTNode *node) {
   // Get external global var name
   std::string newGlobalName = globalScopePrefix + globalName;
 
@@ -2620,13 +2620,13 @@ SymbolType AnalyzerVisitor::initExtGlobal(SymbolTable *sourceScope, const std::s
 
   // Set to DECLARED, so that the generator can set it to DEFINED as soon as the LLVM struct type was generated once
   Capture newGlobalCapture = Capture(externalGlobalSymbol, newGlobalName, DECLARED);
-  rootScope->addCapture(newGlobalName, newGlobalCapture);
+  rootScope->insertCapture(newGlobalName, newGlobalCapture);
   externalGlobalSymbol->isUsed = true;
 
   return externalGlobalSymbol->type;
 }
 
-void AnalyzerVisitor::checkForReservedKeyword(const AstNode *node, const std::string &identifier) {
+void AnalyzerVisitor::checkForReservedKeyword(const ASTNode *node, const std::string &identifier) {
   if (std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), identifier) != std::end(RESERVED_KEYWORDS))
     throw SemanticError(
         node, RESERVED_KEYWORD,

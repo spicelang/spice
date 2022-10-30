@@ -1,13 +1,13 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
-#include <cli/CliInterface.h>
-#include <global/GlobalResourceManager.h>
 #include <SourceFile.h>
+#include <cli/CLIInterface.h>
 #include <exception/CliError.h>
 #include <exception/IRError.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
+#include <global/GlobalResourceManager.h>
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
@@ -23,32 +23,10 @@ bool compileProject(CliOptions &cliOptions) {
     // Create source file instance for main source file
     SourceFile mainSourceFile(resourceManager, nullptr, "root", cliOptions.mainSourceFile, false);
 
-    // Visualize the parse tree (only runs in debug mode)
-    mainSourceFile.visualizeCST();
-
-    // Transform CST to an AST
-    mainSourceFile.buildAST();
-
-    // Visualize the AST (only runs in debug mode)
-    mainSourceFile.visualizeAST();
-
-    // Pre-analyze the project (collect imports, etc.)
-    mainSourceFile.preAnalyze();
-
-    // Analyze the project (semantic analysis, build symbol table, type inference, type checking, etc.)
-    mainSourceFile.analyze();
-
-    // Re-analyze the project (resolve generic functions/procedures/structs, etc.)
-    mainSourceFile.reAnalyze();
-
-    // Generate the project (Coming up with the LLVM types of structs or other types in the root scope)
-    mainSourceFile.generate();
-
-    // Optimize the project
-    mainSourceFile.optimize();
-
-    // Emit the object files for every particular source file
-    mainSourceFile.emitObjectFile();
+    // Run compile pipeline for main source file. All dependent source files are triggered by their parents
+    mainSourceFile.runFrontEnd();
+    mainSourceFile.runMiddleEnd();
+    mainSourceFile.runBackEnd();
 
     // Link the target executable (Link object files to executable)
     resourceManager.linker.link();
@@ -78,7 +56,7 @@ bool compileProject(CliOptions &cliOptions) {
  */
 int main(int argc, char **argv) {
   // Initialize command line parser
-  CliInterface cli;
+  CLIInterface cli;
   cli.createInterface();
   try {
     cli.parse(argc, argv);

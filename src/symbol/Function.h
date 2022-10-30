@@ -9,7 +9,7 @@
 #include <symbol/SymbolType.h>
 
 // Forward declarations
-struct AstNode;
+class ASTNode;
 struct CodeLoc;
 
 struct Param {
@@ -32,7 +32,7 @@ class Function {
 public:
   // Constructors
   Function(std::string name, SymbolSpecifiers specifiers, SymbolType thisType, SymbolType returnType, ParamList paramList,
-           std::vector<GenericType> templateTypes, const AstNode *declNode)
+           std::vector<GenericType> templateTypes, const ASTNode *declNode)
       : name(std::move(name)), specifiers(specifiers), thisType(std::move(thisType)), returnType(std::move(returnType)),
         paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode) {}
   Function() = default;
@@ -61,7 +61,7 @@ public:
   SymbolType returnType = SymbolType(TY_DYN);
   ParamList paramList;
   std::vector<GenericType> templateTypes;
-  const AstNode *declNode;
+  const ASTNode *declNode;
   bool isGenericSubstantiation = false;
   bool isAlreadyAnalyzed = false;
   bool isUsed = false;

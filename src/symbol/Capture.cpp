@@ -10,13 +10,6 @@
 std::string Capture::getName() const { return name.empty() ? capturedEntry->name : name; }
 
 /**
- * Retrieve the state of the capture
- *
- * @return Capture state
- */
-SymbolState Capture::getState() const { return state; }
-
-/**
  * Set the mode of this capture.
  * Possible values are READ_ONLY and READ_WRITE
  *

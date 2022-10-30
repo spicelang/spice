@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <ast/AbstractAstVisitor.h>
+#include <ast/AbstractASTVisitor.h>
 
-class AstVisitor : public AbstractAstVisitor {
+class ASTVisitor : public AbstractASTVisitor {
 public:
   // Visitor methods
   std::any visitEntry(EntryNode *node) override;
@@ -25,6 +25,7 @@ public:
   std::any visitIfStmt(IfStmtNode *node) override;
   std::any visitElseStmt(ElseStmtNode *node) override;
   std::any visitAssertStmt(AssertStmtNode *node) override;
+  std::any visitScope(ScopeNode *node) override;
   std::any visitStmtLst(StmtLstNode *node) override;
   std::any visitTypeLst(TypeLstNode *node) override;
   std::any visitTypeAltsLst(TypeAltsLstNode *node) override;

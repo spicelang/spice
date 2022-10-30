@@ -6,7 +6,7 @@
 
 #include <SourceFile.h>
 #include <analyzer/AnalyzerVisitor.h>
-#include <cli/CliInterface.h>
+#include <cli/CLIInterface.h>
 #include <exception/IRError.h>
 #include <global/GlobalResourceManager.h>
 #include <symbol/Function.h>
@@ -126,9 +126,9 @@ void GeneratorVisitor::emit() {
 }
 
 void GeneratorVisitor::dumpIR() {
-  module->print(llvm::outs(), nullptr);
-  llvm::outs().flush();
-} // GCOV_EXCL_LINE
+  module->print(llvm::outs(), nullptr); // GCOV_EXCL_LINE
+  llvm::outs().flush();                 // GCOV_EXCL_LINE
+}
 
 std::string GeneratorVisitor::getIRString() {
   std::string output;
@@ -149,7 +149,7 @@ void GeneratorVisitor::dumpAsm() {
 
 std::any GeneratorVisitor::visitEntry(EntryNode *node) {
   // Visit children
-  AstVisitor::visitEntry(node);
+  ASTVisitor::visitEntry(node);
 
   // Reset the AST
   node->reset();
@@ -3022,7 +3022,7 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
   return currentSymbolType.toLLVMType(context, currentScope);
 }
 
-llvm::Value *GeneratorVisitor::resolveValue(AstNode *node, SymbolTable *accessScope) {
+llvm::Value *GeneratorVisitor::resolveValue(ASTNode *node, SymbolTable *accessScope) {
   if (!accessScope)
     accessScope = currentScope;
 
@@ -3036,7 +3036,7 @@ llvm::Value *GeneratorVisitor::resolveValue(AstNode *node, SymbolTable *accessSc
   return builder.CreateLoad(dstType, valueAddr);
 }
 
-llvm::Value *GeneratorVisitor::resolveAddress(AstNode *node, bool storeVolatile) {
+llvm::Value *GeneratorVisitor::resolveAddress(ASTNode *node, bool storeVolatile) {
   std::any valueAny = visit(node);
 
   if (!valueAny.has_value() && currentConstValue) {
@@ -3117,14 +3117,14 @@ llvm::Value *GeneratorVisitor::createGlobalArray(llvm::Constant *constArray) {
   return memAddress;
 }
 
-bool GeneratorVisitor::insertDestructorCall(const AstNode *node, SymbolTableEntry *varEntry) {
+bool GeneratorVisitor::insertDestructorCall(const ASTNode *node, SymbolTableEntry *varEntry) {
   // Check if already destructed
-  if (varEntry->state == DESTRUCTED)
+  if (varEntry->state == DEAD)
     return false;
 
   bool callSuccessful = insertStructMethodCall(node->codeLoc, varEntry, DTOR_FUNCTION_NAME);
   if (callSuccessful)
-    varEntry->updateState(DESTRUCTED, node, false);
+    varEntry->updateState(DEAD, node, false);
   return callSuccessful;
 }
 
@@ -3433,7 +3433,7 @@ void GeneratorVisitor::generateDeclDebugInfo(const CodeLoc &codeLoc, const std::
     inst->moveBefore(builder.GetInsertPoint()->getPrevNonDebugInstruction());
 }
 
-void GeneratorVisitor::setSourceLocation(AstNode *node) {
+void GeneratorVisitor::setSourceLocation(ASTNode *node) {
   if (!cliOptions.generateDebugInfo)
     return;
 

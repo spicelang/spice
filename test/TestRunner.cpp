@@ -10,12 +10,12 @@
 #include <llvm/Support/Host.h>
 
 #include "TestUtil.h"
-#include <cli/CliInterface.h>
-#include <global/GlobalResourceManager.h>
 #include <SourceFile.h>
+#include <cli/CLIInterface.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
+#include <global/GlobalResourceManager.h>
 #include <symbol/SymbolTable.h>
 #include <util/FileUtil.h>
 
@@ -42,6 +42,7 @@ void execTestCase(const TestCase &testCase) {
                            /* dumpIR= */ false,
                            /* dumpAssembly= */ false,
                            /* dumpSymbolTables= */ false,
+                           /* disableAstOpt= */ false,
                            /* optLevel= */ 0,
                            /* generateDebugInfo= */ false,
                            /* disableVerifier= */ false,

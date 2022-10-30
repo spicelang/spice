@@ -5,19 +5,21 @@
 #include <string>
 #include <vector>
 
-#include <ast/AbstractAstVisitor.h>
-#include <ast/AstNodes.h>
+#include <CompilerPass.h>
+#include <ast/ASTNodes.h>
+#include <ast/AbstractASTVisitor.h>
 
 /**
- * Visitor for debug purposes (is only executed in the compiler debug mode)
+ * Visitor for debug purposes (is only executed in the compiler debug mode and when explicitly enabling it via cli flag)
  *
  * Jobs:
  * - Visualize AST
  */
-class ASTVisualizerVisitor : public AbstractAstVisitor {
+class ASTVisualizer : private CompilerPass, public AbstractASTVisitor {
 public:
   // Constructors
-  explicit ASTVisualizerVisitor(const AstNode *ast) : ast(ast){};
+  ASTVisualizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile, const ASTNode *ast)
+      : CompilerPass(resourceManager, sourceFile), ast(ast){};
 
   // Visitor methods
   std::any visitEntry(EntryNode *ctx) override { return buildNode(ctx); }
@@ -38,6 +40,7 @@ public:
   std::any visitIfStmt(IfStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitElseStmt(ElseStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitAssertStmt(AssertStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitScope(ScopeNode *ctx) override { return buildNode(ctx); }
   std::any visitStmtLst(StmtLstNode *ctx) override { return buildNode(ctx); }
   std::any visitTypeLst(TypeLstNode *ctx) override { return buildNode(ctx); }
   std::any visitTypeAltsLst(TypeAltsLstNode *ctx) override { return buildNode(ctx); }
@@ -87,7 +90,7 @@ public:
 
 private:
   // Members
-  const AstNode *ast;
+  const ASTNode *ast;
   const std::vector<std::string> nodeNames;
   int currentTabs = 1;
   std::string parentNodeId;
@@ -159,6 +162,8 @@ private:
       return "ElseStmt";
     if (std::is_same<AssertStmtNode, T>())
       return "AssertStmt";
+    if (std::is_same<ScopeNode, T>())
+      return "Scope";
     if (std::is_same<StmtLstNode, T>())
       return "StmtLst";
     if (std::is_same<TypeLstNode, T>())

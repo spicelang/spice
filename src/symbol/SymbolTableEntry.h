@@ -11,13 +11,12 @@
 #include <llvm/IR/Value.h>
 
 #include "../../lib/json/json.hpp"
+#include "borrowchecker/Lifecycle.h"
 
 // Forward declarations
 class SymbolTable;
-struct AstNode;
+class ASTNode;
 struct CodeLoc;
-
-enum SymbolState { DECLARED, INITIALIZED, DESTRUCTED };
 
 /**
  * Entry of a symbol table, representing an individual symbol with all its properties
@@ -25,15 +24,15 @@ enum SymbolState { DECLARED, INITIALIZED, DESTRUCTED };
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, SymbolType type, SymbolTable *scope, SymbolSpecifiers specifiers, SymbolState state,
-                   const AstNode *declNode, size_t orderIndex, const bool global)
-      : name(std::move(name)), type(std::move(type)), scope(scope), specifiers(specifiers), state(state), declNode(declNode),
+  SymbolTableEntry(std::string name, SymbolType type, SymbolTable *scope, SymbolSpecifiers specifiers, const ASTNode *declNode,
+                   size_t orderIndex, const bool global)
+      : name(std::move(name)), type(std::move(type)), scope(scope), specifiers(specifiers), declNode(declNode),
         orderIndex(orderIndex), isGlobal(global){};
 
   // Public methods
   void updateType(const SymbolType &newType, bool force);
-  void updateState(SymbolState newState, const AstNode *node, bool force = false);
-  [[nodiscard]] const AstNode *getDeclNode() const;
+  void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
+  [[nodiscard]] const ASTNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::Type *getStructLLVMType() const;
   void setStructLLVMType(llvm::Type *newStructType);
@@ -48,8 +47,7 @@ public:
   SymbolType type;
   SymbolTable *scope;
   SymbolSpecifiers specifiers;
-  SymbolState state;
-  const AstNode *declNode;
+  const ASTNode *declNode;
   size_t orderIndex;
   const bool isGlobal;
   bool isVolatile = false;
@@ -59,4 +57,5 @@ private:
   // Members
   llvm::Type *llvmType = nullptr;
   std::stack<llvm::Value *> memAddress;
+  Lifecycle lifecycle;
 };

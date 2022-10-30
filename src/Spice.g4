@@ -4,28 +4,29 @@ grammar Spice;
 
 // Control structures
 entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | globalVarDef | importStmt | extDecl)*;
-mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN scope;
+functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN scope;
+procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN scope;
 structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
-interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature* RBRACE;
+interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: specifierLst? TYPE IDENTIFIER typeAltsLst SEMICOLON;
 globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN value)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
-threadDef: THREAD LBRACE stmtLst RBRACE;
-unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;
-forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
+threadDef: THREAD scope;
+unsafeBlockDef: UNSAFE scope;
+forLoop: FOR (forHead | LPAREN forHead RPAREN) scope;
 forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
-foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
+foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) scope;
 foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
-whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;
-ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
-elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
+whileLoop: WHILE assignExpr scope;
+ifStmt: IF assignExpr scope elseStmt?;
+elseStmt: ELSE ifStmt | ELSE scope;
 assertStmt: ASSERT assignExpr SEMICOLON;
+scope: LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef)*;
+stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef | scope)*;
 typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
@@ -37,7 +38,7 @@ signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER LPAREN typeLst
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: specifierLst? dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;
-specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC;
+specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP;
 importStmt: IMPORT STRING_LIT AS IDENTIFIER SEMICOLON;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INT_LIT?;
@@ -99,6 +100,7 @@ SIGNED: 'signed';
 UNSIGNED: 'unsigned';
 INLINE: 'inline';
 PUBLIC: 'public';
+HEAP: 'heap';
 F: 'f';
 P: 'p';
 IF: 'if';
