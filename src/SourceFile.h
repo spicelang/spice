@@ -10,17 +10,17 @@
 #include <SpiceParser.h>
 #include <Token.h>
 
+#include <scope/Scope.h>
 #include <ast/ASTNodes.h>
 #include <global/RuntimeModuleManager.h>
 #include <util/CompilerWarning.h>
+#include <exception/AntlrThrowingErrorListener.h>
 
 #include <llvm/IR/IRBuilder.h>
 
 // Forward declarations
 class AnalyzerVisitor;
 class GeneratorVisitor;
-class AntlrThrowingErrorListener;
-class Scope;
 class GlobalResourceManager;
 class EntryNode;
 class ASTNode;
@@ -34,16 +34,14 @@ enum CompilerStageIOType {
   IO_OBJECT_FILE = 5,
 };
 
-const char *COMPILER_STAGE_IO_TYPE_NAME[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
-
 struct SourceFileAntlrCtx {
   // Create error handlers for lexer and parser
-  std::shared_ptr<AntlrThrowingErrorListener> lexerErrorHandler;
-  std::shared_ptr<AntlrThrowingErrorListener> parserErrorHandler;
-  std::shared_ptr<antlr4::ANTLRInputStream> inputStream;
-  std::shared_ptr<SpiceLexer> lexer;
-  std::shared_ptr<antlr4::CommonTokenStream> tokenStream;
-  std::shared_ptr<SpiceParser> parser;
+  std::unique_ptr<AntlrThrowingErrorListener> lexerErrorHandler;
+  std::unique_ptr<AntlrThrowingErrorListener> parserErrorHandler;
+  std::unique_ptr<antlr4::ANTLRInputStream> inputStream;
+  std::unique_ptr<SpiceLexer> lexer;
+  std::unique_ptr<antlr4::CommonTokenStream> tokenStream;
+  std::unique_ptr<SpiceParser> parser;
 };
 
 struct CompilerOutput {
@@ -53,6 +51,12 @@ struct CompilerOutput {
   std::string irString;
   std::string irOptString;
   std::vector<CompilerWarning> warnings;
+};
+
+struct NameRegistryEntry {
+  std::string predecessorName;
+  SymbolTableEntry *targetEntry;
+  Scope *targetScope;
 };
 
 class SourceFile {
@@ -100,6 +104,7 @@ public:
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   void printWarnings() const;
   void requestRuntimeModule(const RuntimeModuleName &moduleName);
+  [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
 
   // Public fields
   std::string name;
@@ -117,6 +122,7 @@ public:
   std::unique_ptr<Scope> globalScope;
   std::unique_ptr<llvm::Module> llvmModule;
   std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const ASTNode *>> dependencies;
+  std::map<std::string, NameRegistryEntry> exportedNameRegistry;
 
 private:
   // Private fields

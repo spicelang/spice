@@ -135,12 +135,18 @@ void SymbolTableEntry::popAddress() { memAddress.pop(); }
  */
 nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   std::string stateStr;
-  switch (state) {
+  switch (lifecycle.getCurrentState()) {
   case DECLARED:
     stateStr = "declared";
     break;
   case INITIALIZED:
     stateStr = "initialized";
+    break;
+  case MOVED:
+    stateStr = "moved";
+    break;
+  case RETURNED:
+    stateStr = "returned";
     break;
   case DEAD:
     stateStr = "destructed";

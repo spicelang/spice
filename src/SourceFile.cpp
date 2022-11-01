@@ -15,7 +15,6 @@
 #include <irgenerator/IRGenerator.h>
 #include <iroptimizer/IROptimizer.h>
 #include <objectemitter/ObjectEmitter.h>
-#include <scope/Scope.h>
 #include <semanticanalyzer/SemanticAnalyzer.h>
 #include <symbol/SymbolTable.h>
 #include <typechecker/TypeChecker.h>
@@ -43,15 +42,15 @@ void SourceFile::runLexer() {
     throw std::runtime_error("Source file at path '" + filePath + "' does not exist.");
 
   // Create error handlers for lexer and parser
-  antlrCtx.lexerErrorHandler = std::make_shared<AntlrThrowingErrorListener>(LEXER);
-  antlrCtx.parserErrorHandler = std::make_shared<AntlrThrowingErrorListener>(PARSER);
+  antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(LEXER);
+  antlrCtx.parserErrorHandler = std::make_unique<AntlrThrowingErrorListener>(PARSER);
 
   // Tokenize input
-  antlrCtx.inputStream = std::make_shared<antlr4::ANTLRInputStream>(fileInputStream);
-  antlrCtx.lexer = std::make_shared<SpiceLexer>(antlrCtx.inputStream.get());
+  antlrCtx.inputStream = std::make_unique<antlr4::ANTLRInputStream>(fileInputStream);
+  antlrCtx.lexer = std::make_unique<SpiceLexer>(antlrCtx.inputStream.get());
   antlrCtx.lexer->removeErrorListeners();
   antlrCtx.lexer->addErrorListener(antlrCtx.lexerErrorHandler.get());
-  antlrCtx.tokenStream = std::make_shared<antlr4::CommonTokenStream>(antlrCtx.lexer.get());
+  antlrCtx.tokenStream = std::make_unique<antlr4::CommonTokenStream>(antlrCtx.lexer.get());
 
   // Calculate cache key
   std::stringstream cacheKeyString;
@@ -71,7 +70,7 @@ void SourceFile::runParser() {
     return;
 
   // Parse input
-  antlrCtx.parser = std::make_shared<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
+  antlrCtx.parser = std::make_unique<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
   antlrCtx.parser->removeErrorListeners();
   antlrCtx.parser->addErrorListener(antlrCtx.parserErrorHandler.get());
   antlrCtx.parser->removeParseListeners();
@@ -164,13 +163,8 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   importCollector.visit(ast.get());
 
   // Run first part of pipeline for the imported source file
-  for (const auto &dependency : dependencies) {
-    auto sourceFile = dependency.second.first;
-    sourceFile->runASTBuilder();
-    sourceFile->runASTOptimizer();
-    sourceFile->runASTVisualizer();
-    sourceFile->runImportCollector();
-  }
+  for (const auto &dependency : dependencies)
+    dependency.second.first->runFrontEnd();
 
   printStatusMessage("Import Collector", IO_AST, IO_AST);
 }
@@ -400,11 +394,22 @@ void SourceFile::runFrontEnd() {
   runASTOptimizer();
   runASTVisualizer();
   runImportCollector();
+  runSemanticAnalyzer();
+  runTypeCheckerFirst();
 }
 
-void SourceFile::runMiddleEnd() {}
+void SourceFile::runMiddleEnd() {
+  runTypeCheckerSecond();
+  runBorrowChecker();
+  runEscapeAnalyzer();
+}
 
-void SourceFile::runBackEnd() {}
+void SourceFile::runBackEnd() {
+  runIRGenerator();
+  runIROptimizer();
+  runObjectEmitter();
+  concludeCompilation();
+}
 
 std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &dependencyName, const std::string &path,
                                                          bool isStdFile) {
@@ -444,6 +449,17 @@ void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {
   resourceManager.runtimeModuleManager.requestModule(this, moduleName);
 }
 
+const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName) const {
+  if (!exportedNameRegistry.contains(symbolName))
+    return nullptr;
+  const NameRegistryEntry *registryEntry;
+  do {
+    registryEntry = &exportedNameRegistry.at(symbolName);
+    symbolName = registryEntry->predecessorName;
+  } while (!registryEntry->predecessorName.empty());
+  return registryEntry;
+}
+
 void SourceFile::visualizerPreamble(std::stringstream &output) const {
   if (parent == nullptr)
     output << "digraph {\n rankdir=\"TB\";\n";
@@ -475,7 +491,8 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
 void SourceFile::printStatusMessage(const std::string &stage, const CompilerStageIOType &in,
                                     const CompilerStageIOType &out) const {
   if (resourceManager.cliOptions.printDebugOutput) {
+    const char *compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
     std::cout << "[" << stage << "] for " << fileName << ": ";
-    std::cout << COMPILER_STAGE_IO_TYPE_NAME[in] << " --> " << COMPILER_STAGE_IO_TYPE_NAME[out] << "\n";
+    std::cout << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out] << "\n";
   }
 }

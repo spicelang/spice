@@ -11,7 +11,7 @@
 
 // Forward declarations
 class ASTNode;
-class AnalyzerVisitor;
+class TypeChecker;
 
 // Types: double, int, short, long, byte, char, string, bool
 
@@ -592,7 +592,7 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
 class OpRuleManager {
 public:
   // Constructors
-  explicit OpRuleManager(AnalyzerVisitor *analyzer) : analyzer(analyzer) {}
+  explicit OpRuleManager(TypeChecker *typeChecker) : typeChecker(typeChecker) {}
 
   // Public methods
   static SymbolType getAssignResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs);
@@ -637,7 +637,7 @@ public:
 
 private:
   // Members
-  AnalyzerVisitor *analyzer;
+  TypeChecker *typeChecker;
 
   // Private methods
   static SymbolType validateBinaryOperation(const ASTNode *node, const std::vector<BinaryOpRule> &opRules,
@@ -649,4 +649,5 @@ private:
   static SemanticError printErrorMessageUnary(const ASTNode *node, const std::string &name, const SymbolType &lhs);
   static SemanticError printErrorMessageUnsafe(const ASTNode *node, const std::string &name, const SymbolType &lhs,
                                                const SymbolType &rhs);
+  void insertAnonStringStructSymbol(const ASTNode *declNode);
 };

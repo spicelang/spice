@@ -516,7 +516,7 @@ std::any ASTBuilder::visitScope(SpiceParser::ScopeContext *ctx) {
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = scopeNode->createChild<AssignExprNode>(CodeLoc(rule->start, fileName));
+      currentNode = scopeNode->createChild<StmtLstNode>(CodeLoc(rule->start, fileName));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 

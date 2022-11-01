@@ -7,8 +7,8 @@
 #include <ast/ASTNodes.h>
 #include <ast/ASTVisitor.h>
 
-#include <generator/OpRuleConversionsManager.h>
-#include <generator/StdFunctionManager.h>
+#include <irgenerator/OpRuleConversionsManager.h>
+#include <irgenerator/StdFunctionManager.h>
 #include <symbol/ScopePath.h>
 #include <symbol/SymbolType.h>
 
@@ -138,24 +138,6 @@ private:
   llvm::Value *stackState = nullptr;
   SymbolType arraySymbolType = SymbolType(TY_INVALID);
   bool secondRun = false;
-  struct DebugInfo {
-    llvm::DIFile *diFile;
-    llvm::DICompileUnit *compileUnit;
-    std::stack<llvm::DIScope *> lexicalBlocks;
-    llvm::DIType *doubleTy;
-    llvm::DIType *intTy;
-    llvm::DIType *uIntTy;
-    llvm::DIType *shortTy;
-    llvm::DIType *uShortTy;
-    llvm::DIType *longTy;
-    llvm::DIType *uLongTy;
-    llvm::DIType *byteTy;
-    llvm::DIType *uByteTy;
-    llvm::DIType *charTy;
-    llvm::DIType *uCharTy;
-    llvm::DIType *stringTy;
-    llvm::DIType *boolTy;
-  } debugInfo;
 
   // Private methods
   llvm::Value *resolveValue(ASTNode *node, SymbolTable *accessScope = nullptr);
@@ -173,13 +155,4 @@ private:
   llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
   SymbolTableEntry *initExtGlobal(const std::string &globalName, const std::string &fqGlobalName);
   llvm::Value *doImplicitCast(llvm::Value *src, llvm::Type *dstTy, SymbolType srcType);
-  void initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir);
-  [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
-  void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
-  //[[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
-  void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
-  void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address, size_t argNo = SIZE_MAX,
-                             bool moveToPrev = false);
-  void setSourceLocation(ASTNode *node);
-  [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };

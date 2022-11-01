@@ -125,6 +125,7 @@ public:
   [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] int getArraySize() const;
+  [[nodiscard]] bool isSigned() const;
   [[nodiscard]] llvm::Value *getDynamicArraySize() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);

@@ -10,7 +10,7 @@
 #include <llvm/IR/Value.h>
 
 // Forward declarations
-class GeneratorVisitor;
+class IRGenerator;
 class StdFunctionManager;
 class SymbolTable;
 struct CodeLoc;
@@ -33,7 +33,7 @@ struct PtrAndValue {
 class OpRuleConversionsManager {
 public:
   // Constructors
-  OpRuleConversionsManager(GlobalResourceManager &resourceManager, GeneratorVisitor *generator);
+  OpRuleConversionsManager(GlobalResourceManager &resourceManager, IRGenerator *irGenerator);
 
   // Public methods
   PtrAndValue getPlusEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
@@ -87,6 +87,6 @@ private:
   // Members
   llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;
-  GeneratorVisitor *generator;
-  const StdFunctionManager *stdFunctionManager;
+  IRGenerator *irGenerator;
+  const StdFunctionManager &stdFunctionManager;
 };

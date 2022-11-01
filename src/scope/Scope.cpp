@@ -62,7 +62,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
     if (name == THIS_VARIABLE_NAME)
       continue;
     // For dtor calls, only anonymous structs are relevant
-    if (entry.type.isOneOf({TY_STRUCT, TY_STROBJ}) && entry.state != DEAD && entry.name.starts_with("anon."))
+    if (entry.type.isOneOf({TY_STRUCT, TY_STROBJ}) && !entry.isDead() && entry.name.starts_with("anon."))
       varsGoingOutOfScope.push_back(&symbolTable.symbols.at(name));
   }
 
@@ -124,4 +124,15 @@ Scope *Scope::searchForScope(const ScopeType &scopeType) {
   while (searchResult && searchResult->type != scopeType)
     searchResult = searchResult->parent;
   return searchResult;
+}
+
+/**
+ * Check if unsafe operations are allowed in this scope
+ *
+ * @return Allowed or not
+ */
+bool Scope::allowsUnsafeOperations() const { // NOLINT(misc-no-recursion)
+  if (type == SCOPE_UNSAFE_BODY)
+    return true;
+  return parent != nullptr && parent->allowsUnsafeOperations();
 }

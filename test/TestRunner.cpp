@@ -32,6 +32,7 @@ void execTestCase(const TestCase &testCase) {
                            /* targetArch= */ std::string(targetTriple.getArchName()),
                            /* targetVendor= */ std::string(targetTriple.getVendorName()),
                            /* targetOs= */ std::string(targetTriple.getOSName()),
+                           /* isNativeTarget= */ true,
                            /* cacheDir= */ "./cache",
                            /* outputDir= */ ".",
                            /* outputPath= */ ".",
@@ -55,25 +56,32 @@ void execTestCase(const TestCase &testCase) {
     // Create source file instance for main source file
     SourceFile mainSourceFile = SourceFile(resourceManager, nullptr, "root", cliOptions.mainSourceFile, false);
 
+    // Run Lexer and Parser
+    mainSourceFile.runLexer();
+    mainSourceFile.runParser();
+
     // Check CST
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_PARSE_TREE, [&]() {
-      mainSourceFile.visualizeCST();
+      mainSourceFile.runCSTVisualizer();
       return mainSourceFile.compilerOutput.cstString;
     });
 
-    // Build AST
-    mainSourceFile.buildAST();
+    // Build and optimize AST
+    mainSourceFile.runASTBuilder();
+    mainSourceFile.runASTOptimizer();
 
     // Check AST
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYNTAX_TREE, [&]() {
-      mainSourceFile.visualizeAST();
+      mainSourceFile.runASTVisualizer();
       return mainSourceFile.compilerOutput.astString;
     });
 
-    // Execute pre-analyzer and semantic analysis
-    mainSourceFile.preAnalyze();
-    mainSourceFile.analyze();
-    mainSourceFile.reAnalyze();
+    // Execute import collector and semantic analysis stages
+    mainSourceFile.runImportCollector();
+    mainSourceFile.runSemanticAnalyzer();
+    mainSourceFile.runTypeChecker();
+    mainSourceFile.runBorrowChecker();
+    mainSourceFile.runEscapeAnalyzer();
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT))
@@ -81,10 +89,10 @@ void execTestCase(const TestCase &testCase) {
 
     // Check SymbolTable
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYMBOL_TABLE,
-                            [&]() { return mainSourceFile.symbolTable->toJSON().dump(2); });
+                            [&]() { return mainSourceFile.globalScope->symbolTable.toJSON().dump(2); });
 
     // Execute generator
-    mainSourceFile.generate();
+    mainSourceFile.runIRGenerator();
 
     // Check unoptimized IR code
     TestUtil::checkRefMatch(
@@ -103,7 +111,7 @@ void execTestCase(const TestCase &testCase) {
           testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_OPT_IR[i - 1],
           [&]() {
             cliOptions.optLevel = i;
-            mainSourceFile.optimize();
+            mainSourceFile.runIROptimizer();
             return mainSourceFile.compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {
@@ -136,7 +144,7 @@ void execTestCase(const TestCase &testCase) {
       }
 
       // Emit object file
-      mainSourceFile.emitObjectFile();
+      mainSourceFile.runObjectEmitter();
 
       // Run linker
       resourceManager.linker.link();
