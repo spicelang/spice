@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/analyzer/imports/error-imported-std-not-existing/source.spice:1:1:
-Imported source file not existing: The source file 'std/non-existing/foo.spice' was not found in the standard library
+Imported source file not existing: The source file 'std/non-existing/foo.spice' does not exist
 
 1  import "std/non-existing/foo" as foo;
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

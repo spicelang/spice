@@ -18,10 +18,12 @@ digraph {
  L4C0_mainFunctionDef -> L4C11
  L4C12 [color="lightblue",label="RPAREN: )"];
  L4C0_mainFunctionDef -> L4C12
+ L4C14_scope [color="lightgreen",label="scope"];
+ L4C0_mainFunctionDef -> L4C14_scope;
  L4C14 [color="lightblue",label="LBRACE: {"];
- L4C0_mainFunctionDef -> L4C14
+ L4C14_scope -> L4C14
  L5C4_stmtLst [color="lightgreen",label="stmtLst"];
- L4C0_mainFunctionDef -> L5C4_stmtLst;
+ L4C14_scope -> L5C4_stmtLst;
  L5C4_stmt [color="lightgreen",label="stmt"];
  L5C4_stmtLst -> L5C4_stmt;
  L5C4_declStmt [color="lightgreen",label="declStmt"];
@@ -686,10 +688,12 @@ digraph {
  L21C35_atomicExpr -> L21C35
  L21C36 [color="lightblue",label="PLUS_PLUS: ++"];
  L21C35_postfixUnaryExpr -> L21C36
+ L21C39_scope [color="lightgreen",label="scope"];
+ L21C4_forLoop -> L21C39_scope;
  L21C39 [color="lightblue",label="LBRACE: {"];
- L21C4_forLoop -> L21C39
+ L21C39_scope -> L21C39
  L22C8_stmtLst [color="lightgreen",label="stmtLst"];
- L21C4_forLoop -> L22C8_stmtLst;
+ L21C39_scope -> L22C8_stmtLst;
  L22C8_ifStmt [color="lightgreen",label="ifStmt"];
  L22C8_stmtLst -> L22C8_ifStmt;
  L22C8 [color="lightblue",label="IF: if"];
@@ -802,10 +806,12 @@ digraph {
  L22C32_postfixUnaryExpr -> L22C32_atomicExpr;
  L22C32 [color="lightblue",label="IDENTIFIER: t"];
  L22C32_atomicExpr -> L22C32
+ L22C34_scope [color="lightgreen",label="scope"];
+ L22C8_ifStmt -> L22C34_scope;
  L22C34 [color="lightblue",label="LBRACE: {"];
- L22C8_ifStmt -> L22C34
+ L22C34_scope -> L22C34
  L23C12_stmtLst [color="lightgreen",label="stmtLst"];
- L22C8_ifStmt -> L23C12_stmtLst;
+ L22C34_scope -> L23C12_stmtLst;
  L23C12_stmt [color="lightgreen",label="stmt"];
  L23C12_stmtLst -> L23C12_stmt;
  L23C12_assignExpr [color="lightgreen",label="assignExpr"];
@@ -952,10 +958,12 @@ digraph {
  L24C32_value -> L24C32_primitiveValue;
  L24C32 [color="lightblue",label="INT_LIT: 0"];
  L24C32_primitiveValue -> L24C32
+ L24C34_scope [color="lightgreen",label="scope"];
+ L24C12_ifStmt -> L24C34_scope;
  L24C34 [color="lightblue",label="LBRACE: {"];
- L24C12_ifStmt -> L24C34
+ L24C34_scope -> L24C34
  L24C36_stmtLst [color="lightgreen",label="stmtLst"];
- L24C12_ifStmt -> L24C36_stmtLst;
+ L24C34_scope -> L24C36_stmtLst;
  L24C36_stmt [color="lightgreen",label="stmt"];
  L24C36_stmtLst -> L24C36_stmt;
  L24C36_assignExpr [color="lightgreen",label="assignExpr"];
@@ -1005,7 +1013,7 @@ digraph {
  L24C47 [color="lightblue",label="SEMICOLON: ;"];
  L24C36_stmt -> L24C47
  L24C49 [color="lightblue",label="RBRACE: }"];
- L24C12_ifStmt -> L24C49
+ L24C34_scope -> L24C49
  L25C12_stmt [color="lightgreen",label="stmt"];
  L23C12_stmtLst -> L25C12_stmt;
  L25C12_assignExpr [color="lightgreen",label="assignExpr"];
@@ -1561,15 +1569,17 @@ digraph {
  L30C21 [color="lightblue",label="SEMICOLON: ;"];
  L30C12_stmt -> L30C21
  L31C8 [color="lightblue",label="RBRACE: }"];
- L22C8_ifStmt -> L31C8
+ L22C34_scope -> L31C8
  L31C10_elseStmt [color="lightgreen",label="elseStmt"];
  L22C8_ifStmt -> L31C10_elseStmt;
  L31C10 [color="lightblue",label="ELSE: else"];
  L31C10_elseStmt -> L31C10
+ L31C15_scope [color="lightgreen",label="scope"];
+ L31C10_elseStmt -> L31C15_scope;
  L31C15 [color="lightblue",label="LBRACE: {"];
- L31C10_elseStmt -> L31C15
+ L31C15_scope -> L31C15
  L32C12_stmtLst [color="lightgreen",label="stmtLst"];
- L31C10_elseStmt -> L32C12_stmtLst;
+ L31C15_scope -> L32C12_stmtLst;
  L32C12_stmt [color="lightgreen",label="stmt"];
  L32C12_stmtLst -> L32C12_stmt;
  L32C12_assignExpr [color="lightgreen",label="assignExpr"];
@@ -2419,9 +2429,9 @@ digraph {
  L41C21 [color="lightblue",label="SEMICOLON: ;"];
  L41C12_stmt -> L41C21
  L42C8 [color="lightblue",label="RBRACE: }"];
- L31C10_elseStmt -> L42C8
+ L31C15_scope -> L42C8
  L43C4 [color="lightblue",label="RBRACE: }"];
- L21C4_forLoop -> L43C4
+ L21C39_scope -> L43C4
  L44C0 [color="lightblue",label="RBRACE: }"];
- L4C0_mainFunctionDef -> L44C0
+ L4C14_scope -> L44C0
 }

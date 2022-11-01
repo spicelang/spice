@@ -18,10 +18,12 @@ digraph {
  L1C0_mainFunctionDef -> L1C11
  L1C12 [color="lightblue",label="RPAREN: )"];
  L1C0_mainFunctionDef -> L1C12
+ L1C14_scope [color="lightgreen",label="scope"];
+ L1C0_mainFunctionDef -> L1C14_scope;
  L1C14 [color="lightblue",label="LBRACE: {"];
- L1C0_mainFunctionDef -> L1C14
+ L1C14_scope -> L1C14
  L2C4_stmtLst [color="lightgreen",label="stmtLst"];
- L1C0_mainFunctionDef -> L2C4_stmtLst;
+ L1C14_scope -> L2C4_stmtLst;
  L2C4_stmt [color="lightgreen",label="stmt"];
  L2C4_stmtLst -> L2C4_stmt;
  L2C4_assignExpr [color="lightgreen",label="assignExpr"];
@@ -71,5 +73,5 @@ digraph {
  L2C26 [color="lightblue",label="SEMICOLON: ;"];
  L2C4_stmt -> L2C26
  L3C0 [color="lightblue",label="RBRACE: }"];
- L1C0_mainFunctionDef -> L3C0
+ L1C14_scope -> L3C0
 }

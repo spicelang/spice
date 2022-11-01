@@ -22,8 +22,10 @@ digraph {
  L1C19_DeclStmt -> L1C19_DataType;
  L1C19_BaseDataType [color="lightgreen",label="BaseDataType"];
  L1C19_DataType -> L1C19_BaseDataType;
+ L1C26_Scope [color="lightgreen",label="Scope"];
+ L1C1_FctDef -> L1C26_Scope;
  L2C5_StmtLst [color="lightgreen",label="StmtLst"];
- L1C1_FctDef -> L2C5_StmtLst;
+ L1C26_Scope -> L2C5_StmtLst;
  L2C5_IfStmt [color="lightgreen",label="IfStmt"];
  L2C5_StmtLst -> L2C5_IfStmt;
  L2C8_AssignExpr [color="lightgreen",label="AssignExpr"];
@@ -78,8 +80,10 @@ digraph {
  L2C13_AtomicExpr -> L2C13_Value;
  L2C13_PrimitiveValue [color="lightgreen",label="PrimitiveValue"];
  L2C13_Value -> L2C13_PrimitiveValue;
+ L2C15_Scope [color="lightgreen",label="Scope"];
+ L2C5_IfStmt -> L2C15_Scope;
  L2C17_StmtLst [color="lightgreen",label="StmtLst"];
- L2C5_IfStmt -> L2C17_StmtLst;
+ L2C15_Scope -> L2C17_StmtLst;
  L2C17_Stmt [color="lightgreen",label="Stmt"];
  L2C17_StmtLst -> L2C17_Stmt;
  L2C17_ReturnStmt [color="lightgreen",label="ReturnStmt"];
@@ -184,8 +188,10 @@ digraph {
  L3C13_AtomicExpr -> L3C13_Value;
  L3C13_PrimitiveValue [color="lightgreen",label="PrimitiveValue"];
  L3C13_Value -> L3C13_PrimitiveValue;
+ L3C15_Scope [color="lightgreen",label="Scope"];
+ L3C5_IfStmt -> L3C15_Scope;
  L3C17_StmtLst [color="lightgreen",label="StmtLst"];
- L3C5_IfStmt -> L3C17_StmtLst;
+ L3C15_Scope -> L3C17_StmtLst;
  L3C17_Stmt [color="lightgreen",label="Stmt"];
  L3C17_StmtLst -> L3C17_Stmt;
  L3C17_ReturnStmt [color="lightgreen",label="ReturnStmt"];
@@ -516,8 +522,10 @@ digraph {
  L4C34_Value -> L4C34_PrimitiveValue;
  L7C1_MainFctDef [color="lightgreen",label="MainFctDef"];
  L1C1_Entry -> L7C1_MainFctDef;
+ L7C15_Scope [color="lightgreen",label="Scope"];
+ L7C1_MainFctDef -> L7C15_Scope;
  L8C5_StmtLst [color="lightgreen",label="StmtLst"];
- L7C1_MainFctDef -> L8C5_StmtLst;
+ L7C15_Scope -> L8C5_StmtLst;
  L8C5_Stmt [color="lightgreen",label="Stmt"];
  L8C5_StmtLst -> L8C5_Stmt;
  L8C5_DeclStmt [color="lightgreen",label="DeclStmt"];

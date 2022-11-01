@@ -34,10 +34,12 @@ digraph {
  L1C12_declStmt -> L1C16
  L1C17 [color="lightblue",label="RPAREN: )"];
  L1C0_functionDef -> L1C17
+ L1C19_scope [color="lightgreen",label="scope"];
+ L1C0_functionDef -> L1C19_scope;
  L1C19 [color="lightblue",label="LBRACE: {"];
- L1C0_functionDef -> L1C19
+ L1C19_scope -> L1C19
  L2C4_stmtLst [color="lightgreen",label="stmtLst"];
- L1C0_functionDef -> L2C4_stmtLst;
+ L1C19_scope -> L2C4_stmtLst;
  L2C4_ifStmt [color="lightgreen",label="ifStmt"];
  L2C4_stmtLst -> L2C4_ifStmt;
  L2C4 [color="lightblue",label="IF: if"];
@@ -98,10 +100,12 @@ digraph {
  L2C12_value -> L2C12_primitiveValue;
  L2C12 [color="lightblue",label="INT_LIT: 1"];
  L2C12_primitiveValue -> L2C12
+ L2C14_scope [color="lightgreen",label="scope"];
+ L2C4_ifStmt -> L2C14_scope;
  L2C14 [color="lightblue",label="LBRACE: {"];
- L2C4_ifStmt -> L2C14
+ L2C14_scope -> L2C14
  L2C16_stmtLst [color="lightgreen",label="stmtLst"];
- L2C4_ifStmt -> L2C16_stmtLst;
+ L2C14_scope -> L2C16_stmtLst;
  L2C16_stmt [color="lightgreen",label="stmt"];
  L2C16_stmtLst -> L2C16_stmt;
  L2C16_returnStmt [color="lightgreen",label="returnStmt"];
@@ -145,7 +149,7 @@ digraph {
  L2C24 [color="lightblue",label="SEMICOLON: ;"];
  L2C16_stmt -> L2C24
  L2C26 [color="lightblue",label="RBRACE: }"];
- L2C4_ifStmt -> L2C26
+ L2C14_scope -> L2C26
  L3C4_stmt [color="lightgreen",label="stmt"];
  L2C4_stmtLst -> L3C4_stmt;
  L3C4_returnStmt [color="lightgreen",label="returnStmt"];
@@ -327,7 +331,7 @@ digraph {
  L3C36 [color="lightblue",label="SEMICOLON: ;"];
  L3C4_stmt -> L3C36
  L4C0 [color="lightblue",label="RBRACE: }"];
- L1C0_functionDef -> L4C0
+ L1C19_scope -> L4C0
  L6C0_mainFunctionDef [color="lightgreen",label="mainFunctionDef"];
  L1C0_entry -> L6C0_mainFunctionDef;
  L6C0 [color="lightblue",label="F: f"];
@@ -344,10 +348,12 @@ digraph {
  L6C0_mainFunctionDef -> L6C11
  L6C12 [color="lightblue",label="RPAREN: )"];
  L6C0_mainFunctionDef -> L6C12
+ L6C14_scope [color="lightgreen",label="scope"];
+ L6C0_mainFunctionDef -> L6C14_scope;
  L6C14 [color="lightblue",label="LBRACE: {"];
- L6C0_mainFunctionDef -> L6C14
+ L6C14_scope -> L6C14
  L7C4_stmtLst [color="lightgreen",label="stmtLst"];
- L6C0_mainFunctionDef -> L7C4_stmtLst;
+ L6C14_scope -> L7C4_stmtLst;
  L7C4_stmt [color="lightgreen",label="stmt"];
  L7C4_stmtLst -> L7C4_stmt;
  L7C4_assignExpr [color="lightgreen",label="assignExpr"];
@@ -481,5 +487,5 @@ digraph {
  L7C34 [color="lightblue",label="SEMICOLON: ;"];
  L7C4_stmt -> L7C34
  L8C0 [color="lightblue",label="RBRACE: }"];
- L6C0_mainFunctionDef -> L8C0
+ L6C14_scope -> L8C0
 }
