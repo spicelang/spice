@@ -12,20 +12,31 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
   module->setDataLayout(resourceManager.targetMachine->createDataLayout());
 
   // Initialize debug info generator
-  if (cliOptions.generateDebugInfo) {
-    module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
-    module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
-    module->addModuleFlag(llvm::Module::Error, "PIC Level", llvm::PICLevel::BigPIC);
-
-    auto identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
-    llvm::MDNode *n = llvm::MDNode::get(context, llvm::MDString::get(context, "spice version " + std::string(SPICE_VERSION)));
-    identifierMetadata->addOperand(n);
-
-    initializeDIBuilder(sourceFile->fileName, sourceFile->fileDir);
-  }
+  if (cliOptions.generateDebugInfo)
+    diGenerator.initializeDIBuilder(sourceFile->fileName, sourceFile->fileDir);
 }
 
 std::any IRGenerator::visitEntry(EntryNode *node) { return nullptr; }
+
+llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
+  if (allocaInsertInst != nullptr) { // If there is already an alloca inst, insert right after that
+    llvm::AllocaInst *allocaInst = builder.CreateAlloca(llvmType, nullptr, varName);
+    allocaInst->setDebugLoc(llvm::DebugLoc());
+    allocaInst->moveAfter(allocaInsertInst);
+    allocaInsertInst = allocaInst;
+  } else { // This is the first alloca inst in the current function -> insert at the entry block
+    // Save current basic block and move insert cursor to entry block of the current function
+    llvm::BasicBlock *currentBlock = builder.GetInsertBlock();
+    builder.SetInsertPoint(allocaInsertBlock);
+
+    allocaInsertInst = builder.CreateAlloca(llvmType, nullptr, varName);
+    allocaInsertInst->setDebugLoc(llvm::DebugLoc());
+
+    // Restore old basic block
+    builder.SetInsertPoint(currentBlock);
+  }
+  return static_cast<llvm::Value *>(allocaInsertInst);
+}
 
 std::string IRGenerator::getIRString() const {
   std::string output;

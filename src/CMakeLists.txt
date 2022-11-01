@@ -49,12 +49,20 @@ set(SOURCES
         # Borrow checker
         borrowchecker/BorrowChecker.cpp
         borrowchecker/BorrowChecker.h
+        borrowchecker/Lifecycle.cpp
+        borrowchecker/Lifecycle.h
         # Escape analyzer
         escapeanalyzer/EscapeAnalyzer.cpp
         escapeanalyzer/EscapeAnalyzer.h
         # IR generator
         irgenerator/IRGenerator.cpp
         irgenerator/IRGenerator.h
+        irgenerator/StdFunctionManager.cpp
+        irgenerator/StdFunctionManager.h
+        irgenerator/OpRuleConversionsManager.cpp
+        irgenerator/OpRuleConversionsManager.h
+        irgenerator/DebugInfoGenerator.cpp
+        irgenerator/DebugInfoGenerator.h
         # IR optimizer
         iroptimizer/IROptimizer.cpp
         iroptimizer/IROptimizer.h
@@ -116,17 +124,13 @@ set(SOURCES
         util/CompilerWarning.h
 
         # ToDo: Remove
-        analyzer/PreAnalyzerVisitor.cpp
-        analyzer/PreAnalyzerVisitor.h
-        analyzer/AnalyzerVisitor.cpp
-        analyzer/AnalyzerVisitor.h
-        generator/GeneratorVisitor.cpp
-        generator/GeneratorVisitor.h
-        generator/StdFunctionManager.cpp
-        generator/StdFunctionManager.h
-        generator/OpRuleConversionsManager.cpp
-        generator/OpRuleConversionsManager.h
-        borrowchecker/Lifecycle.cpp borrowchecker/Lifecycle.h)
+        #analyzer/PreAnalyzerVisitor.cpp
+        #analyzer/PreAnalyzerVisitor.h
+        #analyzer/AnalyzerVisitor.cpp
+        #analyzer/AnalyzerVisitor.h
+        #generator/GeneratorVisitor.cpp
+        #generator/GeneratorVisitor.h
+)
 
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 

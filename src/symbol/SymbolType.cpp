@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <tuple>
 
-#include <generator/StdFunctionManager.h>
+#include <irgenerator/StdFunctionManager.h>
 #include <symbol/Struct.h>
 #include <symbol/SymbolTable.h>
 #include <symbol/SymbolTableEntry.h>
@@ -353,6 +353,14 @@ int SymbolType::getArraySize() const {
     throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
 
   return typeChain.back().data.arraySize;
+}
+
+/**
+ * Check if the current type is signed
+ */
+bool SymbolType::isSigned() const {
+  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
+  return typeChain.back().data.numericSigned;
 }
 
 /**

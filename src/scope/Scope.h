@@ -46,12 +46,13 @@ public:
   [[nodiscard]] std::vector<SymbolTableEntry *> getVarsGoingOutOfScope();
   [[nodiscard]] std::vector<CompilerWarning> collectWarnings() const;
   [[nodiscard]] size_t getFieldCount() const;
+  [[nodiscard]] bool allowsUnsafeOperations() const;
 
   // Public members
   Scope *parent;
   std::unordered_map<std::string, Scope *> children;
   const ScopeType type;
-  SymbolTable symbolTable = SymbolTable(parent->symbolTable);
+  SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable);
 
 private:
   // Private methods

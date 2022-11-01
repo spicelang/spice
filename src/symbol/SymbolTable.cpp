@@ -112,30 +112,6 @@ SymbolTableEntry *SymbolTable::lookupByIndex(unsigned int orderIndex) {
 }
 
 /**
- * Check if a global variable exists in any of the imported modules and return it if found
- *
- * @param globalName Name of the global variable
- * @return Desired symbol / nullptr if the global was not found
- */
-SymbolTableEntry *SymbolTable::lookupGlobal(const std::string &globalName, bool skipThisScope) { // NOLINT(misc-no-recursion)
-  // Search in the current scope
-  if (!skipThisScope) {
-    SymbolTableEntry *globalSymbol = lookupStrict(globalName);
-    if (globalSymbol)
-      return globalSymbol;
-  }
-  // Loop through all children to find the global var
-  for (const auto &[scopeName, childScope] : children) {
-    if (childScope->isImported(this)) { // Only consider if it is an imported module scope
-      SymbolTableEntry *globalSymbol = childScope->lookupGlobal(globalName);
-      if (globalSymbol)
-        return globalSymbol;
-    }
-  }
-  return nullptr;
-}
-
-/**
  * Check if an anonymous symbol exists in the current scope and return it if possible
  *
  * @param codeLoc Definition code loc

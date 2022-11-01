@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include <queue>
 #include <string>
 #include <vector>
@@ -27,7 +27,7 @@ struct CodeLoc;
 class SymbolTable {
 public:
   // Constructors
-  explicit SymbolTable(SymbolTable *parent, bool inMainSourceFile = false) : parent(parent), isMainSourceFile(inMainSourceFile){};
+  explicit SymbolTable(SymbolTable *parent) : parent(parent) {};
 
   // Friend classes
   friend class Scope;
@@ -39,7 +39,6 @@ public:
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
   SymbolTableEntry *lookupByIndex(unsigned int orderIndex);
-  SymbolTableEntry *lookupGlobal(const std::string &globalName, bool skipThisScope = false);
   SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc);
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
@@ -49,14 +48,9 @@ public:
 
   // Public members
   SymbolTable *parent;
-  bool isShadowTable = false;
+  std::unordered_map<std::string, SymbolTable *> children;
+  std::unordered_map<std::string, SymbolTableEntry> symbols;
+  std::unordered_map<std::string, Capture> captures;
+  std::unordered_map<std::string, GenericType> genericTypes;
   bool isCapturingRequired = false;
-
-private:
-  // Members
-  std::map<std::string, SymbolTable *> children;
-  std::map<std::string, SymbolTableEntry> symbols;
-  std::map<std::string, Capture> captures;
-  std::map<std::string, GenericType> genericTypes;
-  bool isMainSourceFile;
 };

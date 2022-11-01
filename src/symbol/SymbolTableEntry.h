@@ -40,6 +40,7 @@ public:
   void updateAddress(llvm::Value *address);
   void pushAddress(llvm::Value *address);
   void popAddress();
+  [[nodiscard]] bool isDead() const { return lifecycle.isDead(); }
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
   // Public members

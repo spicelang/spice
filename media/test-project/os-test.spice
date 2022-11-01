@@ -17,11 +17,6 @@ f<int> main() {
     printf("%d\n", String("Hello World!").contains("Hello"));
     printf("%d\n", String("Hello World!").contains("World!"));
     printf("%d\n", String("Hello World!").contains("o W"));
-    //printf("'%s'\n", String("Hello World!").substring(0, 5));
-    //printf("'%s'\n", String("Hello World!").substring(4, 2));
-    //printf("'%s'\n", String("Hello World!").substring(6));
-    //printf("'%s'\n", String("Hello World!").substring(2, 0));
-    //printf("%s\n", String("Hello World!").substring(2, 12));
 }
 
 /*f<int> main() {

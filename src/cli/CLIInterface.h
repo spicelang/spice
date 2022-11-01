@@ -15,6 +15,7 @@ struct CliOptions {
   std::string targetArch;
   std::string targetVendor;
   std::string targetOs;
+  bool isNativeTarget = false;
   std::string cacheDir;   // Where the cache files go. Should always be a temp directory
   std::string outputDir;  // Where the object files go. Should always be a temp directory
   std::string outputPath; // Where the output binary goes.

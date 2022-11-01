@@ -23,4 +23,7 @@ public:
 private:
   // Private members
   const CliOptions &cliOptions;
+
+  // Private methods
+  void registerExternalGlobalNames(SourceFile *importedSourceFile, const std::string &importName);
 };

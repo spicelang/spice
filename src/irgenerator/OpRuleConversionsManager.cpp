@@ -4,13 +4,13 @@
 
 #include <stdexcept>
 
-#include <generator/GeneratorVisitor.h>
+#include <irgenerator/IRGenerator.h>
 #include <symbol/SymbolTable.h>
 #include <util/CodeLoc.h>
 
-OpRuleConversionsManager::OpRuleConversionsManager(GlobalResourceManager &resourceManager, GeneratorVisitor *generator)
-    : context(resourceManager.context), builder(resourceManager.builder), generator(generator),
-      stdFunctionManager(generator->stdFunctionManager.get()) {}
+OpRuleConversionsManager::OpRuleConversionsManager(GlobalResourceManager &resourceManager, IRGenerator *irGenerator)
+    : context(resourceManager.context), builder(resourceManager.builder), irGenerator(irGenerator),
+      stdFunctionManager(irGenerator->stdFunctionManager) {}
 
 PtrAndValue OpRuleConversionsManager::getPlusEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy, SymbolTable *accessScope,
@@ -50,13 +50,13 @@ PtrAndValue OpRuleConversionsManager::getPlusEqualInst(const PtrAndValue &lhsDat
     return {.value = builder.CreateAdd(lhsV, rhsV)};
   case COMB(TY_STROBJ, TY_CHAR): {
     // Generate call to the method append(char) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringAppendCharFct();
+    llvm::Function *opFct = stdFunctionManager.getStringAppendCharFct();
     builder.CreateCall(opFct, {lhsP, rhsV});
     return {.ptr = lhsP};
   }
   case COMB(TY_STROBJ, TY_STRING): {
     // Generate call to the method append(string) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringAppendStringFct();
+    llvm::Function *opFct = stdFunctionManager.getStringAppendStringFct();
     builder.CreateCall(opFct, {lhsP, rhsV});
     return {.ptr = lhsP};
   }
@@ -149,19 +149,19 @@ PtrAndValue OpRuleConversionsManager::getMulEqualInst(const PtrAndValue &lhsData
     return {.value = builder.CreateMul(lhsV, rhsV)};
   case COMB(TY_STROBJ, TY_INT): {
     // Generate call to the method append(char) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpIntFct();
+    llvm::Function *opFct = stdFunctionManager.getStringMulOpIntFct();
     builder.CreateCall(opFct, {lhsP, rhsV});
     return {.ptr = lhsP};
   }
   case COMB(TY_STROBJ, TY_LONG): {
     // Generate call to the method append(char) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpLongFct();
+    llvm::Function *opFct = stdFunctionManager.getStringMulOpLongFct();
     builder.CreateCall(opFct, {lhsP, rhsV});
     return {.ptr = lhsP};
   }
   case COMB(TY_STROBJ, TY_SHORT): {
     // Generate call to the method append(char) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringMulOpShortFct();
+    llvm::Function *opFct = stdFunctionManager.getStringMulOpShortFct();
     builder.CreateCall(opFct, {lhsP, rhsV});
     return {.ptr = lhsP};
   }
@@ -528,13 +528,13 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(const PtrAndValue &lhsData, 
     return builder.CreateICmpEQ(lhsV, rhsV);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the function isRawEqual(string, string) of the string std
-    llvm::Function *opFct = stdFunctionManager->getStringIsRawEqualStringStringFct();
+    llvm::Function *opFct = stdFunctionManager.getStringIsRawEqualStringStringFct();
     llvm::Value *result = builder.CreateCall(opFct, {lhsV, rhsV});
     return result;
   }
   case COMB(TY_STROBJ, TY_STROBJ): {
     // Generate call to the function isEqual(strobj) of the string_rt std
-    llvm::Function *opFct = stdFunctionManager->getStringIsEqualStrobjFct();
+    llvm::Function *opFct = stdFunctionManager.getStringIsEqualStrobjFct();
     llvm::Value *result = builder.CreateCall(opFct, {lhsP, rhsV});
     return result;
   }
@@ -646,14 +646,14 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(const PtrAndValue &lhsDat
     return builder.CreateICmpNE(lhsV, rhsV);
   case COMB(TY_STRING, TY_STRING): {
     // Generate call to the function isRawEqual(string, string) of the string std
-    llvm::Function *opFct = stdFunctionManager->getStringIsRawEqualStringStringFct();
+    llvm::Function *opFct = stdFunctionManager.getStringIsRawEqualStringStringFct();
     llvm::Value *result = builder.CreateCall(opFct, {lhsV, rhsV});
     // Negate the result
     return builder.CreateNot(result);
   }
   case COMB(TY_STROBJ, TY_STROBJ): {
     // Generate call to the function isEqual(strobj) of the string_rt std
-    llvm::Function *opFct = stdFunctionManager->getStringIsEqualStrobjFct();
+    llvm::Function *opFct = stdFunctionManager.getStringIsEqualStrobjFct();
     llvm::Value *result = builder.CreateCall(opFct, {lhsP, rhsV});
     // Negate the result
     return builder.CreateNot(result);
@@ -1047,8 +1047,8 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
     return {.value = builder.CreateAdd(lhsV, rhsV)};
   case COMB(TY_STROBJ, TY_STRING): {
     // Generate call to the constructor ctor(strobj, string) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjStringFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    llvm::Function *opFct = stdFunctionManager.getStringCtorStrobjStringFct();
+    llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
     // Update mem address of anonymous symbol
     SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
@@ -1058,8 +1058,8 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
   }
   case COMB(TY_STROBJ, TY_STROBJ): {
     // Generate call to the constructor ctor(strobj, strobj) of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjStrobjFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    llvm::Function *opFct = stdFunctionManager.getStringCtorStrobjStrobjFct();
+    llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
     // Update mem address of anonymous symbol
     SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
@@ -1183,11 +1183,11 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
   }
   case COMB(TY_INT, TY_STROBJ): {
     // Generate call to the copy constructor of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    llvm::Function *opFct = stdFunctionManager.getStringCtorStrobjFct();
+    llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, rhsV});
     // Generate call to the method opMul(int) of the String struct
-    opFct = stdFunctionManager->getStringMulOpIntFct();
+    opFct = stdFunctionManager.getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
     // Update mem address of anonymous symbol
     SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
@@ -1211,11 +1211,11 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
   }
   case COMB(TY_SHORT, TY_STROBJ): {
     // Generate call to the copy constructor of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    llvm::Function *opFct = stdFunctionManager.getStringCtorStrobjFct();
+    llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, rhsV});
     // Generate call to the method opMul(short) of the String struct
-    opFct = stdFunctionManager->getStringMulOpShortFct();
+    opFct = stdFunctionManager.getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
     // Update mem address of anonymous symbol
     SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
@@ -1236,11 +1236,11 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     return {.value = builder.CreateMul(lhsV, rhsV)};
   case COMB(TY_LONG, TY_STROBJ): {
     // Generate call to the copy constructor of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    llvm::Function *opFct = stdFunctionManager.getStringCtorStrobjFct();
+    llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, rhsV});
     // Generate call to the method opMul(long) of the String struct
-    opFct = stdFunctionManager->getStringMulOpLongFct();
+    opFct = stdFunctionManager.getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
     // Update mem address of anonymous symbol
     SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
@@ -1252,11 +1252,11 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     return {.value = builder.CreateMul(lhsV, rhsV)};
   case COMB(TY_STROBJ, TY_INT): {
     // Generate call to the copy constructor of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    llvm::Function *opFct = stdFunctionManager.getStringCtorStrobjFct();
+    llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV});
     // Generate call to the method opMul(int) of the String struct
-    opFct = stdFunctionManager->getStringMulOpIntFct();
+    opFct = stdFunctionManager.getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
     // Update mem address of anonymous symbol
     SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
@@ -1266,11 +1266,11 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
   }
   case COMB(TY_STROBJ, TY_SHORT): {
     // Generate call to the copy constructor of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    llvm::Function *opFct = stdFunctionManager.getStringCtorStrobjFct();
+    llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV});
     // Generate call to the method opMul(short) of the String struct
-    opFct = stdFunctionManager->getStringMulOpShortFct();
+    opFct = stdFunctionManager.getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
     // Update mem address of anonymous symbol
     SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
@@ -1280,11 +1280,11 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
   }
   case COMB(TY_STROBJ, TY_LONG): {
     // Generate call to the copy constructor of the String struct
-    llvm::Function *opFct = stdFunctionManager->getStringCtorStrobjFct();
-    llvm::Value *thisPtr = generator->insertAlloca(StdFunctionManager::getStrobjType(context));
+    llvm::Function *opFct = stdFunctionManager.getStringCtorStrobjFct();
+    llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV});
     // Generate call to the method opMul(long) of the String struct
-    opFct = stdFunctionManager->getStringMulOpLongFct();
+    opFct = stdFunctionManager.getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
     // Update mem address of anonymous symbol
     SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
