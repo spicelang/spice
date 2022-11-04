@@ -10,17 +10,15 @@
 #include <SpiceParser.h>
 #include <Token.h>
 
-#include <scope/Scope.h>
 #include <ast/ASTNodes.h>
-#include <global/RuntimeModuleManager.h>
-#include <util/CompilerWarning.h>
 #include <exception/AntlrThrowingErrorListener.h>
+#include <global/RuntimeModuleManager.h>
+#include <scope/Scope.h>
+#include <util/CompilerWarning.h>
 
 #include <llvm/IR/IRBuilder.h>
 
 // Forward declarations
-class AnalyzerVisitor;
-class GeneratorVisitor;
 class GlobalResourceManager;
 class EntryNode;
 class ASTNode;
@@ -76,7 +74,6 @@ public:
   void runASTOptimizer();
   void runASTVisualizer();
   void runImportCollector();
-  void runSemanticAnalyzer();
   void runTypeChecker();
 
 private:
@@ -99,10 +96,10 @@ public:
   // Public methods
   [[nodiscard]] std::shared_ptr<SourceFile> createSourceFile(const std::string &dependencyName, const std::string &path,
                                                              bool isStdFile);
-  void addDependency(const std::shared_ptr<SourceFile> &sourceFile, const ASTNode *declAstNode, const std::string &name,
+  void addDependency(const std::shared_ptr<SourceFile> &sourceFile, const ASTNode *declNode, const std::string &name,
                      const std::string &path);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
-  void printWarnings() const;
+  void collectAndPrintWarnings();
   void requestRuntimeModule(const RuntimeModuleName &moduleName);
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
 
@@ -113,6 +110,7 @@ public:
   std::string fileDir;
   std::string objectFilePath;
   bool stdFile = false;
+  bool mainFile = true;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
   SourceFile *parent;

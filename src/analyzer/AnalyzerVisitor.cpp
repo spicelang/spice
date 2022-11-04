@@ -2625,11 +2625,3 @@ SymbolType AnalyzerVisitor::initExtGlobal(SymbolTable *sourceScope, const std::s
 
   return externalGlobalSymbol->type;
 }
-
-void AnalyzerVisitor::checkForReservedKeyword(const ASTNode *node, const std::string &identifier) {
-  if (std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), identifier) != std::end(RESERVED_KEYWORDS))
-    throw SemanticError(
-        node, RESERVED_KEYWORD,
-        "'" + identifier +
-            "' is a reserved keyword for future development of the language. Please use another identifier instead");
-}

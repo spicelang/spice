@@ -32,7 +32,7 @@ bool compileProject(CliOptions &cliOptions) {
     resourceManager.linker.link();
 
     // Print compiler warnings
-    mainSourceFile.printWarnings();
+    mainSourceFile.collectAndPrintWarnings();
 
     return true;
   } catch (LexerError &e) {

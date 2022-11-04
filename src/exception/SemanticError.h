@@ -77,7 +77,6 @@ enum SemanticErrorType {
   UNSAFE_OPERATION_IN_SAFE_CONTEXT,
   ASSERTION_CONDITION_BOOL,
   ARRAY_INDEX_OUT_OF_BOUNDS,
-  RESERVED_KEYWORD,
   COMING_SOON_SA
 };
 
@@ -87,7 +86,7 @@ enum SemanticErrorType {
 class SemanticError : public std::exception {
 public:
   // Constructors
-  explicit SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message);
+  SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

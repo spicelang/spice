@@ -36,6 +36,8 @@ std::string ParserError::getMessagePrefix(ParserErrorType type) {
     return "Number is out of range";
   case INVALID_CHAR_LITERAL:
     return "Invalid char literal";
+  case RESERVED_KEYWORD:
+    return "";
   }
   return "Unknown error"; // GCOV_EXCL_LINE
 }

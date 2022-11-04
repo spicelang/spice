@@ -17,16 +17,18 @@
  *
  * @param name Name of the symbol
  * @param type Type of the symbol
- * @param specifiers Specifiers of the symbol
+ * @param sp Specifiers of the symbol
  * @param state State of the symbol (declared or initialized)
  * @param declNode AST node where the symbol is declared
+ * @return Inserted entry
  */
-void SymbolTable::insert(const std::string &name, const SymbolType &type, const SymbolSpecifiers &specifiers,
-                         const ASTNode *declNode) {
+SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolType &type, const SymbolSpecifiers &sp,
+                                      const ASTNode *declNode) {
   bool isGlobal = parent == nullptr;
   size_t orderIndex = symbols.size();
   // Insert into symbols map
-  symbols.insert({name, SymbolTableEntry(name, type, this, specifiers, declNode, orderIndex, isGlobal)});
+  symbols.insert({name, SymbolTableEntry(name, type, this, sp, declNode, orderIndex, isGlobal)});
+  return &symbols.at(name);
 }
 
 /**
@@ -35,11 +37,14 @@ void SymbolTable::insert(const std::string &name, const SymbolType &type, const 
  *
  * @param type Type of the symbol
  * @param declNode AST node where the anonymous symbol is declared
+ * @return Inserted entry
  */
-void SymbolTable::insertAnonymous(const SymbolType &type, const ASTNode *declNode) {
+SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, const ASTNode *declNode) {
   std::string name = "anon." + declNode->codeLoc.toString();
   insert(name, type, SymbolSpecifiers(type), declNode);
-  lookupAnonymous(declNode->codeLoc)->isUsed = true;
+  SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc);
+  anonSymbol->isUsed = true;
+  return anonSymbol;
 }
 
 /**

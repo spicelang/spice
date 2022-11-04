@@ -61,7 +61,7 @@ public:
   SymbolType returnType = SymbolType(TY_DYN);
   ParamList paramList;
   std::vector<GenericType> templateTypes;
-  const ASTNode *declNode;
+  const ASTNode *declNode = nullptr;
   bool isGenericSubstantiation = false;
   bool isAlreadyAnalyzed = false;
   bool isUsed = false;

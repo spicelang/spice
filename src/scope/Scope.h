@@ -40,6 +40,8 @@ public:
 
   // Public methods
   Scope *createChildScope(const std::string &scopeName, const ScopeType &scopeType);
+  void renameChildScope(const std::string &oldName, const std::string &newName);
+  void copyChildScope(const std::string &oldName, const std::string &newName);
   [[nodiscard]] Scope *getGlobalScope();
   [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] Scope *getChildScope(const std::string &scopeName) const;
@@ -47,6 +49,12 @@ public:
   [[nodiscard]] std::vector<CompilerWarning> collectWarnings() const;
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] bool allowsUnsafeOperations() const;
+
+  // Wrapper methods for symbol table
+  inline SymbolTableEntry *insert(const std::string &name, const SymbolType &ty, const SymbolSpecifiers &sp, const ASTNode *nd) {
+    return symbolTable.insert(name, ty, sp, nd);
+  }
+  inline SymbolTableEntry *lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
 
   // Public members
   Scope *parent;

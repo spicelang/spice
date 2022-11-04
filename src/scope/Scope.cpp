@@ -2,7 +2,7 @@
 
 #include "Scope.h"
 
-#include <analyzer/AnalyzerVisitor.h>
+#include "typechecker/TypeChecker.h"
 
 Scope::~Scope() {
   for (const auto &child : children)
@@ -19,6 +19,31 @@ Scope::~Scope() {
 Scope *Scope::createChildScope(const std::string &scopeName, const ScopeType &scopeType) {
   children.insert({scopeName, new Scope(this, scopeType)});
   return children.at(scopeName);
+}
+
+/**
+ * Rename the child scope. This is useful for realizing function overloading by storing a function with not
+ * only its name, but also its signature
+ *
+ * @param oldName Old name of the child table
+ * @param newName New name of the child table
+ */
+void Scope::renameChildScope(const std::string &oldName, const std::string &newName) {
+  auto nodeHandler = children.extract(oldName);
+  nodeHandler.key() = newName;
+  children.insert(std::move(nodeHandler));
+}
+
+/**
+ * Duplicates the child scope by copying it. The duplicated symbols point to the original ones.
+ *
+ * @param oldName Old name of the child block
+ * @param newName New block name
+ */
+void Scope::copyChildScope(const std::string &oldName, const std::string &newName) {
+  assert(children.contains(oldName));
+  const Scope origChildScope = *children.at(oldName);
+  children.insert({newName, new Scope(origChildScope)});
 }
 
 /**

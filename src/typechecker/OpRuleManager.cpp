@@ -2,7 +2,7 @@
 
 #include "OpRuleManager.h"
 
-#include <typechecker/TypeChecker.h>
+#include "TypeChecker.h"
 #include <ast/ASTNodes.h>
 #include <global/RuntimeModuleManager.h>
 

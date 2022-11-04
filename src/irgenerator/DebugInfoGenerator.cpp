@@ -123,7 +123,7 @@ void DebugInfoGenerator::generateDeclDebugInfo(const CodeLoc &codeLoc, const std
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
   // Get symbol table entry
-  SymbolTableEntry *variableEntry = irGenerator->currentScope->symbolTable.lookup(varName);
+  SymbolTableEntry *variableEntry = irGenerator->currentScope->lookup(varName);
   assert(variableEntry != nullptr);
   // Build debug info
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());

@@ -4,29 +4,29 @@ grammar Spice;
 
 // Control structures
 entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | globalVarDef | importStmt | extDecl)*;
-mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN scope;
-functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN scope;
-procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN scope;
+mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN blockStmt;
+functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN blockStmt;
+procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN blockStmt;
 structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
 interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: specifierLst? TYPE IDENTIFIER typeAltsLst SEMICOLON;
 globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN value)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
-threadDef: THREAD scope;
-unsafeBlockDef: UNSAFE scope;
-forLoop: FOR (forHead | LPAREN forHead RPAREN) scope;
+threadDef: THREAD blockStmt;
+unsafeBlockDef: UNSAFE blockStmt;
+forLoop: FOR (forHead | LPAREN forHead RPAREN) blockStmt;
 forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
-foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) scope;
+foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) blockStmt;
 foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
-whileLoop: WHILE assignExpr scope;
-ifStmt: IF assignExpr scope elseStmt?;
-elseStmt: ELSE ifStmt | ELSE scope;
+whileLoop: WHILE assignExpr blockStmt;
+ifStmt: IF assignExpr blockStmt elseStmt?;
+elseStmt: ELSE ifStmt | ELSE blockStmt;
 assertStmt: ASSERT assignExpr SEMICOLON;
-scope: LBRACE stmtLst RBRACE;
+blockStmt: LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef | scope)*;
+stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef | blockStmt)*;
 typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
@@ -77,7 +77,7 @@ functionCall: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst
 arrayInitialization: LBRACE argLst? RBRACE;
 structInstantiation: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 
-dataType: baseDataType (MUL | LBRACKET (INT_LIT | assignExpr)? RBRACKET)*;
+dataType: baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | assignExpr)? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType;
 customDataType: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)?;
 

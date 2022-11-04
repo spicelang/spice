@@ -9,7 +9,7 @@
 // Forward declarations
 struct CodeLoc;
 
-enum ParserErrorType { PARSING_FAILED, NUMBER_OUT_OF_RANGE, INVALID_CHAR_LITERAL };
+enum ParserErrorType { PARSING_FAILED, NUMBER_OUT_OF_RANGE, INVALID_CHAR_LITERAL, RESERVED_KEYWORD };
 
 /**
  * Custom exception for errors, occurring while parsing
@@ -17,7 +17,7 @@ enum ParserErrorType { PARSING_FAILED, NUMBER_OUT_OF_RANGE, INVALID_CHAR_LITERAL
 class ParserError : public std::exception {
 public:
   // Constructors
-  explicit ParserError(const CodeLoc &codeLoc, const ParserErrorType &type, const std::string &message);
+  ParserError(const CodeLoc &codeLoc, const ParserErrorType &type, const std::string &message);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;
