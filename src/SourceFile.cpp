@@ -2,6 +2,7 @@
 
 #include "SourceFile.h"
 
+#include "typechecker/TypeChecker.h"
 #include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
 #include <ast/ASTBuilder.h>
@@ -15,9 +16,7 @@
 #include <irgenerator/IRGenerator.h>
 #include <iroptimizer/IROptimizer.h>
 #include <objectemitter/ObjectEmitter.h>
-#include <semanticanalyzer/SemanticAnalyzer.h>
 #include <symbol/SymbolTable.h>
-#include <typechecker/TypeChecker.h>
 #include <util/CodeLoc.h>
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
@@ -169,24 +168,6 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   printStatusMessage("Import Collector", IO_AST, IO_AST);
 }
 
-void SourceFile::runSemanticAnalyzer() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
-    return;
-
-  // Analyze this source file
-  SemanticAnalyzer semanticAnalyzer(resourceManager, this);
-  semanticAnalyzer.visit(ast.get());
-
-  // Analyze all dependencies
-  for (const auto &[importName, sourceFile] : dependencies) {
-    // Analyze the imported source file
-    sourceFile.first->runSemanticAnalyzer();
-  }
-
-  printStatusMessage("Semantic Analyzer", IO_AST, IO_AST);
-}
-
 void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
   // We need two runs here due to generics.
   // The first run to determine all concrete substantiations of potentially generic elements
@@ -218,7 +199,7 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
   }
 
   // Then type-check the current file
-  TypeChecker typeChecker(resourceManager, this);
+  TypeChecker typeChecker(resourceManager, this, 1);
   typeChecker.visit(ast.get());
 }
 
@@ -231,7 +212,7 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
   bool repetitionRequired;
   unsigned short typeCheckRuns = 0;
   do {
-    TypeChecker typeChecker(resourceManager, this);
+    TypeChecker typeChecker(resourceManager, this, 1);
     repetitionRequired = any_cast<bool>(typeChecker.visit(ast.get()));
     typeCheckRuns++;
     if (typeCheckRuns >= 10)
@@ -386,7 +367,7 @@ void SourceFile::concludeCompilation() { // NOLINT(misc-no-recursion)
     std::cout << "Finished compiling " << fileName << ".\n";
 }
 
-void SourceFile::runFrontEnd() {
+void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
   runLexer();
   runParser();
   runCSTVisualizer();
@@ -394,7 +375,6 @@ void SourceFile::runFrontEnd() {
   runASTOptimizer();
   runASTVisualizer();
   runImportCollector();
-  runSemanticAnalyzer();
   runTypeCheckerFirst();
 }
 
@@ -416,14 +396,15 @@ std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &depe
   return std::make_shared<SourceFile>(resourceManager, this, dependencyName, path, isStdFile);
 }
 
-void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, const ASTNode *declAstNode,
+void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, const ASTNode *declNode,
                                const std::string &dependencyName, const std::string &path) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(path))
-    throw SemanticError(declAstNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + path + "'");
+    throw SemanticError(declNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + path + "'");
 
   // Add the dependency
-  dependencies.insert({dependencyName, {sourceFile, declAstNode}});
+  sourceFile->mainFile = false;
+  dependencies.insert({dependencyName, {sourceFile, declNode}});
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { // NOLINT(misc-no-recursion)
@@ -434,12 +415,15 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { //
   return parent != nullptr && parent->isAlreadyImported(filePathSearch);
 }
 
-void SourceFile::printWarnings() const { // NOLINT(misc-no-recursion)
+void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
   // Print warnings for all dependencies
   for (const auto &dependency : dependencies) {
     if (!dependency.second.first->stdFile)
-      dependency.second.first->printWarnings();
+      dependency.second.first->collectAndPrintWarnings();
   }
+  // Collect warnings for this file
+  for (const CompilerWarning &warning : globalScope->collectWarnings())
+    compilerOutput.warnings.push_back(warning);
   // Print warnings for this file
   for (const CompilerWarning &warning : compilerOutput.warnings)
     warning.print();

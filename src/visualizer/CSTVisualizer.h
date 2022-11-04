@@ -43,7 +43,7 @@ public:
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override { return buildRule(ctx); }
-  std::any visitScope(SpiceParser::ScopeContext *ctx) override { return buildRule(ctx); }
+  std::any visitBlockStmt(SpiceParser::BlockStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override { return buildRule(ctx); }
   std::any visitField(SpiceParser::FieldContext *ctx) override { return buildRule(ctx); }
   std::any visitSignature(SpiceParser::SignatureContext *ctx) override { return buildRule(ctx); }

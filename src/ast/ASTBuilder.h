@@ -12,13 +12,14 @@
 class ASTNode;
 
 #define ERROR_MESSAGE_CONTEXT 20
+const char *const RESERVED_KEYWORDS[8] = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
 
 class ASTBuilder : private CompilerPass, public SpiceVisitor {
 public:
   // Constructors
   ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile, ASTNode *rootNode,
              antlr4::ANTLRInputStream *inputStream)
-      : CompilerPass(resourceManager, sourceFile), currentNode(rootNode), fileName(sourceFile->filePath),
+      : CompilerPass(resourceManager, sourceFile), currentNode(rootNode), filePath(sourceFile->filePath),
         inputStream(inputStream) {}
 
   // Public methods
@@ -42,7 +43,7 @@ public:
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
-  std::any visitScope(SpiceParser::ScopeContext *ctx) override;
+  std::any visitBlockStmt(SpiceParser::BlockStmtContext *ctx) override;
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override;
   std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override;
@@ -96,7 +97,7 @@ public:
 private:
   // Members
   ASTNode *currentNode;
-  const std::string &fileName;
+  const std::string &filePath;
   antlr4::ANTLRInputStream *inputStream;
 
   // Private methods
@@ -107,5 +108,6 @@ private:
   static std::string parseString(std::string input);
   template <typename T> T parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
   static void replaceEscapeChars(std::string &string);
+  std::string getIdentifier(antlr4::tree::TerminalNode *terminal);
   void saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext *ctx);
 };

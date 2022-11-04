@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <ast/ASTVisitor.h>
+#include <scope/Scope.h>
 #include <symbol/Function.h>
 #include <symbol/Struct.h>
 #include <util/CodeLoc.h>
@@ -155,10 +156,10 @@ public:
 
   // Public get methods
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
 
   // Public members
-  SymbolTable *fctScope = nullptr;
+  Scope *fctScope = nullptr;
   bool hasArgs = false;
 };
 
@@ -177,7 +178,7 @@ public:
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
@@ -190,8 +191,8 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
-  SymbolTable *structScope = nullptr;
-  SymbolTable *fctScope = nullptr;
+  Scope *structScope = nullptr;
+  Scope *fctScope = nullptr;
 };
 
 // ========================================================== ProcDefNode ========================================================
@@ -208,7 +209,7 @@ public:
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
@@ -221,8 +222,8 @@ public:
   bool isMethod = false;
   bool isGeneric = false;
   bool hasParams = false;
-  SymbolTable *structScope = nullptr;
-  SymbolTable *procScope = nullptr;
+  Scope *structScope = nullptr;
+  Scope *procScope = nullptr;
 };
 
 // ========================================================= StructDefNode =======================================================
@@ -282,7 +283,7 @@ public:
 
   // Public members
   std::string enumName;
-  SymbolTable *enumScope;
+  Scope *enumScope;
 };
 
 // ====================================================== GenericTypeDefNode =====================================================
@@ -341,7 +342,7 @@ public:
   bool hasArgs = false;
   bool isVarArg = false;
   bool isDll = false;
-  SymbolTable *fctScope = nullptr;
+  Scope *fctScope = nullptr;
 };
 
 // ========================================================= ThreadDefNode =======================================================
@@ -355,7 +356,7 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitThreadDef(this); }
 
   // Public get methods
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "thread:" + codeLoc.toString(); }
@@ -372,7 +373,7 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitUnsafeBlockDef(this); }
 
   // Public get methods
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "unsafe:" + codeLoc.toString(); }
@@ -392,7 +393,7 @@ public:
   [[nodiscard]] DeclStmtNode *initDecl() const { return getChild<DeclStmtNode>(); }
   [[nodiscard]] AssignExprNode *condAssign() const { return getChild<AssignExprNode>(0); }
   [[nodiscard]] AssignExprNode *incAssign() const { return getChild<AssignExprNode>(1); }
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
@@ -415,7 +416,7 @@ public:
   }
   [[nodiscard]] DeclStmtNode *itemDecl() const { return getChildren<DeclStmtNode>().back(); }
   [[nodiscard]] AssignExprNode *arrayAssign() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "foreach:" + codeLoc.toString(); }
@@ -433,7 +434,7 @@ public:
 
   // Public get methods
   [[nodiscard]] AssignExprNode *condition() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "while:" + codeLoc.toString(); }
@@ -451,7 +452,7 @@ public:
 
   // Public get methods
   [[nodiscard]] AssignExprNode *condition() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
   [[nodiscard]] ElseStmtNode *elseStmt() const { return getChild<ElseStmtNode>(); }
 
   // Other methods
@@ -470,7 +471,7 @@ public:
 
   // Public get methods
   [[nodiscard]] IfStmtNode *ifStmt() const { return getChild<IfStmtNode>(); }
-  [[nodiscard]] ScopeNode *scope() const { return getChild<ScopeNode>(); }
+  [[nodiscard]] BlockStmtNode *blockStmt() const { return getChild<BlockStmtNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
@@ -498,13 +499,13 @@ public:
 
 // ========================================================== ScopeNode ==========================================================
 
-class ScopeNode : public ASTNode {
+class BlockStmtNode : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitScope(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBlockStmt(this); }
 
   // Public get methods
   [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
@@ -1287,7 +1288,7 @@ public:
 class DataTypeNode : public ASTNode {
 public:
   // Enums
-  enum TypeModifierType { TYPE_PTR, TYPE_ARRAY };
+  enum TypeModifierType { TYPE_PTR, TYPE_REF, TYPE_ARRAY };
 
   // Structs
   struct TypeModifier {

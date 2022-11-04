@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <unordered_map>
 #include <queue>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <symbol/Capture.h>
@@ -21,20 +21,21 @@ class SymbolType;
 struct CodeLoc;
 
 /**
- * Class for storing information about symbols of the AST. Symbol tables are meant to be arranged in a tree structure,
- * so that you can navigate with the .parent property and getChild() method up and down the tree.
+ * Class for storing information about symbols of the program.
+ * Symbol tables are arranged in a tree structure, so that you can navigate with the .parent property and getChild() method up
+ * and down the tree.
  */
 class SymbolTable {
 public:
   // Constructors
-  explicit SymbolTable(SymbolTable *parent) : parent(parent) {};
+  explicit SymbolTable(SymbolTable *parent) : parent(parent){};
 
   // Friend classes
   friend class Scope;
 
   // Public methods
-  void insert(const std::string &name, const SymbolType &type, const SymbolSpecifiers &specifiers, const ASTNode *declNode);
-  void insertAnonymous(const SymbolType &type, const ASTNode *declNode);
+  SymbolTableEntry *insert(const std::string &name, const SymbolType &type, const SymbolSpecifiers &sp, const ASTNode *declNode);
+  SymbolTableEntry *insertAnonymous(const SymbolType &type, const ASTNode *declNode);
   void insertCapture(const std::string &name, const Capture &capture);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);

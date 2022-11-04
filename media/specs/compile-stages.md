@@ -34,34 +34,30 @@ such things like semantic analysis and type checker.
     Note: Checks, which other source file are imported by the current one. Registers external symbols as described
     [here](./better-imports.md).
 
-8.  **Semantic Analyzer** <br>
-    Input/Output: AST -> AST <br>
-    Note: Prints errors for semantically incorrect code and warnings for potential bugs
-
-9.  **Type Checker** <br>
+8.  **Type Checker** <br>
     Input/Output: AST -> AST <br>
     Note: Checks if all types match, performs type inference, create symbol table
 
-10. **Borrow Checker** (new component, maybe added in the future) <br>
+9.  **Borrow Checker** (new component, maybe added in the future) <br>
     Input/Output: AST -> AST <br>
     Additional used resources: Symbol Table <br>
     Note: Checks if all variable accesses are valid, escape analysis
 
-11. **Escape Analyzer** <br>
+10. **Escape Analyzer** <br>
     Input/Output: AST -> AST <br>
     Additional used resources: Symbol Table <br>
     Note: Checks, which variables escape their scopes and check if these variables are marked as heap-allocated by the programmer.
 
-12. **IR Generator** <br>
+11. **IR Generator** <br>
     Input/Output: AST -> IR <br>
     Additional used resources: Symbol Table <br>
     Note: Uses several helper modules to generate IR from the information of AST and Symbol Table.
 
-13. **IR Optimizer** <br>
+12. **IR Optimizer** <br>
     Input/Output: IR -> IR <br>
     Note: Uses the stated optimization level to call the LLVM optimizer. In case of -O0, the IR Optimizer is not called.
 
-14. **Object Emitter** <br>
+13. **Object Emitter** <br>
     Input/Output: IR -> Object file <br>
     Note: Calls LLVM to emit an object file from the generated IR.
 
@@ -94,30 +90,27 @@ Source file A imports B and C.
        4. AST Builder for C
        5. AST Visualizer for C
        6. Import Collector for C
-7. Semantic Analyzer for B
-8. Semantic Analyzer for C
-9. Semantic Analyzer for A
-10. Type Checker for B
-11. Type Checker for C
-12. Type Checker for A
-13. Type Checker for A (again)
-14. Type Checker for B (again)
-15. Type Checker for C (again)
-16. Borrow Checker for B
-17. Borrow Checker for C
-18. Borrow Checker for A
-19. Escape Analyzer for B
-20. Escape Analyzer for C
-21. Escape Analyzer for A
-22. IR Generator for B
-23. IR Optimizer for B
-24. Object Emitter for B
-25. IR Generator for C
-26. IR Optimizer for C
-27. Object Emitter for C
-28. IR Generator for A
-29. IR Optimizer for A
-30. Object Emitter for A
+7. Type Checker for B
+8. Type Checker for C
+9. Type Checker for A
+10. Type Checker for A (again)
+11. Type Checker for B (again)
+12. Type Checker for C (again)
+13. Borrow Checker for B
+14. Borrow Checker for C
+15. Borrow Checker for A
+16. Escape Analyzer for B
+17. Escape Analyzer for C
+18. Escape Analyzer for A
+19. IR Generator for B
+20. IR Optimizer for B
+21. Object Emitter for B
+22. IR Generator for C
+23. IR Optimizer for C
+24. Object Emitter for C
+25. IR Generator for A
+26. IR Optimizer for A
+27. Object Emitter for A
 
 Note for parallelization: <br>
 The last three steps (IR Generator, IR Optimizer, Object Emitter) are executed for every source file individually and

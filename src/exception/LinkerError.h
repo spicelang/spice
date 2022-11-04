@@ -15,7 +15,7 @@ enum LinkerErrorType {
 class LinkerError : public std::exception {
 public:
   // Constructors
-  explicit LinkerError(const LinkerErrorType &type, const std::string &message);
+  LinkerError(const LinkerErrorType &type, const std::string &message);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

@@ -40,7 +40,7 @@ std::any ASTVisitor::visitElseStmt(ElseStmtNode *node) { return visitChildren(no
 
 std::any ASTVisitor::visitAssertStmt(AssertStmtNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitScope(ScopeNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitBlockStmt(BlockStmtNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitStmtLst(StmtLstNode *node) { return visitChildren(node); }
 

@@ -17,7 +17,7 @@ enum LexerErrorType { TOKENIZING_FAILED };
 class LexerError : public std::exception {
 public:
   // Constructors
-  explicit LexerError(const CodeLoc &codeLoc, const LexerErrorType &type, const std::string &message);
+  LexerError(const CodeLoc &codeLoc, const LexerErrorType &type, const std::string &message);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

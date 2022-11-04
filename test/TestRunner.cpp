@@ -78,7 +78,6 @@ void execTestCase(const TestCase &testCase) {
 
     // Execute import collector and semantic analysis stages
     mainSourceFile.runImportCollector();
-    mainSourceFile.runSemanticAnalyzer();
     mainSourceFile.runTypeChecker();
     mainSourceFile.runBorrowChecker();
     mainSourceFile.runEscapeAnalyzer();

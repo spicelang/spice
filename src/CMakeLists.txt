@@ -38,12 +38,11 @@ set(SOURCES
         # Import collector
         importcollector/ImportCollector.cpp
         importcollector/ImportCollector.h
-        # Semantic analyzer
-        semanticanalyzer/SemanticAnalyzer.cpp
-        semanticanalyzer/SemanticAnalyzer.h
         # Type checker
         typechecker/TypeChecker.cpp
         typechecker/TypeChecker.h
+        typechecker/TypeCheckerFirst.cpp
+        typechecker/TypeCheckerSecond.cpp
         typechecker/OpRuleManager.cpp
         typechecker/OpRuleManager.h
         # Borrow checker

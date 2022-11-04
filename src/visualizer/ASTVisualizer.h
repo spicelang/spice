@@ -40,7 +40,7 @@ public:
   std::any visitIfStmt(IfStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitElseStmt(ElseStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitAssertStmt(AssertStmtNode *ctx) override { return buildNode(ctx); }
-  std::any visitScope(ScopeNode *ctx) override { return buildNode(ctx); }
+  std::any visitBlockStmt(BlockStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitStmtLst(StmtLstNode *ctx) override { return buildNode(ctx); }
   std::any visitTypeLst(TypeLstNode *ctx) override { return buildNode(ctx); }
   std::any visitTypeAltsLst(TypeAltsLstNode *ctx) override { return buildNode(ctx); }
@@ -162,8 +162,8 @@ private:
       return "ElseStmt";
     if (std::is_same<AssertStmtNode, T>())
       return "AssertStmt";
-    if (std::is_same<ScopeNode, T>())
-      return "Scope";
+    if (std::is_same<BlockStmtNode, T>())
+      return "BlockStmt";
     if (std::is_same<StmtLstNode, T>())
       return "StmtLst";
     if (std::is_same<TypeLstNode, T>())

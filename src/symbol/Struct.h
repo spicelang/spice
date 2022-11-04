@@ -12,7 +12,7 @@
 #include "../../lib/json/json.hpp"
 
 // Forward declaration
-class SymbolTable;
+class Scope;
 class SymbolType;
 class Function;
 class ASTNode;
@@ -30,7 +30,7 @@ public:
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] std::string getSignature() const;
   [[nodiscard]] SymbolType getSymbolType() const;
-  [[nodiscard]] Struct substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, SymbolTable *scope) const;
+  [[nodiscard]] Struct substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, Scope *scope) const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
 
@@ -43,7 +43,7 @@ public:
   std::vector<SymbolType> fieldTypes;
   std::vector<GenericType> templateTypes;
   std::vector<SymbolType> interfaceTypes;
-  SymbolTable *structScope = nullptr;
+  Scope *structScope = nullptr;
   const ASTNode *declNode;
   bool isGenericSubstantiation = false;
   bool isUsed = false;
