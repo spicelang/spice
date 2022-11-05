@@ -2,37 +2,37 @@
 
 #include "TypeChecker.h"
 
-std::any TypeChecker::visitMainFctDef1(MainFctDefNode *node) {
+std::any TypeChecker::visitMainFctDefLookup(MainFctDefNode *node) {
   std::string mainSignature = std::string(MAIN_FUNCTION_NAME) + "()";
 
   // Check if the function is already defined
-  if (currentScope->lookup(mainSignature))
+  if (rootScope->lookup(mainSignature))
     throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
 
   // Insert function name into the root symbol table
   SymbolType symbolType = SymbolType(TY_FUNCTION);
-  currentScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), node);
-  currentScope->lookup(mainSignature)->isUsed = true;
+  SymbolTableEntry *mainFctEntry = rootScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), node);
+  mainFctEntry->isUsed = true;
 
   // Create the function scope
-  node->fctScope = currentScope = currentScope->createChildScope(mainSignature, SCOPE_FUNC_PROC_BODY);
+  node->fctScope = currentScope = rootScope->createChildScope(mainSignature, SCOPE_FUNC_PROC_BODY);
 
   // Declare variable for the return value in the function scope
   SymbolType returnType = SymbolType(TY_INT);
-  currentScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), node);
-  currentScope->lookup(RETURN_VARIABLE_NAME)->isUsed = true;
+  SymbolTableEntry *returnVarEntry = node->fctScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), node);
+  returnVarEntry->isUsed = true;
 
   // Visit arguments in new scope
   if (node->hasArgs)
     visit(node->paramLst());
 
   // Return to root scope
-  currentScope = node->fctScope->parent;
+  currentScope = rootScope;
 
   return nullptr;
 }
 
-std::any TypeChecker::visitFctDef1(FctDefNode *node) {
+std::any TypeChecker::visitFctDefLookup(FctDefNode *node) {
   // Check if name is dtor
   if (node->functionName == "dtor")
     throw SemanticError(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
@@ -138,9 +138,8 @@ std::any TypeChecker::visitFctDef1(FctDefNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitProcDef1(ProcDefNode *node) {
-  // Check if name is 'dtor'
-  if (node->procedureName == "dtor" && node->hasParams)
+std::any TypeChecker::visitProcDefLookup(ProcDefNode *node) {
+  if (node->hasParams && node->procedureName == "dtor")
     throw SemanticError(node, DTOR_WITH_PARAMS, "It is not allowed to specify parameters for destructors");
 
   // Change to the struct scope
@@ -236,7 +235,7 @@ std::any TypeChecker::visitProcDef1(ProcDefNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitStructDef1(StructDefNode *node) {
+std::any TypeChecker::visitStructDefLookup(StructDefNode *node) {
   // Check if struct already exists
   if (rootScope->lookup(node->structName))
     throw SemanticError(node, STRUCT_DECLARED_TWICE, "Duplicate struct '" + node->structName + "'");
@@ -314,7 +313,7 @@ std::any TypeChecker::visitStructDef1(StructDefNode *node) {
     }
 
     // Add the field to the symbol table
-    currentScope->insert(field->name, fieldType, fieldSymbolSpecifiers, field);
+    currentScope->insert(field->name, fieldType, fieldSymbolSpecifiers, DECLARED, field);
 
     fieldTypes.push_back(fieldType);
   }

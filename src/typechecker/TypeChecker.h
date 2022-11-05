@@ -36,18 +36,18 @@ public:
   // Public methods
   std::any visitEntry(EntryNode *node) override;
   std::any visitMainFctDef(MainFctDefNode *node) override;
-  std::any visitMainFctDef1(MainFctDefNode *node);
-  std::any visitMainFctDef2(MainFctDefNode *node);
+  std::any visitMainFctDefLookup(MainFctDefNode *node);
+  std::any visitMainFctDefAnalyze(MainFctDefNode *node);
   std::any visitFctDef(FctDefNode *node) override;
-  std::any visitFctDef1(FctDefNode *node);
-  std::any visitFctDef2(FctDefNode *node);
+  std::any visitFctDefLookup(FctDefNode *node);
+  std::any visitFctDefAnalyze(FctDefNode *node);
   std::any visitProcDef(ProcDefNode *node) override;
-  std::any visitProcDef1(ProcDefNode *node);
-  std::any visitProcDef2(ProcDefNode *node);
+  std::any visitProcDefLookup(ProcDefNode *node);
+  std::any visitProcDefAnalyze(ProcDefNode *node);
   std::any visitStructDef(StructDefNode *node) override;
-  std::any visitStructDef1(StructDefNode *node);
-  std::any visitStructDef2(StructDefNode *node);
-  /*std::any visitInterfaceDef(InterfaceDefNode *node) override;
+  std::any visitStructDefLookup(StructDefNode *node);
+  std::any visitStructDefAnalyze(StructDefNode *node);
+  std::any visitInterfaceDef(InterfaceDefNode *node) override;
   std::any visitEnumDef(EnumDefNode *node) override;
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
@@ -60,10 +60,10 @@ public:
   std::any visitIfStmt(IfStmtNode *node) override;
   std::any visitElseStmt(ElseStmtNode *node) override;
   std::any visitAssertStmt(AssertStmtNode *node) override;
+  std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
   std::any visitParamLst(ParamLstNode *node) override;
   std::any visitSignature(SignatureNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
-  std::any visitImportStmt(ImportStmtNode *node) override;
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;
@@ -95,7 +95,7 @@ public:
   std::any visitStructInstantiation(StructInstantiationNode *node) override;
   std::any visitDataType(DataTypeNode *node) override;
   std::any visitBaseDataType(BaseDataTypeNode *node) override;
-  std::any visitCustomDataType(CustomDataTypeNode *node) override;*/
+  std::any visitCustomDataType(CustomDataTypeNode *node) override;
 
 private:
   // Private members

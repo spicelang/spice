@@ -43,7 +43,7 @@ public:
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
-  std::any visitBlockStmt(SpiceParser::BlockStmtContext *ctx) override;
+  std::any visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) override;
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override;
   std::any visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) override;

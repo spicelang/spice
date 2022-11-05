@@ -2,20 +2,20 @@
 
 #include "TypeChecker.h"
 
-std::any TypeChecker::visitMainFctDef2(MainFctDefNode *node) {
+std::any TypeChecker::visitMainFctDefAnalyze(MainFctDefNode *node) {
   // Do down into function scope
   currentScope = node->fctScope;
 
   // Visit statements in new scope
-  visit(node->blockStmt());
+  visit(node->stmtLst());
 
   // Return to root scope
-  currentScope = node->fctScope->parent;
+  currentScope = rootScope;
 
   return nullptr;
 }
 
-std::any TypeChecker::visitFctDef2(FctDefNode *node) {
+std::any TypeChecker::visitFctDefAnalyze(FctDefNode *node) {
   // Get manifestations of that function
   Scope *fctParentScope = node->isMethod ? node->structScope : currentScope;
   assert(fctParentScope != nullptr);
@@ -55,9 +55,6 @@ std::any TypeChecker::visitFctDef2(FctDefNode *node) {
       SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
       if (returnVarEntry->type.is(TY_GENERIC)) {
         SymbolType returnType = spiceFunc.returnType;
-        /*if (returnType.isPointer())
-          throw SemanticError(node, COMING_SOON_SA,
-                              "Spice currently not supports pointer return types due to not handling pointer escaping.");*/
         returnVarEntry->updateType(returnType, true);
       }
 
@@ -79,12 +76,7 @@ std::any TypeChecker::visitFctDef2(FctDefNode *node) {
       }
 
       // Visit statements in new scope
-      visit(node->blockStmt());
-
-      // Call destructors for variables, that are going out of scope
-      std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope();
-      for (const SymbolTableEntry *varEntry : varsToDestruct)
-        insertDestructorCall(varEntry->declNode, varEntry);
+      visit(node->stmtLst());
 
       // Reset generic types
       for (const auto &arg : args) {
@@ -114,7 +106,7 @@ std::any TypeChecker::visitFctDef2(FctDefNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitProcDef2(ProcDefNode *node) {
+std::any TypeChecker::visitProcDefAnalyze(ProcDefNode *node) {
   // Get manifestations of that procedure
   Scope *procParentScope = node->isMethod ? node->structScope : currentScope;
   assert(procParentScope != nullptr);
@@ -168,12 +160,7 @@ std::any TypeChecker::visitProcDef2(ProcDefNode *node) {
       }
 
       // Visit statements in new scope
-      visit(node->blockStmt());
-
-      // Call destructors for variables, that are going out of scope
-      std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope();
-      for (const SymbolTableEntry *varEntry : varsToDestruct)
-        insertDestructorCall(varEntry->declNode, varEntry);
+      visit(node->stmtLst());
 
       // Reset generic types
       for (const auto &arg : params) {
@@ -199,7 +186,7 @@ std::any TypeChecker::visitProcDef2(ProcDefNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitStructDef2(StructDefNode *node) {
+std::any TypeChecker::visitStructDefAnalyze(StructDefNode *node) {
   // Change to struct scope
   currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
 
