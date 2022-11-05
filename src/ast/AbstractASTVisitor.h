@@ -24,7 +24,7 @@ class WhileLoopNode;
 class IfStmtNode;
 class ElseStmtNode;
 class AssertStmtNode;
-class BlockStmtNode;
+class AnonymousBlockStmtNode;
 class StmtLstNode;
 class TypeLstNode;
 class TypeAltsLstNode;
@@ -96,7 +96,7 @@ public:
   virtual std::any visitIfStmt(IfStmtNode *node) = 0;
   virtual std::any visitElseStmt(ElseStmtNode *node) = 0;
   virtual std::any visitAssertStmt(AssertStmtNode *node) = 0;
-  virtual std::any visitBlockStmt(BlockStmtNode *node) = 0;
+  virtual std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) = 0;
   virtual std::any visitStmtLst(StmtLstNode *node) = 0;
   virtual std::any visitTypeLst(TypeLstNode *node) = 0;
   virtual std::any visitTypeAltsLst(TypeAltsLstNode *node) = 0;

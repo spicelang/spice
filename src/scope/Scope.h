@@ -10,12 +10,13 @@ enum ScopeType {
   SCOPE_STRUCT,
   SCOPE_INTERFACE,
   SCOPE_ENUM,
-  SCOPE_IF_BODY,
+  SCOPE_IF_ELSE_BODY,
   SCOPE_WHILE_BODY,
   SCOPE_FOR_BODY,
   SCOPE_FOREACH_BODY,
   SCOPE_THREAD_BODY,
-  SCOPE_UNSAFE_BODY
+  SCOPE_UNSAFE_BODY,
+  SCOPE_ANONYMOUS
 };
 
 /**
@@ -48,6 +49,7 @@ public:
   [[nodiscard]] std::vector<SymbolTableEntry *> getVarsGoingOutOfScope();
   [[nodiscard]] std::vector<CompilerWarning> collectWarnings() const;
   [[nodiscard]] size_t getFieldCount() const;
+  [[nodiscard]] size_t getLoopNestingDepth() const;
   [[nodiscard]] bool allowsUnsafeOperations() const;
 
   // Wrapper methods for symbol table
@@ -61,6 +63,7 @@ public:
   std::unordered_map<std::string, Scope *> children;
   const ScopeType type;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable);
+  bool capturingRequired = false;
 
 private:
   // Private methods

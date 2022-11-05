@@ -11,7 +11,7 @@
 #include "../../lib/json/json.hpp"
 
 // Forward declaration
-class SymbolTable;
+class Scope;
 class SymbolType;
 class ASTNode;
 struct CodeLoc;
@@ -26,7 +26,7 @@ public:
   std::string name;
   SymbolSpecifiers specifiers;
   std::vector<Function *> methods;
-  SymbolTable *interfaceScope = nullptr;
+  Scope *interfaceScope = nullptr;
   const ASTNode *declNode;
   bool isUsed = false;
 };

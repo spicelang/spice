@@ -121,6 +121,21 @@ size_t Scope::getFieldCount() const {
 }
 
 /**
+ * Get the current number of nested loops
+ *
+ * @return Number of loops
+ */
+size_t Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
+  assert(parent != nullptr);
+  if (parent->parent == nullptr)
+    return 0;
+  size_t loopCount = parent->getLoopNestingDepth();
+  if (type == SCOPE_WHILE_BODY || type == SCOPE_FOR_BODY || type == SCOPE_FOREACH_BODY)
+    loopCount++;
+  return loopCount;
+}
+
+/**
  * Collect all warnings, produces within this scope
  *
  * @return Collection of warnings

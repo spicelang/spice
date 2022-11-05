@@ -4,29 +4,29 @@ grammar Spice;
 
 // Control structures
 entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | globalVarDef | importStmt | extDecl)*;
-mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN blockStmt;
-functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN blockStmt;
-procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN blockStmt;
+mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
 interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: specifierLst? TYPE IDENTIFIER typeAltsLst SEMICOLON;
 globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN value)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
-threadDef: THREAD blockStmt;
-unsafeBlockDef: UNSAFE blockStmt;
-forLoop: FOR (forHead | LPAREN forHead RPAREN) blockStmt;
+threadDef: THREAD LBRACE stmtLst RBRACE;
+unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;
+forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
 forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
-foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) blockStmt;
+foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
 foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
-whileLoop: WHILE assignExpr blockStmt;
-ifStmt: IF assignExpr blockStmt elseStmt?;
-elseStmt: ELSE ifStmt | ELSE blockStmt;
+whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;
+ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
+elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 assertStmt: ASSERT assignExpr SEMICOLON;
-blockStmt: LBRACE stmtLst RBRACE;
+anonymousBlockStmt: LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef | blockStmt)*;
+stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef | anonymousBlockStmt)*;
 typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;

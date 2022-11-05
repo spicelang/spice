@@ -25,7 +25,7 @@ public:
   std::any visitIfStmt(IfStmtNode *node) override;
   std::any visitElseStmt(ElseStmtNode *node) override;
   std::any visitAssertStmt(AssertStmtNode *node) override;
-  std::any visitBlockStmt(BlockStmtNode *node) override;
+  std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
   std::any visitStmtLst(StmtLstNode *node) override;
   std::any visitTypeLst(TypeLstNode *node) override;
   std::any visitTypeAltsLst(TypeAltsLstNode *node) override;
