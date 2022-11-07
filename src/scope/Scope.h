@@ -57,7 +57,7 @@ public:
 
   // Functions
   Function *insertFunction(const Function &function);
-  Function *matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,
+  Function *matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
                           const std::vector<SymbolType> &callTemplateTypes, const std::vector<SymbolType> &callArgTypes,
                           const ASTNode *node);
   [[nodiscard]] std::unordered_map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc);
@@ -65,7 +65,7 @@ public:
 
   // Structs
   Struct *insertStruct(const Struct &spiceStruct);
-  Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
+  Struct *matchStruct(Scope *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
                       const ASTNode *node);
   [[nodiscard]] std::unordered_map<std::string, Struct> *getStructManifestations(const CodeLoc &defCodeLoc);
   Struct *insertSubstantiatedStruct(const Struct &s, const ASTNode *declNode);
@@ -84,6 +84,7 @@ public:
   inline SymbolTableEntry *insert(const std::string &name, const SymbolType &symbolType, const SymbolSpecifiers &specifiers,
                                   const ASTNode *declNode);
   inline SymbolTableEntry *lookup(const std::string &symbolName);
+  inline SymbolTableEntry *lookupStrict(const std::string &symbolName);
 
   // Public members
   Scope *parent;

@@ -155,7 +155,6 @@ Function *Scope::insertFunction(const Function &function) {
  * Check if there is a function in this scope, fulfilling all given requirements and if found, return it.
  * If more than one function matches the requirement, an error gets thrown
  *
- * @param currentScope Current scope
  * @param callFunctionName Function name requirement
  * @param callThisType This type requirement
  * @param callTemplateTypes Template types to substantiate generic types
@@ -163,7 +162,7 @@ Function *Scope::insertFunction(const Function &function) {
  * @param node Declaration node for a potential error message
  * @return Matched function or nullptr
  */
-Function *Scope::matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,
+Function *Scope::matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
                                const std::vector<SymbolType> &callTemplateTypes, const std::vector<SymbolType> &callArgTypes,
                                const ASTNode *node) {
   std::vector<Function *> matches;
@@ -358,7 +357,7 @@ Struct *Scope::insertStruct(const Struct &spiceStruct) {
  * @param node Declaration node for the error message
  * @return Matched struct or nullptr
  */
-Struct *Scope::matchStruct(SymbolTable *currentScope, const std::string &structName, // NOLINT(misc-no-recursion)
+Struct *Scope::matchStruct(Scope *currentScope, const std::string &structName, // NOLINT(misc-no-recursion)
                            const std::vector<SymbolType> &templateTypes, const ASTNode *node) {
   std::vector<Struct *> matches;
 
@@ -574,3 +573,11 @@ SymbolTableEntry *Scope::insert(const std::string &name, const SymbolType &symbo
  * @return Desired symbol / nullptr if the symbol was not found
  */
 SymbolTableEntry *Scope::lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
+
+/**
+ * Wrapper around the lookupStrict method of the corresponding symbol table
+ *
+ * @param name Name of the desired symbol
+ * @return Desired symbol / nullptr if the symbol was not found
+ */
+SymbolTableEntry *Scope::lookupStrict(const std::string &symbolName) { return symbolTable.lookupStrict(symbolName); }

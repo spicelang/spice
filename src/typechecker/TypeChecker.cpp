@@ -206,7 +206,7 @@ std::any TypeChecker::visitGlobalVarDef(GlobalVarDefNode *node) {
 
   // Check if symbol already exists in any imported module scope
   for (auto &[_, dependency] : sourceFile->dependencies) {
-    if (dependency.first->globalScope->symbolTable.lookupStrict(node->varName))
+    if (dependency.first->globalScope->lookupStrict(node->varName))
       throw SemanticError(node, VARIABLE_DECLARED_TWICE,
                           "A global variable named '" + node->varName +
                               "' is already declared in another module. Please use a different name.");
@@ -560,7 +560,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
 
 std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   // Check if symbol already exists in the symbol table
-  if (currentScope->symbolTable.lookupStrict(node->varName))
+  if (currentScope->lookupStrict(node->varName))
     throw SemanticError(node, VARIABLE_DECLARED_TWICE, "The variable '" + node->varName + "' was declared more than once");
 
   // Get the type of the symbol
@@ -588,10 +588,10 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
         symbolTypeSpecifiers.setConst(true);
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
         symbolTypeSpecifiers.setSigned(true);
-        symbolType.isBaseTypeSigned = true;
+        symbolType.setSigned(true);
       } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
         symbolTypeSpecifiers.setSigned(false);
-        symbolType.isBaseTypeSigned = false;
+        symbolType.setSigned(false);
       } else {
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a local variable declaration");
       }
@@ -603,7 +603,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
 
   // Insert call to empty constructor, if no value was assigned to a struct
   if (!node->isParam() && !node->hasAssignment && symbolType.isOneOf({TY_STRUCT, TY_STROBJ})) {
-    SymbolTableEntry *entry = currentScope->symbolTable.lookupStrict(node->varName);
+    SymbolTableEntry *entry = currentScope->lookupStrict(node->varName);
     assert(entry != nullptr);
     insertEmptyConstructorCall(node, entry);
   }
@@ -652,7 +652,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   }
 
   // Call destructors for variables, that are going out of scope
-  std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope(true);
+  std::vector<SymbolTableEntry *> varsToDestruct = currentScope->getVarsGoingOutOfScope();
   for (SymbolTableEntry *varEntry : varsToDestruct)
     insertDestructorCall(varEntry->declNode, varEntry);
 
@@ -1286,7 +1286,6 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     return visit(node->value());
 
   if (!node->identifier.empty()) {
-    checkForReservedKeyword(node, node->identifier);
     currentVarName = node->identifier;
 
     // Retrieve access scope
@@ -1440,7 +1439,8 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   bool constructorCall = false;
 
   // Check if it is a reference to the String type
-  bool isStringRuntime = rootScope->lookupStrict(STROBJ_NAME) != nullptr && !rootScope->lookupCaptureStrict(STROBJ_NAME);
+  bool isStringRuntime =
+      rootScope->lookupStrict(STROBJ_NAME) != nullptr && !rootScope->symbolTable.lookupCaptureStrict(STROBJ_NAME);
   if (thisType.is(TY_DYN) && node->functionNameFragments.size() == 1 && node->functionNameFragments.front() == STROBJ_NAME &&
       !isStringRuntime) {
     sourceFile->requestRuntimeModule(STRING_RT);
@@ -1529,8 +1529,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
 
   // Get the function/procedure instance
   SymbolType origThisType = thisType.replaceBaseSubType(CommonUtil::getLastFragment(thisType.getBaseType().getSubType(), "."));
-  Function *spiceFunc =
-      accessScope->matchFunction(currentScope, functionName, origThisType, concreteTemplateTypes, argTypes, node);
+  Function *spiceFunc = accessScope->matchFunction(functionName, origThisType, concreteTemplateTypes, argTypes, node);
   if (!spiceFunc) {
     // Build dummy function to get a better error message
     SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
@@ -1557,7 +1556,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Analyze the function if not done yet. This is only necessary if we call a function in the same source file, which was
   // declared above.
   if (!accessScope->isImported(currentScope) && spiceFunc->getDeclCodeLoc().line < node->codeLoc.line)
-    reAnalyzeRequired = true;
+    reVisitRequested = true;
 
   if (constructorCall) {
     // Add anonymous symbol to keep track of de-allocation
@@ -1640,7 +1639,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
 
 std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Get the access scope
-  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+  Scope *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
   // Retrieve fully qualified struct name and the scope where to search it
   std::string accessScopePrefix;
@@ -1659,7 +1658,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
       accessScopePrefix += structName + ".";
       std::string tableName = symbolEntry->type.is(TY_IMPORT) ? structName : STRUCT_SCOPE_PREFIX + structName;
-      accessScope = accessScope->lookupTable(tableName);
+      accessScope = accessScope->getChildScope(tableName);
       if (accessScope->isImported(currentScope))
         structIsImported = true;
     }
@@ -1700,7 +1699,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   structType.setTemplateTypes(templateTypes);
 
   // Check if the number of fields matches
-  SymbolTable *structTable = currentScope->lookupTable(STRUCT_SCOPE_PREFIX + accessScopePrefix + structName);
+  Scope *structScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + accessScopePrefix + structName);
   std::vector<SymbolType> fieldTypes;
   if (node->fieldLst()) { // Check if any fields are passed. Empty braces are also allowed
     if (spiceStruct->fieldTypes.size() != node->fieldLst()->args().size())
@@ -1713,7 +1712,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       auto assignExpr = node->fieldLst()->args()[i];
       auto actualType = any_cast<SymbolType>(visit(assignExpr));
       // Get expected type
-      SymbolTableEntry *expectedField = structTable->lookupByIndex(i);
+      SymbolTableEntry *expectedField = structScope->symbolTable.lookupByIndex(i);
       assert(expectedField != nullptr);
       SymbolType expectedSymbolType = expectedField->type;
       // Replace expected type with the capture name
@@ -1729,7 +1728,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   }
 
   // Insert anonymous symbol to keep track of dtor calls for de-allocation
-  currentScope->insertAnonymous(structType, node, INITIALIZED);
+  currentScope->symbolTable.insertAnonymous(structType, node);
 
   return node->setEvaluatedSymbolType(structType);
 }
@@ -1801,13 +1800,14 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
 
 std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   // It is a struct type -> get the access scope
-  SymbolTable *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
+  Scope *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
   std::string firstFragment = node->typeNameFragments.front();
 
   // Check if it is a String type
-  bool isStringRuntime = rootScope->lookupStrict(STROBJ_NAME) != nullptr && !rootScope->lookupCaptureStrict(STROBJ_NAME);
+  bool isStringRuntime =
+      rootScope->lookupStrict(STROBJ_NAME) != nullptr && !rootScope->symbolTable.lookupCaptureStrict(STROBJ_NAME);
   if (node->typeNameFragments.size() == 1 && firstFragment == STROBJ_NAME && !isStringRuntime) {
-    sourceFile.requestRuntimeModule(STRING_RT);
+    sourceFile->requestRuntimeModule(STRING_RT);
     return node->setEvaluatedSymbolType(SymbolType(TY_STROBJ));
   }
 
@@ -1841,7 +1841,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     } else if (entry->type.is(TY_ENUM)) {
       tableName = ENUM_SCOPE_PREFIX + typeName;
     }
-    accessScope = accessScope->lookupTable(tableName);
+    accessScope = accessScope->getChildScope(tableName);
     assert(accessScope != nullptr);
     if (accessScope->isImported(currentScope))
       isImported = true;
@@ -1944,7 +1944,7 @@ void TypeChecker::insertStructMethodCall(const ASTNode *node, const SymbolTableE
   assert(accessScope != nullptr);
   accessScope = accessScope->getChildScope(STRUCT_SCOPE_PREFIX + structEntry->name);
   assert(accessScope != nullptr);
-  Function *spiceFunc = accessScope->matchFunction(currentScope, name, varEntryType, {}, {}, node);
+  Function *spiceFunc = accessScope->matchFunction(name, varEntryType, {}, {}, node);
   if (spiceFunc)
     spiceFunc->isUsed = true;
 }
