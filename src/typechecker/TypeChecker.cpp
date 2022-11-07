@@ -26,8 +26,6 @@ std::any TypeChecker::visitMainFctDef(MainFctDefNode *node) {
     return visitMainFctDefLookup(node);
   else // Other runs
     return visitMainFctDefAnalyze(node);
-  assert(false && "MainFctDef TypeChecker fall-through");
-  return nullptr;
 }
 
 std::any TypeChecker::visitFctDef(FctDefNode *node) {
@@ -35,8 +33,6 @@ std::any TypeChecker::visitFctDef(FctDefNode *node) {
     return visitFctDefLookup(node);
   else // Other runs
     return visitFctDefAnalyze(node);
-  assert(false && "FctDef TypeChecker fall-through");
-  return nullptr;
 }
 
 std::any TypeChecker::visitProcDef(ProcDefNode *node) {
@@ -44,8 +40,6 @@ std::any TypeChecker::visitProcDef(ProcDefNode *node) {
     return visitProcDefLookup(node);
   else // Other runs
     return visitProcDefAnalyze(node);
-  assert(false && "ProcDef TypeChecker fall-through");
-  return nullptr;
 }
 
 std::any TypeChecker::visitStructDef(StructDefNode *node) {
@@ -77,7 +71,7 @@ std::any TypeChecker::visitInterfaceDef(InterfaceDefNode *node) {
   }
 
   // Add the interface to the symbol table
-  currentScope->insert(node->interfaceName, symbolType, interfaceSymbolSpecifiers, DECLARED, node);
+  currentScope->insert(node->interfaceName, symbolType, interfaceSymbolSpecifiers, node);
 
   // Create scope for interface
   Scope *interfaceScope = currentScope =
@@ -197,7 +191,7 @@ std::any TypeChecker::visitGenericTypeDef(GenericTypeDefNode *node) {
   }
 
   // Add it to the symbol table
-  currentScope->symbolTable.insertGenericType(node->typeName, genericType);
+  currentScope->insertGenericType(node->typeName, genericType);
 
   return nullptr;
 }
@@ -211,10 +205,12 @@ std::any TypeChecker::visitGlobalVarDef(GlobalVarDefNode *node) {
     throw SemanticError(node, VARIABLE_DECLARED_TWICE, "The global variable '" + node->varName + "' was declared more than once");
 
   // Check if symbol already exists in any imported module scope
-  if (currentScope->symbolTable.lookupGlobal(node->varName, true))
-    throw SemanticError(node, VARIABLE_DECLARED_TWICE,
-                        "A global variable named '" + node->varName +
-                            "' is already declared in another module. Please use a different name.");
+  for (auto &[_, dependency] : sourceFile->dependencies) {
+    if (dependency.first->globalScope->symbolTable.lookupStrict(node->varName))
+      throw SemanticError(node, VARIABLE_DECLARED_TWICE,
+                          "A global variable named '" + node->varName +
+                              "' is already declared in another module. Please use a different name.");
+  }
 
   // Insert variable name to symbol table
   auto symbolType = any_cast<SymbolType>(visit(node->dataType()));
@@ -295,7 +291,7 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
 
     // Add return symbol for function
     node->fctScope = currentScope->createChildScope(spiceFunc.getSignature(), SCOPE_FUNC_PROC_BODY);
-    node->fctScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), DECLARED, node);
+    node->fctScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), node);
     node->fctScope->lookup(RETURN_VARIABLE_NAME)->isUsed = true;
   } else { // Procedure
     // Insert procedure into symbol table
@@ -313,7 +309,7 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
 std::any TypeChecker::visitThreadDef(ThreadDefNode *node) {
   // Create a new scope
   currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_THREAD_BODY);
-  currentScope->capturingRequired = true; // Requires capturing because the LLVM IR will end up in a separate function
+  currentScope->symbolTable.capturingRequired = true; // Requires capturing because the LLVM IR will end up in a separate function
 
   // Visit statement list in new scope
   visit(node->stmtLst());
@@ -326,7 +322,7 @@ std::any TypeChecker::visitThreadDef(ThreadDefNode *node) {
 
 std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Create a new scope
-  currentScope = currentScope->createChildBlock(node->getScopeId(), SCOPE_UNSAFE_BODY);
+  currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_UNSAFE_BODY);
 
   // Visit statement list in new scope
   visit(node->stmtLst());
@@ -571,12 +567,10 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   SymbolType symbolType = expectedType = any_cast<SymbolType>(visit(node->dataType()));
 
   // Visit the right side
-  SymbolState initialState = DECLARED;
   if (node->hasAssignment) {
     auto rhsTy = any_cast<SymbolType>(visit(node->assignExpr()));
     // Check if type has to be inferred or both types are fixed
     symbolType = OpRuleManager::getAssignResultType(node, symbolType, rhsTy);
-    initialState = INITIALIZED;
 
     // Push symbolType to the declaration data type
     node->dataType()->setEvaluatedSymbolType(symbolType);
@@ -605,7 +599,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   }
 
   // Insert variable into symbol table
-  currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, initialState, node);
+  currentScope->insert(node->varName, symbolType, symbolTypeSpecifiers, node);
 
   // Insert call to empty constructor, if no value was assigned to a struct
   if (!node->isParam() && !node->hasAssignment && symbolType.isOneOf({TY_STRUCT, TY_STROBJ})) {
@@ -830,21 +824,21 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     } else if (node->op == AssignExprNode::OP_MINUS_EQUAL) {
       rhsTy = opRuleManager.getMinusEqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_MUL_EQUAL) {
-      rhsTy = opRuleManager.getMulEqualResultType(node, lhsTy, rhsTy);
+      rhsTy = OpRuleManager::getMulEqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_DIV_EQUAL) {
-      rhsTy = opRuleManager.getDivEqualResultType(node, lhsTy, rhsTy);
+      rhsTy = OpRuleManager::getDivEqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_REM_EQUAL) {
-      rhsTy = opRuleManager.getRemEqualResultType(node, lhsTy, rhsTy);
+      rhsTy = OpRuleManager::getRemEqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_SHL_EQUAL) {
-      rhsTy = opRuleManager.getSHLEqualResultType(node, lhsTy, rhsTy);
+      rhsTy = OpRuleManager::getSHLEqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_SHR_EQUAL) {
-      rhsTy = opRuleManager.getSHREqualResultType(node, lhsTy, rhsTy);
+      rhsTy = OpRuleManager::getSHREqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_AND_EQUAL) {
-      rhsTy = opRuleManager.getAndEqualResultType(node, lhsTy, rhsTy);
+      rhsTy = OpRuleManager::getAndEqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_OR_EQUAL) {
-      rhsTy = opRuleManager.getOrEqualResultType(node, lhsTy, rhsTy);
+      rhsTy = OpRuleManager::getOrEqualResultType(node, lhsTy, rhsTy);
     } else if (node->op == AssignExprNode::OP_XOR_EQUAL) {
-      rhsTy = opRuleManager.getXorEqualResultType(node, lhsTy, rhsTy);
+      rhsTy = OpRuleManager::getXorEqualResultType(node, lhsTy, rhsTy);
     }
 
     if (!variableName.empty()) { // Variable is involved on the left side
@@ -872,11 +866,13 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     }
 
     return node->setEvaluatedSymbolType(rhsTy);
-  } else if (node->ternaryExpr()) {
-    return visit(node->ternaryExpr());
-  } else if (node->threadDef()) {
-    return visit(node->threadDef());
   }
+
+  if (node->ternaryExpr())
+    return visit(node->ternaryExpr());
+
+  if (node->threadDef())
+    return visit(node->threadDef());
 
   // This is a fallthrough case -> throw an error
   throw std::runtime_error("Internal compiler error: Assign stmt fall-through"); // GCOV_EXCL_LINE
@@ -979,7 +975,7 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
     auto rhsTy = any_cast<SymbolType>(visit(node->operands()[1]));
 
     if (lhsTy.is(TY_STRING) && rhsTy.is(TY_STRING))
-      sourceFile.requestRuntimeModule(STRING_RT);
+      sourceFile->requestRuntimeModule(STRING_RT);
 
     if (node->op == EqualityExprNode::OP_EQUAL) // Operator was equal
       return node->setEvaluatedSymbolType(OpRuleManager::getEqualResultType(node, lhsTy, rhsTy));
@@ -1259,7 +1255,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       break;
     }
     case PostfixUnaryExprNode::OP_MINUS_MINUS: {
-      lhs = opRuleManager->getPostfixMinusMinusResultType(node->atomicExpr(), lhs);
+      lhs = OpRuleManager::getPostfixMinusMinusResultType(node->atomicExpr(), lhs);
 
       // Update state in symbol table
       if (currentEntry != nullptr)
@@ -1904,4 +1900,51 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return node->setEvaluatedSymbolType(SymbolType(TY_INTERFACE, typeName, {}, {}));
   }
   throw std::runtime_error("Base type fall-through");
+}
+
+void TypeChecker::insertAnonStringStructSymbol(const ASTNode *declNode) {
+  // Insert anonymous string symbol
+  SymbolType stringStructType(TY_STRING, "", {}, {});
+  currentScope->symbolTable.insertAnonymous(stringStructType, declNode);
+
+  // Enable string runtime
+  sourceFile->requestRuntimeModule(STRING_RT);
+}
+
+void TypeChecker::insertDestructorCall(const ASTNode *node, const SymbolTableEntry *varEntry) {
+  insertStructMethodCall(node, varEntry, DTOR_FUNCTION_NAME);
+}
+
+void TypeChecker::insertEmptyConstructorCall(const ASTNode *node, const SymbolTableEntry *varEntry) {
+  insertStructMethodCall(node, varEntry, CTOR_FUNCTION_NAME);
+
+  // Add anonymous symbol to keep track of de-allocation
+  SymbolType thisType = varEntry->type;
+  if (thisType.is(TY_STROBJ))
+    thisType = SymbolType(TY_STRUCT, STROBJ_NAME);
+  currentScope->symbolTable.insertAnonymous(thisType, node);
+}
+
+void TypeChecker::insertStructMethodCall(const ASTNode *node, const SymbolTableEntry *varEntry, const std::string &name) {
+  assert(varEntry != nullptr);
+  SymbolType varEntryType = varEntry->type;
+  assert(varEntryType.isOneOf({TY_STRUCT, TY_STROBJ}));
+
+  // Resolve strobj type
+  if (varEntryType.is(TY_STROBJ)) {
+    sourceFile->requestRuntimeModule(STRING_RT);
+    Scope *stringScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
+    varEntryType = initExtStruct(stringScope, "", STROBJ_NAME, {}, node);
+  }
+
+  // Create Spice function
+  std::string symbolName = varEntryType.getName();
+  SymbolTableEntry *structEntry = currentScope->lookup(symbolName);
+  Scope *accessScope = structEntry->scope;
+  assert(accessScope != nullptr);
+  accessScope = accessScope->getChildScope(STRUCT_SCOPE_PREFIX + structEntry->name);
+  assert(accessScope != nullptr);
+  Function *spiceFunc = accessScope->matchFunction(currentScope, name, varEntryType, {}, {}, node);
+  if (spiceFunc)
+    spiceFunc->isUsed = true;
 }

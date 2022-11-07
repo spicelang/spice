@@ -28,7 +28,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const SymbolT
 
 SymbolType OpRuleManager::getPlusEqualResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (typeChecker->currentScope->allowsUnsafeOperations())
+    if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
       throw printErrorMessageUnsafe(node, "+=", lhs, rhs);
@@ -39,7 +39,7 @@ SymbolType OpRuleManager::getPlusEqualResultType(const ASTNode *node, const Symb
 
 SymbolType OpRuleManager::getMinusEqualResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (typeChecker->currentScope->allowsUnsafeOperations())
+    if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
       throw printErrorMessageUnsafe(node, "-=", lhs, rhs);
@@ -149,14 +149,14 @@ SymbolType OpRuleManager::getShiftRightResultType(const ASTNode *node, const Sym
 SymbolType OpRuleManager::getPlusResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow any* + <int/long/short>
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (typeChecker->currentScope->allowsUnsafeOperations())
+    if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
       throw printErrorMessageUnsafe(node, "+", lhs, rhs);
   }
   // Allow <int/long/short> + any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
-    if (typeChecker->currentScope->allowsUnsafeOperations())
+    if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return rhs;
     else
       throw printErrorMessageUnsafe(node, "+", lhs, rhs);
@@ -175,14 +175,14 @@ SymbolType OpRuleManager::getPlusResultType(const ASTNode *node, const SymbolTyp
 SymbolType OpRuleManager::getMinusResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Allow any* - <int/long/short>
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (typeChecker->currentScope->allowsUnsafeOperations())
+    if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
       throw printErrorMessageUnsafe(node, "-", lhs, rhs);
   }
   // Allow <int/long/short> - any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
-    if (typeChecker->currentScope->allowsUnsafeOperations())
+    if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return rhs;
     else
       throw printErrorMessageUnsafe(node, "-", lhs, rhs);
@@ -259,7 +259,7 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, const SymbolTyp
     return lhs;
   // Allow casts any* -> any*
   if (lhs.isPointer() && rhs.isPointer()) {
-    if (typeChecker->currentScope->allowsUnsafeOperations())
+    if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
       throw printErrorMessageUnsafe(node, "(cast)", lhs, rhs);
