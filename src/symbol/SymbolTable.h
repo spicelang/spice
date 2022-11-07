@@ -9,7 +9,6 @@
 
 #include <symbol/Capture.h>
 #include <symbol/GenericType.h>
-#include <symbol/Interface.h>
 #include <symbol/SymbolTableEntry.h>
 #include <util/CompilerWarning.h>
 

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <symbol/Interface.h>
+#include <symbol/Struct.h>
 #include <symbol/SymbolTable.h>
 
 enum ScopeType {
@@ -63,9 +65,15 @@ public:
   std::unordered_map<std::string, Scope *> children;
   const ScopeType type;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable);
+
   bool capturingRequired = false;
 
 private:
+  // Private members
+  std::map<std::string, std::map<std::string, Function>> functions; // <code-loc-str, map-of-representations>
+  std::map<std::string, std::map<std::string, Struct>> structs;     // <code-loc-str, map-of-representations>
+  std::map<std::string, Interface> interfaces;
+
   // Private methods
   Scope *searchForScope(const ScopeType &scopeType);
 };
