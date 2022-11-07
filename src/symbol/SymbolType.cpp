@@ -356,6 +356,16 @@ int SymbolType::getArraySize() const {
 }
 
 /**
+ * Set the signedness of the current type
+ *
+ * @param value Signed or not signed
+ */
+void SymbolType::setSigned(bool value) {
+  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
+  typeChain.back().data.numericSigned = value;
+}
+
+/**
  * Check if the current type is signed
  */
 bool SymbolType::isSigned() const {

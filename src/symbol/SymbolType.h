@@ -46,7 +46,7 @@ public:
   // Unions
   union TypeChainElementData {
     // Union fields
-    int arraySize = 0; // TY_ARRAY
+    int arraySize = 0;  // TY_ARRAY
     bool numericSigned; // TY_INT, TY_SHORT, TY_LONG
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
@@ -125,6 +125,7 @@ public:
   [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] int getArraySize() const;
+  void setSigned(bool value = true);
   [[nodiscard]] bool isSigned() const;
   [[nodiscard]] llvm::Value *getDynamicArraySize() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
