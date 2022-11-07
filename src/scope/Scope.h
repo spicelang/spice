@@ -42,6 +42,7 @@ public:
   ~Scope();
 
   // Public methods
+  // Scope management
   Scope *createChildScope(const std::string &scopeName, const ScopeType &scopeType);
   void renameChildScope(const std::string &oldName, const std::string &newName);
   void copyChildScope(const std::string &oldName, const std::string &newName);
@@ -49,16 +50,40 @@ public:
   [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] Scope *getChildScope(const std::string &scopeName) const;
   [[nodiscard]] std::vector<SymbolTableEntry *> getVarsGoingOutOfScope();
+
+  // Generic types
+  void insertGenericType(const std::string &typeName, const GenericType &genericType);
+  GenericType *lookupGenericType(const std::string &typeName);
+
+  // Functions
+  Function *insertFunction(const Function &function);
+  Function *matchFunction(SymbolTable *currentScope, const std::string &callFunctionName, const SymbolType &callThisType,
+                          const std::vector<SymbolType> &callTemplateTypes, const std::vector<SymbolType> &callArgTypes,
+                          const ASTNode *node);
+  [[nodiscard]] std::unordered_map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc);
+  Function *insertSubstantiatedFunction(const Function &function, const ASTNode *declNode);
+
+  // Structs
+  Struct *insertStruct(const Struct &spiceStruct);
+  Struct *matchStruct(SymbolTable *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
+                      const ASTNode *node);
+  [[nodiscard]] std::unordered_map<std::string, Struct> *getStructManifestations(const CodeLoc &defCodeLoc);
+  Struct *insertSubstantiatedStruct(const Struct &s, const ASTNode *declNode);
+
+  // Interfaces
+  Interface *lookupInterface(const std::string &interfaceName);
+  void insertInterface(const Interface &interface);
+
+  // Util
   [[nodiscard]] std::vector<CompilerWarning> collectWarnings() const;
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] size_t getLoopNestingDepth() const;
-  [[nodiscard]] bool allowsUnsafeOperations() const;
+  [[nodiscard]] bool doesAllowUnsafeOperations() const;
 
   // Wrapper methods for symbol table
-  inline SymbolTableEntry *insert(const std::string &name, const SymbolType &ty, const SymbolSpecifiers &sp, const ASTNode *nd) {
-    return symbolTable.insert(name, ty, sp, nd);
-  }
-  inline SymbolTableEntry *lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
+  inline SymbolTableEntry *insert(const std::string &name, const SymbolType &symbolType, const SymbolSpecifiers &specifiers,
+                                  const ASTNode *declNode);
+  inline SymbolTableEntry *lookup(const std::string &symbolName);
 
   // Public members
   Scope *parent;
@@ -66,13 +91,12 @@ public:
   const ScopeType type;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable);
 
-  bool capturingRequired = false;
-
 private:
   // Private members
-  std::map<std::string, std::map<std::string, Function>> functions; // <code-loc-str, map-of-representations>
-  std::map<std::string, std::map<std::string, Struct>> structs;     // <code-loc-str, map-of-representations>
-  std::map<std::string, Interface> interfaces;
+  std::unordered_map<std::string, std::unordered_map<std::string, Function>> functions; // <code-loc-str, map-of-representations>
+  std::unordered_map<std::string, std::unordered_map<std::string, Struct>> structs;     // <code-loc-str, map-of-representations>
+  std::unordered_map<std::string, Interface> interfaces;
+  std::unordered_map<std::string, GenericType> genericTypes;
 
   // Private methods
   Scope *searchForScope(const ScopeType &scopeType);

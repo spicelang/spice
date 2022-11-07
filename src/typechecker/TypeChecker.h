@@ -104,4 +104,10 @@ private:
   Scope *currentScope = nullptr;
   unsigned short runNumber;
   bool reVisitRequested = false;
+
+  // Private methods
+  void insertAnonStringStructSymbol(const ASTNode *declNode);
+  void insertDestructorCall(const ASTNode *node, const SymbolTableEntry *varEntry);
+  void insertEmptyConstructorCall(const ASTNode *node, const SymbolTableEntry *varEntry);
+  void insertStructMethodCall(const ASTNode *node, const SymbolTableEntry *varEntry, const std::string &name);
 };

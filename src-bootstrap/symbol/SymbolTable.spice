@@ -46,7 +46,7 @@ public type SymbolTable struct {
     bool inMainSourceFile
     bool isSourceFileRootScope
     bool isShadowTable
-    bool isCapturingRequired
+    bool capturingRequired
 }
 
 public p SymbolTable.ctor(
@@ -61,7 +61,7 @@ public p SymbolTable.ctor(
     this.inMainSourceFile = inMainSourceFile;
     this.isSourceFileRootScope = isSourceFileRoot;
     this.isShadowTable = false;
-    this.isCapturingRequired = false;
+    this.capturingRequired = false;
 }
 
 /**
@@ -127,7 +127,7 @@ public f<ste::SymbolTableEntry*> SymbolTable.lookup(const string name) {
         if entry == nil<SymbolTable*> { return nil<ste::SymbolTableEntry*>; }
 
         // Check if this scope requires capturing and capture the variable if appropriate
-        if this.isCapturingRequired && !this.captures.contains(name) && !entry.ty.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}) {
+        if this.capturingRequired && !this.captures.contains(name) && !entry.ty.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}) {
             this.captures.insert(name, cpt::Capture(entry));
         }
     }

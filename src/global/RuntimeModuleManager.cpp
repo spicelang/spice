@@ -4,7 +4,6 @@
 
 #include <SourceFile.h>
 #include <scope/Scope.h>
-#include <symbol/SymbolTable.h>
 #include <util/FileUtil.h>
 
 #include <ast/ASTNodes.h>
@@ -18,9 +17,9 @@ SourceFile *RuntimeModuleManager::requestModule(SourceFile *sourceFile, const Ru
   return available ? modules.at(moduleName) : nullptr;
 }
 
-SymbolTable *RuntimeModuleManager::getModuleScope(const RuntimeModuleName &moduleName) const {
+Scope *RuntimeModuleManager::getModuleScope(const RuntimeModuleName &moduleName) const {
   assert(modules.contains(moduleName));
-  return &modules.at(moduleName)->globalScope->symbolTable;
+  return modules.at(moduleName)->globalScope.get();
 }
 
 bool RuntimeModuleManager::isModuleAvailable(const RuntimeModuleName &module) const { return modules.contains(module); }

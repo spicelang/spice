@@ -33,7 +33,8 @@ public:
   friend class Scope;
 
   // Public methods
-  SymbolTableEntry *insert(const std::string &name, const SymbolType &type, const SymbolSpecifiers &sp, const ASTNode *declNode);
+  SymbolTableEntry *insert(const std::string &name, const SymbolType &symbolType, const SymbolSpecifiers &specifiers,
+                           const ASTNode *declNode);
   SymbolTableEntry *insertAnonymous(const SymbolType &type, const ASTNode *declNode);
   void insertCapture(const std::string &name, const Capture &capture);
   SymbolTableEntry *lookup(const std::string &symbolName);
@@ -42,8 +43,6 @@ public:
   SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc);
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
-  void insertGenericType(const std::string &typeName, const GenericType &genericType);
-  GenericType *lookupGenericType(const std::string &typeName);
   [[nodiscard]] nlohmann::json toJSON() const;
 
   // Public members
@@ -51,6 +50,5 @@ public:
   std::unordered_map<std::string, SymbolTable *> children;
   std::unordered_map<std::string, SymbolTableEntry> symbols;
   std::unordered_map<std::string, Capture> captures;
-  std::unordered_map<std::string, GenericType> genericTypes;
-  bool isCapturingRequired = false;
+  bool capturingRequired = false;
 };

@@ -14,7 +14,7 @@
 #include "borrowchecker/Lifecycle.h"
 
 // Forward declarations
-class SymbolTable;
+class Scope;
 class ASTNode;
 struct CodeLoc;
 
@@ -24,7 +24,7 @@ struct CodeLoc;
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, SymbolType type, SymbolTable *scope, SymbolSpecifiers specifiers, const ASTNode *declNode,
+  SymbolTableEntry(std::string name, SymbolType type, Scope *scope, SymbolSpecifiers specifiers, const ASTNode *declNode,
                    size_t orderIndex, const bool global)
       : name(std::move(name)), type(std::move(type)), scope(scope), specifiers(specifiers), declNode(declNode),
         orderIndex(orderIndex), isGlobal(global){};
@@ -46,7 +46,7 @@ public:
   // Public members
   const std::string name;
   SymbolType type;
-  SymbolTable *scope;
+  Scope *scope;
   SymbolSpecifiers specifiers;
   const ASTNode *declNode;
   size_t orderIndex;

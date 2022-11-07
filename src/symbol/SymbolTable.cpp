@@ -16,18 +16,18 @@
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
  *
  * @param name Name of the symbol
- * @param type Type of the symbol
- * @param sp Specifiers of the symbol
+ * @param symbolType Type of the symbol
+ * @param specifiers Specifiers of the symbol
  * @param state State of the symbol (declared or initialized)
  * @param declNode AST node where the symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolType &type, const SymbolSpecifiers &sp,
+SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolType &symbolType, const SymbolSpecifiers &specifiers,
                                       const ASTNode *declNode) {
   bool isGlobal = parent == nullptr;
   size_t orderIndex = symbols.size();
   // Insert into symbols map
-  symbols.insert({name, SymbolTableEntry(name, type, this, sp, declNode, orderIndex, isGlobal)});
+  symbols.insert({name, SymbolTableEntry(name, symbolType, this, specifiers, declNode, orderIndex, isGlobal)});
   return &symbols.at(name);
 }
 
@@ -75,7 +75,7 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-
       return nullptr;
 
     // Check if this scope requires capturing and capture the variable if appropriate
-    if (isCapturingRequired && !captures.contains(name) && !entry->type.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
+    if (capturingRequired && !captures.contains(name) && !entry->type.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
       captures.insert({name, Capture(entry)});
   }
 
@@ -155,29 +155,6 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
     return &captures.at(name);
   // Otherwise, return nullptr
   return nullptr;
-}
-
-/**
- * Insert a new generic type in this scope
- *
- * @param typeName Name of the generic type
- * @param genericType Generic type itself
- */
-void SymbolTable::insertGenericType(const std::string &typeName, const GenericType &genericType) {
-  genericTypes.insert({typeName, genericType});
-}
-
-/**
- * Search for a generic type by its name. If it was not found, the parent scopes will be searched.
- * If the generic type does not exist at all, the function will return a nullptr.
- *
- * @param typeName Name of the generic type
- * @return Generic type
- */
-GenericType *SymbolTable::lookupGenericType(const std::string &typeName) { // NOLINT(misc-no-recursion)
-  if (genericTypes.contains(typeName))
-    return &genericTypes.at(typeName);
-  return parent ? parent->lookupGenericType(typeName) : nullptr;
 }
 
 /**
