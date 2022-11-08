@@ -121,6 +121,7 @@ set(SOURCES
         util/CodeLoc.h
         util/CompilerWarning.cpp
         util/CompilerWarning.h
+        util/Timer.h
 
         # ToDo: Remove
         #analyzer/PreAnalyzerVisitor.cpp
