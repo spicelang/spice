@@ -21,6 +21,7 @@
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
+#include <util/Timer.h>
 #include <visualizer/ASTVisualizer.h>
 #include <visualizer/CSTVisualizer.h>
 
@@ -35,6 +36,8 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
 }
 
 void SourceFile::runLexer() {
+  Timer timer; // Start timer, which runs until the end of the current scope
+
   // Read from file
   std::ifstream fileInputStream(filePath);
   if (!fileInputStream)
@@ -68,6 +71,8 @@ void SourceFile::runParser() {
   if (restoredFromCache)
     return;
 
+  Timer timer; // Start timer, which runs until the end of the current scope
+
   // Parse input
   antlrCtx.parser = std::make_unique<SpiceParser>(antlrCtx.tokenStream.get()); // Check for syntax errors
   antlrCtx.parser->removeErrorListeners();
@@ -81,6 +86,8 @@ void SourceFile::runCSTVisualizer() {
   // Only execute if enabled
   if (restoredFromCache || (!resourceManager.cliOptions.dumpCST && !resourceManager.cliOptions.testMode))
     return;
+
+  Timer timer; // Start timer, which runs until the end of the current scope
 
   // Generate dot code for this source file
   std::stringstream dotCode;
@@ -105,6 +112,8 @@ void SourceFile::runASTBuilder() {
   if (restoredFromCache)
     return;
 
+  Timer timer; // Start timer, which runs until the end of the current scope
+
   // Create AST
   ast = std::make_unique<EntryNode>(nullptr, CodeLoc(1, 1, filePath));
 
@@ -124,6 +133,8 @@ void SourceFile::runASTOptimizer() {
   if (restoredFromCache)
     return;
 
+  Timer timer; // Start timer, which runs until the end of the current scope
+
   ASTOptimizer astOptimizer(resourceManager, this);
   astOptimizer.visit(ast.get());
 
@@ -134,6 +145,8 @@ void SourceFile::runASTVisualizer() {
   // Only execute if enabled
   if (restoredFromCache || (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode))
     return;
+
+  Timer timer; // Start timer, which runs until the end of the current scope
 
   // Generate dot code for this source file
   std::stringstream dotCode;
@@ -157,6 +170,8 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
+  Timer timer; // Start timer, which runs until the end of the current scope
+
   // Collect the imports for this source file
   ImportCollector importCollector(resourceManager, this);
   importCollector.visit(ast.get());
@@ -169,6 +184,8 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
+  Timer timer;                      // Start timer, which runs until the end of the current scope
+
   // We need two runs here due to generics.
   // The first run to determine all concrete substantiations of potentially generic elements
   runTypeCheckerFirst(); // Visit dependency tree from bottom to top
@@ -184,19 +201,8 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
     return;
 
   // Type-check all dependencies first
-  for (const auto &[importName, sourceFile] : dependencies) {
-    // Type-check the imported source file
+  for (const auto &[importName, sourceFile] : dependencies)
     sourceFile.first->runTypeChecker();
-
-    // Mount symbol table to the current one
-    // sourceFile.first->globalScope->symbolTable.parent = &globalScope->symbolTable;
-    // globalScope->symbolTable->mountChildBlock(importName, sourceFile.first->symbolTable.get());
-
-    // Insert import symbol
-    // SymbolType type = SymbolType(TY_IMPORT);
-    // SymbolSpecifiers specifiers(type);
-    // symbolTable->insert(importName, type, specifiers, INITIALIZED, sourceFile.second);
-  }
 
   // Then type-check the current file
   TypeChecker typeChecker(resourceManager, this, 1);
@@ -239,6 +245,8 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
+  Timer timer; // Start timer, which runs until the end of the current scope
+
   // Borrow-check all dependencies first
   for (const auto &[importName, sourceFile] : dependencies)
     sourceFile.first->runBorrowChecker();
@@ -255,13 +263,15 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
+  Timer timer; // Start timer, which runs until the end of the current scope
+
   // Escape-analyze all dependencies first
   for (const auto &[importName, sourceFile] : dependencies)
     sourceFile.first->runEscapeAnalyzer();
 
   // Then escape-analyze current file
-  EscapeAnalyzer escapeanalyzer(resourceManager, this);
-  escapeanalyzer.visit(ast.get());
+  EscapeAnalyzer escapeAnalyzer(resourceManager, this);
+  escapeAnalyzer.visit(ast.get());
 
   printStatusMessage("Escape Analyzer", IO_AST, IO_AST);
 }
@@ -270,6 +280,8 @@ void SourceFile::runIRGenerator() { // NOLINT(misc-no-recursion)
   // Skip if restored from cache
   if (restoredFromCache)
     return;
+
+  Timer timer; // Start timer, which runs until the end of the current scope
 
   // Generate the imported source files
   for (const auto &sourceFile : dependencies)
@@ -300,6 +312,8 @@ void SourceFile::runIROptimizer() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
+  Timer timer; // Start timer, which runs until the end of the current scope
+
   // Skip this stage if optimization is disabled
   if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
     return;
@@ -329,6 +343,8 @@ void SourceFile::runObjectEmitter() { // NOLINT(misc-no-recursion)
   // Skip if restored from cache
   if (restoredFromCache)
     return;
+
+  Timer timer; // Start timer, which runs until the end of the current scope
 
   // Emit objects for the imported source files
   for (const auto &sourceFile : dependencies)
@@ -477,6 +493,6 @@ void SourceFile::printStatusMessage(const std::string &stage, const CompilerStag
   if (resourceManager.cliOptions.printDebugOutput) {
     const char *compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
     std::cout << "[" << stage << "] for " << fileName << ": ";
-    std::cout << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out] << "\n";
+    std::cout << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
   }
 }
