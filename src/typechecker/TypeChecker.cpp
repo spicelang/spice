@@ -564,7 +564,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     throw SemanticError(node, VARIABLE_DECLARED_TWICE, "The variable '" + node->varName + "' was declared more than once");
 
   // Get the type of the symbol
-  SymbolType symbolType = expectedType = any_cast<SymbolType>(visit(node->dataType()));
+  SymbolType symbolType = any_cast<SymbolType>(visit(node->dataType()));
 
   // Visit the right side
   if (node->hasAssignment) {
@@ -615,8 +615,6 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   SymbolType returnType = SymbolType(TY_DYN);
   SymbolTableEntry *returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
   if (returnVariable) { // Return variable => function
-    expectedType = returnVariable->type;
-
     // Check if there is a value attached to the return statement
     if (node->hasReturnValue) {
       // Visit the value
@@ -1602,10 +1600,6 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   int actualSize = 0;
   SymbolType actualItemType = SymbolType(TY_DYN);
   if (node->itemLst()) {
-    // Set the expected array type to the contained type
-    SymbolType expectedTypeBackup = expectedType;
-    expectedType = expectedType.isArray() ? expectedType.getContainedTy() : expectedType;
-
     for (const auto &arg : node->itemLst()->args()) {
       auto itemType = any_cast<SymbolType>(visit(arg));
       if (actualItemType.is(TY_DYN)) {
@@ -1617,21 +1611,6 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
       }
       actualSize++;
     }
-
-    // Restore the expected array type
-    expectedType = expectedTypeBackup;
-  }
-
-  // Override actual array size if the expected type has a fixed size
-  actualSize = expectedType.isArray() ? expectedType.getArraySize() : actualSize;
-
-  // Check if actual item type is known now
-  if (actualItemType.is(TY_DYN)) { // Not enough info to perform type inference, because of empty array {}
-    if (expectedType.is(TY_DYN))
-      throw SemanticError(node, UNEXPECTED_DYN_TYPE_SA, "Not enough information to perform type inference");
-    if (!expectedType.isArray())
-      throw SemanticError(node, ARRAY_ITEM_TYPE_NOT_MATCHING, "Cannot initialize array for type " + expectedType.getName() + "");
-    actualItemType = expectedType.getContainedTy();
   }
 
   return node->setEvaluatedSymbolType(actualItemType.toArray(node, actualSize));
