@@ -1,15 +1,15 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "SymbolType.h"
-#include "analyzer/AnalyzerVisitor.h"
 
 #include <stdexcept>
 #include <tuple>
 
+#include <exception/SemanticError.h>
 #include <irgenerator/StdFunctionManager.h>
-#include <symbol/Struct.h>
-#include <symbol/SymbolTable.h>
-#include <symbol/SymbolTableEntry.h>
+#include <model/Struct.h>
+#include <symboltablebuilder/SymbolTable.h>
+#include <symboltablebuilder/SymbolTableEntry.h>
 
 /**
  * Get the pointer type of the current type as a new type

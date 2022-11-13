@@ -6,8 +6,8 @@
 #include <utility>
 #include <vector>
 
-#include <symbol/GenericType.h>
-#include <symbol/SymbolSpecifiers.h>
+#include <model/GenericType.h>
+#include <symboltablebuilder/SymbolSpecifiers.h>
 
 #include "../../lib/json/json.hpp"
 

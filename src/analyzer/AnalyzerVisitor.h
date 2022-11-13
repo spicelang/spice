@@ -5,9 +5,9 @@
 #include <ast/ASTNodes.h>
 #include <ast/ASTVisitor.h>
 
+#include <model/ScopePath.h>
+#include <symboltablebuilder/SymbolType.h>
 #include <typechecker/OpRuleManager.h>
-#include <symbol/ScopePath.h>
-#include <symbol/SymbolType.h>
 
 #include <llvm/ADT/Triple.h>
 #include <llvm/IR/IRBuilder.h>
@@ -123,5 +123,5 @@ private:
                            const std::vector<SymbolType> &templateTypes, const ASTNode *node);
   SymbolType initExtGlobal(SymbolTable *sourceScope, const std::string &globalScopePrefix, const std::string &globalName,
                            const ASTNode *node);
-  static void checkForReservedKeyword(const ASTNode *node, const std::string &identifier) ;
+  static void checkForReservedKeyword(const ASTNode *node, const std::string &identifier);
 };

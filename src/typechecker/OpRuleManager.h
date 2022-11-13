@@ -6,8 +6,8 @@
 
 #include <Token.h>
 
+#include "symboltablebuilder/SymbolType.h"
 #include <exception/SemanticError.h>
-#include <symbol/SymbolType.h>
 
 // Forward declarations
 class ASTNode;

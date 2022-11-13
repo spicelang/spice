@@ -2,9 +2,9 @@
 
 #include "SymbolTableEntry.h"
 
-#include <ast/ASTNodes.h>
-#include <exception/SemanticError.h>
-#include <util/CodeLoc.h>
+#include "ast/ASTNodes.h"
+#include "exception/SemanticError.h"
+#include "util/CodeLoc.h"
 
 /**
  * Update the type of a symbol. This is used for substantiateOptionalParams types in the process of type inference
@@ -39,9 +39,9 @@ void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node
   // Check if the type is known at time of initialization
   if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                    // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'");   // GCOV_EXCL_LINE
-  if (newState == DEAD && oldState == DECLARED)                                                              // GCOV_EXCL_LINE
+  if (newState == DEAD && oldState == DECLARED)                                                                 // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
-  if (newState == DEAD && oldState == DEAD)                                                            // GCOV_EXCL_LINE
+  if (newState == DEAD && oldState == DEAD)                                                                     // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: cannot destruct already freed variable '" + name + "'"); // GCOV_EXCL_LINE
   lifecycle.addEvent({newState, node});
 }

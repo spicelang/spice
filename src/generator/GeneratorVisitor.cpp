@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 
+#include "symboltablebuilder/SymbolTable.h"
 #include <SourceFile.h>
 #include <analyzer/AnalyzerVisitor.h>
 #include <cli/CLIInterface.h>
@@ -11,7 +12,6 @@
 #include <global/GlobalResourceManager.h>
 #include <symbol/Function.h>
 #include <symbol/Struct.h>
-#include <symbol/SymbolTable.h>
 #include <util/FileUtil.h>
 
 #include <llvm/Analysis/AliasAnalysis.h>

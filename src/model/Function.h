@@ -4,9 +4,9 @@
 
 #include <utility>
 
-#include <symbol/GenericType.h>
-#include <symbol/SymbolSpecifiers.h>
-#include <symbol/SymbolType.h>
+#include <model/GenericType.h>
+#include <symboltablebuilder/SymbolSpecifiers.h>
+#include <symboltablebuilder/SymbolType.h>
 
 // Forward declarations
 class ASTNode;

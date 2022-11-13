@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <symbol/Interface.h>
-#include <symbol/Struct.h>
-#include <symbol/SymbolTable.h>
+#include <model/Interface.h>
+#include <model/Struct.h>
+#include <symboltablebuilder/SymbolTable.h>
 
 enum ScopeType {
   SCOPE_GLOBAL,

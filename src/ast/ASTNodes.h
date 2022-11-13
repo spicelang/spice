@@ -10,9 +10,9 @@
 #include <ast/ASTVisitor.h>
 #include <importcollector/ImportCollector.h>
 #include <irgenerator/IRGenerator.h>
+#include <model/Function.h>
+#include <model/Struct.h>
 #include <scope/Scope.h>
-#include <symbol/Function.h>
-#include <symbol/Struct.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeChecker.h>
 #include <util/CodeLoc.h>

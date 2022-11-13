@@ -42,6 +42,16 @@ set(SOURCES
         # Symbol table builder
         symboltablebuilder/SymbolTableBuilder.cpp
         symboltablebuilder/SymbolTableBuilder.h
+        symboltablebuilder/SymbolTable.cpp
+        symboltablebuilder/SymbolTable.h
+        symboltablebuilder/SymbolTableEntry.cpp
+        symboltablebuilder/SymbolTableEntry.h
+        symboltablebuilder/Capture.cpp
+        symboltablebuilder/Capture.h
+        symboltablebuilder/SymbolType.cpp
+        symboltablebuilder/SymbolType.h
+        symboltablebuilder/SymbolSpecifiers.cpp
+        symboltablebuilder/SymbolSpecifiers.h
         # Type checker
         typechecker/TypeChecker.cpp
         typechecker/TypeChecker.h
@@ -78,27 +88,17 @@ set(SOURCES
         # Scope management
         scope/Scope.cpp
         scope/Scope.h
-        # Symbol table management
-        symbol/SymbolTable.cpp
-        symbol/SymbolTable.h
-        symbol/SymbolTableEntry.cpp
-        symbol/SymbolTableEntry.h
-        symbol/Function.cpp
-        symbol/Function.h
-        symbol/Struct.cpp
-        symbol/Struct.h
-        symbol/Interface.cpp
-        symbol/Interface.h
-        symbol/Capture.cpp
-        symbol/Capture.h
-        symbol/SymbolType.cpp
-        symbol/SymbolType.h
-        symbol/GenericType.cpp
-        symbol/GenericType.h
-        symbol/ScopePath.cpp
-        symbol/ScopePath.h
-        symbol/SymbolSpecifiers.cpp
-        symbol/SymbolSpecifiers.h
+        # Model
+        model/Function.cpp
+        model/Function.h
+        model/Struct.cpp
+        model/Struct.h
+        model/Interface.cpp
+        model/Interface.h
+        model/GenericType.cpp
+        model/GenericType.h
+        model/ScopePath.cpp
+        model/ScopePath.h
         # Exception handling
         exception/CliError.cpp
         exception/CliError.h

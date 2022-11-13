@@ -4,8 +4,8 @@
 
 #include <utility>
 
+#include "symboltablebuilder/SymbolType.h"
 #include <global/GlobalResourceManager.h>
-#include <symbol/SymbolType.h>
 
 #include <llvm/IR/Value.h>
 

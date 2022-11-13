@@ -4,6 +4,8 @@
 
 #include <utility>
 
+#include "symboltablebuilder/SymbolSpecifiers.h"
+#include "symboltablebuilder/SymbolTable.h"
 #include <SourceFile.h>
 #include <cli/CLIInterface.h>
 #include <exception/SemanticError.h>
@@ -13,8 +15,6 @@
 #include <symbol/GenericType.h>
 #include <symbol/Interface.h>
 #include <symbol/Struct.h>
-#include <symbol/SymbolSpecifiers.h>
-#include <symbol/SymbolTable.h>
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 

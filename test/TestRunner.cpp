@@ -10,13 +10,13 @@
 #include <llvm/Support/Host.h>
 
 #include "TestUtil.h"
+#include "symboltablebuilder/SymbolTable.h"
 #include <SourceFile.h>
 #include <cli/CLIInterface.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
-#include <symbol/SymbolTable.h>
 #include <util/FileUtil.h>
 
 void execTestCase(const TestCase &testCase) {

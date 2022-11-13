@@ -9,8 +9,8 @@
 
 #include <irgenerator/OpRuleConversionsManager.h>
 #include <irgenerator/StdFunctionManager.h>
-#include <symbol/ScopePath.h>
-#include <symbol/SymbolType.h>
+#include <model/ScopePath.h>
+#include <symboltablebuilder/SymbolType.h>
 
 #include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/IRBuilder.h>

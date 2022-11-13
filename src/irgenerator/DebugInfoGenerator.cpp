@@ -4,7 +4,7 @@
 
 #include <ast/ASTNodes.h>
 #include <irgenerator/IRGenerator.h>
-#include <symbol/Function.h>
+#include <model/Function.h>
 
 #include <llvm/BinaryFormat/Dwarf.h>
 

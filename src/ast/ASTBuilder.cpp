@@ -4,9 +4,15 @@
 
 #include <regex>
 
+#include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <exception/ParserError.h>
 #include <util/CommonUtil.h>
+
+ASTBuilder::ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile, ASTNode *rootNode,
+                       antlr4::ANTLRInputStream *inputStream)
+    : CompilerPass(resourceManager, sourceFile), currentNode(rootNode), filePath(sourceFile->filePath), inputStream(inputStream) {
+}
 
 std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = dynamic_cast<EntryNode *>(currentNode);

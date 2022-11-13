@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include "model/Function.h"
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
-#include <symbol/SymbolTableEntry.h>
+#include <symboltablebuilder/SymbolTableEntry.h>
 #include <typechecker/OpRuleManager.h>
 
 #define TCResult SymbolType
@@ -27,7 +28,6 @@ public:
   // Public methods
   TCResult visitEntry(EntryNode *node) override;
   TCResult visitMainFctDef(MainFctDefNode *node) override;
-  TCResult visitMainFctDefLookup(MainFctDefNode *node);
   TCResult visitMainFctDefAnalyze(MainFctDefNode *node);
   TCResult visitFctDef(FctDefNode *node) override;
   TCResult visitFctDefLookup(FctDefNode *node);
@@ -97,6 +97,7 @@ private:
   Scope *rootScope;
   Scope *currentScope = nullptr;
   const TypeCheckerMode typeCheckerMode;
+  NamedParamList namedParamList;
 
   // Private methods
   void insertAnonStringStructSymbol(const ASTNode *declNode);

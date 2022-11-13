@@ -2,20 +2,18 @@
 
 #include "SourceFile.h"
 
-#include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
 #include <ast/ASTBuilder.h>
 #include <astoptimizer/ASTOptimizer.h>
 #include <borrowchecker/BorrowChecker.h>
 #include <escapeanalyzer/EscapeAnalyzer.h>
 #include <exception/AntlrThrowingErrorListener.h>
-#include <generator/GeneratorVisitor.h>
 #include <global/GlobalResourceManager.h>
 #include <importcollector/ImportCollector.h>
 #include <irgenerator/IRGenerator.h>
 #include <iroptimizer/IROptimizer.h>
 #include <objectemitter/ObjectEmitter.h>
-#include <symbol/SymbolTable.h>
+#include <symboltablebuilder/SymbolTable.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeChecker.h>
 #include <util/CodeLoc.h>

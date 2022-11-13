@@ -4,7 +4,9 @@
 
 #include <stdexcept>
 
-#include <symbol/SymbolType.h>
+#include "SymbolType.h"
+
+SymbolSpecifiers SymbolSpecifiers::of(const SymbolType &symbolType) { return of(symbolType.getSuperType()); }
 
 SymbolSpecifiers SymbolSpecifiers::of(SymbolSuperType superType) {
   switch (superType) {

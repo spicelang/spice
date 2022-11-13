@@ -24,9 +24,14 @@ STBResult SymbolTableBuilder::visitEntry(EntryNode *node) {
 }
 
 STBResult SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
+  const std::string fctSignature = std::string(MAIN_FUNCTION_NAME) + "()";
+
+  // Check if the function is already defined
+  if (rootScope->lookup(fctSignature))
+    throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
+
   // Insert symbol for main function
-  std::string mainSignature = std::string(MAIN_FUNCTION_NAME) + "()";
-  SymbolTableEntry *mainFctEntry = currentScope->insert(mainSignature, SymbolSpecifiers::of(TY_FUNCTION), node);
+  SymbolTableEntry *mainFctEntry = currentScope->insert(fctSignature, SymbolSpecifiers::of(TY_FUNCTION), node);
   mainFctEntry->isUsed = true;
 
   // Create scope for main function body
@@ -46,3 +51,5 @@ STBResult SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   // Return to root scope
   currentScope = rootScope;
 }
+
+STBResult SymbolTableBuilder::visitFctDef(FctDefNode *node) {}

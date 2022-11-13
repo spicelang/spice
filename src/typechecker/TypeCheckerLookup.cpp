@@ -4,35 +4,6 @@
 
 #include <SourceFile.h>
 
-TCResult TypeChecker::visitMainFctDefLookup(MainFctDefNode *node) {
-  std::string mainSignature = std::string(MAIN_FUNCTION_NAME) + "()";
-
-  // Check if the function is already defined
-  if (rootScope->lookup(mainSignature))
-    throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
-
-  // Insert function name into the root symbol table
-  SymbolTableEntry *mainFctEntry = rootScope->insert(mainSignature, SymbolSpecifiers::of(TY_FUNCTION), node);
-  mainFctEntry->isUsed = true;
-
-  // Create the function scope
-  node->fctScope = currentScope = rootScope->createChildScope(mainSignature, SCOPE_FUNC_PROC_BODY);
-
-  // Declare variable for the return value in the function scope
-  SymbolType returnType = SymbolType(TY_INT);
-  SymbolTableEntry *returnVarEntry = node->fctScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), node);
-  returnVarEntry->isUsed = true;
-
-  // Visit arguments in new scope
-  if (node->hasArgs)
-    visit(node->paramLst());
-
-  // Return to root scope
-  currentScope = rootScope;
-
-  return {};
-}
-
 TCResult TypeChecker::visitFctDefLookup(FctDefNode *node) {
   // Check if name is dtor
   if (node->functionName == "dtor")
@@ -69,7 +40,7 @@ TCResult TypeChecker::visitFctDefLookup(FctDefNode *node) {
       auto templateType = visit(dataType);
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
-      GenericType *genericType = node->fctScope->symbolTable.lookupGenericType(templateType.getSubType());
+      GenericType *genericType = node->fctScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       templateTypes.push_back(*genericType);
     }
@@ -79,7 +50,8 @@ TCResult TypeChecker::visitFctDefLookup(FctDefNode *node) {
   std::vector<std::string> paramNames;
   ParamList paramTypes;
   if (node->hasParams) {
-    auto namedParamList = any_cast<NamedParamList>(visit(node->paramLst()));
+    namedParamList.clear();
+    visit(node->paramLst());
     for (const auto &param : namedParamList) {
       // Check if the type is present in the template for generic types
       if (param.type.is(TY_GENERIC)) {
@@ -95,16 +67,18 @@ TCResult TypeChecker::visitFctDefLookup(FctDefNode *node) {
 
   // Declare 'this' variable in new scope
   if (node->isMethod) {
-    SymbolSpecifiers thisTypeSpecifiers(thisPtrType);
+    SymbolSpecifiers thisTypeSpecifiers = SymbolSpecifiers::of(thisPtrType);
     thisTypeSpecifiers.setConst(true);
-    node->fctScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisTypeSpecifiers, node);
+    SymbolTableEntry *thisEntry = node->fctScope->insert(THIS_VARIABLE_NAME, thisTypeSpecifiers, node);
+    thisEntry->type = thisPtrType;
   }
 
   // Declare variable for the return value in the function scope
   auto returnType = visit(node->returnType());
   if (returnType.is(TY_DYN))
     throw SemanticError(node, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
-  node->fctScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), node);
+  SymbolTableEntry *resultEntry = node->fctScope->insert(RETURN_VARIABLE_NAME, SymbolSpecifiers::of(returnType), node);
+  resultEntry->type = returnType;
 
   // Return to old scope
   currentScope = node->fctScope->parent;
@@ -172,7 +146,7 @@ TCResult TypeChecker::visitProcDefLookup(ProcDefNode *node) {
       auto templateType = visit(dataType);
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
-      GenericType *genericType = node->procScope->symbolTable.lookupGenericType(templateType.getSubType());
+      GenericType *genericType = node->procScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       templateTypes.push_back(*genericType);
     }
@@ -182,7 +156,8 @@ TCResult TypeChecker::visitProcDefLookup(ProcDefNode *node) {
   std::vector<std::string> paramNames;
   ParamList paramTypes;
   if (node->hasParams) {
-    auto namedParamList = any_cast<NamedParamList>(visit(node->paramLst()));
+    namedParamList.clear();
+    visit(node->paramLst());
     for (const auto &param : namedParamList) {
       // Check if the type is present in the template for generic types
       if (param.type.is(TY_GENERIC)) {
@@ -198,9 +173,10 @@ TCResult TypeChecker::visitProcDefLookup(ProcDefNode *node) {
 
   // Declare 'this' variable in new scope
   if (node->isMethod) {
-    auto thisSymbolSpecifiers = SymbolSpecifiers(thisPtrType);
+    SymbolSpecifiers thisSymbolSpecifiers = SymbolSpecifiers::of(thisPtrType);
     thisSymbolSpecifiers.setConst(true);
-    node->procScope->insert(THIS_VARIABLE_NAME, thisPtrType, thisSymbolSpecifiers, node);
+    SymbolTableEntry *thisEntry = node->procScope->insert(THIS_VARIABLE_NAME, thisSymbolSpecifiers, node);
+    thisEntry->type = thisPtrType;
   }
 
   // Return to old scope
@@ -249,7 +225,7 @@ TCResult TypeChecker::visitStructDefLookup(StructDefNode *node) {
       auto templateType = visit(dataType);
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
-      GenericType *genericType = currentScope->symbolTable.lookupGenericType(templateType.getSubType());
+      GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       genericTemplateTypes.push_back(*genericType);
       templateTypes.push_back(*genericType);
@@ -269,7 +245,7 @@ TCResult TypeChecker::visitStructDefLookup(StructDefNode *node) {
 
   // Build struct specifiers
   SymbolType symbolType = SymbolType(TY_STRUCT, node->structName, {}, templateTypes);
-  auto structSymbolSpecifiers = SymbolSpecifiers(symbolType);
+  SymbolSpecifiers structSymbolSpecifiers = SymbolSpecifiers::of(symbolType);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const auto &specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
@@ -280,7 +256,8 @@ TCResult TypeChecker::visitStructDefLookup(StructDefNode *node) {
   }
 
   // Add the struct to the symbol table
-  currentScope->insert(node->structName, symbolType, structSymbolSpecifiers, node);
+  SymbolTableEntry *structEntry = currentScope->insert(node->structName, structSymbolSpecifiers, node);
+  structEntry->type = symbolType;
 
   // Create scope for struct
   Scope *structScope = currentScope = currentScope->createChildScope(STRUCT_SCOPE_PREFIX + node->structName, SCOPE_STRUCT);
@@ -297,7 +274,7 @@ TCResult TypeChecker::visitStructDefLookup(StructDefNode *node) {
                             "Generic field type not included in struct template");
     }
 
-    auto fieldSymbolSpecifiers = SymbolSpecifiers(symbolType);
+    SymbolSpecifiers fieldSymbolSpecifiers = SymbolSpecifiers::of(symbolType);
     if (SpecifierLstNode *specifierLst = field->specifierLst(); specifierLst) {
       for (const auto &specifier : specifierLst->specifiers()) {
         if (specifier->type == SpecifierNode::TY_CONST)
@@ -314,7 +291,8 @@ TCResult TypeChecker::visitStructDefLookup(StructDefNode *node) {
     }
 
     // Add the field to the symbol table
-    currentScope->insert(field->name, fieldType, fieldSymbolSpecifiers, DECLARED, field);
+    SymbolTableEntry *fieldEntry = currentScope->insert(field->name, fieldSymbolSpecifiers, field);
+    fieldEntry->type = fieldType;
 
     fieldTypes.push_back(fieldType);
   }
