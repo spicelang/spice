@@ -2,9 +2,10 @@
 
 #include "OpRuleManager.h"
 
-#include "TypeChecker.h"
+#include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <global/RuntimeModuleManager.h>
+#include <typechecker/TypeChecker.h>
 
 SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference

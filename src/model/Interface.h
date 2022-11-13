@@ -5,8 +5,8 @@
 #include <string>
 #include <utility>
 
-#include <symbol/Function.h>
-#include <symbol/SymbolSpecifiers.h>
+#include <model/Function.h>
+#include <symboltablebuilder/SymbolSpecifiers.h>
 
 #include "../../lib/json/json.hpp"
 

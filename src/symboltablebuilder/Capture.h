@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#include <symbol/SymbolTableEntry.h>
+#include "SymbolTableEntry.h"
 
 #include "../../lib/json/json.hpp"
 

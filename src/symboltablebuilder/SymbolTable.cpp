@@ -5,10 +5,10 @@
 #include <stdexcept>
 #include <utility>
 
-#include <analyzer/AnalyzerVisitor.h>
-#include <symbol/Function.h>
-#include <symbol/GenericType.h>
-#include <symbol/Struct.h>
+#include <ast/ASTNodes.h>
+#include <model/Function.h>
+#include <model/GenericType.h>
+#include <model/Struct.h>
 #include <util/CodeLoc.h>
 #include <util/CompilerWarning.h>
 
@@ -38,7 +38,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolSpeci
  */
 SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, const ASTNode *declNode) {
   std::string name = "anon." + declNode->codeLoc.toString();
-  insert(name, SymbolSpecifiers(type), declNode);
+  insert(name, SymbolSpecifiers::of(type), declNode);
   SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc);
   anonSymbol->isUsed = true;
   return anonSymbol;

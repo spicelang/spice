@@ -23,9 +23,7 @@ TCResult TypeChecker::visitEntry(EntryNode *node) {
 }
 
 TCResult TypeChecker::visitMainFctDef(MainFctDefNode *node) {
-  if (typeCheckerMode == TC_MODE_LOOKUP)
-    return visitMainFctDefLookup(node);
-  else
+  if (typeCheckerMode != TC_MODE_LOOKUP)
     return visitMainFctDefAnalyze(node);
 }
 

@@ -4,8 +4,8 @@
 
 #include <stdexcept>
 
+#include "symboltablebuilder/SymbolTable.h"
 #include <irgenerator/IRGenerator.h>
-#include <symbol/SymbolTable.h>
 #include <util/CodeLoc.h>
 
 OpRuleConversionsManager::OpRuleConversionsManager(GlobalResourceManager &resourceManager, IRGenerator *irGenerator)

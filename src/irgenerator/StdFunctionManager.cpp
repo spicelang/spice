@@ -2,7 +2,7 @@
 
 #include "StdFunctionManager.h"
 
-#include <symbol/Function.h>
+#include <model/Function.h>
 
 llvm::StructType *StdFunctionManager::getStrobjType(llvm::LLVMContext &context) {
   std::string structTypeName = "_s__String__charptr_long_long";

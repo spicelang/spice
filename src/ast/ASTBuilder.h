@@ -18,9 +18,7 @@ class ASTBuilder : private CompilerPass, public SpiceVisitor {
 public:
   // Constructors
   ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile, ASTNode *rootNode,
-             antlr4::ANTLRInputStream *inputStream)
-      : CompilerPass(resourceManager, sourceFile), currentNode(rootNode), filePath(sourceFile->filePath),
-        inputStream(inputStream) {}
+             antlr4::ANTLRInputStream *inputStream);
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;

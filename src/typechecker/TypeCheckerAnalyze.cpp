@@ -87,10 +87,6 @@ TCResult TypeChecker::visitFctDefAnalyze(FctDefNode *node) {
         argEntry->updateType(arg.second, true);
       }
 
-      // Check if return variable is now initialized
-      if (currentScope->lookup(RETURN_VARIABLE_NAME)->state == DECLARED)
-        throw SemanticError(node, FUNCTION_WITHOUT_RETURN_STMT, "Function without return statement");
-
       // Leave the function scope
       currentScope = currentScope->parent;
 

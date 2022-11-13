@@ -30,8 +30,8 @@ public:
   // Public methods
   STBResult visitEntry(EntryNode *node) override;
   STBResult visitMainFctDef(MainFctDefNode *node) override;
-  /*STBResult visitFctDef(FctDefNode *node) override;
-  STBResult visitProcDef(ProcDefNode *node) override;
+  STBResult visitFctDef(FctDefNode *node) override;
+  /*STBResult visitProcDef(ProcDefNode *node) override;
   STBResult visitStructDef(StructDefNode *node) override;
   STBResult visitInterfaceDef(InterfaceDefNode *node) override;
   STBResult visitEnumDef(EnumDefNode *node) override;

@@ -5,8 +5,8 @@
 #include <string>
 #include <utility>
 
-#include <symbol/SymbolSpecifiers.h>
-#include <symbol/SymbolType.h>
+#include "SymbolSpecifiers.h"
+#include "SymbolType.h"
 
 #include <llvm/IR/Value.h>
 
