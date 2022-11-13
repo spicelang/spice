@@ -3,6 +3,7 @@
 #pragma once
 
 #include <CompilerPass.h>
+#include <SourceFile.h>
 #include <ast/ASTVisitor.h>
 
 #include <llvm/Passes/OptimizationLevel.h>

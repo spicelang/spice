@@ -81,8 +81,7 @@ public:
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
 
   // Wrapper methods for symbol table
-  inline SymbolTableEntry *insert(const std::string &name, const SymbolType &symbolType, const SymbolSpecifiers &specifiers,
-                                  const ASTNode *declNode);
+  inline SymbolTableEntry *insert(const std::string &name, const SymbolSpecifiers &specifiers, const ASTNode *declNode);
   inline SymbolTableEntry *lookup(const std::string &symbolName);
   inline SymbolTableEntry *lookupStrict(const std::string &symbolName);
 

@@ -4,11 +4,10 @@
 
 #include <ast/ASTNodes.h>
 
-std::any AbstractASTVisitor::visit(ASTNode *node) { return node->accept(this); }
+template <typename T> T AbstractASTVisitor<T>::visit(ASTNode *node) { return node->accept(this); }
 
-std::any AbstractASTVisitor::visitChildren(ASTNode *node) {
-  std::any result = std::any();
+template <typename T> T AbstractASTVisitor<T>::visitChildren(ASTNode *node) {
   for (const auto &child : node->children)
-    result = child->accept(this);
-  return result;
+    child->accept(this);
+  return {};
 }

@@ -2,7 +2,6 @@
 
 #include "SourceFile.h"
 
-#include "typechecker/TypeChecker.h"
 #include <analyzer/AnalyzerVisitor.h>
 #include <analyzer/PreAnalyzerVisitor.h>
 #include <ast/ASTBuilder.h>
@@ -17,6 +16,8 @@
 #include <iroptimizer/IROptimizer.h>
 #include <objectemitter/ObjectEmitter.h>
 #include <symbol/SymbolTable.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/TypeChecker.h>
 #include <util/CodeLoc.h>
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
@@ -183,6 +184,22 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   printStatusMessage("Import Collector", IO_AST, IO_AST);
 }
 
+void SourceFile::runSymbolTableBuilder() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache
+  if (restoredFromCache)
+    return;
+
+  Timer timer; // Start timer, which runs until the end of the current scope
+
+  // Build symbol table of dependencies first
+  for (const auto &[importName, sourceFile] : dependencies)
+    sourceFile.first->runSymbolTableBuilder();
+
+  // Then build symbol table of the current file
+  SymbolTableBuilder symbolTableBuilder(resourceManager, this);
+  symbolTableBuilder.visit(ast.get());
+}
+
 void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
   Timer timer;                      // Start timer, which runs until the end of the current scope
 
@@ -205,7 +222,7 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
     sourceFile.first->runTypeChecker();
 
   // Then type-check the current file
-  TypeChecker typeChecker(resourceManager, this, 1);
+  TypeChecker typeChecker(resourceManager, this, TC_MODE_LOOKUP);
   typeChecker.visit(ast.get());
 }
 
@@ -215,16 +232,15 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
     return;
 
   // Type-check the current file first, if requested multiple times
-  bool repetitionRequired;
+  TypeChecker typeChecker(resourceManager, this, TC_MODE_ANALYZE);
   unsigned short typeCheckRuns = 0;
   do {
-    TypeChecker typeChecker(resourceManager, this, 1);
-    repetitionRequired = any_cast<bool>(typeChecker.visit(ast.get()));
+    typeChecker.visit(ast.get());
     typeCheckRuns++;
     if (typeCheckRuns >= 10)
       throw std::runtime_error("Internal compiler error: Number of type checker runs for one source file exceeded. Please report "
                                "this as a bug on GitHub.");
-  } while (repetitionRequired);
+  } while (typeChecker.reVisitRequested);
 
   // Then type-check all dependencies
   for (const auto &[importName, sourceFile] : dependencies)

@@ -4,7 +4,6 @@
 
 #include <ast/ASTNodes.h>
 
-std::any ASTOptimizer::visitIfStmt(IfStmtNode *node) {
+ASTOResult ASTOptimizer::visitIfStmt(IfStmtNode *node) {
   // ToDo
-  return nullptr;
 }

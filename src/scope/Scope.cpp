@@ -2,7 +2,8 @@
 
 #include "Scope.h"
 
-#include "typechecker/TypeChecker.h"
+#include <ast/ASTNodes.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 
 Scope::~Scope() {
   for (const auto &child : children)
@@ -555,15 +556,12 @@ bool Scope::doesAllowUnsafeOperations() const { // NOLINT(misc-no-recursion)
  * Wrapper around the insert method of the corresponding symbol table
  *
  * @param name Name of the symbol
- * @param type Type of the symbol
- * @param sp Specifiers of the symbol
- * @param state State of the symbol (declared or initialized)
+ * @param specifiers Specifiers of the symbol
  * @param declNode AST node where the symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *Scope::insert(const std::string &name, const SymbolType &symbolType, const SymbolSpecifiers &specifiers,
-                                const ASTNode *declNode) {
-  return symbolTable.insert(name, symbolType, specifiers, declNode);
+SymbolTableEntry *Scope::insert(const std::string &name, const SymbolSpecifiers &specifiers, const ASTNode *declNode) {
+  return symbolTable.insert(name, specifiers, declNode);
 }
 
 /**

@@ -5,6 +5,8 @@
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
 
+#define ASTOResult bool
+
 /**
  * Jobs:
  * - Remove obviously unnecessary nodes from the AST
@@ -12,13 +14,13 @@
  * The following optimizations are made:
  * - Remove empty if and else branches
  */
-class ASTOptimizer : private CompilerPass, public ASTVisitor {
+class ASTOptimizer : private CompilerPass, public ASTVisitor<ASTOResult> {
 public:
   // Constructors
   ASTOptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile) : CompilerPass(resourceManager, sourceFile) {}
 
   // Public methods
-  std::any visitIfStmt(IfStmtNode *node) override;
+  ASTOResult visitIfStmt(IfStmtNode *node) override;
 
 private:
   // Private members

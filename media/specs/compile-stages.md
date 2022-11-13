@@ -34,30 +34,34 @@ such things like semantic analysis and type checker.
     Note: Checks, which other source file are imported by the current one. Registers external symbols as described
     [here](./better-imports.md).
 
-8.  **Type Checker** <br>
+8.  **Symbol Table Builder** <br>
     Input/Output: AST -> AST <br>
-    Note: Checks if all types match, performs type inference, create symbol table
+    Note: Creates the symbol table without types and lifetimes
 
-9.  **Borrow Checker** (new component, maybe added in the future) <br>
+9.  **Type Checker** <br>
+    Input/Output: AST -> AST <br>
+    Note: Checks if all types match, performs type inference, fill types in symbol table
+
+10. **Borrow Checker** (new component, maybe added in the future) <br>
     Input/Output: AST -> AST <br>
     Additional used resources: Symbol Table <br>
-    Note: Checks if all variable accesses are valid, escape analysis
+    Note: Checks if all variable accesses are valid, escape analysis, fill lifetimes in symbol table
 
-10. **Escape Analyzer** <br>
+11. **Escape Analyzer** <br>
     Input/Output: AST -> AST <br>
     Additional used resources: Symbol Table <br>
     Note: Checks, which variables escape their scopes and check if these variables are marked as heap-allocated by the programmer.
 
-11. **IR Generator** <br>
+12. **IR Generator** <br>
     Input/Output: AST -> IR <br>
     Additional used resources: Symbol Table <br>
     Note: Uses several helper modules to generate IR from the information of AST and Symbol Table.
 
-12. **IR Optimizer** <br>
+13. **IR Optimizer** <br>
     Input/Output: IR -> IR <br>
     Note: Uses the stated optimization level to call the LLVM optimizer. In case of -O0, the IR Optimizer is not called.
 
-13. **Object Emitter** <br>
+14. **Object Emitter** <br>
     Input/Output: IR -> Object file <br>
     Note: Calls LLVM to emit an object file from the generated IR.
 

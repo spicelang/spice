@@ -10,7 +10,7 @@ class SourceFile;
 class CacheManager {
 public:
   // Constructors
-  CacheManager(const std::string &cacheDir) : cacheDir(cacheDir) {}
+  explicit CacheManager(const std::string &cacheDir) : cacheDir(cacheDir) {}
 
   // Public methods
   bool lookupSourceFile(SourceFile *sourceFile);

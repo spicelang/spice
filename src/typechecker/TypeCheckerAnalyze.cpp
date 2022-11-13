@@ -2,7 +2,9 @@
 
 #include "TypeChecker.h"
 
-std::any TypeChecker::visitMainFctDefAnalyze(MainFctDefNode *node) {
+#include <SourceFile.h>
+
+TCResult TypeChecker::visitMainFctDefAnalyze(MainFctDefNode *node) {
   // Do down into function scope
   currentScope = node->fctScope;
 
@@ -12,14 +14,14 @@ std::any TypeChecker::visitMainFctDefAnalyze(MainFctDefNode *node) {
   // Return to root scope
   currentScope = rootScope;
 
-  return nullptr;
+  return {};
 }
 
-std::any TypeChecker::visitFctDefAnalyze(FctDefNode *node) {
+TCResult TypeChecker::visitFctDefAnalyze(FctDefNode *node) {
   // Get manifestations of that function
   Scope *fctParentScope = node->isMethod ? node->structScope : currentScope;
   assert(fctParentScope != nullptr);
-  std::map<std::string, Function> *manifestations = fctParentScope->getFunctionManifestations(node->codeLoc);
+  std::unordered_map<std::string, Function> *manifestations = fctParentScope->getFunctionManifestations(node->codeLoc);
 
   // Set the symbolTypeIndex to 0
   node->symbolTypeIndex = 0;
@@ -103,14 +105,14 @@ std::any TypeChecker::visitFctDefAnalyze(FctDefNode *node) {
     }
   }
 
-  return nullptr;
+  return {};
 }
 
-std::any TypeChecker::visitProcDefAnalyze(ProcDefNode *node) {
+TCResult TypeChecker::visitProcDefAnalyze(ProcDefNode *node) {
   // Get manifestations of that procedure
   Scope *procParentScope = node->isMethod ? node->structScope : currentScope;
   assert(procParentScope != nullptr);
-  std::map<std::string, Function> *manifestations = procParentScope->getFunctionManifestations(node->codeLoc);
+  std::unordered_map<std::string, Function> *manifestations = procParentScope->getFunctionManifestations(node->codeLoc);
 
   // Set the symbolTypeIndex to 0
   node->symbolTypeIndex = 0;
@@ -183,10 +185,10 @@ std::any TypeChecker::visitProcDefAnalyze(ProcDefNode *node) {
     }
   }
 
-  return nullptr;
+  return {};
 }
 
-std::any TypeChecker::visitStructDefAnalyze(StructDefNode *node) {
+TCResult TypeChecker::visitStructDefAnalyze(StructDefNode *node) {
   // Change to struct scope
   currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
 
@@ -198,8 +200,8 @@ std::any TypeChecker::visitStructDefAnalyze(StructDefNode *node) {
 
     for (const Function *expectedMethod : interface->methods) {
       // Check if the struct implements the method
-      Function *actualMethod = currentScope->matchFunction(
-          currentScope, expectedMethod->name, node->spiceStruct->getSymbolType(), {}, expectedMethod->getParamTypes(), node);
+      Function *actualMethod = currentScope->matchFunction(expectedMethod->name, node->spiceStruct->getSymbolType(), {},
+                                                           expectedMethod->getParamTypes(), node);
       if (actualMethod == nullptr)
         throw SemanticError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                             "The struct '" + node->structName + "' does not implement the method '" +
@@ -210,5 +212,5 @@ std::any TypeChecker::visitStructDefAnalyze(StructDefNode *node) {
   // Return to the old scope
   currentScope = currentScope->parent;
 
-  return nullptr;
+  return {};
 }

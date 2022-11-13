@@ -8,7 +8,12 @@
 #include <irgenerator/OpRuleConversionsManager.h>
 #include <irgenerator/StdFunctionManager.h>
 
-class IRGenerator : private CompilerPass, public ASTVisitor {
+#define IGResult llvm::Value *
+
+// Forward declarations
+class SourceFile;
+
+class IRGenerator : private CompilerPass, public ASTVisitor<IGResult> {
 public:
   // Constructors
   IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
@@ -18,9 +23,10 @@ public:
   friend class OpRuleConversionsManager;
   friend class DebugInfoGenerator;
 
-  // Public methods
-  std::any visitEntry(EntryNode *node) override;
+  // Visitor methods
+  IGResult visitEntry(EntryNode *node) override;
 
+  // Public methods
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   [[nodiscard]] std::string getIRString() const;
   void dumpIR() const;
@@ -31,9 +37,9 @@ private:
   llvm::IRBuilder<> &builder;
   llvm::Module *module;
   OpRuleConversionsManager conversionManager = OpRuleConversionsManager(resourceManager, this);
-  const StdFunctionManager stdFunctionManager = StdFunctionManager(resourceManager, sourceFile->llvmModule.get());
+  const StdFunctionManager stdFunctionManager;
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
-  Scope *currentScope = sourceFile->globalScope.get();
+  Scope *currentScope;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
 };

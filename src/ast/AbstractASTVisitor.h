@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <any>
-
 // Forward declarations
 class ASTNode;
 class EntryNode;
@@ -72,78 +70,76 @@ class DataTypeNode;
 class BaseDataTypeNode;
 class CustomDataTypeNode;
 
-class AbstractASTVisitor {
+template <typename T> class AbstractASTVisitor {
 public:
   // General visitor method
-  virtual std::any visit(ASTNode *node);
+  virtual T visit(ASTNode *node);
+  virtual T visitChildren(ASTNode *node);
 
   // Visitor methods
-  virtual std::any visitEntry(EntryNode *node) = 0;
-  virtual std::any visitMainFctDef(MainFctDefNode *node) = 0;
-  virtual std::any visitFctDef(FctDefNode *node) = 0;
-  virtual std::any visitProcDef(ProcDefNode *node) = 0;
-  virtual std::any visitStructDef(StructDefNode *node) = 0;
-  virtual std::any visitInterfaceDef(InterfaceDefNode *node) = 0;
-  virtual std::any visitEnumDef(EnumDefNode *node) = 0;
-  virtual std::any visitGenericTypeDef(GenericTypeDefNode *node) = 0;
-  virtual std::any visitGlobalVarDef(GlobalVarDefNode *node) = 0;
-  virtual std::any visitExtDecl(ExtDeclNode *node) = 0;
-  virtual std::any visitThreadDef(ThreadDefNode *node) = 0;
-  virtual std::any visitUnsafeBlockDef(UnsafeBlockDefNode *node) = 0;
-  virtual std::any visitForLoop(ForLoopNode *node) = 0;
-  virtual std::any visitForeachLoop(ForeachLoopNode *node) = 0;
-  virtual std::any visitWhileLoop(WhileLoopNode *node) = 0;
-  virtual std::any visitIfStmt(IfStmtNode *node) = 0;
-  virtual std::any visitElseStmt(ElseStmtNode *node) = 0;
-  virtual std::any visitAssertStmt(AssertStmtNode *node) = 0;
-  virtual std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) = 0;
-  virtual std::any visitStmtLst(StmtLstNode *node) = 0;
-  virtual std::any visitTypeLst(TypeLstNode *node) = 0;
-  virtual std::any visitTypeAltsLst(TypeAltsLstNode *node) = 0;
-  virtual std::any visitParamLst(ParamLstNode *node) = 0;
-  virtual std::any visitArgLst(ArgLstNode *node) = 0;
-  virtual std::any visitEnumItemLst(EnumItemLstNode *node) = 0;
-  virtual std::any visitEnumItem(EnumItemNode *node) = 0;
-  virtual std::any visitField(FieldNode *node) = 0;
-  virtual std::any visitSignature(SignatureNode *node) = 0;
-  virtual std::any visitStmt(StmtNode *node) = 0;
-  virtual std::any visitDeclStmt(DeclStmtNode *node) = 0;
-  virtual std::any visitSpecifierLst(SpecifierLstNode *node) = 0;
-  virtual std::any visitSpecifier(SpecifierNode *node) = 0;
-  virtual std::any visitImportStmt(ImportStmtNode *node) = 0;
-  virtual std::any visitReturnStmt(ReturnStmtNode *node) = 0;
-  virtual std::any visitBreakStmt(BreakStmtNode *node) = 0;
-  virtual std::any visitContinueStmt(ContinueStmtNode *node) = 0;
-  virtual std::any visitPrintfCall(PrintfCallNode *node) = 0;
-  virtual std::any visitSizeofCall(SizeofCallNode *node) = 0;
-  virtual std::any visitLenCall(LenCallNode *node) = 0;
-  virtual std::any visitTidCall(TidCallNode *node) = 0;
-  virtual std::any visitJoinCall(JoinCallNode *node) = 0;
-  virtual std::any visitAssignExpr(AssignExprNode *node) = 0;
-  virtual std::any visitTernaryExpr(TernaryExprNode *node) = 0;
-  virtual std::any visitLogicalOrExpr(LogicalOrExprNode *node) = 0;
-  virtual std::any visitLogicalAndExpr(LogicalAndExprNode *node) = 0;
-  virtual std::any visitBitwiseOrExpr(BitwiseOrExprNode *node) = 0;
-  virtual std::any visitBitwiseXorExpr(BitwiseXorExprNode *node) = 0;
-  virtual std::any visitBitwiseAndExpr(BitwiseAndExprNode *node) = 0;
-  virtual std::any visitEqualityExpr(EqualityExprNode *node) = 0;
-  virtual std::any visitRelationalExpr(RelationalExprNode *node) = 0;
-  virtual std::any visitShiftExpr(ShiftExprNode *node) = 0;
-  virtual std::any visitAdditiveExpr(AdditiveExprNode *node) = 0;
-  virtual std::any visitMultiplicativeExpr(MultiplicativeExprNode *node) = 0;
-  virtual std::any visitCastExpr(CastExprNode *node) = 0;
-  virtual std::any visitPrefixUnaryExpr(PrefixUnaryExprNode *node) = 0;
-  virtual std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *node) = 0;
-  virtual std::any visitAtomicExpr(AtomicExprNode *node) = 0;
-  virtual std::any visitValue(ValueNode *node) = 0;
-  virtual std::any visitPrimitiveValue(PrimitiveValueNode *node) = 0;
-  virtual std::any visitFunctionCall(FunctionCallNode *node) = 0;
-  virtual std::any visitArrayInitialization(ArrayInitializationNode *node) = 0;
-  virtual std::any visitStructInstantiation(StructInstantiationNode *node) = 0;
-  virtual std::any visitDataType(DataTypeNode *node) = 0;
-  virtual std::any visitBaseDataType(BaseDataTypeNode *node) = 0;
-  virtual std::any visitCustomDataType(CustomDataTypeNode *node) = 0;
-
-  // Public methods
-  virtual std::any visitChildren(ASTNode *node);
+  virtual T visitEntry(EntryNode *node) = 0;
+  virtual T visitMainFctDef(MainFctDefNode *node) = 0;
+  virtual T visitFctDef(FctDefNode *node) = 0;
+  virtual T visitProcDef(ProcDefNode *node) = 0;
+  virtual T visitStructDef(StructDefNode *node) = 0;
+  virtual T visitInterfaceDef(InterfaceDefNode *node) = 0;
+  virtual T visitEnumDef(EnumDefNode *node) = 0;
+  virtual T visitGenericTypeDef(GenericTypeDefNode *node) = 0;
+  virtual T visitGlobalVarDef(GlobalVarDefNode *node) = 0;
+  virtual T visitExtDecl(ExtDeclNode *node) = 0;
+  virtual T visitThreadDef(ThreadDefNode *node) = 0;
+  virtual T visitUnsafeBlockDef(UnsafeBlockDefNode *node) = 0;
+  virtual T visitForLoop(ForLoopNode *node) = 0;
+  virtual T visitForeachLoop(ForeachLoopNode *node) = 0;
+  virtual T visitWhileLoop(WhileLoopNode *node) = 0;
+  virtual T visitIfStmt(IfStmtNode *node) = 0;
+  virtual T visitElseStmt(ElseStmtNode *node) = 0;
+  virtual T visitAssertStmt(AssertStmtNode *node) = 0;
+  virtual T visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) = 0;
+  virtual T visitStmtLst(StmtLstNode *node) = 0;
+  virtual T visitTypeLst(TypeLstNode *node) = 0;
+  virtual T visitTypeAltsLst(TypeAltsLstNode *node) = 0;
+  virtual T visitParamLst(ParamLstNode *node) = 0;
+  virtual T visitArgLst(ArgLstNode *node) = 0;
+  virtual T visitEnumItemLst(EnumItemLstNode *node) = 0;
+  virtual T visitEnumItem(EnumItemNode *node) = 0;
+  virtual T visitField(FieldNode *node) = 0;
+  virtual T visitSignature(SignatureNode *node) = 0;
+  virtual T visitStmt(StmtNode *node) = 0;
+  virtual T visitDeclStmt(DeclStmtNode *node) = 0;
+  virtual T visitSpecifierLst(SpecifierLstNode *node) = 0;
+  virtual T visitSpecifier(SpecifierNode *node) = 0;
+  virtual T visitImportStmt(ImportStmtNode *node) = 0;
+  virtual T visitReturnStmt(ReturnStmtNode *node) = 0;
+  virtual T visitBreakStmt(BreakStmtNode *node) = 0;
+  virtual T visitContinueStmt(ContinueStmtNode *node) = 0;
+  virtual T visitPrintfCall(PrintfCallNode *node) = 0;
+  virtual T visitSizeofCall(SizeofCallNode *node) = 0;
+  virtual T visitLenCall(LenCallNode *node) = 0;
+  virtual T visitTidCall(TidCallNode *node) = 0;
+  virtual T visitJoinCall(JoinCallNode *node) = 0;
+  virtual T visitAssignExpr(AssignExprNode *node) = 0;
+  virtual T visitTernaryExpr(TernaryExprNode *node) = 0;
+  virtual T visitLogicalOrExpr(LogicalOrExprNode *node) = 0;
+  virtual T visitLogicalAndExpr(LogicalAndExprNode *node) = 0;
+  virtual T visitBitwiseOrExpr(BitwiseOrExprNode *node) = 0;
+  virtual T visitBitwiseXorExpr(BitwiseXorExprNode *node) = 0;
+  virtual T visitBitwiseAndExpr(BitwiseAndExprNode *node) = 0;
+  virtual T visitEqualityExpr(EqualityExprNode *node) = 0;
+  virtual T visitRelationalExpr(RelationalExprNode *node) = 0;
+  virtual T visitShiftExpr(ShiftExprNode *node) = 0;
+  virtual T visitAdditiveExpr(AdditiveExprNode *node) = 0;
+  virtual T visitMultiplicativeExpr(MultiplicativeExprNode *node) = 0;
+  virtual T visitCastExpr(CastExprNode *node) = 0;
+  virtual T visitPrefixUnaryExpr(PrefixUnaryExprNode *node) = 0;
+  virtual T visitPostfixUnaryExpr(PostfixUnaryExprNode *node) = 0;
+  virtual T visitAtomicExpr(AtomicExprNode *node) = 0;
+  virtual T visitValue(ValueNode *node) = 0;
+  virtual T visitPrimitiveValue(PrimitiveValueNode *node) = 0;
+  virtual T visitFunctionCall(FunctionCallNode *node) = 0;
+  virtual T visitArrayInitialization(ArrayInitializationNode *node) = 0;
+  virtual T visitStructInstantiation(StructInstantiationNode *node) = 0;
+  virtual T visitDataType(DataTypeNode *node) = 0;
+  virtual T visitBaseDataType(BaseDataTypeNode *node) = 0;
+  virtual T visitCustomDataType(CustomDataTypeNode *node) = 0;
 };

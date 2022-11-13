@@ -16,18 +16,15 @@
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
  *
  * @param name Name of the symbol
- * @param symbolType Type of the symbol
  * @param specifiers Specifiers of the symbol
- * @param state State of the symbol (declared or initialized)
  * @param declNode AST node where the symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolType &symbolType, const SymbolSpecifiers &specifiers,
-                                      const ASTNode *declNode) {
+SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolSpecifiers &specifiers, const ASTNode *declNode) {
   bool isGlobal = parent == nullptr;
   size_t orderIndex = symbols.size();
-  // Insert into symbols map
-  symbols.insert({name, SymbolTableEntry(name, symbolType, this, specifiers, declNode, orderIndex, isGlobal)});
+  // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
+  symbols.insert({name, SymbolTableEntry(name, SymbolType(TY_DYN), this, specifiers, declNode, orderIndex, isGlobal)});
   return &symbols.at(name);
 }
 
@@ -41,7 +38,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolType 
  */
 SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, const ASTNode *declNode) {
   std::string name = "anon." + declNode->codeLoc.toString();
-  insert(name, type, SymbolSpecifiers(type), declNode);
+  insert(name, SymbolSpecifiers(type), declNode);
   SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc);
   anonSymbol->isUsed = true;
   return anonSymbol;

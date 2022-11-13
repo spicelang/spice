@@ -2,12 +2,13 @@
 
 #include "ImportCollector.h"
 
+#include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
-std::any ImportCollector::visitEntry(EntryNode *node) {
+ICResult ImportCollector::visitEntry(EntryNode *node) {
   // Visit all import statements
   for (ImportStmtNode *importStmt : node->importStmts())
     visit(importStmt);
@@ -15,10 +16,10 @@ std::any ImportCollector::visitEntry(EntryNode *node) {
   // Reset the AST
   node->reset();
 
-  return nullptr;
+  return false;
 }
 
-std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
+ICResult ImportCollector::visitImportStmt(ImportStmtNode *node) {
   std::string importPath = node->importPath;
   bool isStd = importPath.rfind("std/", 0) == 0;
 
@@ -62,7 +63,7 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   // Register all external names of the imported source file to the current one
   registerExternalGlobalNames(importedSourceFile.get(), node->importName);
 
-  return nullptr;
+  return false;
 }
 
 /**

@@ -6,64 +6,46 @@
 
 #include <symbol/SymbolType.h>
 
-SymbolSpecifiers::SymbolSpecifiers(const SymbolType &type) {
-  switch (type.getSuperType()) {
+SymbolSpecifiers SymbolSpecifiers::of(SymbolSuperType superType) {
+  switch (superType) {
   case TY_DOUBLE:
-    specifierValue = SPECIFIER_DEFAULTS_DOUBLE;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_DOUBLE);
   case TY_INT:
-    specifierValue = SPECIFIER_DEFAULTS_INT;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_INT);
   case TY_SHORT:
-    specifierValue = SPECIFIER_DEFAULTS_SHORT;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_SHORT);
   case TY_LONG:
-    specifierValue = SPECIFIER_DEFAULTS_LONG;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_LONG);
   case TY_BYTE:
-    specifierValue = SPECIFIER_DEFAULTS_BYTE;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_BYTE);
   case TY_CHAR:
-    specifierValue = SPECIFIER_DEFAULTS_CHAR;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_CHAR);
   case TY_STRING:
-    specifierValue = SPECIFIER_DEFAULTS_STRING;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_STRING);
   case TY_STROBJ:
-    specifierValue = SPECIFIER_DEFAULTS_STROBJ;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_STROBJ);
   case TY_BOOL:
-    specifierValue = SPECIFIER_DEFAULTS_BOOL;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_BOOL);
   case TY_PTR:
-    specifierValue = SPECIFIER_DEFAULTS_PTR;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_PTR);
   case TY_ARRAY:
-    specifierValue = SPECIFIER_DEFAULTS_ARRAY;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_ARRAY);
   case TY_GENERIC:
-    specifierValue = SPECIFIER_DEFAULTS_GENERIC;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_GENERIC);
   case TY_STRUCT:
-    specifierValue = SPECIFIER_DEFAULTS_STRUCT;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_STRUCT);
   case TY_INTERFACE:
-    specifierValue = SPECIFIER_DEFAULTS_INTERFACE;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_INTERFACE);
   case TY_ENUM:
-    specifierValue = SPECIFIER_DEFAULTS_ENUM;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_ENUM);
   case TY_FUNCTION:
-    specifierValue = SPECIFIER_DEFAULTS_FUNCTION;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_FUNCTION);
   case TY_PROCEDURE:
-    specifierValue = SPECIFIER_DEFAULTS_PROCEDURE;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_PROCEDURE);
   case TY_IMPORT:
-    specifierValue = SPECIFIER_DEFAULTS_IMPORT;
-    break;
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_IMPORT);
   case TY_DYN:
-    break;
+    return {};
   default:                                                    // GCOV_EXCL_LINE
     throw std::runtime_error("Symbol specifier fallthrough"); // GCOV_EXCL_LINE
   }

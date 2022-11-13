@@ -2,15 +2,15 @@
 
 #pragma once
 
-#include <SourceFile.h>
 #include <global/GlobalResourceManager.h>
+
+// Forward declarations
+class Scope;
 
 class CompilerPass {
 public:
   // Constructors
-  CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
-      : resourceManager(resourceManager), cliOptions(resourceManager.cliOptions), sourceFile(sourceFile),
-        rootScope(sourceFile->globalScope.get()){};
+  CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
 
 protected:
   // Protected members
