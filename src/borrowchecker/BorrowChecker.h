@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include <ast/ASTVisitor.h>
 #include <CompilerPass.h>
+#include <ast/ASTVisitor.h>
 
-class BorrowChecker : private CompilerPass, public ASTVisitor {
+#define BCResult bool
+
+class BorrowChecker : private CompilerPass, public ASTVisitor<BCResult> {
 public:
   // Constructors
   BorrowChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile) : CompilerPass(resourceManager, sourceFile) {}

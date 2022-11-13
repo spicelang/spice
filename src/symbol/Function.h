@@ -56,7 +56,7 @@ public:
 
   // Public members
   std::string name;
-  SymbolSpecifiers specifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+  SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_FUNCTION);
   SymbolType thisType = SymbolType(TY_DYN);
   SymbolType returnType = SymbolType(TY_DYN);
   ParamList paramList;

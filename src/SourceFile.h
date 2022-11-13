@@ -74,6 +74,7 @@ public:
   void runASTOptimizer();
   void runASTVisualizer();
   void runImportCollector();
+  void runSymbolTableBuilder();
   void runTypeChecker();
 
 private:

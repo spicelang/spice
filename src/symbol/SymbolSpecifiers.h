@@ -3,9 +3,7 @@
 #pragma once
 
 #include "../../lib/json/json.hpp"
-
-// Forward declarations
-class SymbolType;
+#include <symbol/SymbolType.h>
 
 // Bit indices from right to left
 const unsigned short BIT_INDEX_PUBLIC = 0;
@@ -54,7 +52,11 @@ const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b0101;
 class SymbolSpecifiers {
 public:
   // Constructors
-  explicit SymbolSpecifiers(const SymbolType &symbolType);
+  SymbolSpecifiers() = default;
+  explicit SymbolSpecifiers(unsigned short initialValue) : specifierValue(initialValue) {}
+
+  // Public static methods
+  static SymbolSpecifiers of(SymbolSuperType superType);
 
   // Public methods
   void setConst(bool value);

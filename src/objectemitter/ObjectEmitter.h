@@ -3,9 +3,10 @@
 #pragma once
 
 #include <CompilerPass.h>
+#include <SourceFile.h>
 #include <ast/ASTVisitor.h>
 
-class ObjectEmitter : private CompilerPass, public ASTVisitor {
+class ObjectEmitter : private CompilerPass {
 public:
   // Constructors
   ObjectEmitter(GlobalResourceManager &resourceManager, SourceFile *sourceFile)

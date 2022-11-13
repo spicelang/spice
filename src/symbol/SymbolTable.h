@@ -33,8 +33,7 @@ public:
   friend class Scope;
 
   // Public methods
-  SymbolTableEntry *insert(const std::string &name, const SymbolType &symbolType, const SymbolSpecifiers &specifiers,
-                           const ASTNode *declNode);
+  SymbolTableEntry *insert(const std::string &name, const SymbolSpecifiers &specifiers, const ASTNode *declNode);
   SymbolTableEntry *insertAnonymous(const SymbolType &type, const ASTNode *declNode);
   void insertCapture(const std::string &name, const Capture &capture);
   SymbolTableEntry *lookup(const std::string &symbolName);

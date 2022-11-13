@@ -2,7 +2,9 @@
 
 #include "TypeChecker.h"
 
-std::any TypeChecker::visitMainFctDefLookup(MainFctDefNode *node) {
+#include <SourceFile.h>
+
+TCResult TypeChecker::visitMainFctDefLookup(MainFctDefNode *node) {
   std::string mainSignature = std::string(MAIN_FUNCTION_NAME) + "()";
 
   // Check if the function is already defined
@@ -10,8 +12,7 @@ std::any TypeChecker::visitMainFctDefLookup(MainFctDefNode *node) {
     throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
 
   // Insert function name into the root symbol table
-  SymbolType symbolType = SymbolType(TY_FUNCTION);
-  SymbolTableEntry *mainFctEntry = rootScope->insert(mainSignature, symbolType, SymbolSpecifiers(symbolType), node);
+  SymbolTableEntry *mainFctEntry = rootScope->insert(mainSignature, SymbolSpecifiers::of(TY_FUNCTION), node);
   mainFctEntry->isUsed = true;
 
   // Create the function scope
@@ -29,10 +30,10 @@ std::any TypeChecker::visitMainFctDefLookup(MainFctDefNode *node) {
   // Return to root scope
   currentScope = rootScope;
 
-  return nullptr;
+  return {};
 }
 
-std::any TypeChecker::visitFctDefLookup(FctDefNode *node) {
+TCResult TypeChecker::visitFctDefLookup(FctDefNode *node) {
   // Check if name is dtor
   if (node->functionName == "dtor")
     throw SemanticError(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
@@ -65,7 +66,7 @@ std::any TypeChecker::visitFctDefLookup(FctDefNode *node) {
   // Get template types
   if (node->hasTemplateTypes) {
     for (const auto &dataType : node->templateTypeLst()->dataTypes()) {
-      auto templateType = any_cast<SymbolType>(visit(dataType));
+      auto templateType = visit(dataType);
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       GenericType *genericType = node->fctScope->symbolTable.lookupGenericType(templateType.getSubType());
@@ -100,7 +101,7 @@ std::any TypeChecker::visitFctDefLookup(FctDefNode *node) {
   }
 
   // Declare variable for the return value in the function scope
-  auto returnType = any_cast<SymbolType>(visit(node->returnType()));
+  auto returnType = visit(node->returnType());
   if (returnType.is(TY_DYN))
     throw SemanticError(node, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
   node->fctScope->insert(RETURN_VARIABLE_NAME, returnType, SymbolSpecifiers(returnType), node);
@@ -109,7 +110,7 @@ std::any TypeChecker::visitFctDefLookup(FctDefNode *node) {
   currentScope = node->fctScope->parent;
 
   // Build function specifiers
-  auto fctSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+  auto fctSymbolSpecifiers = SymbolSpecifiers(TY_FUNCTION);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const auto &specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
@@ -135,10 +136,10 @@ std::any TypeChecker::visitFctDefLookup(FctDefNode *node) {
   if (node->isMethod)
     currentScope = node->structScope->parent;
 
-  return nullptr;
+  return {};
 }
 
-std::any TypeChecker::visitProcDefLookup(ProcDefNode *node) {
+TCResult TypeChecker::visitProcDefLookup(ProcDefNode *node) {
   if (node->hasParams && node->procedureName == "dtor")
     throw SemanticError(node, DTOR_WITH_PARAMS, "It is not allowed to specify parameters for destructors");
 
@@ -168,7 +169,7 @@ std::any TypeChecker::visitProcDefLookup(ProcDefNode *node) {
   // Get template types
   if (node->isGeneric) {
     for (const auto &dataType : node->templateTypeLst()->dataTypes()) {
-      auto templateType = any_cast<SymbolType>(visit(dataType));
+      auto templateType = visit(dataType);
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       GenericType *genericType = node->procScope->symbolTable.lookupGenericType(templateType.getSubType());
@@ -206,7 +207,7 @@ std::any TypeChecker::visitProcDefLookup(ProcDefNode *node) {
   currentScope = currentScope->parent;
 
   // Build procedure specifiers
-  auto procSymbolSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
+  auto procSymbolSpecifiers = SymbolSpecifiers(TY_FUNCTION);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const auto &specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
@@ -232,10 +233,10 @@ std::any TypeChecker::visitProcDefLookup(ProcDefNode *node) {
   if (node->isMethod)
     currentScope = currentScope->parent;
 
-  return nullptr;
+  return {};
 }
 
-std::any TypeChecker::visitStructDefLookup(StructDefNode *node) {
+TCResult TypeChecker::visitStructDefLookup(StructDefNode *node) {
   // Check if struct already exists
   if (rootScope->lookup(node->structName))
     throw SemanticError(node, STRUCT_DECLARED_TWICE, "Duplicate struct '" + node->structName + "'");
@@ -245,7 +246,7 @@ std::any TypeChecker::visitStructDefLookup(StructDefNode *node) {
   std::vector<SymbolType> templateTypes;
   if (node->isGeneric) {
     for (const auto &dataType : node->templateTypeLst()->dataTypes()) {
-      auto templateType = any_cast<SymbolType>(visit(dataType));
+      auto templateType = visit(dataType);
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       GenericType *genericType = currentScope->symbolTable.lookupGenericType(templateType.getSubType());
@@ -259,7 +260,7 @@ std::any TypeChecker::visitStructDefLookup(StructDefNode *node) {
   std::vector<SymbolType> interfaceTypes;
   if (node->hasInterfaces) {
     for (const auto &dataType : node->interfaceTypeLst()->dataTypes()) {
-      auto interfaceType = any_cast<SymbolType>(visit(dataType));
+      auto interfaceType = visit(dataType);
       if (!interfaceType.is(TY_INTERFACE))
         throw SemanticError(dataType, EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName());
       interfaceTypes.push_back(interfaceType);
@@ -287,7 +288,7 @@ std::any TypeChecker::visitStructDefLookup(StructDefNode *node) {
   // Insert a field for each field list entry
   std::vector<SymbolType> fieldTypes;
   for (const auto &field : node->fields()) {
-    auto fieldType = any_cast<SymbolType>(visit(field->dataType()));
+    auto fieldType = visit(field->dataType());
 
     if (fieldType.isBaseType(TY_GENERIC)) { // Check if the type is present in the template for generic types
       if (std::none_of(genericTemplateTypes.begin(), genericTemplateTypes.end(),
@@ -326,5 +327,5 @@ std::any TypeChecker::visitStructDefLookup(StructDefNode *node) {
   node->spiceStruct = currentScope->insertStruct(s);
   s.structScope = structScope;
 
-  return nullptr;
+  return {};
 }

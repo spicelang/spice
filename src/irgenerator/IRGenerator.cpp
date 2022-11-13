@@ -2,11 +2,14 @@
 
 #include "IRGenerator.h"
 
+#include <SourceFile.h>
+
 #include <llvm/BinaryFormat/Dwarf.h>
 
 IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile), context(resourceManager.context), builder(resourceManager.builder),
-      module(sourceFile->llvmModule.get()) {
+      module(sourceFile->llvmModule.get()), stdFunctionManager(StdFunctionManager(resourceManager, sourceFile->llvmModule.get())),
+      currentScope(sourceFile->globalScope.get()) {
   // Attach information to the module
   module->setTargetTriple(resourceManager.cliOptions.targetTriple);
   module->setDataLayout(resourceManager.targetMachine->createDataLayout());
@@ -16,7 +19,7 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
     diGenerator.initializeDIBuilder(sourceFile->fileName, sourceFile->fileDir);
 }
 
-std::any IRGenerator::visitEntry(EntryNode *node) { return nullptr; }
+IGResult IRGenerator::visitEntry(EntryNode *node) { return nullptr; }
 
 llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) { // If there is already an alloca inst, insert right after that

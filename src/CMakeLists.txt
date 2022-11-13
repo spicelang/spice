@@ -5,6 +5,7 @@ antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/Spice.g4 VISITOR)
 set(SOURCES
         # Global source files
         main.cpp
+        CompilerPass.cpp
         CompilerPass.h
         SourceFile.cpp
         SourceFile.h
@@ -38,6 +39,9 @@ set(SOURCES
         # Import collector
         importcollector/ImportCollector.cpp
         importcollector/ImportCollector.h
+        # Symbol table builder
+        symboltablebuilder/SymbolTableBuilder.cpp
+        symboltablebuilder/SymbolTableBuilder.h
         # Type checker
         typechecker/TypeChecker.cpp
         typechecker/TypeChecker.h
