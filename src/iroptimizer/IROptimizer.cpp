@@ -9,7 +9,7 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 void IROptimizer::optimize() {
-  if (cliOptions.printDebugOutput)
+  if (cliOptions.printDebugOutput && cliOptions.dumpIR)
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " ...\n"; // GCOV_EXCL_LINE
 
   llvm::LoopAnalysisManager loopAnalysisMgr;
