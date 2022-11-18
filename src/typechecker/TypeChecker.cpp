@@ -8,7 +8,7 @@
 TypeChecker::TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode)
     : CompilerPass(resourceManager, sourceFile), typeCheckerMode(typeCheckerMode), rootScope(sourceFile->globalScope.get()) {}
 
-TCResult TypeChecker::visitEntry(EntryNode *node) {
+std::any TypeChecker::visitEntry(EntryNode *node) {
   // Initialize
   currentScope = rootScope;
   reVisitRequested = false;
@@ -22,33 +22,34 @@ TCResult TypeChecker::visitEntry(EntryNode *node) {
   return {};
 }
 
-TCResult TypeChecker::visitMainFctDef(MainFctDefNode *node) {
+std::any TypeChecker::visitMainFctDef(MainFctDefNode *node) {
   if (typeCheckerMode != TC_MODE_LOOKUP)
     return visitMainFctDefAnalyze(node);
+  return {};
 }
 
-TCResult TypeChecker::visitFctDef(FctDefNode *node) {
+std::any TypeChecker::visitFctDef(FctDefNode *node) {
   if (typeCheckerMode == TC_MODE_LOOKUP)
     return visitFctDefLookup(node);
   else
     return visitFctDefAnalyze(node);
 }
 
-TCResult TypeChecker::visitProcDef(ProcDefNode *node) {
+std::any TypeChecker::visitProcDef(ProcDefNode *node) {
   if (typeCheckerMode == TC_MODE_LOOKUP)
     return visitProcDefLookup(node);
   else
     return visitProcDefAnalyze(node);
 }
 
-TCResult TypeChecker::visitStructDef(StructDefNode *node) {
+std::any TypeChecker::visitStructDef(StructDefNode *node) {
   if (typeCheckerMode == TC_MODE_LOOKUP)
     return visitStructDefLookup(node);
   else
     return visitStructDefAnalyze(node);
 }
 
-TCResult TypeChecker::visitInterfaceDef(InterfaceDefNode *node) {
+/*std::any TypeChecker::visitInterfaceDef(InterfaceDefNode *node) {
   if (typeCheckerMode != TC_MODE_LOOKUP)
     return {};
 
@@ -100,7 +101,7 @@ TCResult TypeChecker::visitInterfaceDef(InterfaceDefNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitEnumDef(EnumDefNode *node) {
+std::any TypeChecker::visitEnumDef(EnumDefNode *node) {
   if (typeCheckerMode != TC_MODE_LOOKUP)
     return nullptr;
 
@@ -156,7 +157,7 @@ TCResult TypeChecker::visitEnumDef(EnumDefNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitGenericTypeDef(GenericTypeDefNode *node) {
+std::any TypeChecker::visitGenericTypeDef(GenericTypeDefNode *node) {
   if (typeCheckerMode != TC_MODE_LOOKUP)
     return nullptr;
 
@@ -167,7 +168,7 @@ TCResult TypeChecker::visitGenericTypeDef(GenericTypeDefNode *node) {
   // Get type conditions
   std::vector<SymbolType> typeConditions;
   for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
-    auto typeCondition = any_cast<SymbolType>(visit(typeAlt));
+    auto typeCondition = visit(typeAlt);
     typeConditions.push_back(typeCondition);
   }
 
@@ -194,7 +195,7 @@ TCResult TypeChecker::visitGenericTypeDef(GenericTypeDefNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitGlobalVarDef(GlobalVarDefNode *node) {
+std::any TypeChecker::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (typeCheckerMode != TC_MODE_LOOKUP)
     return nullptr;
 
@@ -211,7 +212,7 @@ TCResult TypeChecker::visitGlobalVarDef(GlobalVarDefNode *node) {
   }
 
   // Insert variable name to symbol table
-  auto symbolType = any_cast<SymbolType>(visit(node->dataType()));
+  SymbolType symbolType = visit(node->dataType());
 
   if (node->value()) { // Variable is initialized here
     auto valueType = any_cast<SymbolType>(visit(node->value()));
@@ -260,7 +261,7 @@ TCResult TypeChecker::visitGlobalVarDef(GlobalVarDefNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitExtDecl(ExtDeclNode *node) {
+std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
   if (typeCheckerMode != TC_MODE_LOOKUP)
     return nullptr;
 
@@ -268,7 +269,7 @@ TCResult TypeChecker::visitExtDecl(ExtDeclNode *node) {
   if (node->hasArgs) {
     // Check if an argument is dyn
     for (const auto &arg : node->argTypeLst()->dataTypes()) {
-      auto argType = any_cast<SymbolType>(visit(arg));
+      SymbolType argType = visit(arg);
       if (argType.is(TY_DYN))
         throw SemanticError(arg, UNEXPECTED_DYN_TYPE_SA, "Dyn data type is not allowed as arg type for external functions");
       argTypes.push_back({argType, false});
@@ -304,7 +305,7 @@ TCResult TypeChecker::visitExtDecl(ExtDeclNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitThreadDef(ThreadDefNode *node) {
+std::any TypeChecker::visitThreadDef(ThreadDefNode *node) {
   // Create a new scope
   currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_THREAD_BODY);
   currentScope->symbolTable.capturingRequired = true; // Requires capturing because the LLVM IR will end up in a separate function
@@ -318,7 +319,7 @@ TCResult TypeChecker::visitThreadDef(ThreadDefNode *node) {
   return node->setEvaluatedSymbolType(SymbolType(TY_BYTE).toPointer(node));
 }
 
-TCResult TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
+std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Create a new scope
   currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_UNSAFE_BODY);
 
@@ -331,7 +332,7 @@ TCResult TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitForLoop(ForLoopNode *node) {
+std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   // Create a new scope
   currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FOR_BODY);
 
@@ -354,7 +355,7 @@ TCResult TypeChecker::visitForLoop(ForLoopNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
+std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Create a new scope
   currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FOREACH_BODY);
 
@@ -420,7 +421,7 @@ TCResult TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitWhileLoop(WhileLoopNode *node) {
+std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   // Create a new scope
   currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_WHILE_BODY);
 
@@ -438,13 +439,13 @@ TCResult TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitIfStmt(IfStmtNode *node) {
+std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   // Create a new scope
   currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_IF_ELSE_BODY);
 
   // Visit condition
   AssignExprNode *condition = node->condition();
-  auto conditionType = any_cast<SymbolType>(visit(condition));
+  SymbolType conditionType = visit(condition);
   if (!conditionType.is(TY_BOOL))
     throw SemanticError(node->condition(), CONDITION_MUST_BE_BOOL, "If condition must be of type bool");
 
@@ -466,7 +467,7 @@ TCResult TypeChecker::visitIfStmt(IfStmtNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitElseStmt(ElseStmtNode *node) {
+std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   if (node->isElseIf) { // Visit if statement in the case of an else if branch
     visit(node->ifStmt());
   } else { // Make a new scope in case of an else branch
@@ -482,7 +483,7 @@ TCResult TypeChecker::visitElseStmt(ElseStmtNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitAssertStmt(AssertStmtNode *node) {
+std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   auto assertConditionType = any_cast<SymbolType>(visit(node->assignExpr()));
 
   // Check if assertStmt evaluates to bool
@@ -492,7 +493,7 @@ TCResult TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
+std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Create child scope
   currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_ANONYMOUS);
 
@@ -505,7 +506,7 @@ TCResult TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitParamLst(ParamLstNode *node) {
+std::any TypeChecker::visitParamLst(ParamLstNode *node) {
   NamedParamList namedParamList;
   bool metOptional = false;
   for (const auto &param : node->params()) {
@@ -528,7 +529,7 @@ TCResult TypeChecker::visitParamLst(ParamLstNode *node) {
   return namedParamList;
 }
 
-TCResult TypeChecker::visitSignature(SignatureNode *node) {
+std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Build method specifiers
   auto methodSpecifiers = SymbolSpecifiers(SymbolType(TY_FUNCTION));
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
@@ -556,7 +557,7 @@ TCResult TypeChecker::visitSignature(SignatureNode *node) {
   return currentScope->insertFunction(f);
 }
 
-TCResult TypeChecker::visitDeclStmt(DeclStmtNode *node) {
+std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   // Check if symbol already exists in the symbol table
   if (currentScope->lookupStrict(node->varName))
     throw SemanticError(node, VARIABLE_DECLARED_TWICE, "The variable '" + node->varName + "' was declared more than once");
@@ -609,7 +610,7 @@ TCResult TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   return symbolType;
 }
 
-TCResult TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
+std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   SymbolType returnType = SymbolType(TY_DYN);
   SymbolTableEntry *returnVariable = currentScope->lookup(RETURN_VARIABLE_NAME);
   if (returnVariable) { // Return variable => function
@@ -655,7 +656,7 @@ TCResult TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitBreakStmt(BreakStmtNode *node) {
+std::any TypeChecker::visitBreakStmt(BreakStmtNode *node) {
   if (node->breakTimes != 1) {
     // Check if the stated number is valid
     if (node->breakTimes < 1)
@@ -669,7 +670,7 @@ TCResult TypeChecker::visitBreakStmt(BreakStmtNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitContinueStmt(ContinueStmtNode *node) {
+std::any TypeChecker::visitContinueStmt(ContinueStmtNode *node) {
   if (node->continueTimes != 1) {
     // Check if the stated number is valid
     if (node->continueTimes < 1)
@@ -683,7 +684,7 @@ TCResult TypeChecker::visitContinueStmt(ContinueStmtNode *node) {
   return nullptr;
 }
 
-TCResult TypeChecker::visitPrintfCall(PrintfCallNode *node) {
+std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   // Check if assignment types match placeholder types
   std::size_t index = node->templatedString.find_first_of('%');
   int placeholderCount = 0;
@@ -757,7 +758,7 @@ TCResult TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   return node->setEvaluatedSymbolType(SymbolType(TY_BOOL));
 }
 
-TCResult TypeChecker::visitSizeofCall(SizeofCallNode *node) {
+std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
   SymbolType symbolType;
   if (node->isType) { // Size of type
     symbolType = any_cast<SymbolType>(visit(node->dataType()));
@@ -772,7 +773,7 @@ TCResult TypeChecker::visitSizeofCall(SizeofCallNode *node) {
   return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 
-TCResult TypeChecker::visitLenCall(LenCallNode *node) {
+std::any TypeChecker::visitLenCall(LenCallNode *node) {
   auto argType = any_cast<SymbolType>(visit(node->assignExpr()));
 
   // Check if arg is of type array
@@ -782,12 +783,12 @@ TCResult TypeChecker::visitLenCall(LenCallNode *node) {
   return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 
-TCResult TypeChecker::visitTidCall(TidCallNode *node) {
+std::any TypeChecker::visitTidCall(TidCallNode *node) {
   // Nothing to check here. Tid builtin has no arguments
   return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 
-TCResult TypeChecker::visitJoinCall(JoinCallNode *node) {
+std::any TypeChecker::visitJoinCall(JoinCallNode *node) {
   SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(node);
   for (const auto &assignExpr : node->assignExpressions()) {
     auto argSymbolType = any_cast<SymbolType>(visit(assignExpr));
@@ -800,7 +801,7 @@ TCResult TypeChecker::visitJoinCall(JoinCallNode *node) {
   return node->setEvaluatedSymbolType(SymbolType(TY_INT));
 }
 
-TCResult TypeChecker::visitAssignExpr(AssignExprNode *node) {
+std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   // Check if there is an assign operator applied
   if (node->hasOperator) { // This is an assignment
     // Get symbol type of right side
@@ -874,7 +875,7 @@ TCResult TypeChecker::visitAssignExpr(AssignExprNode *node) {
   throw std::runtime_error("Internal compiler error: Assign stmt fall-through"); // GCOV_EXCL_LINE
 }
 
-TCResult TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
+std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // Check if there is a ternary operator applied
   if (node->children.size() > 1) {
     LogicalOrExprNode *condition = node->operands()[0];
@@ -899,7 +900,7 @@ TCResult TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
+std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
   // Check if a logical or operator is applied
   if (node->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -912,7 +913,7 @@ TCResult TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
+std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
   // Check if a logical and operator is applied
   if (node->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -925,7 +926,7 @@ TCResult TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
+std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
   // Check if a bitwise or operator is applied
   if (node->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -938,7 +939,7 @@ TCResult TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
+std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   // Check if a bitwise xor operator is applied
   if (node->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -951,7 +952,7 @@ TCResult TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
+std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
   // Check if a bitwise and operator is applied
   if (node->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -964,7 +965,7 @@ TCResult TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
+std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   // Check if at least one equality operator is applied
   if (node->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -981,7 +982,7 @@ TCResult TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
+std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   // Check if a relational operator is applied
   if (node->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -999,7 +1000,7 @@ TCResult TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitShiftExpr(ShiftExprNode *node) {
+std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
   // Check if at least one shift operator is applied
   if (node->children.size() > 1) {
     auto lhsTy = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -1013,7 +1014,7 @@ TCResult TypeChecker::visitShiftExpr(ShiftExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
+std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
   // Check if at least one additive operator is applied
   if (node->operands().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -1047,7 +1048,7 @@ TCResult TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
+std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
   // Check if at least one multiplicative operator is applied
   if (node->operands().size() > 1) {
     auto currentType = any_cast<SymbolType>(visit(node->operands()[0]));
@@ -1084,8 +1085,8 @@ TCResult TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
   return visit(node->operands().front());
 }
 
-TCResult TypeChecker::visitCastExpr(CastExprNode *node) {
-  TCResult rhs = visit(node->prefixUnaryExpr());
+std::any TypeChecker::visitCastExpr(CastExprNode *node) {
+  std::any rhs = visit(node->prefixUnaryExpr());
 
   if (node->isCasted) { // Cast is applied
     auto srcType = any_cast<SymbolType>(rhs);
@@ -1097,7 +1098,7 @@ TCResult TypeChecker::visitCastExpr(CastExprNode *node) {
   return rhs;
 }
 
-TCResult TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
+std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   currentVarName = "";                  // Reset the current variable name
   scopePath.clear();                    // Clear the scope path
   currentThisType = SymbolType(TY_DYN); // Reset this type
@@ -1157,7 +1158,7 @@ TCResult TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   return node->setEvaluatedSymbolType(rhs);
 }
 
-TCResult TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
+std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   auto lhs = any_cast<SymbolType>(visit(node->atomicExpr()));
   if (lhs.is(TY_INVALID))
     throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE,
@@ -1277,7 +1278,7 @@ TCResult TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   return node->setEvaluatedSymbolType(lhs);
 }
 
-TCResult TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
+std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (node->value())
     return visit(node->value());
 
@@ -1374,7 +1375,7 @@ TCResult TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   return visit(node->assignExpr());
 }
 
-TCResult TypeChecker::visitValue(ValueNode *node) {
+std::any TypeChecker::visitValue(ValueNode *node) {
   // Primitive value
   if (node->primitiveValue())
     return visit(node->primitiveValue());
@@ -1402,7 +1403,7 @@ TCResult TypeChecker::visitValue(ValueNode *node) {
   throw std::runtime_error("Value fall-through");
 }
 
-TCResult TypeChecker::visitPrimitiveValue(PrimitiveValueNode *node) {
+std::any TypeChecker::visitPrimitiveValue(PrimitiveValueNode *node) {
   switch (node->type) {
   case PrimitiveValueNode::TYPE_DOUBLE:
     return node->setEvaluatedSymbolType(SymbolType(TY_DOUBLE));
@@ -1424,7 +1425,7 @@ TCResult TypeChecker::visitPrimitiveValue(PrimitiveValueNode *node) {
   throw std::runtime_error("Primitive value fall-through");
 }
 
-TCResult TypeChecker::visitFunctionCall(FunctionCallNode *node) {
+std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Get the access scope
   Scope *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
@@ -1593,7 +1594,7 @@ TCResult TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   return node->setEvaluatedSymbolType(returnType);
 }
 
-TCResult TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
+std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   // Check if all values have the same type
   int actualSize = 0;
   SymbolType actualItemType = SymbolType(TY_DYN);
@@ -1614,7 +1615,7 @@ TCResult TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   return node->setEvaluatedSymbolType(actualItemType.toArray(node, actualSize));
 }
 
-TCResult TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
+std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Get the access scope
   Scope *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
 
@@ -1710,7 +1711,7 @@ TCResult TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   return node->setEvaluatedSymbolType(structType);
 }
 
-TCResult TypeChecker::visitDataType(DataTypeNode *node) {
+std::any TypeChecker::visitDataType(DataTypeNode *node) {
   auto type = any_cast<SymbolType>(visit(node->baseDataType()));
 
   size_t assignExprCounter = 0;
@@ -1750,7 +1751,7 @@ TCResult TypeChecker::visitDataType(DataTypeNode *node) {
   return node->setEvaluatedSymbolType(type);
 }
 
-TCResult TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
+std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
   switch (node->type) {
   case BaseDataTypeNode::TYPE_DOUBLE:
     return node->setEvaluatedSymbolType(SymbolType(TY_DOUBLE));
@@ -1775,7 +1776,7 @@ TCResult TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
   }
 }
 
-TCResult TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
+std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   // It is a struct type -> get the access scope
   Scope *accessScope = scopePath.getCurrentScope() ? scopePath.getCurrentScope() : currentScope;
   std::string firstFragment = node->typeNameFragments.front();
@@ -1924,4 +1925,4 @@ void TypeChecker::insertStructMethodCall(const ASTNode *node, const SymbolTableE
   Function *spiceFunc = accessScope->matchFunction(name, varEntryType, {}, {}, node);
   if (spiceFunc)
     spiceFunc->isUsed = true;
-}
+}*/

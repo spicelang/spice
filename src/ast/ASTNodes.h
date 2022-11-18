@@ -8,13 +8,9 @@
 #include <vector>
 
 #include <ast/ASTVisitor.h>
-#include <importcollector/ImportCollector.h>
-#include <irgenerator/IRGenerator.h>
 #include <model/Function.h>
 #include <model/Struct.h>
 #include <scope/Scope.h>
-#include <symboltablebuilder/SymbolTableBuilder.h>
-#include <typechecker/TypeChecker.h>
 #include <util/CodeLoc.h>
 
 /**
@@ -45,9 +41,7 @@ public:
   }
 
   // Virtual methods
-  virtual TCResult accept(AbstractASTVisitor<TCResult> *visitor) = 0;
-  virtual ICResult accept(AbstractASTVisitor<ICResult> *visitor) = 0;
-  virtual IGResult accept(AbstractASTVisitor<IGResult> *visitor) = 0;
+  virtual std::any accept(AbstractASTVisitor *visitor) = 0;
 
   // Public methods
   template <typename T> T *createChild(const CodeLoc &loc) {
@@ -144,9 +138,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitEntry(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitEntry(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitEntry(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEntry(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<ImportStmtNode *> importStmts() const { return getChildren<ImportStmtNode>(); }
@@ -160,9 +152,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitMainFctDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitMainFctDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitMainFctDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitMainFctDef(this); }
 
   // Public get methods
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
@@ -185,9 +175,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitFctDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitFctDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitFctDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctDef(this); }
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
@@ -220,9 +208,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitProcDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitProcDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitProcDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitProcDef(this); }
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
@@ -254,9 +240,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitStructDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitStructDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitStructDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStructDef(this); }
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
@@ -280,9 +264,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitInterfaceDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitInterfaceDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitInterfaceDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitInterfaceDef(this); }
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
@@ -302,9 +284,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitEnumDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitEnumDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitEnumDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEnumDef(this); }
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
@@ -324,9 +304,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitGenericTypeDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitGenericTypeDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitGenericTypeDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitGenericTypeDef(this); }
 
   // Public get methods
   [[nodiscard]] TypeAltsLstNode *typeAltsLst() const { return getChild<TypeAltsLstNode>(); }
@@ -344,9 +322,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitGlobalVarDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitGlobalVarDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitGlobalVarDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitGlobalVarDef(this); }
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
@@ -366,9 +342,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitExtDecl(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitExtDecl(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitExtDecl(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitExtDecl(this); }
 
   // Public get methods
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
@@ -391,9 +365,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitThreadDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitThreadDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitThreadDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitThreadDef(this); }
 
   // Public get methods
   [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
@@ -410,9 +382,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitUnsafeBlockDef(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitUnsafeBlockDef(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitUnsafeBlockDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitUnsafeBlockDef(this); }
 
   // Public get methods
   [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
@@ -429,9 +399,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitForLoop(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitForLoop(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitForLoop(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForLoop(this); }
 
   // Public get methods
   [[nodiscard]] DeclStmtNode *initDecl() const { return getChild<DeclStmtNode>(); }
@@ -451,9 +419,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitForeachLoop(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitForeachLoop(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitForeachLoop(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForeachLoop(this); }
 
   // Public get methods
   [[nodiscard]] DeclStmtNode *idxVarDecl() const {
@@ -476,9 +442,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitWhileLoop(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitWhileLoop(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitWhileLoop(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitWhileLoop(this); }
 
   // Public get methods
   [[nodiscard]] AssignExprNode *condition() const { return getChild<AssignExprNode>(); }
@@ -496,9 +460,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitIfStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitIfStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitIfStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitIfStmt(this); }
 
   // Public get methods
   [[nodiscard]] AssignExprNode *condition() const { return getChild<AssignExprNode>(); }
@@ -517,9 +479,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitElseStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitElseStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitElseStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitElseStmt(this); }
 
   // Public get methods
   [[nodiscard]] IfStmtNode *ifStmt() const { return getChild<IfStmtNode>(); }
@@ -540,9 +500,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitAssertStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitAssertStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitAssertStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAssertStmt(this); }
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
@@ -559,9 +517,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitAnonymousBlockStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitAnonymousBlockStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitAnonymousBlockStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAnonymousBlockStmt(this); }
 
   // Public get methods
   [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
@@ -578,9 +534,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitStmtLst(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitStmtLst(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitStmtLst(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStmtLst(this); }
 
   // Public members
   size_t complexity = 0;
@@ -594,9 +548,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitTypeLst(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitTypeLst(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitTypeLst(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTypeLst(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
@@ -613,9 +565,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitTypeAltsLst(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitTypeAltsLst(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitTypeAltsLst(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTypeAltsLst(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
@@ -632,9 +582,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitParamLst(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitParamLst(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitParamLst(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitParamLst(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<DeclStmtNode *> params() const { return getChildren<DeclStmtNode>(); }
@@ -648,9 +596,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitArgLst(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitArgLst(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitArgLst(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitArgLst(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<AssignExprNode *> args() const { return getChildren<AssignExprNode>(); }
@@ -664,9 +610,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitEnumItemLst(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitEnumItemLst(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitEnumItemLst(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEnumItemLst(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<EnumItemNode *> items() const { return getChildren<EnumItemNode>(); }
@@ -680,9 +624,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitEnumItem(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitEnumItem(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitEnumItem(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEnumItem(this); }
 
   // Public get methods
 
@@ -701,9 +643,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitField(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitField(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitField(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitField(this); }
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
@@ -728,9 +668,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitSignature(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitSignature(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitSignature(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSignature(this); }
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
@@ -754,9 +692,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStmt(this); }
 };
 
 // ========================================================= DeclStmtNode ========================================================
@@ -767,9 +703,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitDeclStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitDeclStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitDeclStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDeclStmt(this); }
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
@@ -793,9 +727,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitSpecifierLst(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitSpecifierLst(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitSpecifierLst(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSpecifierLst(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<SpecifierNode *> specifiers() const { return getChildren<SpecifierNode>(); }
@@ -812,9 +744,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitSpecifier(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitSpecifier(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitSpecifier(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSpecifier(this); }
 
   // Public members
   SpecifierType type;
@@ -828,9 +758,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitImportStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitImportStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitImportStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitImportStmt(this); }
 
   // Public members
   std::string importPath;
@@ -845,9 +773,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitReturnStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitReturnStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitReturnStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitReturnStmt(this); }
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
@@ -864,9 +790,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitBreakStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitBreakStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitBreakStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBreakStmt(this); }
 
   // Public members
   int breakTimes = 1;
@@ -880,9 +804,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitContinueStmt(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitContinueStmt(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitContinueStmt(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitContinueStmt(this); }
 
   // Public members
   int continueTimes = 1;
@@ -896,9 +818,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitPrintfCall(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitPrintfCall(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitPrintfCall(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrintfCall(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<AssignExprNode *> assignExpr() const { return getChildren<AssignExprNode>(); }
@@ -915,9 +835,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitSizeofCall(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitSizeofCall(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitSizeofCall(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSizeofCall(this); }
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
@@ -935,9 +853,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitLenCall(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitLenCall(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitLenCall(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLenCall(this); }
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
@@ -951,9 +867,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitTidCall(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitTidCall(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitTidCall(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTidCall(this); }
 };
 
 // ======================================================== JoinCallNode =========================================================
@@ -964,9 +878,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitJoinCall(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitJoinCall(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitJoinCall(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitJoinCall(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<AssignExprNode *> assignExpressions() const { return getChildren<AssignExprNode>(); }
@@ -995,9 +907,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitAssignExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitAssignExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitAssignExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAssignExpr(this); }
 
   // Public get methods
   [[nodiscard]] AssignExprNode *rhs() const { return getChild<AssignExprNode>(); }
@@ -1018,9 +928,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitTernaryExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitTernaryExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitTernaryExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTernaryExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<LogicalOrExprNode *> operands() const { return getChildren<LogicalOrExprNode>(); }
@@ -1036,9 +944,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitLogicalOrExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitLogicalOrExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitLogicalOrExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLogicalOrExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<LogicalAndExprNode *> operands() const { return getChildren<LogicalAndExprNode>(); }
@@ -1052,9 +958,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitLogicalAndExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitLogicalAndExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitLogicalAndExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLogicalAndExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<BitwiseOrExprNode *> operands() const { return getChildren<BitwiseOrExprNode>(); }
@@ -1068,9 +972,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitBitwiseOrExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitBitwiseOrExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitBitwiseOrExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBitwiseOrExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<BitwiseXorExprNode *> operands() const { return getChildren<BitwiseXorExprNode>(); }
@@ -1084,9 +986,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitBitwiseXorExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitBitwiseXorExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitBitwiseXorExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBitwiseXorExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<BitwiseAndExprNode *> operands() const { return getChildren<BitwiseAndExprNode>(); }
@@ -1100,9 +1000,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitBitwiseAndExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitBitwiseAndExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitBitwiseAndExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBitwiseAndExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<EqualityExprNode *> operands() const { return getChildren<EqualityExprNode>(); }
@@ -1119,9 +1017,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitEqualityExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitEqualityExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitEqualityExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEqualityExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<RelationalExprNode *> operands() const { return getChildren<RelationalExprNode>(); }
@@ -1141,9 +1037,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitRelationalExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitRelationalExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitRelationalExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitRelationalExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<ShiftExprNode *> operands() const { return getChildren<ShiftExprNode>(); }
@@ -1166,9 +1060,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitShiftExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitShiftExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitShiftExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitShiftExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<AdditiveExprNode *> operands() const { return getChildren<AdditiveExprNode>(); }
@@ -1191,9 +1083,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitAdditiveExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitAdditiveExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitAdditiveExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAdditiveExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<MultiplicativeExprNode *> operands() const { return getChildren<MultiplicativeExprNode>(); }
@@ -1217,9 +1107,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitMultiplicativeExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitMultiplicativeExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitMultiplicativeExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitMultiplicativeExpr(this); }
 
   // Public get methods
   [[nodiscard]] std::vector<CastExprNode *> operands() const { return getChildren<CastExprNode>(); }
@@ -1236,9 +1124,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitCastExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitCastExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitCastExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCastExpr(this); }
 
   // Public get methods
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
@@ -1267,9 +1153,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitPrefixUnaryExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitPrefixUnaryExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitPrefixUnaryExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrefixUnaryExpr(this); }
 
   // Public get methods
   [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
@@ -1289,9 +1173,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitPostfixUnaryExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitPostfixUnaryExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitPostfixUnaryExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPostfixUnaryExpr(this); }
 
   // Public get methods
   [[nodiscard]] AtomicExprNode *atomicExpr() const { return getChild<AtomicExprNode>(); }
@@ -1310,9 +1192,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitAtomicExpr(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitAtomicExpr(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitAtomicExpr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAtomicExpr(this); }
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
@@ -1336,9 +1216,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitValue(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitValue(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitValue(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitValue(this); }
 
   // Public get methods
   [[nodiscard]] PrimitiveValueNode *primitiveValue() const { return getChild<PrimitiveValueNode>(); }
@@ -1362,9 +1240,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitPrimitiveValue(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitPrimitiveValue(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitPrimitiveValue(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrimitiveValue(this); }
 
   // Public members
   PrimitiveValueType type;
@@ -1378,9 +1254,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitFunctionCall(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitFunctionCall(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitFunctionCall(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFunctionCall(this); }
 
   // Public get methods
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
@@ -1402,9 +1276,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitArrayInitialization(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitArrayInitialization(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitArrayInitialization(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitArrayInitialization(this); }
 
   // Public get methods
   [[nodiscard]] ArgLstNode *itemLst() const { return getChild<ArgLstNode>(); }
@@ -1418,9 +1290,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitStructInstantiation(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitStructInstantiation(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitStructInstantiation(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStructInstantiation(this); }
 
   // Public get methods
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
@@ -1451,9 +1321,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitDataType(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitDataType(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitDataType(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDataType(this); }
 
   // Public get methods
   [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
@@ -1480,9 +1348,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitBaseDataType(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitBaseDataType(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitBaseDataType(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBaseDataType(this); }
 
   // Public get methods
   [[nodiscard]] CustomDataTypeNode *customDataType() const { return getChild<CustomDataTypeNode>(); }
@@ -1499,9 +1365,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  TCResult accept(AbstractASTVisitor<TCResult> *visitor) override { return visitor->visitCustomDataType(this); }
-  ICResult accept(AbstractASTVisitor<ICResult> *visitor) override { return visitor->visitCustomDataType(this); }
-  IGResult accept(AbstractASTVisitor<IGResult> *visitor) override { return visitor->visitCustomDataType(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCustomDataType(this); }
 
   // Public get methods
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }

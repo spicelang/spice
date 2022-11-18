@@ -5,9 +5,7 @@
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
 
-#define EAResult bool
-
-class EscapeAnalyzer : private CompilerPass, public ASTVisitor<EAResult> {
+class EscapeAnalyzer : private CompilerPass, public ASTVisitor {
 public:
   // Constructor
   EscapeAnalyzer(GlobalResourceManager &resourceManager, SourceFile *sourceFile) : CompilerPass(resourceManager, sourceFile) {}

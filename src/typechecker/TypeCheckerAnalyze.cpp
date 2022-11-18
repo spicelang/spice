@@ -3,8 +3,10 @@
 #include "TypeChecker.h"
 
 #include <SourceFile.h>
+#include <exception/SemanticError.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 
-TCResult TypeChecker::visitMainFctDefAnalyze(MainFctDefNode *node) {
+std::any TypeChecker::visitMainFctDefAnalyze(MainFctDefNode *node) {
   // Do down into function scope
   currentScope = node->fctScope;
 
@@ -17,7 +19,7 @@ TCResult TypeChecker::visitMainFctDefAnalyze(MainFctDefNode *node) {
   return {};
 }
 
-TCResult TypeChecker::visitFctDefAnalyze(FctDefNode *node) {
+std::any TypeChecker::visitFctDefAnalyze(FctDefNode *node) {
   // Get manifestations of that function
   Scope *fctParentScope = node->isMethod ? node->structScope : currentScope;
   assert(fctParentScope != nullptr);
@@ -104,7 +106,7 @@ TCResult TypeChecker::visitFctDefAnalyze(FctDefNode *node) {
   return {};
 }
 
-TCResult TypeChecker::visitProcDefAnalyze(ProcDefNode *node) {
+std::any TypeChecker::visitProcDefAnalyze(ProcDefNode *node) {
   // Get manifestations of that procedure
   Scope *procParentScope = node->isMethod ? node->structScope : currentScope;
   assert(procParentScope != nullptr);
@@ -184,7 +186,7 @@ TCResult TypeChecker::visitProcDefAnalyze(ProcDefNode *node) {
   return {};
 }
 
-TCResult TypeChecker::visitStructDefAnalyze(StructDefNode *node) {
+std::any TypeChecker::visitStructDefAnalyze(StructDefNode *node) {
   // Change to struct scope
   currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
 

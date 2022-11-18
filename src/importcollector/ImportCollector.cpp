@@ -8,18 +8,16 @@
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
-ICResult ImportCollector::visitEntry(EntryNode *node) {
+std::any ImportCollector::visitEntry(EntryNode *node) {
   // Visit all import statements
   for (ImportStmtNode *importStmt : node->importStmts())
     visit(importStmt);
 
   // Reset the AST
   node->reset();
-
-  return false;
 }
 
-ICResult ImportCollector::visitImportStmt(ImportStmtNode *node) {
+std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   std::string importPath = node->importPath;
   bool isStd = importPath.rfind("std/", 0) == 0;
 
@@ -62,8 +60,6 @@ ICResult ImportCollector::visitImportStmt(ImportStmtNode *node) {
   sourceFile->addDependency(importedSourceFile, node, node->importName, importPath);
   // Register all external names of the imported source file to the current one
   registerExternalGlobalNames(importedSourceFile.get(), node->importName);
-
-  return false;
 }
 
 /**

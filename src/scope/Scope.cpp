@@ -3,6 +3,7 @@
 #include "Scope.h"
 
 #include <ast/ASTNodes.h>
+#include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 Scope::~Scope() {
@@ -554,31 +555,3 @@ bool Scope::doesAllowUnsafeOperations() const { // NOLINT(misc-no-recursion)
     return true;
   return parent != nullptr && parent->doesAllowUnsafeOperations();
 }
-
-/**
- * Wrapper around the insert method of the corresponding symbol table
- *
- * @param name Name of the symbol
- * @param specifiers Specifiers of the symbol
- * @param declNode AST node where the symbol is declared
- * @return Inserted entry
- */
-SymbolTableEntry *Scope::insert(const std::string &name, const SymbolSpecifiers &specifiers, const ASTNode *declNode) {
-  return symbolTable.insert(name, specifiers, declNode);
-}
-
-/**
- * Wrapper around the lookup method of the corresponding symbol table
- *
- * @param name Name of the desired symbol
- * @return Desired symbol / nullptr if the symbol was not found
- */
-SymbolTableEntry *Scope::lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
-
-/**
- * Wrapper around the lookupStrict method of the corresponding symbol table
- *
- * @param name Name of the desired symbol
- * @return Desired symbol / nullptr if the symbol was not found
- */
-SymbolTableEntry *Scope::lookupStrict(const std::string &symbolName) { return symbolTable.lookupStrict(symbolName); }

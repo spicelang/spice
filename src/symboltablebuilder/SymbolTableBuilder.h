@@ -5,8 +5,6 @@
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
 
-#define STBResult bool
-
 const char *const MAIN_FUNCTION_NAME = "main";
 const char *const RETURN_VARIABLE_NAME = "result";
 const char *const THIS_VARIABLE_NAME = "this";
@@ -22,15 +20,15 @@ const char *const UNUSED_VARIABLE_NAME = "_";
  * Jobs:
  * - Build symbol table
  */
-class SymbolTableBuilder : private CompilerPass, public ASTVisitor<STBResult> {
+class SymbolTableBuilder : private CompilerPass, public ASTVisitor {
 public:
   // Constructors
   SymbolTableBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
 
   // Public methods
-  STBResult visitEntry(EntryNode *node) override;
-  STBResult visitMainFctDef(MainFctDefNode *node) override;
-  STBResult visitFctDef(FctDefNode *node) override;
+  std::any visitEntry(EntryNode *node) override;
+  std::any visitMainFctDef(MainFctDefNode *node) override;
+  std::any visitFctDef(FctDefNode *node) override;
   /*STBResult visitProcDef(ProcDefNode *node) override;
   STBResult visitStructDef(StructDefNode *node) override;
   STBResult visitInterfaceDef(InterfaceDefNode *node) override;

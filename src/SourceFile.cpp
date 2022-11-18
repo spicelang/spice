@@ -2,7 +2,6 @@
 
 #include "SourceFile.h"
 
-#include <analyzer/PreAnalyzerVisitor.h>
 #include <ast/ASTBuilder.h>
 #include <astoptimizer/ASTOptimizer.h>
 #include <borrowchecker/BorrowChecker.h>
@@ -92,9 +91,8 @@ void SourceFile::runCSTVisualizer() {
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
   CSTVisualizer cstVisualizer(resourceManager, this, antlrCtx.lexer.get(), antlrCtx.parser.get());
-  dotCode << any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry()));
+  dotCode << any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
   antlrCtx.parser->reset();
-  dotCode << "}";
 
   // If this is the root source file, output the serialized string and the SVG file
   if (parent == nullptr) {
@@ -135,7 +133,7 @@ void SourceFile::runASTOptimizer() {
   Timer timer; // Start timer, which runs until the end of the current scope
 
   ASTOptimizer astOptimizer(resourceManager, this);
-  astOptimizer.visit(ast.get());
+  astOptimizer.visit(static_cast<EntryNode *>(ast.get()));
 
   printStatusMessage("AST Optimizer", IO_AST, IO_AST);
 }
@@ -151,8 +149,7 @@ void SourceFile::runASTVisualizer() {
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
   ASTVisualizer astVisualizer(resourceManager, this, ast.get());
-  dotCode << any_cast<std::string>(astVisualizer.visit(ast.get()));
-  dotCode << "}";
+  dotCode << std::any_cast<std::string>(astVisualizer.visit(ast.get())) << "}";
 
   // If this is the root source file, output the serialized string and the SVG file
   if (parent == nullptr) {
@@ -173,7 +170,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
 
   // Collect the imports for this source file
   ImportCollector importCollector(resourceManager, this);
-  importCollector.visit(ast.get());
+  importCollector.visit(static_cast<EntryNode *>(ast.get()));
 
   // Run first part of pipeline for the imported source file
   for (const auto &dependency : dependencies)
@@ -195,7 +192,7 @@ void SourceFile::runSymbolTableBuilder() { // NOLINT(misc-no-recursion)
 
   // Then build symbol table of the current file
   SymbolTableBuilder symbolTableBuilder(resourceManager, this);
-  symbolTableBuilder.visit(ast.get());
+  symbolTableBuilder.visit(static_cast<EntryNode *>(ast.get()));
 }
 
 void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
@@ -221,7 +218,7 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
 
   // Then type-check the current file
   TypeChecker typeChecker(resourceManager, this, TC_MODE_LOOKUP);
-  typeChecker.visit(ast.get());
+  typeChecker.visit(static_cast<EntryNode *>(ast.get()));
 }
 
 void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
@@ -233,7 +230,7 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
   TypeChecker typeChecker(resourceManager, this, TC_MODE_ANALYZE);
   unsigned short typeCheckRuns = 0;
   do {
-    typeChecker.visit(ast.get());
+    typeChecker.visit(static_cast<EntryNode *>(ast.get()));
     typeCheckRuns++;
     if (typeCheckRuns >= 10)
       throw std::runtime_error("Internal compiler error: Number of type checker runs for one source file exceeded. Please report "
@@ -267,7 +264,7 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
 
   // Then borrow-check current file
   BorrowChecker borrowChecker(resourceManager, this);
-  borrowChecker.visit(ast.get());
+  borrowChecker.visit(static_cast<EntryNode *>(ast.get()));
 
   printStatusMessage("Borrow Checker", IO_AST, IO_AST);
 }
@@ -285,7 +282,7 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
 
   // Then escape-analyze current file
   EscapeAnalyzer escapeAnalyzer(resourceManager, this);
-  escapeAnalyzer.visit(ast.get());
+  escapeAnalyzer.visit(static_cast<EntryNode *>(ast.get()));
 
   printStatusMessage("Escape Analyzer", IO_AST, IO_AST);
 }
@@ -306,7 +303,7 @@ void SourceFile::runIRGenerator() { // NOLINT(misc-no-recursion)
 
   // Generate this source file
   IRGenerator irGenerator(resourceManager, this);
-  irGenerator.visit(ast.get());
+  irGenerator.visit(static_cast<EntryNode *>(ast.get()));
 
   // Save the JSON version in the compiler output
   compilerOutput.irString = irGenerator.getIRString();

@@ -5,9 +5,7 @@
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
 
-#define BCResult bool
-
-class BorrowChecker : private CompilerPass, public ASTVisitor<BCResult> {
+class BorrowChecker : private CompilerPass, public ASTVisitor {
 public:
   // Constructors
   BorrowChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile) : CompilerPass(resourceManager, sourceFile) {}
