@@ -22,6 +22,7 @@
 class GlobalResourceManager;
 class EntryNode;
 class ASTNode;
+class Timer;
 
 enum CompilerStageIOType {
   IO_CODE = 0,
@@ -130,5 +131,6 @@ private:
   // Private methods
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
-  void printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out) const;
+  void printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out,
+                          const Timer *timer) const;
 };

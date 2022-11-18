@@ -127,12 +127,6 @@ void CLIInterface::enrich() {
     cliOptions.targetOs = triple.getOSName();
     cliOptions.isNativeTarget = triple == defaultTriple;
   }
-  // Dump AST, IR and symbol table if all debug output is enabled
-  if (cliOptions.printDebugOutput) {
-    cliOptions.dumpAST = true;
-    cliOptions.dumpIR = true;
-    cliOptions.dumpSymbolTables = true;
-  }
 }
 
 /**

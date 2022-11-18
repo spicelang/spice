@@ -15,6 +15,8 @@ std::any ImportCollector::visitEntry(EntryNode *node) {
 
   // Reset the AST
   node->reset();
+
+  return nullptr;
 }
 
 std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
@@ -60,6 +62,8 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   sourceFile->addDependency(importedSourceFile, node, node->importName, importPath);
   // Register all external names of the imported source file to the current one
   registerExternalGlobalNames(importedSourceFile.get(), node->importName);
+
+  return nullptr;
 }
 
 /**

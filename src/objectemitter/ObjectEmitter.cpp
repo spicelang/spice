@@ -11,7 +11,7 @@ void ObjectEmitter::emit() const {
   const std::string &objectFile = sourceFile->objectFilePath;
 
   // GCOV_EXCL_START
-  if (cliOptions.printDebugOutput)
+  if (cliOptions.printDebugOutput && cliOptions.dumpAssembly)
     std::cout << "\nEmitting object file for triplet '" << cliOptions.targetTriple << "' to path: " << objectFile << "\n";
   // GCOV_EXCL_STOP
 
