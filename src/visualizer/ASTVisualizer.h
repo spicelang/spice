@@ -9,86 +9,84 @@
 #include <ast/ASTNodes.h>
 #include <ast/AbstractASTVisitor.h>
 
-#define ASTVResult std::string
-
 /**
  * Visitor for debug purposes (is only executed in the compiler debug mode and when explicitly enabling it via cli flag)
  *
  * Jobs:
  * - Visualize AST
  */
-class ASTVisualizer : private CompilerPass, public AbstractASTVisitor<ASTVResult> {
+class ASTVisualizer : private CompilerPass, public AbstractASTVisitor {
 public:
   // Constructors
   ASTVisualizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile, const ASTNode *ast)
       : CompilerPass(resourceManager, sourceFile), ast(ast){};
 
   // Visitor methods
-  ASTVResult visitEntry(EntryNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitMainFctDef(MainFctDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitFctDef(FctDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitProcDef(ProcDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitStructDef(StructDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitInterfaceDef(InterfaceDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitEnumDef(EnumDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitGenericTypeDef(GenericTypeDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitGlobalVarDef(GlobalVarDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitExtDecl(ExtDeclNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitThreadDef(ThreadDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitUnsafeBlockDef(UnsafeBlockDefNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitForLoop(ForLoopNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitForeachLoop(ForeachLoopNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitWhileLoop(WhileLoopNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitIfStmt(IfStmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitElseStmt(ElseStmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitAssertStmt(AssertStmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitAnonymousBlockStmt(AnonymousBlockStmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitStmtLst(StmtLstNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitTypeLst(TypeLstNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitTypeAltsLst(TypeAltsLstNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitParamLst(ParamLstNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitArgLst(ArgLstNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitEnumItemLst(EnumItemLstNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitEnumItem(EnumItemNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitField(FieldNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitSignature(SignatureNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitStmt(StmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitDeclStmt(DeclStmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitSpecifierLst(SpecifierLstNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitSpecifier(SpecifierNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitImportStmt(ImportStmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitReturnStmt(ReturnStmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitBreakStmt(BreakStmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitContinueStmt(ContinueStmtNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitPrintfCall(PrintfCallNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitSizeofCall(SizeofCallNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitLenCall(LenCallNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitTidCall(TidCallNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitJoinCall(JoinCallNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitAssignExpr(AssignExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitTernaryExpr(TernaryExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitLogicalOrExpr(LogicalOrExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitLogicalAndExpr(LogicalAndExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitBitwiseOrExpr(BitwiseOrExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitBitwiseXorExpr(BitwiseXorExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitBitwiseAndExpr(BitwiseAndExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitEqualityExpr(EqualityExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitRelationalExpr(RelationalExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitShiftExpr(ShiftExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitAdditiveExpr(AdditiveExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitMultiplicativeExpr(MultiplicativeExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitCastExpr(CastExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitPrefixUnaryExpr(PrefixUnaryExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitPostfixUnaryExpr(PostfixUnaryExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitAtomicExpr(AtomicExprNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitValue(ValueNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitPrimitiveValue(PrimitiveValueNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitFunctionCall(FunctionCallNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitArrayInitialization(ArrayInitializationNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitStructInstantiation(StructInstantiationNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitDataType(DataTypeNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitBaseDataType(BaseDataTypeNode *ctx) override { return buildNode(ctx); }
-  ASTVResult visitCustomDataType(CustomDataTypeNode *ctx) override { return buildNode(ctx); }
+  std::any visitEntry(EntryNode *ctx) override { return buildNode(ctx); }
+  std::any visitMainFctDef(MainFctDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitFctDef(FctDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitProcDef(ProcDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitStructDef(StructDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitInterfaceDef(InterfaceDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitEnumDef(EnumDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitGenericTypeDef(GenericTypeDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitGlobalVarDef(GlobalVarDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitExtDecl(ExtDeclNode *ctx) override { return buildNode(ctx); }
+  std::any visitThreadDef(ThreadDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitUnsafeBlockDef(UnsafeBlockDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitForLoop(ForLoopNode *ctx) override { return buildNode(ctx); }
+  std::any visitForeachLoop(ForeachLoopNode *ctx) override { return buildNode(ctx); }
+  std::any visitWhileLoop(WhileLoopNode *ctx) override { return buildNode(ctx); }
+  std::any visitIfStmt(IfStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitElseStmt(ElseStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitAssertStmt(AssertStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitStmtLst(StmtLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitTypeLst(TypeLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitTypeAltsLst(TypeAltsLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitParamLst(ParamLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitArgLst(ArgLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitEnumItemLst(EnumItemLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitEnumItem(EnumItemNode *ctx) override { return buildNode(ctx); }
+  std::any visitField(FieldNode *ctx) override { return buildNode(ctx); }
+  std::any visitSignature(SignatureNode *ctx) override { return buildNode(ctx); }
+  std::any visitStmt(StmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitDeclStmt(DeclStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitSpecifierLst(SpecifierLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitSpecifier(SpecifierNode *ctx) override { return buildNode(ctx); }
+  std::any visitImportStmt(ImportStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitReturnStmt(ReturnStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitBreakStmt(BreakStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitContinueStmt(ContinueStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitPrintfCall(PrintfCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitSizeofCall(SizeofCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitLenCall(LenCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitTidCall(TidCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitJoinCall(JoinCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitAssignExpr(AssignExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitTernaryExpr(TernaryExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitLogicalOrExpr(LogicalOrExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitLogicalAndExpr(LogicalAndExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitBitwiseOrExpr(BitwiseOrExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitBitwiseXorExpr(BitwiseXorExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitBitwiseAndExpr(BitwiseAndExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitEqualityExpr(EqualityExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitRelationalExpr(RelationalExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitShiftExpr(ShiftExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitAdditiveExpr(AdditiveExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitMultiplicativeExpr(MultiplicativeExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitCastExpr(CastExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitPrefixUnaryExpr(PrefixUnaryExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitAtomicExpr(AtomicExprNode *ctx) override { return buildNode(ctx); }
+  std::any visitValue(ValueNode *ctx) override { return buildNode(ctx); }
+  std::any visitPrimitiveValue(PrimitiveValueNode *ctx) override { return buildNode(ctx); }
+  std::any visitFunctionCall(FunctionCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitArrayInitialization(ArrayInitializationNode *ctx) override { return buildNode(ctx); }
+  std::any visitStructInstantiation(StructInstantiationNode *ctx) override { return buildNode(ctx); }
+  std::any visitDataType(DataTypeNode *ctx) override { return buildNode(ctx); }
+  std::any visitBaseDataType(BaseDataTypeNode *ctx) override { return buildNode(ctx); }
+  std::any visitCustomDataType(CustomDataTypeNode *ctx) override { return buildNode(ctx); }
 
 private:
   // Members
@@ -118,7 +116,7 @@ private:
     // Visit all the children
     for (const auto &child : ctx->children) {
       result << getSpaces();
-      result << visit(child);
+      result << std::any_cast<std::string>(visit(child));
     }
 
     // Restore parent node id

@@ -4,6 +4,8 @@
 
 #include <ast/ASTNodes.h>
 
-ASTOResult ASTOptimizer::visitIfStmt(IfStmtNode *node) {
+std::any ASTOptimizer::visitIfStmt(IfStmtNode *node) {
   // ToDo
+
+  return false;
 }

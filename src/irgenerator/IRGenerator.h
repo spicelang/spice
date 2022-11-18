@@ -8,12 +8,10 @@
 #include <irgenerator/OpRuleConversionsManager.h>
 #include <irgenerator/StdFunctionManager.h>
 
-#define IGResult llvm::Value *
-
 // Forward declarations
 class SourceFile;
 
-class IRGenerator : private CompilerPass, public ASTVisitor<IGResult> {
+class IRGenerator : private CompilerPass, public ASTVisitor {
 public:
   // Constructors
   IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
@@ -24,7 +22,7 @@ public:
   friend class DebugInfoGenerator;
 
   // Visitor methods
-  IGResult visitEntry(EntryNode *node) override;
+  std::any visitEntry(EntryNode *node) override;
 
   // Public methods
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");

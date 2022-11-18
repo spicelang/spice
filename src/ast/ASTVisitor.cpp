@@ -2,132 +2,134 @@
 
 #include "ASTVisitor.h"
 
-template <typename T> T ASTVisitor<T>::visitEntry(EntryNode *node) { return visitChildren<T>(node); }
+#include <ast/AstNodes.h>
 
-template <typename T> T ASTVisitor<T>::visitMainFctDef(MainFctDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitEntry(EntryNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitFctDef(FctDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitMainFctDef(MainFctDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitProcDef(ProcDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitFctDef(FctDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitStructDef(StructDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitProcDef(ProcDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitInterfaceDef(InterfaceDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitStructDef(StructDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitEnumDef(EnumDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitInterfaceDef(InterfaceDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitGenericTypeDef(GenericTypeDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitEnumDef(EnumDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitGlobalVarDef(GlobalVarDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitGenericTypeDef(GenericTypeDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitExtDecl(ExtDeclNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitGlobalVarDef(GlobalVarDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitThreadDef(ThreadDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitExtDecl(ExtDeclNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitUnsafeBlockDef(UnsafeBlockDefNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitThreadDef(ThreadDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitForLoop(ForLoopNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitForeachLoop(ForeachLoopNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitForLoop(ForLoopNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitWhileLoop(WhileLoopNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitForeachLoop(ForeachLoopNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitIfStmt(IfStmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitWhileLoop(WhileLoopNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitElseStmt(ElseStmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitIfStmt(IfStmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitAssertStmt(AssertStmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitElseStmt(ElseStmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitAssertStmt(AssertStmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitStmtLst(StmtLstNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitTypeLst(TypeLstNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitStmtLst(StmtLstNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitTypeAltsLst(TypeAltsLstNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitTypeLst(TypeLstNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitParamLst(ParamLstNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitTypeAltsLst(TypeAltsLstNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitArgLst(ArgLstNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitParamLst(ParamLstNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitEnumItemLst(EnumItemLstNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitArgLst(ArgLstNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitEnumItem(EnumItemNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitEnumItemLst(EnumItemLstNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitField(FieldNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitEnumItem(EnumItemNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitSignature(SignatureNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitField(FieldNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitStmt(StmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitSignature(SignatureNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitDeclStmt(DeclStmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitStmt(StmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitSpecifierLst(SpecifierLstNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitDeclStmt(DeclStmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitSpecifier(SpecifierNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitSpecifierLst(SpecifierLstNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitImportStmt(ImportStmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitSpecifier(SpecifierNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitReturnStmt(ReturnStmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitImportStmt(ImportStmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitBreakStmt(BreakStmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitReturnStmt(ReturnStmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitContinueStmt(ContinueStmtNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitBreakStmt(BreakStmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitPrintfCall(PrintfCallNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitContinueStmt(ContinueStmtNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitSizeofCall(SizeofCallNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitPrintfCall(PrintfCallNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitLenCall(LenCallNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitSizeofCall(SizeofCallNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitTidCall(TidCallNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitLenCall(LenCallNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitJoinCall(JoinCallNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitTidCall(TidCallNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitAssignExpr(AssignExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitJoinCall(JoinCallNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitTernaryExpr(TernaryExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitAssignExpr(AssignExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitLogicalOrExpr(LogicalOrExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitTernaryExpr(TernaryExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitLogicalAndExpr(LogicalAndExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitLogicalOrExpr(LogicalOrExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitBitwiseOrExpr(BitwiseOrExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitLogicalAndExpr(LogicalAndExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitBitwiseXorExpr(BitwiseXorExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitBitwiseOrExpr(BitwiseOrExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitBitwiseAndExpr(BitwiseAndExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitBitwiseXorExpr(BitwiseXorExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitEqualityExpr(EqualityExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitBitwiseAndExpr(BitwiseAndExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitRelationalExpr(RelationalExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitEqualityExpr(EqualityExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitShiftExpr(ShiftExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitRelationalExpr(RelationalExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitAdditiveExpr(AdditiveExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitShiftExpr(ShiftExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitMultiplicativeExpr(MultiplicativeExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitAdditiveExpr(AdditiveExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitCastExpr(CastExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitMultiplicativeExpr(MultiplicativeExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitCastExpr(CastExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitAtomicExpr(AtomicExprNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitValue(ValueNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitAtomicExpr(AtomicExprNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitPrimitiveValue(PrimitiveValueNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitValue(ValueNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitFunctionCall(FunctionCallNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitPrimitiveValue(PrimitiveValueNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitArrayInitialization(ArrayInitializationNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitFunctionCall(FunctionCallNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitStructInstantiation(StructInstantiationNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitArrayInitialization(ArrayInitializationNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitDataType(DataTypeNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitStructInstantiation(StructInstantiationNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitBaseDataType(BaseDataTypeNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitDataType(DataTypeNode *node) { return visitChildren(node); }
 
-template <typename T> T ASTVisitor<T>::visitCustomDataType(CustomDataTypeNode *node) { return visitChildren<T>(node); }
+std::any ASTVisitor::visitBaseDataType(BaseDataTypeNode *node) { return visitChildren(node); }
+
+std::any ASTVisitor::visitCustomDataType(CustomDataTypeNode *node) { return visitChildren(node); }

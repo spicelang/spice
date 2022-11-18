@@ -134,7 +134,7 @@ set(SOURCES
         #analyzer/AnalyzerVisitor.h
         #generator/GeneratorVisitor.cpp
         #generator/GeneratorVisitor.h
-)
+        )
 
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 

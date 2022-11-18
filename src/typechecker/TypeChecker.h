@@ -2,13 +2,11 @@
 
 #pragma once
 
-#include "model/Function.h"
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
+#include <model/Function.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 #include <typechecker/OpRuleManager.h>
-
-#define TCResult SymbolType
 
 enum TypeCheckerMode { TC_MODE_LOOKUP, TC_MODE_ANALYZE };
 
@@ -17,7 +15,7 @@ enum TypeCheckerMode { TC_MODE_LOOKUP, TC_MODE_ANALYZE };
  * - Ensure that all actual types match the expected types
  * - Perform type inference
  */
-class TypeChecker : private CompilerPass, public ASTVisitor<TCResult> {
+class TypeChecker : private CompilerPass, public ASTVisitor {
 public:
   // Constructors
   TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode);
@@ -26,19 +24,19 @@ public:
   friend class OpRuleManager;
 
   // Public methods
-  TCResult visitEntry(EntryNode *node) override;
-  TCResult visitMainFctDef(MainFctDefNode *node) override;
-  TCResult visitMainFctDefAnalyze(MainFctDefNode *node);
-  TCResult visitFctDef(FctDefNode *node) override;
-  TCResult visitFctDefLookup(FctDefNode *node);
-  TCResult visitFctDefAnalyze(FctDefNode *node);
-  TCResult visitProcDef(ProcDefNode *node) override;
-  TCResult visitProcDefLookup(ProcDefNode *node);
-  TCResult visitProcDefAnalyze(ProcDefNode *node);
-  TCResult visitStructDef(StructDefNode *node) override;
-  TCResult visitStructDefLookup(StructDefNode *node);
-  TCResult visitStructDefAnalyze(StructDefNode *node);
-  TCResult visitInterfaceDef(InterfaceDefNode *node) override;
+  std::any visitEntry(EntryNode *node) override;
+  std::any visitMainFctDef(MainFctDefNode *node) override;
+  std::any visitMainFctDefAnalyze(MainFctDefNode *node);
+  std::any visitFctDef(FctDefNode *node) override;
+  std::any visitFctDefLookup(FctDefNode *node);
+  std::any visitFctDefAnalyze(FctDefNode *node);
+  std::any visitProcDef(ProcDefNode *node) override;
+  std::any visitProcDefLookup(ProcDefNode *node);
+  std::any visitProcDefAnalyze(ProcDefNode *node);
+  std::any visitStructDef(StructDefNode *node) override;
+  std::any visitStructDefLookup(StructDefNode *node);
+  std::any visitStructDefAnalyze(StructDefNode *node);
+  /*TCResult visitInterfaceDef(InterfaceDefNode *node) override;
   TCResult visitEnumDef(EnumDefNode *node) override;
   TCResult visitGenericTypeDef(GenericTypeDefNode *node) override;
   TCResult visitGlobalVarDef(GlobalVarDefNode *node) override;
@@ -86,7 +84,7 @@ public:
   TCResult visitStructInstantiation(StructInstantiationNode *node) override;
   TCResult visitDataType(DataTypeNode *node) override;
   TCResult visitBaseDataType(BaseDataTypeNode *node) override;
-  TCResult visitCustomDataType(CustomDataTypeNode *node) override;
+  TCResult visitCustomDataType(CustomDataTypeNode *node) override;*/
 
   // Public members
   bool reVisitRequested = false;

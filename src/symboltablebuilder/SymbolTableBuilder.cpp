@@ -8,7 +8,7 @@
 SymbolTableBuilder::SymbolTableBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile), rootScope(sourceFile->globalScope.get()) {}
 
-STBResult SymbolTableBuilder::visitEntry(EntryNode *node) {
+std::any SymbolTableBuilder::visitEntry(EntryNode *node) {
   // Initialize
   currentScope = rootScope;
 
@@ -21,9 +21,11 @@ STBResult SymbolTableBuilder::visitEntry(EntryNode *node) {
   // Check if the main function exists
   if (sourceFile->mainFile && !rootScope->lookup(std::string(MAIN_FUNCTION_NAME) + "()"))
     throw SemanticError(node, MISSING_MAIN_FUNCTION, "No main function found");
+
+  return false;
 }
 
-STBResult SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
+std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   const std::string fctSignature = std::string(MAIN_FUNCTION_NAME) + "()";
 
   // Check if the function is already defined
@@ -50,6 +52,8 @@ STBResult SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 
   // Return to root scope
   currentScope = rootScope;
+
+  return false;
 }
 
-STBResult SymbolTableBuilder::visitFctDef(FctDefNode *node) {}
+std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) { return false; }
