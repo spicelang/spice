@@ -29,12 +29,23 @@ public:
   std::any visitEntry(EntryNode *node) override;
   std::any visitMainFctDef(MainFctDefNode *node) override;
   std::any visitFctDef(FctDefNode *node) override;
-  /*STBResult visitProcDef(ProcDefNode *node) override;
-  STBResult visitStructDef(StructDefNode *node) override;
-  STBResult visitInterfaceDef(InterfaceDefNode *node) override;
-  STBResult visitEnumDef(EnumDefNode *node) override;
-  STBResult visitGlobalVarDef(GlobalVarDefNode *node) override;
-  STBResult visitExtDecl(ExtDeclNode *node) override;*/
+  std::any visitProcDef(ProcDefNode *node) override;
+  std::any visitStructDef(StructDefNode *node) override;
+  std::any visitInterfaceDef(InterfaceDefNode *node) override;
+  std::any visitEnumDef(EnumDefNode *node) override;
+  std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
+  std::any visitExtDecl(ExtDeclNode *node) override;
+  std::any visitThreadDef(ThreadDefNode *node) override;
+  std::any visitUnsafeBlockDef(UnsafeBlockDefNode *node) override;
+  std::any visitForLoop(ForLoopNode *node) override;
+  std::any visitForeachLoop(ForeachLoopNode *node) override;
+  std::any visitWhileLoop(WhileLoopNode *node) override;
+  std::any visitIfStmt(IfStmtNode *node) override;
+  std::any visitElseStmt(ElseStmtNode *node) override;
+  std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
+  std::any visitEnumItem(EnumItemNode *node) override;
+  std::any visitField(FieldNode *node) override;
+  std::any visitDeclStmt(DeclStmtNode *node) override;
 
 private:
   // Private members

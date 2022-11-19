@@ -38,6 +38,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Struct ambiguity";
   case VARIABLE_DECLARED_TWICE:
     return "Multiple declarations of the same variable";
+  case GLOBAL_DECLARED_TWICE:
+    return "Multiple declarations of the same global variable";
   case FUNCTION_DECLARED_TWICE:
     return "Multiple declarations of a function/procedure";
   case GENERIC_TYPE_DECLARED_TWICE:

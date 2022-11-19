@@ -675,7 +675,7 @@ std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
 
   for (const auto &subTree : ctx->children) {
     if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::IDENTIFIER)
-      enumItemNode->name = getIdentifier(t1);
+      enumItemNode->itemName = getIdentifier(t1);
     else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::INT_LIT) {
       enumItemNode->itemValue = parseInt(t2);
       enumItemNode->hasValue = true;
@@ -690,7 +690,7 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   saveErrorMessage(fieldNode, ctx);
 
   // Extract field name
-  fieldNode->name = getIdentifier(ctx->IDENTIFIER());
+  fieldNode->fieldName = getIdentifier(ctx->IDENTIFIER());
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
