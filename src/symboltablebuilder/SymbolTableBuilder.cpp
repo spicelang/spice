@@ -19,21 +19,19 @@ std::any SymbolTableBuilder::visitEntry(EntryNode *node) {
   node->reset();
 
   // Check if the main function exists
-  if (sourceFile->mainFile && !rootScope->lookup(std::string(MAIN_FUNCTION_NAME) + "()"))
+  if (sourceFile->mainFile && !hasMainFunction)
     throw SemanticError(node, MISSING_MAIN_FUNCTION, "No main function found");
 
   return nullptr;
 }
 
 std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
-  const std::string fctSignature = std::string(MAIN_FUNCTION_NAME) + "()";
-
   // Check if the function is already defined
-  if (rootScope->lookup(fctSignature))
+  if (rootScope->lookup(node->getSignature()))
     throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
 
   // Insert symbol for main function
-  SymbolTableEntry *mainFctEntry = currentScope->insert(fctSignature, SymbolSpecifiers::of(TY_FUNCTION), node);
+  SymbolTableEntry *mainFctEntry = currentScope->insert(node->getSignature(), SymbolSpecifiers::of(TY_FUNCTION), node);
   mainFctEntry->isUsed = true;
 
   // Create scope for main function body
@@ -44,7 +42,7 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   resultVarEntry->isUsed = true;
 
   // Visit arguments in new scope
-  if (node->hasArgs)
+  if (node->takesArgs)
     visit(node->paramLst());
 
   // Visit function body in new scope
@@ -53,10 +51,26 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   // Return to root scope
   currentScope = rootScope;
 
+  hasMainFunction = true;
   return nullptr;
 }
 
 std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
+  // Build function specifiers
+  auto specifiers = SymbolSpecifiers::of(TY_FUNCTION);
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_INLINE)
+        specifiers.setInline(true);
+      else if (specifier->type == SpecifierNode::TY_PUBLIC)
+        specifiers.setPublic(true);
+      else if (specifier->type == SpecifierNode::TY_CONST)
+        specifiers.setConst(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+    }
+  }
+
   // Change to struct scope if this function is a method
   if (node->isMethod) {
     node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
@@ -68,8 +82,11 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   node->fctScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY);
 
   // Create symbol for 'this' variable
-  if (node->isMethod)
-    currentScope->insert(THIS_VARIABLE_NAME, SymbolSpecifiers::of(TY_STRUCT), node);
+  if (node->isMethod) {
+    SymbolSpecifiers thisVarSpecifiers = SymbolSpecifiers::of(TY_STRUCT);
+    thisVarSpecifiers.setConst(specifiers.isConst()); // Make this 'const' if the function is 'const'
+    currentScope->insert(THIS_VARIABLE_NAME, thisVarSpecifiers, node);
+  }
 
   // Create symbol for 'result' variable
   currentScope->insert(RETURN_VARIABLE_NAME, SymbolSpecifiers(), node);
@@ -84,22 +101,9 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   // Leave function body scope
   currentScope = node->fctScope->parent;
 
-  // Build function specifiers
-  auto specifiers = SymbolSpecifiers::of(TY_FUNCTION);
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
-      if (specifier->type == SpecifierNode::TY_INLINE)
-        specifiers.setInline(true);
-      else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        specifiers.setPublic(true);
-      else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
-    }
-  }
-
   // Insert symbol for function with a temporary name, depending on the code location
   // this has to be done due to overloading and because not having any types
-  currentScope->insert(node->getTemporaryName(), specifiers, node);
+  node->entry = currentScope->insert(node->getTemporaryName(), specifiers, node);
 
   // Leave the struct scope
   if (node->isMethod)
@@ -109,6 +113,21 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 }
 
 std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
+  // Build procedure specifiers
+  auto specifiers = SymbolSpecifiers::of(TY_PROCEDURE);
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_INLINE)
+        specifiers.setInline(true);
+      else if (specifier->type == SpecifierNode::TY_PUBLIC)
+        specifiers.setPublic(true);
+      else if (specifier->type == SpecifierNode::TY_CONST)
+        specifiers.setConst(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
+    }
+  }
+
   // Change to struct scope if this procedure is a method
   if (node->isMethod) {
     node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
@@ -120,8 +139,11 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   node->procScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY);
 
   // Create symbol for 'this' variable
-  if (node->isMethod)
-    currentScope->insert(THIS_VARIABLE_NAME, SymbolSpecifiers::of(TY_STRUCT), node);
+  if (node->isMethod) {
+    SymbolSpecifiers thisVarSpecifiers = SymbolSpecifiers::of(TY_STRUCT);
+    thisVarSpecifiers.setConst(specifiers.isConst()); // Make this 'const' if the procedure is 'const'
+    currentScope->insert(THIS_VARIABLE_NAME, thisVarSpecifiers, node);
+  }
 
   // Create symbols for the parameters
   if (node->hasParams)
@@ -133,22 +155,9 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // Leave procedure body scope
   currentScope = node->procScope->parent;
 
-  // Build procedure specifiers
-  auto specifiers = SymbolSpecifiers::of(TY_PROCEDURE);
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
-      if (specifier->type == SpecifierNode::TY_INLINE)
-        specifiers.setInline(true);
-      else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        specifiers.setPublic(true);
-      else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
-    }
-  }
-
   // Insert symbol for procedure with a temporary name, depending on the code location
   // this has to be done due to overloading and because not having any types
-  currentScope->insert(node->getTemporaryName(), specifiers, node);
+  node->entry = currentScope->insert(node->getTemporaryName(), specifiers, node);
 
   // Leave the struct scope
   if (node->isMethod)
@@ -184,7 +193,9 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   }
 
   // Add the struct to the symbol table
-  rootScope->insert(node->structName, specifiers, node);
+  node->entry = rootScope->insert(node->structName, specifiers, node);
+  // Register the name in the exported name registry
+  sourceFile->addNameRegistryEntry(node->structName, node->entry, node->structScope);
 
   return nullptr;
 }
@@ -217,7 +228,9 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   }
 
   // Add the interface to the symbol table
-  rootScope->insert(node->interfaceName, specifiers, node);
+  node->entry = rootScope->insert(node->interfaceName, specifiers, node);
+  // Register the name in the exported name registry
+  sourceFile->addNameRegistryEntry(node->interfaceName, node->entry, node->interfaceScope);
 
   return nullptr;
 }
@@ -248,7 +261,9 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   }
 
   // Add the enum to the symbol table
-  rootScope->insert(node->enumName, specifiers, node);
+  node->entry = rootScope->insert(node->enumName, specifiers, node);
+  // Register the name in the exported name registry
+  sourceFile->addNameRegistryEntry(node->enumName, node->entry, node->enumScope);
 
   return nullptr;
 }
@@ -283,7 +298,9 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
   }
 
   // Add the global to the symbol table
-  rootScope->insert(node->varName, specifiers, node);
+  node->entry = rootScope->insert(node->varName, specifiers, node);
+  // Register the name in the exported name registry
+  sourceFile->addNameRegistryEntry(node->varName, node->entry, nullptr);
 
   return nullptr;
 }
@@ -297,7 +314,9 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   SymbolSpecifiers specifiers = SymbolSpecifiers::of(node->returnType() ? TY_FUNCTION : TY_PROCEDURE);
 
   // Add the external declaration to the symbol table
-  rootScope->insert(node->extFunctionName, specifiers, node);
+  node->entry = rootScope->insert(node->extFunctionName, specifiers, node);
+  // Register the name in the exported name registry
+  sourceFile->addNameRegistryEntry(node->extFunctionName, node->entry, nullptr);
 
   return nullptr;
 }
@@ -353,8 +372,12 @@ std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
   if (node->idxVarDecl()) {
     visit(node->idxVarDecl());
   } else {
-    // Insert default index variable
-    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, SymbolSpecifiers(TY_INT), node);
+    // Build default index variable specifiers
+    SymbolSpecifiers specifiers(TY_INT);
+    specifiers.setConst(true);
+
+    // Add default index variable to symbol table
+    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, specifiers, node);
   }
 
   // Visit item variable declaration
@@ -406,6 +429,7 @@ std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
 }
 
 std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
+  // Visit if statement in the case of an else if branch
   if (node->isElseIf) {
     visit(node->ifStmt());
     return nullptr;
@@ -441,8 +465,12 @@ std::any SymbolTableBuilder::visitEnumItem(EnumItemNode *node) {
   if (currentScope->lookupStrict(node->itemName))
     throw SemanticError(node, VARIABLE_DECLARED_TWICE, "The enum item '" + node->itemName + "' was declared more than once");
 
+  // Build enum item specifiers
+  SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_INT);
+  specifiers.setSigned(false); // Enum items are unsigned integers
+
   // Add enum item entry to symbol table
-  currentScope->insert(node->itemName, SymbolSpecifiers(TY_INT), node);
+  currentScope->insert(node->itemName, specifiers, node);
 
   return nullptr;
 }

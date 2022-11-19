@@ -11,10 +11,10 @@ type AstNode struct : Visitable {}
 type AstEntryNode struct : Visitable {
     AstNode astNode
     SymbolTable* fctScope
-    bool hasArgs
+    bool takesArgs
 }
 
 f<int> main() {
     dyn entryNode = AstEntryNode{};
-    printf("%d", entryNode.hasArgs);
+    printf("%d", entryNode.takesArgs);
 }

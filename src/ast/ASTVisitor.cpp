@@ -120,7 +120,7 @@ std::any ASTVisitor::visitAtomicExpr(AtomicExprNode *node) { return visitChildre
 
 std::any ASTVisitor::visitValue(ValueNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitPrimitiveValue(PrimitiveValueNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitConstant(ConstantNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitFunctionCall(FunctionCallNode *node) { return visitChildren(node); }
 

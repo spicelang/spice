@@ -112,7 +112,7 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
   size_t lineNumber = globalEntry->getDeclCodeLoc().line;
   llvm::StringRef name = global->getName();
-  llvm::DIType *type = getDITypeForSymbolType(globalEntry->type);
+  llvm::DIType *type = getDITypeForSymbolType(globalEntry->getType());
   bool isLocal = globalEntry->specifiers.isPublic();
 
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(unit, name, name, unit, lineNumber, type, isLocal));
@@ -128,7 +128,7 @@ void DebugInfoGenerator::generateDeclDebugInfo(const CodeLoc &codeLoc, const std
   // Build debug info
   llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
   llvm::DIScope *scope = debugInfo.lexicalBlocks.top();
-  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->type);
+  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
   llvm::DILocalVariable *varInfo;
   if (argNo != SIZE_MAX)
     varInfo = diBuilder->createParameterVariable(scope, varName, argNo, unit, codeLoc.line, diType);

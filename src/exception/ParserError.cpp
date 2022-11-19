@@ -37,7 +37,7 @@ std::string ParserError::getMessagePrefix(ParserErrorType type) {
   case INVALID_CHAR_LITERAL:
     return "Invalid char literal";
   case RESERVED_KEYWORD:
-    return "";
+    return "Usage of reserved keyword";
   }
   return "Unknown error"; // GCOV_EXCL_LINE
 }

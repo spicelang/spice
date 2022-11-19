@@ -14,6 +14,7 @@
 // Forward declaration
 class Scope;
 class SymbolType;
+class SymbolTableEntry;
 class Function;
 class ASTNode;
 struct CodeLoc;
@@ -21,9 +22,9 @@ struct CodeLoc;
 class Struct {
 public:
   // Constructors
-  Struct(std::string name, SymbolSpecifiers specifiers, std::vector<SymbolType> fieldTypes,
-         std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, const ASTNode *declNode)
-      : name(std::move(name)), specifiers(specifiers), fieldTypes(std::move(fieldTypes)), templateTypes(std::move(templateTypes)),
+  Struct(std::string name, SymbolTableEntry *entry, std::vector<SymbolType> fieldTypes, std::vector<GenericType> templateTypes,
+         std::vector<SymbolType> interfaceTypes, const ASTNode *declNode)
+      : name(std::move(name)), entry(entry), fieldTypes(std::move(fieldTypes)), templateTypes(std::move(templateTypes)),
         interfaceTypes(std::move(interfaceTypes)), declNode(declNode) {}
 
   // Public methods
@@ -39,16 +40,15 @@ public:
 
   // Public members
   std::string name;
-  SymbolSpecifiers specifiers;
   std::vector<SymbolType> fieldTypes;
   std::vector<GenericType> templateTypes;
   std::vector<SymbolType> interfaceTypes;
+  SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   const ASTNode *declNode;
   bool isGenericSubstantiation = false;
   bool isUsed = false;
 
   // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, specifiers, fieldTypes, templateTypes, interfaceTypes, isGenericSubstantiation,
-                                 isUsed)
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, fieldTypes, templateTypes, interfaceTypes, isGenericSubstantiation, isUsed)
 };

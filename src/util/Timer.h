@@ -13,7 +13,7 @@ public:
   // Public methods
   void start() { timeStart = std::chrono::high_resolution_clock::now(); }
   void stop() { timeStop = std::chrono::high_resolution_clock::now(); }
-  [[nodiscard]] long long getDurationMilliseconds() const {
+  [[nodiscard]] uint64_t getDurationMilliseconds() const {
     std::chrono::duration<double> duration = timeStop - timeStart;
     return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
   }

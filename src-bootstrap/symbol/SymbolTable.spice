@@ -589,6 +589,6 @@ public f<vec::Vector<cw::CompilerWarning>> SymbolTable.collectWarnings() {
  *
  * @return Imported / not imported
  */
-public f<bool> SymbolTable.isImported(const SymbolTable* askingScope) {
+public f<bool> SymbolTable.isImportedBy(const SymbolTable* askingScope) {
     // ToDo
 }

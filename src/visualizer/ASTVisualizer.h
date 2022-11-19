@@ -80,7 +80,7 @@ public:
   std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *ctx) override { return buildNode(ctx); }
   std::any visitAtomicExpr(AtomicExprNode *ctx) override { return buildNode(ctx); }
   std::any visitValue(ValueNode *ctx) override { return buildNode(ctx); }
-  std::any visitPrimitiveValue(PrimitiveValueNode *ctx) override { return buildNode(ctx); }
+  std::any visitConstant(ConstantNode *ctx) override { return buildNode(ctx); }
   std::any visitFunctionCall(FunctionCallNode *ctx) override { return buildNode(ctx); }
   std::any visitArrayInitialization(ArrayInitializationNode *ctx) override { return buildNode(ctx); }
   std::any visitStructInstantiation(StructInstantiationNode *ctx) override { return buildNode(ctx); }
@@ -242,8 +242,8 @@ private:
       return "AtomicExpr";
     if (std::is_same<ValueNode, T>())
       return "Value";
-    if (std::is_same<PrimitiveValueNode, T>())
-      return "PrimitiveValue";
+    if (std::is_same<ConstantNode, T>())
+      return "Constant";
     if (std::is_same<FunctionCallNode, T>())
       return "FunctionCall";
     if (std::is_same<ArrayInitializationNode, T>())

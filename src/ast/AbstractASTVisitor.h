@@ -64,7 +64,7 @@ class PrefixUnaryExprNode;
 class PostfixUnaryExprNode;
 class AtomicExprNode;
 class ValueNode;
-class PrimitiveValueNode;
+class ConstantNode;
 class FunctionCallNode;
 class ArrayInitializationNode;
 class StructInstantiationNode;
@@ -137,7 +137,7 @@ public:
   virtual std::any visitPostfixUnaryExpr(PostfixUnaryExprNode *node) = 0;
   virtual std::any visitAtomicExpr(AtomicExprNode *node) = 0;
   virtual std::any visitValue(ValueNode *node) = 0;
-  virtual std::any visitPrimitiveValue(PrimitiveValueNode *node) = 0;
+  virtual std::any visitConstant(ConstantNode *node) = 0;
   virtual std::any visitFunctionCall(FunctionCallNode *node) = 0;
   virtual std::any visitArrayInitialization(ArrayInitializationNode *node) = 0;
   virtual std::any visitStructInstantiation(StructInstantiationNode *node) = 0;

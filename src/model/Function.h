@@ -11,6 +11,7 @@
 // Forward declarations
 class ASTNode;
 struct CodeLoc;
+class SymbolTableEntry;
 
 struct Param {
   SymbolType type;
@@ -31,9 +32,9 @@ using NamedParamList = std::vector<NamedParam>;
 class Function {
 public:
   // Constructors
-  Function(std::string name, SymbolSpecifiers specifiers, SymbolType thisType, SymbolType returnType, ParamList paramList,
+  Function(std::string name, SymbolTableEntry *entry, SymbolType thisType, SymbolType returnType, ParamList paramList,
            std::vector<GenericType> templateTypes, const ASTNode *declNode)
-      : name(std::move(name)), specifiers(specifiers), thisType(std::move(thisType)), returnType(std::move(returnType)),
+      : name(std::move(name)), entry(entry), thisType(std::move(thisType)), returnType(std::move(returnType)),
         paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode) {}
   Function() = default;
 
@@ -56,16 +57,16 @@ public:
 
   // Public members
   std::string name;
-  SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_FUNCTION);
   SymbolType thisType = SymbolType(TY_DYN);
   SymbolType returnType = SymbolType(TY_DYN);
   ParamList paramList;
   std::vector<GenericType> templateTypes;
+  SymbolTableEntry *entry = nullptr;
   const ASTNode *declNode = nullptr;
   bool isGenericSubstantiation = false;
-  bool isAlreadyAnalyzed = false;
+  bool isAlreadyTypeChecked = false;
   bool isUsed = false;
 
   // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, specifiers, thisType, returnType, paramList, templateTypes)
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, thisType, returnType, paramList, templateTypes)
 };

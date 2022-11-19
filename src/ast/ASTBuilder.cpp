@@ -58,7 +58,7 @@ std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ArgLstDef
       currentNode = mainFctDefNode->createChild<ParamLstNode>(CodeLoc(rule->start, filePath));
-      mainFctDefNode->hasArgs = true;
+      mainFctDefNode->takesArgs = true;
     } else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
       currentNode = mainFctDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, filePath));
     else
@@ -127,7 +127,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
       currentNode = procDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = procDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
-      procDefNode->isGeneric = true;
+      procDefNode->hasTemplateTypes = true;
     } else if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ParamLst
       currentNode = procDefNode->createChild<ParamLstNode>(CodeLoc(rule->start, filePath));
       procDefNode->hasParams = true;
@@ -267,8 +267,8 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
       currentNode = globalVarDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = globalVarDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::ValueContext *>(subTree); rule != nullptr) // Value
-      currentNode = globalVarDefNode->createChild<ValueNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) // Constant
+      currentNode = globalVarDefNode->createChild<ConstantNode>(CodeLoc(rule->start, filePath));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1369,7 +1369,9 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::ValueContext *>(subTree); rule != nullptr) // Value
+    if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) // Constant
+      currentNode = atomicExprNode->createChild<ConstantNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::ValueContext *>(subTree); rule != nullptr) // Value
       currentNode = atomicExprNode->createChild<ValueNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::BuiltinCallContext *>(subTree); rule != nullptr) // BuiltinCall
       visit(rule);
@@ -1394,9 +1396,7 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::PrimitiveValueContext *>(subTree); rule != nullptr) // PrimitiveValue
-      currentNode = valueNode->createChild<PrimitiveValueNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::FunctionCallContext *>(subTree); rule != nullptr) // FunctionCall
+    if (rule = dynamic_cast<SpiceParser::FunctionCallContext *>(subTree); rule != nullptr) // FunctionCall
       currentNode = valueNode->createChild<FunctionCallNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::ArrayInitializationContext *>(subTree); rule != nullptr) // ArrayInitialization
       currentNode = valueNode->createChild<ArrayInitializationNode>(CodeLoc(rule->start, filePath));
@@ -1416,59 +1416,59 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
   return nullptr;
 }
 
-std::any ASTBuilder::visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) {
-  auto primitiveValueNode = dynamic_cast<PrimitiveValueNode *>(currentNode);
-  saveErrorMessage(primitiveValueNode, ctx);
+std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
+  auto constantNode = dynamic_cast<ConstantNode *>(currentNode);
+  saveErrorMessage(constantNode, ctx);
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
     if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::DOUBLE_LIT) {
-      primitiveValueNode->type = PrimitiveValueNode::TYPE_DOUBLE;
-      primitiveValueNode->compileTimeValue.doubleValue = std::stod(t->toString());
-      primitiveValueNode->hasDirectCompileTimeValue = true;
+      constantNode->type = ConstantNode::TYPE_DOUBLE;
+      constantNode->compileTimeValue.doubleValue = std::stod(t->toString());
+      constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t1->getSymbol()->getType() == SpiceParser::INT_LIT) {
-      primitiveValueNode->type = PrimitiveValueNode::TYPE_INT;
-      primitiveValueNode->compileTimeValue.intValue = parseInt(t1);
-      primitiveValueNode->hasDirectCompileTimeValue = true;
+      constantNode->type = ConstantNode::TYPE_INT;
+      constantNode->compileTimeValue.intValue = parseInt(t1);
+      constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t2->getSymbol()->getType() == SpiceParser::SHORT_LIT) {
-      primitiveValueNode->type = PrimitiveValueNode::TYPE_SHORT;
-      primitiveValueNode->compileTimeValue.shortValue = parseShort(t2);
-      primitiveValueNode->hasDirectCompileTimeValue = true;
+      constantNode->type = ConstantNode::TYPE_SHORT;
+      constantNode->compileTimeValue.shortValue = parseShort(t2);
+      constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t3->getSymbol()->getType() == SpiceParser::LONG_LIT) {
-      primitiveValueNode->type = PrimitiveValueNode::TYPE_LONG;
-      primitiveValueNode->compileTimeValue.longValue = parseLong(t3);
-      primitiveValueNode->hasDirectCompileTimeValue = true;
+      constantNode->type = ConstantNode::TYPE_LONG;
+      constantNode->compileTimeValue.longValue = parseLong(t3);
+      constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t4->getSymbol()->getType() == SpiceParser::CHAR_LIT) {
-      primitiveValueNode->type = PrimitiveValueNode::TYPE_CHAR;
-      primitiveValueNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
-      primitiveValueNode->hasDirectCompileTimeValue = true;
+      constantNode->type = ConstantNode::TYPE_CHAR;
+      constantNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
+      constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t5 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t5->getSymbol()->getType() == SpiceParser::STRING_LIT) {
       std::string stringValue = parseString(ctx->STRING_LIT()->toString());
 
-      primitiveValueNode->type = PrimitiveValueNode::TYPE_STRING;
-      primitiveValueNode->compileTimeStringValue = stringValue;
-      primitiveValueNode->compileTimeValue.stringValue = primitiveValueNode->compileTimeStringValue.c_str();
-      primitiveValueNode->hasDirectCompileTimeValue = true;
+      constantNode->type = ConstantNode::TYPE_STRING;
+      constantNode->compileTimeStringValue = stringValue;
+      constantNode->compileTimeValue.stringValue = constantNode->compileTimeStringValue.c_str();
+      constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t6 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t6->getSymbol()->getType() == SpiceParser::TRUE) {
-      primitiveValueNode->type = PrimitiveValueNode::TYPE_BOOL;
-      primitiveValueNode->compileTimeValue.boolValue = true;
-      primitiveValueNode->hasDirectCompileTimeValue = true;
+      constantNode->type = ConstantNode::TYPE_BOOL;
+      constantNode->compileTimeValue.boolValue = true;
+      constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t7 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t7->getSymbol()->getType() == SpiceParser::FALSE) {
-      primitiveValueNode->type = PrimitiveValueNode::TYPE_BOOL;
-      primitiveValueNode->compileTimeValue.boolValue = false;
-      primitiveValueNode->hasDirectCompileTimeValue = true;
+      constantNode->type = ConstantNode::TYPE_BOOL;
+      constantNode->compileTimeValue.boolValue = false;
+      constantNode->hasDirectCompileTimeValue = true;
     } else {
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
     }
 
-    if (currentNode != primitiveValueNode) {
+    if (currentNode != constantNode) {
       visit(rule);
-      currentNode = primitiveValueNode;
+      currentNode = constantNode;
     }
   }
   return nullptr;
@@ -1700,22 +1700,22 @@ std::any ASTBuilder::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) 
 
   // Extract assign operator
   if (ctx->MINUS())
-    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_MINUS, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_MINUS, SymbolType(TY_INVALID));
   else if (ctx->PLUS_PLUS())
-    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_PLUS_PLUS, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_PLUS_PLUS, SymbolType(TY_INVALID));
   else if (ctx->MINUS_MINUS())
-    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_MINUS_MINUS, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_MINUS_MINUS, SymbolType(TY_INVALID));
   else if (ctx->NOT())
-    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_NOT, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_NOT, SymbolType(TY_INVALID));
   else if (ctx->BITWISE_NOT())
-    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_BITWISE_NOT, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_BITWISE_NOT, SymbolType(TY_INVALID));
   else if (ctx->MUL())
-    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_INDIRECTION, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_INDIRECTION, SymbolType(TY_INVALID));
   else if (ctx->BITWISE_AND())
-    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
   else if (ctx->LOGICAL_AND()) {
-    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
-    prefixUnaryExprNode->opStack.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
   } else
     assert(false);
 
@@ -1887,8 +1887,12 @@ void ASTBuilder::saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext
 std::string ASTBuilder::getIdentifier(antlr4::tree::TerminalNode *terminal) {
   std::string identifier = terminal->getText();
 
-  // Check for reserved keywords
-  if (std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), identifier) != std::end(RESERVED_KEYWORDS)) {
+  // Check if the identifier is 'String' and this is no std source file
+  bool isReserved = identifier == STROBJ_NAME && !sourceFile->stdFile;
+  // Check if the list of reserved keywords contains the given identifier
+  isReserved |= std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), identifier) != std::end(RESERVED_KEYWORDS);
+  // Print error message
+  if (isReserved) {
     const CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), filePath);
     throw ParserError(codeLoc, RESERVED_KEYWORD, "'" + identifier + "' is a reserved keyword. Please use another name instead.");
   }

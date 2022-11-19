@@ -14,6 +14,12 @@
 // Forward declarations
 class SymbolTable;
 class ASTNode;
+class Scope;
+
+// Constants
+const char *const STROBJ_NAME = "String";
+const int ARRAY_SIZE_UNKNOWN = 0;
+const int ARRAY_SIZE_DYNAMIC = -1;
 
 enum SymbolSuperType {
   TY_INVALID,
@@ -39,15 +45,14 @@ enum SymbolSuperType {
   TY_IMPORT
 };
 
-const char *const STROBJ_NAME = "String";
-
 class SymbolType {
 public:
   // Unions
   union TypeChainElementData {
     // Union fields
-    int arraySize = 0;  // TY_ARRAY
-    bool numericSigned; // TY_INT, TY_SHORT, TY_LONG
+    long arraySize = 0;     // TY_ARRAY
+    bool numericSigned;     // TY_INT, TY_SHORT, TY_LONG
+    Scope *structBodyScope; // TY_STRUCT
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
@@ -86,7 +91,7 @@ public:
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, data, templateTypes)
   };
 
-  // Type defs
+  // Typedefs
   using TypeChain = std::vector<TypeChainElement>;
 
   // Constructors
@@ -101,7 +106,7 @@ public:
   // Public methods
   [[nodiscard]] SymbolType toPointer(const ASTNode *node, llvm::Value *dynamicSize = nullptr) const;
   [[nodiscard]] SymbolType toReference(const ASTNode *node) const;
-  [[nodiscard]] SymbolType toArray(const ASTNode *node, int size = 0) const;
+  [[nodiscard]] SymbolType toArray(const ASTNode *node, long size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
@@ -122,11 +127,13 @@ public:
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;
   void setTemplateTypes(std::vector<SymbolType> templateTypes);
-  [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
+  [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
-  [[nodiscard]] int getArraySize() const;
+  [[nodiscard]] long getArraySize() const;
   void setSigned(bool value = true);
   [[nodiscard]] bool isSigned() const;
+  void setStructBodyScope(Scope *bodyScope);
+  [[nodiscard]] Scope *getStructBodyScope() const;
   [[nodiscard]] llvm::Value *getDynamicArraySize() const;
   friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);

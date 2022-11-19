@@ -168,20 +168,19 @@ std::vector<Function> Function::substantiateOptionalParams() const {
   for (const Param &param : paramList) {
     if (param.isOptional) {         // Met optional parameter
       if (!metFirstOptionalParam) { // Add substantiation without the optional parameter
-        definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionParamTypes, templateTypes,
-                                       declNode);
+        definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
         metFirstOptionalParam = true;
       }
       // Add substantiation with the optional parameter
       currentFunctionParamTypes.push_back({param.type, false});
-      definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
+      definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
     } else { // Met mandatory parameter
       currentFunctionParamTypes.push_back({param.type, false});
     }
   }
 
   if (definiteFunctions.empty())
-    definiteFunctions.emplace_back(name, specifiers, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
+    definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
 
   return definiteFunctions;
 }
@@ -196,7 +195,7 @@ Function Function::substantiateGenerics(const ParamList &concreteParamList, cons
   // Substantiate return type
   SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
 
-  Function substantiatedFunction(name, specifiers, concreteThisType, newReturnType, concreteParamList, {}, declNode);
+  Function substantiatedFunction(name, entry, concreteThisType, newReturnType, concreteParamList, {}, declNode);
   substantiatedFunction.isGenericSubstantiation = true;
   return substantiatedFunction;
 }

@@ -11,7 +11,7 @@ structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON t
 interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: specifierLst? TYPE IDENTIFIER typeAltsLst SEMICOLON;
-globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN value)? SEMICOLON;
+globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 threadDef: THREAD LBRACE stmtLst RBRACE;
 unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;
@@ -68,11 +68,11 @@ multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: LPAREN dataType RPAREN prefixUnaryExpr | prefixUnaryExpr;
 prefixUnaryExpr: prefixUnaryOp* postfixUnaryExpr;
 postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | DOT postfixUnaryExpr | SCOPE_ACCESS postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
-atomicExpr: value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
+atomicExpr: constant | value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
-value: primitiveValue | functionCall | arrayInitialization | structInstantiation | NIL LESS dataType GREATER;
-primitiveValue: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
+value: functionCall | arrayInitialization | structInstantiation | NIL LESS dataType GREATER;
+constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
 functionCall: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACE argLst? RBRACE;
 structInstantiation: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;

@@ -160,11 +160,12 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
+  [[nodiscard]] std::string getSignature() const { return takesArgs ? "main()" : "main(int, string[])"; }
 
   // Public members
   SymbolTableEntry *entry = nullptr;
   Scope *fctScope = nullptr;
-  bool hasArgs = false;
+  bool takesArgs = false;
 };
 
 // ========================================================== FctDefNode =========================================================
@@ -199,6 +200,7 @@ public:
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   Scope *fctScope = nullptr;
+  std::vector<Function *> fctManifestations;
 };
 
 // ========================================================== ProcDefNode ========================================================
@@ -227,11 +229,13 @@ public:
   std::string fqProcedureName;
   std::vector<std::string> procedureNameFragments;
   bool isMethod = false;
-  bool isGeneric = false;
+  bool hasTemplateTypes = false;
   bool hasParams = false;
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   Scope *procScope = nullptr;
+  Function *procBase = nullptr;
+  std::vector<Function *> procManifestations;
 };
 
 // ========================================================= StructDefNode =======================================================
@@ -331,7 +335,7 @@ public:
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] ValueNode *value() const { return getChild<ValueNode>(); }
+  [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
 
   // Public members
   std::string varName;
@@ -359,6 +363,7 @@ public:
   bool isDll = false;
   Scope *fctScope = nullptr;
   SymbolTableEntry *entry = nullptr;
+  Function *externalFunction = nullptr;
 };
 
 // ========================================================= ThreadDefNode =======================================================
@@ -704,10 +709,8 @@ public:
   // Public members
   std::string methodName;
   Type signatureType = SignatureNode::TYPE_PROCEDURE;
-  std::vector<GenericType> templateTypes;
-  ParamList paramTypes;
   bool hasParams = false;
-  SymbolType returnType = SymbolType(TY_DYN);
+  std::vector<Function *> signatureManifestations;
 };
 
 // =========================================================== StmtNode ==========================================================
@@ -1105,6 +1108,9 @@ public:
     OP_MINUS,
   };
 
+  // Typedefs
+  typedef std::queue<std::pair<AdditiveOp, SymbolType>> OpQueue;
+
   // Constructors
   using ASTNode::ASTNode;
 
@@ -1115,7 +1121,7 @@ public:
   [[nodiscard]] std::vector<MultiplicativeExprNode *> operands() const { return getChildren<MultiplicativeExprNode>(); }
 
   // Public members
-  std::queue<std::pair<AdditiveOp, SymbolType>> opQueue;
+  OpQueue opQueue;
 };
 
 // ================================================== MultiplicativeExprNode =====================================================
@@ -1129,6 +1135,9 @@ public:
     OP_REM,
   };
 
+  // Typedefs
+  typedef std::queue<std::pair<MultiplicativeOp, SymbolType>> OpQueue;
+
   // Constructors
   using ASTNode::ASTNode;
 
@@ -1139,7 +1148,7 @@ public:
   [[nodiscard]] std::vector<CastExprNode *> operands() const { return getChildren<CastExprNode>(); }
 
   // Public members
-  std::queue<std::pair<MultiplicativeOp, SymbolType>> opQueue;
+  OpQueue opQueue;
 };
 
 // ======================================================= CastExprNode ==========================================================
@@ -1175,6 +1184,9 @@ public:
     OP_ADDRESS_OF,
   };
 
+  // Typedefs
+  typedef std::queue<std::pair<PrefixUnaryOp, SymbolType>> OpQueue;
+
   // Constructors
   using ASTNode::ASTNode;
 
@@ -1185,7 +1197,7 @@ public:
   [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
 
   // Public members
-  std::stack<std::pair<PrefixUnaryOp, SymbolType>> opStack;
+  OpQueue opQueue;
 };
 
 // =================================================== PostfixUnaryExprNode ======================================================
@@ -1194,6 +1206,9 @@ class PostfixUnaryExprNode : public ASTNode {
 public:
   // Enums
   enum PostfixUnaryOp { OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS, OP_SCOPE_ACCESS };
+
+  // Typedefs
+  typedef std::queue<std::pair<PostfixUnaryOp, SymbolType>> OpQueue;
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1207,7 +1222,7 @@ public:
   [[nodiscard]] std::vector<PostfixUnaryExprNode *> postfixUnaryExpr() const { return getChildren<PostfixUnaryExprNode>(); }
 
   // Public members
-  std::queue<std::pair<PostfixUnaryOp, SymbolType>> opQueue;
+  OpQueue opQueue;
 };
 
 // ====================================================== AtomicExprNode =========================================================
@@ -1221,8 +1236,9 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAtomicExpr(this); }
 
   // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
   [[nodiscard]] ValueNode *value() const { return getChild<ValueNode>(); }
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
   [[nodiscard]] PrintfCallNode *printfCall() const { return getChild<PrintfCallNode>(); }
   [[nodiscard]] SizeofCallNode *sizeofCall() const { return getChild<SizeofCallNode>(); }
   [[nodiscard]] LenCallNode *lenCall() const { return getChild<LenCallNode>(); }
@@ -1245,7 +1261,6 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitValue(this); }
 
   // Public get methods
-  [[nodiscard]] PrimitiveValueNode *primitiveValue() const { return getChild<PrimitiveValueNode>(); }
   [[nodiscard]] FunctionCallNode *functionCall() const { return getChild<FunctionCallNode>(); }
   [[nodiscard]] ArrayInitializationNode *arrayInitialization() const { return getChild<ArrayInitializationNode>(); }
   [[nodiscard]] StructInstantiationNode *structInstantiation() const { return getChild<StructInstantiationNode>(); }
@@ -1257,7 +1272,7 @@ public:
 
 // =================================================== PrimitiveValueNode ========================================================
 
-class PrimitiveValueNode : public ASTNode {
+class ConstantNode : public ASTNode {
 public:
   // Enum
   enum PrimitiveValueType { TYPE_DOUBLE, TYPE_INT, TYPE_SHORT, TYPE_LONG, TYPE_BYTE, TYPE_CHAR, TYPE_STRING, TYPE_BOOL };
@@ -1266,7 +1281,7 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrimitiveValue(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitConstant(this); }
 
   // Public members
   PrimitiveValueType type;
