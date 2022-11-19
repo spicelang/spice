@@ -89,7 +89,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
     if (name == THIS_VARIABLE_NAME)
       continue;
     // For dtor calls, only anonymous structs are relevant
-    if (entry.type.isOneOf({TY_STRUCT, TY_STROBJ}) && !entry.isDead() && entry.name.starts_with("anon."))
+    if (entry.getType().isOneOf({TY_STRUCT, TY_STROBJ}) && !entry.isDead() && entry.name.starts_with("anon."))
       varsGoingOutOfScope.push_back(&symbolTable.symbols.at(name));
   }
 
@@ -109,12 +109,9 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
 /**
  * Insert a new generic type in this scope
  *
- * @param typeName Name of the generic type
  * @param genericType Generic type itself
  */
-void Scope::insertGenericType(const std::string &typeName, const GenericType &genericType) {
-  genericTypes.insert({typeName, genericType});
-}
+void Scope::insertGenericType(const GenericType &genericType) { genericTypes.insert({genericType.getName(), genericType}); }
 
 /**
  * Search for a generic type by its name. If it was not found, the parent scopes will be searched.
@@ -133,24 +130,19 @@ GenericType *Scope::lookupGenericType(const std::string &typeName) { // NOLINT(m
  * Insert a function object into this symbol table scope
  *
  * @param function Function object
- * @return Inserted function
+ * @param manifestations Output parameter for collecting the
  */
-Function *Scope::insertFunction(const Function &function) {
-  const ASTNode *declNode = function.declNode;
-
+void Scope::insertFunction(const Function &function, std::vector<Function *> *manifestations /*=nullptr*/) {
   // Open a new function declaration pointer list. Which gets filled by the 'insertSubstantiatedFunction' method
-  std::string codeLocStr = declNode->codeLoc.toString();
-  functions.insert({codeLocStr, std::unordered_map<std::string, Function>()});
+  functions.insert({function.declNode->codeLoc.toString(), std::unordered_map<std::string, Function>()});
 
-  // Check if function is already substantiated
-  if (function.hasSubstantiatedParams())
-    return insertSubstantiatedFunction(function, declNode);
-
-  // Substantiate the function and insert the substantiated instances
-  for (const auto &fct : function.substantiateOptionalParams())
-    insertSubstantiatedFunction(fct, declNode);
-
-  return nullptr;
+  // Substantiate the optional params of the function
+  for (const Function &spiceFunc : function.substantiateOptionalParams()) {
+    Function *manifestation = insertSubstantiatedFunction(spiceFunc, function.declNode);
+    assert(manifestation != nullptr);
+    if (manifestations)
+      manifestations->push_back(manifestation);
+  }
 }
 
 /**
@@ -270,7 +262,7 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
         // Insert symbols for generic type names with concrete types into the child block
         Scope *childBlock = getChildScope(newFunction.getSignature());
         for (const auto &[typeName, symbolType] : concreteGenericTypes)
-          childBlock->insertGenericType(typeName, GenericType(symbolType));
+          childBlock->insertGenericType(GenericType(symbolType));
 
         // Replace this type with concrete one
         if ((f.isMethodFunction() || f.isMethodProcedure()) && !fctThisType.getTemplateTypes().empty()) {
@@ -322,7 +314,7 @@ Function *Scope::insertSubstantiatedFunction(const Function &function, const AST
     throw std::runtime_error("Internal compiler error: Expected substantiated function");
 
   // Check if the function exists already
-  std::string mangledFctName = function.getMangledName();
+  const std::string mangledFctName = function.getMangledName();
   for (const auto &[_, manifestations] : functions) {
     if (manifestations.contains(mangledFctName))
       throw SemanticError(declNode, FUNCTION_DECLARED_TWICE,
@@ -333,8 +325,8 @@ Function *Scope::insertSubstantiatedFunction(const Function &function, const AST
   assert(functions.contains(codeLocStr));
   functions.at(codeLocStr).emplace(mangledFctName, function);
   // Add symbol table entry for the function
-  SymbolTableEntry *functionEntry = insert(function.getSignature(), function.specifiers, declNode);
-  functionEntry->type = function.getSymbolType();
+  SymbolTableEntry *functionEntry = insert(function.getSignature(), function.entry->specifiers, declNode);
+  functionEntry->updateType(function.getSymbolType(), true);
   return &functions.at(codeLocStr).at(mangledFctName);
 }
 
@@ -453,8 +445,8 @@ Struct *Scope::insertSubstantiatedStruct(const Struct &s, const ASTNode *declNod
   assert(structs.contains(codeLocStr));
   structs.at(codeLocStr).emplace(s.getMangledName(), s);
   // Add symbol table entry for the struct
-  SymbolTableEntry *structEntry = insert(s.getSignature(), s.specifiers, declNode);
-  structEntry->type = s.getSymbolType();
+  SymbolTableEntry *structEntry = insert(s.getSignature(), s.entry->specifiers, declNode);
+  structEntry->updateType(s.getSymbolType(), true);
   return &structs.at(codeLocStr).at(s.getMangledName());
 }
 
@@ -481,7 +473,7 @@ void Scope::insertInterface(const Interface &interface) {
   interfaces.insert({interface.name, interface});
   // Add symbol table entry for the interface
   SymbolTableEntry *interfaceEntry = insert(interface.name, interface.specifiers, interface.declNode);
-  interfaceEntry->type = SymbolType(TY_INTERFACE);
+  interfaceEntry->updateType(SymbolType(TY_INTERFACE), false);
 }
 
 /**
@@ -493,7 +485,7 @@ size_t Scope::getFieldCount() const {
   assert(type == SCOPE_STRUCT);
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols) {
-    const SymbolType &symbolType = symbol.second.type;
+    const SymbolType &symbolType = symbol.second.getType();
     if (symbolType.isPrimitive() || symbolType.isOneOf({TY_STRUCT, TY_STROBJ}))
       fieldCount++;
   }
@@ -543,6 +535,27 @@ Scope *Scope::searchForScope(const ScopeType &scopeType) {
   while (searchResult && searchResult->type != scopeType)
     searchResult = searchResult->parent;
   return searchResult;
+}
+
+/**
+ * Checks if this scope is imported
+ *
+ * @param askingScope Scope, which asks whether the current one is imported from its point of view or not
+ *
+ * @return Imported / not imported
+ */
+bool Scope::isImportedBy(const Scope *askingScope) const {
+  // Get root scope of the source file where askingScope scope lives
+  const Scope *askingRootScope = askingScope;
+  while (askingRootScope->type != SCOPE_GLOBAL && askingRootScope->parent)
+    askingRootScope = askingRootScope->parent;
+
+  // Get root scope of the source file where the current scope lives
+  const Scope *thisRootScope = this;
+  while (thisRootScope->type != SCOPE_GLOBAL && thisRootScope->parent)
+    thisRootScope = thisRootScope->parent;
+
+  return askingRootScope != thisRootScope;
 }
 
 /**

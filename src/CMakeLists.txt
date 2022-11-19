@@ -55,8 +55,8 @@ set(SOURCES
         # Type checker
         typechecker/TypeChecker.cpp
         typechecker/TypeChecker.h
-        typechecker/TypeCheckerLookup.cpp
-        typechecker/TypeCheckerAnalyze.cpp
+        typechecker/TypeCheckerPrepare.cpp
+        typechecker/TypeCheckerCheck.cpp
         typechecker/OpRuleManager.cpp
         typechecker/OpRuleManager.h
         # Borrow checker

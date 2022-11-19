@@ -4,6 +4,8 @@ We aim to get rid of the explicit scope, that programmers have to write when acc
 `using` in C++. This can be beneficial for programmer productivity, code readability and might reduce the complexity
 in the compiler.
 
+This design works for functions, procedures, structs, interfaces and global variables.
+
 ##  Design
 
 The `Import Collector` will check every source file for potential dependencies. If an import statement was found, the
@@ -19,10 +21,10 @@ have written `sourceB::TestStruct` to access the struct from source file A. Now 
 
 Registry:
 
-| Name                | Predecessor name    | Pointer to SymbolTableEntry | Pointer to scope of symbol |
-|---------------------|---------------------|-----------------------------|----------------------------|
-| sourceB::TestStruct |                     | Pointer to struct entry     | Pointer to struct scope    |
-| TestStruct          | sourceB::TestStruct | Pointer to struct entry     | Pointer to struct scope    |
+| Name                | Pointer to SymbolTableEntry | Pointer to scope of symbol   | Predecessor name    |
+|---------------------|-----------------------------|------------------------------|---------------------|
+| sourceB::TestStruct | Pointer to struct entry     | Pointer to struct body scope |                     |
+| TestStruct          | Pointer to struct entry     | Pointer to struct body scope | sourceB::TestStruct |
 
 However, if A also imports source file C, which also exposes a struct with the name `TestStruct`, there would be an
 ambiguity between `sourceB::TestStruct` and `sourceC::TestStruct` when you just write `TestStruct`. Therefore, when
@@ -31,17 +33,17 @@ Accessing `TestStruct` without a scope identifier, leads to a compile error.
 
 Registry:
 
-| Name                | Predecessor name | Pointer to SymbolTableEntry | Pointer to scope of symbol |
-|---------------------|------------------|-----------------------------|----------------------------|
-| sourceB::TestStruct |                  | Pointer to struct entry     | Pointer to struct scope    |
-| sourceC::TestStruct |                  | Pointer to struct entry     | Pointer to struct scope    |
+| Name                | Pointer to SymbolTableEntry | Pointer to scope of symbol   | Predecessor name |
+|---------------------|-----------------------------|------------------------------|------------------|
+| sourceB::TestStruct | Pointer to struct entry     | Pointer to struct body scope |                  |
+| sourceC::TestStruct | Pointer to struct entry     | Pointer to struct body scope |                  |
 
 When source file C now imports source file D, which expose another struct `AnotherStruct` the registry looks like so:
 
-| Name                            | Predecessor name                | Pointer to SymbolTableEntry | Pointer to scope of symbol |
-|---------------------------------|---------------------------------|-----------------------------|----------------------------|
-| sourceB::TestStruct             |                                 | Pointer to struct entry     | Pointer to struct scope    |
-| sourceC::TestStruct             |                                 | Pointer to struct entry     | Pointer to struct scope    |
-| sourceC::sourceD::AnotherStruct |                                 | Pointer to struct entry     | Pointer to struct scope    |
-| sourceD::AnotherStruct          | sourceC::sourceD::AnotherStruct | Pointer to struct entry     | Pointer to struct scope    |
-| AnotherStruct                   | sourceD::AnotherStruct          | Pointer to struct entry     | Pointer to struct scope    |
+| Name                            | Pointer to SymbolTableEntry | Pointer to scope of symbol   | Predecessor name                |
+|---------------------------------|-----------------------------|------------------------------|---------------------------------|
+| sourceB::TestStruct             | Pointer to struct entry     | Pointer to struct body scope |                                 |
+| sourceC::TestStruct             | Pointer to struct entry     | Pointer to struct body scope |                                 |
+| sourceC::sourceD::AnotherStruct | Pointer to struct entry     | Pointer to struct body scope |                                 |
+| sourceD::AnotherStruct          | Pointer to struct entry     | Pointer to struct body scope | sourceC::sourceD::AnotherStruct |
+| AnotherStruct                   | Pointer to struct entry     | Pointer to struct body scope | sourceD::AnotherStruct          |

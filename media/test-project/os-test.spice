@@ -1,6 +1,529 @@
+// Constants
+const unsigned long INITIAL_ALLOC_COUNT = 5l;
+const unsigned int RESIZE_FACTOR = 2;
+
+// Link external functions
+ext<byte*> malloc(long);
+ext<byte*> realloc(byte*, int);
+ext free(byte*);
+ext memcpy(char*, char*, long);
+
+/**
+ * String wrapper for enriching raw strings with information and make them mutable
+ */
+public type Str struct {
+    char* contents         // Pointer to the first char
+    unsigned long capacity // Allocated number of chars (without null terminator)
+    unsigned long length   // Used number of chars
+}
+
+public p Str.ctor(const string value = "") {
+    this.length = getRawLength(value);
+    this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
+
+    // Allocate space for the initial number of elements
+    unsafe {
+        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
+        this.contents = (char*) malloc(requiredBytes);
+    }
+
+    // Save initial value
+    unsafe {
+        for unsigned long i; i < this.length + 1; i++ { // +1 because of null terminator
+            this.contents[i] = value[i];
+        }
+    }
+}
+
+public p Str.ctor(const char value) {
+    this.length = 1l;
+    this.capacity = INITIAL_ALLOC_COUNT;
+
+    // Allocate space for the initial number of elements
+    unsafe {
+        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
+        this.contents = (char*) malloc(requiredBytes);
+    }
+
+    // Save initial value
+    unsafe {
+        this.contents[0] = value;
+        this.contents[1] = '\0';
+    }
+}
+
+public p Str.ctor(const Str value1, const string value2 = "") {
+    this.length = value1.length;
+    this.capacity = value1.capacity;
+
+    // Allocate space
+    unsafe {
+        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
+        this.contents = (char*) malloc(requiredBytes);
+    }
+
+    // Copy the contents from the other string
+    unsafe {
+        memcpy(this.contents, value1.contents, value1.length + 1l); // +1 because of null terminator
+    }
+
+    if getRawLength(value2) > 0l {
+        this.append(value2);
+    }
+}
+
+public p Str.ctor(const Str value1, const Str value2) {
+    this.length = value1.length + value2.length;
+    this.capacity = value1.capacity + value2.capacity;
+
+    // Allocate space
+    unsafe {
+        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
+        this.contents = (char*) malloc(requiredBytes);
+    }
+
+    // Copy the contents from the other string
+    unsafe {
+        memcpy(this.contents, value1.contents, value1.length);
+        memcpy(this.contents + value1.length, value2.contents, value2.length + 1l); // +1 because of null terminator
+    }
+}
+
+public p Str.dtor() {
+    // Free all the memory
+    unsafe {
+        free((byte*) this.contents);
+    }
+}
+
+/**
+ * Appends the given string to the current one
+ *
+ * @param appendix string to be appended
+ */
+public p Str.append(const string appendix) {
+    unsigned long appendixLength = getRawLength(appendix);
+    // Check if we need to re-allocate memory
+    while this.capacity < this.length + appendixLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Save data
+    unsafe {
+        for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
+            this.contents[this.length++] = appendix[i];
+        }
+    }
+    this.length--; // Remove null terminator
+}
+
+/**
+ * Appends the given String to the current one
+ *
+ * @param appendix String to be appended
+ */
+public p Str.append(const Str appendix) {
+    const char* rawAppendix = appendix.getRaw();
+    unsigned long appendixLength = appendix.length;
+    // Check if we need to re-allocate memory
+    while this.capacity < this.length + appendixLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Save data
+    unsafe {
+        for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
+            this.contents[this.length++] = rawAppendix[i];
+        }
+    }
+    this.length--; // Remove null terminator
+}
+
+/**
+ * Appends the given char to the string and resize it if needed
+ *
+ * @param c Char to append
+ */
+public p Str.append(const char c) {
+    // Check if we need to re-allocate memory
+    if this.capacity < this.length + 1 {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Insert the char at the right position
+    unsafe {
+        this.contents[this.length++] = c;
+        this.contents[this.length] = '\0';
+    }
+}
+
+/**
+ * Implements the multily operator for 'string * int' or 'int * string'
+ *
+ * @param operand Number of repetitions
+ */
+public inline p Str.opMul(const int operand) {
+    this.opMul((long) operand);
+}
+
+/**
+ * Implements the multily operator for 'string * long' or 'long * string'
+ *
+ * @param operand Number of repetitions
+ */
+public p Str.opMul(const long operand) {
+    // Cancel if operand is less than 2
+    if operand < 2l { return; }
+
+    unsigned long newLength = operand * this.length;
+    // Check if we need to re-allocate memory
+    while this.capacity < newLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    // Save the value
+    unsafe {
+        for unsigned long i = 0l; i < newLength; i++ {
+            this.contents[i] = this.contents[i % this.length];
+        }
+        this.contents[newLength] = '\0';
+    }
+    this.length = newLength;
+}
+
+/**
+ * Implements the multily operator for 'string * short' or 'short * string'
+ *
+ * @param operand Number of repetitions
+ */
+public inline p Str.opMul(const short operand) {
+    this.opMul((long) operand);
+}
+
+/**
+ * Checks if this String equals another String
+ *
+ * @param operand String to comare the current string to
+ *
+ * @return Equal or not
+ */
+public f<bool> Str.isEqual(const Str operand) {
+    // Compare sizes
+    if operand.length != this.length { return false; }
+
+    // Compare contents
+    unsafe {
+        for int i = 0; i < this.length; i++ {
+            if this.contents[i] != operand.contents[i] {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Get the raw and immutable string from this container instance
+ *
+ * @return Raw immutable string
+ */
+public inline f<char*> Str.getRaw() {
+    return this.contents;
+}
+
+/**
+ * Retrieve the current length of the string
+ *
+ * @return Current length of the string
+ */
+public inline f<long> Str.getLength() {
+    return this.length;
+}
+
+/**
+ * Check if the string is empty
+ */
+public inline f<bool> Str.isEmpty() {
+    return this.length == 0;
+}
+
+/**
+ * Retrieve the current capacity of the string
+ *
+ * @return Current capacity of the string
+ */
+ public inline f<long> Str.getCapacity() {
+     return this.capacity;
+ }
+
+/**
+ * Checks if the string exhausts its capacity
+ *
+ * @return Full or not full
+ */
+public inline f<bool> Str.isFull() {
+    return this.length == this.capacity;
+}
+
+/**
+ * Replaces the current contents of the string with an empty string
+ */
+public p Str.clear() {
+    this.length = 0l;
+    unsafe {
+        this.contents[0] = '\0';
+    }
+}
+
+/**
+ * Searches for a substring in a string. Returns -1 if the string was not found.
+ *
+ * @param startIndex Index where to start the search
+ * @return Index, where the substring was found / -1
+ */
+public f<long> Str.find(string needle, unsigned long startIndex = 0l) {
+    // Return -1 if the startIndex is out of bounds
+    if startIndex >= this.length { return -1l; }
+
+    unsigned long needleLength = getRawLength(needle);
+    // Return false if the needle is longer than the haystack
+    if this.length < needleLength { return -1l; }
+
+    // Search needle in haystack
+    for unsigned long idx = startIndex; idx <= this.length - needleLength; idx++ {
+        // Start matching at startIdx
+        for unsigned long charIdx = 0l; charIdx < needleLength; charIdx++ {
+            unsafe {
+                if this.contents[idx + charIdx] != needle[charIdx] {
+                    continue 2;
+                }
+            }
+        }
+        // Whole string was matched
+        return idx;
+    }
+    return -1l;
+}
+
+/**
+ * Searches for a substring in a string. Returns -1 if the string was not found.
+ *
+ * @param startIndex Index where to start the search
+ * @return Index, where the substring was found / -1
+ */
+public f<long> Str.find(string needle, unsigned int startIndex) {
+    return this.find(needle, (long) startIndex);
+}
+
+/**
+ * Checks if the string contains a substring
+ *
+ * @param needle Substring to search for
+ * @return Found or not
+ */
+public inline f<bool> Str.contains(string needle) {
+    return this.find(needle) != -1l;
+}
+
+/**
+ * Reverse the string
+ */
+public p Str.reverse() {
+    unsafe {
+        for int i = 0; i < this.length / 2; i++ {
+            this.contents[i] ^= this.contents[this.length - i - 1];
+            this.contents[this.length - i - 1] ^= this.contents[i];
+            this.contents[i] ^= this.contents[this.length - i - 1];
+        }
+    }
+}
+
+/**
+ * Replace occurrence of substring with the replacement string
+ *
+ * @param needle Substring to replace
+ * @param replacement Replacement for the substring
+ */
+/*public p String.replace(
+    string* haystack,
+    string needle,
+    string replacement,
+    unsigned long startIndex = 0l
+) {
+    // Find occurrence
+    unsigned long startIdx = haystack.find(needle, startIndex);
+    // Return if not found
+    if startIdx == -1l { return; }
+
+    // Replace
+    unsigned long needleLength = getRawLength(needle);
+    for unsigned long idx = 0; idx < needleLength; idx++ {
+        // ToDo: Extend
+    }
+}*/
+
+/**
+ * Replace occurrence of substring with the replacement string
+ *
+ * @param needle Substring to replace
+ * @param replacement Replacement for the substring
+ */
+/*public inline p String.replace(
+    string* haystack,
+    string needle,
+    string replacement,
+    unsigned int startIndex
+) {
+    this.replace(haystack, needle, replacement, (long) startIndex);
+}*/
+
+/**
+ * Replace all occurrences of substring with the replacement string
+ *
+ * @param needle Substring to replace
+ * @param replacement Replacement for the substring
+ */
+/*public p String.replaceAll(string* haystack, string needle, string replacement) {
+    unsigned long needleLength = getRawLength(needle);
+    // Return false if the needle is longer than the haystack
+    if this.length < needleLength { return -1l; }
+
+    for unsigned long startIdx = 0; startIdx <= this.length - needle; startIdx++ {
+        // ToDo: Extend
+    }
+}*/
+
+/**
+ * Returns the substring of the current string, starting at position `startIndex` with
+ * the length of `length`.
+ *
+ * @param startIndex Substring start index
+ * @param length Length of substring
+ * @return Substring
+ */
+public f<String> Str.substring(unsigned long startIndex, long length = -1l) {
+    // Return empty string if the length is 0 or the startIndex is out of bounds
+    if length == 0l || startIndex >= this.length {
+        return String("");
+    }
+
+    // Get everything after startIndex when length is -1
+    if length == -1l {
+        length = this.length - startIndex;
+    }
+
+    // Do not exceed original string length
+    if startIndex + length > this.length {
+        length = this.length - startIndex;
+    }
+
+    // Get substring
+    String substring = String("");
+    substring.reserve(length);
+    unsigned long endIndex = startIndex + length;
+    for unsigned long charIndex = startIndex; charIndex < endIndex; charIndex++ {
+        unsafe {
+            substring.contents[charIndex - startIndex] = this.contents[charIndex];
+        }
+    }
+
+    // Terminate string
+    unsafe {
+        substring.contents[length] = '\0';
+    }
+
+    // Return raw string
+    return substring;
+}
+
+/**
+ * Returns the substring of the current string, starting at position `startIndex` with
+ * the length of `length`.
+ *
+ * @param startIndex Substring start index
+ * @param length Length of substring
+ * @return Substring
+ */
+public inline f<String> Str.substring(unsigned int startIndex, int length = -1) {
+    return this.substring((long) startIndex, (long) length);
+}
+
+/**
+ * Reserves `charCount` items
+ *
+ * @param charCount Number of chars to reserve for the string
+ */
+public p Str.reserve(unsigned long charCount) {
+    if charCount > this.capacity {
+        this.resize(charCount);
+    }
+}
+
+/**
+ * Reserves `charCount` items
+ *
+ * @param charCount Number of chars to reserve for the string
+ */
+public p Str.reserve(unsigned int charCount) {
+    this.reserve((long) charCount);
+}
+
+/**
+ * Re-allocates heap space for the string contents
+ *
+ * @param newLength new length of the string after resizing
+ */
+p Str.resize(unsigned long newLength) {
+    // Allocate the new memory
+    unsafe {
+        byte* oldAddress = (byte*) this.contents;
+        unsigned long requiredBytes = newLength + 1; // +1 because of null terminator
+        char* newMemory = (char*) realloc(oldAddress, (int) requiredBytes);
+        this.contents = newMemory;
+    }
+    // Set new capacity
+    this.capacity = newLength;
+}
+
+// ======================================================= Static functions ======================================================
+
+/*
+ * Returns the length of a string
+ *
+ * @param input Input string
+ * @return Length of the input string
+ */
+public f<long> getRawLength(string input) {
+    result = 0l;
+    while input[result] != '\0' {
+        result++;
+    }
+}
+
+/*
+ * Checks the equality of two strings
+ *
+ * @param lhs First input string
+ * @param rhs Second input string
+ * @return Equality of lhs and rhs
+ */
+public f<bool> isRawEqual(string lhs, string rhs) {
+    unsigned long lhsLength = getRawLength(lhs);
+    unsigned long rhsLength = getRawLength(rhs);
+    // Return false immediately if length does not match
+    if lhsLength != rhsLength { return false; }
+    // Compare chars
+    for int i = 0; i < lhsLength; i++ {
+        if lhs[i] != rhs[i] {
+            return false;
+        }
+    }
+    return true;
+}
+
 f<int> main() {
-    i32
-    printf("Hello World!");
+
 }
 
 /*f<int> main() {

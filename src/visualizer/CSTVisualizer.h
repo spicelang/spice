@@ -19,7 +19,7 @@ class CSTVisualizer : private CompilerPass, public SpiceVisitor {
 public:
   // Constructors
   CSTVisualizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile, const SpiceLexer *lexer,
-                       const SpiceParser *parser)
+                const SpiceParser *parser)
       : CompilerPass(resourceManager, sourceFile), vocabulary(lexer->getVocabulary()), ruleNames(parser->getRuleNames()){};
 
   // Visitor methods
@@ -87,7 +87,7 @@ public:
   std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override { return buildRule(ctx); }
   std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override { return buildRule(ctx); }
   std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override { return buildRule(ctx); }
-  std::any visitPrimitiveValue(SpiceParser::PrimitiveValueContext *ctx) override { return buildRule(ctx); }
+  std::any visitConstant(SpiceParser::ConstantContext *ctx) override { return buildRule(ctx); }
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override { return buildRule(ctx); }

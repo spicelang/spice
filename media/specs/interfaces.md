@@ -20,7 +20,7 @@ type AstNode interface {
 
 type MainFctDefNode struct : AstNode {
     SymbolTable* fctScope
-    bool hasArgs
+    bool takesArgs
 }
 
 // Must exist. Otherwise the compiler throws an error

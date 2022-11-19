@@ -6,6 +6,10 @@
 #include <model/Struct.h>
 #include <symboltablebuilder/SymbolTable.h>
 
+// Forward declarations
+class FctDefNode;
+class ProcDefNode;
+
 enum ScopeType {
   SCOPE_GLOBAL,
   SCOPE_FUNC_PROC_BODY,
@@ -52,11 +56,11 @@ public:
   [[nodiscard]] std::vector<SymbolTableEntry *> getVarsGoingOutOfScope();
 
   // Generic types
-  void insertGenericType(const std::string &typeName, const GenericType &genericType);
+  void insertGenericType(const GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
 
   // Functions
-  Function *insertFunction(const Function &function);
+  void insertFunction(const Function &function, std::vector<Function *> *manifestations = nullptr);
   Function *matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
                           const std::vector<SymbolType> &callTemplateTypes, const std::vector<SymbolType> &callArgTypes,
                           const ASTNode *node);
@@ -79,6 +83,7 @@ public:
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] size_t getLoopNestingDepth() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
+  [[nodiscard]] bool isImportedBy(const Scope *askingScope) const;
   [[nodiscard]] nlohmann::json getSymbolTableJSON() const;
 
   // Wrapper methods for symbol table

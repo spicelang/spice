@@ -43,6 +43,24 @@ struct SourceFileAntlrCtx {
   std::unique_ptr<SpiceParser> parser;
 };
 
+struct TimerOutput {
+  uint64_t lexer = 0;
+  uint64_t parser = 0;
+  uint64_t cstVisualizer = 0;
+  uint64_t astBuilder = 0;
+  uint64_t astOptimizer = 0;
+  uint64_t astVisualizer = 0;
+  uint64_t importCollector = 0;
+  uint64_t symbolTableBuilder = 0;
+  uint64_t typeCheckerPre = 0;
+  uint64_t typeCheckerPost = 0;
+  uint64_t borrowChecker = 0;
+  uint64_t escapeAnalyzer = 0;
+  uint64_t irGenerator = 0;
+  uint64_t irOptimizer = 0;
+  uint64_t objectEmitter = 0;
+};
+
 struct CompilerOutput {
   std::string cstString;
   std::string astString;
@@ -50,12 +68,15 @@ struct CompilerOutput {
   std::string irString;
   std::string irOptString;
   std::vector<CompilerWarning> warnings;
+  TimerOutput times;
 };
 
 struct NameRegistryEntry {
-  std::string predecessorName;
   SymbolTableEntry *targetEntry;
   Scope *targetScope;
+#ifndef NDEBUG
+  std::string predecessorName; // Only for better debugging, not required for production
+#endif
 };
 
 class SourceFile {
@@ -103,6 +124,7 @@ public:
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   void collectAndPrintWarnings();
   void requestRuntimeModule(const RuntimeModuleName &moduleName);
+  void addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true);
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
 
   // Public fields
@@ -121,8 +143,8 @@ public:
   std::unique_ptr<EntryNode> ast;
   std::unique_ptr<Scope> globalScope;
   std::unique_ptr<llvm::Module> llvmModule;
-  std::map<std::string, std::pair<std::shared_ptr<SourceFile>, const ASTNode *>> dependencies;
-  std::map<std::string, NameRegistryEntry> exportedNameRegistry;
+  std::unordered_map<std::string, std::pair<std::shared_ptr<SourceFile>, const ASTNode *>> dependencies;
+  std::unordered_map<std::string, NameRegistryEntry> exportedNameRegistry;
 
 private:
   // Private fields
@@ -132,5 +154,5 @@ private:
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
   void printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out,
-                          const Timer *timer) const;
+                          const Timer *timer, uint64_t &timeCompilerOutput) const;
 };

@@ -61,7 +61,7 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   // Register it as a dependency to the current source file
   sourceFile->addDependency(importedSourceFile, node, node->importName, importPath);
   // Register all external names of the imported source file to the current one
-  registerExternalGlobalNames(importedSourceFile.get(), node->importName);
+  buildExportedNameRegistry(importedSourceFile.get(), node->importName);
 
   return nullptr;
 }
@@ -74,16 +74,17 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
  * @param importedSourceFile Imported source file
  * @param importName First fragment of all fully-qualified symbol names from that import
  */
-void ImportCollector::registerExternalGlobalNames(SourceFile *importedSourceFile, const std::string &importName) {
-  for (const auto &[name, entry] : importedSourceFile->exportedNameRegistry) {
-    const std::string newName = importName + name;
-    // Check for name collision
-    if (sourceFile->exportedNameRegistry.contains(newName)) {
-      // Remove the existing entry
-      sourceFile->exportedNameRegistry.erase(newName);
-      continue;
-    }
-    // If no collision occurred, insert the entry with the new name
-    sourceFile->exportedNameRegistry.insert({newName, entry});
+void ImportCollector::buildExportedNameRegistry(SourceFile *importedSourceFile, const std::string &importName) {
+  auto &nameRegistry = sourceFile->exportedNameRegistry;
+  for (const auto &[originalName, entry] : importedSourceFile->exportedNameRegistry) {
+    // Add fully qualified name
+    const std::string newName = importName + "::" + originalName;
+#ifndef NDEBUG // Only fill predecessor in debug mode
+    nameRegistry.insert({newName, {entry.targetEntry, entry.targetScope, originalName}});
+#else
+    nameRegistry.insert({newName, entry});
+#endif
+    // Add the shortened name, considering the name collision
+    sourceFile->addNameRegistryEntry(originalName, entry.targetEntry, entry.targetScope, /*keepNewOnCollision=*/false);
   }
 }

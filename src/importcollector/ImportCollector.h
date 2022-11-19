@@ -26,5 +26,5 @@ private:
   const CliOptions &cliOptions;
 
   // Private methods
-  void registerExternalGlobalNames(SourceFile *importedSourceFile, const std::string &importName);
+  void buildExportedNameRegistry(SourceFile *importedSourceFile, const std::string &importName);
 };

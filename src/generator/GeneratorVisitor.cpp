@@ -201,7 +201,7 @@ std::any GeneratorVisitor::visitMainFctDef(MainFctDefNode *node) {
       SymbolTableEntry *paramSymbol = node->fctScope->lookup(currentVarName);
       assert(paramSymbol != nullptr);
       currentConstSigned = paramSymbol->specifiers.isSigned();
-      auto paramType = any_cast<llvm::Type *>(visit(param->dataType()));
+      auto paramType = std::any_cast<llvm::Type *>(visit(param->dataType()));
       paramTypes.push_back(paramType);
     }
   }
@@ -773,7 +773,7 @@ std::any GeneratorVisitor::visitGlobalVarDef(GlobalVarDefNode *node) {
 
   // Create correctly signed LLVM type from the data type
   currentConstSigned = specifiers.isSigned();
-  auto varType = any_cast<llvm::Type *>(visit(node->dataType()));
+  auto varType = std::any_cast<llvm::Type *>(visit(node->dataType()));
 
   // Create global variable
   llvm::Value *memAddress = module->getOrInsertGlobal(node->varName, varType);
@@ -815,7 +815,7 @@ std::any GeneratorVisitor::visitExtDecl(ExtDeclNode *node) {
   // Get LLVM return type
   llvm::Type *returnType;
   if (node->returnType()) {
-    returnType = any_cast<llvm::Type *>(visit(node->returnType()));
+    returnType = std::any_cast<llvm::Type *>(visit(node->returnType()));
     SymbolTable *functionTable = currentScope->getChild(spiceFunc.getSignature());
     assert(functionTable != nullptr);
     SymbolTableEntry *returnEntry = functionTable->lookup(RETURN_VARIABLE_NAME);
@@ -829,7 +829,7 @@ std::any GeneratorVisitor::visitExtDecl(ExtDeclNode *node) {
   std::vector<llvm::Type *> argTypes;
   if (node->argTypeLst()) {
     for (const auto &arg : node->argTypeLst()->dataTypes()) {
-      auto argType = any_cast<llvm::Type *>(visit(arg));
+      auto argType = std::any_cast<llvm::Type *>(visit(arg));
       argTypes.push_back(argType);
     }
   }
@@ -1058,7 +1058,7 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
   llvm::Value *idxVarPtr;
   llvm::Type *idxVarType;
   if (node->idxVarDecl()) {
-    auto idxVarName = any_cast<std::string>(visit(node->idxVarDecl()));
+    auto idxVarName = std::any_cast<std::string>(visit(node->idxVarDecl()));
     SymbolTableEntry *idxVarEntry = currentScope->lookup(idxVarName);
     assert(idxVarEntry != nullptr);
     idxVarPtr = idxVarEntry->getAddress();
@@ -1075,7 +1075,7 @@ std::any GeneratorVisitor::visitForeachLoop(ForeachLoopNode *node) {
     // Initialize variable with 0
     builder.CreateStore(builder.getInt32(0), idxVarPtr);
   }
-  auto itemVarName = any_cast<std::string>(visit(node->itemDecl()));
+  auto itemVarName = std::any_cast<std::string>(visit(node->itemDecl()));
   SymbolTableEntry *itemVarEntry = currentScope->lookup(itemVarName);
   assert(itemVarEntry != nullptr);
   llvm::Value *itemVarPtr = itemVarEntry->getAddress();
@@ -1339,7 +1339,7 @@ std::any GeneratorVisitor::visitDeclStmt(DeclStmtNode *node) {
   currentVarName = lhsVarName = node->varName;
 
   // Get data type
-  llvm::Type *varType = lhsType = any_cast<llvm::Type *>(visit(node->dataType()));
+  llvm::Type *varType = lhsType = std::any_cast<llvm::Type *>(visit(node->dataType()));
   entry->updateType(currentSymbolType, true);
 
   // Restore lhsVarName and currentVarName
@@ -1521,7 +1521,7 @@ std::any GeneratorVisitor::visitPrintfCall(PrintfCallNode *node) {
 std::any GeneratorVisitor::visitSizeofCall(SizeofCallNode *node) {
   llvm::Type *type;
   if (node->isType) { // Size of type
-    type = any_cast<llvm::Type *>(visit(node->dataType()));
+    type = std::any_cast<llvm::Type *>(visit(node->dataType()));
   } else { // Size of value
     // Visit the argument
     llvm::Value *value = resolveValue(node->assignExpr());
@@ -2513,7 +2513,7 @@ std::any GeneratorVisitor::visitValue(ValueNode *node) {
   // Primitive value
   if (node->primitiveValue()) {
     // Visit the primitive value
-    currentConstValue = any_cast<llvm::Constant *>(visit(node->primitiveValue()));
+    currentConstValue = std::any_cast<llvm::Constant *>(visit(node->primitiveValue()));
 
     // If global variable value, return value immediately, because it is already a pointer
     if (currentScope == rootScope)
@@ -2536,7 +2536,7 @@ std::any GeneratorVisitor::visitValue(ValueNode *node) {
     return visit(node->structInstantiation());
 
   if (node->isNil) {
-    auto nilType = any_cast<llvm::Type *>(visit(node->nilType()));
+    auto nilType = std::any_cast<llvm::Type *>(visit(node->nilType()));
     currentConstValue = llvm::Constant::getNullValue(nilType);
 
     // If global variable value, return value immediately, because it is already a pointer
@@ -3005,7 +3005,7 @@ std::any GeneratorVisitor::visitDataType(DataTypeNode *node) {
         } else {
           AssignExprNode *indexExpr = arraySizeExpr[assignExprCounter++];
           assert(indexExpr != nullptr);
-          auto sizeValuePtr = any_cast<llvm::Value *>(visit(indexExpr));
+          auto sizeValuePtr = std::any_cast<llvm::Value *>(visit(indexExpr));
           llvm::Type *sizeType = indexExpr->getEvaluatedSymbolType().toLLVMType(context, currentScope);
           dynamicArraySize = builder.CreateLoad(sizeType, sizeValuePtr);
           symbolType = symbolType.toPointer(node, dynamicArraySize);
@@ -3031,7 +3031,7 @@ llvm::Value *GeneratorVisitor::resolveValue(ASTNode *node, SymbolTable *accessSc
   if (!valueAny.has_value() && currentConstValue)
     return currentConstValue;
 
-  auto valueAddr = any_cast<llvm::Value *>(valueAny);
+  auto valueAddr = std::any_cast<llvm::Value *>(valueAny);
   llvm::Type *dstType = node->getEvaluatedSymbolType().toLLVMType(context, accessScope);
   return builder.CreateLoad(dstType, valueAddr);
 }
@@ -3045,7 +3045,7 @@ llvm::Value *GeneratorVisitor::resolveAddress(ASTNode *node, bool storeVolatile)
     return valueAddr;
   }
 
-  return any_cast<llvm::Value *>(valueAny);
+  return std::any_cast<llvm::Value *>(valueAny);
 }
 
 void GeneratorVisitor::moveInsertPointToBlock(llvm::BasicBlock *block) {

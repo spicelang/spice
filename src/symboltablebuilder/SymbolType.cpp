@@ -46,7 +46,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
  *
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const ASTNode *node, int size) const {
+SymbolType SymbolType::toArray(const ASTNode *node, long size) const {
   // Do not allow arrays of dyn
   if (typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
@@ -321,7 +321,7 @@ void SymbolType::setTemplateTypes(std::vector<SymbolType> templateTypes) {
  *
  * @return Template types
  */
-std::vector<SymbolType> SymbolType::getTemplateTypes() const { return typeChain.back().templateTypes; }
+const std::vector<SymbolType> &SymbolType::getTemplateTypes() const { return typeChain.back().templateTypes; }
 
 /**
  * Get the name of the symbol type as a string
@@ -348,7 +348,7 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLI
  *
  * @return Size
  */
-int SymbolType::getArraySize() const {
+long SymbolType::getArraySize() const {
   if (typeChain.back().superType != TY_ARRAY)                                               // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
 
@@ -374,6 +374,26 @@ bool SymbolType::isSigned() const {
 }
 
 /**
+ * Set the struct body scope of the current type
+ *
+ * @param bodyScope Struct body scope
+ */
+void SymbolType::setStructBodyScope(Scope *bodyScope) {
+  assert(isOneOf({TY_STRUCT, TY_STROBJ}));
+  typeChain.back().data.structBodyScope = bodyScope;
+}
+
+/**
+ * Return the struct body scope of the current type
+ *
+ * @return Struct body scope
+ */
+Scope *SymbolType::getStructBodyScope() const {
+  assert(isOneOf({TY_STRUCT, TY_STROBJ}));
+  return typeChain.back().data.structBodyScope;
+}
+
+/**
  * Retrieve the dynamic array size of the current type
  *
  * @return Dynamic array size
@@ -381,7 +401,7 @@ bool SymbolType::isSigned() const {
 llvm::Value *SymbolType::getDynamicArraySize() const {
   if (typeChain.back().superType != TY_PTR)                                                          // GCOV_EXCL_LINE
     throw std::runtime_error("Internal compiler error: Cannot get dynamic sized of non-array type"); // GCOV_EXCL_LINE
-  if (typeChain.back().data.arraySize > 0)                                                           // GCOV_EXCL_LINE
+  if (typeChain.back().data.arraySize > ARRAY_SIZE_UNKNOWN)                                          // GCOV_EXCL_LINE
     throw std::runtime_error("Cannot retrieve dynamic size of non-dynamically-sized array");         // GCOV_EXCL_LINE
 
   return typeChain.back().dynamicArraySize;

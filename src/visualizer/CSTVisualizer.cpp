@@ -36,7 +36,7 @@ std::string CSTVisualizer::buildRule(antlr4::ParserRuleContext *ctx) {
       result << terminalCodeLoc << R"( [color="lightblue",label=")" << terminalName << "\"];\n";
       result << getSpaces() << nodeId << " -> " << terminalCodeLoc << "\n";
     } else { // Non-terminal node
-      result << any_cast<std::string>(visit(child));
+      result << std::any_cast<std::string>(visit(child));
     }
   }
 

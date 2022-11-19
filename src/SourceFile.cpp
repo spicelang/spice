@@ -63,7 +63,7 @@ void SourceFile::runLexer() {
     restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
 
   timer.stop();
-  printStatusMessage("Lexer", IO_CODE, IO_TOKENS, &timer);
+  printStatusMessage("Lexer", IO_CODE, IO_TOKENS, &timer, compilerOutput.times.lexer);
 }
 
 void SourceFile::runParser() {
@@ -81,7 +81,7 @@ void SourceFile::runParser() {
   antlrCtx.parser->removeParseListeners();
 
   timer.stop();
-  printStatusMessage("Parser", IO_TOKENS, IO_CST, &timer);
+  printStatusMessage("Parser", IO_TOKENS, IO_CST, &timer, compilerOutput.times.parser);
 }
 
 void SourceFile::runCSTVisualizer() {
@@ -96,7 +96,7 @@ void SourceFile::runCSTVisualizer() {
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
   CSTVisualizer cstVisualizer(resourceManager, this, antlrCtx.lexer.get(), antlrCtx.parser.get());
-  dotCode << any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
+  dotCode << std::any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
   antlrCtx.parser->reset();
 
   // If this is the root source file, output the serialized string and the SVG file
@@ -107,7 +107,7 @@ void SourceFile::runCSTVisualizer() {
   }
 
   timer.stop();
-  printStatusMessage("CST Visualizer", IO_CST, IO_CST, &timer);
+  printStatusMessage("CST Visualizer", IO_CST, IO_CST, &timer, compilerOutput.times.cstVisualizer);
 }
 
 void SourceFile::runASTBuilder() {
@@ -130,7 +130,7 @@ void SourceFile::runASTBuilder() {
   globalScope = std::make_unique<Scope>(nullptr, SCOPE_GLOBAL);
 
   timer.stop();
-  printStatusMessage("AST Builder", IO_CST, IO_AST, &timer);
+  printStatusMessage("AST Builder", IO_CST, IO_AST, &timer, compilerOutput.times.astBuilder);
 }
 
 void SourceFile::runASTOptimizer() {
@@ -145,7 +145,7 @@ void SourceFile::runASTOptimizer() {
   astOptimizer.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("AST Optimizer", IO_AST, IO_AST, &timer);
+  printStatusMessage("AST Optimizer", IO_AST, IO_AST, &timer, compilerOutput.times.astOptimizer);
 }
 
 void SourceFile::runASTVisualizer() {
@@ -170,7 +170,7 @@ void SourceFile::runASTVisualizer() {
   }
 
   timer.stop();
-  printStatusMessage("AST Visualizer", IO_AST, IO_AST, &timer);
+  printStatusMessage("AST Visualizer", IO_AST, IO_AST, &timer, compilerOutput.times.astVisualizer);
 }
 
 void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
@@ -190,7 +190,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
     dependency.second.first->runFrontEnd();
 
   timer.stop();
-  printStatusMessage("Import Collector", IO_AST, IO_AST, &timer);
+  printStatusMessage("Import Collector", IO_AST, IO_AST, &timer, compilerOutput.times.importCollector);
 }
 
 void SourceFile::runSymbolTableBuilder() { // NOLINT(misc-no-recursion)
@@ -210,7 +210,7 @@ void SourceFile::runSymbolTableBuilder() { // NOLINT(misc-no-recursion)
   symbolTableBuilder.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("Symbol Table Builder", IO_AST, IO_AST, &timer);
+  printStatusMessage("Symbol Table Builder", IO_AST, IO_AST, &timer, compilerOutput.times.symbolTableBuilder);
 }
 
 void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
@@ -234,11 +234,11 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
     sourceFile.first->runTypeCheckerFirst();
 
   // Then type-check the current file
-  TypeChecker typeChecker(resourceManager, this, TC_MODE_LOOKUP);
+  TypeChecker typeChecker(resourceManager, this, TC_MODE_PREPARE);
   typeChecker.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("Type Checker Pre", IO_AST, IO_AST, &timer);
+  printStatusMessage("Type Checker Pre", IO_AST, IO_AST, &timer, compilerOutput.times.typeCheckerPre);
 }
 
 void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
@@ -250,7 +250,7 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
   timer.start();
 
   // Type-check the current file first, if requested multiple times
-  TypeChecker typeChecker(resourceManager, this, TC_MODE_ANALYZE);
+  TypeChecker typeChecker(resourceManager, this, TC_MODE_CHECK);
   unsigned short typeCheckRuns = 0;
   do {
     typeChecker.visit(static_cast<EntryNode *>(ast.get()));
@@ -265,7 +265,7 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
     sourceFile.first->runTypeCheckerSecond();
 
   timer.stop();
-  printStatusMessage("Type Checker Post", IO_AST, IO_AST, &timer);
+  printStatusMessage("Type Checker Post", IO_AST, IO_AST, &timer, compilerOutput.times.typeCheckerPost);
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);
@@ -273,7 +273,7 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
   // Dump symbol table
   if (resourceManager.cliOptions.dumpSymbolTables) { // GCOV_EXCL_START
     std::cout << "\nSymbol table of file " << filePath << ":\n\n";
-    std::cout << compilerOutput.symbolTableString << "\n";
+    std::cout << compilerOutput.symbolTableString << "\n\n";
   } // GCOV_EXCL_STOP
 }
 
@@ -294,7 +294,7 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
   borrowChecker.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("Borrow Checker", IO_AST, IO_AST, &timer);
+  printStatusMessage("Borrow Checker", IO_AST, IO_AST, &timer, compilerOutput.times.borrowChecker);
 }
 
 void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
@@ -314,7 +314,7 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
   escapeAnalyzer.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("Escape Analyzer", IO_AST, IO_AST, &timer);
+  printStatusMessage("Escape Analyzer", IO_AST, IO_AST, &timer, compilerOutput.times.escapeAnalyzer);
 }
 
 void SourceFile::runIRGenerator() { // NOLINT(misc-no-recursion)
@@ -347,7 +347,7 @@ void SourceFile::runIRGenerator() { // NOLINT(misc-no-recursion)
   } // GCOV_EXCL_STOP
 
   timer.stop();
-  printStatusMessage("IR Generator", IO_AST, IO_IR, &timer);
+  printStatusMessage("IR Generator", IO_AST, IO_IR, &timer, compilerOutput.times.irGenerator);
 }
 
 void SourceFile::runIROptimizer() { // NOLINT(misc-no-recursion)
@@ -381,7 +381,7 @@ void SourceFile::runIROptimizer() { // NOLINT(misc-no-recursion)
   } // GCOV_EXCL_STOP
 
   timer.stop();
-  printStatusMessage("IR Optimizer", IO_IR, IO_IR, &timer);
+  printStatusMessage("IR Optimizer", IO_IR, IO_IR, &timer, compilerOutput.times.irOptimizer);
 }
 
 void SourceFile::runObjectEmitter() { // NOLINT(misc-no-recursion)
@@ -407,7 +407,7 @@ void SourceFile::runObjectEmitter() { // NOLINT(misc-no-recursion)
   } // GCOV_EXCL_STOP
 
   timer.stop();
-  printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, &timer);
+  printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, &timer, compilerOutput.times.objectEmitter);
 }
 
 void SourceFile::concludeCompilation() { // NOLINT(misc-no-recursion)
@@ -497,6 +497,13 @@ void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {
   resourceManager.runtimeModuleManager.requestModule(this, moduleName);
 }
 
+void SourceFile::addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision) {
+  if (keepNewOnCollision || !exportedNameRegistry.contains(name)) // Overwrite potential existing entry
+    exportedNameRegistry[name] = {entry, scope};
+  else // Name collision => we must remove the existing entry
+    exportedNameRegistry.erase(name);
+}
+
 const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName) const {
   if (!exportedNameRegistry.contains(symbolName))
     return nullptr;
@@ -537,12 +544,14 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
 }
 
 void SourceFile::printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out,
-                                    const Timer *timer) const {
+                                    const Timer *timer, uint64_t &timeCompilerOutput) const {
   if (resourceManager.cliOptions.printDebugOutput) {
-    const char *compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
+    const char *const compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
     std::cout << "[" << stage << "] for " << fileName << ": ";
     std::cout << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
-    if (timer != nullptr)
-      std::cout << " (" << std::to_string(timer->getDurationMilliseconds()) << " ms)\n";
+    if (timer != nullptr) {
+      timeCompilerOutput = timer->getDurationMilliseconds();
+      std::cout << " (" << std::to_string(timeCompilerOutput) << " s)\n";
+    }
   }
 }

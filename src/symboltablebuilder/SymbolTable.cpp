@@ -72,7 +72,7 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-
       return nullptr;
 
     // Check if this scope requires capturing and capture the variable if appropriate
-    if (capturingRequired && !captures.contains(name) && !entry->type.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
+    if (capturingRequired && !captures.contains(name) && !entry->getType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
       captures.insert({name, Capture(entry)});
   }
 

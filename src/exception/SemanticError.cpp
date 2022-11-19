@@ -7,8 +7,9 @@
 
 SemanticError::SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message) {
   errorMessage = "[Error|Semantic] " + node->codeLoc.toPrettyString() + ":\n";
-  errorMessage += getMessagePrefix(type) + ": " + message + "\n\n";
-  errorMessage += node->errorMessage;
+  errorMessage += getMessagePrefix(type) + ": " + message;
+  if (!node->errorMessage.empty())
+    errorMessage += "\n\n" + node->errorMessage;
 }
 
 /**
@@ -112,6 +113,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "The type of a field value does not match the declaration";
   case ARRAY_SIZE_INVALID:
     return "Array size invalid";
+  case ARRAY_INDEX_NOT_INT:
+    return "Array index not of type int";
   case ARRAY_INDEX_NOT_INT_OR_LONG:
     return "Array index not of type int or long";
   case ARRAY_ITEM_TYPE_NOT_MATCHING:

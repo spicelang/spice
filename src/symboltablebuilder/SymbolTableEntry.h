@@ -30,7 +30,8 @@ public:
         orderIndex(orderIndex), isGlobal(global){};
 
   // Public methods
-  void updateType(const SymbolType &newType, bool force);
+  [[nodiscard]] const SymbolType &getType() const;
+  void updateType(const SymbolType &newType, bool overwriteExistingType);
   void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
   [[nodiscard]] const ASTNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
@@ -45,7 +46,6 @@ public:
 
   // Public members
   const std::string name;
-  SymbolType type;
   SymbolTable *symbolTable;
   SymbolSpecifiers specifiers;
   const ASTNode *declNode;
@@ -56,6 +56,7 @@ public:
 
 private:
   // Members
+  SymbolType type;
   llvm::Type *llvmType = nullptr;
   std::stack<llvm::Value *> memAddress;
   Lifecycle lifecycle;

@@ -7,12 +7,20 @@
 #include "util/CodeLoc.h"
 
 /**
- * Update the type of a symbol. This is used for substantiateOptionalParams types in the process of type inference
+ * Retrieve the symbol type of this symbol
+ *
+ * @return Current symbol type of this symbol
+ */
+const SymbolType &SymbolTableEntry::getType() const { return type; }
+
+/**
+ * Update the type of this symbol.
  *
  * @param newType New type of the current symbol
+ * @param overwriteExistingType Overwrites the existing type without throwing an error
  */
-void SymbolTableEntry::updateType(const SymbolType &newType, bool force) {
-  if (force || type.is(TY_DYN)) {
+void SymbolTableEntry::updateType(const SymbolType &newType, bool overwriteExistingType) {
+  if (overwriteExistingType || type.is(TY_DYN)) {
     type = newType;
   } else if (type.isBaseType(TY_STRING) && newType.is(TY_STRING)) {
     type = type.replaceBaseType(newType);
