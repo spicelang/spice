@@ -46,7 +46,6 @@ public:
 
   // Public members
   SymbolTable *parent;
-  std::unordered_map<std::string, SymbolTable *> children;
   std::unordered_map<std::string, SymbolTableEntry> symbols;
   std::unordered_map<std::string, Capture> captures;
   bool capturingRequired = false;

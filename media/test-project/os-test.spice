@@ -1,4 +1,5 @@
 f<int> main() {
+    i32
     printf("Hello World!");
 }
 

@@ -79,6 +79,7 @@ public:
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] size_t getLoopNestingDepth() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
+  [[nodiscard]] nlohmann::json getSymbolTableJSON() const;
 
   // Wrapper methods for symbol table
   inline SymbolTableEntry *insert(const std::string &name, const SymbolSpecifiers &specifiers, const ASTNode *declNode) {
