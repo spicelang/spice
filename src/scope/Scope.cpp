@@ -175,7 +175,7 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
     auto oldManifestations = manifestations;
     for (auto &[mangledName, f] : oldManifestations) {
       // Check name requirement
-      if (f.name != callFunctionName)
+      if (f.fieldName != callFunctionName)
         continue;
 
       // Initialize mapping from generic type name to concrete symbol type
@@ -258,7 +258,7 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
         callTemplateTypeIndex++;
       }
       // If types remain in the callTemplateTypes vector, skip this function substantiation (useful for generic return types)
-      if (callTemplateTypeIndex < callTemplateTypes.size() && f.name != CTOR_FUNCTION_NAME)
+      if (callTemplateTypeIndex < callTemplateTypes.size() && f.fieldName != CTOR_FUNCTION_NAME)
         continue;
 
       // Duplicate function
@@ -370,7 +370,7 @@ Struct *Scope::matchStruct(Scope *currentScope, const std::string &structName, /
     auto oldManifestations = manifestations;
     for (auto &[mangledName, s] : oldManifestations) {
       // Check name requirement
-      if (s.name != structName)
+      if (s.fieldName != structName)
         continue;
 
       // Check template types requirement

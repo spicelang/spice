@@ -80,7 +80,7 @@ std::any TypeChecker::visitFctDefAnalyze(FctDefNode *node) {
       }
 
       // Visit statements in new scope
-      visit(node->stmtLst());
+      visit(node->body());
 
       // Reset generic types
       for (const auto &arg : args) {
@@ -160,7 +160,7 @@ std::any TypeChecker::visitProcDefAnalyze(ProcDefNode *node) {
       }
 
       // Visit statements in new scope
-      visit(node->stmtLst());
+      visit(node->body());
 
       // Reset generic types
       for (const auto &arg : params) {

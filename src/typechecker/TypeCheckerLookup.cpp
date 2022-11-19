@@ -292,7 +292,7 @@ std::any TypeChecker::visitStructDefLookup(StructDefNode *node) {
     }
 
     // Add the field to the symbol table
-    SymbolTableEntry *fieldEntry = currentScope->insert(field->name, fieldSymbolSpecifiers, field);
+    SymbolTableEntry *fieldEntry = currentScope->insert(field->fieldName, fieldSymbolSpecifiers, field);
     fieldEntry->type = fieldType;
 
     fieldTypes.push_back(fieldType);

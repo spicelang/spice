@@ -1,22 +1,5 @@
 f<int> main() {
-    // Directly
-    printf("%d\n", String("").isEmpty());
-    printf("%d\n", String("Hello").isEmpty());
-    printf("%d\n", String("Hello!").getLength());
-    printf("%d\n", String("Hello World!").getLength());
-    printf("%d\n", String("Hello!").getCapacity());
-    printf("%d\n", String("Hello World!").getCapacity());
-    printf("%d\n", String("Hello").isFull());
-    printf("%d\n", String("Hello World!").isFull());
-    printf("%d\n", String("Hello World!").find("ell"));
-    printf("%d\n", String("Hello World!").find("Wort"));
-    printf("%d\n", String("Hello World!").find("H"));
-    printf("%d\n", String("Hello World!").find("!"));
-    printf("%d\n", String("Hello World!").find(" ", 12));
-    printf("%d\n", String("Hello World!").contains("abc"));
-    printf("%d\n", String("Hello World!").contains("Hello"));
-    printf("%d\n", String("Hello World!").contains("World!"));
-    printf("%d\n", String("Hello World!").contains("o W"));
+    printf("Hello World!");
 }
 
 /*f<int> main() {
