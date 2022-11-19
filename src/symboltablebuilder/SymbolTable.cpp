@@ -170,7 +170,7 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
  *
  * @return Symbol table if form of a string
  */
-nlohmann::json SymbolTable::toJSON() const { // NOLINT(misc-no-recursion)
+nlohmann::json SymbolTable::toJSON() const {
   // Collect all symbols
   std::vector<nlohmann::json> jsonSymbols;
   jsonSymbols.reserve(symbols.size());
@@ -183,19 +183,9 @@ nlohmann::json SymbolTable::toJSON() const { // NOLINT(misc-no-recursion)
   for (const auto &capture : captures)
     jsonCaptures.emplace_back(capture.second.toJSON());
 
-  // Collect all children
-  std::vector<nlohmann::json> jsonChildren;
-  jsonChildren.reserve(symbols.size());
-  for (const auto &child : children) {
-    nlohmann::json c = child.second->toJSON();
-    c["name"] = child.first; // Inject symbol table name into JSON object
-    jsonChildren.emplace_back(c);
-  }
-
   // Generate json
   nlohmann::json result;
   result["symbols"] = jsonSymbols;
   result["captures"] = jsonCaptures;
-  result["children"] = jsonChildren;
   return result;
 }

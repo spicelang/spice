@@ -214,17 +214,11 @@ void SourceFile::runSymbolTableBuilder() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
-  Timer timer;
-  timer.start();
-
   // We need two runs here due to generics.
   // The first run to determine all concrete substantiations of potentially generic elements
   runTypeCheckerFirst(); // Visit dependency tree from bottom to top
   // The second run to ensure, also generic scopes are type-checked properly
   runTypeCheckerSecond(); // Visit dependency tree from top to bottom
-
-  timer.stop();
-  printStatusMessage("Type Checker", IO_AST, IO_AST, &timer);
 }
 
 void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
@@ -232,19 +226,28 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
+  Timer timer;
+  timer.start();
+
   // Type-check all dependencies first
   for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runTypeChecker();
+    sourceFile.first->runTypeCheckerFirst();
 
   // Then type-check the current file
   TypeChecker typeChecker(resourceManager, this, TC_MODE_LOOKUP);
   typeChecker.visit(static_cast<EntryNode *>(ast.get()));
+
+  timer.stop();
+  printStatusMessage("Type Checker Pre", IO_AST, IO_AST, &timer);
 }
 
 void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
   // Skip if restored from cache
   if (restoredFromCache)
     return;
+
+  Timer timer;
+  timer.start();
 
   // Type-check the current file first, if requested multiple times
   TypeChecker typeChecker(resourceManager, this, TC_MODE_ANALYZE);
@@ -259,10 +262,13 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
 
   // Then type-check all dependencies
   for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runTypeChecker();
+    sourceFile.first->runTypeCheckerSecond();
+
+  timer.stop();
+  printStatusMessage("Type Checker Post", IO_AST, IO_AST, &timer);
 
   // Save the JSON version in the compiler output
-  compilerOutput.symbolTableString = globalScope->symbolTable.toJSON().dump(2);
+  compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);
 
   // Dump symbol table
   if (resourceManager.cliOptions.dumpSymbolTables) { // GCOV_EXCL_START
@@ -432,6 +438,7 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
   runASTOptimizer();
   runASTVisualizer();
   runImportCollector();
+  runSymbolTableBuilder();
   runTypeCheckerFirst();
 }
 

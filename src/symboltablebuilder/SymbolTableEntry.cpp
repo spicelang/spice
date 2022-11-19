@@ -156,6 +156,7 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   nlohmann::json result;
   result["name"] = name;
   result["type"] = type.getName(true);
+  result["codeLoc"] = declNode->codeLoc.toString();
   result["orderIndex"] = orderIndex;
   result["state"] = stateStr;
   result["specifiers"] = specifiers.toJSON();

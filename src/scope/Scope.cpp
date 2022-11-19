@@ -175,7 +175,7 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
     auto oldManifestations = manifestations;
     for (auto &[mangledName, f] : oldManifestations) {
       // Check name requirement
-      if (f.fieldName != callFunctionName)
+      if (f.name != callFunctionName)
         continue;
 
       // Initialize mapping from generic type name to concrete symbol type
@@ -258,7 +258,7 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
         callTemplateTypeIndex++;
       }
       // If types remain in the callTemplateTypes vector, skip this function substantiation (useful for generic return types)
-      if (callTemplateTypeIndex < callTemplateTypes.size() && f.fieldName != CTOR_FUNCTION_NAME)
+      if (callTemplateTypeIndex < callTemplateTypes.size() && f.name != CTOR_FUNCTION_NAME)
         continue;
 
       // Duplicate function
@@ -370,7 +370,7 @@ Struct *Scope::matchStruct(Scope *currentScope, const std::string &structName, /
     auto oldManifestations = manifestations;
     for (auto &[mangledName, s] : oldManifestations) {
       // Check name requirement
-      if (s.fieldName != structName)
+      if (s.name != structName)
         continue;
 
       // Check template types requirement
@@ -554,4 +554,20 @@ bool Scope::doesAllowUnsafeOperations() const { // NOLINT(misc-no-recursion)
   if (type == SCOPE_UNSAFE_BODY)
     return true;
   return parent != nullptr && parent->doesAllowUnsafeOperations();
+}
+
+nlohmann::json Scope::getSymbolTableJSON() const {
+  nlohmann::json result = symbolTable.toJSON();
+
+  // Collect all children
+  std::vector<nlohmann::json> jsonChildren;
+  jsonChildren.reserve(children.size());
+  for (const auto &child : children) {
+    nlohmann::json c = child.second->getSymbolTableJSON();
+    c["name"] = child.first; // Inject symbol table name into JSON object
+    jsonChildren.emplace_back(c);
+  }
+  result["children"] = jsonChildren;
+
+  return result;
 }
