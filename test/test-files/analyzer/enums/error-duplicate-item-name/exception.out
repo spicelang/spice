@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/analyzer/enums/error-duplicate-item-name/source.spice:4:5:
-Duplicate enum item name: Duplicate enum item name, please use another
+Multiple declarations of the same variable: The enum item 'ITEM_NAME' was declared more than once
 
 4  ITEM_NAME
    ^^^^^^^^^

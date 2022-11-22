@@ -324,12 +324,12 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Build signature object
-  Function signature(node->methodName, nullptr, /*thisType=*/SymbolType(TY_DYN), returnType, paramTypes, {}, node);
+  Function signature(node->methodName, /*entry=*/nullptr, /*thisType=*/SymbolType(TY_DYN), returnType, paramTypes, {}, node);
 
   // Add signature to current scope
   currentScope->insertFunction(signature, &node->signatureManifestations);
 
-  return nullptr;
+  return &node->signatureManifestations;
 }
 
 std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
@@ -848,11 +848,14 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
 }
 
 std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
+  // Reset access scope
+  accessScope = nullptr;
+
   // Visit the right side
   auto [operandType, operandEntry] = std::any_cast<ExprResult>(visit(node->postfixUnaryExpr()));
 
   // Loop through the op queue
-  for (size_t i = 1; i < node->opQueue.size(); i++) {
+  for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Check operator
     const PrefixUnaryExprNode::PrefixUnaryOp &op = node->opQueue.front().first;
     switch (op) {
@@ -896,20 +899,14 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 }
 
 std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
-  // Reset access scope
-  accessScope = nullptr;
-
   // Visit left side
   auto [lhsType, lhsEntry] = std::any_cast<ExprResult>(visit(node->atomicExpr()));
-  if (lhsType.is(TY_INVALID))
-    throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE,
-                        "Variable '" + node->atomicExpr()->identifier + "' was referenced before declared");
 
   size_t subscriptCounter = 0;
   size_t memberOrScopeAccessCount = 0;
 
   // Loop through op queue
-  for (size_t i = 1; i < node->opQueue.size(); i++) {
+  for (size_t i = 0; i < node->opQueue.size(); i++) {
     const PostfixUnaryExprNode::PostfixUnaryOp &op = node->opQueue.front().first;
     switch (op) {
     case PostfixUnaryExprNode::OP_SUBSCRIPT: {
@@ -950,7 +947,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
       // Check if lhs is enum or strobj
-      if (!lhsType.isBaseType(TY_STRUCT) && !lhsType.isOneOf({TY_ENUM, TY_STROBJ}))
+      if (!lhsType.isBaseType(TY_STRUCT) && !lhsType.isBaseType(TY_STROBJ) && !lhsType.is(TY_ENUM))
         throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName());
       // Visit rhs
       PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberOrScopeAccessCount++];
@@ -1031,13 +1028,19 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
   // Load symbol table entry
   SymbolTableEntry *varEntry = accessScope->lookup(node->identifier);
-  assert(varEntry != nullptr);
+  if (!varEntry)
+    throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->identifier + "' could not be found");
+  const SymbolType varType = varEntry->getType();
+
+  if (varType.is(TY_DYN))
+    throw SemanticError(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.");
+
   // The base type should be a primitive or struct
   assert(varEntry->getType().getBaseType().isPrimitive() || varEntry->getType().isBaseType(TY_STRUCT));
 
   // Check if is an imported variable
   if (accessScope->isImportedBy(currentScope)) {
-    assert(varEntry->isGlobal); // If it is imported, it must be a global variable
+    assert(varEntry->global); // If it is imported, it must be a global variable
     // Check if the entry is public
     if (!varEntry->specifiers.isPublic())
       throw SemanticError(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility");
@@ -1049,7 +1052,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Retrieve scope for the new scope path fragment
   if (varEntry->getType().isBaseType(TY_STRUCT)) { // Base type struct
     // Set access scope to struct scope
-    const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(varEntry->getType().getSubType());
+    const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(varEntry->getType().getBaseType().getSubType());
     assert(nameRegistryEntry != nullptr);
 
     // Change the access scope to the struct scope
@@ -1064,7 +1067,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
                           "Cannot access struct '" + structEntry->name + "' due to its private visibility");
   }
 
-  return node->setEvaluatedSymbolType(varEntry->getType());
+  return ExprResult{node->setEvaluatedSymbolType(varEntry->getType())};
 }
 
 std::any TypeChecker::visitValue(ValueNode *node) {
@@ -1316,7 +1319,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
 
 std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Check if access scope was altered
-  if (accessScope != currentScope)
+  if (accessScope != nullptr && accessScope != currentScope)
     throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + node->fqStructName + "'");
 
   // Retrieve struct
@@ -1469,7 +1472,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return node->setEvaluatedSymbolType(*genericType);
   }
 
-  SymbolTableEntry *entry = nullptr;
+  SymbolTableEntry *entry;
   if (isImported) { // Imported
     // Check if the type exists in the exported names registry
     const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqTypeName);
@@ -1484,12 +1487,13 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'");
     accessScope = rootScope; // Structs, enums and interfaces can only be declared in the root scope
   }
+  const SymbolType entryType = entry->getType();
 
   // Enums can early-return
-  if (entry->getType().is(TY_ENUM))
+  if (entryType.is(TY_ENUM))
     return SymbolType(TY_INT);
 
-  if (entry->getType().is(TY_STRUCT)) {
+  if (entryType.is(TY_STRUCT)) {
     // Collect the concrete template types
     std::vector<SymbolType> concreteTemplateTypes;
     if (node->templateTypeLst())
@@ -1504,7 +1508,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, node->fqTypeName, {}, concreteTemplateTypes));
   }
 
-  if (entry->getType().is(TY_INTERFACE)) {
+  if (entryType.is(TY_INTERFACE)) {
     // Check if template types are given
     if (node->templateTypeLst())
       throw SemanticError(node->templateTypeLst(), INTERFACE_WITH_TEMPLATE_LIST,
@@ -1518,7 +1522,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return node->setEvaluatedSymbolType(SymbolType(TY_INTERFACE, node->fqTypeName, {}, {}));
   }
 
-  throw std::runtime_error("Base type fall-through");
+  throw SemanticError(node, EXPECTED_TYPE, "Expected type, but got " + entryType.getName());
 }
 
 /*void TypeChecker::insertAnonStringStructSymbol(const ASTNode *declNode) {

@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/analyzer/builtins/error-printf-wrong-type3/source.spice:3:18:
-Types of printf call not matching: Template string expects string, char* or char[], but got int*
+Types of printf call not matching: The placeholder string expects string, char* or char[], but got int
 
 3  printf("%s", &integer);
                 ^^^^^^^^

@@ -80,10 +80,10 @@ public p SymbolTable.insert(
     const ste::SymbolState state,
     const ast::AstNode* declNode
 ) {
-    bool isGlobal = this.parent == nil<SymbolTable*>;
+    bool global = this.parent == nil<SymbolTable*>;
     unsigned int orderIndex = this.symbols.getSize();
     // Insert into symbols map
-    symbols.insert(ste::SymbolTableEntry{name, symbolType, this, specifiers, state, declNode, orderIndex, isGlobal});
+    symbols.insert(ste::SymbolTableEntry{name, symbolType, this, specifiers, state, declNode, orderIndex, global});
 }
 
 /**
