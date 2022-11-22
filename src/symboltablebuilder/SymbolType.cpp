@@ -292,7 +292,10 @@ SymbolSuperType SymbolType::getSuperType() const { return typeChain.back().super
  *
  * @return Sub type
  */
-std::string SymbolType::getSubType() const { return typeChain.back().subType; }
+std::string SymbolType::getSubType() const {
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC, TY_STROBJ}));
+  return typeChain.back().subType;
+}
 
 /**
  * Retrieve the base type of the current type. E.g. int of int[]*[]**

@@ -229,10 +229,18 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   for (const auto &field : node->fields()) {
     // Visit field type
     auto fieldType = std::any_cast<SymbolType>(visit(field->dataType()));
+
     // Add to field types
     fieldTypes.push_back(fieldType);
+
+    // Update type of field entry
+    SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
+    assert(fieldEntry != nullptr);
+    fieldEntry->updateType(fieldType, false);
+
     if (!fieldType.isBaseType(TY_GENERIC))
       continue;
+
     // Check if the template type list contains this type
     if (std::none_of(usedTemplateTypesGeneric.begin(), usedTemplateTypesGeneric.end(),
                      [&](const GenericType &t) { return t == fieldType.getBaseType(); }))
@@ -264,9 +272,9 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   std::vector<Function *> signatures;
   signatures.reserve(node->signatures().size());
   for (SignatureNode *signature : node->signatures()) {
-    auto method = std::any_cast<Function *>(visit(signature));
+    auto method = std::any_cast<std::vector<Function *> *>(visit(signature));
     assert(method != nullptr);
-    signatures.push_back(method);
+    signatures.insert(signatures.end(), method->begin(), method->end());
   }
 
   // Change to root scope

@@ -325,7 +325,8 @@ Function *Scope::insertSubstantiatedFunction(const Function &function, const AST
   assert(functions.contains(codeLocStr));
   functions.at(codeLocStr).emplace(mangledFctName, function);
   // Add symbol table entry for the function
-  SymbolTableEntry *functionEntry = insert(function.getSignature(), function.entry->specifiers, declNode);
+  const SymbolSpecifiers ss = function.entry ? function.entry->specifiers : SymbolSpecifiers::of(function.getSymbolType());
+  SymbolTableEntry *functionEntry = insert(function.getSignature(), ss, declNode);
   functionEntry->updateType(function.getSymbolType(), true);
   return &functions.at(codeLocStr).at(mangledFctName);
 }
@@ -473,7 +474,7 @@ void Scope::insertInterface(const Interface &interface) {
   interfaces.insert({interface.name, interface});
   // Add symbol table entry for the interface
   SymbolTableEntry *interfaceEntry = insert(interface.name, interface.specifiers, interface.declNode);
-  interfaceEntry->updateType(SymbolType(TY_INTERFACE), false);
+  interfaceEntry->updateType(SymbolType(TY_INTERFACE), true);
 }
 
 /**

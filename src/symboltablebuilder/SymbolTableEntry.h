@@ -27,7 +27,7 @@ public:
   SymbolTableEntry(std::string name, SymbolType type, SymbolTable *symbolTable, SymbolSpecifiers specifiers,
                    const ASTNode *declNode, size_t orderIndex, const bool global)
       : name(std::move(name)), type(std::move(type)), symbolTable(symbolTable), specifiers(specifiers), declNode(declNode),
-        orderIndex(orderIndex), isGlobal(global){};
+        orderIndex(orderIndex), global(global){};
 
   // Public methods
   [[nodiscard]] const SymbolType &getType() const;
@@ -50,7 +50,7 @@ public:
   SymbolSpecifiers specifiers;
   const ASTNode *declNode;
   size_t orderIndex;
-  const bool isGlobal;
+  const bool global;
   bool isVolatile = false;
   bool isUsed = false;
 

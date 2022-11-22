@@ -168,7 +168,7 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   result["orderIndex"] = orderIndex;
   result["state"] = stateStr;
   result["specifiers"] = specifiers.toJSON();
-  result["isGlobal"] = isGlobal;
+  result["isGlobal"] = global;
   result["isVolatile"] = isVolatile;
   return result;
 }

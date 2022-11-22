@@ -33,6 +33,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Referenced undefined variable";
   case REFERENCED_UNDEFINED_STRUCT:
     return "Referenced undefined struct";
+  case USED_BEFORE_DECLARED:
+    return "Used before declared";
   case FUNCTION_AMBIGUITY:
     return "Function ambiguity";
   case STRUCT_AMBIGUITY:

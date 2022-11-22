@@ -71,7 +71,6 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
       NamedParamList namedParams;
       if (node->hasParams) {
         const std::vector<SymbolType> newParamTypes = manifestation.getParamTypes();
-        assert(newParamTypes.size() == node->paramLst()->params().size());
         for (int i = 0; i < newParamTypes.size(); i++) {
           // Get param declaration node
           const DeclStmtNode *paramDecl = node->paramLst()->params()[i];
@@ -141,7 +140,6 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
       NamedParamList namedParams;
       if (node->hasParams) {
         const std::vector<SymbolType> newParamTypes = manifestation.getParamTypes();
-        assert(newParamTypes.size() == node->paramLst()->params().size());
         for (int i = 0; i < newParamTypes.size(); i++) {
           // Get param declaration node
           const DeclStmtNode *paramDecl = node->paramLst()->params()[i];

@@ -78,20 +78,16 @@ digraph {
  L1C61_prefixUnaryExpr -> L1C61_postfixUnaryExpr;
  L1C61_atomicExpr [color="lightgreen",label="atomicExpr"];
  L1C61_postfixUnaryExpr -> L1C61_atomicExpr;
- L1C61_value [color="lightgreen",label="value"];
- L1C61_atomicExpr -> L1C61_value;
- L1C61_primitiveValue [color="lightgreen",label="primitiveValue"];
- L1C61_value -> L1C61_primitiveValue;
+ L1C61_constant [color="lightgreen",label="constant"];
+ L1C61_atomicExpr -> L1C61_constant;
  L1C61 [color="lightblue",label="TRUE: true"];
- L1C61_primitiveValue -> L1C61
+ L1C61_constant -> L1C61
  L1C65 [color="lightblue",label="RPAREN: )"];
  L1C0_functionDef -> L1C65
- L1C67_scope [color="lightgreen",label="scope"];
- L1C0_functionDef -> L1C67_scope;
  L1C67 [color="lightblue",label="LBRACE: {"];
- L1C67_scope -> L1C67
+ L1C0_functionDef -> L1C67
  L2C4_stmtLst [color="lightgreen",label="stmtLst"];
- L1C67_scope -> L2C4_stmtLst;
+ L1C0_functionDef -> L2C4_stmtLst;
  L2C4_stmt [color="lightgreen",label="stmt"];
  L2C4_stmtLst -> L2C4_stmt;
  L2C4_assignExpr [color="lightgreen",label="assignExpr"];
@@ -298,16 +294,14 @@ digraph {
  L4C11_prefixUnaryExpr -> L4C11_postfixUnaryExpr;
  L4C11_atomicExpr [color="lightgreen",label="atomicExpr"];
  L4C11_postfixUnaryExpr -> L4C11_atomicExpr;
- L4C11_value [color="lightgreen",label="value"];
- L4C11_atomicExpr -> L4C11_value;
- L4C11_primitiveValue [color="lightgreen",label="primitiveValue"];
- L4C11_value -> L4C11_primitiveValue;
+ L4C11_constant [color="lightgreen",label="constant"];
+ L4C11_atomicExpr -> L4C11_constant;
  L4C11 [color="lightblue",label="DOUBLE_LIT: 0.1"];
- L4C11_primitiveValue -> L4C11
+ L4C11_constant -> L4C11
  L4C14 [color="lightblue",label="SEMICOLON: ;"];
  L4C4_stmt -> L4C14
  L5C0 [color="lightblue",label="RBRACE: }"];
- L1C67_scope -> L5C0
+ L1C0_functionDef -> L5C0
  L7C0_functionDef [color="lightgreen",label="functionDef"];
  L1C0_entry -> L7C0_functionDef;
  L7C0 [color="lightblue",label="F: f"];
@@ -340,12 +334,10 @@ digraph {
  L7C25_declStmt -> L7C32
  L7C42 [color="lightblue",label="RPAREN: )"];
  L7C0_functionDef -> L7C42
- L7C44_scope [color="lightgreen",label="scope"];
- L7C0_functionDef -> L7C44_scope;
  L7C44 [color="lightblue",label="LBRACE: {"];
- L7C44_scope -> L7C44
+ L7C0_functionDef -> L7C44
  L8C4_stmtLst [color="lightgreen",label="stmtLst"];
- L7C44_scope -> L8C4_stmtLst;
+ L7C0_functionDef -> L8C4_stmtLst;
  L8C4_stmt [color="lightgreen",label="stmt"];
  L8C4_stmtLst -> L8C4_stmt;
  L8C4_assignExpr [color="lightgreen",label="assignExpr"];
@@ -468,16 +460,14 @@ digraph {
  L9C11_prefixUnaryExpr -> L9C11_postfixUnaryExpr;
  L9C11_atomicExpr [color="lightgreen",label="atomicExpr"];
  L9C11_postfixUnaryExpr -> L9C11_atomicExpr;
- L9C11_value [color="lightgreen",label="value"];
- L9C11_atomicExpr -> L9C11_value;
- L9C11_primitiveValue [color="lightgreen",label="primitiveValue"];
- L9C11_value -> L9C11_primitiveValue;
+ L9C11_constant [color="lightgreen",label="constant"];
+ L9C11_atomicExpr -> L9C11_constant;
  L9C11 [color="lightblue",label="DOUBLE_LIT: 0.3"];
- L9C11_primitiveValue -> L9C11
+ L9C11_constant -> L9C11
  L9C14 [color="lightblue",label="SEMICOLON: ;"];
  L9C4_stmt -> L9C14
  L10C0 [color="lightblue",label="RBRACE: }"];
- L7C44_scope -> L10C0
+ L7C0_functionDef -> L10C0
  L12C0_mainFunctionDef [color="lightgreen",label="mainFunctionDef"];
  L1C0_entry -> L12C0_mainFunctionDef;
  L12C0 [color="lightblue",label="F: f"];
@@ -494,12 +484,10 @@ digraph {
  L12C0_mainFunctionDef -> L12C11
  L12C12 [color="lightblue",label="RPAREN: )"];
  L12C0_mainFunctionDef -> L12C12
- L12C14_scope [color="lightgreen",label="scope"];
- L12C0_mainFunctionDef -> L12C14_scope;
  L12C14 [color="lightblue",label="LBRACE: {"];
- L12C14_scope -> L12C14
+ L12C0_mainFunctionDef -> L12C14
  L13C4_stmtLst [color="lightgreen",label="stmtLst"];
- L12C14_scope -> L13C4_stmtLst;
+ L12C0_mainFunctionDef -> L13C4_stmtLst;
  L13C4_stmt [color="lightgreen",label="stmt"];
  L13C4_stmtLst -> L13C4_stmt;
  L13C4_declStmt [color="lightgreen",label="declStmt"];
@@ -588,12 +576,10 @@ digraph {
  L13C29_prefixUnaryExpr -> L13C29_postfixUnaryExpr;
  L13C29_atomicExpr [color="lightgreen",label="atomicExpr"];
  L13C29_postfixUnaryExpr -> L13C29_atomicExpr;
- L13C29_value [color="lightgreen",label="value"];
- L13C29_atomicExpr -> L13C29_value;
- L13C29_primitiveValue [color="lightgreen",label="primitiveValue"];
- L13C29_value -> L13C29_primitiveValue;
+ L13C29_constant [color="lightgreen",label="constant"];
+ L13C29_atomicExpr -> L13C29_constant;
  L13C29 [color="lightblue",label="INT_LIT: 1"];
- L13C29_primitiveValue -> L13C29
+ L13C29_constant -> L13C29
  L13C30 [color="lightblue",label="COMMA: ,"];
  L13C29_argLst -> L13C30
  L13C32_assignExpr [color="lightgreen",label="assignExpr"];
@@ -628,12 +614,10 @@ digraph {
  L13C32_prefixUnaryExpr -> L13C32_postfixUnaryExpr;
  L13C32_atomicExpr [color="lightgreen",label="atomicExpr"];
  L13C32_postfixUnaryExpr -> L13C32_atomicExpr;
- L13C32_value [color="lightgreen",label="value"];
- L13C32_atomicExpr -> L13C32_value;
- L13C32_primitiveValue [color="lightgreen",label="primitiveValue"];
- L13C32_value -> L13C32_primitiveValue;
+ L13C32_constant [color="lightgreen",label="constant"];
+ L13C32_atomicExpr -> L13C32_constant;
  L13C32 [color="lightblue",label="FALSE: false"];
- L13C32_primitiveValue -> L13C32
+ L13C32_constant -> L13C32
  L13C37 [color="lightblue",label="RPAREN: )"];
  L13C14_functionCall -> L13C37
  L13C38 [color="lightblue",label="SEMICOLON: ;"];
@@ -798,16 +782,14 @@ digraph {
  L15C19_prefixUnaryExpr -> L15C19_postfixUnaryExpr;
  L15C19_atomicExpr [color="lightgreen",label="atomicExpr"];
  L15C19_postfixUnaryExpr -> L15C19_atomicExpr;
- L15C19_value [color="lightgreen",label="value"];
- L15C19_atomicExpr -> L15C19_value;
- L15C19_primitiveValue [color="lightgreen",label="primitiveValue"];
- L15C19_value -> L15C19_primitiveValue;
+ L15C19_constant [color="lightgreen",label="constant"];
+ L15C19_atomicExpr -> L15C19_constant;
  L15C19 [color="lightblue",label="STRING_LIT: \"test\""];
- L15C19_primitiveValue -> L15C19
+ L15C19_constant -> L15C19
  L15C25 [color="lightblue",label="RPAREN: )"];
  L15C4_functionCall -> L15C25
  L15C26 [color="lightblue",label="SEMICOLON: ;"];
  L15C4_stmt -> L15C26
  L16C0 [color="lightblue",label="RBRACE: }"];
- L12C14_scope -> L16C0
+ L12C0_mainFunctionDef -> L16C0
 }
