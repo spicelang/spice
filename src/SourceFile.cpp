@@ -127,7 +127,7 @@ void SourceFile::runASTBuilder() {
   antlrCtx.parser->reset();
 
   // Create global scope
-  globalScope = std::make_unique<Scope>(nullptr, SCOPE_GLOBAL);
+  globalScope = std::make_unique<Scope>(nullptr, SCOPE_GLOBAL, &ast->codeLoc);
 
   timer.stop();
   printStatusMessage("AST Builder", IO_CST, IO_AST, &timer, compilerOutput.times.astBuilder);
@@ -193,7 +193,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   printStatusMessage("Import Collector", IO_AST, IO_AST, &timer, compilerOutput.times.importCollector);
 }
 
-void SourceFile::runSymbolTableBuilder() { // NOLINT(misc-no-recursion)
+void SourceFile::runSymbolTableBuilder() {
   // Skip if restored from cache
   if (restoredFromCache)
     return;
@@ -201,11 +201,7 @@ void SourceFile::runSymbolTableBuilder() { // NOLINT(misc-no-recursion)
   Timer timer;
   timer.start();
 
-  // Build symbol table of dependencies first
-  for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runSymbolTableBuilder();
-
-  // Then build symbol table of the current file
+  // Build symbol table of the current file
   SymbolTableBuilder symbolTableBuilder(resourceManager, this);
   symbolTableBuilder.visit(static_cast<EntryNode *>(ast.get()));
 
@@ -439,10 +435,10 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
   runASTVisualizer();
   runImportCollector();
   runSymbolTableBuilder();
-  runTypeCheckerFirst();
 }
 
 void SourceFile::runMiddleEnd() {
+  runTypeCheckerFirst();
   runTypeCheckerSecond();
   runBorrowChecker();
   runEscapeAnalyzer();

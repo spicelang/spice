@@ -52,7 +52,7 @@ public:
   size_t orderIndex;
   const bool global;
   bool isVolatile = false;
-  bool isUsed = false;
+  bool used = false;
 
 private:
   // Members

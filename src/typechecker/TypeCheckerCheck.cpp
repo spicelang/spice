@@ -11,7 +11,7 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
   SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
   assert(functionEntry != nullptr);
   functionEntry->updateType(SymbolType(TY_FUNCTION), false);
-  functionEntry->isUsed = true;
+  functionEntry->used = true;
 
   // Change to function body scope
   currentScope = node->fctScope;
@@ -20,14 +20,14 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
   SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
   resultEntry->updateType(SymbolType(TY_INT), false);
-  resultEntry->isUsed = true;
+  resultEntry->used = true;
 
   // Visit param list
   if (node->takesArgs)
     visit(node->paramLst());
 
   // Visit statements in new scope
-  visit(node->stmtLst());
+  visit(node->body());
 
   // Leave main function body scope
   currentScope = rootScope;
@@ -46,7 +46,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 
     for (auto &[mangledName, manifestation] : *manifestations) {
       // Skip non-substantiated or already checked functions
-      if (!manifestation.isFullySubstantiated() || manifestation.isAlreadyTypeChecked)
+      if (!manifestation.isFullySubstantiated() || manifestation.alreadyTypeChecked)
         continue;
 
       // Change scope to concrete struct specialization scope
@@ -101,7 +101,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
       currentScope = rootScope;
 
       // Do not type-check this manifestation again
-      manifestation.isAlreadyTypeChecked = true;
+      manifestation.alreadyTypeChecked = true;
 
       // Increase the symbolTypeIndex
       node->symbolTypeIndex++;
@@ -122,7 +122,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 
     for (auto &[mangledName, manifestation] : *manifestations) {
       // Skip non-substantiated or already checked procedures
-      if (!manifestation.isFullySubstantiated() || manifestation.isAlreadyTypeChecked)
+      if (!manifestation.isFullySubstantiated() || manifestation.alreadyTypeChecked)
         continue;
 
       // Change scope to concrete struct specialization scope
@@ -170,7 +170,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
       currentScope = rootScope;
 
       // Do not type-check this manifestation again
-      manifestation.isAlreadyTypeChecked = true;
+      manifestation.alreadyTypeChecked = true;
 
       // Increase the symbolTypeIndex
       node->symbolTypeIndex++;

@@ -77,7 +77,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   saveErrorMessage(fctDefNode, ctx);
 
   // Extract function name
-  fctDefNode->functionName = getIdentifier(ctx->IDENTIFIER().back());
+  fctDefNode->functionName = fctDefNode->fqFunctionName = getIdentifier(ctx->IDENTIFIER().back());
   if (ctx->IDENTIFIER().size() > 1) {
     fctDefNode->structName = getIdentifier(ctx->IDENTIFIER().front());
     fctDefNode->fqFunctionName = fctDefNode->structName + "." + fctDefNode->functionName;
@@ -114,7 +114,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   saveErrorMessage(procDefNode, ctx);
 
   // Extract procedure name
-  procDefNode->procedureName = getIdentifier(ctx->IDENTIFIER().back());
+  procDefNode->procedureName = procDefNode->fqProcedureName = getIdentifier(ctx->IDENTIFIER().back());
   if (ctx->IDENTIFIER().size() > 1) {
     procDefNode->structName = getIdentifier(ctx->IDENTIFIER().front());
     procDefNode->fqProcedureName = procDefNode->structName + "." + procDefNode->procedureName;

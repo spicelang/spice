@@ -46,9 +46,9 @@ public:
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   const ASTNode *declNode;
-  bool isGenericSubstantiation = false;
-  bool isUsed = false;
+  bool genericSubstantiation = false;
+  bool used = false;
 
   // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, fieldTypes, templateTypes, interfaceTypes, isGenericSubstantiation, isUsed)
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, fieldTypes, templateTypes, interfaceTypes, genericSubstantiation, used)
 };

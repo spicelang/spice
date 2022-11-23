@@ -28,5 +28,5 @@ public:
   std::vector<Function *> methods;
   Scope *interfaceScope = nullptr;
   const ASTNode *declNode;
-  bool isUsed = false;
+  bool used = false;
 };

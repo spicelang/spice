@@ -7,8 +7,14 @@
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 Scope::~Scope() {
-  for (const auto &child : children)
-    delete child.second;
+  // Check if the scope was already destroyed
+  if (!parent)
+    return;
+  // Destroy the scope
+  for (const auto &[name, scope] : children)
+    delete scope;
+  // Mark the scope as destroyed
+  parent = nullptr;
 }
 
 /**
@@ -16,10 +22,11 @@ Scope::~Scope() {
  *
  * @param scopeName Name of the child scope
  * @param scopeType Type of the child scope
+ * @param codeLoc Code location of the scope
  * @return Child scope (heap allocated)
  */
-Scope *Scope::createChildScope(const std::string &scopeName, const ScopeType &scopeType) {
-  children.insert({scopeName, new Scope(this, scopeType)});
+Scope *Scope::createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc) {
+  children.insert({scopeName, new Scope(this, scopeType, codeLoc)});
   return children.at(scopeName);
 }
 
@@ -518,7 +525,7 @@ std::vector<CompilerWarning> Scope::collectWarnings() const { // NOLINT(misc-no-
   // Visit own symbols
   for (const auto &[key, entry] : symbolTable.symbols) {
     // Do not produce a warning if the symbol is used or has a special name
-    if (entry.isUsed || entry.name == UNUSED_VARIABLE_NAME)
+    if (entry.used || entry.name == UNUSED_VARIABLE_NAME)
       continue;
   }
 

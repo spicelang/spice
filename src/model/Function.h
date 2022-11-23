@@ -63,9 +63,9 @@ public:
   std::vector<GenericType> templateTypes;
   SymbolTableEntry *entry = nullptr;
   const ASTNode *declNode = nullptr;
-  bool isGenericSubstantiation = false;
-  bool isAlreadyTypeChecked = false;
-  bool isUsed = false;
+  bool genericSubstantiation = false;
+  bool alreadyTypeChecked = false;
+  bool used = false;
 
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, thisType, returnType, paramList, templateTypes)
