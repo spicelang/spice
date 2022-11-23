@@ -156,7 +156,7 @@ public:
 
   // Public get methods
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
@@ -1306,6 +1306,7 @@ public:
   std::vector<std::string> functionNameFragments;
   bool hasTemplateTypes = false;
   bool hasArgs = false;
+  bool isConstructorCall = false;
   Function *calledFunction;
 };
 

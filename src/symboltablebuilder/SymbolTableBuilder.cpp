@@ -32,21 +32,21 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 
   // Insert symbol for main function
   SymbolTableEntry *mainFctEntry = currentScope->insert(node->getSignature(), SymbolSpecifiers::of(TY_FUNCTION), node);
-  mainFctEntry->isUsed = true;
+  mainFctEntry->used = true;
 
   // Create scope for main function body
-  node->fctScope = currentScope = rootScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY);
+  node->fctScope = currentScope = rootScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->body()->codeLoc);
 
   // Declare variable for the return value in the function scope
   SymbolTableEntry *resultVarEntry = node->fctScope->insert(RETURN_VARIABLE_NAME, SymbolSpecifiers::of(TY_INT), node);
-  resultVarEntry->isUsed = true;
+  resultVarEntry->used = true;
 
   // Visit arguments in new scope
   if (node->takesArgs)
     visit(node->paramLst());
 
   // Visit function body in new scope
-  visit(node->stmtLst());
+  visit(node->body());
 
   // Return to root scope
   currentScope = rootScope;
@@ -79,7 +79,8 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   }
 
   // Create scope for the function
-  node->fctScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY);
+  node->fctScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->body()->codeLoc);
 
   // Create symbol for 'this' variable
   if (node->isMethod) {
@@ -104,6 +105,11 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   // Insert symbol for function with a temporary name, depending on the code location
   // this has to be done due to overloading and because not having any types
   node->entry = currentScope->insert(node->getTemporaryName(), specifiers, node);
+
+  // Add to external name registry
+  // if a function has overloads, they both refer to the same entry in the registry. So we only register the name once
+  if (!sourceFile->getNameRegistryEntry(node->fqFunctionName))
+    sourceFile->addNameRegistryEntry(node->fqFunctionName, /*entry=*/nullptr, node->fctScope, true);
 
   // Leave the struct scope
   if (node->isMethod)
@@ -136,7 +142,8 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   }
 
   // Create scope for the procedure
-  node->procScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY);
+  node->procScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->body()->codeLoc);
 
   // Create symbol for 'this' variable
   if (node->isMethod) {
@@ -159,6 +166,11 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // this has to be done due to overloading and because not having any types
   node->entry = currentScope->insert(node->getTemporaryName(), specifiers, node);
 
+  // Add to external name registry
+  // if a procedure has overloads, they both refer to the same entry in the registry. So we only register the name once
+  if (!sourceFile->getNameRegistryEntry(node->fqProcedureName))
+    sourceFile->addNameRegistryEntry(node->fqProcedureName, /*entry=*/nullptr, node->procScope, true);
+
   // Leave the struct scope
   if (node->isMethod)
     currentScope = node->structScope->parent;
@@ -172,7 +184,8 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
     throw SemanticError(node, STRUCT_DECLARED_TWICE, "Duplicate struct '" + node->structName + "'");
 
   // Create scope for the struct
-  node->structScope = currentScope = rootScope->createChildScope(STRUCT_SCOPE_PREFIX + node->structName, SCOPE_STRUCT);
+  node->structScope = currentScope =
+      rootScope->createChildScope(STRUCT_SCOPE_PREFIX + node->structName, SCOPE_STRUCT, &node->codeLoc);
 
   // Visit struct fields
   for (FieldNode *field : node->fields())
@@ -207,7 +220,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
 
   // Create scope for the interface
   node->interfaceScope = currentScope =
-      rootScope->createChildScope(INTERFACE_SCOPE_PREFIX + node->interfaceName, SCOPE_INTERFACE);
+      rootScope->createChildScope(INTERFACE_SCOPE_PREFIX + node->interfaceName, SCOPE_INTERFACE, &node->codeLoc);
 
   // Visit signatures
   for (SignatureNode *signature : node->signatures())
@@ -241,7 +254,7 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
     throw SemanticError(node, ENUM_DECLARED_TWICE, "Duplicate interface '" + node->enumName + "'");
 
   // Create scope for the enum
-  node->enumScope = currentScope = rootScope->createChildScope(ENUM_SCOPE_PREFIX + node->enumName, SCOPE_ENUM);
+  node->enumScope = currentScope = rootScope->createChildScope(ENUM_SCOPE_PREFIX + node->enumName, SCOPE_ENUM, &node->codeLoc);
 
   // Visit items
   visit(node->itemLst());
@@ -323,7 +336,7 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
 
 std::any SymbolTableBuilder::visitThreadDef(ThreadDefNode *node) {
   // Create scope for the thread body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_THREAD_BODY);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_THREAD_BODY, &node->body()->codeLoc);
   currentScope->symbolTable.capturingRequired = true; // Requires capturing because the LLVM IR will end up in a separate function
 
   // Visit body
@@ -337,7 +350,7 @@ std::any SymbolTableBuilder::visitThreadDef(ThreadDefNode *node) {
 
 std::any SymbolTableBuilder::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Create scope for the unsafe block body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_UNSAFE_BODY);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_UNSAFE_BODY, &node->body()->codeLoc);
 
   // Visit body
   visit(node->body());
@@ -350,7 +363,7 @@ std::any SymbolTableBuilder::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
 
 std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
   // Create scope for the loop body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FOR_BODY);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FOR_BODY, &node->body()->codeLoc);
 
   // Visit loop variable declaration
   visit(node->initDecl());
@@ -366,7 +379,7 @@ std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
 
 std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
   // Create scope for the loop body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FOREACH_BODY);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FOREACH_BODY, &node->body()->codeLoc);
 
   // Visit index variable declaration
   if (node->idxVarDecl()) {
@@ -394,7 +407,7 @@ std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
 
 std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
   // Create scope for the loop body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_WHILE_BODY);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_WHILE_BODY, &node->body()->codeLoc);
 
   // Visit condition
   visit(node->condition());
@@ -410,7 +423,8 @@ std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
 
 std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
   // Create scope for the then body
-  node->thenBodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_IF_ELSE_BODY);
+  node->thenBodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), SCOPE_IF_ELSE_BODY, &node->thenBody()->codeLoc);
 
   // Visit condition
   visit(node->condition());
@@ -436,7 +450,8 @@ std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
   }
 
   // Create scope for the else body
-  node->elseBodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_IF_ELSE_BODY);
+  node->elseBodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), SCOPE_IF_ELSE_BODY, &node->body()->codeLoc);
 
   // Visit else body
   visit(node->body());
@@ -449,7 +464,8 @@ std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
 
 std::any SymbolTableBuilder::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Create scope for the anonymous block body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_ANONYMOUS_BLOCK_BODY);
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), SCOPE_ANONYMOUS_BLOCK_BODY, &node->body()->codeLoc);
 
   // Visit body
   visit(node->body());

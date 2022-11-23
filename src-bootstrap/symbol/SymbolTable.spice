@@ -96,7 +96,7 @@ public p SymbolTable.insert(
 public p SymbolTable.insertAnonymous(const st::SymbolType symbolType, const ast::AstNode* declNode) {
     string name = "anon." + declNode.codeLoc.toString();
     this.insert(name, symbolType, ss::SymbolSpecifiers(symbolType), ste::SymbolState.DECLARED, declNode);
-    this.lookupAnonymous(declNode.codeLoc).isUsed = true;
+    this.lookupAnonymous(declNode.codeLoc).used = true;
 }
 
 /**

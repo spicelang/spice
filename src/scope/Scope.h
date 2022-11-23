@@ -42,12 +42,12 @@ enum ScopeType {
 class Scope {
 public:
   // Constructors
-  Scope(Scope *parent, const ScopeType &scopeType) : parent(parent), type(scopeType) {}
+  Scope(Scope *parent, const ScopeType &scopeType, const CodeLoc *codeLoc) : parent(parent), type(scopeType), codeLoc(codeLoc) {}
   ~Scope();
 
   // Public methods
   // Scope management
-  Scope *createChildScope(const std::string &scopeName, const ScopeType &scopeType);
+  Scope *createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc);
   void renameChildScope(const std::string &oldName, const std::string &newName);
   void copyChildScope(const std::string &oldName, const std::string &newName);
   [[nodiscard]] Scope *getGlobalScope();
@@ -98,6 +98,7 @@ public:
   std::unordered_map<std::string, Scope *> children;
   const ScopeType type;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable);
+  const CodeLoc *codeLoc{};
 
 private:
   // Private members

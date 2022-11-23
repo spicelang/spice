@@ -54,7 +54,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   SymbolTableEntry *resultVarEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultVarEntry != nullptr);
   resultVarEntry->updateType(returnType, false);
-  resultVarEntry->isUsed = true;
+  resultVarEntry->used = true;
 
   // Visit parameters
   std::vector<std::string> paramNames;
@@ -83,7 +83,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   functionEntry->updateType(SymbolType(TY_FUNCTION), false);
 
   // Build function object
-  Function spiceFunc(node->functionName, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node);
+  const Function spiceFunc(node->functionName, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node);
   currentScope->insertFunction(spiceFunc, &node->fctManifestations);
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
@@ -166,7 +166,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   procedureEntry->updateType(SymbolType(TY_PROCEDURE), false);
 
   // Build procedure object
-  Function spiceProc(node->procedureName, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node);
+  const Function spiceProc(node->procedureName, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node);
   currentScope->insertFunction(spiceProc, &node->procManifestations);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the procedure
