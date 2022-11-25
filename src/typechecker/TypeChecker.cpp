@@ -1229,8 +1229,8 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   long actualSize = 0;
   if (node->itemLst()) {
     actualSize = (long)node->itemLst()->args().size();
-    for (const auto &arg : node->itemLst()->args()) {
-      const auto itemType = std::any_cast<SymbolType>(visit(arg));
+    for (AssignExprNode *arg : node->itemLst()->args()) {
+      const SymbolType itemType = std::any_cast<ExprResult>(visit(arg)).type;
       if (actualItemType.is(TY_DYN)) // Perform type inference
         actualItemType = itemType;
       else if (itemType != actualItemType) // Check if types are matching
