@@ -1,92 +1,46 @@
 {
   "captures": [],
-  "children": [
-    {
-      "captures": [],
-      "children": [
-        {
-          "captures": [],
-          "children": [],
-          "name": "if:L2C5",
-          "symbols": []
-        }
-      ],
-      "name": "fibo(int): int",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "n",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "declared",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "main()",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    }
-  ],
   "symbols": [
     {
+      "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
       "name": "fibo(int): int",
-      "orderIndex": 0,
+      "orderIndex": 2,
       "specifiers": {
         "const": true,
         "public": false,
         "signed": false
       },
-      "state": "initialized",
+      "state": "destructed",
       "type": "function"
     },
     {
+      "codeLoc": "L6C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "main()",
+      "name": "main(int, string[])",
       "orderIndex": 1,
       "specifiers": {
         "const": true,
         "public": false,
         "signed": false
       },
-      "state": "initialized",
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L1C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "fibo:L1C1",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
       "type": "function"
     }
   ]

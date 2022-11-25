@@ -1,216 +1,88 @@
 {
   "captures": [],
-  "children": [
-    {
-      "captures": [],
-      "children": [],
-      "name": "calledFunction(int): double",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "mandatoryArg",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "declared",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "optionalArg",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": false
-          },
-          "state": "initialized",
-          "type": "bool"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 2,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "double"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "calledFunction(int,bool): double",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "mandatoryArg",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "declared",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "optionalArg",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": false
-          },
-          "state": "initialized",
-          "type": "bool"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 2,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "double"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "calledFunction(string): double",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "double"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "testString",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": false
-          },
-          "state": "declared",
-          "type": "string"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "main()",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "res",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "double"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    }
-  ],
   "symbols": [
     {
+      "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
       "name": "calledFunction(int): double",
-      "orderIndex": 0,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
-      "state": "initialized",
-      "type": "function"
-    },
-    {
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "calledFunction(int,bool): double",
-      "orderIndex": 1,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
-      "state": "initialized",
-      "type": "function"
-    },
-    {
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "calledFunction(string): double",
-      "orderIndex": 2,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
-      "state": "initialized",
-      "type": "function"
-    },
-    {
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "main()",
       "orderIndex": 3,
       "specifiers": {
         "const": true,
         "public": false,
         "signed": false
       },
-      "state": "initialized",
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L12C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main(int, string[])",
+      "orderIndex": 2,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L7C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "calledFunction:L7C1",
+      "orderIndex": 1,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L7C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "calledFunction(string): double",
+      "orderIndex": 5,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L1C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "calledFunction(int,bool): double",
+      "orderIndex": 4,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L1C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "calledFunction:L1C1",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
       "type": "function"
     }
   ]

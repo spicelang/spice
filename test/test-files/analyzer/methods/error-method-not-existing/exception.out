@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/analyzer/methods/error-method-not-existing/source.spice:12:14:
-Referenced undefined function: Function/Procedure 'Test.getInt()' could not be found
+Referenced undefined function: Function/procedure/struct could not be found
 
 12  result = test.getInt();
              ^^^^^^^^^^^^^
