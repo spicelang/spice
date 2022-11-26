@@ -63,5 +63,5 @@ private:
   void addCompileSubcommandOptions(CLI::App *subCmd);
 
   // Members
-  CLI::App app = CLI::App{"Spice Programming Language", "Spice"};
+  CLI::App app = CLI::App{"Spice Programming Language", "spice"};
 };

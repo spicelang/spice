@@ -10,7 +10,7 @@
 
 #include <gtest/gtest.h>
 
-#include <util/FileUtil.h>
+#include "util/FileUtil.h"
 
 #if OS_WINDOWS
 const char *const PATH_TEST_FILES = ".\\test-files\\";
