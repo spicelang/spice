@@ -57,7 +57,7 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 
 std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   // Build function specifiers
-  auto specifiers = SymbolSpecifiers::of(TY_FUNCTION);
+  SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_FUNCTION);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
@@ -120,7 +120,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
 std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // Build procedure specifiers
-  auto specifiers = SymbolSpecifiers::of(TY_PROCEDURE);
+  SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_PROCEDURE);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)

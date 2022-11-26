@@ -279,8 +279,8 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
 int CLIInterface::parse(int argc, char **argv) {
   try {
     app.parse(argc, argv);
-  } catch (const CLI::ParseError &e) {
-    return app.exit(e);
+  } catch (const CLI::ParseError &parseError) {
+    return app.exit(parseError);
   }
   return 0;
 }

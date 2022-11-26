@@ -8,8 +8,8 @@
 
 #include <gtest/gtest.h>
 
-#include <util/CommonUtil.h>
-#include <util/FileUtil.h>
+#include "util/CommonUtil.h"
+#include "util/FileUtil.h"
 
 #ifdef OS_UNIX
 #include <cstring> // Required by builds on Linux

@@ -9,8 +9,8 @@
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
 
-#include "TestUtil.h"
 #include "symboltablebuilder/SymbolTable.h"
+#include "util/TestUtil.h"
 #include <SourceFile.h>
 #include <cli/CLIInterface.h>
 #include <exception/LexerError.h>

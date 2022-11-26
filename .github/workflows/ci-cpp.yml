@@ -79,7 +79,7 @@ jobs:
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
           cd ./bin/test
-          ./spicetest false
+          ./spicetest --skip-github-tests
 
       - name: Generate coverage report
         run: |
