@@ -11,6 +11,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Change to function scope
   currentScope = node->fctScope;
 
+  // Check if all control paths in the function return
+  if (!node->returnsOnAllControlPaths())
+    throw SemanticError(node, NOT_ALL_CONTROL_PATHS_RETURN, "Not all control paths have a return statement");
+
   // Retrieve function template types
   if (node->hasTemplateTypes) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {

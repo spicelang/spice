@@ -1451,7 +1451,6 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
       std::string stringValue = parseString(ctx->STRING_LIT()->toString());
 
       constantNode->type = ConstantNode::TYPE_STRING;
-      constantNode->compileTimeStringValue = stringValue;
       constantNode->compileTimeValue.stringValue = constantNode->compileTimeStringValue.c_str();
       constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t6 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t6->getSymbol()->getType() == SpiceParser::TRUE) {

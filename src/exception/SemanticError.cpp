@@ -39,6 +39,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Function ambiguity";
   case STRUCT_AMBIGUITY:
     return "Struct ambiguity";
+  case NOT_ALL_CONTROL_PATHS_RETURN:
+    return "Not all control paths return";
   case VARIABLE_DECLARED_TWICE:
     return "Multiple declarations of the same variable";
   case GLOBAL_DECLARED_TWICE:

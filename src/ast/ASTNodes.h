@@ -40,6 +40,9 @@ public:
       delete child;
   }
 
+  // Friend classes
+  friend class ASTBuilder;
+
   // Virtual methods
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
 
@@ -104,8 +107,8 @@ public:
     symbolTypeIndex = SIZE_MAX;
   }
 
-  [[nodiscard]] const CompileTimeValue &getCompileTimeValue() const { // NOLINT(misc-no-recursion)
-    if (hasDirectCompileTimeValue || children.size() != 1)
+  [[nodiscard]] virtual const CompileTimeValue &getCompileTimeValue() const { // NOLINT(misc-no-recursion)
+    if (hasDirectCompileTimeValue || children.empty())
       return compileTimeValue;
     return children.front()->getCompileTimeValue();
   }
@@ -118,6 +121,10 @@ public:
     return children.front()->hasCompileTimeValue();
   }
 
+  [[nodiscard]] virtual bool returnsOnAllControlPaths() const {
+    return children.size() == 1 && children.front()->returnsOnAllControlPaths();
+  }
+
   // Public members
   ASTNode *parent;
   std::vector<ASTNode *> children;
@@ -125,8 +132,13 @@ public:
   std::string errorMessage;
   size_t symbolTypeIndex = SIZE_MAX;
   std::vector<SymbolType> symbolTypes;
+
+protected:
+  // Private members
   CompileTimeValue compileTimeValue = {};
   std::string compileTimeStringValue;
+
+private:
   bool hasDirectCompileTimeValue = false;
 };
 
@@ -188,6 +200,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
   [[nodiscard]] std::string getTemporaryName() const { return functionName + ":" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths() const override;
 
   // Public members
   std::string functionName;
@@ -424,6 +437,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths() const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -471,6 +485,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "while:" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths() const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -493,6 +508,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths() const override;
 
   // Public members
   Scope *thenBodyScope = nullptr;
@@ -514,6 +530,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths() const override;
 
   // Public members
   bool isElseIf = false;
@@ -566,6 +583,9 @@ public:
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStmtLst(this); }
+
+  // Other methods
+  [[nodiscard]] bool returnsOnAllControlPaths() const override;
 
   // Public members
   size_t complexity = 0;
@@ -807,6 +827,9 @@ public:
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
+  // Other methods
+  [[nodiscard]] bool returnsOnAllControlPaths() const override { return true; }
+
   // Public members
   bool hasReturnValue = false;
 };
@@ -962,6 +985,9 @@ public:
   // Public get methods
   [[nodiscard]] std::vector<LogicalOrExprNode *> operands() const { return getChildren<LogicalOrExprNode>(); }
 
+  // Other methods
+  [[nodiscard]] const CompileTimeValue &getCompileTimeValue() const override;
+
   bool isShortened = false;
 };
 
@@ -977,6 +1003,9 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<LogicalAndExprNode *> operands() const { return getChildren<LogicalAndExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] const CompileTimeValue &getCompileTimeValue() const override;
 };
 
 // ===================================================== LogicalAndExprNode ======================================================
