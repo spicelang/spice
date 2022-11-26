@@ -1,6 +1,6 @@
 f<int> main() {
     double[2] doubleArray;
-    doubleArray = { 1.44, 2.7, 333.1 };
+    doubleArray = { 1.44, 2.7 };
     double[3] anotherArray = doubleArray;
     printf("anotherArray[1]: %f\n", anotherArray[1]);
 }

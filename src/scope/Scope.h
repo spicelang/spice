@@ -98,7 +98,7 @@ public:
   std::unordered_map<std::string, Scope *> children;
   const ScopeType type;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable);
-  const CodeLoc *codeLoc{};
+  const CodeLoc *codeLoc = nullptr;
 
 private:
   // Private members
