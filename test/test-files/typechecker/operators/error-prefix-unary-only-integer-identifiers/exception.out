@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/operators/error-prefix-unary-only-integer-identifiers/source.spice:2:7:
+Wrong data type for operator: Cannot apply '--' operator on type string
+
+2  --"test";
+     ^^^^^^

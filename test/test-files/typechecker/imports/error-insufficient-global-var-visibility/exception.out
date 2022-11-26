@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/imports/error-insufficient-global-var-visibility/source.spice:4:34:
+Insufficient symbol visibility: Cannot access 'globalTestVar' due to its private visibility
+
+4  esult: %d/n", src1::globalTestVar);
+                       ^^^^^^^^^^^^^

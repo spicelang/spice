@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/generics/error-not-in-template2/source.spice:4:15:
+Generic type not contained in template: Generic arg type not included in procedure template
+
+4  p printDyn<T>(T a1, U a2) {
+                 ^^^^^^^^^^

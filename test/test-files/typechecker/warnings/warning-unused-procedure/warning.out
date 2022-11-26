@@ -1,0 +1,1 @@
+[Warning] ./test-files/typechecker/warnings/warning-unused-procedure/source.spice:1:1: Unused procedure: The procedure 'unusedProcedure()' is unused

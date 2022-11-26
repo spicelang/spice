@@ -2,6 +2,8 @@
 
 #include <ast/ASTNodes.h>
 
+#include <symboltablebuilder/SymbolTableBuilder.h>
+
 bool FctDefNode::returnsOnAllControlPaths() const { return body()->returnsOnAllControlPaths(); }
 
 bool ForLoopNode::returnsOnAllControlPaths() const {
@@ -28,10 +30,10 @@ bool IfStmtNode::returnsOnAllControlPaths() const {
 }
 
 bool ElseStmtNode::returnsOnAllControlPaths() const {
-  if (isElseIf)
-    return ifStmt()->returnsOnAllControlPaths();
-  return body()->returnsOnAllControlPaths();
+  return isElseIf ? ifStmt()->returnsOnAllControlPaths() : body()->returnsOnAllControlPaths();
 }
+
+bool ThreadDefNode::returnsOnAllControlPaths() const { return false; }
 
 bool StmtLstNode::returnsOnAllControlPaths() const {
   // An empty statement list does not return at all
@@ -44,6 +46,10 @@ bool StmtLstNode::returnsOnAllControlPaths() const {
       return true;
   }
   return false;
+}
+
+bool AssignExprNode::returnsOnAllControlPaths() const {
+  return hasOperator && op == OP_ASSIGN && lhs()->postfixUnaryExpr()->atomicExpr()->identifier == RETURN_VARIABLE_NAME;
 }
 
 const CompileTimeValue &TernaryExprNode::getCompileTimeValue() const {

@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/methods/error-destructor-is-function/source.spice:5:1:
-Destructor must be a procedure: Destructors are not allowed to be of type function
-
-5  f<bool> TestStruct.dtor() {
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^

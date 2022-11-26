@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/arrays/error-out-of-bounds/source.spice:3:26:
-Array index out of bounds: You are trying to access element with index 15 of an array with size 10
-
-3  rintf("Test: %d/n", testArray[15]);
-                       ^^^^^^^^^^^^^

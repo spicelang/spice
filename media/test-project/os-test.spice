@@ -1,8 +1,5 @@
 f<bool> fct(bool i) {
-    while (false) {
-
-    }
-    return false;
+    //result = true;
 }
 
 f<int> main() {

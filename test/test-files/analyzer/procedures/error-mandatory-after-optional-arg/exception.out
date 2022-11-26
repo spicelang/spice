@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/procedures/error-mandatory-after-optional-arg/source.spice:1:44:
-Invalid argument order: Mandatory parameters must go before any optional parameters
-
-1  bool arg1 = false, int arg2) {
-                      ^^^^^^^^

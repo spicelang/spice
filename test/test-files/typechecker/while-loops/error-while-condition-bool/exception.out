@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/while-loops/error-while-condition-bool/source.spice:2:11:
+Condition must be bool: While loop condition must be of type bool
+
+2  while 5.6 {
+         ^^^

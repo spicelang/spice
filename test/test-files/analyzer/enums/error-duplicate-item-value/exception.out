@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/enums/error-duplicate-item-value/source.spice:3:5:
-Duplicate enum item value: Duplicate enum item value, please use another
-
-3  ITEM_NAME2 = 1,
-   ^^^^^^^^^^^^^^

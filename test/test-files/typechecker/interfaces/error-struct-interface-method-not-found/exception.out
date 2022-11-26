@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/interfaces/error-struct-interface-method-not-found/source.spice:9:1:
+Interface method not implemented: The struct 'AstNode' does not implement the method 'accept(Visitor*): bool', requested of interface 'Visitable'
+
+9  type AstNode struct : Visitable {}
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

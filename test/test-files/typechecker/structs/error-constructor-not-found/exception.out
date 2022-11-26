@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/structs/error-constructor-not-found/source.spice:7:29:
+Referenced undefined function: The struct 'TestStruct' does not provide a constructor
+
+7  Struct testStruct = TestStruct();
+                       ^^^^^^^^^^^^

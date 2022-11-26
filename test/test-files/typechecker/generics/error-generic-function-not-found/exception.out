@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/generics/error-generic-function-not-found/source.spice:7:5:
+Referenced undefined function: Function/Procedure 's1.Vector.setData(double)' could not be found
+
+7  v.setData(1.5);
+   ^^^^^^^^^^^^^^

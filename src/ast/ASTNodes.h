@@ -394,6 +394,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "thread:" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths() const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -966,6 +967,9 @@ public:
   [[nodiscard]] PrefixUnaryExprNode *lhs() const { return getChild<PrefixUnaryExprNode>(); }
   [[nodiscard]] TernaryExprNode *ternaryExpr() const { return getChild<TernaryExprNode>(); }
   [[nodiscard]] ThreadDefNode *threadDef() const { return getChild<ThreadDefNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool returnsOnAllControlPaths() const override;
 
   // Public members
   AssignOp op;

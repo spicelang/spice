@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/variables/error-global-var-different-type-assign/source.spice:1:32:
-Wrong data type for operator: Expected short, but got int
-
-1  ort unsignedShort = -10;
-                       ^^^

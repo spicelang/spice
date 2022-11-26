@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/variables/error-variable-declared-before-referenced/source.spice:2:26:
+Referenced undefined variable: The variable 'test' could not be found
+
+2  rintf("Output: %s", test);
+                       ^^^^

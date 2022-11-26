@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/builtins/error-printf-type-incompatibility/source.spice:6:36:
-Types of printf call not matching: The placeholder string expects char, but got string
-
-6  s is a string: %c", "test");
-                       ^^^^^^

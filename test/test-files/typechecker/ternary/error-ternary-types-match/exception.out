@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/ternary/error-ternary-types-match/source.spice:2:25:
+Wrong data type for operator: True and false operands in ternary must be of same data type
+
+2  double calcResult = 1 != 2 ? false : 1.0;
+                       ^^^^^^^^^^^^^^^^^^^^

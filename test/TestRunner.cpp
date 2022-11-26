@@ -166,16 +166,46 @@ void execTestCase(const TestCase &testCase) {
   SUCCEED();
 }
 
-class AnalyzerTests : public testing::TestWithParam<TestCase> {};
-TEST_P(AnalyzerTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, AnalyzerTests, testing::ValuesIn(TestUtil::collectTestCases("analyzer")), TestUtil::NameResolver());
+class LexerTests : public testing::TestWithParam<TestCase> {};
+TEST_P(LexerTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, LexerTests, testing::ValuesIn(TestUtil::collectTestCases("lexer", false)), TestUtil::NameResolver());
 
-class GeneratorTests : public testing::TestWithParam<TestCase> {};
-TEST_P(GeneratorTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, GeneratorTests, testing::ValuesIn(TestUtil::collectTestCases("generator")), TestUtil::NameResolver());
+class ParserTests : public testing::TestWithParam<TestCase> {};
+TEST_P(ParserTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, ParserTests, testing::ValuesIn(TestUtil::collectTestCases("parser", false)), TestUtil::NameResolver());
+
+class SymbolTableBuilderTests : public testing::TestWithParam<TestCase> {};
+TEST_P(SymbolTableBuilderTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, SymbolTableBuilderTests, testing::ValuesIn(TestUtil::collectTestCases("symboltablebuilder", true)),
+                         TestUtil::NameResolver());
+
+class TypeCheckerTests : public testing::TestWithParam<TestCase> {};
+TEST_P(TypeCheckerTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, TypeCheckerTests, testing::ValuesIn(TestUtil::collectTestCases("typechecker", true)),
+                         TestUtil::NameResolver());
+
+class BorrowCheckerTests : public testing::TestWithParam<TestCase> {};
+TEST_P(BorrowCheckerTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, BorrowCheckerTests, testing::ValuesIn(TestUtil::collectTestCases("borrowchecker", true)),
+                         TestUtil::NameResolver());
+
+class EscapeAnalyzerTests : public testing::TestWithParam<TestCase> {};
+TEST_P(EscapeAnalyzerTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, EscapeAnalyzerTests, testing::ValuesIn(TestUtil::collectTestCases("borrowchecker", true)),
+                         TestUtil::NameResolver());
+
+class IRGeneratorTests : public testing::TestWithParam<TestCase> {};
+TEST_P(IRGeneratorTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, IRGeneratorTests, testing::ValuesIn(TestUtil::collectTestCases("irgenerator", true)),
+                         TestUtil::NameResolver());
 
 class StdTests : public testing::TestWithParam<TestCase> {};
 TEST_P(StdTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, StdTests, testing::ValuesIn(TestUtil::collectTestCases("std")), TestUtil::NameResolver());
+INSTANTIATE_TEST_SUITE_P(, StdTests, testing::ValuesIn(TestUtil::collectTestCases("std", true)), TestUtil::NameResolver());
+
+class BenchmarkTests : public testing::TestWithParam<TestCase> {};
+TEST_P(BenchmarkTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, BenchmarkTests, testing::ValuesIn(TestUtil::collectTestCases("benchmark", false)),
+                         TestUtil::NameResolver());
 
 // GCOV_EXCL_STOP

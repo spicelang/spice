@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/imports/error-circular-import/source2.spice:1:1:
+Circular import detected: Circular import detected while importing './test-files/typechecker/imports/error-circular-import/source.spice'
+
+1  import "source" as s;
+   ^^^^^^^^^^^^^^^^^^^^^

@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/builtins/error-printf-wrong-type2/source.spice:2:18:
-Types of printf call not matching: The placeholder string expects double, but got bool
-
-2  printf("%f", true);
-                ^^^^

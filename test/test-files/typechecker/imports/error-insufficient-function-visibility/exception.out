@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/imports/error-insufficient-function-visibility/source.spice:4:15:
+Insufficient symbol visibility: Cannot access function/procedure 'testFunc(): int' due to its private visibility
+
+4  int res = src1.testFunc();
+             ^^^^^^^^^^^^^^^

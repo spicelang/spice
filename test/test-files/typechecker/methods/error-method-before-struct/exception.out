@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/methods/error-method-before-struct/source.spice:1:1:
+Referenced undefined struct: Struct 'Vec' could not be found
+
+1  public p Vec.print() {
+   ^^^^^^^^^^^^^^^^^^^^^^
