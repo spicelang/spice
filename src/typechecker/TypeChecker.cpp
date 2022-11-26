@@ -344,10 +344,6 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
 
     // Push symbolType to the declaration data type
     node->dataType()->setEvaluatedSymbolType(localVarType);
-
-    // If the rhs is an array and this was the array initialization, the compiler needs to know the array size
-    if (localVarType.isArray() && localVarType.getArraySize() == ARRAY_SIZE_UNKNOWN)
-      throw SemanticError(node->dataType(), ARRAY_SIZE_INVALID, "The declaration of an array type must have a size attached");
   }
 
   // Update the type of the variable
