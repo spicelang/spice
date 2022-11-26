@@ -21,19 +21,28 @@
  * @param suitePath Path to the test suite
  * @return Vector of tests cases
  */
-std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName) {
+std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName, bool useSubDirs) {
   std::string suitePath = std::string(PATH_TEST_FILES) + suiteName;
 
-  // Collect subdirectories of the given suite
-  std::vector<std::string> testGroupDirs = TestUtil::getSubdirs(suitePath);
-
-  // Convert them to test cases
   std::vector<TestCase> testCases;
   testCases.reserve(EXPECTED_NUMBER_OF_TESTS);
-  for (const std::string &groupDirName : testGroupDirs) {
-    std::string groupPath = suitePath + FileUtil::DIR_SEPARATOR + groupDirName;
-    for (const std::string &caseDirName : TestUtil::getSubdirs(groupPath)) {
-      TestCase tc = {toCamelCase(groupDirName), toCamelCase(caseDirName), groupPath + FileUtil::DIR_SEPARATOR + caseDirName};
+
+  if (useSubDirs) {
+    // Collect subdirectories of the given suite
+    const std::vector<std::string> testGroupDirs = TestUtil::getSubdirs(suitePath);
+
+    // Convert them to test cases
+    for (const std::string &groupDirName : testGroupDirs) {
+      const std::string groupPath = suitePath + FileUtil::DIR_SEPARATOR + groupDirName;
+      for (const std::string &caseDirName : TestUtil::getSubdirs(groupPath)) {
+        TestCase tc = {toCamelCase(groupDirName), toCamelCase(caseDirName), groupPath + FileUtil::DIR_SEPARATOR + caseDirName};
+        testCases.push_back(tc);
+      }
+    }
+  } else {
+    // Collect test cases
+    for (const std::string &caseDirName : TestUtil::getSubdirs(suitePath)) {
+      TestCase tc = {toCamelCase(suiteName), toCamelCase(caseDirName), suitePath + FileUtil::DIR_SEPARATOR + caseDirName};
       testCases.push_back(tc);
     }
   }

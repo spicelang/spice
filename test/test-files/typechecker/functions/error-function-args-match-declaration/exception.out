@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/functions/error-function-args-match-declaration/source.spice:6:5:
+Referenced undefined function: Function/procedure 'testFunction()' could not be found
+
+6  testFunction();
+   ^^^^^^^^^^^^^^

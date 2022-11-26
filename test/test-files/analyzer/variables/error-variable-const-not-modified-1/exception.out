@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/variables/error-variable-const-not-modified-1/source.spice:3:5:
-Cannot re-assign constant variable: Not re-assignable variable 'variable'
-
-3  variable = 3.2;
-   ^^^^^^^^

@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/structs/error-custom-type-unknown/source.spice:8:5:
+Unknown datatype: Unknown datatype 'NonExisting'
+
+8  NonExisting instance = Test { "
+   ^^^^^^^^^^^

@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/if-stmts/error-if-condition-bool/source.spice:2:8:
+Condition must be bool: If condition must be of type bool
+
+2  if 7 {
+      ^

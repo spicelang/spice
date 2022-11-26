@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/variables/error-variable-declared-only-once/source.spice:3:5:
+Multiple declarations of the same variable: The variable 'i' was declared more than once
+
+3  int i = 2;
+   ^^^^^^^^^

@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/generics/error-failing-type-condition/source.spice:8:16:
-Referenced undefined function: Function/Procedure 'max(short,short)' could not be found
-
-8  dyn test = max(1s, 2s);
-              ^^^^^^^^^^^

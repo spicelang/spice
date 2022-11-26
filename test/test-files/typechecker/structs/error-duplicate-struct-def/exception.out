@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/structs/error-duplicate-struct-def/source.spice:7:1:
+Multiple declarations of a struct with the same name: Duplicate struct 'Person'
+
+7  type Person struct {
+   ^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/operators/error-bitwise-operators-are-booleans-or-integers/source.spice:2:22:
+Wrong data type for operator: Cannot apply '|' operator on types string and int
+
+2  int calcResult = "test" | 6;
+                    ^^^^^^^^^^

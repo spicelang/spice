@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/methods/error-field-without-this/source.spice:13:18:
+Referenced undefined variable: The symbol 'size' could not be found. Missing 'this.' prefix?
+
+13  if (index <= size) { // size instead
+                 ^^^^

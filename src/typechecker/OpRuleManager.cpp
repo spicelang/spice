@@ -289,19 +289,19 @@ SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const std:
 
 SemanticError OpRuleManager::printErrorMessageBinary(const ASTNode *node, const std::string &name, const SymbolType &lhs,
                                                      const SymbolType &rhs) {
-  return SemanticError(node, OPERATOR_WRONG_DATA_TYPE,
-                       "Cannot apply '" + name + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true));
+  return {node, OPERATOR_WRONG_DATA_TYPE,
+          "Cannot apply '" + name + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true)};
 }
 
 SemanticError OpRuleManager::printErrorMessageUnary(const ASTNode *node, const std::string &name, const SymbolType &lhs) {
-  return SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + name + "' operator on type " + lhs.getName(true));
+  return {node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + name + "' operator on type " + lhs.getName(true)};
 }
 
 SemanticError OpRuleManager::printErrorMessageUnsafe(const ASTNode *node, const std::string &name, const SymbolType &lhs,
                                                      const SymbolType &rhs) {
-  return SemanticError(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
-                       "Cannot apply '" + name + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
-                           " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing.");
+  return {node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
+          "Cannot apply '" + name + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
+              " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing."};
 }
 void OpRuleManager::insertAnonStringStructSymbol(const ASTNode *declNode) {
   // Insert anonymous string symbol

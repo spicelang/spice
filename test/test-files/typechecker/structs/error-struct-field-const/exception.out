@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/structs/error-struct-field-const/source.spice:2:5:
+Specifier at illegal context: Struct fields cannot have the const specifier attached
+
+2  const string f1
+   ^^^^^

@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/operators/error-logical-operators-are-booleans/source.spice:2:9:
-Wrong data type for operator: Cannot apply '||' operator on types string and bool
-
-2  if ("test" || false) {
-       ^^^^^^^^^^^^^^^

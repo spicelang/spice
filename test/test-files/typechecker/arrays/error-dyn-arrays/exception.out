@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/arrays/error-dyn-arrays/source.spice:2:5:
+Dyn arrays not allowed: Just use the dyn type without '[]' instead
+
+2  dyn[] test = { "This", "i
+   ^^^^^

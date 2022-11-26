@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/variables/error-global-var-decl-twice/source.spice:3:1:
-Multiple declarations of the same global variable: Duplicate global variable 'GLOBAL_VAR'
-
-3  double GLOBAL_VAR = 4.567;
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^

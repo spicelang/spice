@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/analyzer/variables/error-global-var-struct-array/source.spice:8:7:
-Global of invalid type: Spice does not allow global variables of this type
-
-8  const dyn RULE_SET = {
-         ^^^

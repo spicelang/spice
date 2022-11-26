@@ -1,0 +1,1 @@
+[Warning] ./test-files/typechecker/warnings/warning-unused-function/source.spice:1:1: Unused function: The function 'unusedFunction(): string' is unused

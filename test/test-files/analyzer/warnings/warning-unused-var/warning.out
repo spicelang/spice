@@ -1,1 +1,0 @@
-[Warning] ./test-files/analyzer/warnings/warning-unused-var/source.spice:2:5: Unused variable: The variable 'unusedVar' is unused

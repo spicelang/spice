@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/operators/error-equality-operators-some-combinations/source.spice:2:9:
+Wrong data type for operator: Cannot apply '==' operator on types string and double
+
+2  if ("test" == 5.6) {
+       ^^^^^^^^^^^^^

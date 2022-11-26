@@ -57,7 +57,7 @@ public:
   };
 
   // Public static methods
-  static std::vector<TestCase> collectTestCases(const std::string &suiteName);
+  static std::vector<TestCase> collectTestCases(const std::string &suiteName, bool useSubDirs);
   static void checkRefMatch(
       const std::string &refPath, GetOutputFct getActualOutput,
       ModifyOutputFct modifyOutput = [](std::string &, std::string &) {});
