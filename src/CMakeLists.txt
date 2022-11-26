@@ -27,6 +27,7 @@ set(SOURCES
         ast/AbstractASTVisitor.h
         ast/ASTVisitor.cpp
         ast/ASTVisitor.h
+        ast/AstNodes.cpp
         ast/ASTNodes.h
         ast/ASTBuilder.cpp
         ast/ASTBuilder.h
@@ -126,15 +127,7 @@ set(SOURCES
         util/CompilerWarning.cpp
         util/CompilerWarning.h
         util/Timer.h
-
-        # ToDo: Remove
-        #analyzer/PreAnalyzerVisitor.cpp
-        #analyzer/PreAnalyzerVisitor.h
-        #analyzer/AnalyzerVisitor.cpp
-        #analyzer/AnalyzerVisitor.h
-        #generator/GeneratorVisitor.cpp
-        #generator/GeneratorVisitor.h
-        )
+)
 
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 

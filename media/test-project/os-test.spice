@@ -1,11 +1,22 @@
-f<bool> isValid(int input = 12) {
+f<bool> fct(bool i) {
+    while (false) {
+
+    }
+    return false;
+}
+
+f<int> main() {
+    fct(true);
+}
+
+/*f<bool> isValid(int input = 12) {
     printf("This is a test");
 }
 
 f<int> main() {
     bool isValid = isValid();
     printf("Is valid: %d", isValid);
-}
+}*/
 
 /*type NotAPointer struct {}
 
