@@ -1,6 +1,6 @@
 digraph {
  rankdir="TB";
- label="./test-files/typechecker/arbitrary/success-function-overloading/source.spice";
+ label="./test-files/typechecker/functions/success-function-overloading/source.spice";
  L1C1_Entry [color="lightgreen",label="Entry"];
  L1C1_FctDef [color="lightgreen",label="FctDef"];
  L1C1_Entry -> L1C1_FctDef;

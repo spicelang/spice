@@ -48,15 +48,6 @@ else()
     message(STATUS "Spice: Coverage reports disabled.")
 endif()
 
-# GH Actions
-option(SPICE_IS_GH_ACTIONS "Skip some tests, that do not work with GitHub actions" OFF)
-if (SPICE_IS_GH_ACTIONS)
-    message(STATUS "Spice: Skipping tests, that do not work with GH actions.")
-    ADD_DEFINITIONS(-DSPICE_IS_GH_ACTIONS)
-else()
-    message(STATUS "Spice: Running all the tests.")
-endif()
-
 # Add additional definitions
 IF (WIN32)
     ADD_DEFINITIONS(-DOS_WINDOWS)
