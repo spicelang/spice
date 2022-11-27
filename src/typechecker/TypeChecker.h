@@ -7,6 +7,7 @@
 #include <model/Function.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 #include <typechecker/OpRuleManager.h>
+#include <util/CompilerWarning.h>
 
 enum TypeCheckerMode { TC_MODE_PREPARE, TC_MODE_CHECK };
 
@@ -32,6 +33,7 @@ public:
   // Public methods
   std::any visitEntry(EntryNode *node) override;
   std::any visitMainFctDef(MainFctDefNode *node) override;
+  std::any visitMainFctDefPrepare(MainFctDefNode *node);
   std::any visitMainFctDefCheck(MainFctDefNode *node);
   std::any visitFctDef(FctDefNode *node) override;
   std::any visitFctDefPrepare(FctDefNode *node);
@@ -61,6 +63,7 @@ public:
   std::any visitElseStmt(ElseStmtNode *node) override;
   std::any visitAssertStmt(AssertStmtNode *node) override;
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
+  std::any visitStmtLst(StmtLstNode *node) override;
   std::any visitParamLst(ParamLstNode *node) override;
   std::any visitField(FieldNode *node) override;
   std::any visitSignature(SignatureNode *node) override;
@@ -108,6 +111,7 @@ private:
   Scope *currentScope = nullptr;
   Scope *accessScope = nullptr;
   const TypeCheckerMode typeCheckerMode;
+  std::vector<CompilerWarning> &warnings;
 
   // Private methods
   /*void insertAnonStringStructSymbol(const ASTNode *declNode);

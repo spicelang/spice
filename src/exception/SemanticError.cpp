@@ -39,8 +39,6 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Function ambiguity";
   case STRUCT_AMBIGUITY:
     return "Struct ambiguity";
-  case NOT_ALL_CONTROL_PATHS_RETURN:
-    return "Not all control paths return";
   case VARIABLE_DECLARED_TWICE:
     return "Multiple declarations of the same variable";
   case GLOBAL_DECLARED_TWICE:
@@ -69,7 +67,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Global of invalid type";
   case GLOBAL_CONST_WITHOUT_VALUE:
     return "Global const without value";
-  case FUNCTION_WITHOUT_RETURN_STMT:
+  case MISSING_RETURN_STMT:
     return "Missing return statement";
   case INVALID_PARAM_ORDER:
     return "Invalid argument order";

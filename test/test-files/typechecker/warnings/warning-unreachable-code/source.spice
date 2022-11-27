@@ -1,0 +1,5 @@
+f<int> main() {
+    printf("Working ...");
+    return 0;
+    printf("Unreachable");
+}

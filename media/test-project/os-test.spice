@@ -1,9 +1,8 @@
-f<bool> fct(bool i) {
-    //result = true;
-}
-
 f<int> main() {
-    fct(true);
+    printf("Working ...");
+    while (true) {
+    }
+    printf("Unreachable");
 }
 
 /*f<bool> isValid(int input = 12) {
