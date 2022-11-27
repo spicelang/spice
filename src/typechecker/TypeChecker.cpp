@@ -348,17 +348,26 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
 }
 
 std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
-  // Visit data type
-  auto localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
-
-  // Visit the right side
+  SymbolType localVarType;
   if (node->hasAssignment) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+    // Visit the right side
+    auto [rhsTy, rhsEntry] = std::any_cast<ExprResult>(visit(node->assignExpr()));
+
+    // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
+    if (rhsEntry != nullptr && rhsEntry->anonymous)
+      currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
+
+    // Visit data type
+    localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
+
     // Check if type has to be inferred or both types are fixed
     localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy);
 
     // Push symbolType to the declaration data type
     node->dataType()->setEvaluatedSymbolType(localVarType);
+  } else {
+    // Visit data type
+    localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
   }
 
   // Update the type of the variable
@@ -906,7 +915,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     node->opQueue.pop();
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(operandType)};
+  return ExprResult{node->setEvaluatedSymbolType(operandType), operandEntry};
 }
 
 std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
@@ -1051,7 +1060,6 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
   // Check if is an imported variable
   if (accessScope->isImportedBy(currentScope)) {
-    assert(varEntry->global); // If it is imported, it must be a global variable
     // Check if the entry is public
     if (!varEntry->specifiers.isPublic())
       throw SemanticError(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility");
@@ -1155,7 +1163,8 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Check if the target symbol is a struct
   SymbolType thisType(TY_DYN);
   if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
-    const std::string structName = symbolEntry->name;
+    const NameRegistryEntry *structRegistryEntry = registryEntry;
+    const std::string structName = structRegistryEntry->targetEntry->name;
     // Append the actual function name 'ctor' to the saved names
     node->functionNameFragments.emplace_back(CTOR_FUNCTION_NAME);
     node->fqFunctionName += ".";
@@ -1167,11 +1176,11 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     if (!registryEntry)
       throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor");
     // Set the 'this' type of the function to the struct type
-    thisType = symbolEntry->getType();
+    thisType = symbolEntry->getType().replaceBaseSubType(structRegistryEntry->name);
     // Mark the call node as constructor call
     node->isConstructorCall = true;
     // Set the struct to used
-    symbolEntry->used = true;
+    structRegistryEntry->targetEntry->used = true;
   }
 
   // Visit template type hints
@@ -1230,8 +1239,15 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
 
   // Retrieve return type
   SymbolType returnType = spiceFunc->returnType;
-  if (spiceFunc->isProcedure() || spiceFunc->returnType.is(TY_DYN))
+  if (node->isConstructorCall) {
+    // Add anonymous symbol to keep track of de-allocation
+    currentScope->symbolTable.insertAnonymous(thisType, node);
+
+    returnType = thisType;
+  } else if (spiceFunc->isProcedure() || spiceFunc->returnType.is(TY_DYN)) {
     returnType = SymbolType(TY_BOOL);
+  }
+
   return ExprResult{node->setEvaluatedSymbolType(returnType)};
 }
 
@@ -1267,14 +1283,18 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + node->fqStructName + "'");
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *structEntry = registryEntry->targetEntry;
-  SymbolType structType = structEntry->getType();
   Scope *structScope = accessScope = registryEntry->targetScope;
+
+  // Get struct type and change it to the fully qualified name for identifying without ambiguities
+  SymbolType structType = structEntry->getType().replaceBaseSubType(registryEntry->name);
 
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
-  if (node->templateTypeLst())
+  if (node->templateTypeLst()) {
+    concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
     for (const auto &dataType : node->templateTypeLst()->dataTypes())
       concreteTemplateTypes.push_back(std::any_cast<SymbolType>(visit(dataType)));
+  }
 
   // Get the struct instance
   Struct *spiceStruct = structScope->parent->matchStruct(currentScope, structEntry->name, concreteTemplateTypes, node);
@@ -1307,9 +1327,6 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       const SymbolTableEntry *expectedField = structScope->symbolTable.lookupByIndex(i);
       assert(expectedField != nullptr);
       SymbolType expectedType = expectedField->getType();
-      // Replace expected type with the capture name
-      if (expectedType.is(TY_STRUCT))
-        expectedType = expectedType.replaceBaseSubType(node->fqStructName);
       // Check if type matches declaration
       if (actualType != expectedType)
         throw SemanticError(assignExpr, FIELD_TYPE_NOT_MATCHING,
@@ -1319,9 +1336,9 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   }
 
   // Insert anonymous symbol to keep track of dtor calls for de-allocation
-  currentScope->symbolTable.insertAnonymous(structType, node);
+  SymbolTableEntry *anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
-  return ExprResult{node->setEvaluatedSymbolType(structType)};
+  return ExprResult{node->setEvaluatedSymbolType(structType), anonymousEntry};
 }
 
 std::any TypeChecker::visitDataType(DataTypeNode *node) {
@@ -1411,22 +1428,16 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return node->setEvaluatedSymbolType(*genericType);
   }
 
-  SymbolTableEntry *entry;
-  if (isImported) { // Imported
-    // Check if the type exists in the exported names registry
-    const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqTypeName);
-    if (!registryEntry)
-      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'");
-    assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
-    entry = registryEntry->targetEntry;
-    accessScope = registryEntry->targetScope->parent;
-  } else { // Not imported
-    entry = currentScope->lookup(node->fqTypeName);
-    if (!entry)
-      throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'");
-    accessScope = rootScope; // Structs, enums and interfaces can only be declared in the root scope
-  }
-  const SymbolType entryType = entry->getType();
+  // Check if the type exists in the exported names registry
+  const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqTypeName);
+  if (!registryEntry)
+    throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'");
+  assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
+  SymbolTableEntry *entry = registryEntry->targetEntry;
+  accessScope = registryEntry->targetScope->parent;
+
+  // Get struct type and change it to the fully qualified name for identifying without ambiguities
+  SymbolType entryType = entry->getType().replaceBaseSubType(registryEntry->name);
 
   // Enums can early-return
   if (entryType.is(TY_ENUM))
@@ -1445,7 +1456,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     if (spiceStruct)
       spiceStruct->used = true;
 
-    return node->setEvaluatedSymbolType(SymbolType(TY_STRUCT, node->fqTypeName, {}, concreteTemplateTypes));
+    return node->setEvaluatedSymbolType(entryType);
   }
 
   if (entryType.is(TY_INTERFACE)) {
@@ -1459,7 +1470,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     assert(spiceInterface != nullptr);
     spiceInterface->used = true;
 
-    return node->setEvaluatedSymbolType(SymbolType(TY_INTERFACE, node->fqTypeName, {}, {}));
+    return node->setEvaluatedSymbolType(entryType);
   }
 
   throw SemanticError(node, EXPECTED_TYPE, "Expected type, but got " + entryType.getName());

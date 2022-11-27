@@ -40,6 +40,7 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, const AST
   std::string name = "anon." + declNode->codeLoc.toString();
   insert(name, SymbolSpecifiers::of(type), declNode);
   SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc);
+  anonSymbol->anonymous = true;
   anonSymbol->used = true;
   return anonSymbol;
 }
@@ -153,6 +154,13 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
   // Otherwise, return nullptr
   return nullptr;
 }
+
+/**
+ * Deletes an existing anonymous symbol
+ *
+ * @param name Anonymous symbol name
+ */
+void SymbolTable::deleteAnonymous(const std::string &name) { symbols.erase(name); }
 
 /**
  * Stringify a symbol table to a human-readable form. This is used to realize dumps of symbol tables

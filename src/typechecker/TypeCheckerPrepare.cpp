@@ -101,10 +101,12 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
       paramTypes.push_back({param.type, param.isOptional});
-      if (!param.type.is(TY_GENERIC))
+      if (!param.type.getBaseType().is(TY_GENERIC))
         continue;
       // Check if the type is present in the template for generic types
-      if (std::none_of(usedGenericTypes.begin(), usedGenericTypes.end(), [&](const GenericType &t) { return t == param.type; }))
+      const bool found = std::none_of(usedGenericTypes.begin(), usedGenericTypes.end(),
+                                      [&](const GenericType &t) { return t == param.type.getBaseType(); });
+      if (found)
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic argument type not included in function template types");
     }
@@ -190,10 +192,12 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
       paramTypes.push_back({param.type, param.isOptional});
-      if (!param.type.is(TY_GENERIC))
+      if (!param.type.getBaseType().is(TY_GENERIC))
         continue;
       // Check if the type is present in the template for generic types
-      if (std::none_of(usedGenericTypes.begin(), usedGenericTypes.end(), [&](const GenericType &t) { return t == param.type; }))
+      const bool found = std::none_of(usedGenericTypes.begin(), usedGenericTypes.end(),
+                                      [&](const GenericType &t) { return t == param.type.getBaseType(); });
+      if (found)
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic argument type not included in procedure template types");
     }

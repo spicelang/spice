@@ -3,7 +3,7 @@
 #pragma once
 
 #include <CompilerPass.h>
-#include <ast/ASTVisitor.h>
+#include <ast/ParallelizableASTVisitor.h>
 #include <irgenerator/DebugInfoGenerator.h>
 #include <irgenerator/OpRuleConversionsManager.h>
 #include <irgenerator/StdFunctionManager.h>
@@ -11,7 +11,7 @@
 // Forward declarations
 class SourceFile;
 
-class IRGenerator : private CompilerPass, public ASTVisitor {
+class IRGenerator : private CompilerPass, public ParallelizableASTVisitor {
 public:
   // Constructors
   IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
@@ -22,7 +22,7 @@ public:
   friend class DebugInfoGenerator;
 
   // Visitor methods
-  std::any visitEntry(EntryNode *node) override;
+  std::any visitEntry(const EntryNode *node) override;
 
   // Public methods
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");

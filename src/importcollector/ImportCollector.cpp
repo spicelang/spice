@@ -60,31 +60,6 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   const auto importedSourceFile = sourceFile->createSourceFile(node->importName, importPath, isStd);
   // Register it as a dependency to the current source file
   sourceFile->addDependency(importedSourceFile, node, node->importName, importPath);
-  // Register all external names of the imported source file to the current one
-  buildExportedNameRegistry(importedSourceFile.get(), node->importName);
 
   return nullptr;
-}
-
-/**
- * Acquire all publicly visible symbols from the imported source file and put them in the name registry of the current one.
- * Here, we also register privately visible symbols, to know that the symbol exist. The error handling regarding the visibility
- * is issued later in the pipeline.
- *
- * @param importedSourceFile Imported source file
- * @param importName First fragment of all fully-qualified symbol names from that import
- */
-void ImportCollector::buildExportedNameRegistry(SourceFile *importedSourceFile, const std::string &importName) {
-  auto &nameRegistry = sourceFile->exportedNameRegistry;
-  for (const auto &[originalName, entry] : importedSourceFile->exportedNameRegistry) {
-    // Add fully qualified name
-    const std::string newName = importName + "::" + originalName;
-#ifndef NDEBUG // Only fill predecessor in debug mode
-    nameRegistry.insert({newName, {entry.targetEntry, entry.targetScope, originalName}});
-#else
-    nameRegistry.insert({newName, entry});
-#endif
-    // Add the shortened name, considering the name collision
-    sourceFile->addNameRegistryEntry(originalName, entry.targetEntry, entry.targetScope, /*keepNewOnCollision=*/false);
-  }
 }

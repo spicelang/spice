@@ -1,14 +1,10 @@
-type TestStruct struct {
-    int field1
-    double field2
-}
-
-p TestStruct.ctor() {
-    this.field1 = 1;
-}
+import "os-test2" as src1;
+//import "os-test3" as src2;
 
 f<int> main() {
-    dyn testStruct = TestStruct(345);
+    //printf("Result: %d\n", src1::globalTestVar);
+    Test t = Test();
+    //printf("%d", t.t);
 }
 
 /*f<bool> isValid(int input = 12) {

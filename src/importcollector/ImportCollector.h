@@ -9,7 +9,6 @@
 /**
  * Jobs:
  * - Visit the import statements of a source file and register the imported files as dependencies to the current one
- * - Load the exposed symbols of the imported file and register them in the name registry of the current source file
  */
 class ImportCollector : private CompilerPass, public ASTVisitor {
 public:
@@ -24,7 +23,4 @@ public:
 private:
   // Private members
   const CliOptions &cliOptions;
-
-  // Private methods
-  void buildExportedNameRegistry(SourceFile *importedSourceFile, const std::string &importName);
 };

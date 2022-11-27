@@ -1536,7 +1536,7 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
       std::string fragment = t->toString();
       structInstantiationNode->structNameFragments.push_back(fragment);
       if (!structInstantiationNode->fqStructName.empty())
-        structInstantiationNode->fqStructName += ".";
+        structInstantiationNode->fqStructName += "::";
       structInstantiationNode->fqStructName += fragment;
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1645,7 +1645,7 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
       std::string fragment = t->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
       if (!customDataTypeNode->fqTypeName.empty())
-        customDataTypeNode->fqTypeName += ".";
+        customDataTypeNode->fqTypeName += "::";
       customDataTypeNode->fqTypeName += fragment;
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
