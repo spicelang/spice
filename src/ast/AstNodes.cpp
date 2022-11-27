@@ -4,7 +4,11 @@
 
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+bool MainFctDefNode::returnsOnAllControlPaths() const { return body()->returnsOnAllControlPaths(); }
+
 bool FctDefNode::returnsOnAllControlPaths() const { return body()->returnsOnAllControlPaths(); }
+
+bool ProcDefNode::returnsOnAllControlPaths() const { return body()->returnsOnAllControlPaths(); }
 
 bool ForLoopNode::returnsOnAllControlPaths() const {
   const AssignExprNode *cond = condAssign();
@@ -40,12 +44,16 @@ bool StmtLstNode::returnsOnAllControlPaths() const {
   if (children.empty())
     return false;
   // A statement list returns on all control paths, if the one statement returns on all control paths
-  for (auto it = children.rbegin(); it != children.rend(); ++it) {
-    const ASTNode *astNode = *it;
-    if (astNode->returnsOnAllControlPaths())
-      return true;
+  bool returns = false;
+  for (auto it = children.begin(); it != children.end(); ++it) {
+    ASTNode *astNode = *it;
+    if (returns) {
+      astNode->unreachable = true;
+    } else if (astNode->returnsOnAllControlPaths()) {
+      returns = true;
+    }
   }
-  return false;
+  return returns;
 }
 
 bool AssignExprNode::returnsOnAllControlPaths() const {

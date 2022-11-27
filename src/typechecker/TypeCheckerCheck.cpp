@@ -7,24 +7,8 @@
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
-  // Update main function symbol type
-  SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
-  assert(functionEntry != nullptr);
-  functionEntry->updateType(SymbolType(TY_FUNCTION), false);
-  functionEntry->used = true;
-
   // Change to function body scope
   currentScope = node->fctScope;
-
-  // Set type of 'result' variable to int
-  SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
-  assert(resultEntry != nullptr);
-  resultEntry->updateType(SymbolType(TY_INT), false);
-  resultEntry->used = true;
-
-  // Visit param list
-  if (node->takesArgs)
-    visit(node->paramLst());
 
   // Visit statements in new scope
   visit(node->body());

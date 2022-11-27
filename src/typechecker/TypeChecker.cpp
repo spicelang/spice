@@ -6,7 +6,8 @@
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 TypeChecker::TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode)
-    : CompilerPass(resourceManager, sourceFile), typeCheckerMode(typeCheckerMode), rootScope(sourceFile->globalScope.get()) {}
+    : CompilerPass(resourceManager, sourceFile), typeCheckerMode(typeCheckerMode), rootScope(sourceFile->globalScope.get()),
+      warnings(sourceFile->compilerOutput.warnings) {}
 
 std::any TypeChecker::visitEntry(EntryNode *node) {
   // Initialize
@@ -23,9 +24,10 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
 }
 
 std::any TypeChecker::visitMainFctDef(MainFctDefNode *node) {
-  if (typeCheckerMode == TC_MODE_CHECK)
+  if (typeCheckerMode == TC_MODE_PREPARE)
+    return visitMainFctDefPrepare(node);
+  else
     return visitMainFctDefCheck(node);
-  return nullptr;
 }
 
 std::any TypeChecker::visitFctDef(FctDefNode *node) {
@@ -268,6 +270,19 @@ std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Leave anonymous scope body scope
   currentScope = node->bodyScope->parent;
 
+  return nullptr;
+}
+
+std::any TypeChecker::visitStmtLst(StmtLstNode *node) {
+  for (ASTNode *stmt : node->children) {
+    // Print warning if statement is unreachable
+    if (stmt->unreachable) {
+      warnings.emplace_back(stmt->codeLoc, UNREACHABLE_CODE, "This statement is unreachable");
+      continue;
+    }
+    // Visit the statement
+    visit(stmt);
+  }
   return nullptr;
 }
 

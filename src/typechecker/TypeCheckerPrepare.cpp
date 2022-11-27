@@ -5,15 +5,44 @@
 #include <SourceFile.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
+  // Mark unreachable statements
+  node->returnsOnAllControlPaths();
+
+  // Update main function symbol type
+  SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
+  assert(functionEntry != nullptr);
+  functionEntry->updateType(SymbolType(TY_FUNCTION), false);
+  functionEntry->used = true;
+
+  // Change to function body scope
+  currentScope = node->fctScope;
+
+  // Set type of 'result' variable to int
+  SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+  assert(resultEntry != nullptr);
+  resultEntry->updateType(SymbolType(TY_INT), false);
+  resultEntry->used = true;
+
+  // Visit param list
+  if (node->takesArgs)
+    visit(node->paramLst());
+
+  // Leave main function body scope
+  currentScope = rootScope;
+
+  return nullptr;
+}
+
 std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   std::vector<GenericType> usedGenericTypes;
 
-  // Change to function scope
-  currentScope = node->fctScope;
-
   // Check if all control paths in the function return
   if (!node->returnsOnAllControlPaths())
-    throw SemanticError(node, NOT_ALL_CONTROL_PATHS_RETURN, "Not all control paths have a return statement");
+    throw SemanticError(node, MISSING_RETURN_STMT, "Not all control paths of this function have a return statement");
+
+  // Change to function scope
+  currentScope = node->fctScope;
 
   // Retrieve function template types
   if (node->hasTemplateTypes) {
@@ -104,6 +133,9 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
 std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   std::vector<GenericType> usedGenericTypes;
+
+  // Mark unreachable statements
+  node->returnsOnAllControlPaths();
 
   // Change to procedure scope
   currentScope = node->procScope;

@@ -54,6 +54,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused enum item";
   case UNUSED_VARIABLE:
     return "Unused variable";
+  case UNREACHABLE_CODE:
+    return "Unreachable code detected";
   case INTERFACE_WITHOUT_SIGNATURE:
     return "Interface without signature";
   case SINGLE_GENERIC_TYPE_CONDITION:

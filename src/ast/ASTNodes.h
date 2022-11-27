@@ -132,6 +132,7 @@ public:
   std::string errorMessage;
   size_t symbolTypeIndex = SIZE_MAX;
   std::vector<SymbolType> symbolTypes;
+  bool unreachable = false;
 
 protected:
   // Private members
@@ -173,6 +174,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
   [[nodiscard]] std::string getSignature() const { return takesArgs ? "main()" : "main(int, string[])"; }
+  bool returnsOnAllControlPaths() const override;
 
   // Public members
   SymbolTableEntry *entry = nullptr;
@@ -235,6 +237,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
   [[nodiscard]] std::string getTemporaryName() const { return procedureName + ":" + codeLoc.toString(); }
+  bool returnsOnAllControlPaths() const override;
 
   // Public members
   std::string procedureName;
