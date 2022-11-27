@@ -19,7 +19,7 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
     diGenerator.initializeDIBuilder(sourceFile->fileName, sourceFile->fileDir);
 }
 
-std::any IRGenerator::visitEntry(EntryNode *node) { return nullptr; }
+std::any IRGenerator::visitEntry(const EntryNode *node) { return nullptr; }
 
 llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) { // If there is already an alloca inst, insert right after that

@@ -1,15 +1,9 @@
-public type NestedSocket struct {
-    public string testString
-    long testLong
+public type Test struct {
+    public int t
 }
 
-public type Socket struct {
-    public int sock // Actual socket
-    short errorCode
-    public NestedSocket nested
+public p Test.ctor() {
+
 }
 
-public f<Socket> openServerSocket(unsigned short port) {
-    dyn nested = NestedSocket { "Test", 2345l };
-    return Socket{ 2, 0s, nested };
-}
+//const int globalTestVar = 123;

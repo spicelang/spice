@@ -83,8 +83,8 @@ public:
     // Public members
     SymbolSuperType superType = TY_DYN;
     std::string subType;
-    TypeChainElementData data;
-    std::vector<SymbolType> templateTypes;
+    TypeChainElementData data = {.arraySize = 0};
+    std::vector<SymbolType> templateTypes = {};
     llvm::Value *dynamicArraySize = nullptr;
 
     // Json serializer/deserializer
@@ -95,11 +95,11 @@ public:
   using TypeChain = std::vector<TypeChainElement>;
 
   // Constructors
-  explicit SymbolType(SymbolSuperType superType) : typeChain({{superType, "", {}, {}, nullptr}}) {}
-  SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({{superType, subType, {}, {}, nullptr}}) {}
+  explicit SymbolType(SymbolSuperType superType) : typeChain({TypeChainElement{superType}}) {}
+  SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({TypeChainElement{superType, subType}}) {}
   SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
              const std::vector<SymbolType> &templateTypes)
-      : typeChain({{superType, subType, data, templateTypes, nullptr}}) {}
+      : typeChain({TypeChainElement{superType, subType, data, templateTypes}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
   SymbolType() = default;
 
@@ -126,7 +126,7 @@ public:
   [[nodiscard]] SymbolSuperType getSuperType() const;
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;
-  void setTemplateTypes(std::vector<SymbolType> templateTypes);
+  void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
   [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] long getArraySize() const;

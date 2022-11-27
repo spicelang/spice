@@ -52,6 +52,7 @@ public:
   size_t orderIndex;
   const bool global;
   bool isVolatile = false;
+  bool anonymous = false;
   bool used = false;
 
 private:

@@ -308,15 +308,16 @@ SymbolType SymbolType::getBaseType() const {
   // Unwrap the chain until the base type can be retrieved
   while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_REF || chainCopy.back().superType == TY_ARRAY)
     chainCopy.pop_back();
-  // Check if it is of the given superType and subType
+  // Return the base type
   return SymbolType(chainCopy);
 }
 
 /**
  * Set the list of templates types
  */
-void SymbolType::setTemplateTypes(std::vector<SymbolType> templateTypes) {
-  typeChain.back().templateTypes = std::move(templateTypes);
+void SymbolType::setTemplateTypes(const std::vector<SymbolType> &templateTypes) {
+  assert(is(TY_STRUCT));
+  typeChain.back().templateTypes = templateTypes;
 }
 
 /**

@@ -72,11 +72,10 @@ struct CompilerOutput {
 };
 
 struct NameRegistryEntry {
+  std::string name;
   SymbolTableEntry *targetEntry;
   Scope *targetScope;
-#ifndef NDEBUG
-  std::string predecessorName; // Only for better debugging, not required for production
-#endif
+  std::string predecessorName;
 };
 
 class SourceFile {
@@ -124,7 +123,8 @@ public:
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   void collectAndPrintWarnings();
   void requestRuntimeModule(const RuntimeModuleName &moduleName);
-  void addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true);
+  void addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
+                            const std::string &predecessorName = "");
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
 
   // Public fields
@@ -151,6 +151,7 @@ private:
   GlobalResourceManager &resourceManager;
 
   // Private methods
+  void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
   void printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out,

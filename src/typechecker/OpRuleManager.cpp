@@ -305,7 +305,7 @@ SemanticError OpRuleManager::printErrorMessageUnsafe(const ASTNode *node, const 
 }
 void OpRuleManager::insertAnonStringStructSymbol(const ASTNode *declNode) {
   // Insert anonymous string symbol
-  SymbolType stringStructType(TY_STRING, "", {}, {});
+  const SymbolType stringStructType(TY_STRING, "");
   typeChecker->currentScope->symbolTable.insertAnonymous(stringStructType, declNode);
 
   // Enable string runtime

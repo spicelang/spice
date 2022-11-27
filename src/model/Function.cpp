@@ -54,31 +54,33 @@ std::string Function::getMangledName() const {
     returnTyStr = returnType.getName(false, true);
 
   // Param type string
-  std::string paramTyStr;
-  for (const Param &param : paramList) {
-    if (!paramTyStr.empty())
-      paramTyStr += "_";
-    paramTyStr += param.type.getName(false, true);
+  std::stringstream paramTyStr;
+  for (size_t i = 0; i < paramList.size(); i++) {
+    const Param &param = paramList.at(i);
+    if (i > 0)
+      paramTyStr << "_";
+    paramTyStr << param.type.getName(false, true);
     if (param.isOptional)
-      paramTyStr += "?";
+      paramTyStr << "?";
   }
 
   // Template type string
-  std::string templateTyStr;
-  for (const auto &templateType : templateTypes) {
-    if (!templateTyStr.empty())
-      templateTyStr += "_";
-    templateTyStr += templateType.getName(false, true);
+  std::stringstream templateTyStr;
+  for (size_t i = 0; i < templateTypes.size(); i++) {
+    if (i != 0)
+      templateTyStr << "_";
+    templateTyStr << templateTypes.at(i).getName(false, true);
   }
 
   // Construct mangled name
-  std::string mangledName = "_" + functionTyStr + "__" + thisTyStr + "__" + returnTyStr;
-  if (!templateTyStr.empty())
-    mangledName += "__" + templateTyStr;
-  mangledName += "__" + name;
-  if (!paramTyStr.empty())
-    mangledName += "__" + paramTyStr;
-  return mangledName;
+  std::stringstream mangledName;
+  mangledName << "_" << functionTyStr << "__" << thisTyStr << "__" << returnTyStr;
+  if (templateTyStr.rdbuf()->in_avail() > 0)
+    mangledName << "__" << templateTyStr.str();
+  mangledName << "__" << name;
+  if (paramTyStr.rdbuf()->in_avail() > 0)
+    mangledName << "__" << paramTyStr.str();
+  return mangledName.str();
 }
 
 /**
