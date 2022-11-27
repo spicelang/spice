@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/operators/error-additive-operators-some-combinations/source.spice:2:29:
 Wrong data type for operator: Cannot apply '+' operator on types bool and string
 
-2  calcResult = true + "test";
-                       ^^^^^^
+2  calcResult1 = true + "test";
+                        ^^^^^^

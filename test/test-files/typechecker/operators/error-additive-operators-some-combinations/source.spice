@@ -1,6 +1,6 @@
 f<int> main() {
-    int calcResult = true + "test";
-    double calcResult = false - 3.90;
-    string calcResult = true - 4;
-    bool calcResult = true + false;
+    int calcResult1 = true + "test";
+    double calcResult2 = false - 3.90;
+    string calcResult3 = true - 4;
+    bool calcResult4 = true + false;
 }

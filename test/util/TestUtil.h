@@ -20,6 +20,8 @@ const char *const PATH_TEST_FILES = "./test-files/";
 const unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
 const unsigned int IR_FILE_SKIP_LINES = 4; // Skip the first couple of lines, because they contain target dependent information
 extern bool updateRefs;
+extern bool runBenchmarks;
+extern bool skipNonGitHubTests;
 
 const char *const REF_NAME_SOURCE = "source.spice";
 const char *const REF_NAME_PARSE_TREE = "parse-tree.dot";
@@ -67,7 +69,7 @@ public:
   static std::vector<std::string> getFileContentLinesVector(const std::string &filePath);
   static std::string toCamelCase(std::string input);
   static std::string getDefaultExecutableName();
-  static bool isDisabled(const TestCase &testCase);
+  static bool isDisabled(const TestCase &testCase, const bool isGHActions);
 };
 
 // GCOV_EXCL_STOP

@@ -35,7 +35,9 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
 }
 
 std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
-  std::vector<GenericType> usedGenericTypes;
+  // Check if name is dtor
+  if (node->functionName == DTOR_FUNCTION_NAME)
+    throw SemanticError(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
 
   // Check if all control paths in the function return
   if (!node->returnsOnAllControlPaths())
@@ -45,6 +47,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   currentScope = node->fctScope;
 
   // Retrieve function template types
+  std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
@@ -132,15 +135,18 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 }
 
 std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
-  std::vector<GenericType> usedGenericTypes;
-
   // Mark unreachable statements
   node->returnsOnAllControlPaths();
+
+  // Check if dtor and has params
+  if (node->hasParams && node->procedureName == DTOR_FUNCTION_NAME)
+    throw SemanticError(node, DTOR_WITH_PARAMS, "It is not allowed to specify parameters for destructors");
 
   // Change to procedure scope
   currentScope = node->procScope;
 
   // Retrieve procedure template types
+  std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type

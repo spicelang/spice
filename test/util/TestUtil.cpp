@@ -171,16 +171,18 @@ std::string TestUtil::getDefaultExecutableName() {
   return executableName;
 }
 
-bool TestUtil::isDisabled(const TestCase &testCase) {
-  // Check if disabled
-  std::string disabledFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_SKIP_DISABLED;
-  if (FileUtil::fileExists(disabledFile))
+/**
+ * Check if the provided test case is disabled
+ *
+ * @param testCase Test case to check
+ * @param isGHActions Running tests with GitHub Actions
+ * @return Disabled or not
+ */
+bool TestUtil::isDisabled(const TestCase &testCase, const bool isGHActions) {
+  if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_SKIP_DISABLED))
     return true;
-#ifdef SPICE_IS_GH_ACTIONS
-  std::string disabledGHFile = testCase.testPath + CTL_SKIP_GH;
-  if (FileUtil::fileExists(disabledGHFile))
+  if (isGHActions && FileUtil::fileExists(testCase.testPath + CTL_SKIP_GH))
     return true;
-#endif
   return false;
 }
 

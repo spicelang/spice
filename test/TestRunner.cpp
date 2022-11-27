@@ -21,7 +21,7 @@
 
 void execTestCase(const TestCase &testCase) {
   // Check if test is disabled
-  if (TestUtil::isDisabled(testCase))
+  if (TestUtil::isDisabled(testCase, skipNonGitHubTests))
     GTEST_SKIP();
 
   // Create fake cli options

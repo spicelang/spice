@@ -782,15 +782,15 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
 
 std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
   // Check if at least one additive operator is applied
-  if (node->operands().size() > 1)
+  if (node->children.size() == 1)
     return visit(node->operands().front());
 
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through remaining operands
-  for (size_t i = 1; i < node->opQueue.size(); i++) {
+  for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
-    MultiplicativeExprNode *operand = node->operands()[i];
+    MultiplicativeExprNode *operand = node->operands()[i + 1];
     SymbolType operandType = std::any_cast<ExprResult>(visit(operand)).type;
 
     // Check operator
@@ -812,15 +812,15 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
 
 std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
   // Check if at least one multiplicative operator is applied
-  if (node->operands().size() > 1)
+  if (node->children.size() == 1)
     return visit(node->operands().front());
 
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through remaining operands
-  for (size_t i = 1; i < node->opQueue.size(); i++) {
+  for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
-    CastExprNode *operand = node->operands()[i];
+    CastExprNode *operand = node->operands()[i + 1];
     SymbolType operandType = std::any_cast<ExprResult>(visit(operand)).type;
 
     // Check operator
@@ -1139,7 +1139,7 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 }
 
 std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
-  const std::string &functionName = node->functionNameFragments.back();
+  std::string &functionName = node->functionNameFragments.back();
 
   // Check if this is a ctor call to the String type
   const bool isStringRt = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
@@ -1160,6 +1160,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     node->functionNameFragments.emplace_back(CTOR_FUNCTION_NAME);
     node->fqFunctionName += ".";
     node->fqFunctionName += CTOR_FUNCTION_NAME;
+    functionName = node->functionNameFragments.back();
     // Retrieve the name registry entry for the constructor
     registryEntry = sourceFile->getNameRegistryEntry(node->fqFunctionName);
     // Check if the struct was found

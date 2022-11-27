@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/functions/error-function-without-return/source.spice:1:1:
-Not all control paths return: Not all control paths have a return statement
+Missing return statement: Not all control paths of this function have a return statement
 
 1  f<bool> isValid(int input = 12) {
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
