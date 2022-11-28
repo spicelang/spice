@@ -84,7 +84,7 @@ public:
     SymbolSuperType superType = TY_DYN;
     std::string subType;
     TypeChainElementData data = {.arraySize = 0};
-    std::vector<SymbolType> templateTypes = {};
+    std::vector<SymbolType> templateTypes;
     llvm::Value *dynamicArraySize = nullptr;
 
     // Json serializer/deserializer
@@ -95,13 +95,13 @@ public:
   using TypeChain = std::vector<TypeChainElement>;
 
   // Constructors
+  SymbolType() = default;
   explicit SymbolType(SymbolSuperType superType) : typeChain({TypeChainElement{superType}}) {}
   SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({TypeChainElement{superType, subType}}) {}
   SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
              const std::vector<SymbolType> &templateTypes)
       : typeChain({TypeChainElement{superType, subType, data, templateTypes}}) {}
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
-  SymbolType() = default;
 
   // Public methods
   [[nodiscard]] SymbolType toPointer(const ASTNode *node, llvm::Value *dynamicSize = nullptr) const;

@@ -1147,7 +1147,7 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 }
 
 std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
-  std::string &functionName = node->functionNameFragments.back();
+  std::string functionName = node->functionNameFragments.back();
 
   // Check if this is a ctor call to the String type
   const bool isStringRt = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
