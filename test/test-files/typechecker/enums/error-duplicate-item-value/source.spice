@@ -5,5 +5,5 @@ type TestEnum enum {
 }
 
 f<int> main() {
-    printf("Item: %d", TestEnum.ITEM_NAME2);
+    printf("Item: %d", TestEnum::ITEM_NAME2);
 }

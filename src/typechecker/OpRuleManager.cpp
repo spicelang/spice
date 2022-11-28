@@ -20,9 +20,6 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const SymbolT
   // Allow char* = string
   if (lhs.isPointerOf(TY_CHAR) && rhs.is(TY_STRING))
     return lhs;
-  // Allow String (strobj) = String (struct)
-  if (lhs.is(TY_STROBJ) && rhs.is(TY_STRUCT, STROBJ_NAME))
-    return lhs;
   // Check primitive type combinations
   return validateBinaryOperation(node, ASSIGN_OP_RULES, "=", lhs, rhs);
 }
@@ -163,13 +160,6 @@ SymbolType OpRuleManager::getPlusResultType(const ASTNode *node, const SymbolTyp
       throw printErrorMessageUnsafe(node, "+", lhs, rhs);
   }
 
-  // Allow strobj + string
-  if (lhs.is(TY_STROBJ) && rhs.is(TY_STRING))
-    insertAnonStringStructSymbol(node);
-  // Allow strobj + strobj
-  if (lhs.is(TY_STROBJ) && rhs.is(TY_STROBJ))
-    insertAnonStringStructSymbol(node);
-
   return validateBinaryOperation(node, PLUS_OP_RULES, "+", lhs, rhs);
 }
 
@@ -193,14 +183,6 @@ SymbolType OpRuleManager::getMinusResultType(const ASTNode *node, const SymbolTy
 }
 
 SymbolType OpRuleManager::getMulResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs) {
-  // Allow strobj * <int|short|long>
-  if (lhs.is(TY_STROBJ) && rhs.isOneOf({TY_INT, TY_SHORT, TY_LONG}))
-    insertAnonStringStructSymbol(node);
-
-  // Allow <int|short|long> * strobj
-  if (lhs.isOneOf({TY_INT, TY_SHORT, TY_LONG}) && rhs.is(TY_STROBJ))
-    insertAnonStringStructSymbol(node);
-
   return validateBinaryOperation(node, MUL_OP_RULES, "*", lhs, rhs);
 }
 
@@ -272,8 +254,8 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, const SymbolTyp
 SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const std::vector<BinaryOpRule> &opRules,
                                                   const std::string &name, const SymbolType &lhs, const SymbolType &rhs) {
   for (const auto &rule : opRules) {
-    if (std::get<0>(rule) == lhs && std::get<1>(rule) == rhs)
-      return std::get<2>(rule);
+    if (std::get<0>(rule) == lhs.getSuperType() && std::get<1>(rule) == rhs.getSuperType())
+      return SymbolType(SymbolSuperType(std::get<2>(rule)));
   }
   throw printErrorMessageBinary(node, name, lhs, rhs);
 }
@@ -281,8 +263,8 @@ SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const std
 SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const std::vector<UnaryOpRule> &opRules,
                                                  const std::string &name, const SymbolType &lhs) {
   for (const auto &rule : opRules) {
-    if (std::get<0>(rule) == lhs)
-      return std::get<1>(rule);
+    if (std::get<0>(rule) == lhs.getSuperType())
+      return SymbolType(SymbolSuperType(std::get<2>(rule)));
   }
   throw printErrorMessageUnary(node, name, lhs);
 }
@@ -302,12 +284,4 @@ SemanticError OpRuleManager::printErrorMessageUnsafe(const ASTNode *node, const 
   return {node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
           "Cannot apply '" + name + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
               " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing."};
-}
-void OpRuleManager::insertAnonStringStructSymbol(const ASTNode *declNode) {
-  // Insert anonymous string symbol
-  const SymbolType stringStructType(TY_STRING, "");
-  typeChecker->currentScope->symbolTable.insertAnonymous(stringStructType, declNode);
-
-  // Enable string runtime
-  typeChecker->sourceFile->requestRuntimeModule(STRING_RT);
 }

@@ -20,7 +20,7 @@ const SymbolType &SymbolTableEntry::getType() const { return type; }
  * @param overwriteExistingType Overwrites the existing type without throwing an error
  */
 void SymbolTableEntry::updateType(const SymbolType &newType, bool overwriteExistingType) {
-  if (overwriteExistingType || type.is(TY_DYN)) {
+  if (overwriteExistingType || type.isOneOf({TY_INVALID, TY_DYN})) {
     type = newType;
   } else if (type.isBaseType(TY_STRING) && newType.is(TY_STRING)) {
     type = type.replaceBaseType(newType);

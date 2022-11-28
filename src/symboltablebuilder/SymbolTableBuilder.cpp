@@ -313,7 +313,7 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
   // Add the global to the symbol table
   node->entry = rootScope->insert(node->varName, specifiers, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->varName, node->entry, nullptr);
+  sourceFile->addNameRegistryEntry(node->varName, node->entry, currentScope);
 
   return nullptr;
 }

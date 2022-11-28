@@ -112,10 +112,4 @@ private:
   Scope *accessScope = nullptr;
   const TypeCheckerMode typeCheckerMode;
   std::vector<CompilerWarning> &warnings;
-
-  // Private methods
-  /*void insertAnonStringStructSymbol(const ASTNode *declNode);
-  void insertDestructorCall(const ASTNode *node, const SymbolTableEntry *varEntry);
-  void insertEmptyConstructorCall(const ASTNode *node, const SymbolTableEntry *varEntry);
-  void insertStructMethodCall(const ASTNode *node, const SymbolTableEntry *varEntry, const std::string &name);*/
 };

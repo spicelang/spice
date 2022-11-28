@@ -96,7 +96,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
     if (name == THIS_VARIABLE_NAME)
       continue;
     // For dtor calls, only anonymous structs are relevant
-    if (entry.getType().isOneOf({TY_STRUCT, TY_STROBJ}) && !entry.isDead() && entry.name.starts_with("anon."))
+    if (entry.getType().is(TY_STRUCT) && !entry.isDead() && entry.name.starts_with("anon."))
       varsGoingOutOfScope.push_back(&symbolTable.symbols.at(name));
   }
 
@@ -229,7 +229,7 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
         } else { // For arguments with non-generic type, check if the candidate type matches with the call
           const SymbolType &expected = argList[i].type;
           const SymbolType &actual = callArgTypes[i];
-          if (!equalsIgnoreArraySizes(actual, expected) && !(actual.is(TY_STROBJ) && expected.is(TY_STRUCT, STROBJ_NAME))) {
+          if (!equalsIgnoreArraySizes(actual, expected)) {
             differentArgTypes = true;
             break;
           }
@@ -494,7 +494,7 @@ size_t Scope::getFieldCount() const {
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols) {
     const SymbolType &symbolType = symbol.second.getType();
-    if (symbolType.isPrimitive() || symbolType.isOneOf({TY_STRUCT, TY_STROBJ}))
+    if (symbolType.isPrimitive() || symbolType.isOneOf({TY_STRUCT, TY_INTERFACE}))
       fieldCount++;
   }
   return fieldCount;
@@ -552,7 +552,7 @@ Scope *Scope::searchForScope(const ScopeType &scopeType) {
  *
  * @return Imported / not imported
  */
-bool Scope::isImportedBy(const Scope *askingScope) const {
+bool Scope::isImportedBy(Scope *askingScope) const {
   // Get root scope of the source file where askingScope scope lives
   const Scope *askingRootScope = askingScope;
   while (askingRootScope->type != SCOPE_GLOBAL && askingRootScope->parent)

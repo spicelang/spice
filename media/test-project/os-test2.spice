@@ -1,9 +1,7 @@
-public type Test struct {
-    public int t
+public type Vector1 struct {
+    int i2
 }
 
-public p Test.ctor() {
-
+public type Vector struct {
+    Vector1 i1
 }
-
-//const int globalTestVar = 123;

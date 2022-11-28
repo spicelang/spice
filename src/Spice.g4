@@ -69,13 +69,13 @@ additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: LPAREN dataType RPAREN prefixUnaryExpr | prefixUnaryExpr;
 prefixUnaryExpr: prefixUnaryOp* postfixUnaryExpr;
-postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | DOT postfixUnaryExpr | SCOPE_ACCESS postfixUnaryExpr | PLUS_PLUS | MINUS_MINUS)*;
-atomicExpr: constant | value | IDENTIFIER | builtinCall | LPAREN assignExpr RPAREN;
+postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS)*;
+atomicExpr: constant | value | IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values and types
 value: functionCall | arrayInitialization | structInstantiation | NIL LESS dataType GREATER;
 constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
-functionCall: IDENTIFIER (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
+functionCall: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACE argLst? RBRACE;
 structInstantiation: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 

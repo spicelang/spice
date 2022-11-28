@@ -264,7 +264,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Update type of struct entry
   SymbolTableEntry *structEntry = rootScope->lookupStrict(node->structName);
   assert(structEntry != nullptr);
-  const SymbolType structType(TY_STRUCT, node->structName, {}, usedTemplateTypes);
+  const SymbolType structType(TY_STRUCT, node->structName, {.structBodyScope = node->structScope}, usedTemplateTypes);
   structEntry->updateType(structType, false);
 
   // Change to struct scope

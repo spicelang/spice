@@ -27,8 +27,6 @@ const unsigned short SPECIFIER_DEFAULTS_CHAR = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_STRING = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_STROBJ = 0b0000;
-// Defaults: Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_BOOL = 0b0000;
 // Defaults: Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_PTR = 0b0000;

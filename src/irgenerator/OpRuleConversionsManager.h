@@ -15,6 +15,8 @@ class StdFunctionManager;
 class SymbolTable;
 struct CodeLoc;
 
+const uint32_t TY_STROBJ = SHRT_MAX; // Max of 16 bit value in 32 bit variable
+
 #define COMB(en1, en2) ((en1) | ((en2) << 16))
 
 /**
@@ -40,8 +42,8 @@ public:
                                SymbolTable *accessScope, const CodeLoc &codeLoc);
   llvm::Value *getMinusEqualInst(llvm::Value *lhs, llvm::Value *rhs, const SymbolType &lhsTy, const SymbolType &rhsTy,
                                  SymbolTable *accessScope);
-  PtrAndValue getMulEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy,
-                              SymbolTable *accessScope, const CodeLoc &codeLoc);
+  PtrAndValue getMulEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy, const SymbolType &rhsSTy,
+                              const CodeLoc &codeLoc);
   llvm::Value *getDivEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
   llvm::Value *getRemEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
   llvm::Value *getSHLEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy);
@@ -79,14 +81,17 @@ public:
   llvm::Value *getPostfixMinusMinusInst(llvm::Value *lhsV, const SymbolType &lhsTy);
   llvm::Value *getCastInst(llvm::Value *rhsV, const SymbolType &lhsTy, const SymbolType &rhsTy, SymbolTable *accessScope);
 
-  // Util methods
-  /*llvm::Value *propagateValueToStringObject(SymbolTable *accessScope, const SymbolType &symbolType, llvm::Value *operandPtr,
-                                            llvm::Value *operandValue, const CodeLoc &codeLoc);*/
-
 private:
   // Members
   llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;
   IRGenerator *irGenerator;
   const StdFunctionManager &stdFunctionManager;
+
+  // Private methods
+  [[nodiscard]] static inline uint32_t getTypeCombination(const SymbolType &lhsTy, const SymbolType &rhsTy) {
+    const uint32_t lhsSuperType = lhsTy.is(TY_STRUCT, STROBJ_NAME) ? TY_STROBJ : lhsTy.getSuperType();
+    const uint32_t rhsSuperType = rhsTy.is(TY_STRUCT, STROBJ_NAME) ? TY_STROBJ : rhsTy.getSuperType();
+    return COMB(lhsSuperType, rhsSuperType);
+  }
 };

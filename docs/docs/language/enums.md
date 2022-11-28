@@ -13,7 +13,7 @@ type Fruit enum {
 }
 
 f<int> main() {
-    printf("Test: %d", Fruit.MANGO);
+    printf("Test: %d", Fruit::MANGO);
 }
 ```
 

@@ -1,10 +1,8 @@
-import "os-test2" as src1;
-//import "os-test3" as src2;
+import "os-test2" as s1;
 
 f<int> main() {
-    //printf("Result: %d\n", src1::globalTestVar);
-    Test t = Test();
-    //printf("%d", t.t);
+    dyn s = s1::Vector{Vector1{12}};
+    printf("Result: %d\n", s.i);
 }
 
 /*f<bool> isValid(int input = 12) {
