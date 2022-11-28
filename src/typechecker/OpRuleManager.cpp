@@ -264,7 +264,7 @@ SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const std:
                                                  const std::string &name, const SymbolType &lhs) {
   for (const auto &rule : opRules) {
     if (std::get<0>(rule) == lhs.getSuperType())
-      return SymbolType(SymbolSuperType(std::get<2>(rule)));
+      return SymbolType(SymbolSuperType(std::get<1>(rule)));
   }
   throw printErrorMessageUnary(node, name, lhs);
 }

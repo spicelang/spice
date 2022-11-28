@@ -1,9 +1,0 @@
-type TestStruct struct {
-    int t1
-    double* t2
-}
-
-f<int> main() {
-    dyn ts = TestStruct{};
-    ts::t1 = 2;
-}
