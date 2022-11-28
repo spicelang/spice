@@ -136,9 +136,6 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
   if (is(TY_STRING))
     return llvm::Type::getInt8PtrTy(context);
 
-  if (is(TY_STROBJ))
-    return StdFunctionManager::getStrobjType(context);
-
   if (is(TY_BOOL))
     return llvm::Type::getInt1Ty(context);
 
@@ -293,7 +290,7 @@ SymbolSuperType SymbolType::getSuperType() const { return typeChain.back().super
  * @return Sub type
  */
 std::string SymbolType::getSubType() const {
-  assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC, TY_STROBJ}));
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
   return typeChain.back().subType;
 }
 
@@ -383,7 +380,7 @@ bool SymbolType::isSigned() const {
  * @param bodyScope Struct body scope
  */
 void SymbolType::setStructBodyScope(Scope *bodyScope) {
-  assert(isOneOf({TY_STRUCT, TY_STROBJ}));
+  assert(is(TY_STRUCT));
   typeChain.back().data.structBodyScope = bodyScope;
 }
 
@@ -393,7 +390,7 @@ void SymbolType::setStructBodyScope(Scope *bodyScope) {
  * @return Struct body scope
  */
 Scope *SymbolType::getStructBodyScope() const {
-  assert(isOneOf({TY_STRUCT, TY_STROBJ}));
+  assert(is(TY_STRUCT));
   return typeChain.back().data.structBodyScope;
 }
 
@@ -482,8 +479,6 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "char";
   case TY_STRING:
     return "string";
-  case TY_STROBJ:
-    return STROBJ_NAME;
   case TY_BOOL:
     return "bool";
   case TY_STRUCT: {

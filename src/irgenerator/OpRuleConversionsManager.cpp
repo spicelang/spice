@@ -20,7 +20,7 @@ PtrAndValue OpRuleConversionsManager::getPlusEqualInst(const PtrAndValue &lhsDat
   llvm::Value *lhsP = lhsData.ptr;
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return {.value = builder.CreateFAdd(lhsV, rhsV)};
   case COMB(TY_INT, TY_INT):
@@ -74,7 +74,7 @@ llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhsV, llvm
   // Unpack lhs
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFSub(lhsV, rhsV);
   case COMB(TY_INT, TY_INT):
@@ -112,14 +112,13 @@ llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhsV, llvm
 }
 
 PtrAndValue OpRuleConversionsManager::getMulEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
-                                                      const SymbolType &rhsSTy, SymbolTable *accessScope,
-                                                      const CodeLoc &codeLoc) {
+                                                      const SymbolType &rhsSTy, const CodeLoc &codeLoc) {
   // Unpack lhs
   llvm::Value *lhsV = lhsData.value;
   llvm::Value *lhsP = lhsData.ptr;
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return {.value = builder.CreateFMul(lhsV, rhsV)};
   case COMB(TY_INT, TY_INT):
@@ -174,7 +173,7 @@ llvm::Value *OpRuleConversionsManager::getDivEqualInst(llvm::Value *lhsV, llvm::
   // Unpack lhs
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFDiv(lhsV, rhsV);
   case COMB(TY_INT, TY_INT):
@@ -211,7 +210,7 @@ llvm::Value *OpRuleConversionsManager::getRemEqualInst(llvm::Value *lhsV, llvm::
   // Unpack lhsV
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFRem(lhsV, rhsV);
   case COMB(TY_INT, TY_INT):
@@ -248,7 +247,7 @@ llvm::Value *OpRuleConversionsManager::getSHLEqualInst(llvm::Value *lhsV, llvm::
   // Unpack lhs
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
     return builder.CreateShl(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
@@ -277,7 +276,7 @@ llvm::Value *OpRuleConversionsManager::getSHREqualInst(llvm::Value *lhsV, llvm::
   // Unpack lhsV
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
     return builder.CreateLShr(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
@@ -306,7 +305,7 @@ llvm::Value *OpRuleConversionsManager::getAndEqualInst(llvm::Value *lhsV, llvm::
   // Unpack lhs
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
     return builder.CreateAnd(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
@@ -335,7 +334,7 @@ llvm::Value *OpRuleConversionsManager::getOrEqualInst(llvm::Value *lhsV, llvm::V
   // Unpack lhs
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
     return builder.CreateOr(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
@@ -364,7 +363,7 @@ llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhsV, llvm::
   // Unpack lhs
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
     return builder.CreateXor(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
@@ -391,7 +390,7 @@ llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhsV, llvm::
 
 llvm::Value *OpRuleConversionsManager::getBitwiseAndInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                          const SymbolType &rhsSTy) {
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
   case COMB(TY_LONG, TY_LONG):   // fallthrough
@@ -403,7 +402,7 @@ llvm::Value *OpRuleConversionsManager::getBitwiseAndInst(llvm::Value *lhsV, llvm
 
 llvm::Value *OpRuleConversionsManager::getBitwiseOrInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                         const SymbolType &rhsSTy) {
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
   case COMB(TY_LONG, TY_LONG):   // fallthrough
@@ -415,7 +414,7 @@ llvm::Value *OpRuleConversionsManager::getBitwiseOrInst(llvm::Value *lhsV, llvm:
 
 llvm::Value *OpRuleConversionsManager::getBitwiseXorInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
                                                          const SymbolType &rhsSTy) {
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
   case COMB(TY_LONG, TY_LONG):   // fallthrough
@@ -445,7 +444,7 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(const PtrAndValue &lhsData, 
   }
 
   // Check for primitive type combinations
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFCmpOEQ(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -563,7 +562,7 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(const PtrAndValue &lhsDat
     return builder.CreateICmpNE(lhsInt, rhsV);
   }
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFCmpONE(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -672,7 +671,7 @@ llvm::Value *OpRuleConversionsManager::getLessInst(llvm::Value *lhsV, llvm::Valu
   // Unpack rhsV
   llvm::Type *rhsVTy = rhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFCmpOLT(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -733,7 +732,7 @@ llvm::Value *OpRuleConversionsManager::getGreaterInst(llvm::Value *lhsV, llvm::V
   // Unpack rhs
   llvm::Type *rhsVTy = rhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFCmpOGT(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -794,7 +793,7 @@ llvm::Value *OpRuleConversionsManager::getLessEqualInst(llvm::Value *lhsV, llvm:
   // Unpack rhs
   llvm::Type *rhsVTy = rhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFCmpOLE(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -855,7 +854,7 @@ llvm::Value *OpRuleConversionsManager::getGreaterEqualInst(llvm::Value *lhsV, ll
   // Unpack rhsV
   llvm::Type *rhsVTy = rhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFCmpOGE(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -914,7 +913,7 @@ llvm::Value *OpRuleConversionsManager::getShiftLeftInst(llvm::Value *lhsV, llvm:
   // Unpack lhsV
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
     return builder.CreateShl(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
@@ -950,7 +949,7 @@ llvm::Value *OpRuleConversionsManager::getShiftRightInst(llvm::Value *lhsV, llvm
   // Unpack lhs
   llvm::Type *lhsVTy = lhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
     return builder.CreateLShr(lhsV, rhsV);
   case COMB(TY_INT, TY_SHORT): // fallthrough
@@ -988,7 +987,7 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
   // Unpack rhs
   llvm::Type *rhsVTy = rhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return {.value = builder.CreateFAdd(lhsV, rhsV)};
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -1082,7 +1081,7 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhsV, llvm::Val
   // Unpack rhsV
   llvm::Type *rhsVTy = rhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFSub(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -1151,14 +1150,12 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
                                                  const SymbolType &rhsSTy, SymbolTable *accessScope, const CodeLoc &codeLoc) {
   // Unpack lhs
   llvm::Value *lhsV = lhsData.value;
-  llvm::Value *lhsP = lhsData.ptr;
   llvm::Type *lhsTy = lhsV->getType();
   // Unpack rhs
   llvm::Value *rhsV = rhsData.value;
-  llvm::Value *rhsP = rhsData.ptr;
   llvm::Type *rhsTy = rhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return {.value = builder.CreateFMul(lhsV, rhsV)};
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -1303,7 +1300,7 @@ llvm::Value *OpRuleConversionsManager::getDivInst(llvm::Value *lhsV, llvm::Value
   // Unpack rhs
   llvm::Type *rhsTy = rhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFDiv(lhsV, rhsV);
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
@@ -1364,7 +1361,7 @@ llvm::Value *OpRuleConversionsManager::getRemInst(llvm::Value *lhsV, llvm::Value
   // Unpack rhs
   llvm::Type *rhsTy = rhsV->getType();
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return builder.CreateFRem(lhsV, rhsV);
   case COMB(TY_INT, TY_INT):
@@ -1495,7 +1492,7 @@ llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhsV, const Symb
   // Unpack lhs
   llvm::Type *lhsTy = lhsSTy.toLLVMType(context, accessScope);
 
-  switch (COMB(lhsSTy.getSuperType(), rhsSTy.getSuperType())) {
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return rhsV;
   case COMB(TY_INT, TY_DOUBLE):

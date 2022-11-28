@@ -1298,7 +1298,7 @@ public:
 class PostfixUnaryExprNode : public ASTNode {
 public:
   // Enums
-  enum PostfixUnaryOp { OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS, OP_SCOPE_ACCESS };
+  enum PostfixUnaryOp { OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS };
 
   // Typedefs
   typedef std::queue<std::pair<PostfixUnaryOp, SymbolType>> OpQueue;
@@ -1313,10 +1313,10 @@ public:
   // Public get methods
   [[nodiscard]] AtomicExprNode *atomicExpr() const { return getChild<AtomicExprNode>(); }
   [[nodiscard]] std::vector<AssignExprNode *> assignExpr() const { return getChildren<AssignExprNode>(); }
-  [[nodiscard]] std::vector<PostfixUnaryExprNode *> postfixUnaryExpr() const { return getChildren<PostfixUnaryExprNode>(); }
 
   // Public members
   OpQueue opQueue;
+  std::string identifier; // Only set when operator is member access
 };
 
 // ====================================================== AtomicExprNode =========================================================
@@ -1341,7 +1341,8 @@ public:
   [[nodiscard]] JoinCallNode *joinCall() const { return getChild<JoinCallNode>(); }
 
   // Public members
-  std::string identifier;
+  std::vector<std::string> identifierFragments;
+  std::string fqIdentifier;
   SymbolTableEntry *entry = nullptr; // Only set if identifier is set as well
 };
 

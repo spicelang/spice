@@ -528,8 +528,7 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
   for (const auto &[originalName, entry] : importedSourceFile.exportedNameRegistry) {
     // Add fully qualified name
     const bool isFunction = entry.targetEntry == nullptr || entry.targetEntry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE});
-    const std::string separator = isFunction ? "." : "::";
-    const std::string newName = importName + separator + originalName;
+    const std::string newName = importName + "::" + originalName;
     exportedNameRegistry.insert({newName, {newName, entry.targetEntry, entry.targetScope}});
     // Add the shortened name, considering the name collision
     addNameRegistryEntry(originalName, entry.targetEntry, entry.targetScope, /*keepNewOnCollision=*/false, newName);

@@ -24,8 +24,6 @@ SymbolSpecifiers SymbolSpecifiers::of(SymbolSuperType superType) {
     return SymbolSpecifiers(SPECIFIER_DEFAULTS_CHAR);
   case TY_STRING:
     return SymbolSpecifiers(SPECIFIER_DEFAULTS_STRING);
-  case TY_STROBJ:
-    return SymbolSpecifiers(SPECIFIER_DEFAULTS_STROBJ);
   case TY_BOOL:
     return SymbolSpecifiers(SPECIFIER_DEFAULTS_BOOL);
   case TY_PTR:

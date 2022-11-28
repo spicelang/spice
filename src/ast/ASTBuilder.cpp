@@ -1342,16 +1342,15 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
       currentNode = postfixUnaryExprNode->createChild<PostfixUnaryExprNode>(CodeLoc(rule->start, filePath));
     else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::LBRACKET)
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_SUBSCRIPT, SymbolType(TY_INVALID));
-    else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DOT)
+    else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DOT) {
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_MEMBER_ACCESS, SymbolType(TY_INVALID));
+    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER)
+      postfixUnaryExprNode->identifier = getIdentifier(t);
     else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::PLUS_PLUS)
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_PLUS_PLUS, SymbolType(TY_INVALID));
     else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
              t4->getSymbol()->getType() == SpiceParser::MINUS_MINUS)
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_MINUS_MINUS, SymbolType(TY_INVALID));
-    else if (auto t5 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
-             t5->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
-      postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_SCOPE_ACCESS, SymbolType(TY_INVALID));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1377,9 +1376,12 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
       visit(rule);
     else if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = atomicExprNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
-    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER)
-      atomicExprNode->identifier = getIdentifier(t);
-    else
+    else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      atomicExprNode->identifierFragments.push_back(getIdentifier(t));
+      if (!atomicExprNode->fqIdentifier.empty())
+        atomicExprNode->fqIdentifier += "::";
+      atomicExprNode->fqIdentifier += atomicExprNode->identifierFragments.back();
+    } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
     if (currentNode != atomicExprNode) {
@@ -1487,12 +1489,14 @@ std::any ASTBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
       fctCallNode->hasArgs = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      std::string fragment = t->toString();
-      fctCallNode->functionNameFragments.push_back(fragment);
-      if (!fctCallNode->fqFunctionName.empty())
-        fctCallNode->fqFunctionName += ".";
-      fctCallNode->fqFunctionName += fragment;
-    } else
+      fctCallNode->functionNameFragments.push_back(t->toString());
+      fctCallNode->fqFunctionName += fctCallNode->functionNameFragments.back();
+    } else if (auto t7 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t7->getSymbol()->getType() == SpiceParser::DOT)
+      fctCallNode->fqFunctionName += ".";
+    else if (auto t7 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+             t7->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
+      fctCallNode->fqFunctionName += "::";
+    else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
     if (currentNode != fctCallNode) {

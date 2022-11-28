@@ -481,7 +481,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
       break;
     }
     case 's': {
-      if (!argType.isOneOf({TY_STRING, TY_STROBJ}) && !argType.isPointerOf(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
+      if (!argType.is(TY_STRING) && !argType.isPointerOf(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
         throw SemanticError(assignment, PRINTF_TYPE_ERROR,
                             "The placeholder string expects string, char* or char[], but got " + argType.getName());
       placeholderCount++;
@@ -967,23 +967,21 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
       // Check if lhs is enum or strobj
-      if (!lhsType.isBaseType(TY_STRUCT) && !lhsType.isBaseType(TY_STROBJ) && !lhsType.is(TY_ENUM))
+      if (!lhsType.isBaseType(TY_STRUCT))
         throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName());
-      // Visit rhs
-      PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberOrScopeAccessCount++];
-      auto rhsResult = std::any_cast<ExprResult>(visit(rhs));
+
+      // Retrieve registry entry
+      const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(lhsEntry->getType().getSubType());
+      assert(registryEntry != nullptr && registryEntry->targetScope != nullptr);
+
+      // Get accessed field
+      SymbolTableEntry *memberEntry = registryEntry->targetScope->lookupStrict(node->identifier);
+      assert(memberEntry != nullptr);
+      memberEntry->used = true;
+
       // Overwrite type and entry of left side with member type and entry
-      lhsType = rhsResult.type;
-      lhsEntry = rhsResult.entry;
-      break;
-    }
-    case PostfixUnaryExprNode::OP_SCOPE_ACCESS: {
-      // Check if lhs is import
-      if (!lhsType.is(TY_IMPORT))
-        throw SemanticError(node, SCOPE_ACCESS_ONLY_IMPORTS, "Cannot apply scope access operator on " + lhsType.getName());
-      // Visit rhs
-      PostfixUnaryExprNode *rhs = node->postfixUnaryExpr()[memberOrScopeAccessCount++];
-      lhsType = std::any_cast<ExprResult>(visit(rhs)).type;
+      lhsType = memberEntry->getType();
+      lhsEntry = memberEntry;
       break;
     }
     case PostfixUnaryExprNode::OP_PLUS_PLUS: {
@@ -1042,14 +1040,26 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     return visit(node->assignExpr());
 
   // Identifier (local or global variable access)
-  assert(!node->identifier.empty());
+  assert(!node->fqIdentifier.empty());
   if (!accessScope)
     accessScope = currentScope;
 
-  // Load symbol table entry
-  SymbolTableEntry *varEntry = accessScope->lookup(node->identifier);
-  if (!varEntry)
-    throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->identifier + "' could not be found");
+  // Retrieve var entry
+  SymbolTableEntry *varEntry;
+  if (node->identifierFragments.size() > 1) {
+    const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqIdentifier);
+    if (!registryEntry)
+      throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found");
+    varEntry = registryEntry->targetEntry;
+    assert(varEntry != nullptr);
+    accessScope = registryEntry->targetScope;
+    assert(accessScope != nullptr);
+  } else {
+    // Load symbol table entry
+    varEntry = accessScope->lookup(node->identifierFragments.back());
+    if (!varEntry)
+      throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found");
+  }
   const SymbolType varType = varEntry->getType();
 
   if (varType.is(TY_DYN))
@@ -1086,7 +1096,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
                           "Cannot access struct '" + structEntry->name + "' due to its private visibility");
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(varEntry->getType())};
+  return ExprResult{node->setEvaluatedSymbolType(varEntry->getType()), varEntry};
 }
 
 std::any TypeChecker::visitValue(ValueNode *node) {
@@ -1162,8 +1172,9 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
 
   // Check if the target symbol is a struct
   SymbolType thisType(TY_DYN);
+  const NameRegistryEntry *structRegistryEntry = nullptr;
   if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
-    const NameRegistryEntry *structRegistryEntry = registryEntry;
+    structRegistryEntry = registryEntry;
     const std::string structName = structRegistryEntry->targetEntry->name;
     // Append the actual function name 'ctor' to the saved names
     node->functionNameFragments.emplace_back(CTOR_FUNCTION_NAME);
@@ -1176,7 +1187,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     if (!registryEntry)
       throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor");
     // Set the 'this' type of the function to the struct type
-    thisType = symbolEntry->getType().replaceBaseSubType(structRegistryEntry->name);
+    thisType = symbolEntry->getType();
     // Mark the call node as constructor call
     node->isConstructorCall = true;
     // Set the struct to used
@@ -1240,6 +1251,8 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Retrieve return type
   SymbolType returnType = spiceFunc->returnType;
   if (node->isConstructorCall) {
+    thisType = thisType.replaceBaseSubType(structRegistryEntry->name);
+
     // Add anonymous symbol to keep track of de-allocation
     currentScope->symbolTable.insertAnonymous(thisType, node);
 
@@ -1416,10 +1429,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Check if it is a String type
   const bool isStringRT = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
-  if (!isImported && !isStringRT && firstFragment == STROBJ_NAME) {
+  if (!isImported && !isStringRT && firstFragment == STROBJ_NAME)
     sourceFile->requestRuntimeModule(STRING_RT);
-    return node->setEvaluatedSymbolType(SymbolType(TY_STROBJ));
-  }
 
   // Check if it is a generic type
   if (!isImported && currentScope->lookupGenericType(firstFragment)) {
@@ -1473,52 +1484,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return node->setEvaluatedSymbolType(entryType);
   }
 
-  throw SemanticError(node, EXPECTED_TYPE, "Expected type, but got " + entryType.getName());
+  const std::string errorMessage =
+      entryType.is(TY_INVALID) ? "Used type before declared" : "Expected type, but got " + entryType.getName();
+  throw SemanticError(node, EXPECTED_TYPE, errorMessage);
 }
-
-/*void TypeChecker::insertAnonStringStructSymbol(const ASTNode *declNode) {
-  // Insert anonymous string symbol
-  SymbolType stringStructType(TY_STRING, "", {}, {});
-  currentScope->symbolTable.insertAnonymous(stringStructType, declNode);
-
-  // Enable string runtime
-  sourceFile->requestRuntimeModule(STRING_RT);
-}
-
-void TypeChecker::insertDestructorCall(const ASTNode *node, const SymbolTableEntry *varEntry) {
-  insertStructMethodCall(node, varEntry, DTOR_FUNCTION_NAME);
-}
-
-void TypeChecker::insertEmptyConstructorCall(const ASTNode *node, const SymbolTableEntry *varEntry) {
-  insertStructMethodCall(node, varEntry, CTOR_FUNCTION_NAME);
-
-  // Add anonymous symbol to keep track of de-allocation
-  SymbolType thisType = varEntry->type;
-  if (thisType.is(TY_STROBJ))
-    thisType = SymbolType(TY_STRUCT, STROBJ_NAME);
-  currentScope->symbolTable.insertAnonymous(thisType, node);
-}
-
-void TypeChecker::insertStructMethodCall(const ASTNode *node, const SymbolTableEntry *varEntry, const std::string &name) {
-  assert(varEntry != nullptr);
-  SymbolType varEntryType = varEntry->type;
-  assert(varEntryType.isOneOf({TY_STRUCT, TY_STROBJ}));
-
-  // Resolve strobj type
-  if (varEntryType.is(TY_STROBJ)) {
-    sourceFile->requestRuntimeModule(STRING_RT);
-    Scope *stringScope = resourceManager.runtimeModuleManager.getModuleScope(STRING_RT);
-    varEntryType = initExtStruct(stringScope, "", STROBJ_NAME, {}, node);
-  }
-
-  // Create Spice function
-  std::string symbolName = varEntryType.getName();
-  SymbolTableEntry *structEntry = currentScope->lookup(symbolName);
-  Scope *accessScope = structEntry->scope;
-  assert(accessScope != nullptr);
-  accessScope = accessScope->getChildScope(STRUCT_SCOPE_PREFIX + structEntry->name);
-  assert(accessScope != nullptr);
-  Function *spiceFunc = accessScope->matchFunction(name, varEntryType, {}, {}, node);
-  if (spiceFunc)
-    spiceFunc->isUsed = true;
-}*/

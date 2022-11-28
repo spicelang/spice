@@ -57,7 +57,7 @@ bool StmtLstNode::returnsOnAllControlPaths() const {
 }
 
 bool AssignExprNode::returnsOnAllControlPaths() const {
-  return hasOperator && op == OP_ASSIGN && lhs()->postfixUnaryExpr()->atomicExpr()->identifier == RETURN_VARIABLE_NAME;
+  return hasOperator && op == OP_ASSIGN && lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
 }
 
 const CompileTimeValue &TernaryExprNode::getCompileTimeValue() const {

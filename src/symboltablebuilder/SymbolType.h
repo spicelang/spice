@@ -29,8 +29,7 @@ enum SymbolSuperType {
   TY_LONG,
   TY_BYTE,
   TY_CHAR,
-  TY_STRING,
-  TY_STROBJ,
+  TY_STRING, // Alias for 'const char*'
   TY_BOOL,
   TY_GENERIC,
   TY_STRUCT,

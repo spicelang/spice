@@ -6,8 +6,9 @@
 
 #include <Token.h>
 
-#include "symboltablebuilder/SymbolType.h"
 #include <exception/SemanticError.h>
+#include <irgenerator/OpRuleConversionsManager.h>
+#include <symboltablebuilder/SymbolType.h>
 
 // Forward declarations
 class ASTNode;
@@ -16,9 +17,9 @@ class TypeChecker;
 // Types: double, int, short, long, byte, char, string, bool
 
 // Unary operator rule pair: lhs type, result type, unsafe
-typedef std::tuple<SymbolType, SymbolType, bool> UnaryOpRule;
+typedef std::tuple<uint32_t, uint32_t, bool> UnaryOpRule;
 // Binary operator rule pair: lhs type, rhs type, result type, unsafe
-typedef std::tuple<SymbolType, SymbolType, SymbolType, bool> BinaryOpRule;
+typedef std::tuple<uint32_t, uint32_t, uint32_t, bool> BinaryOpRule;
 
 // Assign op rules
 const std::vector<BinaryOpRule> ASSIGN_OP_RULES = {
@@ -621,7 +622,7 @@ public:
   static SymbolType getShiftRightResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getPlusResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs);
   SymbolType getMinusResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs);
-  SymbolType getMulResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs);
+  static SymbolType getMulResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getDivResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getRemResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType getPrefixMinusResultType(const ASTNode *node, const SymbolType &lhs);
@@ -649,5 +650,4 @@ private:
   static SemanticError printErrorMessageUnary(const ASTNode *node, const std::string &name, const SymbolType &lhs);
   static SemanticError printErrorMessageUnsafe(const ASTNode *node, const std::string &name, const SymbolType &lhs,
                                                const SymbolType &rhs);
-  void insertAnonStringStructSymbol(const ASTNode *declNode);
 };
