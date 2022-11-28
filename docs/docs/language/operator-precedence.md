@@ -7,8 +7,8 @@ The following table shows how Spice prioritizes the supported operators. The lis
 | Precedence | Operator | Description                          | Associativity | Modifying |
 | ---------- | -------- | ------------------------------------ | ------------- | --------- |
 | 1          | `a()`    | Function/procedure call              | left to right | no        |
-| 1          | `.`      | Member access operator               | left to right | no        |
 | 1          | `::`     | Scope access operator                | left to right | no        |
+| 1          | `.`      | Member access operator               | left to right | no        |
 | 1          | `a[]`    | Subscript operator                   | left to right | no        |
 | 1          | `a++`    | Postfix increment operator           | left to right | yes       |
 | 1          | `a--`    | Postfix decrement operator           | left to right | yes       |
