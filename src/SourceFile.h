@@ -18,6 +18,8 @@
 
 #include <llvm/IR/IRBuilder.h>
 
+#include "../lib/thread-pool/thread-pool.hpp"
+
 // Forward declarations
 class GlobalResourceManager;
 class EntryNode;
@@ -149,11 +151,12 @@ public:
 private:
   // Private fields
   GlobalResourceManager &resourceManager;
+  BS::synced_stream &tout;
 
   // Private methods
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
   void printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out,
-                          const Timer *timer, uint64_t &timeCompilerOutput) const;
+                          const Timer *timer, uint64_t &timeCompilerOutput, bool fromThread = false) const;
 };

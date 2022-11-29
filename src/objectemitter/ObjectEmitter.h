@@ -10,7 +10,7 @@ class ObjectEmitter : private CompilerPass {
 public:
   // Constructors
   ObjectEmitter(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
-      : CompilerPass(resourceManager, sourceFile), module(sourceFile->llvmModule.get()) {}
+      : CompilerPass(resourceManager, sourceFile), module(*sourceFile->llvmModule) {}
 
   // Public methods
   void emit() const;
@@ -18,5 +18,5 @@ public:
 
 private:
   // Private members
-  llvm::Module *module;
+  llvm::Module &module;
 };

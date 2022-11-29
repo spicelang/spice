@@ -25,7 +25,8 @@
 
 SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
                        bool stdFile)
-    : resourceManager(resourceManager), name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent) {
+    : resourceManager(resourceManager), tout(resourceManager.tout), name(std::move(name)), filePath(filePath), stdFile(stdFile),
+      parent(parent) {
   this->objectFilePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
 
   // Deduce fileName and fileDir
@@ -317,17 +318,13 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
   printStatusMessage("Escape Analyzer", IO_AST, IO_AST, &timer, compilerOutput.times.escapeAnalyzer);
 }
 
-void SourceFile::runIRGenerator() { // NOLINT(misc-no-recursion)
+void SourceFile::runIRGenerator() {
   // Skip if restored from cache
   if (restoredFromCache)
     return;
 
   Timer timer;
   timer.start();
-
-  // Generate the imported source files
-  for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->runIRGenerator();
 
   // Create LLVM module for this source file
   llvmModule = std::make_unique<llvm::Module>(FileUtil::getFileName(filePath), resourceManager.context);
@@ -340,17 +337,14 @@ void SourceFile::runIRGenerator() { // NOLINT(misc-no-recursion)
   compilerOutput.irString = irGenerator.getIRString();
 
   // Dump unoptimized IR code
-  if (resourceManager.cliOptions.dumpIR) { // GCOV_EXCL_START
-    std::cout << "\nUnoptimized IR code:\n";
-    irGenerator.dumpIR();
-    std::cout << "\n";
-  } // GCOV_EXCL_STOP
+  if (resourceManager.cliOptions.dumpIR)                                  // GCOV_EXCL_LINE
+    tout.println("\nUnoptimized IR code:\n" + irGenerator.getIRString()); // GCOV_EXCL_LINE
 
   timer.stop();
-  printStatusMessage("IR Generator", IO_AST, IO_IR, &timer, compilerOutput.times.irGenerator);
+  printStatusMessage("IR Generator", IO_AST, IO_IR, &timer, compilerOutput.times.irGenerator, true);
 }
 
-void SourceFile::runIROptimizer() { // NOLINT(misc-no-recursion)
+void SourceFile::runIROptimizer() {
   // Skip if restored from cache
   if (restoredFromCache)
     return;
@@ -362,10 +356,6 @@ void SourceFile::runIROptimizer() { // NOLINT(misc-no-recursion)
   if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
     return;
 
-  // Optimize the imported source files
-  for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->runIROptimizer();
-
   // Optimize this source file
   IROptimizer irOptimizer(resourceManager, this);
   irOptimizer.optimize();
@@ -374,17 +364,14 @@ void SourceFile::runIROptimizer() { // NOLINT(misc-no-recursion)
   compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
 
   // Dump optimized IR code
-  if (resourceManager.cliOptions.dumpIR) { // GCOV_EXCL_START
-    std::cout << "\nOptimized IR code:\n";
-    irOptimizer.dumpOptimizedIR();
-    std::cout << "\n";
-  } // GCOV_EXCL_STOP
+  if (resourceManager.cliOptions.dumpIR)                                         // GCOV_EXCL_LINE
+    tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
 
   timer.stop();
-  printStatusMessage("IR Optimizer", IO_IR, IO_IR, &timer, compilerOutput.times.irOptimizer);
+  printStatusMessage("IR Optimizer", IO_IR, IO_IR, &timer, compilerOutput.times.irOptimizer, true);
 }
 
-void SourceFile::runObjectEmitter() { // NOLINT(misc-no-recursion)
+void SourceFile::runObjectEmitter() {
   // Skip if restored from cache
   if (restoredFromCache)
     return;
@@ -392,42 +379,35 @@ void SourceFile::runObjectEmitter() { // NOLINT(misc-no-recursion)
   Timer timer;
   timer.start();
 
-  // Emit objects for the imported source files
-  for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->runIROptimizer();
-
   // Emit object for this source file
   ObjectEmitter objectEmitter(resourceManager, this);
   objectEmitter.emit();
 
   // Dump assembly code
   if (resourceManager.cliOptions.dumpAssembly) { // GCOV_EXCL_START
-    std::cout << "\nAssembly code:\n";
+    tout.println("\nAssembly code:\n");
     objectEmitter.dumpAsm();
   } // GCOV_EXCL_STOP
 
   timer.stop();
-  printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, &timer, compilerOutput.times.objectEmitter);
+  printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, &timer, compilerOutput.times.objectEmitter, true);
 }
 
-void SourceFile::concludeCompilation() { // NOLINT(misc-no-recursion)
-  // Conclude all dependencies
-  for (const auto &sourceFile : dependencies)
-    sourceFile.second.first->concludeCompilation();
-
+void SourceFile::concludeCompilation() {
   // Cache the source file
   if (!resourceManager.cliOptions.ignoreCache)
     resourceManager.cacheManager.cacheSourceFile(this);
 
   // Print warning if verifier is disabled
   if (parent == nullptr && resourceManager.cliOptions.disableVerifier) {
-    std::cout << "\n";
-    CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.").print();
-    std::cout << "\n";
+    const std::string warningMessage =
+        CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.")
+            .warningMessage;
+    tout.println("\n" + warningMessage);
   }
 
   if (resourceManager.cliOptions.printDebugOutput)
-    std::cout << "Finished compiling " << fileName << ".\n";
+    tout.println("Finished compiling " + fileName);
 }
 
 void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
@@ -448,11 +428,22 @@ void SourceFile::runMiddleEnd() {
   runEscapeAnalyzer();
 }
 
-void SourceFile::runBackEnd() {
-  runIRGenerator();
-  runIROptimizer();
-  runObjectEmitter();
-  concludeCompilation();
+void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
+  // Run backend for all dependencies first
+  for (const auto &[importName, sourceFile] : dependencies)
+    sourceFile.first->runBackEnd();
+
+  // Submit source file compilation to the task queue
+  resourceManager.threadPool.push_task([&]() {
+    runIRGenerator();
+    runIROptimizer();
+    runObjectEmitter();
+    concludeCompilation();
+  });
+
+  // Wait until all compile tasks are done
+  if (mainFile)
+    resourceManager.threadPool.wait_for_tasks();
 }
 
 std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &dependencyName, const std::string &path,
@@ -527,7 +518,6 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName
 void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName) {
   for (const auto &[originalName, entry] : importedSourceFile.exportedNameRegistry) {
     // Add fully qualified name
-    const bool isFunction = entry.targetEntry == nullptr || entry.targetEntry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE});
     const std::string newName = importName + "::" + originalName;
     exportedNameRegistry.insert({newName, {newName, entry.targetEntry, entry.targetScope}});
     // Add the shortened name, considering the name collision
@@ -564,14 +554,26 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
 }
 
 void SourceFile::printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out,
-                                    const Timer *timer, uint64_t &timeCompilerOutput) const {
+                                    const Timer *timer, uint64_t &timeCompilerOutput, bool fromThread /*=false*/) const {
   if (resourceManager.cliOptions.printDebugOutput) {
     const char *const compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
-    std::cout << "[" << stage << "] for " << fileName << ": ";
-    std::cout << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
-    if (timer != nullptr) {
-      timeCompilerOutput = timer->getDurationMilliseconds();
-      std::cout << " (" << std::to_string(timeCompilerOutput) << " s)\n";
+    if (fromThread) {
+      if (timer != nullptr) {
+        tout.println("[" + stage + "] for " + fileName + ": " + compilerStageIoTypeName[in] + " --> " +
+                     compilerStageIoTypeName[out] + " (" + std::to_string(timeCompilerOutput) + " s)");
+      } else {
+        tout.println("[" + stage + "] for " + fileName + ": " + compilerStageIoTypeName[in] + " --> " +
+                     compilerStageIoTypeName[out]);
+      }
+    } else {
+      if (timer != nullptr) {
+        std::cout << "[" << stage << "] for " << fileName << ": ";
+        std::cout << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
+        std::cout << " (" << std::to_string(timeCompilerOutput) << " s)\n";
+      } else {
+        std::cout << "[" << stage << "] for " << fileName << ": ";
+        std::cout << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out] << "\n";
+      }
     }
   }
 }

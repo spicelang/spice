@@ -9,7 +9,10 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Target/TargetMachine.h>
+
+#include "../../lib/thread-pool/thread-pool.hpp"
 
 // Forward declarations
 struct CliOptions;
@@ -32,4 +35,7 @@ public:
   llvm::LLVMContext context;
   llvm::IRBuilder<> builder = llvm::IRBuilder<>(context);
   llvm::TargetMachine *targetMachine;
+  BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
+  BS::synced_stream tout;
+  std::mutex objectEmitLock;
 };

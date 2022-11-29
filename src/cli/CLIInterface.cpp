@@ -244,6 +244,8 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --dump-assembly
   subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
 
+  // --jobs
+  subCmd->add_option<unsigned short>("--jobs,-j", cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
   // --ignore-cache
   subCmd->add_option<bool>("--ignore-cache", cliOptions.ignoreCache, "Force re-compilation of all source files");
   // --disable-ast-opt

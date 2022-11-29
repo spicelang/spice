@@ -16,9 +16,10 @@ struct CliOptions {
   std::string targetVendor;
   std::string targetOs;
   bool isNativeTarget = false;
-  std::string cacheDir;   // Where the cache files go. Should always be a temp directory
-  std::string outputDir;  // Where the object files go. Should always be a temp directory
-  std::string outputPath; // Where the output binary goes.
+  std::string cacheDir;               // Where the cache files go. Should always be a temp directory
+  std::string outputDir;              // Where the object files go. Should always be a temp directory
+  std::string outputPath;             // Where the output binary goes.
+  unsigned short compileJobCount = 0; // 0 for auto
   bool ignoreCache = false;
   bool printDebugOutput = false;
   bool dumpCST = false;
