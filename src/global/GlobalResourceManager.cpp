@@ -11,17 +11,17 @@
 GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
     : cliOptions(cliOptions), linker(threadFactory, cliOptions), cacheManager(cliOptions.cacheDir) {
   // Initialize the required LLVM targets
-  //llvm::InitializeAllTargetInfos();
   if (cliOptions.isNativeTarget) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetAsmPrinter();
   } else {
     llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmParsers();
     llvm::InitializeAllAsmPrinters();
   }
-  //llvm::InitializeAllTargetMCs();
 
   // Search after selected target
   std::string error;

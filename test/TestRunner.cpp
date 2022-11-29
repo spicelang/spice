@@ -36,6 +36,7 @@ void execTestCase(const TestCase &testCase) {
                            /* cacheDir= */ "./cache",
                            /* outputDir= */ ".",
                            /* outputPath= */ ".",
+                           /* compileJobCount= */ 0,
                            /* ignoreCache */ true,
                            /* printDebugOutput= */ false,
                            /* dumpCST= */ false,
