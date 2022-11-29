@@ -150,13 +150,6 @@ bool Function::isMethodFunction() const { return !returnType.is(TY_DYN) && !this
 bool Function::isMethodProcedure() const { return returnType.is(TY_DYN) && !thisType.is(TY_DYN); }
 
 /**
- * Get symbol type. Possible super types are TY_FUNCTION and TY_PROCEDURE
- *
- * @return Symbol representing the function
- */
-SymbolType Function::getSymbolType() const { return SymbolType(isFunction() || isMethodFunction() ? TY_FUNCTION : TY_PROCEDURE); }
-
-/**
  * Convert the current ambiguous function with potential optional parameters to a vector of
  * definite functions without optional parameters
  *
@@ -170,19 +163,22 @@ std::vector<Function> Function::substantiateOptionalParams() const {
   for (const Param &param : paramList) {
     if (param.isOptional) {         // Met optional parameter
       if (!metFirstOptionalParam) { // Add substantiation without the optional parameter
-        definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
+        definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode,
+                                       external);
         metFirstOptionalParam = true;
       }
       // Add substantiation with the optional parameter
       currentFunctionParamTypes.push_back({param.type, false});
-      definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
+      definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode,
+                                     external);
     } else { // Met mandatory parameter
       currentFunctionParamTypes.push_back({param.type, false});
     }
   }
 
   if (definiteFunctions.empty())
-    definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode);
+    definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode,
+                                   external);
 
   return definiteFunctions;
 }
@@ -197,7 +193,7 @@ Function Function::substantiateGenerics(const ParamList &concreteParamList, cons
   // Substantiate return type
   SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
 
-  Function substantiatedFunction(name, entry, concreteThisType, newReturnType, concreteParamList, {}, declNode);
+  Function substantiatedFunction(name, entry, concreteThisType, newReturnType, concreteParamList, {}, declNode, external);
   substantiatedFunction.genericSubstantiation = true;
   return substantiatedFunction;
 }

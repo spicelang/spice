@@ -10,7 +10,7 @@ procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER
 structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
 interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
-genericTypeDef: specifierLst? TYPE IDENTIFIER typeAltsLst SEMICOLON;
+genericTypeDef: TYPE IDENTIFIER typeAltsLst SEMICOLON;
 globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 

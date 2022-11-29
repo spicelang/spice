@@ -37,4 +37,4 @@ std::string CodeLoc::toPrettyString() const {
  *
  * @return Pretty line number
  */
-std::string CodeLoc::toPrettyLine() const { return "l" + std::to_string(line); }
+std::string CodeLoc::toPrettyLine() const { return "L" + std::to_string(line); }

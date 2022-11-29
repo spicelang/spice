@@ -33,9 +33,9 @@ class Function {
 public:
   // Constructors
   Function(std::string name, SymbolTableEntry *entry, SymbolType thisType, SymbolType returnType, ParamList paramList,
-           std::vector<GenericType> templateTypes, const ASTNode *declNode)
+           std::vector<GenericType> templateTypes, const ASTNode *declNode, bool external)
       : name(std::move(name)), entry(entry), thisType(std::move(thisType)), returnType(std::move(returnType)),
-        paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode) {}
+        paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode), external(external) {}
   Function() = default;
 
   // Public methods
@@ -46,7 +46,6 @@ public:
   [[nodiscard]] bool isProcedure() const;
   [[nodiscard]] bool isMethodFunction() const;
   [[nodiscard]] bool isMethodProcedure() const;
-  [[nodiscard]] SymbolType getSymbolType() const;
   [[nodiscard]] std::vector<Function> substantiateOptionalParams() const;
   [[nodiscard]] Function substantiateGenerics(const ParamList &concreteParamList, const SymbolType &concreteThisType,
                                               const std::map<std::string, SymbolType> &concreteGenericTypes) const;
@@ -65,6 +64,7 @@ public:
   const ASTNode *declNode = nullptr;
   bool genericSubstantiation = false;
   bool alreadyTypeChecked = false;
+  bool external = false;
   bool used = false;
 
   // Json serializer/deserializer

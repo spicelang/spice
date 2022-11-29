@@ -1,95 +1,15 @@
-import "os-test2" as s1;
+//import "std/type/int" as unused;
+//import "os-test2" as s1;
 
-f<int> main() {
-    //dyn s = Vector{Vector1{123}};
-    //printf("Result: %d\n", s.i1.i2);
-    printf("Test");
+type TestStruct struct {
+    int field1
+    double field2
 }
 
-/*f<bool> isValid(int input = 12) {
-    printf("This is a test");
-}
-
-f<int> main() {
-    bool isValid = isValid();
-    printf("Is valid: %d", isValid);
-}*/
-
-/*type NotAPointer struct {}
-
-f<int> main() {
-    NotAPointer nonPtr = NotAPointer {};
-    printf("%p", nonPtr);
-}*/
-
-/*f<int> main() {
-    String testString;
-    printf("Test: %s\n", testString);
-    testString += "Hi!";
-    printf("Test: %s\n", testString);
-    //testString = String("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.");
-
-    //printf("Length: %d\n", testString.getLength());
-    //printf("Capacity: %d", testString.getCapacity());
-}*/
-
-/*f<int> main() {
-    String s = String("Hello ");
-    printf("Output: %s\n", s);
-    s = String("");
-    printf("Output: %s\n", s);
-}*/
-
-/*type Visitor struct {
-
-}
-
-type SymbolTable struct {
-
-}
-
-type VisitableNode interface {
-    f<bool> accept(Visitor*)
-}
-
-type AstNode struct : VisitableNode {
-
-}
-
-f<bool> AstNode.accept(Visitor* v) {
-    return true;
-}
-
-type AstEntryNode struct : VisitableNode {
-    AstNode astNode
-    SymbolTable* fctScope
-    bool hasArgs
-}
-
-f<bool> AstEntryNode.accept(Visitor* v) {
-    return true;
+p TestStruct.ctor() {
+    this.field1 = 1;
 }
 
 f<int> main() {
-    dyn entryNode = AstEntryNode{};
-    printf("%d", entryNode.hasArgs);
-}*/
-
-/*import "std/net/http" as http;
-
-f<int> main() {
-    http::HttpServer server = http::HttpServer();
-    server.serve("/test", "Hello World!");
-}*/
-
-/*public f<bool> src(bool x, bool y) {
-    return ((x ? 1 : 4) & (y ? 1 : 4)) == 0;
+    dyn testStruct = TestStruct(345);
 }
-
-public f<int> tgt(int x, int y) {
-    return x ^ y;
-}
-
-f<int> main() {
-    printf("Result: %d, %d", src(false, true), tgt(0, 1));
-}*/

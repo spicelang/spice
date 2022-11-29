@@ -206,7 +206,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getTemporaryName() const { return functionName + ":" + codeLoc.toString(); }
+  [[nodiscard]] std::string getSymbolTableEntryName() const { return functionName + ":" + codeLoc.toPrettyLine(); }
   [[nodiscard]] bool returnsOnAllControlPaths() const override;
 
   // Public members
@@ -242,7 +242,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getTemporaryName() const { return procedureName + ":" + codeLoc.toString(); }
+  [[nodiscard]] std::string getSymbolTableEntryName() const { return procedureName + ":" + codeLoc.toPrettyLine(); }
   bool returnsOnAllControlPaths() const override;
 
   // Public members
@@ -342,7 +342,6 @@ public:
 
   // Public get methods
   [[nodiscard]] TypeAltsLstNode *typeAltsLst() const { return getChild<TypeAltsLstNode>(); }
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
 
   // Public members
   std::string typeName;
@@ -696,6 +695,9 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<EnumItemNode *> items() const { return getChildren<EnumItemNode>(); }
+
+  // Public members
+  EnumDefNode *enumDef = nullptr;
 };
 
 // ========================================================= EnumItemNode ========================================================
@@ -716,6 +718,7 @@ public:
   uint32_t itemValue;
   bool hasValue = false;
   SymbolTableEntry *entry = nullptr;
+  EnumDefNode *enumDef = nullptr;
 };
 
 // ========================================================== FieldNode ==========================================================
@@ -1316,7 +1319,7 @@ public:
 
   // Public members
   OpQueue opQueue;
-  std::string identifier; // Only set when operator is member access
+  std::vector<std::string> identifier; // Only set when operator is member access
 };
 
 // ====================================================== AtomicExprNode =========================================================
@@ -1406,6 +1409,9 @@ public:
   bool hasTemplateTypes = false;
   bool hasArgs = false;
   bool isConstructorCall = false;
+  bool isMethodCall = false;
+  std::vector<SymbolType> concreteTemplateTypes;
+  std::vector<SymbolType> argTypes;
   Function *calledFunction;
 };
 

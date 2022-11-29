@@ -3,5 +3,9 @@ public type Vector1 struct {
 }
 
 public type Vector struct {
-    Vector1 i1
+    public Vector1 i1
+}
+
+public p Vector1.ctor() {
+
 }

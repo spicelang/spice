@@ -84,6 +84,7 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
 std::any TypeChecker::visitThreadDef(ThreadDefNode *node) {
   // Change to thread body scope
   currentScope = node->bodyScope;
+  assert(currentScope->type == SCOPE_THREAD_BODY);
 
   // Visit body
   visit(node->body());
@@ -98,6 +99,7 @@ std::any TypeChecker::visitThreadDef(ThreadDefNode *node) {
 std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Change to unsafe block body scope
   currentScope = node->bodyScope;
+  assert(currentScope->type == SCOPE_UNSAFE_BODY);
 
   // Visit body
   visit(node->body());
@@ -111,6 +113,7 @@ std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
 std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   // Change to for body scope
   currentScope = node->bodyScope;
+  assert(currentScope->type == SCOPE_FOR_BODY);
 
   // Visit loop variable declaration
   visit(node->initDecl());
@@ -136,6 +139,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Change to foreach body scope
   currentScope = node->bodyScope;
+  assert(currentScope->type == SCOPE_FOREACH_BODY);
 
   // Check type of the array
   SymbolType arrayType = std::any_cast<ExprResult>(visit(node->arrayAssign())).type;
@@ -191,6 +195,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   // Change to while body scope
   currentScope = node->bodyScope;
+  assert(currentScope->type == SCOPE_WHILE_BODY);
 
   // Visit condition
   SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
@@ -210,6 +215,7 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
 std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   // Change to then body scope
   currentScope = node->thenBodyScope;
+  assert(currentScope->type == SCOPE_IF_ELSE_BODY);
 
   // Visit condition
   SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
@@ -239,6 +245,7 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
 
   // Change to else body scope
   currentScope = node->elseBodyScope;
+  assert(currentScope->type == SCOPE_IF_ELSE_BODY);
 
   // Visit body
   visit(node->body());
@@ -263,6 +270,7 @@ std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
 std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Change to anonymous scope body scope
   currentScope = node->bodyScope;
+  assert(currentScope->type == SCOPE_ANONYMOUS_BLOCK_BODY);
 
   // Visit body
   visit(node->body());
@@ -339,7 +347,8 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Build signature object
-  Function signature(node->methodName, /*entry=*/nullptr, /*thisType=*/SymbolType(TY_DYN), returnType, paramTypes, {}, node);
+  Function signature(node->methodName, /*entry=*/nullptr, /*thisType=*/SymbolType(TY_DYN), returnType, paramTypes, {}, node,
+                     /*external=*/false);
 
   // Add signature to current scope
   currentScope->insertFunction(signature, &node->signatureManifestations);
@@ -373,7 +382,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   // Update the type of the variable
   SymbolTableEntry *localVarEntry = currentScope->lookupStrict(node->varName);
   assert(localVarEntry != nullptr);
-  localVarEntry->updateType(localVarType, false);
+  localVarEntry->updateType(localVarType, /*overwriteExistingType=*/true);
 
   return node->setEvaluatedSymbolType(localVarType);
 }
@@ -923,6 +932,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   auto [lhsTy, lhsEntry] = std::any_cast<ExprResult>(visit(node->atomicExpr()));
 
   size_t subscriptCounter = 0;
+  size_t identifierCounter = 0;
 
   // Loop through op queue
   for (size_t i = 0; i < node->opQueue.size(); i++) {
@@ -970,17 +980,17 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
         throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsTy.getName());
 
       // Retrieve registry entry
-      const std::string structName = lhsEntry->getType().getSubType();
+      const std::string structName = lhsEntry->getType().getBaseType().getSubType();
       const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(structName);
       assert(registryEntry != nullptr);
       Scope *structScope = registryEntry->targetScope;
       assert(structScope != nullptr);
 
       // Get accessed field
-      SymbolTableEntry *memberEntry = structScope->lookupStrict(node->identifier);
+      SymbolTableEntry *memberEntry = structScope->lookupStrict(node->identifier[identifierCounter]);
       if (!memberEntry)
         throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE,
-                            "Field '" + node->identifier + "' not found in struct " + structName);
+                            "Field '" + node->identifier[identifierCounter] + "' not found in struct " + structName);
 
       // Check for insufficient visibility
       if (structScope->isImportedBy(rootScope) && !memberEntry->specifiers.isPublic())
@@ -993,6 +1003,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       // Overwrite type and entry of left side with member type and entry
       lhsTy = memberEntry->getType();
       lhsEntry = memberEntry;
+      identifierCounter++;
       break;
     }
     case PostfixUnaryExprNode::OP_PLUS_PLUS: {
@@ -1073,11 +1084,12 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   }
   const SymbolType varType = varEntry->getType();
 
-  if (varType.is(TY_DYN))
+  if (varType.is(TY_INVALID))
     throw SemanticError(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.");
 
   // The base type should be a primitive or struct
-  assert(varEntry->getType().getBaseType().isPrimitive() || varEntry->getType().isBaseType(TY_STRUCT));
+  if (!varType.getBaseType().isPrimitive() && !varType.isBaseType(TY_STRUCT))
+    throw SemanticError(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here");
 
   // Check if is an imported variable
   if (accessScope->isImportedBy(currentScope)) {
@@ -1168,111 +1180,170 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 }
 
 std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
-  std::string functionName = node->functionNameFragments.back();
+  // Visit template type hints
+  if (node->hasTemplateTypes) {
+    node->concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
+    for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
+      // Visit template type
+      const auto templateType = any_cast<SymbolType>(visit(templateTypeNode));
+      // Check if template type is valid
+      if (templateType.isBaseType(TY_GENERIC))
+        throw SemanticError(node, EXPECTED_NON_GENERIC_TYPE, "Template hints may contain non-generic types only");
+      // Add the type to the concrete template types list
+      node->concreteTemplateTypes.push_back(templateType);
+    }
+  }
+
+  // Visit args
+  if (node->hasArgs) {
+    node->argTypes.reserve(node->argLst()->args().size());
+    for (AssignExprNode *arg : node->argLst()->args()) {
+      // Visit argument
+      const SymbolType argType = any_cast<ExprResult>(visit(arg)).type;
+      assert(!argType.isBaseType(TY_GENERIC));
+      // Save arg type to arg types list
+      node->argTypes.push_back(argType);
+    }
+  }
 
   // Check if this is a ctor call to the String type
   const bool isStringRt = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
   if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !isStringRt)
     sourceFile->requestRuntimeModule(STRING_RT);
 
+  // Check if this is a method call or a normal function call
+  SymbolTableEntry *firstFragmentEntry = currentScope->lookup(node->functionNameFragments.front());
+  Scope *functionParentScope;
+  SymbolType returnType(TY_DYN);
+  if (firstFragmentEntry != nullptr && firstFragmentEntry->getType().is(TY_STRUCT) && firstFragmentEntry->symbolTable->parent) {
+    // This is a method call
+    node->isMethodCall = true;
+    const SymbolType firstFragmentType = firstFragmentEntry->getType();
+    Scope *structBodyScope = firstFragmentType.getStructBodyScope();
+    assert(structBodyScope != nullptr);
+    functionParentScope = visitMethodCall(node, firstFragmentType, structBodyScope);
+  } else {
+    // This is an ordinary function call
+    auto [scope, knownStructName] = visitOrdinaryFctCall(node);
+    functionParentScope = scope;
+
+    // Only ordinary function calls can be constructors
+    if (node->calledFunction && node->isConstructorCall) {
+      // Set a name to the thisType that is known to the current source file
+      const SymbolType thisType = node->calledFunction->thisType.replaceBaseSubType(knownStructName);
+      assert(thisType.is(TY_STRUCT));
+      // Add anonymous symbol to keep track of de-allocation
+      currentScope->symbolTable.insertAnonymous(thisType, node);
+      // Constructors return the struct type
+      returnType = thisType;
+    }
+  }
+  assert(functionParentScope != nullptr);
+
+  // Check if we were able to find a function
+  if (!node->calledFunction) {
+    // Build error message
+    const std::string functionName = node->functionNameFragments.back();
+    ParamList errArgTypes;
+    for (const auto &argType : node->argTypes)
+      errArgTypes.push_back({argType, false});
+    const SymbolType dynType(TY_DYN);
+    Function f(functionName, nullptr, dynType, dynType, errArgTypes, /*templateTypes=*/{}, node, /*external=*/false);
+    // Throw error
+    throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + f.getSignature() + "' could not be found");
+  }
+
+  // Retrieve return type
+  returnType = node->calledFunction->returnType;
+
+  // Get function entry from function object
+  SymbolTableEntry *functionEntry = node->calledFunction->entry;
+
+  // Check if the called function has sufficient visibility
+  if (functionParentScope->isImportedBy(rootScope) && !functionEntry->specifiers.isPublic())
+    throw SemanticError(node, INSUFFICIENT_VISIBILITY,
+                        "Function/procedure '" + node->calledFunction->getSignature() + "' has insufficient visibility");
+
+  // Set the function to used
+  node->calledFunction->used = true;
+  functionEntry->used = true;
+
+  // Procedures always have the return type 'bool'
+  if (node->calledFunction->isProcedure() || returnType.is(TY_DYN))
+    returnType = SymbolType(TY_BOOL);
+
+  return ExprResult{node->setEvaluatedSymbolType(returnType)};
+}
+
+std::pair<Scope *, std::string> TypeChecker::visitOrdinaryFctCall(FunctionCallNode *node) const {
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqFunctionName);
   if (!registryEntry)
     throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure/struct could not be found");
   SymbolTableEntry *symbolEntry = registryEntry->targetEntry;
 
-  // Check if the target symbol is a struct
+  // Check if the target symbol is a struct -> this must be a constructor call
   SymbolType thisType(TY_DYN);
-  const NameRegistryEntry *structRegistryEntry = nullptr;
+  std::string knownStructName;
   if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
-    structRegistryEntry = registryEntry;
+    const NameRegistryEntry *structRegistryEntry = registryEntry;
     const std::string structName = structRegistryEntry->targetEntry->name;
+
     // Append the actual function name 'ctor' to the saved names
     node->functionNameFragments.emplace_back(CTOR_FUNCTION_NAME);
     node->fqFunctionName += ".";
     node->fqFunctionName += CTOR_FUNCTION_NAME;
-    functionName = node->functionNameFragments.back();
+
     // Retrieve the name registry entry for the constructor
     registryEntry = sourceFile->getNameRegistryEntry(node->fqFunctionName);
-    // Check if the struct was found
+    // Check if the constructor was found
     if (!registryEntry)
       throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor");
+    node->isConstructorCall = true;
+
     // Set the 'this' type of the function to the struct type
     thisType = symbolEntry->getType();
-    // Mark the call node as constructor call
-    node->isConstructorCall = true;
+
     // Set the struct to used
     structRegistryEntry->targetEntry->used = true;
-  }
 
-  // Visit template type hints
-  std::vector<SymbolType> concreteTemplateTypes;
-  if (node->hasTemplateTypes) {
-    concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
-    for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
-      // Visit template type
-      auto templateType = any_cast<SymbolType>(visit(templateTypeNode));
-      // Check if template type is valid
-      if (templateType.isBaseType(TY_GENERIC))
-        throw SemanticError(node, EXPECTED_NON_GENERIC_TYPE, "Template hints may contain non-generic types only");
-      // Add the type to the concrete template types list
-      concreteTemplateTypes.push_back(templateType);
-    }
-  }
-
-  // Visit args
-  std::vector<SymbolType> argTypes;
-  if (node->hasArgs) {
-    argTypes.reserve(node->argLst()->args().size());
-    for (AssignExprNode *arg : node->argLst()->args()) {
-      // Visit argument
-      SymbolType argType = any_cast<ExprResult>(visit(arg)).type;
-      assert(!argType.isBaseType(TY_GENERIC));
-      // Save arg type to arg types list
-      argTypes.push_back(argType);
-    }
+    // Get the name, that can be used in the current source file to identify the struct
+    knownStructName = structRegistryEntry->name;
   }
 
   // Retrieve function object
-  const Scope *functionScope = registryEntry->targetScope;
-  Function *spiceFunc = functionScope->parent->matchFunction(functionName, thisType, concreteTemplateTypes, argTypes, node);
-  if (!spiceFunc) {
-    // Build error message
-    ParamList errArgTypes;
-    for (const auto &argType : argTypes)
-      errArgTypes.push_back({argType, false});
-    Function f(functionName, nullptr, thisType, SymbolType(TY_DYN), errArgTypes, {}, node);
-    // Throw error
-    throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + f.getSignature() + "' could not be found");
-  }
-  node->calledFunction = spiceFunc;
+  const std::string functionName = node->functionNameFragments.back();
+  Scope *functionParentScope = registryEntry->targetScope;
+  node->calledFunction =
+      functionParentScope->matchFunction(functionName, thisType, node->concreteTemplateTypes, node->argTypes, node);
 
-  // Get function entry from function object
-  SymbolTableEntry *functionEntry = spiceFunc->entry;
+  return std::make_pair(functionParentScope, knownStructName);
+}
 
-  // Check if the called function has sufficient visibility
-  if (functionScope->isImportedBy(rootScope) && !functionEntry->specifiers.isPublic())
-    throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                        "Function/procedure '" + spiceFunc->getSignature() + "' has insufficient visibility");
+Scope *TypeChecker::visitMethodCall(FunctionCallNode *node, SymbolType thisType, Scope *structScope) {
+  // Traverse through structs - the first fragment is already looked up and the last one is the function name
+  for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
+    const std::string identifier = node->functionNameFragments.at(i);
 
-  // Set the function to used
-  spiceFunc->used = true;
-  functionEntry->used = true;
+    // Retrieve field entry
+    SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
+    if (!fieldEntry->getType().is(TY_STRUCT))
+      throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct");
+    fieldEntry->used = true;
 
-  // Retrieve return type
-  SymbolType returnType = spiceFunc->returnType;
-  if (node->isConstructorCall) {
-    thisType = thisType.replaceBaseSubType(structRegistryEntry->name);
-
-    // Add anonymous symbol to keep track of de-allocation
-    currentScope->symbolTable.insertAnonymous(thisType, node);
-
-    returnType = thisType;
-  } else if (spiceFunc->isProcedure() || spiceFunc->returnType.is(TY_DYN)) {
-    returnType = SymbolType(TY_BOOL);
+    // Get struct type and scope
+    thisType = fieldEntry->getType();
+    structScope = thisType.getStructBodyScope();
+    assert(structScope != nullptr);
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(returnType)};
+  // Retrieve function object
+  const std::string functionName = node->functionNameFragments.back();
+  Scope *functionParentScope = structScope;
+  node->calledFunction =
+      functionParentScope->matchFunction(functionName, thisType, node->concreteTemplateTypes, node->argTypes, node);
+
+  return functionParentScope;
 }
 
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {

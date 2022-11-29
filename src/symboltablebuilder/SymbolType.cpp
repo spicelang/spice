@@ -410,30 +410,7 @@ llvm::Value *SymbolType::getDynamicArraySize() const {
 
 bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
 
-bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain != rhs.typeChain; }
-
-/**
- * Compares the type chains of two symbol types without taking array sizes into account
- *
- * @param lhs Lhs symbol type
- * @param rhs Rhs symbol type
- * @return Equal or not
- */
-bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs) {
-  // Compare sizes of stacks
-  if (lhs.typeChain.size() != rhs.typeChain.size())
-    return false;
-
-  // Compare stack elements
-  for (int i = 0; i < lhs.typeChain.size(); i++) {
-    if (!itemEqualsIgnoreArraySize(lhs.typeChain.back(), rhs.typeChain.back()))
-      return false;
-    lhs.typeChain.pop_back();
-    rhs.typeChain.pop_back();
-  }
-
-  return true;
-}
+bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs.typeChain == rhs.typeChain); }
 
 /**
  * Set the sub type of the top element

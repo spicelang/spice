@@ -216,9 +216,11 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = enumDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::EnumItemLstContext *>(subTree); rule != nullptr) // EnumItemLst
-      currentNode = enumDefNode->createChild<EnumItemLstNode>(CodeLoc(rule->start, filePath));
-    else
+    else if (rule = dynamic_cast<SpiceParser::EnumItemLstContext *>(subTree); rule != nullptr) { // EnumItemLst
+      auto enumItemLst = enumDefNode->createChild<EnumItemLstNode>(CodeLoc(rule->start, filePath));
+      enumItemLst->enumDef = enumDefNode;
+      currentNode = enumItemLst;
+    } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
     if (currentNode != enumDefNode) {
@@ -239,9 +241,7 @@ std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
-      currentNode = genericTypeDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::TypeAltsLstContext *>(subTree); rule != nullptr) // TypeAltsLst
+    if (rule = dynamic_cast<SpiceParser::TypeAltsLstContext *>(subTree); rule != nullptr) // TypeAltsLst
       currentNode = genericTypeDefNode->createChild<TypeAltsLstNode>(CodeLoc(rule->start, filePath));
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -656,9 +656,11 @@ std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::EnumItemContext *>(subTree); rule != nullptr) // EnumItem
-      currentNode = enumItemLstNode->createChild<EnumItemNode>(CodeLoc(rule->start, filePath));
-    else
+    if (rule = dynamic_cast<SpiceParser::EnumItemContext *>(subTree); rule != nullptr) { // EnumItem
+      auto enumItem = enumItemLstNode->createChild<EnumItemNode>(CodeLoc(rule->start, filePath));
+      enumItem->enumDef = enumItemLstNode->enumDef;
+      currentNode = enumItem;
+    } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
     if (currentNode != enumItemLstNode) {
@@ -1345,7 +1347,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
     else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DOT) {
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_MEMBER_ACCESS, SymbolType(TY_INVALID));
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER)
-      postfixUnaryExprNode->identifier = getIdentifier(t);
+      postfixUnaryExprNode->identifier.push_back(getIdentifier(t));
     else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::PLUS_PLUS)
       postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_PLUS_PLUS, SymbolType(TY_INVALID));
     else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);

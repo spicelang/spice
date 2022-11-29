@@ -25,7 +25,8 @@ void CommonUtil::replaceAll(std::string &haystack, const std::string &needle, co
  * @return Last fragment
  */
 std::string CommonUtil::getLastFragment(const std::string &haystack, const std::string &needle) {
-  return haystack.substr(haystack.find(needle) + needle.length());
+  const size_t index = haystack.rfind(needle);
+  return index == std::string::npos ? haystack : haystack.substr(index + needle.length());
 }
 
 /**

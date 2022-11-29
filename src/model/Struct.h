@@ -30,7 +30,6 @@ public:
   // Public methods
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] std::string getSignature() const;
-  [[nodiscard]] SymbolType getSymbolType() const;
   [[nodiscard]] Struct substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, Scope *scope) const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
