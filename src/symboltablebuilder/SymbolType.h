@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <util/CommonUtil.h>
+
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
@@ -51,7 +53,7 @@ public:
     // Union fields
     long arraySize = 0;     // TY_ARRAY
     bool numericSigned;     // TY_INT, TY_SHORT, TY_LONG
-    Scope *structBodyScope; // TY_STRUCT
+    Scope *structBodyScope; // TY_STRUCT, TY_INTERFACE, TY_ENUM
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
@@ -61,22 +63,30 @@ public:
   public:
     // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
-      // Check super type, subtype and template types
-      if (!itemEqualsIgnoreArraySize(lhs, rhs))
+      // Check super type
+      if (lhs.superType != rhs.superType)
         return false;
       // Check data
       switch (lhs.superType) {
       case TY_ARRAY:
         return lhs.data.arraySize == rhs.data.arraySize;
+      case TY_STRUCT: {
+        assert(lhs.data.structBodyScope != nullptr && rhs.data.structBodyScope != nullptr);
+        const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, "::");
+        const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, "::");
+        return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes &&
+               lhs.data.structBodyScope == rhs.data.structBodyScope;
+      }
+      case TY_INTERFACE:
+      case TY_ENUM: {
+        assert(lhs.data.structBodyScope != nullptr && rhs.data.structBodyScope != nullptr);
+        const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, "::");
+        const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, "::");
+        return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.structBodyScope == rhs.data.structBodyScope;
+      }
       default:
         return true;
       }
-    }
-
-    // Public methods
-    friend bool itemEqualsIgnoreArraySize(const TypeChainElement &lhs, const TypeChainElement &rhs) {
-      // Check super type, subtype and template types
-      return lhs.superType == rhs.superType && lhs.subType == rhs.subType && lhs.templateTypes == rhs.templateTypes;
     }
 
     // Public members
@@ -134,7 +144,6 @@ public:
   void setStructBodyScope(Scope *bodyScope);
   [[nodiscard]] Scope *getStructBodyScope() const;
   [[nodiscard]] llvm::Value *getDynamicArraySize() const;
-  friend bool equalsIgnoreArraySizes(SymbolType lhs, SymbolType rhs);
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
 

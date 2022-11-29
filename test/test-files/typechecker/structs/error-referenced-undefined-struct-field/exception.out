@@ -1,5 +1,5 @@
-[Error|Semantic] ./test-files/typechecker/structs/error-referenced-undefined-struct-field/source.spice:8:29:
-Referenced undefined variable: The variable 'f3' could not be found
+[Error|Semantic] ./test-files/typechecker/structs/error-referenced-undefined-struct-field/source.spice:8:27:
+Referenced undefined variable: Field 'f3' not found in struct TestStruct
 
-8  tf("Field 1: %d", a.f3);
-                       ^^
+8  intf("Field 1: %d", a.f3);
+                       ^^^^

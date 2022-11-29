@@ -25,7 +25,6 @@ bool GenericType::checkConditionsOf(const SymbolType &symbolType) const { return
  */
 bool GenericType::checkTypeConditionOf(const SymbolType &symbolType) const {
   // Check type conditions
-  return std::ranges::any_of(typeConditions, [&](const SymbolType &typeCondition) {
-    return typeCondition.is(TY_DYN) || equalsIgnoreArraySizes(typeCondition, symbolType);
-  });
+  return std::ranges::any_of(
+      typeConditions, [&](const SymbolType &typeCondition) { return typeCondition.is(TY_DYN) || typeCondition == symbolType; });
 }

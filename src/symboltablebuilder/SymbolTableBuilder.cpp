@@ -35,7 +35,7 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   mainFctEntry->used = true;
 
   // Create scope for main function body
-  node->fctScope = currentScope = rootScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->body()->codeLoc);
+  node->fctScope = currentScope = rootScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
 
   // Declare variable for the return value in the function scope
   SymbolTableEntry *resultVarEntry = node->fctScope->insert(RETURN_VARIABLE_NAME, SymbolSpecifiers::of(TY_INT), node);
@@ -79,8 +79,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   }
 
   // Create scope for the function
-  node->fctScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->body()->codeLoc);
+  node->fctScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
 
   // Create symbol for 'this' variable
   if (node->isMethod) {
@@ -102,14 +101,13 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   // Leave function body scope
   currentScope = node->fctScope->parent;
 
-  // Insert symbol for function with a temporary name, depending on the code location
-  // this has to be done due to overloading and because not having any types
-  node->entry = currentScope->insert(node->getTemporaryName(), specifiers, node);
+  // Insert symbol for function into the symbol table
+  node->entry = currentScope->insert(node->getSymbolTableEntryName(), specifiers, node);
 
   // Add to external name registry
   // if a function has overloads, they both refer to the same entry in the registry. So we only register the name once
   if (!sourceFile->getNameRegistryEntry(node->fqFunctionName))
-    sourceFile->addNameRegistryEntry(node->fqFunctionName, /*entry=*/nullptr, node->fctScope, true);
+    sourceFile->addNameRegistryEntry(node->fqFunctionName, /*entry=*/nullptr, currentScope, /*keepNewOnCollision=*/true);
 
   // Leave the struct scope
   if (node->isMethod)
@@ -142,8 +140,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   }
 
   // Create scope for the procedure
-  node->procScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->body()->codeLoc);
+  node->procScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
 
   // Create symbol for 'this' variable
   if (node->isMethod) {
@@ -162,14 +159,13 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // Leave procedure body scope
   currentScope = node->procScope->parent;
 
-  // Insert symbol for procedure with a temporary name, depending on the code location
-  // this has to be done due to overloading and because not having any types
-  node->entry = currentScope->insert(node->getTemporaryName(), specifiers, node);
+  // Insert symbol for procedure into the symbol table
+  node->entry = currentScope->insert(node->getSymbolTableEntryName(), specifiers, node);
 
   // Add to external name registry
   // if a procedure has overloads, they both refer to the same entry in the registry. So we only register the name once
   if (!sourceFile->getNameRegistryEntry(node->fqProcedureName))
-    sourceFile->addNameRegistryEntry(node->fqProcedureName, /*entry=*/nullptr, node->procScope, true);
+    sourceFile->addNameRegistryEntry(node->fqProcedureName, /*entry=*/nullptr, currentScope, /*keepNewOnCollision=*/true);
 
   // Leave the struct scope
   if (node->isMethod)
@@ -208,7 +204,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Add the struct to the symbol table
   node->entry = rootScope->insert(node->structName, specifiers, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->structName, node->entry, node->structScope);
+  sourceFile->addNameRegistryEntry(node->structName, node->entry, node->structScope, /*keepNewOnCollision=*/true);
 
   return nullptr;
 }
@@ -243,7 +239,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   // Add the interface to the symbol table
   node->entry = rootScope->insert(node->interfaceName, specifiers, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->interfaceName, node->entry, node->interfaceScope);
+  sourceFile->addNameRegistryEntry(node->interfaceName, node->entry, node->interfaceScope, /*keepNewOnCollision=*/true);
 
   return nullptr;
 }
@@ -276,7 +272,7 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   // Add the enum to the symbol table
   node->entry = rootScope->insert(node->enumName, specifiers, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->enumName, node->entry, node->enumScope);
+  sourceFile->addNameRegistryEntry(node->enumName, node->entry, node->enumScope, /*keepNewOnCollision=*/true);
 
   return nullptr;
 }
@@ -313,7 +309,7 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
   // Add the global to the symbol table
   node->entry = rootScope->insert(node->varName, specifiers, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->varName, node->entry, currentScope);
+  sourceFile->addNameRegistryEntry(node->varName, node->entry, currentScope, /*keepNewOnCollision=*/true);
 
   return nullptr;
 }
@@ -329,7 +325,7 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   // Add the external declaration to the symbol table
   node->entry = rootScope->insert(node->extFunctionName, specifiers, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->extFunctionName, node->entry, nullptr);
+  sourceFile->addNameRegistryEntry(node->extFunctionName, node->entry, rootScope, /*keepNewOnCollision=*/true);
 
   return nullptr;
 }
@@ -486,7 +482,12 @@ std::any SymbolTableBuilder::visitEnumItem(EnumItemNode *node) {
   specifiers.setSigned(false); // Enum items are unsigned integers
 
   // Add enum item entry to symbol table
-  currentScope->insert(node->itemName, specifiers, node);
+  SymbolTableEntry *enumItemEntry = currentScope->insert(node->itemName, specifiers, node);
+
+  // Add external registry entry
+  assert(node->enumDef != nullptr);
+  sourceFile->addNameRegistryEntry(node->enumDef->enumName + "::" + node->itemName, enumItemEntry, currentScope,
+                                   /*keepNewOnCollision=*/true);
 
   return nullptr;
 }

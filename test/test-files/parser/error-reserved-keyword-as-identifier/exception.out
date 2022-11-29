@@ -1,0 +1,1 @@
+[Error|Parser] ./test-files/typechecker/variables/error-reserved-keyword-as-identifier/source.spice:2:9: Usage of reserved keyword: 'new' is a reserved keyword. Please use another name instead.

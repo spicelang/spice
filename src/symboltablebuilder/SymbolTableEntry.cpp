@@ -20,13 +20,8 @@ const SymbolType &SymbolTableEntry::getType() const { return type; }
  * @param overwriteExistingType Overwrites the existing type without throwing an error
  */
 void SymbolTableEntry::updateType(const SymbolType &newType, bool overwriteExistingType) {
-  if (overwriteExistingType || type.isOneOf({TY_INVALID, TY_DYN})) {
-    type = newType;
-  } else if (type.isBaseType(TY_STRING) && newType.is(TY_STRING)) {
-    type = type.replaceBaseType(newType);
-  } else {
-    throw std::runtime_error("Internal compiler error: Cannot change type of non-dyn"); // GCOV_EXCL_LINE
-  }
+  assert(overwriteExistingType || type.isOneOf({TY_INVALID, TY_DYN}));
+  type = newType;
 }
 
 /**
@@ -53,13 +48,6 @@ void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node
     throw std::runtime_error("Internal compiler error: cannot destruct already freed variable '" + name + "'"); // GCOV_EXCL_LINE
   lifecycle.addEvent({newState, node});
 }
-
-/**
- * Retrieve the AST node where the symbol was declared
- *
- * @return Declaration node
- */
-const ASTNode *SymbolTableEntry::getDeclNode() const { return declNode; }
 
 /**
  * Retrieve the code location where the symbol was declared

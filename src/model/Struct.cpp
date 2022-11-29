@@ -51,20 +51,6 @@ std::string Struct::getSignature() const {
 }
 
 /**
- * Get symbol type. Possible super types are TY_STRUCT
- *
- * @return Symbol representing the struct
- */
-SymbolType Struct::getSymbolType() const {
-  std::vector<SymbolType> concreteTemplateTypes;
-  if (isFullySubstantiated()) {
-    for (const auto &templateType : templateTypes)
-      concreteTemplateTypes.push_back(templateType);
-  }
-  return SymbolType(TY_STRUCT, name, {.arraySize = 0}, concreteTemplateTypes);
-}
-
-/**
  * Convert the current ambiguous struct with potential generic types to a definite struct without generic types
  *
  * @return Substantiated struct without template types

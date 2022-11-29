@@ -45,9 +45,14 @@ bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const Runtime
   const auto moduleSourceFile = parentSourceFile->createSourceFile(importName, filePath, true);
   parentSourceFile->addDependency(moduleSourceFile, parentSourceFile->ast.get(), importName, filePath);
 
+  // Run frontend and type checker for runtime module source file
   const auto runtimeFile = parentSourceFile->dependencies.at(importName).first;
   runtimeFile->runFrontEnd();
-
+  runtimeFile->runTypeChecker();
   modules.emplace(moduleName, runtimeFile.get());
+
+  // Merge the module name registry with the one of the source file
+  parentSourceFile->mergeNameRegistries(*runtimeFile, importName);
+
   return true;
 }

@@ -51,16 +51,10 @@ void Scope::renameChildScope(const std::string &oldName, const std::string &newN
  */
 void Scope::copyChildScope(const std::string &oldName, const std::string &newName) {
   assert(children.contains(oldName));
-  const Scope origChildScope = *children.at(oldName);
-  children.insert({newName, new Scope(origChildScope)});
+  const Scope *origChildScope = children.at(oldName);
+  auto newChildBlock = new Scope(*origChildScope);
+  children.insert({newName, newChildBlock});
 }
-
-/**
- * Retrieve the global scope of the current source file
- *
- * @return Global scope
- */
-Scope *Scope::getGlobalScope() { return searchForScope(SCOPE_GLOBAL); }
 
 /**
  * Retrieve the scope of the function or procedure, where this scope lives
@@ -229,7 +223,7 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
         } else { // For arguments with non-generic type, check if the candidate type matches with the call
           const SymbolType &expected = argList[i].type;
           const SymbolType &actual = callArgTypes[i];
-          if (!equalsIgnoreArraySizes(actual, expected)) {
+          if (actual != expected) {
             differentArgTypes = true;
             break;
           }
@@ -262,8 +256,10 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
 
       // Duplicate function
       Function newFunction = f.substantiateGenerics(argList, callThisType, concreteGenericTypes);
-      if (!getChildScope(newFunction.getSignature())) { // Insert function
+      if (!f.external && !getChildScope(newFunction.getSignature())) {
+        // Insert function
         insertSubstantiatedFunction(newFunction, f.declNode);
+        // Copy function scope
         copyChildScope(f.getSignature(), newFunction.getSignature());
 
         // Insert symbols for generic type names with concrete types into the child block
@@ -331,10 +327,6 @@ Function *Scope::insertSubstantiatedFunction(const Function &function, const AST
   const std::string codeLocStr = declNode->codeLoc.toString();
   assert(functions.contains(codeLocStr));
   functions.at(codeLocStr).emplace(mangledFctName, function);
-  // Add symbol table entry for the function
-  const SymbolSpecifiers ss = function.entry ? function.entry->specifiers : SymbolSpecifiers::of(function.getSymbolType());
-  SymbolTableEntry *functionEntry = insert(function.getSignature(), ss, declNode);
-  functionEntry->updateType(function.getSymbolType(), true);
   return &functions.at(codeLocStr).at(mangledFctName);
 }
 
@@ -452,9 +444,6 @@ Struct *Scope::insertSubstantiatedStruct(const Struct &s, const ASTNode *declNod
   const std::string codeLocStr = declNode->codeLoc.toString();
   assert(structs.contains(codeLocStr));
   structs.at(codeLocStr).emplace(s.getMangledName(), s);
-  // Add symbol table entry for the struct
-  SymbolTableEntry *structEntry = insert(s.getSignature(), s.entry->specifiers, declNode);
-  structEntry->updateType(s.getSymbolType(), true);
   return &structs.at(codeLocStr).at(s.getMangledName());
 }
 

@@ -33,6 +33,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Referenced undefined variable";
   case REFERENCED_UNDEFINED_STRUCT:
     return "Referenced undefined struct";
+  case REFERENCED_UNDEFINED_FIELD:
+    return "Referenced undefined struct field";
   case USED_BEFORE_DECLARED:
     return "Used before declared";
   case FUNCTION_AMBIGUITY:
@@ -57,6 +59,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Interface method not implemented";
   case ENUM_DECLARED_TWICE:
     return "Multiple declarations of an enum with the same name";
+  case INVALID_SYMBOL_ACCESS:
+    return "Invalid symbol access";
   case DUPLICATE_ENUM_ITEM_NAME:
     return "Duplicate enum item name";
   case DUPLICATE_ENUM_ITEM_VALUE:

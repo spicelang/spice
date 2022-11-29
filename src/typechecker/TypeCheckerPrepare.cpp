@@ -45,6 +45,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Change to function scope
   currentScope = node->fctScope;
+  assert(currentScope->type == SCOPE_FUNC_PROC_BODY);
 
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
@@ -114,14 +115,16 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Leave function body scope
   currentScope = node->fctScope->parent;
+  assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
 
   // Update type of function entry
-  SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getTemporaryName());
+  SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
   assert(functionEntry != nullptr);
   functionEntry->updateType(SymbolType(TY_FUNCTION), false);
 
   // Build function object
-  const Function spiceFunc(node->functionName, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node);
+  const Function spiceFunc(node->functionName, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node,
+                           /*external=*/true);
   currentScope->insertFunction(spiceFunc, &node->fctManifestations);
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
@@ -132,6 +135,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Change to the root scope
   currentScope = rootScope;
+  assert(currentScope->type == SCOPE_GLOBAL);
 
   return nullptr;
 }
@@ -146,6 +150,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Change to procedure scope
   currentScope = node->procScope;
+  assert(currentScope->type == SCOPE_FUNC_PROC_BODY);
 
   // Retrieve procedure template types
   std::vector<GenericType> usedGenericTypes;
@@ -205,14 +210,16 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Leave procedure body scope
   currentScope = node->procScope->parent;
+  assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
 
   // Update type of procedure entry
-  SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getTemporaryName());
+  SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
   assert(procedureEntry != nullptr);
   procedureEntry->updateType(SymbolType(TY_PROCEDURE), false);
 
   // Build procedure object
-  const Function spiceProc(node->procedureName, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node);
+  const Function spiceProc(node->procedureName, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node,
+                           /*external=*/true);
   currentScope->insertFunction(spiceProc, &node->procManifestations);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the procedure
@@ -223,6 +230,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Change to the root scope
   currentScope = rootScope;
+  assert(currentScope->type == SCOPE_GLOBAL);
 
   return nullptr;
 }
@@ -233,6 +241,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Retrieve struct template types
   if (node->isGeneric) {
+    usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
+    usedTemplateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
@@ -250,6 +260,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Retrieve implemented interfaces
   std::vector<SymbolType> interfaceTypes;
   if (node->hasInterfaces) {
+    interfaceTypes.reserve(node->interfaceTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->interfaceTypeLst()->dataTypes()) {
       // Visit interface type
       auto interfaceType = std::any_cast<SymbolType>(visit(dataType));
@@ -269,10 +280,12 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Change to struct scope
   currentScope = node->structScope;
+  assert(currentScope->type == SCOPE_STRUCT);
 
   // Retrieve field types
   std::vector<SymbolType> fieldTypes;
-  for (const auto &field : node->fields()) {
+  fieldTypes.reserve(node->fields().size());
+  for (FieldNode *field : node->fields()) {
     // Visit field type
     auto fieldType = std::any_cast<SymbolType>(visit(field->dataType()));
 
@@ -295,6 +308,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Change to the root scope
   currentScope = rootScope;
+  assert(currentScope->type == SCOPE_GLOBAL);
 
   // Build struct object
   Struct spiceStruct(node->structName, structEntry, fieldTypes, usedTemplateTypesGeneric, interfaceTypes, node);
@@ -313,6 +327,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Change to interface scope
   currentScope = node->interfaceScope;
+  assert(currentScope->type == SCOPE_INTERFACE);
 
   // Visit signatures
   std::vector<Function *> signatures;
@@ -325,6 +340,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Change to root scope
   currentScope = rootScope;
+  assert(currentScope->type == SCOPE_GLOBAL);
 
   // Build interface object
   Interface i(node->interfaceName, node->entry->specifiers, signatures, node);
@@ -335,12 +351,15 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 }
 
 std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
-  // Get enum entry
+  // Update type of enum entry
+  SymbolType enumType(TY_ENUM, node->enumName);
   SymbolTableEntry *enumEntry = rootScope->lookupStrict(node->enumName);
   assert(enumEntry != nullptr);
+  enumEntry->updateType(enumType, false);
 
   // Change to enum scope
   currentScope = node->enumScope;
+  assert(currentScope->type == SCOPE_ENUM);
 
   // Loop through all items with values
   std::vector<std::string> names;
@@ -372,6 +391,10 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
       values.push_back(nextValue);
     }
   }
+
+  // Change to root scope
+  currentScope = rootScope;
+  assert(currentScope->type == SCOPE_GLOBAL);
 
   return nullptr;
 }
@@ -446,9 +469,11 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
     // Check if return type is dyn
     if (returnType.is(TY_DYN))
       throw SemanticError(node->returnType(), UNEXPECTED_DYN_TYPE_SA, "dyn is not allowed as return type for external functions");
-    spiceFunc = Function(node->extFunctionName, node->entry, /*thisType=*/dynType, returnType, argTypes, {}, node);
+    spiceFunc = Function(node->extFunctionName, node->entry, /*thisType=*/dynType, returnType, argTypes, /*templateTypes=*/{},
+                         node, /*external=*/true);
   } else { // External procedure
-    spiceFunc = Function(node->extFunctionName, node->entry, /*thisType=*/dynType, /*returnType=*/dynType, argTypes, {}, node);
+    spiceFunc = Function(node->extFunctionName, node->entry, /*thisType=*/dynType, /*returnType=*/dynType, argTypes,
+                         /*templateTypes=*/{}, node, /*=external*/ true);
   }
 
   // Add function to current scope

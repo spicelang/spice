@@ -112,4 +112,8 @@ private:
   Scope *accessScope = nullptr;
   const TypeCheckerMode typeCheckerMode;
   std::vector<CompilerWarning> &warnings;
+
+  // Private methods
+  [[nodiscard]] std::pair<Scope *, std::string> visitOrdinaryFctCall(FunctionCallNode *node) const;
+  [[nodiscard]] static Scope *visitMethodCall(FunctionCallNode *node, SymbolType thisType, Scope *structScope);
 };
