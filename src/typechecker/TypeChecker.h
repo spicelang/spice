@@ -114,6 +114,6 @@ private:
   std::vector<CompilerWarning> &warnings;
 
   // Private methods
-  [[nodiscard]] std::pair<Scope *, std::string> visitOrdinaryFctCall(FunctionCallNode *node) const;
-  [[nodiscard]] static Scope *visitMethodCall(FunctionCallNode *node, SymbolType thisType, Scope *structScope);
+  std::tuple<Scope *, SymbolType, std::string> visitOrdinaryFctCall(FunctionCallNode *node) const;
+  static std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, SymbolType thisType, Scope *structScope);
 };
