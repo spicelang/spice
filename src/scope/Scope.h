@@ -50,13 +50,12 @@ public:
   Scope *createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc);
   void renameChildScope(const std::string &oldName, const std::string &newName);
   void copyChildScope(const std::string &oldName, const std::string &newName);
-  [[nodiscard]] Scope *getGlobalScope();
   [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] Scope *getChildScope(const std::string &scopeName) const;
   [[nodiscard]] std::vector<SymbolTableEntry *> getVarsGoingOutOfScope();
 
   // Generic types
-  void insertGenericType(const GenericType &genericType);
+  void insertGenericType(const std::string &typeName, const GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
 
   // Functions

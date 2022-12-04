@@ -1,19 +1,11 @@
 //import "std/type/int" as unused;
-//import "os-test2" as s1;
 
-f<double> calledFunction(int mandatoryArg, dyn optionalArg = true) {
-    printf("Mandatory: %d\n", mandatoryArg);
-    printf("Optional: %d\n", optionalArg);
-    return 0.1;
-}
-
-f<double> calledFunction(string testString) {
-    printf("String: %s", testString);
-    return 0.3;
-}
+import "os-test2" as s1;
 
 f<int> main() {
-    dyn res = calledFunction(1, false);
-    printf("Result: %f\n", res);
-    calledFunction("test");
+    dyn v = s1::Vector<int>{};
+    v.setData(12);
+    printf("Data: %d\n", v.data);
+    v.setData(1.5);
+    printf("Data: %d\n", v.data);
 }

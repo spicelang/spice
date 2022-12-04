@@ -112,7 +112,9 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
  *
  * @param genericType Generic type itself
  */
-void Scope::insertGenericType(const GenericType &genericType) { genericTypes.insert({genericType.getName(), genericType}); }
+void Scope::insertGenericType(const std::string &typeName, const GenericType &genericType) {
+  genericTypes.insert({typeName, genericType});
+}
 
 /**
  * Search for a generic type by its name. If it was not found, the parent scopes will be searched.
@@ -265,7 +267,7 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
         // Insert symbols for generic type names with concrete types into the child block
         Scope *childBlock = getChildScope(newFunction.getSignature());
         for (const auto &[typeName, symbolType] : concreteGenericTypes)
-          childBlock->insertGenericType(GenericType(symbolType));
+          childBlock->insertGenericType(typeName, GenericType(symbolType));
 
         // Replace this type with concrete one
         if ((f.isMethodFunction() || f.isMethodProcedure()) && !fctThisType.getTemplateTypes().empty()) {
@@ -276,8 +278,10 @@ Function *Scope::matchFunction(const std::string &callFunctionName, const Symbol
         }
       }
 
-      assert(functions.contains(defCodeLocStr) && functions.at(defCodeLocStr).contains(newFunction.getMangledName()));
-      matches.push_back(&functions.at(defCodeLocStr).at(newFunction.getMangledName()));
+      assert(functions.contains(defCodeLocStr));
+      std::unordered_map<std::string, Function> &manifestations = functions.at(defCodeLocStr);
+      assert(manifestations.contains(newFunction.getMangledName()));
+      matches.push_back(&manifestations.at(newFunction.getMangledName()));
       break;
     }
   }
@@ -385,7 +389,7 @@ Struct *Scope::matchStruct(Scope *currentScope, const std::string &structName, /
         if (differentTemplateTypes)
           continue;
 
-        // Duplicate function
+        // Duplicate struct
         Scope *structScope = getChildScope(STRUCT_SCOPE_PREFIX + structName);
         Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, structScope);
         if (!getChildScope(STRUCT_SCOPE_PREFIX + newStruct.getSignature())) { // Insert struct
@@ -393,8 +397,10 @@ Struct *Scope::matchStruct(Scope *currentScope, const std::string &structName, /
           copyChildScope(STRUCT_SCOPE_PREFIX + structName, STRUCT_SCOPE_PREFIX + newStruct.getSignature());
         }
 
-        assert(structs.contains(defCodeLocStr) && structs.at(defCodeLocStr).contains(newStruct.getMangledName()));
-        matches.push_back(&structs.at(defCodeLocStr).at(newStruct.getMangledName()));
+        assert(structs.contains(defCodeLocStr));
+        std::unordered_map<std::string, Struct> &manifestations = structs.at(defCodeLocStr);
+        assert(manifestations.contains(newStruct.getMangledName()));
+        matches.push_back(&manifestations.at(newStruct.getMangledName()));
         break;
       }
     }
