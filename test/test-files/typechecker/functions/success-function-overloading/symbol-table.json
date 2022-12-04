@@ -2,20 +2,6 @@
   "captures": [],
   "symbols": [
     {
-      "codeLoc": "L1C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "calledFunction(int): double",
-      "orderIndex": 3,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
-      "state": "destructed",
-      "type": "function"
-    },
-    {
       "codeLoc": "L12C1",
       "isGlobal": true,
       "isVolatile": false,
@@ -33,7 +19,7 @@
       "codeLoc": "L7C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "calledFunction:L7C1",
+      "name": "calledFunction:L7",
       "orderIndex": 1,
       "specifiers": {
         "const": true,
@@ -44,38 +30,10 @@
       "type": "function"
     },
     {
-      "codeLoc": "L7C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "calledFunction(string): double",
-      "orderIndex": 5,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
-      "state": "destructed",
-      "type": "function"
-    },
-    {
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "calledFunction(int,bool): double",
-      "orderIndex": 4,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
-      "state": "destructed",
-      "type": "function"
-    },
-    {
-      "codeLoc": "L1C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "calledFunction:L1C1",
+      "name": "calledFunction:L1",
       "orderIndex": 0,
       "specifiers": {
         "const": true,

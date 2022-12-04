@@ -1,15 +1,19 @@
 //import "std/type/int" as unused;
 //import "os-test2" as s1;
 
-type TestStruct struct {
-    int field1
-    double field2
+f<double> calledFunction(int mandatoryArg, dyn optionalArg = true) {
+    printf("Mandatory: %d\n", mandatoryArg);
+    printf("Optional: %d\n", optionalArg);
+    return 0.1;
 }
 
-p TestStruct.ctor() {
-    this.field1 = 1;
+f<double> calledFunction(string testString) {
+    printf("String: %s", testString);
+    return 0.3;
 }
 
 f<int> main() {
-    dyn testStruct = TestStruct(345);
+    dyn res = calledFunction(1, false);
+    printf("Result: %f\n", res);
+    calledFunction("test");
 }

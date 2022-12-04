@@ -1215,27 +1215,27 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   SymbolTableEntry *firstFragmentEntry = currentScope->lookup(node->functionNameFragments.front());
   Scope *functionParentScope;
   SymbolType returnType(TY_DYN);
+  SymbolType thisType(TY_DYN);
   if (firstFragmentEntry != nullptr && firstFragmentEntry->getType().is(TY_STRUCT) && firstFragmentEntry->symbolTable->parent) {
     // This is a method call
     node->isMethodCall = true;
     const SymbolType firstFragmentType = firstFragmentEntry->getType();
     Scope *structBodyScope = firstFragmentType.getStructBodyScope();
     assert(structBodyScope != nullptr);
-    functionParentScope = visitMethodCall(node, firstFragmentType, structBodyScope);
+    auto [scope, type] = visitMethodCall(node, firstFragmentType, structBodyScope);
+    functionParentScope = scope;
+    thisType = type;
   } else {
     // This is an ordinary function call
-    auto [scope, knownStructName] = visitOrdinaryFctCall(node);
+    auto [scope, type, knownStructName] = visitOrdinaryFctCall(node);
     functionParentScope = scope;
+    thisType = type;
 
     // Only ordinary function calls can be constructors
-    if (node->calledFunction && node->isConstructorCall) {
+    if (node->isConstructorCall) {
       // Set a name to the thisType that is known to the current source file
-      const SymbolType thisType = node->calledFunction->thisType.replaceBaseSubType(knownStructName);
+      thisType = thisType.replaceBaseSubType(knownStructName);
       assert(thisType.is(TY_STRUCT));
-      // Add anonymous symbol to keep track of de-allocation
-      currentScope->symbolTable.insertAnonymous(thisType, node);
-      // Constructors return the struct type
-      returnType = thisType;
     }
   }
   assert(functionParentScope != nullptr);
@@ -1248,13 +1248,21 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     for (const auto &argType : node->argTypes)
       errArgTypes.push_back({argType, false});
     const SymbolType dynType(TY_DYN);
-    Function f(functionName, nullptr, dynType, dynType, errArgTypes, /*templateTypes=*/{}, node, /*external=*/false);
+    Function f(functionName, nullptr, thisType, returnType, errArgTypes, /*templateTypes=*/{}, node, /*external=*/false);
     // Throw error
     throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + f.getSignature() + "' could not be found");
   }
 
   // Retrieve return type
-  returnType = node->calledFunction->returnType;
+  if (node->isConstructorCall) {
+    // Add anonymous symbol to keep track of de-allocation
+    currentScope->symbolTable.insertAnonymous(thisType, node);
+    // Set return type to 'this' type
+    returnType = thisType;
+  } else {
+    // Set return type to return type of function
+    returnType = node->calledFunction->returnType;
+  }
 
   // Get function entry from function object
   SymbolTableEntry *functionEntry = node->calledFunction->entry;
@@ -1275,7 +1283,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType)};
 }
 
-std::pair<Scope *, std::string> TypeChecker::visitOrdinaryFctCall(FunctionCallNode *node) const {
+std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(FunctionCallNode *node) const {
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqFunctionName);
   if (!registryEntry)
@@ -1317,10 +1325,10 @@ std::pair<Scope *, std::string> TypeChecker::visitOrdinaryFctCall(FunctionCallNo
   node->calledFunction =
       functionParentScope->matchFunction(functionName, thisType, node->concreteTemplateTypes, node->argTypes, node);
 
-  return std::make_pair(functionParentScope, knownStructName);
+  return std::make_tuple(functionParentScope, thisType, knownStructName);
 }
 
-Scope *TypeChecker::visitMethodCall(FunctionCallNode *node, SymbolType thisType, Scope *structScope) {
+std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *node, SymbolType thisType, Scope *structScope) {
   // Traverse through structs - the first fragment is already looked up and the last one is the function name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
     const std::string identifier = node->functionNameFragments.at(i);
@@ -1343,7 +1351,7 @@ Scope *TypeChecker::visitMethodCall(FunctionCallNode *node, SymbolType thisType,
   node->calledFunction =
       functionParentScope->matchFunction(functionName, thisType, node->concreteTemplateTypes, node->argTypes, node);
 
-  return functionParentScope;
+  return std::make_pair(functionParentScope, thisType);
 }
 
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
