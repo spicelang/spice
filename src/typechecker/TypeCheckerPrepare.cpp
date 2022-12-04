@@ -57,7 +57,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = node->structScope->lookupGenericType(templateType.getSubType());
+      GenericType *genericType = node->fctScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -124,7 +124,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Build function object
   const Function spiceFunc(node->functionName, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node,
-                           /*external=*/true);
+                           /*external=*/false);
   currentScope->insertFunction(spiceFunc, &node->fctManifestations);
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
@@ -219,7 +219,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Build procedure object
   const Function spiceProc(node->procedureName, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node,
-                           /*external=*/true);
+                           /*external=*/false);
   currentScope->insertFunction(spiceProc, &node->procManifestations);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the procedure
@@ -410,7 +410,7 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
 
   // Add generic type to the scope
   const GenericType genericType(node->typeName, typeConditions);
-  currentScope->insertGenericType(genericType);
+  rootScope->insertGenericType(node->typeName, genericType);
 
   return nullptr;
 }

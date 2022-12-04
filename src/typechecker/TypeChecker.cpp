@@ -1181,6 +1181,7 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 
 std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Visit template type hints
+  node->concreteTemplateTypes.clear();
   if (node->hasTemplateTypes) {
     node->concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
@@ -1195,6 +1196,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   }
 
   // Visit args
+  node->argTypes.clear();
   if (node->hasArgs) {
     node->argTypes.reserve(node->argLst()->args().size());
     for (AssignExprNode *arg : node->argLst()->args()) {
@@ -1211,8 +1213,10 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !isStringRt)
     sourceFile->requestRuntimeModule(STRING_RT);
 
-  // Check if this is a method call or a normal function call
+  // Retrieve entry of the first fragment
   SymbolTableEntry *firstFragmentEntry = currentScope->lookup(node->functionNameFragments.front());
+
+  // Check if this is a method call or a normal function call
   Scope *functionParentScope;
   SymbolType returnType(TY_DYN);
   SymbolType thisType(TY_DYN);
@@ -1252,6 +1256,10 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     // Throw error
     throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + f.getSignature() + "' could not be found");
   }
+
+  // Check if we need to request a re-visit, because the function body was not type-checked yet
+  if (!node->calledFunction->alreadyTypeChecked)
+    reVisitRequested = true;
 
   // Retrieve return type
   if (node->isConstructorCall) {
@@ -1523,8 +1531,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     sourceFile->requestRuntimeModule(STRING_RT);
 
   // Check if it is a generic type
-  if (!isImported && currentScope->lookupGenericType(firstFragment)) {
-    const SymbolType *genericType = currentScope->lookupGenericType(firstFragment);
+  if (!isImported && rootScope->lookupGenericType(firstFragment)) {
+    const SymbolType *genericType = rootScope->lookupGenericType(firstFragment);
     assert(genericType != nullptr);
     return node->setEvaluatedSymbolType(*genericType);
   }

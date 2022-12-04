@@ -1,11 +1,9 @@
-public type Vector1 struct {
-    public int i2
+type T int|double;
+
+public type Vector<T> struct {
+    public T data
 }
 
-public type Vector struct {
-    public Vector1 i1
-}
-
-public p Vector1.ctor() {
-
+public p Vector.setData<T>(T data) {
+    this.data = data;
 }
