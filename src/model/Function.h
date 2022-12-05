@@ -42,13 +42,11 @@ public:
   [[nodiscard]] std::vector<SymbolType> getParamTypes() const;
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] std::string getSignature() const;
-  [[nodiscard]] bool isFunction() const;
-  [[nodiscard]] bool isProcedure() const;
-  [[nodiscard]] bool isMethodFunction() const;
-  [[nodiscard]] bool isMethodProcedure() const;
-  [[nodiscard]] std::vector<Function> substantiateOptionalParams() const;
-  [[nodiscard]] Function substantiateGenerics(const ParamList &concreteParamList, const SymbolType &concreteThisType,
-                                              const std::map<std::string, SymbolType> &concreteGenericTypes) const;
+  [[nodiscard]] inline bool isMethod() const { return !thisType.is(TY_DYN); }
+  [[nodiscard]] inline bool isFunction() const { return !isMethod() && !returnType.is(TY_DYN); }
+  [[nodiscard]] inline bool isProcedure() const { return !isMethod() && returnType.is(TY_DYN); }
+  [[nodiscard]] inline bool isMethodFunction() const { return isMethod() && !returnType.is(TY_DYN); }
+  [[nodiscard]] inline bool isMethodProcedure() const { return isMethod() && returnType.is(TY_DYN); }
   [[nodiscard]] bool hasSubstantiatedParams() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;

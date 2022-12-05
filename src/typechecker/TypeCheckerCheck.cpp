@@ -23,7 +23,8 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
   // Get all manifestations for this function definition
   Scope *fctParentScope = node->isMethod ? node->structScope : currentScope;
   assert(fctParentScope != nullptr);
-  std::unordered_map<std::string, Function> *manifestations = fctParentScope->getFunctionManifestations(node->codeLoc);
+  std::unordered_map<std::string, Function> *manifestations =
+      FunctionManager::getManifestationList(fctParentScope, node->codeLoc);
 
   if (manifestations) {
     node->symbolTypeIndex = 0; // Reset the symbolTypeIndex
@@ -36,7 +37,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
       // Change scope to concrete struct specialization scope
       if (node->isMethod) {
         const std::string structSignature = Struct::getSignature(node->structName, manifestation.thisType.getTemplateTypes());
-        currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
+        currentScope = rootScope->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
         assert(currentScope != nullptr && currentScope->type == SCOPE_STRUCT);
       }
 
@@ -100,7 +101,8 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
   // Get all manifestations for this procedure definition
   Scope *procParentScope = node->isMethod ? node->structScope : currentScope;
   assert(procParentScope != nullptr);
-  std::unordered_map<std::string, Function> *manifestations = procParentScope->getFunctionManifestations(node->codeLoc);
+  std::unordered_map<std::string, Function> *manifestations =
+      FunctionManager::getManifestationList(procParentScope, node->codeLoc);
 
   if (manifestations) {
     node->symbolTypeIndex = 0; // Reset the symbolTypeIndex
@@ -113,7 +115,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
       // Change scope to concrete struct specialization scope
       if (node->isMethod) {
         const std::string structSignature = Struct::getSignature(node->structName, manifestation.thisType.getTemplateTypes());
-        currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
+        currentScope = rootScope->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
         assert(currentScope != nullptr && currentScope->type == SCOPE_STRUCT);
       }
 
@@ -179,8 +181,9 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
     for (const Function *expectedMethod : interface->methods) {
       // Check if the struct implements the method
-      Function *actualMethod = currentScope->matchFunction(expectedMethod->name, node->spiceStruct->entry->getType(), {},
-                                                           expectedMethod->getParamTypes(), node);
+      Function *actualMethod =
+          FunctionManager::matchFunction(currentScope, expectedMethod->name, node->spiceStruct->entry->getType(),
+                                         /*templateTypeHints=*/{}, expectedMethod->getParamTypes(), node);
       if (!actualMethod)
         throw SemanticError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                             "The struct '" + node->structName + "' does not implement the method '" +

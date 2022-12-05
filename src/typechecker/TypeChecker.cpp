@@ -351,7 +351,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
                      /*external=*/false);
 
   // Add signature to current scope
-  currentScope->insertFunction(signature, &node->signatureManifestations);
+  FunctionManager::insertFunction(currentScope, signature, node, &node->signatureManifestations);
 
   return &node->signatureManifestations;
 }
@@ -1330,8 +1330,8 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
   Scope *functionParentScope = registryEntry->targetScope;
-  node->calledFunction =
-      functionParentScope->matchFunction(functionName, thisType, node->concreteTemplateTypes, node->argTypes, node);
+  node->calledFunction = FunctionManager::matchFunction(functionParentScope, functionName, thisType, node->concreteTemplateTypes,
+                                                        node->argTypes, node);
 
   return std::make_tuple(functionParentScope, thisType, knownStructName);
 }
@@ -1356,8 +1356,8 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
   Scope *functionParentScope = structScope;
-  node->calledFunction =
-      functionParentScope->matchFunction(functionName, thisType, node->concreteTemplateTypes, node->argTypes, node);
+  node->calledFunction = FunctionManager::matchFunction(functionParentScope, functionName, thisType, node->concreteTemplateTypes,
+                                                        node->argTypes, node);
 
   return std::make_pair(functionParentScope, thisType);
 }
