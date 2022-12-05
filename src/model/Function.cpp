@@ -84,118 +84,60 @@ std::string Function::getMangledName() const {
 }
 
 /**
- * Get a string representation of the current function
+ * Get a string representation of the current function.
+ *
+ * Example:
+ * string Vector<double>.setData<double>(double)
  *
  * @return String representation as function signature
  */
 std::string Function::getSignature() const {
-  std::string thisTyStr;
-  if (!thisType.is(TY_DYN))
-    thisTyStr = thisType.getBaseType().getSubType() + ".";
+  // Build this type string
+  std::stringstream thisTyStr;
+  if (!thisType.is(TY_DYN)) {
+    thisTyStr << thisType.getBaseType().getSubType();
+    const std::vector<SymbolType> &thisTemplateTypes = thisType.getTemplateTypes();
+    if (!thisTemplateTypes.empty()) {
+      thisTyStr << "<";
+      for (size_t i = 0; i < thisTemplateTypes.size(); i++) {
+        if (i > 0)
+          thisTyStr << ",";
+        thisTyStr << thisTemplateTypes.at(i).getName();
+      }
+      thisTyStr << ">";
+    }
+    thisTyStr << ".";
+  }
 
-  // Return type string
+  // Build return type string
   std::string returnTyStr;
   if (!returnType.is(TY_DYN))
-    returnTyStr = ": " + returnType.getName();
+    returnTyStr = returnType.getName() + " ";
 
   // Parameter type string
-  std::string paramTyStr;
-  for (const Param &param : paramList) {
-    if (!paramTyStr.empty())
-      paramTyStr += ",";
-    paramTyStr += param.type.getName();
+  std::stringstream paramTyStr;
+  for (size_t i = 0; i < paramList.size(); i++) {
+    const Param &param = paramList.at(i);
+    if (i > 0)
+      paramTyStr << ",";
+    paramTyStr << param.type.getName();
     if (param.isOptional)
-      paramTyStr += "?";
+      paramTyStr << "?";
   }
 
-  // Template type string
-  std::string templateTyStr;
-  for (const auto &templateType : templateTypes) {
-    if (!templateTyStr.empty())
-      templateTyStr += ",";
-    templateTyStr += templateType.getName();
-  }
-  if (!templateTyStr.empty())
-    templateTyStr = "<" + templateTyStr + ">";
-
-  return thisTyStr + name + templateTyStr + "(" + paramTyStr + ")" + returnTyStr;
-}
-
-/**
- * Check if the current function is a function
- *
- * @return Function or not
- */
-bool Function::isFunction() const { return !returnType.is(TY_DYN) && thisType.is(TY_DYN); }
-
-/**
- * Check if the current function is a procedure
- *
- * @return Procedure or not
- */
-bool Function::isProcedure() const { return returnType.is(TY_DYN) && thisType.is(TY_DYN); }
-
-/**
- * Check if the current function is a method function
- *
- * @return Method function or not
- */
-bool Function::isMethodFunction() const { return !returnType.is(TY_DYN) && !thisType.is(TY_DYN); }
-
-/**
- * Check if the current function is a method procedure
- *
- * @return Method procedure or not
- */
-bool Function::isMethodProcedure() const { return returnType.is(TY_DYN) && !thisType.is(TY_DYN); }
-
-/**
- * Convert the current ambiguous function with potential optional parameters to a vector of
- * definite functions without optional parameters
- *
- * @return List of definite functions
- */
-std::vector<Function> Function::substantiateOptionalParams() const {
-  std::vector<Function> definiteFunctions;
-  ParamList currentFunctionParamTypes;
-  bool metFirstOptionalParam = false;
-
-  for (const Param &param : paramList) {
-    if (param.isOptional) {         // Met optional parameter
-      if (!metFirstOptionalParam) { // Add substantiation without the optional parameter
-        definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode,
-                                       external);
-        metFirstOptionalParam = true;
-      }
-      // Add substantiation with the optional parameter
-      currentFunctionParamTypes.push_back({param.type, false});
-      definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode,
-                                     external);
-    } else { // Met mandatory parameter
-      currentFunctionParamTypes.push_back({param.type, false});
+  // Build template type string
+  std::stringstream templateTyStr;
+  if (!templateTypes.empty()) {
+    templateTyStr << "<";
+    for (size_t i = 0; i < templateTypes.size(); i++) {
+      if (i > 0)
+        templateTyStr << ",";
+      templateTyStr << templateTypes.at(i).getName();
     }
+    templateTyStr << ">";
   }
 
-  if (definiteFunctions.empty())
-    definiteFunctions.emplace_back(name, entry, thisType, returnType, currentFunctionParamTypes, templateTypes, declNode,
-                                   external);
-
-  return definiteFunctions;
-}
-
-/**
- * Convert the current ambiguous function with potential generic types to a definite function without generic types
- *
- * @return Substantiated function with concrete param types and without template types
- */
-Function Function::substantiateGenerics(const ParamList &concreteParamList, const SymbolType &concreteThisType,
-                                        const std::map<std::string, SymbolType> &concreteGenericTypes) const {
-  // Substantiate return type
-  SymbolType newReturnType = returnType.is(TY_GENERIC) ? concreteGenericTypes.at(returnType.getSubType()) : returnType;
-
-  Function substantiatedFunction(name, entry, concreteThisType, newReturnType, concreteParamList, {}, declNode, external);
-  substantiatedFunction.genericSubstantiation = true;
-  return substantiatedFunction;
+  return returnTyStr + thisTyStr.str() + name + templateTyStr.str() + "(" + paramTyStr.str() + ")";
 }
 
 /**

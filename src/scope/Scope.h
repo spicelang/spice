@@ -5,6 +5,8 @@
 #include <model/Interface.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/SymbolTable.h>
+#include <typechecker/FunctionManager.h>
+#include <typechecker/StructManager.h>
 
 // Forward declarations
 class FctDefNode;
@@ -45,6 +47,10 @@ public:
   Scope(Scope *parent, const ScopeType &scopeType, const CodeLoc *codeLoc) : parent(parent), type(scopeType), codeLoc(codeLoc) {}
   ~Scope();
 
+  // Friend classes
+  friend class FunctionManager;
+  friend class StructManager;
+
   // Public methods
   // Scope management
   Scope *createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc);
@@ -57,14 +63,6 @@ public:
   // Generic types
   void insertGenericType(const std::string &typeName, const GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
-
-  // Functions
-  void insertFunction(const Function &function, std::vector<Function *> *manifestations = nullptr);
-  Function *matchFunction(const std::string &callFunctionName, const SymbolType &callThisType,
-                          const std::vector<SymbolType> &callTemplateTypes, const std::vector<SymbolType> &callArgTypes,
-                          const ASTNode *node);
-  [[nodiscard]] std::unordered_map<std::string, Function> *getFunctionManifestations(const CodeLoc &defCodeLoc);
-  Function *insertSubstantiatedFunction(const Function &function, const ASTNode *declNode);
 
   // Structs
   Struct *insertStruct(const Struct &spiceStruct);
@@ -101,8 +99,8 @@ public:
 
 private:
   // Private members
-  std::unordered_map<std::string, std::unordered_map<std::string, Function>> functions; // <code-loc-str, map-of-representations>
-  std::unordered_map<std::string, std::unordered_map<std::string, Struct>> structs;     // <code-loc-str, map-of-representations>
+  FunctionRegistry functions;
+  StructCollection structs;
   std::unordered_map<std::string, Interface> interfaces;
   std::unordered_map<std::string, GenericType> genericTypes;
 

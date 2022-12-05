@@ -6,7 +6,9 @@
 #include <ast/ASTVisitor.h>
 #include <model/Function.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
+#include <typechecker/FunctionManager.h>
 #include <typechecker/OpRuleManager.h>
+#include <typechecker/StructManager.h>
 #include <util/CompilerWarning.h>
 
 enum TypeCheckerMode { TC_MODE_PREPARE, TC_MODE_CHECK };
@@ -29,6 +31,8 @@ public:
 
   // Friend classes
   friend class OpRuleManager;
+  friend class FunctionManager;
+  friend class StructManager;
 
   // Public methods
   std::any visitEntry(EntryNode *node) override;

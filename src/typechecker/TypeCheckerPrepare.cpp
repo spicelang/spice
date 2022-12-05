@@ -125,12 +125,13 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Build function object
   const Function spiceFunc(node->functionName, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node,
                            /*external=*/false);
-  currentScope->insertFunction(spiceFunc, &node->fctManifestations);
+  FunctionManager::insertFunction(currentScope, spiceFunc, node, &node->fctManifestations);
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
-  const std::vector<Function> substantiatedFunctions = spiceFunc.substantiateOptionalParams();
+  std::vector<Function> substantiatedFunctions;
+  FunctionManager::substantiateOptionalParams(spiceFunc, substantiatedFunctions);
   currentScope->renameChildScope(node->getScopeId(), substantiatedFunctions.front().getSignature());
-  for (int i = 1; i < substantiatedFunctions.size(); i++)
+  for (size_t i = 1; i < substantiatedFunctions.size(); i++)
     currentScope->copyChildScope(substantiatedFunctions.front().getSignature(), substantiatedFunctions[i].getSignature());
 
   // Change to the root scope
@@ -220,12 +221,13 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Build procedure object
   const Function spiceProc(node->procedureName, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node,
                            /*external=*/false);
-  currentScope->insertFunction(spiceProc, &node->procManifestations);
+  FunctionManager::insertFunction(currentScope, spiceProc, node, &node->procManifestations);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the procedure
-  const std::vector<Function> substantiatedProcedures = spiceProc.substantiateOptionalParams();
+  std::vector<Function> substantiatedProcedures;
+  FunctionManager::substantiateOptionalParams(spiceProc, substantiatedProcedures);
   currentScope->renameChildScope(node->getScopeId(), substantiatedProcedures.front().getSignature());
-  for (int i = 1; i < substantiatedProcedures.size(); i++)
+  for (size_t i = 1; i < substantiatedProcedures.size(); i++)
     currentScope->copyChildScope(substantiatedProcedures.front().getSignature(), substantiatedProcedures[i].getSignature());
 
   // Change to the root scope
@@ -477,10 +479,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Add function to current scope
-  std::vector<Function *> manifestations;
-  currentScope->insertFunction(spiceFunc, &manifestations);
-  assert(!manifestations.empty());
-  node->externalFunction = manifestations.front();
+  node->externalFunction = FunctionManager::insertFunction(currentScope, spiceFunc, node, nullptr);
 
   return nullptr;
 }
