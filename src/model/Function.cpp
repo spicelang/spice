@@ -3,7 +3,6 @@
 #include "Function.h"
 
 #include <ast/ASTNodes.h>
-#include <util/CommonUtil.h>
 
 /**
  * Retrieve the parameter types of the current function

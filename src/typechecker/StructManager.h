@@ -6,29 +6,28 @@
 #include <unordered_map>
 #include <vector>
 
+#include <typechecker/FunctionManager.h>
+
 // Forward declarations
-class TypeChecker;
 class Struct;
 class Scope;
 class SymbolType;
 class ASTNode;
 
-using StructSubstantiationList = std::unordered_map</*mangledName=*/std::string, /*structObject=*/Struct>;
-using StructCollection = std::unordered_map</*codeLoc=*/std::string, /*manifestations=*/StructSubstantiationList>;
+using StructManifestationList = std::unordered_map</*mangledName=*/std::string, /*structObject=*/Struct>;
+using StructRegistry = std::unordered_map</*codeLoc=*/std::string, /*manifestations=*/StructManifestationList>;
 
 class StructManager {
 public:
-  // Constructors
-  explicit StructManager(const TypeChecker *typeChecker);
-
   // Public methods
-  [[nodiscard]] Struct *insertStruct(const Struct &spiceStruct) const;
-  [[nodiscard]] Struct *matchStruct(const std::string &name, const std::vector<SymbolType> &templateTypes,
-                                    const ASTNode *node) const;
+  [[nodiscard]] static Struct *insertStruct(Scope *insertScope, const Struct &spiceStruct);
+  [[nodiscard]] static Struct *matchStruct(Scope *matchScope, const std::string &requestedName,
+                                           const std::vector<SymbolType> &requestedTemplateTypes, const ASTNode *node);
 
 private:
-  // Private members
-  Scope *currentScope = nullptr;
-
   // Private methods
+  [[nodiscard]] static Struct *insertSubstantiation(Scope *insertScope, const Struct &newManifestation, const ASTNode *declNode);
+  [[nodiscard]] static bool matchName(const Struct &candidate, const std::string &requestedName);
+  [[nodiscard]] static bool matchTemplateTypes(Struct &candidate, const std::vector<SymbolType> &requestedTemplateTypes,
+                                               TypeMapping &typeMapping);
 };

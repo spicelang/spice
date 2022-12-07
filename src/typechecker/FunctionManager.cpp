@@ -7,7 +7,7 @@
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeChecker.h>
 
-Function *FunctionManager::insertFunction(Scope *insertScope, const Function &baseFunction, const ASTNode *declNode,
+Function *FunctionManager::insertFunction(Scope *insertScope, const Function &baseFunction,
                                           std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
   insertScope->functions.insert({baseFunction.declNode->codeLoc.toString(), std::unordered_map<std::string, Function>()});
@@ -19,7 +19,7 @@ Function *FunctionManager::insertFunction(Scope *insertScope, const Function &ba
 
   // Save substantiations
   for (const Function &manifestation : manifestations) {
-    Function *manifestationPtr = insertSubstantiation(insertScope, manifestation, declNode);
+    Function *manifestationPtr = insertSubstantiation(insertScope, manifestation, baseFunction.declNode);
     assert(manifestationPtr != nullptr);
     if (nodeFunctionList)
       nodeFunctionList->push_back(manifestationPtr);
@@ -33,10 +33,11 @@ Function *FunctionManager::insertFunction(Scope *insertScope, const Function &ba
  * Create definite functions from ambiguous ones, in regards to optional arguments.
  *
  * Example:
- * int testFunc(string, int?)
+ * int testFunc(string, int?, double?)
  * gets
  * int testFunc(string)
  * int testFunc(string, int)
+ * int testFunc(string, int, double)
  *
  * This method also accepts functions, that are already definite, but does nothing to them.
  *
@@ -88,13 +89,12 @@ FunctionManifestationList *FunctionManager::getManifestationList(Scope *lookupSc
   return lookupScope->functions.contains(codeLocStr) ? &lookupScope->functions.at(codeLocStr) : nullptr;
 }
 
-Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &substantiatedFunction,
-                                                const ASTNode *declNode) {
-  assert(substantiatedFunction.hasSubstantiatedParams());
+Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
+  assert(newManifestation.hasSubstantiatedParams());
 
-  const std::string mangledFctName = substantiatedFunction.getMangledName();
+  const std::string mangledFctName = newManifestation.getMangledName();
   const std::string codeLocStr = declNode->codeLoc.toString();
-  const std::string signature = substantiatedFunction.getSignature();
+  const std::string signature = newManifestation.getSignature();
 
   // Check if the function exists already
   for (const auto &[_, manifestations] : insertScope->functions)
@@ -106,7 +106,7 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
   FunctionManifestationList &manifestationList = insertScope->functions.at(codeLocStr);
 
   // Add substantiated function
-  manifestationList.emplace(mangledFctName, substantiatedFunction);
+  manifestationList.emplace(mangledFctName, newManifestation);
   return &manifestationList.at(mangledFctName);
 }
 
@@ -114,6 +114,7 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * Check if there is a function in the scope, fulfilling all given requirements and if found, return it.
  * If more than one function matches the requirement, an error gets thrown.
  *
+ * @param matchScope Scope to match against
  * @param requestedName Function name requirement
  * @param requestedThisType This type requirement
  * @param templateTypeHints Template types to substantiate generic types
@@ -122,7 +123,6 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * @return Matched function or nullptr
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
-                                         const std::vector<SymbolType> &templateTypeHints,
                                          const std::vector<SymbolType> &requestedParamTypes, const ASTNode *callNode) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
@@ -141,18 +141,16 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       if (!matchName(candidate, requestedName))
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name
 
-      // Create mapping table from generic type name to concrete type
-      std::unordered_map</*name=*/std::string, /*concreteType=*/SymbolType> concreteTemplateTypes;
-      concreteTemplateTypes.reserve(templateTypeHints.size());
-      for (size_t i = 0; i < templateTypeHints.size(); i++)
-        concreteTemplateTypes.insert({candidate.templateTypes.at(i).getName(), templateTypeHints.at(i)});
+      // Prepare mapping table from generic type name to concrete type
+      std::unordered_map</*name=*/std::string, /*concreteType=*/SymbolType> typeMapping;
+      typeMapping.reserve(candidate.templateTypes.size());
 
       // Check 'this' type requirement
-      if (!matchThisType(candidate, requestedThisType, concreteTemplateTypes, callNode))
+      if (!matchThisType(candidate, requestedThisType, typeMapping))
         continue; // Leave this manifestation and try the next one
 
       // Check arg types requirement
-      if (!matchArgTypes(candidate, requestedParamTypes, concreteTemplateTypes, callNode))
+      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping))
         continue; // Leave this manifestation and try the next one
 
       // We found a match! -> Check if it needs to be substantiated
@@ -162,7 +160,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
         continue; // Match was successful -> match the next function
       }
 
-      // Clear template types of candidate
+      // Clear template types of candidate, since they are not needed anymore
       candidate.templateTypes.clear();
 
       // Check if we already have this manifestation and can simply re-use it
@@ -179,7 +177,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 
       // Insert symbols for generic type names with concrete types into the child block
       Scope *childBlock = matchScope->getChildScope(substantiatedFunction->getSignature());
-      for (const auto &[typeName, concreteType] : concreteTemplateTypes)
+      for (const auto &[typeName, concreteType] : typeMapping)
         childBlock->insertGenericType(typeName, GenericType(concreteType));
 
       // Substantiate the 'this' symbol table entry in the new function scope
@@ -207,31 +205,6 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 }
 
 /**
- * Uses the provided template type hints to deduce and fill in the return and argument types of a matching candidate
- *
- * @param candidate Matching candidate function
- * @param templateTypeHints Provided type hints
- */
-void FunctionManager::applyTemplateTypeHints(Function &candidate, const std::vector<SymbolType> &templateTypeHints,
-                                             TypeMapping &concreteTemplateTypes) {
-  assert(templateTypeHints.size() <= candidate.templateTypes.size());
-
-  // Substantiate return type
-  const std::string returnTypeName = candidate.returnType.getBaseType().getSubType();
-  if (candidate.returnType.isBaseType(TY_GENERIC) && concreteTemplateTypes.contains(returnTypeName))
-    candidate.returnType = candidate.returnType.replaceBaseType(concreteTemplateTypes.at(returnTypeName));
-
-  // Substantiate param types
-  for (auto &[paramType, optional] : candidate.paramList) {
-    assert(!optional); // All parameters should be substantiated at this point
-    const std::string paramTypeName = paramType.getBaseType().getSubType();
-    // Replace base type with concrete type
-    if (paramType.isBaseType(TY_GENERIC) && concreteTemplateTypes.contains(paramTypeName))
-      paramType = paramType.replaceBaseType(concreteTemplateTypes.at(paramTypeName));
-  }
-}
-
-/**
  * Checks if the matching candidate fulfills the name requirement
  *
  * @param candidate Matching candidate function
@@ -247,10 +220,10 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  *
  * @param candidate Matching candidate function
  * @param requestedThisType Requested 'this' type
+ * @param typeMapping Concrete template type mapping
  * @return Fulfilled or not
  */
-bool FunctionManager::matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping,
-                                    const ASTNode *callNode) {
+bool FunctionManager::matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping) {
   assert(candidate.thisType.is(TY_STRUCT) && requestedThisType.is(TY_STRUCT)); // The 'this' type must always be a struct
 
   // If the candidate 'this' type is non-generic, we can simpy check for equality of the types
@@ -297,10 +270,11 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
  *
  * @param candidate Matching candidate function
  * @param requestedParamTypes Requested argument types
+ * @param typeMapping Concrete template type mapping
  * @return Fulfilled or not
  */
 bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedParamTypes,
-                                    TypeMapping &typeMapping, const ASTNode *callNode) {
+                                    TypeMapping &typeMapping) {
   // If the number of arguments does not match with the number of params, the matching fails
   if (requestedParamTypes.size() != candidate.paramList.size())
     return false;

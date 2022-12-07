@@ -283,7 +283,7 @@ public:
   bool hasInterfaces = false;
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
-  Struct *spiceStruct;
+  Struct *spiceStruct = nullptr;
 };
 
 // ======================================================= InterfaceDefNode ======================================================
@@ -305,7 +305,7 @@ public:
   std::string interfaceName;
   SymbolTableEntry *entry = nullptr;
   Scope *interfaceScope = nullptr;
-  Interface *spiceInterface;
+  Interface *spiceInterface = nullptr;
 };
 
 // ========================================================== EnumDefNode ========================================================
@@ -1400,19 +1400,16 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFunctionCall(this); }
 
   // Public get methods
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
   [[nodiscard]] ArgLstNode *argLst() const { return getChild<ArgLstNode>(); }
 
   // Public members
   std::string fqFunctionName;
   std::vector<std::string> functionNameFragments;
-  bool hasTemplateTypes = false;
   bool hasArgs = false;
   bool isConstructorCall = false;
   bool isMethodCall = false;
-  std::vector<SymbolType> concreteTemplateTypes;
   std::vector<SymbolType> argTypes;
-  Function *calledFunction;
+  Function *calledFunction = nullptr;
 };
 
 // ================================================= ArrayInitializationNode =====================================================

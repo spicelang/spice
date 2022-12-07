@@ -130,125 +130,6 @@ GenericType *Scope::lookupGenericType(const std::string &typeName) { // NOLINT(m
 }
 
 /**
- * Insert a struct object into this symbol table scope
- *
- * @param spiceStruct Struct object
- */
-Struct *Scope::insertStruct(const Struct &spiceStruct) {
-  // Open a new struct declaration pointer list. Which gets filled by the 'insertSubstantiatedStruct' method
-  std::string codeLocStr = spiceStruct.declNode->codeLoc.toString();
-  structs.insert({codeLocStr, std::unordered_map<std::string, Struct>()});
-  return insertSubstantiatedStruct(spiceStruct, spiceStruct.declNode);
-}
-
-/**
- * Check if there is a struct in this scope, fulfilling all given requirements and if found, return it.
- * If more than one struct matches the requirement, an error gets thrown
- *
- * @param currentScope Current scope
- * @param structName Struct name
- * @param templateTypes Template type requirements
- * @param node Declaration node for the error message
- * @return Matched struct or nullptr
- */
-Struct *Scope::matchStruct(Scope *currentScope, const std::string &structName, // NOLINT(misc-no-recursion)
-                           const std::vector<SymbolType> &templateTypes, const ASTNode *node) {
-  std::vector<Struct *> matches;
-
-  // Loop through structs and add any matches to the matches vector
-  auto oldStructList = structs;
-  for (const auto &[defCodeLocStr, manifestations] : oldStructList) {
-    auto oldManifestations = manifestations;
-    for (auto &[mangledName, s] : oldManifestations) {
-      // Check name requirement
-      if (s.name != structName)
-        continue;
-
-      // Check template types requirement
-      const std::vector<GenericType> structTemplateTypes = s.templateTypes;
-      if (structTemplateTypes.empty()) {
-        // It's a match!
-        matches.push_back(&structs.at(defCodeLocStr).at(s.getMangledName()));
-      } else {
-        if (structTemplateTypes.size() != templateTypes.size())
-          continue;
-        std::vector<SymbolType> concreteTemplateTypes;
-        bool differentTemplateTypes = false; // Note: This is a workaround for a break from an inner loop
-        for (int i = 0; i < templateTypes.size(); i++) {
-          if (!structTemplateTypes[i].checkConditionsOf(templateTypes[i])) {
-            differentTemplateTypes = true;
-            break;
-          }
-          concreteTemplateTypes.push_back(templateTypes[i]);
-        }
-        if (differentTemplateTypes)
-          continue;
-
-        // Duplicate struct
-        Scope *structScope = getChildScope(STRUCT_SCOPE_PREFIX + structName);
-        Struct newStruct = s.substantiateGenerics(concreteTemplateTypes, structScope);
-        if (!getChildScope(STRUCT_SCOPE_PREFIX + newStruct.getSignature())) { // Insert struct
-          insertSubstantiatedStruct(newStruct, s.declNode);
-          copyChildScope(STRUCT_SCOPE_PREFIX + structName, STRUCT_SCOPE_PREFIX + newStruct.getSignature());
-        }
-
-        assert(structs.contains(defCodeLocStr));
-        std::unordered_map<std::string, Struct> &manifestations = structs.at(defCodeLocStr);
-        assert(manifestations.contains(newStruct.getMangledName()));
-        matches.push_back(&manifestations.at(newStruct.getMangledName()));
-        break;
-      }
-    }
-  }
-
-  if (matches.empty() && parent)
-    matches.push_back(parent->matchStruct(currentScope, structName, templateTypes, node));
-
-  if (matches.empty())
-    return nullptr;
-
-  // Throw error if more than one struct matches the criteria
-  if (matches.size() > 1)
-    throw SemanticError(
-        node, STRUCT_AMBIGUITY,
-        "More than one struct matches your requested signature criteria. Please try to specify the return type explicitly");
-
-  return matches.front();
-}
-
-/**
- * Retrieve the manifestations of the struct, defined at defToken
- *
- * @return Struct manifestations
- */
-std::unordered_map<std::string, Struct> *Scope::getStructManifestations(const CodeLoc &defCodeLoc) {
-  std::string codeLocStr = defCodeLoc.toString();
-  if (!structs.contains(codeLocStr))
-    throw std::runtime_error("Internal compiler error: Cannot get struct manifestations at " + codeLocStr);
-  return &structs.at(codeLocStr);
-}
-
-/**
- * Insert a substantiated struct into the struct list. If the list already contains a struct with the same signature,
- * an exception will be thrown
- *
- * @param s Substantiated struct
- * @param declNode Declaration AST node
- */
-Struct *Scope::insertSubstantiatedStruct(const Struct &s, const ASTNode *declNode) {
-  // Check if the struct exists already
-  for (const auto &[_, manifestations] : structs) {
-    if (manifestations.contains(s.getMangledName()))
-      throw SemanticError(declNode, STRUCT_DECLARED_TWICE, "The struct '" + s.getSignature() + "' is declared twice");
-  }
-  // Add struct to struct list
-  const std::string codeLocStr = declNode->codeLoc.toString();
-  assert(structs.contains(codeLocStr));
-  structs.at(codeLocStr).emplace(s.getMangledName(), s);
-  return &structs.at(codeLocStr).at(s.getMangledName());
-}
-
-/**
  * Retrieve an interface instance by its name
  *
  * @param interfaceName Name of the interface
@@ -367,6 +248,11 @@ bool Scope::doesAllowUnsafeOperations() const { // NOLINT(misc-no-recursion)
   return parent != nullptr && parent->doesAllowUnsafeOperations();
 }
 
+/**
+ * Get JSON representation of the symbol table
+ *
+ * @return Symbol table as JSON object
+ */
 nlohmann::json Scope::getSymbolTableJSON() const {
   nlohmann::json result = symbolTable.toJSON();
 

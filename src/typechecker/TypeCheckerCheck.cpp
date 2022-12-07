@@ -181,9 +181,8 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
     for (const Function *expectedMethod : interface->methods) {
       // Check if the struct implements the method
-      Function *actualMethod =
-          FunctionManager::matchFunction(currentScope, expectedMethod->name, node->spiceStruct->entry->getType(),
-                                         /*templateTypeHints=*/{}, expectedMethod->getParamTypes(), node);
+      Function *actualMethod = FunctionManager::matchFunction(
+          currentScope, expectedMethod->name, node->spiceStruct->entry->getType(), expectedMethod->getParamTypes(), node);
       if (!actualMethod)
         throw SemanticError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                             "The struct '" + node->structName + "' does not implement the method '" +
