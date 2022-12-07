@@ -351,7 +351,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
                      /*external=*/false);
 
   // Add signature to current scope
-  FunctionManager::insertFunction(currentScope, signature, node, &node->signatureManifestations);
+  FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
 
   return &node->signatureManifestations;
 }
@@ -976,15 +976,13 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
       // Check if lhs is enum or strobj
-      if (!lhsTy.isBaseType(TY_STRUCT))
+      const SymbolType lhsBaseTy = lhsTy.getBaseType();
+      if (!lhsBaseTy.is(TY_STRUCT))
         throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsTy.getName());
 
       // Retrieve registry entry
-      const std::string structName = lhsEntry->getType().getBaseType().getSubType();
-      const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(structName);
-      assert(registryEntry != nullptr);
-      Scope *structScope = registryEntry->targetScope;
-      assert(structScope != nullptr);
+      const std::string structName = lhsBaseTy.getSubType();
+      Scope *structScope = lhsBaseTy.getStructBodyScope();
 
       // Get accessed field
       SymbolTableEntry *memberEntry = structScope->lookupStrict(node->identifier[identifierCounter]);
@@ -1180,21 +1178,6 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 }
 
 std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
-  // Visit template type hints
-  node->concreteTemplateTypes.clear();
-  if (node->hasTemplateTypes) {
-    node->concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
-    for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
-      // Visit template type
-      const auto templateType = any_cast<SymbolType>(visit(templateTypeNode));
-      // Check if template type is valid
-      if (templateType.isBaseType(TY_GENERIC))
-        throw SemanticError(node, EXPECTED_NON_GENERIC_TYPE, "Template hints may contain non-generic types only");
-      // Add the type to the concrete template types list
-      node->concreteTemplateTypes.push_back(templateType);
-    }
-  }
-
   // Visit args
   node->argTypes.clear();
   if (node->hasArgs) {
@@ -1330,8 +1313,7 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
   Scope *functionParentScope = registryEntry->targetScope;
-  node->calledFunction = FunctionManager::matchFunction(functionParentScope, functionName, thisType, node->concreteTemplateTypes,
-                                                        node->argTypes, node);
+  node->calledFunction = FunctionManager::matchFunction(functionParentScope, functionName, thisType, node->argTypes, node);
 
   return std::make_tuple(functionParentScope, thisType, knownStructName);
 }
@@ -1356,8 +1338,7 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
   Scope *functionParentScope = structScope;
-  node->calledFunction = FunctionManager::matchFunction(functionParentScope, functionName, thisType, node->concreteTemplateTypes,
-                                                        node->argTypes, node);
+  node->calledFunction = FunctionManager::matchFunction(functionParentScope, functionName, thisType, node->argTypes, node);
 
   return std::make_pair(functionParentScope, thisType);
 }
@@ -1400,25 +1381,28 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   SymbolType structType = structEntry->getType().replaceBaseSubType(registryEntry->name);
 
   // Get the concrete template types
-  std::vector<SymbolType> concreteTemplateTypes;
+  std::vector<SymbolType> templateTypeHints;
   if (node->templateTypeLst()) {
-    concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
+    templateTypeHints.reserve(node->templateTypeLst()->dataTypes().size());
     for (const auto &dataType : node->templateTypeLst()->dataTypes())
-      concreteTemplateTypes.push_back(std::any_cast<SymbolType>(visit(dataType)));
+      templateTypeHints.push_back(std::any_cast<SymbolType>(visit(dataType)));
   }
 
   // Get the struct instance
-  Struct *spiceStruct = structScope->parent->matchStruct(currentScope, structEntry->name, concreteTemplateTypes, node);
+  Struct *spiceStruct = StructManager::matchStruct(structScope->parent, structEntry->name, templateTypeHints, node);
   if (!spiceStruct) {
-    const std::string structSignature = Struct::getSignature(structEntry->name, concreteTemplateTypes);
+    const std::string structSignature = Struct::getSignature(structEntry->name, templateTypeHints);
     throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
   }
   spiceStruct->used = true;
 
+  // Use scope of concrete substantiation and not the scope of the generic type
+  structScope = spiceStruct->structScope;
+  structType.setStructBodyScope(structScope);
+
   // Set template types to the struct
-  const std::vector<GenericType> templateTypesGeneric = spiceStruct->templateTypes;
   std::vector<SymbolType> templateTypes;
-  for (const GenericType &genericType : templateTypesGeneric)
+  for (const GenericType &genericType : spiceStruct->templateTypes)
     templateTypes.emplace_back(genericType.typeChain);
   structType.setTemplateTypes(templateTypes);
 
@@ -1561,7 +1545,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
     // Set the struct instance to used, if found
     // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
-    Struct *spiceStruct = accessScope->matchStruct(nullptr, node->typeNameFragments.back(), concreteTemplateTypes, node);
+    const std::string structName = node->typeNameFragments.back();
+    Struct *spiceStruct = StructManager::matchStruct(accessScope, structName, concreteTemplateTypes, node);
     if (spiceStruct)
       spiceStruct->used = true;
 

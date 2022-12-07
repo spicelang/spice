@@ -125,7 +125,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Build function object
   const Function spiceFunc(node->functionName, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node,
                            /*external=*/false);
-  FunctionManager::insertFunction(currentScope, spiceFunc, node, &node->fctManifestations);
+  FunctionManager::insertFunction(currentScope, spiceFunc, &node->fctManifestations);
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
   std::vector<Function> substantiatedFunctions;
@@ -221,7 +221,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Build procedure object
   const Function spiceProc(node->procedureName, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node,
                            /*external=*/false);
-  FunctionManager::insertFunction(currentScope, spiceProc, node, &node->procManifestations);
+  FunctionManager::insertFunction(currentScope, spiceProc, &node->procManifestations);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the procedure
   std::vector<Function> substantiatedProcedures;
@@ -314,7 +314,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Build struct object
   Struct spiceStruct(node->structName, structEntry, fieldTypes, usedTemplateTypesGeneric, interfaceTypes, node);
-  node->spiceStruct = currentScope->insertStruct(spiceStruct);
+  node->spiceStruct = StructManager::insertStruct(currentScope, spiceStruct);
   spiceStruct.structScope = node->structScope;
 
   return nullptr;
@@ -479,7 +479,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Add function to current scope
-  node->externalFunction = FunctionManager::insertFunction(currentScope, spiceFunc, node, nullptr);
+  node->externalFunction = FunctionManager::insertFunction(currentScope, spiceFunc, nullptr);
 
   return nullptr;
 }

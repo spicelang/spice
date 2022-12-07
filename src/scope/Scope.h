@@ -64,13 +64,6 @@ public:
   void insertGenericType(const std::string &typeName, const GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
 
-  // Structs
-  Struct *insertStruct(const Struct &spiceStruct);
-  Struct *matchStruct(Scope *currentScope, const std::string &structName, const std::vector<SymbolType> &templateTypes,
-                      const ASTNode *node);
-  [[nodiscard]] std::unordered_map<std::string, Struct> *getStructManifestations(const CodeLoc &defCodeLoc);
-  Struct *insertSubstantiatedStruct(const Struct &s, const ASTNode *declNode);
-
   // Interfaces
   Interface *lookupInterface(const std::string &interfaceName);
   void insertInterface(const Interface &interface);
@@ -100,7 +93,7 @@ public:
 private:
   // Private members
   FunctionRegistry functions;
-  StructCollection structs;
+  StructRegistry structs;
   std::unordered_map<std::string, Interface> interfaces;
   std::unordered_map<std::string, GenericType> genericTypes;
 

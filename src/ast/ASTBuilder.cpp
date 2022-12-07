@@ -1483,10 +1483,7 @@ std::any ASTBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
 
   for (const auto &subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
-      currentNode = fctCallNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
-      fctCallNode->hasTemplateTypes = true;
-    } else if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) { // ArgLst
+    if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) { // ArgLst
       currentNode = fctCallNode->createChild<ArgLstNode>(CodeLoc(rule->start, filePath));
       fctCallNode->hasArgs = true;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);

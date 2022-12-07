@@ -1,6 +1,6 @@
 //import "std/type/int" as unused;
 
-type T int|double;
+/*type T int|double;
 
 public type Vector<T> struct {
     public T data
@@ -14,7 +14,14 @@ f<int> main() {
     dyn v = Vector<int>{1};
     v.setData(12);
     printf("Data: %d\n", v.data);
-    /*dyn v2 = Vector<double>{};
-    v2.setData(1.5);
-    printf("Data: %d\n", v.data);*/
+    //dyn v2 = Vector<double>{};
+    //v2.setData(1.5);
+    //printf("Data: %d\n", v.data);
+}*/
+
+type NotAPointer struct {}
+
+f<int> main() {
+    NotAPointer nonPtr = NotAPointer {};
+    //printf("%p", nonPtr);
 }

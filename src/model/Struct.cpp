@@ -2,40 +2,37 @@
 
 #include "Struct.h"
 
-#include <ast/ASTNodes.h>
-#include <scope/Scope.h>
-#include <util/CommonUtil.h>
-
 /**
  * Mange the struct and return the mangled string
  *
  * @return Mangled string
  */
 std::string Struct::getMangledName() const {
-  // Field type string
-  std::string fieldTyStr;
-  for (const auto &fieldType : fieldTypes) {
-    if (!fieldTyStr.empty())
-      fieldTyStr += "_";
-    fieldTyStr += fieldType.getName(false, true);
+  // Build field type string
+  std::stringstream fieldTyStr;
+  for (size_t i = 0; i < fieldTypes.size(); i++) {
+    if (i > 0)
+      fieldTyStr << "_";
+    fieldTyStr << fieldTypes.at(i).getName(false, true);
   }
 
-  // Template type string
-  std::string templateTyStr;
-  for (const auto &templateType : templateTypes) {
-    if (!templateTyStr.empty())
-      templateTyStr += "_";
-    templateTyStr += templateType.getName(false, true);
+  // Build template type string
+  std::stringstream templateTyStr;
+  for (size_t i = 0; i < templateTypes.size(); i++) {
+    if (i > 0)
+      templateTyStr << "_";
+    templateTyStr << templateTypes.at(i).getName(false, true);
   }
 
   // Construct mangled name
-  std::string mangledName = "_s";
-  if (!templateTyStr.empty())
-    mangledName += "__" + templateTyStr;
-  mangledName += "__" + name;
-  if (!fieldTyStr.empty())
-    mangledName += "__" + fieldTyStr;
-  return mangledName;
+  std::stringstream mangledName("_s");
+  if (!templateTypes.empty())
+    mangledName << "__" << templateTyStr.str();
+  mangledName << "__" << name;
+  if (!fieldTypes.empty())
+    mangledName << "__" << fieldTyStr.str();
+
+  return mangledName.str();
 }
 
 /**
@@ -48,41 +45,6 @@ std::string Struct::getSignature() const {
   for (const auto &templateType : templateTypes)
     templateSymbolTypes.push_back(templateType);
   return getSignature(name, templateSymbolTypes);
-}
-
-/**
- * Convert the current ambiguous struct with potential generic types to a definite struct without generic types
- *
- * @return Substantiated struct without template types
- */
-Struct Struct::substantiateGenerics(const std::vector<SymbolType> &concreteTemplateTypes, Scope *scope) const {
-  // Convert concrete template types to a list of generic types
-  std::vector<GenericType> concreteTemplateTypesGeneric;
-  for (const auto &concreteTemplateType : concreteTemplateTypes)
-    concreteTemplateTypesGeneric.emplace_back(concreteTemplateType);
-
-  // Substantiate field types
-  std::vector<SymbolType> currentFieldTypes;
-  for (int i = 0; i < fieldTypes.size(); i++) {
-    SymbolTableEntry *fieldEntry = scope->symbolTable.lookupByIndex(i);
-    if (fieldTypes[i].isBaseType(TY_GENERIC)) {        // We have to replace it only if it is a generic type
-      for (int j = 0; j < templateTypes.size(); j++) { // Go through all template types and get the respective concrete type
-        if (fieldTypes[i].getBaseType() == templateTypes[j]) {
-          const SymbolType &newFieldType =
-              fieldTypes[i].replaceBaseType(concreteTemplateTypes[j]); // Use the concrete type instead of the generic one
-          fieldEntry->updateType(newFieldType, true);
-          currentFieldTypes.push_back(newFieldType);
-          break;
-        }
-      }
-    } else {
-      currentFieldTypes.push_back(fieldEntry->getType());
-    }
-  }
-
-  Struct substantiatedStruct(name, entry, currentFieldTypes, concreteTemplateTypesGeneric, interfaceTypes, declNode);
-  substantiatedStruct.genericSubstantiation = true;
-  return substantiatedStruct;
 }
 
 /**
@@ -107,20 +69,25 @@ bool Struct::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
 /**
  * Get the signature from the struct name and the concrete template types
  *
+ * Example:
+ * Pair<int,double>
+ *
  * @param structName Struct name
  * @param concreteTemplateTypes Concrete template types
  * @return Signature
  */
 std::string Struct::getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes) {
-  // Template type string
-  std::string templateTyStr;
-  for (const auto &templateType : concreteTemplateTypes) {
-    if (!templateTyStr.empty())
-      templateTyStr += ",";
-    templateTyStr += templateType.getName();
+  // Build template type string
+  std::stringstream templateTyStr;
+  if (!concreteTemplateTypes.empty()) {
+    templateTyStr << "<";
+    for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
+      if (i > 0)
+        templateTyStr << ",";
+      templateTyStr << concreteTemplateTypes.at(i).getName();
+    }
+    templateTyStr << ">";
   }
-  if (!templateTyStr.empty())
-    templateTyStr = "<" + templateTyStr + ">";
 
-  return structName + templateTyStr;
+  return structName + templateTyStr.str();
 }
