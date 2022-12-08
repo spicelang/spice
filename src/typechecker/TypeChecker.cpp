@@ -1381,17 +1381,22 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   SymbolType structType = structEntry->getType().replaceBaseSubType(registryEntry->name);
 
   // Get the concrete template types
-  std::vector<SymbolType> templateTypeHints;
+  std::vector<SymbolType> concreteTemplateTypes;
   if (node->templateTypeLst()) {
-    templateTypeHints.reserve(node->templateTypeLst()->dataTypes().size());
-    for (const auto &dataType : node->templateTypeLst()->dataTypes())
-      templateTypeHints.push_back(std::any_cast<SymbolType>(visit(dataType)));
+    concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
+    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+      auto concreteType = std::any_cast<SymbolType>(visit(dataType));
+      // Check if generic type
+      if (concreteType.is(TY_GENERIC))
+        throw SemanticError(dataType, EXPECTED_NON_GENERIC_TYPE, "Struct instantiations may only take concrete template types");
+      concreteTemplateTypes.push_back(concreteType);
+    }
   }
 
   // Get the struct instance
-  Struct *spiceStruct = StructManager::matchStruct(structScope->parent, structEntry->name, templateTypeHints, node);
+  Struct *spiceStruct = StructManager::matchStruct(structScope->parent, structEntry->name, concreteTemplateTypes, node);
   if (!spiceStruct) {
-    const std::string structSignature = Struct::getSignature(structEntry->name, templateTypeHints);
+    const std::string structSignature = Struct::getSignature(structEntry->name, concreteTemplateTypes);
     throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
   }
   spiceStruct->used = true;
@@ -1527,6 +1532,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'");
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *entry = registryEntry->targetEntry;
+  assert(entry != nullptr);
   accessScope = registryEntry->targetScope->parent;
 
   // Get struct type and change it to the fully qualified name for identifying without ambiguities
@@ -1539,9 +1545,16 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (entryType.is(TY_STRUCT)) {
     // Collect the concrete template types
     std::vector<SymbolType> concreteTemplateTypes;
-    if (node->templateTypeLst())
-      for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes())
-        concreteTemplateTypes.push_back(std::any_cast<SymbolType>(visit(dataType)));
+    if (node->templateTypeLst()) {
+      concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
+      for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+        auto concreteType = std::any_cast<SymbolType>(visit(dataType));
+        // Check if generic type
+        if (concreteType.is(TY_GENERIC))
+          throw SemanticError(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here");
+        concreteTemplateTypes.push_back(concreteType);
+      }
+    }
 
     // Set the struct instance to used, if found
     // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs

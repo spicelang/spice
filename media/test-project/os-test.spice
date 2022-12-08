@@ -1,27 +1,9 @@
-//import "std/type/int" as unused;
-
-/*type T int|double;
-
-public type Vector<T> struct {
-    public T data
-}
-
-public p Vector.setData<T>(T data) {
-    this.data = data;
-}
+import "os-test2" as s1;
 
 f<int> main() {
-    dyn v = Vector<int>{1};
+    dyn v = s1::Vector<int>{};
     v.setData(12);
     printf("Data: %d\n", v.data);
-    //dyn v2 = Vector<double>{};
-    //v2.setData(1.5);
-    //printf("Data: %d\n", v.data);
-}*/
-
-type NotAPointer struct {}
-
-f<int> main() {
-    NotAPointer nonPtr = NotAPointer {};
-    //printf("%p", nonPtr);
+    v.setData(1.5);
+    printf("Data: %d\n", v.data);
 }

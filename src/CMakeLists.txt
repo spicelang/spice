@@ -133,6 +133,7 @@ set(SOURCES
         util/CompilerWarning.cpp
         util/CompilerWarning.h
         util/Timer.h
+        #util/Memory.h
 )
 
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})

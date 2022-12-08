@@ -72,14 +72,14 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
 
       // We found a match! -> Check if it needs to be substantiated
       if (presetStruct.templateTypes.empty()) {
-        assert(structRegistry.contains(defCodeLocStr) && structRegistry.at(defCodeLocStr).contains(mangledName));
-        matches.push_back(&structRegistry.at(defCodeLocStr).at(mangledName));
+        assert(matchScope->structs.contains(defCodeLocStr) && matchScope->structs.at(defCodeLocStr).contains(mangledName));
+        matches.push_back(&matchScope->structs.at(defCodeLocStr).at(mangledName));
         continue; // Match was successful -> match the next struct
       }
 
       // Check if we already have this manifestation and can simply re-use it
       if (manifestations.contains(candidate.getMangledName())) {
-        matches.push_back(&structRegistry.at(defCodeLocStr).at(candidate.getMangledName()));
+        matches.push_back(&matchScope->structs.at(defCodeLocStr).at(candidate.getMangledName()));
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 

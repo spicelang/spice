@@ -11,6 +11,7 @@ class Function;
 class Scope;
 class SymbolType;
 class ASTNode;
+class GenericType;
 struct CodeLoc;
 
 using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, /*structObject=*/Function>;
@@ -36,4 +37,6 @@ private:
   [[nodiscard]] static bool matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping);
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedParamTypes,
                                           TypeMapping &typeMapping);
+  [[nodiscard]] static const GenericType *getGenericTypeByNameFromCandidate(const Function &candidate,
+                                                                            const std::string &templateTypeName);
 };

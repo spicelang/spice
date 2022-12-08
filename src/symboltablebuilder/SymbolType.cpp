@@ -278,6 +278,17 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
 }
 
 /**
+ * Check if the current type is of the same container type like the other type.
+ * Only TY_PTR, TY_REF and TY_ARRAY are considered as container types.
+ *
+ * @param otherType Other symbol type
+ * @return Same container type or not
+ */
+bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
+  return (is(TY_PTR) && otherType.is(TY_PTR)) || (is(TY_REF) && otherType.is(TY_REF)) || (is(TY_ARRAY) && otherType.is(TY_ARRAY));
+}
+
+/**
  * Retrieve the super type of the current type
  *
  * @return Super type

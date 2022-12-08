@@ -313,7 +313,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(currentScope->type == SCOPE_GLOBAL);
 
   // Build struct object
-  Struct spiceStruct(node->structName, structEntry, fieldTypes, usedTemplateTypesGeneric, interfaceTypes, node);
+  Struct spiceStruct(node->structName, structEntry, node->structScope, fieldTypes, usedTemplateTypesGeneric, interfaceTypes,
+                     node);
   node->spiceStruct = StructManager::insertStruct(currentScope, spiceStruct);
   spiceStruct.structScope = node->structScope;
 

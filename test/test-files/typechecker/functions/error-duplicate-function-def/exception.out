@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/functions/error-duplicate-function-def/source.spice:5:1:
-Multiple declarations of a function/procedure: The function/procedure 'exampleFunc(): string' is declared twice
+Multiple declarations of a function/procedure: The function/procedure 'string exampleFunc()' is declared twice
 
 5  f<string> exampleFunc() {
    ^^^^^^^^^^^^^^^^^^^^^^^^^

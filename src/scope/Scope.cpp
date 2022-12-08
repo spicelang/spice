@@ -7,14 +7,20 @@
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 Scope::~Scope() {
-  // Check if the scope was already destroyed
-  if (!parent)
-    return;
-  // Destroy the scope
-  for (const auto &[name, scope] : children)
-    delete scope;
-  // Mark the scope as destroyed
+  // Reset fields
   parent = nullptr;
+  codeLoc = nullptr;
+  // Notify all parents, that the scope is de-allocated now
+  for (Scope *parent : parents) {
+    if (parent)
+      for (auto &child : parent->children)
+        if (child.second == this)
+          child.second = nullptr;
+  }
+  // Destroy child scopes
+  for (const auto &scope : children)
+    delete scope.second;
+  children.clear();
 }
 
 /**
@@ -26,7 +32,8 @@ Scope::~Scope() {
  * @return Child scope (heap allocated)
  */
 Scope *Scope::createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc) {
-  children.insert({scopeName, new Scope(this, scopeType, codeLoc)});
+  auto newScope = new Scope(this, scopeType, codeLoc);
+  children.insert({scopeName, newScope});
   return children.at(scopeName);
 }
 
@@ -38,6 +45,7 @@ Scope *Scope::createChildScope(const std::string &scopeName, const ScopeType &sc
  * @param newName New name of the child table
  */
 void Scope::renameChildScope(const std::string &oldName, const std::string &newName) {
+  assert(children.contains(oldName) && !children.contains(newName));
   auto nodeHandler = children.extract(oldName);
   nodeHandler.key() = newName;
   children.insert(std::move(nodeHandler));
@@ -50,9 +58,12 @@ void Scope::renameChildScope(const std::string &oldName, const std::string &newN
  * @param newName New block name
  */
 void Scope::copyChildScope(const std::string &oldName, const std::string &newName) {
-  assert(children.contains(oldName));
+  assert(children.contains(oldName) && !children.contains(newName));
   const Scope *origChildScope = children.at(oldName);
   auto newChildBlock = new Scope(*origChildScope);
+  // Add newChildBlock as parent of all children for tracking de-allocation
+  for (const auto &child : newChildBlock->children)
+    child.second->parents.push_back(newChildBlock);
   children.insert({newName, newChildBlock});
 }
 
@@ -107,12 +118,15 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
   return varsGoingOutOfScope;
 }
 
+void Scope::addParent(Scope *parent) { parents.push_back(parent); }
+
 /**
  * Insert a new generic type in this scope
  *
  * @param genericType Generic type itself
  */
 void Scope::insertGenericType(const std::string &typeName, const GenericType &genericType) {
+  assert(!genericTypes.contains(typeName));
   genericTypes.insert({typeName, genericType});
 }
 
