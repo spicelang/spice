@@ -48,6 +48,17 @@ else()
     message(STATUS "Spice: Coverage reports disabled.")
 endif()
 
+# ASAN
+option(SPICE_RUN_ASAN "Run address sanitizer on executable" OFF)
+if (SPICE_RUN_ASAN)
+    message(STATUS "Spice: Address sanitizer enabled.")
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+else()
+    message(STATUS "Spice: Coverage reports disabled.")
+endif()
+
+
+
 # Add additional definitions
 IF (WIN32)
     ADD_DEFINITIONS(-DOS_WINDOWS)

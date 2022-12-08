@@ -22,10 +22,10 @@ struct CodeLoc;
 class Struct {
 public:
   // Constructors
-  Struct(std::string name, SymbolTableEntry *entry, std::vector<SymbolType> fieldTypes, std::vector<GenericType> templateTypes,
-         std::vector<SymbolType> interfaceTypes, const ASTNode *declNode)
-      : name(std::move(name)), entry(entry), fieldTypes(std::move(fieldTypes)), templateTypes(std::move(templateTypes)),
-        interfaceTypes(std::move(interfaceTypes)), declNode(declNode) {}
+  Struct(std::string name, SymbolTableEntry *entry, Scope *structScope, std::vector<SymbolType> fieldTypes,
+         std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, const ASTNode *declNode)
+      : name(std::move(name)), entry(entry), structScope(structScope), fieldTypes(std::move(fieldTypes)),
+        templateTypes(std::move(templateTypes)), interfaceTypes(std::move(interfaceTypes)), declNode(declNode) {}
 
   // Public methods
   [[nodiscard]] std::string getMangledName() const;

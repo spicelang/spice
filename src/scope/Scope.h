@@ -44,7 +44,8 @@ enum ScopeType {
 class Scope {
 public:
   // Constructors
-  Scope(Scope *parent, const ScopeType &scopeType, const CodeLoc *codeLoc) : parent(parent), type(scopeType), codeLoc(codeLoc) {}
+  Scope(Scope *parent, const ScopeType &scopeType, const CodeLoc *codeLoc)
+      : parent(parent), parents({parent}), type(scopeType), codeLoc(codeLoc) {}
   ~Scope();
 
   // Friend classes
@@ -59,6 +60,7 @@ public:
   [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] Scope *getChildScope(const std::string &scopeName) const;
   [[nodiscard]] std::vector<SymbolTableEntry *> getVarsGoingOutOfScope();
+  void addParent(Scope *parent);
 
   // Generic types
   void insertGenericType(const std::string &typeName, const GenericType &genericType);
@@ -92,6 +94,7 @@ public:
 
 private:
   // Private members
+  std::vector<Scope *> parents;
   FunctionRegistry functions;
   StructRegistry structs;
   std::unordered_map<std::string, Interface> interfaces;
