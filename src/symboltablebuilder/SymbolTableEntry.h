@@ -24,8 +24,8 @@ struct CodeLoc;
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, SymbolType type, SymbolTable *symbolTable, SymbolSpecifiers specifiers,
-                   const ASTNode *declNode, size_t orderIndex, const bool global)
+  SymbolTableEntry(std::string name, SymbolType type, SymbolTable *symbolTable, SymbolSpecifiers specifiers, ASTNode *declNode,
+                   size_t orderIndex, const bool global)
       : name(std::move(name)), type(std::move(type)), symbolTable(symbolTable), specifiers(specifiers), declNode(declNode),
         orderIndex(orderIndex), global(global){};
 
@@ -48,7 +48,7 @@ public:
   const std::string name;
   SymbolTable *symbolTable;
   SymbolSpecifiers specifiers;
-  const ASTNode *declNode;
+  ASTNode *declNode;
   size_t orderIndex;
   const bool global;
   bool isVolatile = false;

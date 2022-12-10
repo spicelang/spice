@@ -35,7 +35,7 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
 }
 
 void SourceFile::runLexer() {
-  Timer timer;
+  Timer timer(&compilerOutput.times.lexer);
   timer.start();
 
   // Read from file
@@ -64,7 +64,7 @@ void SourceFile::runLexer() {
     restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
 
   timer.stop();
-  printStatusMessage("Lexer", IO_CODE, IO_TOKENS, &timer, compilerOutput.times.lexer);
+  printStatusMessage("Lexer", IO_CODE, IO_TOKENS, compilerOutput.times.lexer);
 }
 
 void SourceFile::runParser() {
@@ -72,7 +72,7 @@ void SourceFile::runParser() {
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.parser);
   timer.start();
 
   // Parse input
@@ -82,7 +82,7 @@ void SourceFile::runParser() {
   antlrCtx.parser->removeParseListeners();
 
   timer.stop();
-  printStatusMessage("Parser", IO_TOKENS, IO_CST, &timer, compilerOutput.times.parser);
+  printStatusMessage("Parser", IO_TOKENS, IO_CST, compilerOutput.times.parser);
 }
 
 void SourceFile::runCSTVisualizer() {
@@ -90,7 +90,7 @@ void SourceFile::runCSTVisualizer() {
   if (restoredFromCache || (!resourceManager.cliOptions.dumpCST && !resourceManager.cliOptions.testMode))
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.cstVisualizer);
   timer.start();
 
   // Generate dot code for this source file
@@ -108,7 +108,7 @@ void SourceFile::runCSTVisualizer() {
   }
 
   timer.stop();
-  printStatusMessage("CST Visualizer", IO_CST, IO_CST, &timer, compilerOutput.times.cstVisualizer);
+  printStatusMessage("CST Visualizer", IO_CST, IO_CST, compilerOutput.times.cstVisualizer);
 }
 
 void SourceFile::runASTBuilder() {
@@ -116,7 +116,7 @@ void SourceFile::runASTBuilder() {
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.astBuilder);
   timer.start();
 
   // Create AST
@@ -128,10 +128,10 @@ void SourceFile::runASTBuilder() {
   antlrCtx.parser->reset();
 
   // Create global scope
-  globalScope = std::make_unique<Scope>(nullptr, SCOPE_GLOBAL, &ast->codeLoc);
+  globalScope = std::make_unique<Scope>(nullptr, this, SCOPE_GLOBAL, &ast->codeLoc);
 
   timer.stop();
-  printStatusMessage("AST Builder", IO_CST, IO_AST, &timer, compilerOutput.times.astBuilder);
+  printStatusMessage("AST Builder", IO_CST, IO_AST, compilerOutput.times.astBuilder);
 }
 
 void SourceFile::runASTOptimizer() {
@@ -139,14 +139,14 @@ void SourceFile::runASTOptimizer() {
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.astOptimizer);
   timer.start();
 
   ASTOptimizer astOptimizer(resourceManager, this);
   astOptimizer.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("AST Optimizer", IO_AST, IO_AST, &timer, compilerOutput.times.astOptimizer);
+  printStatusMessage("AST Optimizer", IO_AST, IO_AST, compilerOutput.times.astOptimizer);
 }
 
 void SourceFile::runASTVisualizer() {
@@ -154,7 +154,7 @@ void SourceFile::runASTVisualizer() {
   if (restoredFromCache || (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode))
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.astVisualizer);
   timer.start();
 
   // Generate dot code for this source file
@@ -171,7 +171,7 @@ void SourceFile::runASTVisualizer() {
   }
 
   timer.stop();
-  printStatusMessage("AST Visualizer", IO_AST, IO_AST, &timer, compilerOutput.times.astVisualizer);
+  printStatusMessage("AST Visualizer", IO_AST, IO_AST, compilerOutput.times.astVisualizer);
 }
 
 void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
@@ -179,7 +179,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.importCollector);
   timer.start();
 
   // Collect the imports for this source file
@@ -191,7 +191,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
     dependency.second.first->runFrontEnd();
 
   timer.stop();
-  printStatusMessage("Import Collector", IO_AST, IO_AST, &timer, compilerOutput.times.importCollector);
+  printStatusMessage("Import Collector", IO_AST, IO_AST, compilerOutput.times.importCollector);
 }
 
 void SourceFile::runSymbolTableBuilder() {
@@ -199,7 +199,7 @@ void SourceFile::runSymbolTableBuilder() {
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.symbolTableBuilder);
   timer.start();
 
   // Build symbol table of the current file
@@ -207,7 +207,7 @@ void SourceFile::runSymbolTableBuilder() {
   symbolTableBuilder.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("Symbol Table Builder", IO_AST, IO_AST, &timer, compilerOutput.times.symbolTableBuilder);
+  printStatusMessage("Symbol Table Builder", IO_AST, IO_AST, compilerOutput.times.symbolTableBuilder);
 }
 
 void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
@@ -223,7 +223,7 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.typeCheckerPre);
   timer.start();
 
   // Type-check all dependencies first
@@ -239,7 +239,7 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
   typeChecker.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("Type Checker Pre", IO_AST, IO_AST, &timer, compilerOutput.times.typeCheckerPre);
+  printStatusMessage("Type Checker Pre", IO_AST, IO_AST, compilerOutput.times.typeCheckerPre);
 }
 
 void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
@@ -247,26 +247,29 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.typeCheckerPost);
   timer.start();
 
-  // Type-check the current file first, if requested multiple times
+  // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
   TypeChecker typeChecker(resourceManager, this, TC_MODE_CHECK);
-  unsigned short typeCheckRuns = 0;
+  unsigned short runNumber = 0;
   do {
+    runNumber++;
+
+    // Type-check the current file first, if requested multiple times
     typeChecker.visit(static_cast<EntryNode *>(ast.get()));
-    typeCheckRuns++;
-    if (typeCheckRuns >= 10)
+
+    // Then type-check all dependencies
+    for (const auto &[importName, sourceFile] : dependencies)
+      sourceFile.first->runTypeCheckerSecond();
+
+    if (runNumber >= 10)
       throw std::runtime_error("Internal compiler error: Number of type checker runs for one source file exceeded. Please report "
                                "this as a bug on GitHub.");
   } while (typeChecker.reVisitRequested);
 
-  // Then type-check all dependencies
-  for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runTypeCheckerSecond();
-
   timer.stop();
-  printStatusMessage("Type Checker Post", IO_AST, IO_AST, &timer, compilerOutput.times.typeCheckerPost);
+  printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost);
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);
@@ -283,7 +286,7 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.borrowChecker);
   timer.start();
 
   // Borrow-check all dependencies first
@@ -295,7 +298,7 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
   borrowChecker.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("Borrow Checker", IO_AST, IO_AST, &timer, compilerOutput.times.borrowChecker);
+  printStatusMessage("Borrow Checker", IO_AST, IO_AST, compilerOutput.times.borrowChecker);
 }
 
 void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
@@ -303,7 +306,7 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.escapeAnalyzer);
   timer.start();
 
   // Escape-analyze all dependencies first
@@ -315,7 +318,7 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
   escapeAnalyzer.visit(static_cast<EntryNode *>(ast.get()));
 
   timer.stop();
-  printStatusMessage("Escape Analyzer", IO_AST, IO_AST, &timer, compilerOutput.times.escapeAnalyzer);
+  printStatusMessage("Escape Analyzer", IO_AST, IO_AST, compilerOutput.times.escapeAnalyzer);
 }
 
 void SourceFile::runIRGenerator() {
@@ -323,7 +326,7 @@ void SourceFile::runIRGenerator() {
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.irGenerator);
   timer.start();
 
   // Create LLVM module for this source file
@@ -341,7 +344,7 @@ void SourceFile::runIRGenerator() {
     tout.println("\nUnoptimized IR code:\n" + irGenerator.getIRString()); // GCOV_EXCL_LINE
 
   timer.stop();
-  printStatusMessage("IR Generator", IO_AST, IO_IR, &timer, compilerOutput.times.irGenerator, true);
+  printStatusMessage("IR Generator", IO_AST, IO_IR, compilerOutput.times.irGenerator, true);
 }
 
 void SourceFile::runIROptimizer() {
@@ -349,7 +352,7 @@ void SourceFile::runIROptimizer() {
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.irGenerator);
   timer.start();
 
   // Skip this stage if optimization is disabled
@@ -368,7 +371,7 @@ void SourceFile::runIROptimizer() {
     tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
 
   timer.stop();
-  printStatusMessage("IR Optimizer", IO_IR, IO_IR, &timer, compilerOutput.times.irOptimizer, true);
+  printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irGenerator, true);
 }
 
 void SourceFile::runObjectEmitter() {
@@ -376,7 +379,7 @@ void SourceFile::runObjectEmitter() {
   if (restoredFromCache)
     return;
 
-  Timer timer;
+  Timer timer(&compilerOutput.times.objectEmitter);
   timer.start();
 
   // Emit object for this source file
@@ -390,7 +393,7 @@ void SourceFile::runObjectEmitter() {
   } // GCOV_EXCL_STOP
 
   timer.stop();
-  printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, &timer, compilerOutput.times.objectEmitter, true);
+  printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, compilerOutput.times.objectEmitter, true);
 }
 
 void SourceFile::concludeCompilation() {
@@ -553,27 +556,20 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
   std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
 }
 
-void SourceFile::printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out,
-                                    const Timer *timer, uint64_t &timeCompilerOutput, bool fromThread /*=false*/) const {
+void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,
+                                    uint64_t &stageRuntime, bool fromThread /*=false*/) const {
   if (resourceManager.cliOptions.printDebugOutput) {
     const char *const compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
+    // Build output string
+    std::stringstream outputStr;
+    outputStr << "[" << stage << "] for " << fileName << ": ";
+    outputStr << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
+    outputStr << " (" << std::to_string(stageRuntime) << " ms)\n";
+    // Print
     if (fromThread) {
-      if (timer != nullptr) {
-        tout.println("[" + stage + "] for " + fileName + ": " + compilerStageIoTypeName[in] + " --> " +
-                     compilerStageIoTypeName[out] + " (" + std::to_string(timeCompilerOutput) + " s)");
-      } else {
-        tout.println("[" + stage + "] for " + fileName + ": " + compilerStageIoTypeName[in] + " --> " +
-                     compilerStageIoTypeName[out]);
-      }
+      tout.print(outputStr.str());
     } else {
-      if (timer != nullptr) {
-        std::cout << "[" << stage << "] for " << fileName << ": ";
-        std::cout << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
-        std::cout << " (" << std::to_string(timeCompilerOutput) << " s)\n";
-      } else {
-        std::cout << "[" << stage << "] for " << fileName << ": ";
-        std::cout << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out] << "\n";
-      }
+      std::cout << outputStr.str();
     }
   }
 }

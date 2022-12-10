@@ -25,6 +25,7 @@ class GlobalResourceManager {
 public:
   // Constructors
   explicit GlobalResourceManager(const CliOptions &cliOptions);
+  GlobalResourceManager(const GlobalResourceManager &) = delete;
 
   // Public members
   const CliOptions &cliOptions;

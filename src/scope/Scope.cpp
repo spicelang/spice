@@ -32,7 +32,7 @@ Scope::~Scope() {
  * @return Child scope (heap allocated)
  */
 Scope *Scope::createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc) {
-  auto newScope = new Scope(this, scopeType, codeLoc);
+  auto newScope = new Scope(this, sourceFile, scopeType, codeLoc);
   children.insert({scopeName, newScope});
   return children.at(scopeName);
 }

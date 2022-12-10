@@ -11,6 +11,7 @@
 // Forward declarations
 class FctDefNode;
 class ProcDefNode;
+class SourceFile;
 
 enum ScopeType {
   SCOPE_GLOBAL,
@@ -38,14 +39,14 @@ enum ScopeType {
  * - for loops
  * - foreach loops
  * - while loops
- * - if/elseif/else statements
+ * - if statements
  * - anonymous scopes
  */
 class Scope {
 public:
   // Constructors
-  Scope(Scope *parent, const ScopeType &scopeType, const CodeLoc *codeLoc)
-      : parent(parent), parents({parent}), type(scopeType), codeLoc(codeLoc) {}
+  Scope(Scope *parent, SourceFile *sourceFile, const ScopeType &scopeType, const CodeLoc *codeLoc)
+      : parent(parent), parents({parent}), sourceFile(sourceFile), type(scopeType), codeLoc(codeLoc) {}
   ~Scope();
 
   // Friend classes
@@ -79,7 +80,7 @@ public:
   [[nodiscard]] nlohmann::json getSymbolTableJSON() const;
 
   // Wrapper methods for symbol table
-  inline SymbolTableEntry *insert(const std::string &name, const SymbolSpecifiers &specifiers, const ASTNode *declNode) {
+  inline SymbolTableEntry *insert(const std::string &name, const SymbolSpecifiers &specifiers, ASTNode *declNode) {
     return symbolTable.insert(name, specifiers, declNode);
   }
   inline SymbolTableEntry *lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
@@ -87,6 +88,7 @@ public:
 
   // Public members
   Scope *parent;
+  SourceFile *sourceFile;
   std::unordered_map<std::string, Scope *> children;
   const ScopeType type;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable);

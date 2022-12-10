@@ -134,6 +134,10 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
     for (const auto &[mangledName, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
+      // Skip generic substantiations to prevent double matching of a function
+      if (presetFunction.genericSubstantiation)
+        continue;
+
       // Copy the function to be able to substantiate types
       Function candidate = presetFunction;
 
@@ -179,6 +183,8 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       // Insert the substantiated version if required
       Function *substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
       substantiatedFunction->genericSubstantiation = true;
+      substantiatedFunction->declNode->getFctManifestations()->push_back(substantiatedFunction);
+
       // Copy function scope
       matchScope->copyChildScope(presetFunction.getSignature(), substantiatedFunction->getSignature());
 
@@ -196,6 +202,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 
       // Add to matched functions
       matches.push_back(substantiatedFunction);
+      break; // Leave the whole manifestation list to not double-match the manifestation
     }
   }
 
@@ -308,8 +315,13 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
 
     // Check if we have an information mismatch
     const std::string genericTypeName = paramType.getSubType();
-    if (typeMapping.contains(genericTypeName)) { // Seen type name
+    if (typeMapping.contains(genericTypeName)) { // Known type name
       const SymbolType &concreteType = typeMapping.at(paramType.getSubType());
+
+      // Check if the concrete type matches the requested type
+      if (concreteType != requestedParamType)
+        return false;
+
       candidate.paramList.at(i) = Param{concreteType, false};
       continue;
     }
@@ -329,6 +341,13 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
   return true;
 }
 
+/**
+ * Searches the candidate template types for a generic type object with a certain name and return it
+ *
+ * @param candidate Matching candidate function
+ * @param templateTypeName Template type name
+ * @return Generic type object
+ */
 const GenericType *FunctionManager::getGenericTypeByNameFromCandidate(const Function &candidate,
                                                                       const std::string &templateTypeName) {
   for (const auto &templateType : candidate.templateTypes) {

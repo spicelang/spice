@@ -7,6 +7,10 @@
  */
 class ThreadFactory {
 public:
+  // Constructors
+  ThreadFactory() = default;
+  ThreadFactory(const ThreadFactory &) = delete;
+
   // Public methods
   int getNextFunctionSuffix();
   [[nodiscard]] bool isUsingThreads() const;

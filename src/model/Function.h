@@ -33,7 +33,7 @@ class Function {
 public:
   // Constructors
   Function(std::string name, SymbolTableEntry *entry, SymbolType thisType, SymbolType returnType, ParamList paramList,
-           std::vector<GenericType> templateTypes, const ASTNode *declNode, bool external)
+           std::vector<GenericType> templateTypes, ASTNode *declNode, bool external)
       : name(std::move(name)), entry(entry), thisType(std::move(thisType)), returnType(std::move(returnType)),
         paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode), external(external) {}
   Function() = default;
@@ -59,7 +59,7 @@ public:
   ParamList paramList;
   std::vector<GenericType> templateTypes;
   SymbolTableEntry *entry = nullptr;
-  const ASTNode *declNode = nullptr;
+  ASTNode *declNode = nullptr;
   bool genericSubstantiation = false;
   bool alreadyTypeChecked = false;
   bool external = false;

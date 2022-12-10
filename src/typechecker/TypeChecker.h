@@ -119,5 +119,6 @@ private:
 
   // Private methods
   std::tuple<Scope *, SymbolType, std::string> visitOrdinaryFctCall(FunctionCallNode *node) const;
-  static std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, SymbolType thisType, Scope *structScope);
+  static std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, Scope *structScope);
+  [[nodiscard]] static SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType);
 };

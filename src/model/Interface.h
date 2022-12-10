@@ -19,7 +19,7 @@ struct CodeLoc;
 class Interface {
 public:
   // Constructors
-  Interface(std::string name, SymbolSpecifiers specifiers, std::vector<Function *> methods, const ASTNode *declNode)
+  Interface(std::string name, SymbolSpecifiers specifiers, std::vector<Function *> methods, ASTNode *declNode)
       : name(std::move(name)), specifiers(specifiers), methods(std::move(methods)), declNode(declNode) {}
 
   // Public members
@@ -27,6 +27,6 @@ public:
   SymbolSpecifiers specifiers;
   std::vector<Function *> methods;
   Scope *interfaceScope = nullptr;
-  const ASTNode *declNode;
+  ASTNode *declNode;
   bool used = false;
 };

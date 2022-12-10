@@ -86,6 +86,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       // Insert the substantiated version if required
       Struct *substantiatedStruct = insertSubstantiation(matchScope, candidate, presetStruct.declNode);
       substantiatedStruct->genericSubstantiation = true;
+      substantiatedStruct->declNode->getStructManifestations()->push_back(substantiatedStruct);
       // Copy struct scope
       const std::string newScopeName = STRUCT_SCOPE_PREFIX + substantiatedStruct->getSignature();
       matchScope->copyChildScope(STRUCT_SCOPE_PREFIX + presetStruct.name, newScopeName);

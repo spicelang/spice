@@ -1,9 +1,9 @@
 import "os-test2" as s1;
 
 f<int> main() {
-    dyn v = s1::Vector<int>{};
+    Vector<int> v = Vector<int>{};
     v.setData(12);
     printf("Data: %d\n", v.data);
-    v.setData(1.5);
+    v.setData(1);
     printf("Data: %d\n", v.data);
 }

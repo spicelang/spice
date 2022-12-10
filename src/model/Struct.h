@@ -23,7 +23,7 @@ class Struct {
 public:
   // Constructors
   Struct(std::string name, SymbolTableEntry *entry, Scope *structScope, std::vector<SymbolType> fieldTypes,
-         std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, const ASTNode *declNode)
+         std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, ASTNode *declNode)
       : name(std::move(name)), entry(entry), structScope(structScope), fieldTypes(std::move(fieldTypes)),
         templateTypes(std::move(templateTypes)), interfaceTypes(std::move(interfaceTypes)), declNode(declNode) {}
 
@@ -41,7 +41,7 @@ public:
   std::vector<SymbolType> interfaceTypes;
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
-  const ASTNode *declNode;
+  ASTNode *declNode;
   bool genericSubstantiation = false;
   bool used = false;
 
