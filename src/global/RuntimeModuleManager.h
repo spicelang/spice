@@ -15,6 +15,10 @@ enum RuntimeModuleName { STRING_RT, THREAD_RT };
 
 class RuntimeModuleManager {
 public:
+  // Constructors
+  RuntimeModuleManager() = default;
+  RuntimeModuleManager(const RuntimeModuleManager &) = delete;
+
   // Public methods
   SourceFile *requestModule(SourceFile *sourceFile, const RuntimeModuleName &moduleName);
   [[nodiscard]] Scope *getModuleScope(const RuntimeModuleName &moduleName) const;

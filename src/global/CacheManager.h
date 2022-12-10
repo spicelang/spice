@@ -11,6 +11,7 @@ class CacheManager {
 public:
   // Constructors
   explicit CacheManager(const std::string &cacheDir) : cacheDir(cacheDir) {}
+  CacheManager(const CacheManager &) = delete;
 
   // Public methods
   bool lookupSourceFile(SourceFile *sourceFile);

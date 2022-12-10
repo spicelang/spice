@@ -26,7 +26,7 @@ class EntryNode;
 class ASTNode;
 class Timer;
 
-enum CompilerStageIOType {
+enum CompileStageIOType {
   IO_CODE = 0,
   IO_TOKENS = 1,
   IO_CST = 2,
@@ -85,6 +85,7 @@ public:
   // Constructors
   explicit SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
                       bool stdFile);
+  SourceFile(const SourceFile &) = delete;
 
   // Friend classes
   friend class RuntimeModuleManager;
@@ -157,6 +158,6 @@ private:
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
-  void printStatusMessage(const std::string &stage, const CompilerStageIOType &in, const CompilerStageIOType &out,
-                          const Timer *timer, uint64_t &timeCompilerOutput, bool fromThread = false) const;
+  void printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out, uint64_t &stageRuntime,
+                          bool fromThread = false) const;
 };

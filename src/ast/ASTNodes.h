@@ -127,6 +127,16 @@ public:
     return children.size() == 1 && children.front()->returnsOnAllControlPaths();
   }
 
+  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations() {
+    assert(false); // Must be called on FctDefNode or ProcDefNode
+    return nullptr;
+  }
+
+  [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() {
+    assert(false); // Must be called on StructDefNode
+    return nullptr;
+  }
+
   // Public members
   ASTNode *parent;
   std::vector<ASTNode *> children;
@@ -208,6 +218,7 @@ public:
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
   [[nodiscard]] std::string getSymbolTableEntryName() const { return functionName + ":" + codeLoc.toPrettyLine(); }
   [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
 
   // Public members
   std::string functionName;
@@ -244,6 +255,7 @@ public:
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
   [[nodiscard]] std::string getSymbolTableEntryName() const { return procedureName + ":" + codeLoc.toPrettyLine(); }
   bool returnsOnAllControlPaths() const override;
+  std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
 
   // Public members
   std::string procedureName;
@@ -276,12 +288,14 @@ public:
   [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
   [[nodiscard]] TypeLstNode *interfaceTypeLst() const { return getChild<TypeLstNode>(isGeneric ? 1 : 0); }
+  std::vector<Struct *> *getStructManifestations() override { return &structManifestations; }
 
   // Public members
   std::string structName;
   bool isGeneric = false;
   bool hasInterfaces = false;
   SymbolTableEntry *entry = nullptr;
+  std::vector<Struct *> structManifestations;
   Scope *structScope = nullptr;
   Struct *spiceStruct = nullptr;
 };
@@ -1408,6 +1422,7 @@ public:
   bool hasArgs = false;
   bool isConstructorCall = false;
   bool isMethodCall = false;
+  SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
   std::vector<SymbolType> argTypes;
   Function *calledFunction = nullptr;
 };

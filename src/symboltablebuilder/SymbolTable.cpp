@@ -20,7 +20,7 @@
  * @param declNode AST node where the symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolSpecifiers &specifiers, const ASTNode *declNode) {
+SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolSpecifiers &specifiers, ASTNode *declNode) {
   bool isGlobal = parent == nullptr;
   size_t orderIndex = symbols.size();
   // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
@@ -36,7 +36,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolSpeci
  * @param declNode AST node where the anonymous symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, const ASTNode *declNode) {
+SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *declNode) {
   std::string name = "anon." + declNode->codeLoc.toString();
   insert(name, SymbolSpecifiers::of(type), declNode);
   SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc);

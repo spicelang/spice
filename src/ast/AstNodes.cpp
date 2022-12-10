@@ -45,8 +45,7 @@ bool StmtLstNode::returnsOnAllControlPaths() const {
     return false;
   // A statement list returns on all control paths, if the one statement returns on all control paths
   bool returns = false;
-  for (auto it = children.begin(); it != children.end(); ++it) {
-    ASTNode *astNode = *it;
+  for (auto astNode : children) {
     if (returns) {
       astNode->unreachable = true;
     } else if (astNode->returnsOnAllControlPaths()) {

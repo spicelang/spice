@@ -1206,10 +1206,10 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   if (firstFragmentEntry != nullptr && firstFragmentEntry->getType().is(TY_STRUCT) && firstFragmentEntry->symbolTable->parent) {
     // This is a method call
     node->isMethodCall = true;
-    const SymbolType firstFragmentType = firstFragmentEntry->getType();
-    Scope *structBodyScope = firstFragmentType.getStructBodyScope();
+    node->thisType = firstFragmentEntry->getType();
+    Scope *structBodyScope = node->thisType.getStructBodyScope();
     assert(structBodyScope != nullptr);
-    auto [scope, type] = visitMethodCall(node, firstFragmentType, structBodyScope);
+    auto [scope, type] = visitMethodCall(node, structBodyScope);
     functionParentScope = scope;
     thisType = type;
   } else {
@@ -1282,7 +1282,6 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   SymbolTableEntry *symbolEntry = registryEntry->targetEntry;
 
   // Check if the target symbol is a struct -> this must be a constructor call
-  SymbolType thisType(TY_DYN);
   std::string knownStructName;
   if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
     const NameRegistryEntry *structRegistryEntry = registryEntry;
@@ -1301,7 +1300,7 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
     node->isConstructorCall = true;
 
     // Set the 'this' type of the function to the struct type
-    thisType = symbolEntry->getType();
+    node->thisType = symbolEntry->getType();
 
     // Set the struct to used
     structRegistryEntry->targetEntry->used = true;
@@ -1310,15 +1309,21 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
     knownStructName = structRegistryEntry->name;
   }
 
+  // Map local types to imported types
+  Scope *functionParentScope = registryEntry->targetScope;
+  std::vector<SymbolType> importedArgTypes = node->argTypes;
+  for (SymbolType &symbolType : importedArgTypes)
+    symbolType = mapLocalTypeToImportedScopeType(functionParentScope, symbolType);
+
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
-  Scope *functionParentScope = registryEntry->targetScope;
-  node->calledFunction = FunctionManager::matchFunction(functionParentScope, functionName, thisType, node->argTypes, node);
+  node->calledFunction =
+      FunctionManager::matchFunction(functionParentScope, functionName, node->thisType, importedArgTypes, node);
 
-  return std::make_tuple(functionParentScope, thisType, knownStructName);
+  return std::make_tuple(functionParentScope, node->thisType, knownStructName);
 }
 
-std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *node, SymbolType thisType, Scope *structScope) {
+std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *node, Scope *structScope) {
   // Traverse through structs - the first fragment is already looked up and the last one is the function name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
     const std::string identifier = node->functionNameFragments.at(i);
@@ -1330,17 +1335,26 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
     fieldEntry->used = true;
 
     // Get struct type and scope
-    thisType = fieldEntry->getType();
-    structScope = thisType.getStructBodyScope();
+    node->thisType = fieldEntry->getType();
+    structScope = node->thisType.getStructBodyScope();
     assert(structScope != nullptr);
   }
 
+  // Map local types to imported types
+  Scope *functionParentScope = structScope;
+  // Arg types
+  std::vector<SymbolType> importedArgTypes = node->argTypes;
+  for (SymbolType &symbolType : importedArgTypes)
+    symbolType = mapLocalTypeToImportedScopeType(functionParentScope, symbolType);
+  // 'this' type
+  SymbolType importedThisType = mapLocalTypeToImportedScopeType(functionParentScope, node->thisType);
+
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
-  Scope *functionParentScope = structScope;
-  node->calledFunction = FunctionManager::matchFunction(functionParentScope, functionName, thisType, node->argTypes, node);
+  node->calledFunction =
+      FunctionManager::matchFunction(functionParentScope, functionName, importedThisType, importedArgTypes, node);
 
-  return std::make_pair(functionParentScope, thisType);
+  return std::make_pair(functionParentScope, node->thisType);
 }
 
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
@@ -1583,4 +1597,19 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   const std::string errorMessage =
       entryType.is(TY_INVALID) ? "Used type before declared" : "Expected type, but got " + entryType.getName();
   throw SemanticError(node, EXPECTED_TYPE, errorMessage);
+}
+
+SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) {
+  // Skip all types, exception structs, interfaces and enums
+  if (!symbolType.getBaseType().is(TY_STRUCT))
+    return symbolType;
+
+  // Match the scope of the symbol type against
+  const SourceFile *targetSourceFile = targetScope->sourceFile;
+  for (const auto &[registryEntryName, entry] : targetSourceFile->exportedNameRegistry)
+    if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
+      for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
+        if (manifestation->structScope == symbolType.getStructBodyScope())
+          return symbolType.replaceBaseSubType(manifestation->name);
+  return symbolType;
 }
