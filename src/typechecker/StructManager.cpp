@@ -58,6 +58,10 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       // Copy the struct to be able to substantiate types
       Struct candidate = presetStruct;
 
+      // Skip generic substantiations to prevent double matching of a struct
+      if (presetStruct.genericSubstantiation)
+        continue;
+
       // Check name requirement
       if (!matchName(candidate, requestedName))
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name

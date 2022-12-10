@@ -84,6 +84,8 @@ public:
         const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, "::");
         return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.structBodyScope == rhs.data.structBodyScope;
       }
+      case TY_GENERIC:
+        return lhs.subType == rhs.subType;
       default:
         return true;
       }
@@ -137,6 +139,7 @@ public:
   [[nodiscard]] std::string getSubType() const;
   [[nodiscard]] SymbolType getBaseType() const;
   void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
+  void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);
   [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] long getArraySize() const;

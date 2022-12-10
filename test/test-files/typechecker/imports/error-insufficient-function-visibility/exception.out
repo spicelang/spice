@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/imports/error-insufficient-function-visibility/source.spice:4:15:
-Insufficient symbol visibility: Function/procedure 'testFunc(): int' has insufficient visibility
+Insufficient symbol visibility: Function/procedure 'int testFunc()' has insufficient visibility
 
 4  int res = src1::testFunc();
              ^^^^^^^^^^^^^^^^

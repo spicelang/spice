@@ -329,6 +329,14 @@ void SymbolType::setTemplateTypes(const std::vector<SymbolType> &templateTypes) 
 }
 
 /**
+ * Set the list of templates types of the base type
+ */
+void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes) {
+  assert(isBaseType(TY_STRUCT));
+  typeChain.front().templateTypes = templateTypes;
+}
+
+/**
  * Retrieve the list of template types of the current type
  *
  * @return Template types

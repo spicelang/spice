@@ -1,9 +1,9 @@
-import "os-test2" as s1;
-
 f<int> main() {
-    Vector<int> v = Vector<int>{};
-    v.setData(12);
-    printf("Data: %d\n", v.data);
-    v.setData(1);
-    printf("Data: %d\n", v.data);
+    bool a = false;
+    bool b = true;
+    if a = b {
+        printf("a: %d, b: %d", a, b);
+    } else {
+        printf("a: %d, b: %d", a, b);
+    }
 }

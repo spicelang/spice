@@ -25,6 +25,9 @@ Function *FunctionManager::insertFunction(Scope *insertScope, const Function &ba
       nodeFunctionList->push_back(manifestationPtr);
   }
 
+  if (!nodeFunctionList)
+    return nullptr;
+
   assert(!nodeFunctionList->empty());
   return nodeFunctionList->front();
 }
@@ -238,23 +241,26 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  * @return Fulfilled or not
  */
 bool FunctionManager::matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping) {
-  // If the candidate 'this' type is non-generic, we can simpy check for equality of the types
-  if (candidate.thisType.getTemplateTypes().empty())
-    return candidate.thisType == requestedThisType;
+  const SymbolType candidateThisType = candidate.thisType;
+  const SymbolType requestedThisBaseType = requestedThisType.getBaseType();
 
-  assert(candidate.thisType.is(TY_STRUCT) && requestedThisType.is(TY_STRUCT)); // The 'this' type must always be a struct
+  // If the candidate 'this' type is non-generic, we can simpy check for equality of the types
+  if (candidateThisType.getTemplateTypes().empty())
+    return candidateThisType == requestedThisBaseType;
+
+  assert(candidateThisType.is(TY_STRUCT) && requestedThisBaseType.is(TY_STRUCT)); // The 'this' type must always be a struct
 
   // Compare this type template type list sizes
-  const std::vector<SymbolType> &candidateTemplateTypeList = candidate.thisType.getTemplateTypes();
-  if (requestedThisType.getTemplateTypes().size() != candidateTemplateTypeList.size())
+  const std::vector<SymbolType> &candidateTemplateTypeList = candidateThisType.getTemplateTypes();
+  if (requestedThisBaseType.getTemplateTypes().size() != candidateTemplateTypeList.size())
     return false;
 
   // Substantiate 'this' type
   std::vector<SymbolType> concreteTemplateTypes;
-  concreteTemplateTypes.reserve(candidate.thisType.getTemplateTypes().size());
-  for (size_t i = 0; i < requestedThisType.getTemplateTypes().size(); i++) {
+  concreteTemplateTypes.reserve(candidateThisType.getTemplateTypes().size());
+  for (size_t i = 0; i < requestedThisBaseType.getTemplateTypes().size(); i++) {
     const SymbolType &templateType = candidateTemplateTypeList.at(i);
-    const SymbolType &concreteTemplateType = requestedThisType.getTemplateTypes().at(i);
+    const SymbolType &concreteTemplateType = requestedThisBaseType.getTemplateTypes().at(i);
 
     // If the template type is non-generic, check it directly
     if (!templateType.is(TY_GENERIC)) {
@@ -275,7 +281,7 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
   }
 
   // Mount the new concrete template type list to the 'this' type
-  candidate.thisType.setTemplateTypes(concreteTemplateTypes);
+  candidate.thisType.setBaseTemplateTypes(concreteTemplateTypes);
 
   return true;
 }
